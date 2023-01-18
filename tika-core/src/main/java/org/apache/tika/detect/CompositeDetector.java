@@ -28,6 +28,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Content type detector that combines multiple different detection mechanisms.
@@ -71,17 +72,15 @@ public class CompositeDetector implements Detector {
     }
 
     public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+        MediaType override = detectOverrides(metadata);
+        if (override != null) {
+            return override;
+        }
         MediaType type = MediaType.OCTET_STREAM;
+
+        //we have to iterate through all detectors because the override detector may
+        //be within a CompositeDetector
         for (Detector detector : getDetectors()) {
-            //short circuit via OverrideDetector
-            //can't rely on ordering because subsequent detector may
-            //change Override's to a specialization of Override's
-            if (detector instanceof OverrideDetector &&
-                    (metadata.get(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE) != null ||
-                            metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE) !=
-                                    null)) {
-                return detector.detect(input, metadata);
-            }
             MediaType detected = detector.detect(input, metadata);
             if (registry.isSpecializationOf(detected, type)) {
                 type = detected;
@@ -90,6 +89,28 @@ public class CompositeDetector implements Detector {
         return type;
     }
 
+    /**
+     *
+     * @param metadata
+     * @return mediaType if a parseable mediatype was sent in via user or parser overrides
+     */
+    private static MediaType detectOverrides(Metadata metadata) {
+        String override = metadata.get(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE);
+        if (!StringUtils.isBlank(override)) {
+            MediaType mt = MediaType.parse(override);
+            if (mt != null) {
+                return mt;
+            }
+        }
+        override = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
+        if (!StringUtils.isBlank(override)) {
+            MediaType mt = MediaType.parse(override);
+            if (mt != null) {
+                return mt;
+            }
+        }
+        return null;
+    }
     /**
      * Returns the component detectors.
      */

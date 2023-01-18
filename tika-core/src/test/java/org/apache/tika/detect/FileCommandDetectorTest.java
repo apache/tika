@@ -48,9 +48,13 @@ public class FileCommandDetectorTest {
                 .getResourceAsStream("/test-documents/basic_embedded.xml")) {
             //run more than once to ensure that the input stream is reset
             for (int i = 0; i < 2; i++) {
-                MediaType answer = DETECTOR.detect(is, new Metadata());
+                Metadata metadata = new Metadata();
+                MediaType answer = DETECTOR.detect(is, metadata);
+                String fileMime = metadata.get(FileCommandDetector.FILE_MIME);
                 assertTrue(MediaType.text("xml").equals(answer) ||
                         MediaType.application("xml").equals(answer));
+                assertTrue("application/xml".equals(fileMime) ||
+                        "text/xml".equals(fileMime));
             }
         }
 

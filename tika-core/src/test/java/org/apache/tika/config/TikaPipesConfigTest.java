@@ -19,12 +19,19 @@ package org.apache.tika.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.CompositePipesReporter;
+import org.apache.tika.pipes.PipesReporter;
+import org.apache.tika.pipes.async.AsyncConfig;
+import org.apache.tika.pipes.async.MockReporter;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.fetcher.Fetcher;
@@ -63,10 +70,11 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
 
     @Test
     public void testNoBasePathFetchers() throws Exception {
-        //can't have an fs fetcher with no basepath specified
-        assertThrows(TikaConfigException.class, () -> {
-            FetcherManager.load(getConfigFilePath("fetchers-nobasepath-config.xml"));
-        });
+        //no basepath is allowed as of > 2.3.0
+        //test that this does not throw an exception.
+
+        FetcherManager fetcherManager = FetcherManager.load(
+                getConfigFilePath("fetchers-nobasepath-config.xml"));
     }
 
     @Test
@@ -100,5 +108,17 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
                     PipesIterator.build(getConfigFilePath("pipes-iterator-multiple-config.xml"));
             assertEquals("fs1", it.getFetcherName());
         });
+    }
+    @Test
+    public void testParams() throws Exception {
+        //This test makes sure that pre 2.7.x configs that still contain <params/> element
+        //in ConfigBase derived objects still work.
+        Path configPath = getConfigFilePath("TIKA-3865-params.xml");
+        AsyncConfig asyncConfig = AsyncConfig.load(configPath);
+        PipesReporter reporter = asyncConfig.getPipesReporter();
+        assertTrue(reporter instanceof CompositePipesReporter);
+        List<PipesReporter> reporters = ((CompositePipesReporter)reporter).getPipesReporters();
+        assertEquals("somethingOrOther1", ((MockReporter)reporters.get(0)).getEndpoint());
+        assertEquals("somethingOrOther2", ((MockReporter)reporters.get(1)).getEndpoint());
     }
 }

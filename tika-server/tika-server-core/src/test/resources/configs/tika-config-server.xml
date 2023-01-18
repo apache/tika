@@ -17,7 +17,6 @@
 -->
 <properties>
   <server>
-    <params>
       <port>9999</port>
       <taskTimeoutMillis>54321</taskTimeoutMillis>
       <minimumTimeoutMillis>10</minimumTimeoutMillis>
@@ -29,6 +28,5 @@
       <endpoints>
         <endpoint>rmeta</endpoint>
       </endpoints>
-    </params>
   </server>
 </properties>

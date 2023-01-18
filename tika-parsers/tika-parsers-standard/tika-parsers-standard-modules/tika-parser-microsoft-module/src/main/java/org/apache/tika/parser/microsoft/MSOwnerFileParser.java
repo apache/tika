@@ -42,6 +42,7 @@ public class MSOwnerFileParser extends AbstractParser {
 
     private static final int ASCII_CHUNK_LENGTH = 54;
     private static final MediaType MEDIA_TYPE = MediaType.application("x-ms-owner");
+    private static final int MAX_STRING_LENGTH = 10 * 1024 * 1024;
     /**
      * Serial version UID
      */
@@ -79,6 +80,7 @@ public class MSOwnerFileParser extends AbstractParser {
         int unicodeCharLength = stream.read();
         if (asciiNameLength == unicodeCharLength) {
             stream.read();//zero after the char length
+            //this is effectively bounds checked by asciiNameLength
             byte[] unicodeBytes = new byte[unicodeCharLength * 2];
             IOUtils.readFully(stream, unicodeBytes);
             String unicodeName = new String(unicodeBytes, StandardCharsets.UTF_16LE);

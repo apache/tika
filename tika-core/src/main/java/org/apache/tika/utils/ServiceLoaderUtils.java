@@ -16,6 +16,8 @@
  */
 package org.apache.tika.utils;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import org.apache.tika.config.ServiceLoader;
@@ -55,6 +57,31 @@ public class ServiceLoaderUtils {
         try {
             return ((Class<T>) Class.forName(className, true, loader)).newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Loads a class and instantiates it.  If the class can be initialized
+     * with a ServiceLoader, the ServiceLoader constructor is used.
+     * Otherwise, a zero arg newInstance() is called.
+     *
+     * @param klass     class to build
+     * @param loader    service loader
+     * @param <T>       service type
+     * @return instance of service
+     */
+    public static <T> T newInstance(Class klass, ServiceLoader loader) {
+        try {
+            try {
+                Constructor<T> constructor = klass.getDeclaredConstructor(ServiceLoader.class);
+                return constructor.newInstance(loader);
+            } catch (NoSuchMethodException e) {
+                return (T)klass.newInstance();
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        } catch (InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }

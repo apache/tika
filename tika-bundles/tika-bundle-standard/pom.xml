@@ -24,12 +24,12 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-bundles</artifactId>
-    <version>2.2.2-SNAPSHOT</version>
+    <version>2.6.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>tika-bundle-standard</artifactId>
-  <version>2.2.2-SNAPSHOT</version>
+  <version>2.6.1-SNAPSHOT</version>
   <packaging>bundle</packaging>
   <name>Apache Tika OSGi standard bundle</name>
 
@@ -40,6 +40,10 @@
     from the tika-parsers component.
   </description>
   <url>https://tika.apache.org/</url>
+  <!-- pax doesn't yet work with junit4; checkstyle forbids junit4. -->
+  <properties>
+    <checkstyle.skip>true</checkstyle.skip>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -50,6 +54,11 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parsers-standard-package</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-html-commons</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -73,7 +82,7 @@
     <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.framework</artifactId>
-      <version>7.0.1</version>
+      <version>7.0.5</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -85,7 +94,7 @@
     <dependency>
       <groupId>org.ops4j.pax.url</groupId>
       <artifactId>pax-url-aether</artifactId>
-      <version>2.5.4</version>
+      <version>2.6.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -97,7 +106,6 @@
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
-      <version>${osgi.core.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -105,14 +113,12 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>${slf4j.version}</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
-      <version>${jaxb.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -123,7 +129,7 @@
     <dependency>
       <groupId>com.sun.xml.fastinfoset</groupId>
       <artifactId>FastInfoset</artifactId>
-      <version>1.2.16</version>
+      <version>2.1.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -158,16 +164,19 @@
               junrar|
               pdfbox|
               pdfbox-tools|
-              pdfbox-debugger|
               fontbox|
               jempbox|
+              xmpbox|
               bcmail-jdk15on|
               bcprov-jdk15on|
               bcpkix-jdk15on|
               bcutil-jdk15on|
-              poi|poi-scratchpad|
+              poi|
+              poi-scratchpad|
               poi-ooxml|
-              poi-ooxml-schemas|
+              poi-ooxml-lite|
+              log4j-core|
+              log4j-api|
               commons-math3|
               curvesapi|
               xmlbeans|
@@ -186,27 +195,13 @@
               rome|
               rome-utils|
               jdom2|
-              sentiment-analysis-parser|
-              opennlp-tools|
-              geoapi|
-              sis-metadata|
-              sis-netcdf|
-              sis-utility|
-              sis-storage|
-              unit-api|
               apache-mime4j-core|
               apache-mime4j-dom|
               jhighlight|
               java-libpst|
-              netcdf4|
-              grib|
-              cdm|
               parso|
-              httpservices|
-              jcip-annotations|
               jmatio|
               guava|
-              age-predictor-api|
               SparseBitSet
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
@@ -221,27 +216,52 @@
               !org.junit.*,
               !junit.*,
               org.apache.tika.fork,
+              org.apache.tika.metadata.writefilter,
+              org.slf4j,
+              org.slf4j.event,
+              org.slf4j.helpers,
               android.util;resolution:=optional,
+              colorspace;resolution:=optional,
               com.apple.eawt;resolution:=optional,
+              com.beust.jcommander;resolution:=optional,
               com.github.luben.zstd;resolution:=optional,
+              com.github.javaparser;resolution:=optional,
+              com.github.javaparser.ast;resolution:=optional,
+              com.github.javaparser.ast.body;resolution:=optional,
+              com.github.javaparser.ast.expr;resolution:=optional,
+              com.github.javaparser.ast.nodeTypes;resolution:=optional,
+              com.github.javaparser.ast.type;resolution:=optional,
+              com.github.javaparser.utils;resolution:=optional,
+              com.google.common.base;resolution:=optional,
+              com.google.common.math;resolution:=optional,
               com.google.common.util.concurrent.internal;resolution:=optional,
               com.google.errorprone.annotations;resolution:=optional,
               com.google.errorprone.annotations.concurrent;resolution:=optional,
               com.google.protobuf;resolution:=optional,
               com.ibm.icu.text;resolution:=optional,
+              com.microsoft.schemas.office.powerpoint;resolution:=optional,
+              com.microsoft.schemas.office.word;resolution:=optional,
               com.sleepycat.je;resolution:=optional,
               com.sun.javadoc;resolution:=optional,
+              com.sun.jna;resolution:=optional,
+              com.sun.jna.ptr;resolution:=optional,
+              com.sun.org.apache.xalan.internal;resolution:=optional,
+              com.sun.org.apache.xml.internal.resolver;resolution:=optional,
+              com.sun.org.apache.xml.internal.resolver.tools;resolution:=optional,
+              com.sun.org.apache.xpath.internal.jaxp;resolution:=optional,
               com.sun.xml.bind.marshaller;resolution:=optional,
               com.sun.xml.internal.bind.marshaller;resolution:=optional,
               com.sun.msv.datatype;resolution:=optional,
               com.sun.msv.datatype.xsd;resolution:=optional,
               com.sun.tools.javadoc;resolution:=optional,
+              de.rototor.pdfbox.graphics2d;resolution:=optional,
+              icc;resolution:=optional,
               javax.annotation;resolution:=optional,
               javax.mail;resolution:=optional,
               javax.mail.internet;resolution:=optional,
               javax.net.ssl;resolution:=optional,
-              javax.servlet.annotation;resolution:=optional,
               javax.servlet;resolution:=optional,
+              javax.servlet.annotation;resolution:=optional,
               javax.servlet.http;resolution:=optional,
               javax.measure.converter;resolution:=optional,
               javax.ws.rs.core;resolution:=optional,
@@ -251,19 +271,49 @@
               javax.xml.bind.attachment;resolution:=optional,
               javax.xml.bind.helpers;resolution:=optional,
               javax.xml.bind.util;resolution:=optional,
+              javax.xml.xpath;resolution:=optional,
+              jj2000.j2k.codestream;resolution:=optional,
+              jj2000.j2k.codestream.reader;resolution:=optional,
+              jj2000.j2k.decoder;resolution:=optional,
+              jj2000.j2k.entropy.decoder;resolution:=optional,
+              jj2000.j2k.fileformat.reader;resolution:=optional,
+              jj2000.j2k.image;resolution:=optional,
+              jj2000.j2k.image.invcomptransf;resolution:=optional,
+              jj2000.j2k.image.output;resolution:=optional,
+              jj2000.j2k.io;resolution:=optional,
+              jj2000.j2k.quantization.dequantizer;resolution:=optional,
+              jj2000.j2k.roi;resolution:=optional,
+              jj2000.j2k.util;resolution:=optional,
+              jj2000.j2k.wavelet.synthesis;resolution:=optional,
               net.sf.saxon;resolution:=optional,
               net.sf.saxon.dom;resolution:=optional,
+              net.sf.saxon.lib;resolution:=optional,
+              net.sf.saxon.ma.map;resolution:=optional,
               net.sf.saxon.om;resolution:=optional,
               net.sf.saxon.query;resolution:=optional,
               net.sf.saxon.sxpath;resolution:=optional,
+              net.sf.saxon.trans;resolution:=optional,
+              net.sf.saxon.tree.wrapper;resolution:=optional,
+              net.sf.saxon.type;resolution:=optional,
               net.sf.saxon.value;resolution:=optional,
               org.apache.batik.anim.dom;resolution:=optional,
               org.apache.batik.bridge;resolution:=optional,
+              org.apache.batik.dom;resolution:=optional,
               org.apache.batik.ext.awt;resolution:=optional,
               org.apache.batik.ext.awt.image.renderable;resolution:=optional,
               org.apache.batik.gvt;resolution:=optional,
+              org.apache.batik.parser;resolution:=optional,
+              org.apache.batik.svggen;resolution:=optional,
               org.apache.batik.util;resolution:=optional,
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
+              org.apache.logging.log4j;resolution:=optional,
+              org.apache.logging.log4j.util;resolution:=optional,
+              org.apache.logging.log4j.util.internal;resolution:=optional,
+              org.apache.logging.log4j.spi;resolution:=optional,
+              org.apache.maven.model;resolution:=optional,
+              org.apache.maven.plugin;resolution:=optional,
+              org.apache.maven.plugin.logging;resolution:=optional,
+              org.apache.maven.project;resolution:=optional,
               org.apache.tools.ant;resolution:=optional,
               org.apache.tools.ant.taskdefs;resolution:=optional,
               org.apache.tools.ant.types;resolution:=optional,
@@ -280,12 +330,10 @@
               org.apache.xml.security.utils;resolution:=optional,
               org.apache.xmlbeans.impl.xpath.saxon;resolution:=optional,
               org.apache.xmlbeans.impl.xquery.saxon;resolution:=optional,
-              org.w3c.dom.ranges;resolution:=optional,
-              org.w3c.dom.traversal;resolution:=optional,
-              sun.io;resolution:=optional,
               org.brotli.dec;resolution:=optional,
               org.cyberneko.html.xercesbridge;resolution:=optional,
               org.etsi.uri.x01903.v14;resolution:=optional,
+              org.itadaki.bzip2;resolution:=optional,
               org.jaxen;resolution:=optional,
               org.jaxen.dom4j;resolution:=optional,
               org.jaxen.pattern;resolution:=optional,
@@ -293,40 +341,19 @@
               org.jaxen.util;resolution:=optional,
               org.openxmlformats.schemas.officeDocument.x2006.math;resolution:=optional,
               org.openxmlformats.schemas.schemaLibrary.x2006.main;resolution:=optional,
-              org.slf4j;resolution:=optional,
-              org.slf4j.helpers;resolution:=optional,
               org.w3c.dom;resolution:=optional,
+              org.w3c.dom.ranges;resolution:=optional,
+              org.w3c.dom.svg;resolution:=optional,
+              org.w3c.dom.traversal;resolution:=optional,
               org.xml.sax;resolution:=optional,
               org.xml.sax.ext;resolution:=optional,
               org.xml.sax.helpers;resolution:=optional,
-              com.microsoft.schemas.office.powerpoint;resolution:=optional,
-              com.microsoft.schemas.office.word;resolution:=optional,
+              sun.io;resolution:=optional,
               sun.java2d.cmm.kcms;resolution:=optional,
               sun.misc;resolution:=optional,
               sun.nio.ch;resolution:=optional,
-              colorspace;resolution:=optional,
-              com.sun.jna;resolution:=optional,
-              com.sun.jna.ptr;resolution:=optional,
-              icc;resolution:=optional,
-              jj2000.j2k.codestream;resolution:=optional,
-              jj2000.j2k.codestream.reader;resolution:=optional,
-              jj2000.j2k.decoder;resolution:=optional,
-              jj2000.j2k.entropy.decoder;resolution:=optional,
-              jj2000.j2k.fileformat.reader;resolution:=optional,
-              jj2000.j2k.image;resolution:=optional,
-              jj2000.j2k.image.invcomptransf;resolution:=optional,
-              jj2000.j2k.image.output;resolution:=optional,
-              jj2000.j2k.io;resolution:=optional,
-              jj2000.j2k.quantization.dequantizer;resolution:=optional,
-              jj2000.j2k.roi;resolution:=optional,
-              jj2000.j2k.util;resolution:=optional,
-              jj2000.j2k.wavelet.synthesis;resolution:=optional,
-              org.itadaki.bzip2;resolution:=optional,
-              thredds.featurecollection;resolution:=optional,
-              com.beust.jcommander;resolution:=optional,
-              com.google.common.base;resolution:=optional,
-              com.google.common.math;resolution:=optional,
               sun.reflect.generics.reflectiveObjects;resolution:=optional,
+              thredds.featurecollection;resolution:=optional,
               *
             </Import-Package>
           </instructions>

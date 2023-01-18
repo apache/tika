@@ -17,6 +17,7 @@
 -->
 <properties>
   <server>
+    <!-- as of Tika 2.7.0, we do not require the params element here -->
     <params>
       <!-- which port to start the server on. If you specify a range,
           e.g. 9995-9998, TikaServerCli will start four forked servers,
@@ -34,10 +35,10 @@
           If not specified, a UUID will be generated.
           -->
       <id>my-id</id>
-      <!-- whether or not to allow CORS requests. Set to 'all' if you
-          want to allow all CORS requests. Set to NONE or leave blank
-           if you do not want to enable CORS. -->
-      <cors>NONE</cors>
+      <!-- Origin URL for cors requests. Set to '*' if you
+          want to allow all CORS requests. Leave blank or remove element
+          if you do not want to enable CORS. -->
+      <cors></cors>
       <!-- which digests to calculate, comma delimited (e.g. md5,sha256);
           optionally specify encoding followed by a colon (e.g. "sha1:32").
           Can be empty if you don't want to calculate a digest -->
@@ -45,7 +46,8 @@
       <!-- how much to read to memory during the digest phase before
           spooling to disc...only if digest is selected -->
       <digestMarkLimit>1000000</digestMarkLimit>
-      <!-- request URI log level 'debug' or 'info' -->
+      <!-- request URI log level 'debug' or 'info'; to change the general log level,
+           edit the "log4j2.xml" file. -->
       <logLevel>info</logLevel>
       <!-- whether or not to include the stacktrace when a parse exception happens
           in the data returned to the user -->

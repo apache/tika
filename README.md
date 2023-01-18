@@ -18,11 +18,12 @@ Pre-built binaries of Apache Tika standalone applications are available
 from https://tika.apache.org/download.html . Pre-built binaries of all the
 Tika jars can be fetched from Maven Central or your favourite Maven mirror.
 
-**Tika 1.X is scheduled for End of Life (EOL) on September 30, 2022.**  We will
-continue to make security improvements until the EOL, but we do not plan to back port new functionality from the main/2.x branch. See [Migrating to 2.x](#migrating-to-2x) below for more details. 
+**Tika 1.X reached End of Life (EOL) on September 30, 2022.**  
 
 Tika is based on **Java 8** and uses the [Maven 3](https://maven.apache.org) build system. 
-**N.B.** [Docker](https://www.docker.com/products/personal) is required in the main/2.x branch to complete all unit tests. You can pass the `-DskipTests` flag if you wish to skip tests.
+**N.B.** [Docker](https://www.docker.com/products/personal) is used for tests in tika-integration-tests.
+As of Tika 2.5.1, if Docker is not installed, those tests are skipped.  Docker is required for a successful
+build on earlier 2.x versions.
 
 To build Tika from source, use the following command in the main directory:
 
@@ -38,6 +39,55 @@ To build a specific project (for example, tika-server-standard):
 
     mvn clean install -am -pl :tika-server-standard
 
+If the ossindex-maven-plugin is causing the build to fail because a dependency
+has now been discovered to have a vulnerability:
+
+    mvn clean install -Dossindex.skip
+
+
+Maven Dependencies
+==================
+
+Apache Tika provides *Bill of Material* (BOM) artifact to align Tika module versions and simplify version management. 
+To avoid convergence errors in your own project, import this
+bom or Tika's parent pom.xml in your dependencey management section.
+
+If you use Apache Maven:
+
+```xml
+<project>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+       <groupId>org.apache.tika</groupId>
+       <artifactId>tika-bom</artifactId>
+       <version>2.x.y</version>
+       <type>pom</type>
+       <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parsers-standard-package</artifactId>
+      <!-- version not required since BOM included -->
+    </dependency>
+  </dependencies>
+</project>
+```
+
+For Gradle:
+
+```kotlin
+dependencies {
+  implementation(platform("org.apache.tika:tika-bom:2.x.y"))
+
+  // version not required since bom (platform in Gradle terms)
+  implementation("org.apache.tika:tika-parsers-standard-package")
+}
+```
 
 Migrating to 2.x
 ================
@@ -55,12 +105,12 @@ See the [pull request template](https://github.com/apache/tika/blob/main/.github
 
 Building from a Specific Tag
 ============================
-Let's assume that you want to build the 1.22 tag:
+Let's assume that you want to build the 2.5.0 tag:
 ```
 0. Download and install hub.github.com
 1. git clone https://github.com/apache/tika.git 
 2. cd tika
-3. git checkout 1.22
+3. git checkout 2.5.0
 4. mvn clean install
 ```
 
@@ -68,7 +118,7 @@ If a new vulnerability has been discovered between the date of the
 tag and the date you are building the tag, you may need to build with:
 
 ```
-4. mvn clean install -Dossindex.fail=false
+4. mvn clean install -Dossindex.skip
 ```
 
 If a local test is not working in your environment, please notify
@@ -76,7 +126,7 @@ If a local test is not working in your environment, please notify
  you can turn off individual tests with e.g.: 
 
 ```
-4. mvn clean install -Dossindex.fail=false -Dtest=\!UnpackerResourceTest#testPDFImages
+4. mvn clean install -Dossindex.skip -Dtest=\!UnpackerResourceTest#testPDFImages
 ```
 
 License (see also LICENSE.txt)

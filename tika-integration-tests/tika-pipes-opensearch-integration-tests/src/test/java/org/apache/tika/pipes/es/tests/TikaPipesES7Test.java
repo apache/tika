@@ -19,10 +19,11 @@ package org.apache.tika.pipes.es.tests;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Ignore;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.pipes.xsearch.tests.TikaPipesXSearchBase;
@@ -32,7 +33,8 @@ import org.apache.tika.pipes.xsearch.tests.TikaPipesXSearchBase;
  * emitter no longer works with elasticsearch.  We should not use
  * &gt; 7.10.x in our unit tests because those versions are not ASL 2.0
  */
-@Ignore
+@Disabled
+@Testcontainers(disabledWithoutDocker = true)
 public class TikaPipesES7Test extends TikaPipesXSearchBase {
 
     // versions > 7.10.x are no longer ASL 2.0. We should not
@@ -40,15 +42,15 @@ public class TikaPipesES7Test extends TikaPipesXSearchBase {
     private static final String DOCKER_IMAGE_NAME = "docker.elastic" +
             ".co/elasticsearch/elasticsearch:7.10.2";
 
-    @ClassRule
+    @Container
     public static GenericContainer<?> ELASTIC_SEARCH_CONTAINER =
             new GenericContainer<>(DockerImageName.parse(DOCKER_IMAGE_NAME))
                     .withExposedPorts(9200)
                     .withStartupTimeout(Duration.of(180, ChronoUnit.SECONDS))
                     .withEnv("discovery.type", "single-node");
 
-    @BeforeClass
-    public static void setupTest() throws Exception {
+    @BeforeEach
+    public void setupTest() throws Exception {
         setupXSearch(ELASTIC_SEARCH_CONTAINER, "http://");
     }
 }

@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import javax.ws.rs.ProcessingException;
@@ -45,6 +46,7 @@ import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -571,12 +573,15 @@ public class TikaResourceTest extends CXFTestBase {
         assertContains("General Congress", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertNotFound("<p", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
+        //test that embedded parsers are appearing in full set of "parsed bys"
+        TikaTest.assertContains("org.apache.tika.parser.microsoft.EMFParser",
+                Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET)));
     }
 
     @Test
     public void testJsonWriteLimitEmbedded() throws Exception {
         Response response =
-                WebClient.create(endPoint + TIKA_PATH + "/text").accept("application/json")
+                WebClient.create(endPoint + TIKA_PATH + "/html").accept("application/json")
                         .header("writeLimit", "500")
                         .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
         Metadata metadata = JsonMetadata.fromJson(
@@ -589,7 +594,26 @@ public class TikaResourceTest extends CXFTestBase {
         assertTrue(metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION)
                 .startsWith("org.apache.tika.exception.WriteLimitReachedException"));
         assertNotFound("embed4.txt", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+    }
 
+    @Test
+    public void testJsonNoThrowWriteLimitEmbedded() throws Exception {
+        Response response =
+                WebClient.create(endPoint + TIKA_PATH + "/html").accept("application/json")
+                        .header("writeLimit", "500")
+                        .header("throwOnWriteLimitReached", "false")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        Metadata metadata = JsonMetadata.fromJson(
+                new InputStreamReader(((InputStream) response.getEntity()),
+                        StandardCharsets.UTF_8));
+        String txt = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+        assertContains("embed2a.txt", txt);
+        assertContains("When in the Course", txt);
+        assertNotFound("declare the causes", txt);
+        assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
+        assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
+        assertContains("<div class=\"embedded\" id=\"embed4.txt",
+                metadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test

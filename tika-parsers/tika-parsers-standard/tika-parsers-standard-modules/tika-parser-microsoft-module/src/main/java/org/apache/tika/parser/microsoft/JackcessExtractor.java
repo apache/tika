@@ -20,7 +20,6 @@ package org.apache.tika.parser.microsoft;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -42,6 +41,7 @@ import com.healthmarketscience.jackcess.Table;
 import com.healthmarketscience.jackcess.query.Query;
 import com.healthmarketscience.jackcess.util.OleBlob;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.xml.sax.SAXException;
 
@@ -222,7 +222,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 m.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
                 try {
                     htmlParser
-                            .parse(new ByteArrayInputStream(v.getBytes(UTF_8)), h, m, parseContext);
+                            .parse(new UnsynchronizedByteArrayInputStream(v.getBytes(UTF_8)), h, m, parseContext);
                     handler.characters(h.toString());
                 } catch (SAXException e) {
                     WriteLimitReachedException.throwIfWriteLimitReached(e);
@@ -386,7 +386,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 return;
             }
 
-            handleEmbeddedOfficeDoc(fileSystem.getRoot(), xhtml);
+            handleEmbeddedOfficeDoc(fileSystem.getRoot(), xhtml, true);
 
         } finally {
             if (fileSystem != null) {

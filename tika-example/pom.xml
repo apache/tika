@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>2.2.2-SNAPSHOT</version>
+    <version>2.6.1-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -110,13 +110,6 @@
       <artifactId>spring-context</artifactId>
       <version>${spring.version}</version>
     </dependency>
-    <!-- after we migrate everything to junit5, we can get rid of this -->
-    <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-      <version>${junit5.version}</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <description>This module contains examples of how to use Apache Tika.</description>
@@ -139,7 +132,7 @@
             <phase>validate</phase>
             <configuration>
               <configLocation>checkstyle.xml</configLocation>
-              <encoding>UTF-8</encoding>
+              <inputEncoding>UTF-8</inputEncoding>
               <consoleOutput>false</consoleOutput>
               <includeTestSourceDirectory>true</includeTestSourceDirectory>
               <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>

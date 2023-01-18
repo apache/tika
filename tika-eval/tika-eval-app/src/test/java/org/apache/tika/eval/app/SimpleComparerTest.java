@@ -17,9 +17,9 @@
 package org.apache.tika.eval.app;
 
 import static org.apache.tika.eval.app.io.ExtractReader.IGNORE_LENGTH;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,10 +30,10 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.eval.app.db.Cols;
@@ -53,14 +53,14 @@ public class SimpleComparerTest extends TikaTest {
     private static MockDBWriter WRITER;
     private ExtractComparer comparer = null;
 
-    @BeforeClass
+    @BeforeAll
     public static void staticSetUp() throws Exception {
         WRITER = new MockDBWriter();
         AbstractProfiler.loadCommonTokens(
                 Paths.get(SimpleComparerTest.class.getResource("/common_tokens").toURI()), "en");
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         WRITER.clear();
         comparer = new ExtractComparer(null, null, Paths.get("extractsA"), Paths.get("extractsB"),
@@ -257,7 +257,7 @@ public class SimpleComparerTest extends TikaTest {
         List<Map<Cols, String>> tableInfos = WRITER.getTable(ExtractComparer.CONTENT_COMPARISONS);
         assertEquals(3, tableInfos.size());
         for (int i = 0; i < tableInfos.size(); i++) {
-            assertEquals("problem with " + i, "1.0", tableInfos.get(i).get(Cols.OVERLAP));
+            assertEquals("1.0", tableInfos.get(i).get(Cols.OVERLAP), "problem with " + i);
         }
     }
 
@@ -326,7 +326,7 @@ public class SimpleComparerTest extends TikaTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testDebug() throws Exception {
         Path commonTokens = Paths.get(getResourceAsFile("/common_tokens_short.txt").toURI());
         AbstractProfiler.loadCommonTokens(commonTokens, "en");
@@ -370,7 +370,7 @@ public class SimpleComparerTest extends TikaTest {
     }
 
     @Test
-    @Ignore("useful for testing 2 files not in test set")
+    @Disabled("useful for testing 2 files not in test set")
     public void oneOff() throws Exception {
         Path p1 = Paths.get("");
         Path p2 = Paths.get("");

@@ -20,6 +20,7 @@ package org.apache.tika.server.core;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.tika.metadata.Metadata;
 
@@ -31,6 +32,12 @@ public class DefaultInputStreamFactory implements InputStreamFactory {
     @Override
     public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
             throws IOException {
+        return is;
+    }
+
+    @Override
+    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders,
+                                      UriInfo uriInfo) throws IOException {
         return is;
     }
 }

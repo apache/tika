@@ -40,11 +40,10 @@ public class StandardsExtractingContentHandlerTest extends TikaTest {
 
         StandardsExtractingContentHandler handler =
                 new StandardsExtractingContentHandler(new BodyContentHandler(-1), metadata);
-        handler.setThreshold(0.75);
-        InputStream inputStream = getResourceAsStream("/test-documents/testStandardsExtractor.pdf");
+        handler.setThreshold(0.25);
+        InputStream inputStream = getResourceAsStream("/test-documents/testStandardsExtractor.txt");
 
         AUTO_DETECT_PARSER.parse(inputStream, handler, metadata, new ParseContext());
-
         String[] standardReferences =
                 metadata.getValues(StandardsExtractingContentHandler.STANDARD_REFERENCES);
 

@@ -16,7 +16,7 @@
  */
 package org.apache.tika.eval.app.tools;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.BufferedWriter;
 import java.nio.charset.StandardCharsets;
@@ -26,9 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.utils.ProcessUtils;
@@ -36,17 +36,17 @@ import org.apache.tika.utils.ProcessUtils;
 public class TopCommonTokenCounterTest extends TikaTest {
     private final static String INPUT_FILE = "lang_file.txt";
     private final static String COMMON_TOKENS_FILE = "common_tokens";
-    private static Path WORKING_DIR;
-//    private static Path LUCENE_DIR;
 
-    @BeforeClass
+    @TempDir
+    private static Path WORKING_DIR;
+
+    @BeforeAll
     public static void setUp() throws Exception {
         String[] docs =
                 new String[]{"th quick brown fox", "jumped over th brown lazy", "brown lazy fox",
                         "\u666e\u6797\u65af\u987f\u5927\u5b66",
                         "\u666e\u6797\u65af\u987f\u5927\u5b66"};
 
-        WORKING_DIR = Files.createTempDirectory("tika-eval-common-tokens");
         try (BufferedWriter writer = Files
                 .newBufferedWriter(WORKING_DIR.resolve(INPUT_FILE), StandardCharsets.UTF_8)) {
             //do this 10 times to bump the numbers above the TopCommonTokenCounter's MIN_DOC_FREQ
@@ -64,10 +64,6 @@ public class TopCommonTokenCounterTest extends TikaTest {
                         WORKING_DIR.resolve(INPUT_FILE).toAbsolutePath().toString())});
     }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
-        FileUtils.deleteDirectory(WORKING_DIR.toFile());
-    }
 
     @Test
     public void testSimple() throws Exception {

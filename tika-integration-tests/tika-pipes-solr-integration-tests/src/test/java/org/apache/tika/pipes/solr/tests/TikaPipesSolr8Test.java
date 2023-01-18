@@ -16,11 +16,14 @@
  */
 package org.apache.tika.pipes.solr.tests;
 
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+@Testcontainers(disabledWithoutDocker = true)
 public class TikaPipesSolr8Test extends TikaPipesSolrTestBase {
 
     @Override
     public String getSolrImageName() {
-        return "solr:8.11.0";
+        return "solr:8.11.2";
     }
 
     @Override

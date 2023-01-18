@@ -16,10 +16,10 @@
  */
 package org.apache.tika.langdetect.optimaize;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -29,7 +29,8 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import org.apache.tika.langdetect.LanguageDetectorTest;
 import org.apache.tika.language.detect.LanguageConfidence;
@@ -201,9 +202,9 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
                 if (results.size() > 0) {
                     LanguageResult result = results.get(0);
 
-                    assertFalse(
+                    assertFalse(result.isReasonablyCertain(),
                             "mix of " + language + " and " + other + " incorrectly detected as " +
-                                    result, result.isReasonablyCertain());
+                                    result);
                 }
             }
         }
@@ -235,14 +236,15 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
             writeTo(language, writer, 300);
 
             LanguageResult result = detector.detect();
-            assertNotNull(String.format(Locale.US, "Language '%s' wasn't detected", language),
-                    result);
+            assertNotNull(result, String.format(Locale.US, "Language '%s' wasn't detected",
+                            language));
 
-            assertTrue(String.format(Locale.US, "Language '%s' was detected as '%s'", language,
-                    result.getLanguage()), result.isLanguage(language));
-            assertTrue(
+            assertTrue(result.isLanguage(language), String.format(Locale.US, "Language '%s' was " +
+                            "detected as '%s'", language,
+                    result.getLanguage()));
+            assertTrue(result.isReasonablyCertain(),
                     String.format(Locale.US, "Language '%s' isn't reasonably certain: %s", language,
-                            result.getConfidence()), result.isReasonablyCertain());
+                            result.getConfidence()));
         }
 
         writer.close();
@@ -270,7 +272,8 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
         return result;
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5000)
     public void testOptimaizeRegexBug() throws Exception {
         //confirm TIKA-2777 doesn't affect langdetect's Optimaize
         LanguageDetector detector = new OptimaizeLangDetector().setShortText(false).loadModels();

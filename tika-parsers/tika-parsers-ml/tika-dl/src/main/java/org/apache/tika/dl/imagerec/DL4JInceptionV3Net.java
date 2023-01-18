@@ -264,10 +264,10 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
             KerasModelBuilder builder =
                     new KerasModel().modelBuilder().modelHdf5Filename(modelWeightsPath)
                             .enforceTrainingConfig(false);
+
             builder.inputShape(new int[]{imgHeight, imgWidth, 3});
             KerasModel model = builder.buildModel();
             this.graph = model.getComputationGraph();
-
             long time = System.currentTimeMillis() - st;
             LOG.info("Loaded the Inception model. Time taken={}ms", time);
         } catch (IOException | InvalidKerasConfigurationException |
@@ -322,7 +322,8 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
     public List<RecognisedObject> recognise(InputStream stream, ContentHandler handler,
                                             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        INDArray image = preProcessImage(imageLoader.asMatrix(stream));
+
+        INDArray image = preProcessImage(imageLoader.asImageMatrix(stream, false).getImage());
         INDArray scores = graph.outputSingle(image);
         List<RecognisedObject> result = new ArrayList<>();
         for (int i = 0; i < scores.length(); i++) {

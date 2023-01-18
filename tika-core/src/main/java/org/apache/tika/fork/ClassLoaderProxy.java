@@ -139,14 +139,15 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
     }
 
     private byte[] readStream() throws IOException {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        byte[] buffer = new byte[0xffff];
-        int n;
-        while ((n = input.readUnsignedShort()) > 0) {
-            input.readFully(buffer, 0, n);
-            stream.write(buffer, 0, n);
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[0xffff];
+            int n;
+            while ((n = input.readUnsignedShort()) > 0) {
+                input.readFully(buffer, 0, n);
+                stream.write(buffer, 0, n);
+            }
+            return stream.toByteArray();
         }
-        return stream.toByteArray();
     }
 
 }

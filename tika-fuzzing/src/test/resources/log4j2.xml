@@ -25,8 +25,18 @@
     </Console>
   </Appenders>
   <Loggers>
-    <Root level="debug">
+    <Root level="info">
       <AppenderRef ref="Console"/>
     </Root>
+    <Logger name="org.apache.tika.pipes" level="error" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="com.github.junrar" level="error" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="org.apache.pdfbox" level="fatal" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+
   </Loggers>
 </Configuration>

@@ -52,7 +52,7 @@ public class TiffParser extends AbstractImageParser {
             throws IOException, SAXException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
         try {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             new ImageMetadataExtractor(metadata).parseTiff(tis.getFile());
             new JempboxExtractor(metadata).parse(tis);
         } finally {

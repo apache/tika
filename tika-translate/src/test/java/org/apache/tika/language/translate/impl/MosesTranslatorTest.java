@@ -16,26 +16,27 @@
  */
 package org.apache.tika.language.translate.impl;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import static org.junit.Assert.assertTrue;
-
-import org.apache.tika.language.translate.impl.MosesTranslator;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MosesTranslatorTest {
     MosesTranslator translator;
-    @Before
+
+    @BeforeEach
     public void setUp() {
         translator = new MosesTranslator();
     }
 
     @Test
     public void testSimpleTranslate() throws Exception {
+        assumeTrue(translator.isAvailable());
         String source = "hola";
         String expected = "hello";
         String translated = translator.translate(source, "sp", "en");
-        if (translator.isAvailable()) assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
-                expected.equalsIgnoreCase(translated));
+        assertTrue(expected.equalsIgnoreCase(translated),
+                "Translate " + source + " to " + expected + " (was " + translated + ")");
     }
 }

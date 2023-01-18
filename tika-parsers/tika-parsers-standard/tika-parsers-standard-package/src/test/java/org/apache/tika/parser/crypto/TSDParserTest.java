@@ -26,14 +26,20 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pdf.PDFParserConfig;
 
 public class TSDParserTest extends TikaTest {
 
     @Test
     public void testBrokenPdf() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
+        parseContext.set(PDFParserConfig.class, config);
         //make sure that embedded file appears in list
         //and make sure embedded exception is recorded
-        List<Metadata> list = getRecursiveMetadata("testTSD_broken_pdf.tsd");
+        List<Metadata> list = getRecursiveMetadata("testTSD_broken_pdf.tsd", parseContext);
         assertEquals(2, list.size());
         assertEquals("application/pdf", list.get(1).get(Metadata.CONTENT_TYPE));
         assertNotNull(list.get(1).get(TikaCoreProperties.EMBEDDED_EXCEPTION));

@@ -153,6 +153,25 @@ public class EndianUtils {
     }
 
     /**
+     * Get a PDP-11 style Middle Endian int value from an InputStream
+     *
+     * @param stream the InputStream from which the int is to be read
+     * @return the int (32-bit) value
+     * @throws IOException             will be propagated back to the caller
+     * @throws BufferUnderrunException if the stream cannot provide enough bytes
+     */
+    public static int readIntME(InputStream stream) throws IOException, BufferUnderrunException {
+        int ch1 = stream.read();
+        int ch2 = stream.read();
+        int ch3 = stream.read();
+        int ch4 = stream.read();
+        if ((ch1 | ch2 | ch3 | ch4) < 0) {
+            throw new BufferUnderrunException();
+        }
+        return (ch2 << 24) + (ch1 << 16) + (ch4 << 8) + (ch3);
+    }
+
+    /**
      * Get a LE long value from an InputStream
      *
      * @param stream the InputStream from which the long is to be read
@@ -211,7 +230,9 @@ public class EndianUtils {
     public static long readUE7(InputStream stream) throws IOException {
         int i;
         long v = 0;
-        while ((i = stream.read()) >= 0) {
+        int max = 6;
+        int read = 0;
+        while ((i = stream.read()) >= 0 && read++ < max) {
             v = v << 7;
             if ((i & 128) == 128) {
                 // Continues

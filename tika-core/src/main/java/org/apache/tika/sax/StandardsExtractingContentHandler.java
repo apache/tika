@@ -29,11 +29,16 @@ import org.apache.tika.metadata.Metadata;
 /**
  * StandardsExtractingContentHandler is a Content Handler used to extract
  * standard references while parsing.
+ * <p>
+ * This handler relies on complex regular expressions which can be slow on some types of
+ * input data.
  */
 public class StandardsExtractingContentHandler extends ContentHandlerDecorator {
     public static final String STANDARD_REFERENCES = "standard_references";
     private final Metadata metadata;
     private final StringBuilder stringBuilder;
+
+    private int maxBufferLength = 100000;
     private double threshold = 0;
 
     /**
@@ -89,6 +94,10 @@ public class StandardsExtractingContentHandler extends ContentHandlerDecorator {
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
         try {
+            if (maxBufferLength > -1) {
+                int remaining = maxBufferLength - stringBuilder.length();
+                length = remaining > length ? length : remaining;
+            }
             String text = new String(Arrays.copyOfRange(ch, start, start + length));
             stringBuilder.append(text);
             super.characters(ch, start, length);
@@ -109,5 +118,16 @@ public class StandardsExtractingContentHandler extends ContentHandlerDecorator {
         for (StandardReference standardReference : standards) {
             metadata.add(STANDARD_REFERENCES, standardReference.toString());
         }
+    }
+
+
+    /**
+     * The number of characters to store in memory for checking for standards.
+     *
+     * If this is unbounded, the complex regular expressions can take a long time
+     * to process some types of data.  Only increase this limit with great caution.
+     */
+    public void setMaxBufferLength(int maxBufferLength) {
+        this.maxBufferLength = maxBufferLength;
     }
 }

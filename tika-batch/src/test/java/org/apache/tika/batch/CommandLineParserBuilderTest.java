@@ -20,7 +20,7 @@ package org.apache.tika.batch;
 import java.io.InputStream;
 
 import org.apache.commons.cli.Options;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.batch.builders.CommandLineParserBuilder;
 import org.apache.tika.batch.fs.FSBatchTestBase;

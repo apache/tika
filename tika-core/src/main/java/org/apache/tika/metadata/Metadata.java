@@ -35,6 +35,7 @@ import java.util.Properties;
 import java.util.TimeZone;
 
 import org.apache.tika.metadata.Property.PropertyType;
+import org.apache.tika.metadata.writefilter.MetadataWriteFilter;
 import org.apache.tika.utils.DateUtils;
 
 /**
@@ -43,6 +44,44 @@ import org.apache.tika.utils.DateUtils;
 public class Metadata
         implements CreativeCommons, Geographic, HttpHeaders, Message, ClimateForcast, TIFF,
         TikaMimeKeys, Serializable {
+
+
+    private static final MetadataWriteFilter ACCEPT_ALL = new MetadataWriteFilter() {
+        @Override
+        public void filterExisting(Map<String, String[]> data) {
+            //no-op
+        }
+
+        @Override
+        public void add(String field, String value, Map<String, String[]> data) {
+            String[] values = data.get(field);
+            if (values == null) {
+                set(field, value, data);
+            } else {
+                data.put(field, appendValues(values, value));
+            }
+        }
+
+        //legacy behavior -- remove the field if value is null
+        @Override
+        public void set(String field, String value, Map<String, String[]> data) {
+            if (value != null) {
+                data.put(field, new String[]{ value });
+            } else {
+                data.remove(field);
+            }
+        }
+
+        private String[] appendValues(String[] values, final String value) {
+            if (value == null) {
+                return values;
+            }
+            String[] newValues = new String[values.length + 1];
+            System.arraycopy(values, 0, newValues, 0, values.length);
+            newValues[newValues.length - 1] = value;
+            return newValues;
+        }
+    };
 
     /**
      * Serial version UID
@@ -58,6 +97,8 @@ public class Metadata
      */
     private Map<String, String[]> metadata = null;
 
+
+    private MetadataWriteFilter writeFilter = ACCEPT_ALL;
     /**
      * Constructs a new, empty metadata.
      */
@@ -129,6 +170,23 @@ public class Metadata
         } else {
             return values[0];
         }
+    }
+
+    /**
+     * Sets the writeFilter that is called before {@link #set(String, String)}
+     * {@link #set(String, String[])}, {@link #add(String, String)},
+     * {@link #add(String, String[])}.  The default is {@link #ACCEPT_ALL}.
+     *
+     * This is intended for expert use only.  Some parsers rely on metadata
+     * during the parse, and if the metadata they need is excluded, they
+     * will not function properly.
+     *
+     * @param writeFilter
+     * @since 2.4.0
+     */
+    public void setMetadataWriteFilter(MetadataWriteFilter writeFilter) {
+        this.writeFilter = writeFilter;
+        this.writeFilter.filterExisting(metadata);
     }
 
     /**
@@ -221,13 +279,6 @@ public class Metadata
         return values;
     }
 
-    private String[] appendedValues(String[] values, final String value) {
-        String[] newValues = new String[values.length + 1];
-        System.arraycopy(values, 0, newValues, 0, values.length);
-        newValues[newValues.length - 1] = value;
-        return newValues;
-    }
-
     /**
      * Add a metadata name/value mapping. Add the specified value to the list of
      * values associated to the specified metadata name.
@@ -236,11 +287,24 @@ public class Metadata
      * @param value the metadata value.
      */
     public void add(final String name, final String value) {
+        writeFilter.add(name, value, metadata);
+    }
+
+    /**
+     * Add a metadata name/value mapping. Add the specified value to the list of
+     * values associated to the specified metadata name.
+     *
+     * @param name  the metadata name.
+     * @param newValues the metadata values
+     */
+    protected void add(final String name, final String[] newValues) {
         String[] values = metadata.get(name);
         if (values == null) {
-            set(name, value);
+            set(name, newValues);
         } else {
-            metadata.put(name, appendedValues(values, value));
+            for (String val : newValues) {
+                add(name, val);
+            }
         }
     }
 
@@ -270,7 +334,7 @@ public class Metadata
                 set(property, value);
             } else {
                 if (property.isMultiValuePermitted()) {
-                    set(property, appendedValues(values, value));
+                    add(property.getName(), value);
                 } else {
                     throw new PropertyTypeException(
                             property.getName() + " : " + property.getPropertyType());
@@ -303,8 +367,17 @@ public class Metadata
      * @param value the metadata value, or <code>null</code>
      */
     public void set(String name, String value) {
-        if (value != null) {
-            metadata.put(name, new String[]{value});
+        writeFilter.set(name, value, metadata);
+    }
+
+    protected void set(String name, String[] values) {
+        //TODO: optimize this to not copy if all
+        //values are to be included "as is"
+        if (values != null) {
+            metadata.remove(name);
+            for (String v : values) {
+                add(name, v);
+            }
         } else {
             metadata.remove(name);
         }
@@ -352,7 +425,7 @@ public class Metadata
                 }
             }
         } else {
-            metadata.put(property.getName(), values);
+            set(property.getName(), values);
         }
     }
 
@@ -463,10 +536,6 @@ public class Metadata
      * @since Apache Tika 0.8
      */
     public void set(Property property, double value) {
-        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
-            throw new PropertyTypeException(Property.PropertyType.SIMPLE,
-                    property.getPrimaryProperty().getPropertyType());
-        }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL &&
                 property.getPrimaryProperty().getValueType() != Property.ValueType.RATIONAL) {
             throw new PropertyTypeException(Property.ValueType.REAL,
@@ -519,6 +588,25 @@ public class Metadata
             dateString = formatDate(date);
         }
         set(property, dateString);
+    }
+
+    /**
+     * Adds the date value of the identified metadata property.
+     *
+     * @param property simple calendar property definition
+     * @param date     property value
+     * @since Apache Tika 2.5.0
+     */
+    public void add(Property property, Calendar date) {
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
+            throw new PropertyTypeException(Property.ValueType.DATE,
+                    property.getPrimaryProperty().getValueType());
+        }
+        String dateString = null;
+        if (date != null) {
+            dateString = formatDate(date);
+        }
+        add(property, dateString);
     }
 
     /**
@@ -598,5 +686,4 @@ public class Metadata
         }
         return buf.toString();
     }
-
 }

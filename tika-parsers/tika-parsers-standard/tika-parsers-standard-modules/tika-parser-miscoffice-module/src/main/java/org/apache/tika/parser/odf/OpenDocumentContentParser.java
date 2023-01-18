@@ -31,7 +31,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -56,7 +55,7 @@ public class OpenDocumentContentParser extends AbstractParser {
 
 
         XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
-                new OfflineContentHandler(new NSNormalizerContentHandler(dh)), context);
+                new NSNormalizerContentHandler(dh), context);
     }
 
 }

@@ -17,10 +17,8 @@
 
 package org.apache.tika.eval.core.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -45,7 +43,7 @@ public class ContentTagParser {
         Map<String, Integer> tags = new HashMap<>();
         XHTMLContentTagHandler xhtmlContentTagHandler =
                 new XHTMLContentTagHandler(uppercaseTagsOfInterest, tags);
-        XMLReaderUtils.parseSAX(new ByteArrayInputStream(html.getBytes(StandardCharsets.UTF_8)),
+        XMLReaderUtils.parseSAX(new StringReader(html),
                 xhtmlContentTagHandler, EMPTY_PARSE_CONTEXT);
         return new ContentTags(xhtmlContentTagHandler.toString(), tags);
     }

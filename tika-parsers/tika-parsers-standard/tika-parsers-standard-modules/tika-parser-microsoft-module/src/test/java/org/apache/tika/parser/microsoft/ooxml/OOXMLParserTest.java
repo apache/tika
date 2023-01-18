@@ -73,6 +73,7 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
+import org.apache.tika.parser.microsoft.OfficeParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 
 public class OOXMLParserTest extends MultiThreadedTikaTest {
@@ -613,6 +614,18 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         String xml = getXML("testWORD_various.docx", parseContext).xml;
         assertNotContained("This is the header text.", xml);
         assertNotContained("This is the footer text.", xml);
+
+        //now test configuration via tika-config
+        Parser configuredParser = null;
+        try (InputStream is =
+                     OfficeParserTest.class.getResourceAsStream(
+                             "tika-config-headers-footers.xml")) {
+            configuredParser = new AutoDetectParser(new TikaConfig(is));
+        }
+        xml = getXML("testWORD_various.docx", configuredParser).xml;
+        assertNotContained("This is the header text.", xml);
+        assertNotContained("This is the footer text.", xml);
+
     }
 
     @Test
@@ -1195,6 +1208,22 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
 
         String content = getXML("testEXCEL_headers_footers.xlsx", parseContext).xml;
+        assertNotContained("Header - Corporate Spreadsheet", content);
+        assertNotContained("Header - For Internal Use Only", content);
+        assertNotContained("Header - Author: John Smith", content);
+        assertNotContained("Footer - Corporate Spreadsheet", content);
+        assertNotContained("Footer - For Internal Use Only", content);
+        assertNotContained("Footer - Author: John Smith", content);
+
+        //now test configuration via tika-config
+        Parser configuredParser = null;
+        try (InputStream is = OfficeParserTest.class.getResourceAsStream("tika-config-headers-footers.xml")) {
+            configuredParser = new AutoDetectParser(new TikaConfig(is));
+        }
+        content = getXML("testEXCEL_headers_footers.xlsx", configuredParser).xml;
+        assertContains("John Smith1", content);
+        assertContains("John Smith50", content);
+        assertContains("1 Corporate HQ", content);
         assertNotContained("Header - Corporate Spreadsheet", content);
         assertNotContained("Header - For Internal Use Only", content);
         assertNotContained("Header - Author: John Smith", content);

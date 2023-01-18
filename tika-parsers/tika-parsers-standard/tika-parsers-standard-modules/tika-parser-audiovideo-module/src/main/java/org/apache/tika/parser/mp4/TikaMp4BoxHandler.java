@@ -24,7 +24,6 @@ import com.drew.lang.annotations.Nullable;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.mp4.Mp4BoxHandler;
 import com.drew.metadata.mp4.Mp4Context;
-import com.drew.metadata.mp4.boxes.Box;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.parser.mp4.boxes.TikaUserDataBox;
@@ -42,30 +41,31 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
     }
 
     @Override
-    public boolean shouldAcceptBox(@NotNull Box box) {
-        if (box.type.equals("udta")) {
+    public boolean shouldAcceptBox(@NotNull String box) {
+        if (box.equals("udta")) {
             return true;
         }
         return super.shouldAcceptBox(box);
     }
 
     @Override
-    public boolean shouldAcceptContainer(@NotNull Box box) {
+    public boolean shouldAcceptContainer(@NotNull String box) {
         return super.shouldAcceptContainer(box);
     }
 
     @Override
-    public Mp4Handler<?> processBox(@NotNull Box box, @Nullable byte[] payload, Mp4Context context)
+    public Mp4Handler<?> processBox(@NotNull String box, @Nullable byte[] payload,
+                                    long size, Mp4Context context)
             throws IOException {
-        if (box.type.equals("udta")) {
+        if (box.equals("udta")) {
             return processUserData(box, payload, context);
         }
 
-        return super.processBox(box, payload, context);
+        return super.processBox(box, payload, size, context);
     }
 
 
-    private Mp4Handler<?> processUserData(Box box, byte[] payload, Mp4Context context) throws IOException {
+    private Mp4Handler<?> processUserData(String box, byte[] payload, Mp4Context context) throws IOException {
         if (payload == null) {
             return this;
         }

@@ -20,7 +20,7 @@ package org.apache.tika.eval.app.io;
 
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class FatalExceptionReaderTest {
     @Test

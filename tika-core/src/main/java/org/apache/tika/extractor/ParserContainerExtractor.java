@@ -111,7 +111,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
                 throws IOException, SAXException, TikaException {
             TemporaryResources tmp = new TemporaryResources();
             try {
-                TikaInputStream tis = TikaInputStream.get(stream, tmp);
+                TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
 
                 // Figure out what we have to process
                 String filename = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);

@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parsers-ml</artifactId>
-    <version>2.2.2-SNAPSHOT</version>
+    <version>2.6.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>tika-dl</artifactId>
@@ -31,75 +31,65 @@
   <name>Apache Tika Deep Learning (powered by DL4J)</name>
   <url>http://maven.apache.org</url>
 
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.twelvemonkeys.common</groupId>
-        <artifactId>common-io</artifactId>
-        <version>${twelvemonkeys.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.twelvemonkeys.imageio</groupId>
-        <artifactId>imageio-bmp</artifactId>
-        <version>${twelvemonkeys.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.twelvemonkeys.imageio</groupId>
-        <artifactId>imageio-jpeg</artifactId>
-        <version>${twelvemonkeys.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.twelvemonkeys.imageio</groupId>
-        <artifactId>imageio-psd</artifactId>
-        <version>${twelvemonkeys.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.twelvemonkeys.imageio</groupId>
-        <artifactId>imageio-tiff</artifactId>
-        <version>${twelvemonkeys.version}</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-advancedmedia-module</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.datavec</groupId>
       <artifactId>datavec-data-image</artifactId>
       <version>${dl4j.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-zoo</artifactId>
       <version>${dl4j.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-modelimport</artifactId>
       <version>${dl4j.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-nn</artifactId>
       <version>${dl4j.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.nd4j</groupId>
       <artifactId>nd4j-api</artifactId>
       <version>${dl4j.version}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-net</groupId>
+          <artifactId>commons-net</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.nd4j</groupId>
       <artifactId>nd4j-native-platform</artifactId>
       <version>${dl4j.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-net</groupId>
+      <artifactId>commons-net</artifactId>
+      <version>${commons.net.version}</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 

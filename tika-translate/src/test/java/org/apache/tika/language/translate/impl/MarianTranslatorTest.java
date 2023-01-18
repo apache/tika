@@ -16,54 +16,50 @@
  */
 package org.apache.tika.language.translate.impl;
 
-import org.junit.AssumptionViolatedException;
-import org.junit.Before;
-import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MarianTranslatorTest {
 
     private MarianTranslator translator;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         translator = new MarianTranslator();
     }
 
     @Test
     public void testTranslate_English_Romanian() throws Exception {
+        assumeTrue(translator.isAvailable("en", "ro"));
         String source = "Apache Tika is a wonderful tool";
         String expected = "Apache Tika este un instrument minunat";
         String translated = translator.translate(source, "en", "ro");
-        if (translator.isAvailable("en", "ro")) {
-            assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
-                    expected.equalsIgnoreCase(translated));
-        } else {
-            throw new AssumptionViolatedException("Engine not available");
-        }
+        assertTrue(expected.equalsIgnoreCase(translated),
+                "Translate " + source + " to " + expected + " (was " + translated + ")");
     }
 
     @Test
     public void testTranslate_Romanian_English() throws Exception {
+        assumeTrue(translator.isAvailable("ro", "en"));
         String source = "Apache Tika este un instrument minunat";
         String expected = "Apache Tika is a wonderful tool";
         String translated = translator.translate(source, "ro", "en");
-        if (translator.isAvailable("ro", "en")) {
-            assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
-                    expected.equalsIgnoreCase(translated));
-        } else {
-            throw new AssumptionViolatedException("Engine not available");
-        }
+        assertTrue(expected.equalsIgnoreCase(translated),
+                "Translate " + source + " to " + expected + " (was " + translated + ")");
     }
 
     @Test
     public void testNoConfig() throws Exception {
         String source = "Apache Tika is a wonderful tool";
-        String expected = "Apache Tika is a wonderful tool"; // Pattern from other Translators is to return source
+        String expected =
+                "Apache Tika is a wonderful tool"; // Pattern from other Translators is to return source
         String translated = translator.translate(source, "en", "zz");
-        assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
-                   expected.equalsIgnoreCase(translated));
+        assertTrue(expected.equalsIgnoreCase(translated),
+                "Translate " + source + " to " + expected + " (was " + translated + ")");
     }
 
 }

@@ -49,6 +49,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -59,7 +60,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xml.DcXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ParserUtils;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -176,7 +176,7 @@ public class EpubParser extends AbstractParser {
             }
         } else {
             temporaryResources = new TemporaryResources();
-            tis = TikaInputStream.get(new CloseShieldInputStream(stream), temporaryResources);
+            tis = TikaInputStream.get(new CloseShieldInputStream(stream), temporaryResources, metadata);
         }
         ZipFile zipFile = null;
         try {
@@ -202,7 +202,8 @@ public class EpubParser extends AbstractParser {
                             Metadata metadata, ParseContext context)
             throws IOException, TikaException, SAXException {
         try (TemporaryResources resources = new TemporaryResources()) {
-            Path salvaged = resources.createTempFile();
+            Path salvaged =
+                    resources.createTempFile(FilenameUtils.getSuffixFromPath(brokenZip.getFileName().toString()));
             ZipSalvager.salvageCopy(brokenZip.toFile(), salvaged.toFile());
             boolean success = false;
             try (ZipFile zipFile = new ZipFile(salvaged.toFile())) {
@@ -233,7 +234,7 @@ public class EpubParser extends AbstractParser {
 
         ContentOrderScraper contentOrderScraper = new ContentOrderScraper();
         try (InputStream is = zipFile.getInputStream(zae)) {
-            XMLReaderUtils.parseSAX(is, new OfflineContentHandler(contentOrderScraper), context);
+            XMLReaderUtils.parseSAX(is, contentOrderScraper, context);
         }
         //if no content items, false
         if (contentOrderScraper.contentItems.size() == 0) {
@@ -359,7 +360,7 @@ public class EpubParser extends AbstractParser {
         try {
             embeddedDocumentExtractor
                     .parseEmbedded(stream, new EmbeddedContentHandler(xhtml), embeddedMetadata,
-                            false);
+                            true);
 
         } finally {
             IOUtils.closeQuietly(stream);
@@ -389,7 +390,7 @@ public class EpubParser extends AbstractParser {
         if (container != null) {
             RootFinder rootFinder = new RootFinder();
             try (InputStream is = zipFile.getInputStream(container)) {
-                XMLReaderUtils.parseSAX(is, new OfflineContentHandler(rootFinder), context);
+                XMLReaderUtils.parseSAX(is, rootFinder, context);
             }
             return rootFinder.root;
         } else {

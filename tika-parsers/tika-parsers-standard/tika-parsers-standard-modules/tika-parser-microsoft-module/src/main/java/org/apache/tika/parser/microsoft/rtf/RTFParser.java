@@ -103,7 +103,7 @@ public class RTFParser extends AbstractParser {
         }
     }
 
-    private int getMemoryLimitInKb() {
+    public int getMemoryLimitInKb() {
         //there's a race condition here, but it shouldn't matter.
         if (USE_STATIC) {
             if (EMB_OBJ_MAX_BYTES < 0) {

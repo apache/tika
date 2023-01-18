@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.dbf;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -30,6 +29,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 
 import org.apache.tika.io.EndianUtils;
 
@@ -43,6 +43,7 @@ class DBFCell {
     DBFCell(DBFColumnHeader.ColType colType, int fieldLength, int decimalCount) {
         this.colType = colType;
         this.decimalCount = decimalCount;
+        //field length is limit-checked in DBFFileHeader
         this.bytes = new byte[fieldLength];
     }
 
@@ -78,6 +79,7 @@ class DBFCell {
      * @return copy of bytes that were read on the last read
      */
     byte[] getBytes() {
+        //bytesReadLast is effectively limit checked by DBFFileHeader
         byte[] ret = new byte[bytesReadLast];
         System.arraycopy(bytes, 0, ret, 0, bytesReadLast);
         return ret;
@@ -128,7 +130,7 @@ class DBFCell {
                 GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
 //        baseCalendar.set(1899, 11, 31, 0, 0, 0);
         baseCalendar.set(-4712, 0, 1, 0, 0, 0);
-        try (InputStream is = new ByteArrayInputStream(getBytes())) {
+        try (InputStream is = new UnsynchronizedByteArrayInputStream(getBytes())) {
 
             int date = EndianUtils.readIntLE(is);
             int time = EndianUtils.readIntLE(is);

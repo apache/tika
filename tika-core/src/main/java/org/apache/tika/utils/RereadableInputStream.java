@@ -18,14 +18,15 @@ package org.apache.tika.utils;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 
 /**
  * Wraps an input stream, reading it only once, but making it available
@@ -213,7 +214,7 @@ public class RereadableInputStream extends InputStream {
         if (byteBuffer != null) {
             if (bufferPointer == maxBytesInMemory) {
                 // Need to switch to file
-                storeFile = File.createTempFile("TIKA_streamstore_", ".tmp");
+                storeFile = Files.createTempFile("TIKA_streamstore_", ".tmp").toFile();
                 storeOutputStream = new BufferedOutputStream(new FileOutputStream(storeFile));
                 // Save what we have so far in buffer
                 storeOutputStream.write(byteBuffer, 0, bufferPointer);
@@ -256,7 +257,7 @@ public class RereadableInputStream extends InputStream {
             // If we have a buffer, then we'll read from it
             if (byteBuffer != null) {
                 readingFromBuffer = true;
-                inputStream = new ByteArrayInputStream(byteBuffer, 0, bufferHighWaterMark);
+                inputStream = new UnsynchronizedByteArrayInputStream(byteBuffer, 0, bufferHighWaterMark);
             } else {
                 // No buffer, which means we've switched to a file
                 inputStream = new BufferedInputStream(new FileInputStream(storeFile));

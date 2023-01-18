@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,27 +18,28 @@
 
 package org.apache.tika.language.translate.impl;
 
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.tika.exception.TikaException;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import org.apache.cxf.jaxrs.client.WebClient;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaException;
 
 
 /**
@@ -82,8 +83,8 @@ public class RTGTranslator extends AbstractTranslator {
     public RTGTranslator() {
         String rtgBaseUrl = RTG_TRANSLATE_URL_BASE;
         Properties config = new Properties();
-        try (InputStream stream = getClass().getClassLoader().getResourceAsStream(RTG_PROPS)){
-            if (stream != null){
+        try (InputStream stream = getClass().getClassLoader().getResourceAsStream(RTG_PROPS)) {
+            if (stream != null) {
                 config.load(stream);
             }
             rtgBaseUrl = config.getProperty("rtg.base.url", rtgBaseUrl);
@@ -96,12 +97,13 @@ public class RTGTranslator extends AbstractTranslator {
         try {
             this.client = WebClient.create(rtgBaseUrl, providers);
             this.isAvailable = client.head().getStatus() == 200;
-        } catch (Exception e){
+        } catch (Exception e) {
             LOG.warn(e.getMessage(), e);
             isAvailable = false;
         }
 
     }
+
     @Override
     public String translate(String text, String sourceLanguage, String targetLanguage)
             throws TikaException, IOException {
@@ -109,8 +111,7 @@ public class RTGTranslator extends AbstractTranslator {
     }
 
     @Override
-    public String translate(String text, String targetLanguage)
-            throws TikaException, IOException {
+    public String translate(String text, String targetLanguage) throws TikaException, IOException {
         return this.translate(text);
     }
 
@@ -120,17 +121,15 @@ public class RTGTranslator extends AbstractTranslator {
         }
         Map<String, List<Object>> input = new HashMap<>();
         input.put("source", Arrays.asList(text.split("(?<=(?<![A-Z])\\. )|\\n")));
-        Response response = client.path("translate")
-                .type(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .post(input);
-        try (InputStreamReader reader = new InputStreamReader(
-							      (InputStream) response.getEntity(), Charset.defaultCharset())) {
+        Response response = client.path("translate").type(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON).post(input);
+        try (InputStreamReader reader = new InputStreamReader((InputStream) response.getEntity(),
+                Charset.defaultCharset())) {
             JSONParser parser = new JSONParser();
             JSONObject obj = (JSONObject) parser.parse(reader);
             List<String> sentences = (List<String>) obj.get("translation");
             return String.join("\n", sentences);
-        } catch (ParseException e){
+        } catch (ParseException e) {
             throw new IOException(e.getMessage(), e);
         }
     }

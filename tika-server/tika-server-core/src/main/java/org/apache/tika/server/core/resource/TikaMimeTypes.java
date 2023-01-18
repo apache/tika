@@ -17,6 +17,7 @@
 package org.apache.tika.server.core.resource;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,13 +25,19 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.server.core.HTMLHelper;
@@ -38,6 +45,7 @@ import org.apache.tika.server.core.HTMLHelper;
 /**
  * <p>Provides details of all the mimetypes known to Apache Tika,
  * similar to <em>--list-supported-types</em> with the Tika CLI.
+ * <p>Can also provide full details on a single known type.
  */
 @Path("/mime-types")
 public class TikaMimeTypes {
@@ -82,7 +90,8 @@ public class TikaMimeTypes {
         // Output all of them
         for (MediaTypeDetails type : types) {
             h.append("<a name=\"").append(type.type).append("\"></a>\n");
-            h.append("<h2>").append(type.type).append("</h2>\n");
+            h.append("<h2><a href=\"mime-types/").append(type.type).append("\">").append(type.type)
+                    .append("</a></h2>\n");
 
             for (MediaType alias : type.aliases) {
                 h.append("<div>Alias: ").append(alias).append("</div>\n");
@@ -91,10 +100,73 @@ public class TikaMimeTypes {
                 h.append("<div>Super Type: <a href=\"#").append(type.supertype).append("\">")
                         .append(type.supertype).append("</a></div>\n");
             }
+            if (type.mime != null) {
+                if (!type.mime.getDescription().isEmpty()) {
+                    h.append("<div>Description: ").append(type.mime.getDescription())
+                            .append("</div>\n");
+                }
+                if (!type.mime.getAcronym().isEmpty()) {
+                    h.append("<div>Acronym: ").append(type.mime.getAcronym()).append("</div>\n");
+                }
+                if (!type.mime.getExtension().isEmpty()) {
+                    h.append("<div>Default Extension: ").append(type.mime.getExtension())
+                            .append("</div>\n");
+                }
+            }
 
             if (type.parser != null) {
                 h.append("<div>Parser: ").append(type.parser).append("</div>\n");
             }
+        }
+
+        html.generateFooter(h);
+        return h.toString();
+    }
+
+    @GET
+    @Path("/{type}/{subtype}")
+    @Produces("text/html")
+    public String getMimeTypeDetailsHTML(@PathParam("type") String typePart,
+                                         @PathParam("subtype") String subtype) {
+        MediaTypeDetails type = getMediaType(typePart, subtype);
+
+        StringBuffer h = new StringBuffer();
+        html.generateHeader(h, "Apache Tika Details on Mime Type " + type.type);
+        h.append("<h2>").append(type.type).append("</h2>\n");
+
+        for (MediaType alias : type.aliases) {
+            h.append("<div>Alias: ").append(alias).append("</div>\n");
+        }
+        if (type.supertype != null) {
+            h.append("<div>Super Type: <a href=\"#").append(type.supertype).append("\">")
+                    .append(type.supertype).append("</a></div>\n");
+        }
+        if (type.mime != null) {
+            if (!type.mime.getDescription().isEmpty()) {
+                h.append("<div>Description: ").append(type.mime.getDescription())
+                        .append("</div>\n");
+            }
+            if (!type.mime.getAcronym().isEmpty()) {
+                h.append("<div>Acronym: ").append(type.mime.getAcronym()).append("</div>\n");
+            }
+            if (!type.mime.getUniformTypeIdentifier().isEmpty()) {
+                h.append("<div>Uniform Type Identifier: ")
+                        .append(type.mime.getUniformTypeIdentifier()).append("</div>\n");
+            }
+            for (URI uri : type.mime.getLinks()) {
+                h.append("<div>Link: ").append(uri).append("</div>\n");
+            }
+            if (!type.mime.getExtension().isEmpty()) {
+                h.append("<div>Default Extension: ").append(type.mime.getExtension())
+                        .append("</div>\n");
+            }
+            for (String ext : type.mime.getExtensions()) {
+                h.append("<div>Extension: ").append(ext).append("</div>\n");
+            }
+        }
+
+        if (type.parser != null) {
+            h.append("<div>Parser: ").append(type.parser).append("</div>\n");
         }
 
         html.generateFooter(h);
@@ -124,6 +196,46 @@ public class TikaMimeTypes {
     }
 
     @GET
+    @Path("/{type}/{subtype}")
+    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    public String getMimeTypeDetailsJSON(@PathParam("type") String typePart,
+                                         @PathParam("subtype") String subtype) throws IOException {
+        MediaTypeDetails type = getMediaType(typePart, subtype);
+        Map<String, Object> details = new HashMap<>();
+
+        details.put("type", type.type.toString());
+        details.put("alias", copyToStringArray(type.aliases));
+        if (type.supertype != null) {
+            details.put("supertype", type.supertype.toString());
+        }
+        if (type.parser != null) {
+            details.put("parser", type.parser);
+        }
+        if (type.mime != null) {
+            if (!type.mime.getDescription().isEmpty()) {
+                details.put("description", type.mime.getDescription());
+            }
+            if (!type.mime.getAcronym().isEmpty()) {
+                details.put("acronym", type.mime.getAcronym());
+            }
+            if (!type.mime.getUniformTypeIdentifier().isEmpty()) {
+                details.put("uniformTypeIdentifier", type.mime.getUniformTypeIdentifier());
+            }
+            if (!type.mime.getLinks().isEmpty()) {
+                details.put("links", type.mime.getLinks());
+            }
+            if (!type.mime.getExtension().isEmpty()) {
+                details.put("defaultExtension", type.mime.getExtension());
+            }
+            if (!type.mime.getExtensions().isEmpty()) {
+                details.put("extensions", type.mime.getExtensions());
+            }
+        }
+
+        return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(details);
+    }
+
+    @GET
     @Produces("text/plain")
     public String getMimeTypesPlain() {
         StringBuffer text = new StringBuffer();
@@ -147,17 +259,34 @@ public class TikaMimeTypes {
         return text.toString();
     }
 
+    protected MediaTypeDetails getMediaType(String type, String subtype) throws NotFoundException {
+        MediaType mt = MediaType.parse(type + "/" + subtype);
+        for (MediaTypeDetails mtd : getMediaTypes()) {
+            if (mtd.type.equals(mt)) {
+                return mtd;
+            }
+        }
+        throw new NotFoundException("No Media Type registered in Tika for " + mt);
+    }
+
     protected List<MediaTypeDetails> getMediaTypes() {
-        MediaTypeRegistry registry = TikaResource.getConfig().getMediaTypeRegistry();
-        Map<MediaType, Parser> parsers =
-                ((CompositeParser) TikaResource.getConfig().getParser()).getParsers();
-        List<MediaTypeDetails> types =
-                new ArrayList<>(registry.getTypes().size());
+        TikaConfig config = TikaResource.getConfig();
+        MimeTypes mimeTypes = config.getMimeRepository();
+        MediaTypeRegistry registry = config.getMediaTypeRegistry();
+        Map<MediaType, Parser> parsers = ((CompositeParser) config.getParser()).getParsers();
+
+        List<MediaTypeDetails> types = new ArrayList<>(registry.getTypes().size());
 
         for (MediaType type : registry.getTypes()) {
             MediaTypeDetails details = new MediaTypeDetails();
             details.type = type;
             details.aliases = registry.getAliases(type).toArray(new MediaType[0]);
+
+            try {
+                details.mime = mimeTypes.getRegisteredMimeType(type.toString());
+            } catch (MimeTypeException e) {
+                // Ignore if invalid
+            }
 
             MediaType supertype = registry.getSupertype(type);
             if (supertype != null && !MediaType.OCTET_STREAM.equals(supertype)) {
@@ -182,6 +311,7 @@ public class TikaMimeTypes {
         private MediaType type;
         private MediaType[] aliases;
         private MediaType supertype;
+        private MimeType mime;
         private String parser;
     }
 }

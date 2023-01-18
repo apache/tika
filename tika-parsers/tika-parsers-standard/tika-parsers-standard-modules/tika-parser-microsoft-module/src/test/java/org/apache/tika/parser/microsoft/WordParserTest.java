@@ -43,6 +43,7 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 
 public class WordParserTest extends TikaTest {
@@ -295,6 +296,14 @@ public class WordParserTest extends TikaTest {
         officeParserConfig.setIncludeHeadersAndFooters(false);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
         String xml = getXML("testWORD_various.doc", parseContext).xml;
+        assertNotContained("This is the header text.", xml);
+        assertNotContained("This is the footer text.", xml);
+
+        Parser configuredParser = null;
+        try (InputStream is = getResourceAsStream("tika-config-headers-footers.xml")) {
+            configuredParser = new AutoDetectParser(new TikaConfig(is));
+        }
+        xml = getXML("testWORD_various.doc", configuredParser).xml;
         assertNotContained("This is the header text.", xml);
         assertNotContained("This is the footer text.", xml);
     }

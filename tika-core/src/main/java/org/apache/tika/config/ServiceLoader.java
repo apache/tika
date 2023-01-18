@@ -28,11 +28,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
  * Internal utility class that Tika uses to look up service providers.
@@ -47,14 +50,14 @@ public class ServiceLoader {
      * source of service instances in the {@link #loadServiceProviders(Class)}
      * method.
      */
-    private static final Map<Object, RankedService> services = new HashMap<>();
+    private static final Map<Object, RankedService> SERVICES = new HashMap<>();
     private static final Pattern COMMENT = Pattern.compile("#.*");
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
     /**
      * The default context class loader to use for all threads, or
      * <code>null</code> to automatically select the context class loader.
      */
-    private static volatile ClassLoader contextClassLoader = null;
+    private static volatile ClassLoader CONTEXT_CLASS_LOADER = null;
     private final ClassLoader loader;
     private final LoadErrorHandler handler;
     private final InitializableProblemHandler initializableProblemHandler;
@@ -98,7 +101,7 @@ public class ServiceLoader {
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-441">TIKA-441</a>
      */
     static ClassLoader getContextClassLoader() {
-        ClassLoader loader = contextClassLoader;
+        ClassLoader loader = CONTEXT_CLASS_LOADER;
         if (loader == null) {
             loader = ServiceLoader.class.getClassLoader();
         }
@@ -117,18 +120,18 @@ public class ServiceLoader {
      *               or <code>null</code> to automatically pick the loader
      */
     public static void setContextClassLoader(ClassLoader loader) {
-        contextClassLoader = loader;
+        CONTEXT_CLASS_LOADER = loader;
     }
 
     static void addService(Object reference, Object service, int rank) {
-        synchronized (services) {
-            services.put(reference, new RankedService(service, rank));
+        synchronized (SERVICES) {
+            SERVICES.put(reference, new RankedService(service, rank));
         }
     }
 
     static Object removeService(Object reference) {
-        synchronized (services) {
-            return services.remove(reference);
+        synchronized (SERVICES) {
+            return SERVICES.remove(reference);
         }
     }
 
@@ -240,13 +243,24 @@ public class ServiceLoader {
     /**
      * Returns all the available service providers of the given type.
      *
+     * As of versions after 2.4.1, this removes duplicate classes
+     *
      * @param iface service provider interface
      * @return available service providers
      */
     public <T> List<T> loadServiceProviders(Class<T> iface) {
+        List<T> tmp = new ArrayList<>();
+        tmp.addAll(loadDynamicServiceProviders(iface));
+        tmp.addAll(loadStaticServiceProviders(iface));
+
         List<T> providers = new ArrayList<>();
-        providers.addAll(loadDynamicServiceProviders(iface));
-        providers.addAll(loadStaticServiceProviders(iface));
+        Set<String> seen = new HashSet<>();
+        for (T provider : tmp) {
+            if (! seen.contains(provider.getClass().getCanonicalName())) {
+                providers.add(provider);
+                seen.add(provider.getClass().getCanonicalName());
+            }
+        }
         return providers;
     }
 
@@ -262,8 +276,8 @@ public class ServiceLoader {
     @SuppressWarnings("unchecked")
     public <T> List<T> loadDynamicServiceProviders(Class<T> iface) {
         if (dynamic) {
-            synchronized (services) {
-                List<RankedService> list = new ArrayList<>(services.values());
+            synchronized (SERVICES) {
+                List<RankedService> list = new ArrayList<>(SERVICES.values());
                 Collections.sort(list);
 
                 List<T> providers = new ArrayList<>(list.size());
@@ -275,7 +289,7 @@ public class ServiceLoader {
                 return providers;
             }
         } else {
-            return new ArrayList<>(0);
+            return Collections.EMPTY_LIST;
         }
     }
 
@@ -341,7 +355,7 @@ public class ServiceLoader {
                             }
                         }
                         if (!shouldExclude) {
-                            T instance = (T) klass.getConstructor().newInstance();
+                            T instance = ServiceLoaderUtils.newInstance(klass, this);
                             if (instance instanceof Initializable) {
                                 ((Initializable) instance).initialize(Collections.EMPTY_MAP);
                                 ((Initializable) instance)
@@ -363,8 +377,8 @@ public class ServiceLoader {
 
     private void collectServiceClassNames(URL resource, Collection<String> names)
             throws IOException {
-        try (InputStream stream = resource.openStream()) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8));
+        try (InputStream stream = resource.openStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8))) {
             String line = reader.readLine();
             while (line != null) {
                 line = COMMENT.matcher(line).replaceFirst("");

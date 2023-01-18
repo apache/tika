@@ -17,10 +17,10 @@
 package org.apache.tika.batch.fs;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,8 +29,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.BatchProcessDriverCLI;
@@ -39,10 +40,11 @@ import org.apache.tika.batch.BatchProcessDriverCLI;
  * This runs a single process.  This was useful during development,
  * but we don't need it because it is duplicative of {@link BatchDriverTest}
  */
-@Ignore("Batch Driver is the integration test")
+@Disabled("Batch Driver is the integration test")
 public class BatchProcessTest extends FSBatchTestBase {
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(15000)
     public void oneHeavyHangTest() throws Exception {
 
         Path outputDir = getNewOutputDir("one_heavy_hang-");
@@ -59,7 +61,8 @@ public class BatchProcessTest extends FSBatchTestBase {
     }
 
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(15000)
     public void allHeavyHangsTest() throws Exception {
         //each of the three threads hits a heavy hang.  The BatchProcess runs into
         //all timedouts and shuts down.
@@ -71,16 +74,18 @@ public class BatchProcessTest extends FSBatchTestBase {
         assertEquals(3, countChildren(outputDir));
         for (Path hvyHang : listPaths(outputDir)) {
             assertTrue(Files.exists(hvyHang));
-            assertEquals("file length for " + hvyHang.getFileName() + " should be 0, but is: " +
-                    Files.size(hvyHang), 0, Files.size(hvyHang));
+            assertEquals(0, Files.size(hvyHang),
+                    "file length for " + hvyHang.getFileName() + " should be 0, but is: " +
+                            Files.size(hvyHang));
         }
         assertContains(BatchProcess.BATCH_CONSTANTS.BATCH_PROCESS_FATAL_MUST_RESTART.toString(),
                 streamStrings.getErrString());
     }
 
-    @Test(timeout = 30000)
-    public void allHeavyHangsTestWithCrazyNumberConsumersTest() throws Exception {
-        Path outputDir = getNewOutputDir("allHeavyHangsCrazyNumberConsumers-");
+    @Test
+    @Timeout(30000)
+    public void allHeavyHangsTestWithExcessiveNumberConsumersTest() throws Exception {
+        Path outputDir = getNewOutputDir("allHeavyHangsExcessiveNumberConsumers-");
         Map<String, String> args = getDefaultArgs("heavy_heavy_hangs", outputDir);
         args.put("numConsumers", "100");
         BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args);
@@ -101,7 +106,8 @@ public class BatchProcessTest extends FSBatchTestBase {
                 streamStrings.getErrString());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30000)
     public void allHeavyHangsTestWithStarvedCrawler() throws Exception {
         //this tests that if all consumers are hung and the crawler is
         //waiting to add to the queue, there isn't deadlock.  The batchrunner should
@@ -126,7 +132,8 @@ public class BatchProcessTest extends FSBatchTestBase {
         assertContains("Crawler timed out", streamStrings.getErrString());
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(15000)
     public void outOfMemory() throws Exception {
         //the first consumer should sleep for 10 seconds
         //the second should be tied up in a heavy hang
@@ -152,7 +159,8 @@ public class BatchProcessTest extends FSBatchTestBase {
     }
 
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(15000)
     public void noRestart() throws Exception {
         Path outputDir = getNewOutputDir("no_restart");
 
@@ -164,9 +172,9 @@ public class BatchProcessTest extends FSBatchTestBase {
         StreamStrings streamStrings = ex.execute();
 
         Path test2 = outputDir.resolve("test2_norestart.xml.xml");
-        assertTrue("test2_norestart.xml", Files.exists(test2));
+        assertTrue(Files.exists(test2), "test2_norestart.xml");
         Path test3 = outputDir.resolve("test3_ok.xml.xml");
-        assertFalse("test3_ok.xml", Files.exists(test3));
+        assertFalse(Files.exists(test3), "test3_ok.xml");
         assertContains("exitStatus=" + BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE,
                 streamStrings.getOutString());
         assertContains("causeForTermination='MAIN_LOOP_EXCEPTION_NO_RESTART'",
@@ -180,7 +188,8 @@ public class BatchProcessTest extends FSBatchTestBase {
      * If this fails, then interruptible parsers (e.g. those with
      * nio channels) will be interrupted and there will be corrupted data.
      */
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60000)
     public void testWaitAfterEarlyTermination() throws Exception {
         Path outputDir = getNewOutputDir("wait_after_early_termination");
 
@@ -203,7 +212,8 @@ public class BatchProcessTest extends FSBatchTestBase {
                 streamStrings.getOutString());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60000)
     public void testTimeOutAfterBeingAskedToShutdown() throws Exception {
         Path outputDir = getNewOutputDir("timeout_after_early_termination");
 
@@ -224,7 +234,8 @@ public class BatchProcessTest extends FSBatchTestBase {
                 streamStrings.getOutString());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10000)
     public void testRedirectionOfStreams() throws Exception {
         //test redirection of system.err to system.out
         Path outputDir = getNewOutputDir("noisy_parsers");
@@ -241,7 +252,8 @@ public class BatchProcessTest extends FSBatchTestBase {
         assertNotContained(stderr, streamStrings.getErrString());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10000)
     public void testConsumersManagerInitHang() throws Exception {
         Path outputDir = getNewOutputDir("init_hang");
 
@@ -256,7 +268,8 @@ public class BatchProcessTest extends FSBatchTestBase {
                 streamStrings.getOutString());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10000)
     public void testConsumersManagerShutdownHang() throws Exception {
         Path outputDir = getNewOutputDir("shutdown_hang");
 
@@ -289,8 +302,8 @@ public class BatchProcessTest extends FSBatchTestBase {
         Path test1 = outputDir.resolve("test1.xml.json");
         Path test2 = outputDir.resolve("sub1a/test2.xml.json");
         Path test3 = outputDir.resolve("sub1a/sub2a/test3.xml.json");
-        assertTrue("test1 exists", Files.exists(test1));
-        assertTrue("test1 length > 10", Files.size(test1) > 10);
+        assertTrue(Files.exists(test1), "test1 exists");
+        assertTrue(Files.size(test1) > 10, "test1 length > 10");
         assertTrue(Files.exists(test3) && Files.size(test3) > 10);
         Path test2Dir = outputDir.resolve("sub1a");
         //should be just the subdirectory, no actual test2 file

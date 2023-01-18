@@ -77,12 +77,21 @@ public class ParserUtils {
      */
     public static void recordParserDetails(Parser parser, Metadata metadata) {
         String className = getParserClassname(parser);
+        recordParserDetails(className, metadata);
+    }
+
+    /**
+     * Records details of the {@link Parser} used to the {@link Metadata},
+     * typically wanted where multiple parsers could be picked between
+     * or used.
+     */
+    public static void recordParserDetails(String parserClassName, Metadata metadata) {
         String[] parsedBys = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
         if (parsedBys == null || parsedBys.length == 0) {
-            metadata.add(TikaCoreProperties.TIKA_PARSED_BY, className);
-        } else if (Arrays.stream(parsedBys).noneMatch(className::equals)) {
+            metadata.add(TikaCoreProperties.TIKA_PARSED_BY, parserClassName);
+        } else if (Arrays.stream(parsedBys).noneMatch(parserClassName::equals)) {
             //only add parser once
-            metadata.add(TikaCoreProperties.TIKA_PARSED_BY, className);
+            metadata.add(TikaCoreProperties.TIKA_PARSED_BY, parserClassName);
         }
     }
 
@@ -104,7 +113,8 @@ public class ParserUtils {
      * Streams that are automatically OK include {@link TikaInputStream}s
      * created from Files or InputStreamFactories, and {@link RereadableInputStream}.
      */
-    public static InputStream ensureStreamReReadable(InputStream stream, TemporaryResources tmp)
+    public static InputStream ensureStreamReReadable(InputStream stream, TemporaryResources tmp,
+                                                     Metadata metadata)
             throws IOException {
         // If it's re-readable, we're done
         if (stream instanceof RereadableInputStream) {
@@ -114,7 +124,7 @@ public class ParserUtils {
         // Make sure it's a TikaInputStream
         TikaInputStream tstream = TikaInputStream.cast(stream);
         if (tstream == null) {
-            tstream = TikaInputStream.get(stream, tmp);
+            tstream = TikaInputStream.get(stream, tmp, metadata);
         }
 
         // If it's factory based, it's ok
@@ -131,7 +141,7 @@ public class ParserUtils {
 
     /**
      * Resets the given {@link TikaInputStream} (checked by
-     * {@link #ensureStreamReReadable(InputStream, TemporaryResources)})
+     * {@link #ensureStreamReReadable(InputStream, TemporaryResources, Metadata)})
      * so that it can be re-read again.
      */
     public static InputStream streamResetForReRead(InputStream stream, TemporaryResources tmp)

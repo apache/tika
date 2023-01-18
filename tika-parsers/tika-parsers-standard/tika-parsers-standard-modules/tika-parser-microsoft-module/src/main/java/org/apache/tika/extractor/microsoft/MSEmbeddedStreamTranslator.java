@@ -16,11 +16,12 @@
  */
 package org.apache.tika.extractor.microsoft;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
@@ -28,7 +29,6 @@ import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.apache.poi.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,13 +61,13 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
     public InputStream translate(InputStream inputStream, Metadata metadata) throws IOException {
         String contentType = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
         if ("application/vnd.openxmlformats-officedocument.oleObject".equals(contentType)) {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
             IOUtils.copy(inputStream, bos);
-            byte[] data = bos.toByteArray();
-            POIFSFileSystem poifs = new POIFSFileSystem(new ByteArrayInputStream(data));
+            POIFSFileSystem poifs = new POIFSFileSystem(bos.toInputStream());
             OfficeParser.POIFSDocumentType type = OfficeParser.POIFSDocumentType.detectType(poifs);
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
 
+            byte[] data = bos.toByteArray();
             if (type == OfficeParser.POIFSDocumentType.OLE10_NATIVE) {
                 try {
                     Ole10Native ole = Ole10Native.createFromEmbeddedOleObject(poifs);
@@ -82,7 +82,7 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
                 name += '.' + type.getExtension();
             }
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
-            return new ByteArrayInputStream(data);
+            return new UnsynchronizedByteArrayInputStream(data);
         } else if (inputStream instanceof TikaInputStream) {
             TikaInputStream tin = (TikaInputStream) inputStream;
 
@@ -90,10 +90,10 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
                     tin.getOpenContainer() instanceof DirectoryEntry) {
                 POIFSFileSystem fs = new POIFSFileSystem();
                 copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
-                ByteArrayOutputStream bos2 = new ByteArrayOutputStream();
-                fs.writeFilesystem(bos2);
-                bos2.close();
-                return new ByteArrayInputStream(bos2.toByteArray());
+                try (UnsynchronizedByteArrayOutputStream bos2 = new UnsynchronizedByteArrayOutputStream()) {
+                    fs.writeFilesystem(bos2);
+                    return bos2.toInputStream();
+                }
             }
         }
         return inputStream;

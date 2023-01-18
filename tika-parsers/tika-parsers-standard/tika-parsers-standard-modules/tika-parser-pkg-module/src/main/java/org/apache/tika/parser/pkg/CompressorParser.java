@@ -252,4 +252,8 @@ public class CompressorParser extends AbstractParser {
         this.memoryLimitInKb = memoryLimitInKb;
     }
 
+    public int getMemoryLimitInKb() {
+        return this.memoryLimitInKb;
+    }
+
 }

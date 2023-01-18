@@ -27,7 +27,6 @@ import static org.apache.tika.detect.zip.PackageConstants.TAR;
 import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -55,6 +54,7 @@ import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -170,7 +170,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 "application/vnd.oasis.opendocument.presentation-template",
                 "application/vnd.oasis.opendocument.chart-template",
                 "application/vnd.oasis.opendocument.text-master",
-                "application/x-gtar" //specialization of tar
+                "application/vnd.adobe.indesign-idml-package",
+                "application/x-gtar", //specialization of tar
+                "application/x-wacz", "application/x-vnd.datapackage+zip"
         }) {
             zipSpecializations.add(MediaType.parse(mediaTypeString));
         }
@@ -265,7 +267,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             if (sne.getFormat().equals(ArchiveStreamFactory.SEVEN_Z)) {
                 // Rework as a file, and wrap
                 stream.reset();
-                TikaInputStream tstream = TikaInputStream.get(stream, tmp);
+                TikaInputStream tstream = TikaInputStream.get(stream, tmp, metadata);
 
                 // Seven Zip suports passwords, was one given?
                 String password = null;
@@ -423,8 +425,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         //Try to detect charset of archive entry in case of non-unicode filename is used
         if (detectCharsetsInEntryNames && entry instanceof ZipArchiveEntry) {
             Charset candidate =
-                    getEncodingDetector().detect(new ByteArrayInputStream(((ZipArchiveEntry) entry).getRawName()),
-                        parentMetadata);
+                    getEncodingDetector().detect(
+                            new UnsynchronizedByteArrayInputStream(((ZipArchiveEntry) entry).getRawName()),
+                            parentMetadata);
             if (candidate != null) {
                 name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);
             }
@@ -442,7 +445,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 // InputStream, which ArchiveInputStream isn't, so wrap
                 TemporaryResources tmp = new TemporaryResources();
                 try {
-                    TikaInputStream tis = TikaInputStream.get(archive, tmp);
+                    TikaInputStream tis = TikaInputStream.get(archive, tmp, entrydata);
                     extractor.parseEmbedded(tis, xhtml, entrydata, true);
                 } finally {
                     tmp.dispose();
@@ -523,5 +526,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
     @Field
     public void setDetectCharsetsInEntryNames(boolean detectCharsetsInEntryNames) {
         this.detectCharsetsInEntryNames = detectCharsetsInEntryNames;
+    }
+
+    public boolean isDetectCharsetsInEntryNames() {
+        return detectCharsetsInEntryNames;
     }
 }

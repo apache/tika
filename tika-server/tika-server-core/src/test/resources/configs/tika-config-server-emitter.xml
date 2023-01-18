@@ -17,19 +17,17 @@
 -->
 <properties>
   <server>
-    <params>
-      <taskTimeoutMillis>120000</taskTimeoutMillis>
-      <port>9999</port>
-      <maxFiles>1000</maxFiles>
-      <forkedJvmArgs>
-        <arg>-Xmx512m</arg>
-      </forkedJvmArgs>
-      <enableUnsecure>true</enableUnsecure>
-      <endpoints>
-        <endpoint>emit</endpoint>
-        <endpoint>async</endpoint>
-        <endpoint>status</endpoint>
-      </endpoints>
-    </params>
+    <taskTimeoutMillis>120000</taskTimeoutMillis>
+    <port>9999</port>
+    <maxFiles>1000</maxFiles>
+    <forkedJvmArgs>
+      <arg>-Xmx512m</arg>
+    </forkedJvmArgs>
+    <enableUnsecure>true</enableUnsecure>
+    <endpoints>
+      <endpoint>emit</endpoint>
+      <endpoint>async</endpoint>
+      <endpoint>status</endpoint>
+    </endpoints>
   </server>
 </properties>

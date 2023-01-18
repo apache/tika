@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parsers</artifactId>
-    <version>2.2.2-SNAPSHOT</version>
+    <version>2.6.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -34,10 +34,12 @@
 
   <modules>
     <module>tika-parser-nlp-module</module>
+    <module>tika-parser-nlp-package</module>
     <!-- needs to come after tika-parser-nlp-module because tika-parser-nlp-module
          downloads model files -->
     <module>tika-age-recogniser</module>
     <module>tika-parser-advancedmedia-module</module>
+    <module>tika-parser-advancedmedia-package</module>
     <module>tika-dl</module>
     <module>tika-transcribe-aws</module>
   </modules>

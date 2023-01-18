@@ -17,8 +17,8 @@
 
 package org.apache.tika.eval.app;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.nio.file.FileSystems;
@@ -35,21 +35,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.batch.fs.FSBatchTestBase;
 import org.apache.tika.eval.app.db.Cols;
 
-@Ignore("move these tests to TikaEvalCLITest")
+@Disabled("move these tests to TikaEvalCLITest")
 public class ComparerBatchTest extends FSBatchTestBase {
 
     public final static String COMPARER_PROCESS_CLASS =
             "org.apache.tika.batch.fs.FSBatchProcessCLI";
     private final static String compJoinCont = "";
+
+    @TempDir
     private static Path dbDir;
     private static Connection conn;
     /*ExtractComparer.COMPARISONS_TABLE+" cmp " +
@@ -57,7 +59,7 @@ public class ComparerBatchTest extends FSBatchTestBase {
             "on cmp."+AbstractProfiler.CONTAINER_HEADERS.CONTAINER_ID+
             " = cnt."+AbstractProfiler.CONTAINER_HEADERS.CONTAINER_ID;*/
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
 
         File inputRoot = new File(ComparerBatchTest.class.getResource("/test-dirs").toURI());
@@ -78,12 +80,9 @@ public class ComparerBatchTest extends FSBatchTestBase {
         conn = dbUtil.getConnection();*/
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws Exception {
-
         conn.close();
-
-        FileUtils.deleteDirectory(dbDir.toFile());
     }
 
 

@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.utils.StringUtils;
 
 public class EmitData implements Serializable {
     /**
@@ -30,9 +31,17 @@ public class EmitData implements Serializable {
     private final EmitKey emitKey;
     private final List<Metadata> metadataList;
 
+    private final String containerStackTrace;
+
     public EmitData(EmitKey emitKey, List<Metadata> metadataList) {
+        this(emitKey, metadataList, StringUtils.EMPTY);
+    }
+
+    public EmitData(EmitKey emitKey, List<Metadata> metadataList, String containerStackTrace) {
         this.emitKey = emitKey;
         this.metadataList = metadataList;
+        this.containerStackTrace = (containerStackTrace == null) ? StringUtils.EMPTY :
+                containerStackTrace;
     }
 
     public EmitKey getEmitKey() {
@@ -43,12 +52,18 @@ public class EmitData implements Serializable {
         return metadataList;
     }
 
-    public long getEstimatedSizeBytes() {
-        return estimateSizeInBytes(getEmitKey().getEmitKey(), getMetadataList());
+    public String getContainerStackTrace() {
+        return containerStackTrace;
     }
 
-    private static long estimateSizeInBytes(String id, List<Metadata> metadataList) {
+    public long getEstimatedSizeBytes() {
+        return estimateSizeInBytes(getEmitKey().getEmitKey(), getMetadataList(), containerStackTrace);
+    }
+
+    private static long estimateSizeInBytes(String id, List<Metadata> metadataList,
+                                            String containerStackTrace) {
         long sz = 36 + id.length() * 2;
+        sz += 36 + containerStackTrace.length() * 2;
         for (Metadata m : metadataList) {
             for (String n : m.names()) {
                 sz += 36 + n.length() * 2;
@@ -59,8 +74,10 @@ public class EmitData implements Serializable {
         }
         return sz;
     }
+
     @Override
     public String toString() {
-        return "EmitData{" + "emitKey=" + emitKey + ", metadataList=" + metadataList + '}';
+        return "EmitData{" + "emitKey=" + emitKey + ", metadataList=" + metadataList +
+                ", containerStackTrace='" + containerStackTrace + '\'' + '}';
     }
 }

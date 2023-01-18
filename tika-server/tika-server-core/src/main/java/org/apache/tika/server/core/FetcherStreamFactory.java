@@ -18,9 +18,16 @@ package org.apache.tika.server.core;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -29,11 +36,13 @@ import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
 
 /**
- * This class looks for &quot;fileUrl&quot; in the http header.  If it is not null
- * and not empty, this will return a new TikaInputStream from the URL.
+ * This class looks for &quot;fetcherName&quot; in the http header.  If it is not null
+ * and not empty, this will return a new TikaInputStream from the fetch key
+ * and the base path as set in the definition of the named fetcher.
+ * As of Tika &gt; 2.5.0, the &quot;fetchKey&quot; is URL decoded.
  * <p>
- * This is not meant to be used in place of a robust, responsible crawler.  Rather, this
- * is a convenience factory.
+ * Users may also specify the &quot;fetcherName&quote; and &quot;fetchKey&quot; in
+ * query parameters with in the request.
  * <p>
  * <em>WARNING:</em> Unless you carefully lock down access to the server,
  * whoever has access to this service will have the read access of the server.
@@ -45,6 +54,8 @@ import org.apache.tika.pipes.fetcher.RangeFetcher;
  */
 public class FetcherStreamFactory implements InputStreamFactory {
 
+    private static final Logger LOG = LoggerFactory.getLogger(FetcherStreamFactory.class);
+
     private final FetcherManager fetcherManager;
 
     public FetcherStreamFactory(FetcherManager fetcherManager) {
@@ -52,12 +63,18 @@ public class FetcherStreamFactory implements InputStreamFactory {
     }
 
     @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
-            throws IOException {
-        String fetcherName = httpHeaders.getHeaderString("fetcherName");
-        String fetchKey = httpHeaders.getHeaderString("fetchKey");
-        long fetchRangeStart = getLong(httpHeaders.getHeaderString("fetchRangeStart"));
-        long fetchRangeEnd = getLong(httpHeaders.getHeaderString("fetchRangeEnd"));
+    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders,
+                                      UriInfo uriInfo) throws IOException {
+        MultivaluedMap params = (uriInfo == null) ? null : uriInfo.getQueryParameters();
+        String fetcherName = getParam("fetcherName", httpHeaders, params);
+        String fetchKey = getParam("fetchKey", httpHeaders, params);
+        fetchKey = urlDecode(fetchKey);
+        if (StringUtils.isBlank(fetchKey)) {
+            fetchKey = getParam("fetchKeyLiteral", httpHeaders, params);
+        }
+
+        long fetchRangeStart = getLong(getParam("fetchRangeStart", httpHeaders, params));
+        long fetchRangeEnd = getLong(getParam("fetchRangeEnd", httpHeaders, params));
         if (StringUtils.isBlank(fetcherName) != StringUtils.isBlank(fetchKey)) {
             throw new IOException("Must specify both a 'fetcherName' and a 'fetchKey'. I see: " +
                     " fetcherName:" + fetcherName + " and fetchKey:" + fetchKey);
@@ -74,6 +91,7 @@ public class FetcherStreamFactory implements InputStreamFactory {
 
         if (!StringUtils.isBlank(fetcherName)) {
             try {
+                LOG.debug("going to fetch '{}' from fetcher: {}", fetchKey, fetcherName);
                 Fetcher fetcher = fetcherManager.getFetcher(fetcherName);
                 if (fetchRangeStart > -1 && fetchRangeEnd > -1) {
                     if (!(fetcher instanceof RangeFetcher)) {
@@ -91,6 +109,33 @@ public class FetcherStreamFactory implements InputStreamFactory {
             }
         }
         return is;
+    }
+
+    private String urlDecode(String fetchKey) {
+        if (fetchKey == null) {
+            return fetchKey;
+        }
+        try {
+            return URLDecoder.decode(fetchKey, StandardCharsets.UTF_8.toString());
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            LOG.warn("couldn't decode fetch key", fetchKey);
+        }
+        return fetchKey;
+    }
+
+    private String getParam(String paramName, HttpHeaders httpHeaders, MultivaluedMap uriParams) {
+        if (uriParams == null || ! uriParams.containsKey(paramName)) {
+            return httpHeaders.getHeaderString(paramName);
+        }
+
+        return (String)uriParams.getFirst(paramName);
+    }
+
+    @Override
+    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
+            throws IOException {
+        return getInputStream(is, metadata, httpHeaders, null);
+
     }
 
     /**

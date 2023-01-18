@@ -17,6 +17,10 @@
 -->
 <properties>
     <detectors class="org.apache.tika.detect.DefaultDetector">
-        <detector class="org.apache.tika.detect.FileCommandDetector"/>
+        <detector class="org.apache.tika.detect.FileCommandDetector">
+            <params>
+                <param name="useMime" type="bool">true</param>
+            </params>
+        </detector>
     </detectors>
 </properties>

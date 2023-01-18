@@ -18,21 +18,17 @@
 <properties>
   <metadataFilters>
     <metadataFilter class="org.apache.tika.metadata.filter.IncludeFieldMetadataFilter">
-      <params>
-        <include>
-          <field>X-TIKA:content</field>
-          <field>extended-properties:Application</field>
-          <field>Content-Type</field>
-        </include>
-      </params>
+      <include>
+        <field>X-TIKA:content</field>
+        <field>extended-properties:Application</field>
+        <field>Content-Type</field>
+      </include>
     </metadataFilter>
     <metadataFilter class="org.apache.tika.metadata.filter.ClearByMimeMetadataFilter">
-      <params>
-        <mimes>
-          <mime>image/emf</mime>
-          <mime>text/plain</mime>
-        </mimes>
-      </params>
+      <mimes>
+        <mime>image/emf</mime>
+        <mime>text/plain</mime>
+      </mimes>
     </metadataFilter>
   </metadataFilters>
 </properties>

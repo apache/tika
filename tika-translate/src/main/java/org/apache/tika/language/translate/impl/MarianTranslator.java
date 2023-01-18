@@ -18,20 +18,6 @@
 package org.apache.tika.language.translate.impl;
 
 
-import jakarta.websocket.ClientEndpoint;
-import jakarta.websocket.ContainerProvider;
-import jakarta.websocket.DeploymentException;
-import jakarta.websocket.OnClose;
-import jakarta.websocket.OnMessage;
-import jakarta.websocket.OnOpen;
-import jakarta.websocket.Session;
-import jakarta.websocket.WebSocketContainer;
-import org.apache.commons.io.FileUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -49,10 +35,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import jakarta.websocket.ClientEndpoint;
+import jakarta.websocket.ContainerProvider;
+import jakarta.websocket.DeploymentException;
+import jakarta.websocket.OnClose;
+import jakarta.websocket.OnMessage;
+import jakarta.websocket.OnOpen;
+import jakarta.websocket.Session;
+import jakarta.websocket.WebSocketContainer;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.StringUtils;
+
 /**
  * Translator that uses the Marian NMT decoder for translation.
- *
+ * <p>
  * Users must install Marian NMT and configure model locations before using this Translator.
+ *
  * @link https://marian-nmt.github.io/.
  */
 public class MarianTranslator extends AbstractTranslator {
@@ -61,11 +63,10 @@ public class MarianTranslator extends AbstractTranslator {
     private static final String DEFAULT_PATH = "dummy-path";
     private static final String INPUT_TMP_NAME = "tika.marian.input";
     private static final String OUTPUT_TMP_NAME = "tika.marian.translation";
-    private long maxWaitForMarianServerResponse = 120000;
-    private long pulseCheckMarianServerResponse = 1000;
-
     private final String marianPath;
     private final Properties config;
+    private long maxWaitForMarianServerResponse = 120000;
+    private long pulseCheckMarianServerResponse = 1000;
 
     /**
      * Default constructor.
@@ -76,12 +77,12 @@ public class MarianTranslator extends AbstractTranslator {
             config.load(MarianTranslator.class.getResourceAsStream("translator.marian.properties"));
             marianPath = config.getProperty("translator.marian.path", DEFAULT_PATH);
             if (config.containsKey("translator.marian.server.responseTimeout")) {
-                maxWaitForMarianServerResponse =
-                        Long.parseLong(config.getProperty("translator.marian.server.responseTimeout"));
+                maxWaitForMarianServerResponse = Long.parseLong(
+                        config.getProperty("translator.marian.server.responseTimeout"));
             }
             if (config.containsKey("translator.marian.server.responsePulse")) {
-                pulseCheckMarianServerResponse =
-                        Long.parseLong(config.getProperty("translator.marian.server.responsePulse"));
+                pulseCheckMarianServerResponse = Long.parseLong(
+                        config.getProperty("translator.marian.server.responsePulse"));
             }
         } catch (IOException e) {
             throw new AssertionError("Failed to read translator.marian.properties.");
@@ -91,11 +92,11 @@ public class MarianTranslator extends AbstractTranslator {
     /**
      * Default translate method which uses built Tika language identification.
      *
-     * @param text The text to translate.
+     * @param text           The text to translate.
      * @param targetLanguage The desired language to translate to (for example, "hi").
      * @return The translated text.
      * @throws TikaException on any error performing translation.
-     * @throws IOException on any I/O error performing translation.
+     * @throws IOException   on any I/O error performing translation.
      */
     public String translate(String text, String targetLanguage) throws TikaException, IOException {
         String sourceLanguage = detectLanguage(text).getLanguage();
@@ -105,33 +106,37 @@ public class MarianTranslator extends AbstractTranslator {
     /**
      * Translate method with specific source and target languages.
      *
-     * @param text The text to translate.
+     * @param text           The text to translate.
      * @param sourceLanguage The language to translate from (for example, "en").
      * @param targetLanguage The desired language to translate to (for example, "hi").
      * @return The translated text.
      * @throws TikaException on any error performing translation.
-     * @throws IOException on any I/O error performing translation.
+     * @throws IOException   on any I/O error performing translation.
      */
-    public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
-        String configPath =
-                config.getProperty("translator.marian." + sourceLanguage + "_" + targetLanguage + ".config");
-        String serverSocket =
-                config.getProperty("translator.marian." + sourceLanguage + "_" + targetLanguage + ".server");
+    public String translate(String text, String sourceLanguage, String targetLanguage)
+            throws TikaException, IOException {
+        String configPath = config.getProperty(
+                "translator.marian." + sourceLanguage + "_" + targetLanguage + ".config");
+        String serverSocket = config.getProperty(
+                "translator.marian." + sourceLanguage + "_" + targetLanguage + ".server");
 
-        if (!isAvailable(sourceLanguage, targetLanguage)) return text;
+        if (!isAvailable(sourceLanguage, targetLanguage)) {
+            return text;
+        }
 
         if (!StringUtils.isEmpty(configPath) && !StringUtils.isEmpty(serverSocket)) {
-            LOG.info("Both local and server configurations exist for " + sourceLanguage + " to " + targetLanguage
-                    + "\nDefaulting to use local engine.");
+            LOG.info("Both local and server configurations exist for " + sourceLanguage + " to " +
+                    targetLanguage + "\nDefaulting to use local engine.");
         }
 
         StringBuilder translation = new StringBuilder();
-        File tmpFile = File.createTempFile(INPUT_TMP_NAME, ".tmp");
+        File tmpFile = Files.createTempFile(INPUT_TMP_NAME, ".tmp").toFile();
         tmpFile.deleteOnExit();
-        try (OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile), Charset.defaultCharset())) {
+        try (OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile),
+                Charset.defaultCharset())) {
             out.append(text).append('\n').close();
         }
-        File tmpTranslatedFile = File.createTempFile(OUTPUT_TMP_NAME, ".tmp");
+        File tmpTranslatedFile = Files.createTempFile(OUTPUT_TMP_NAME, ".tmp").toFile();
         tmpTranslatedFile.deleteOnExit();
 
         try {
@@ -147,9 +152,9 @@ public class MarianTranslator extends AbstractTranslator {
             String postProcessScript = config.getProperty("translator.marian.postprocess");
             executeScript(postProcessScript, tmpTranslatedFile);
 
-            BufferedReader fileReader
-                    = new BufferedReader(new InputStreamReader(
-                            new FileInputStream(tmpTranslatedFile), Charset.defaultCharset()));
+            BufferedReader fileReader = new BufferedReader(
+                    new InputStreamReader(new FileInputStream(tmpTranslatedFile),
+                            Charset.defaultCharset()));
             fileReader.lines().forEach(translation::append);
             fileReader.close();
 
@@ -157,7 +162,7 @@ public class MarianTranslator extends AbstractTranslator {
             throw new TikaException("Failed perform translation", e);
         }
 
-        if (!tmpFile.delete() || !tmpTranslatedFile.delete()){
+        if (!tmpFile.delete() || !tmpTranslatedFile.delete()) {
             throw new IOException("Failed to delete temporary files.");
         }
 
@@ -167,10 +172,11 @@ public class MarianTranslator extends AbstractTranslator {
     /**
      * Process the translation request using a local instance of Marian - i.e. either </i>marian-decoder</i>
      * or <i>marian</i> command line applications.
+     *
      * @param configPath the path of the configuaration to use.
      * @param sourceFile the file containing the source text to read from.
      * @param targetFile the file to write the translated text to.
-     * @throws IOException on any I/O error.
+     * @throws IOException          on any I/O error.
      * @throws InterruptedException on any process error.
      */
     private void processWithLocalMarian(String configPath, File sourceFile, File targetFile)
@@ -181,26 +187,31 @@ public class MarianTranslator extends AbstractTranslator {
         builder.directory(new File(configPath).getParentFile());
         builder.redirectErrorStream(true);
         Process process = builder.start();
-        process.waitFor();
 
-        BufferedReader stdOutReader =
-                new BufferedReader(new InputStreamReader(process.getInputStream(), Charset.defaultCharset()));
+        BufferedReader stdOutReader = new BufferedReader(
+                new InputStreamReader(process.getInputStream(), Charset.defaultCharset()));
         stdOutReader.lines().forEach(LOG::debug);
         stdOutReader.close();
+
+        process.waitFor();
     }
 
     /**
      * Process the translation request using a Marian-Server instance. Marian Server is Marian NMT's WebSocket
      * based server application (<i>marian-server</i>.
-     * @param serverURI the Web Socket URI of the Marian Server instance.
+     *
+     * @param serverURI  the Web Socket URI of the Marian Server instance.
      * @param sourceFile the file containing the source text to read from.
      * @param targetFile the file to write the translated text to.
      * @throws TikaException on any error translating via the server.
      */
-    private void processWithMarianServer(String serverURI, File sourceFile, File targetFile) throws TikaException {
+    private void processWithMarianServer(String serverURI, File sourceFile, File targetFile)
+            throws TikaException {
         try {
-            MarianServerClient clientEndpoint = new MarianServerClient(new URI(serverURI), targetFile);
-            clientEndpoint.translate(FileUtils.readFileToString(sourceFile, Charset.defaultCharset()));
+            MarianServerClient clientEndpoint =
+                    new MarianServerClient(new URI(serverURI), targetFile);
+            clientEndpoint.translate(
+                    FileUtils.readFileToString(sourceFile, Charset.defaultCharset()));
             long start = System.currentTimeMillis();
             long elapsed = System.currentTimeMillis() - start;
             while (!clientEndpoint.receivedResponse && elapsed < maxWaitForMarianServerResponse) {
@@ -221,8 +232,8 @@ public class MarianTranslator extends AbstractTranslator {
      * Executes a script taking the passed file as it's first argument.
      *
      * @param script the path to the script to execute
-     * @param file the file to process
-     * @throws IOException on any IO errors
+     * @param file   the file to process
+     * @throws IOException          on any IO errors
      * @throws InterruptedException if the process fails.
      */
     private void executeScript(String script, File file) throws IOException, InterruptedException {
@@ -244,12 +255,13 @@ public class MarianTranslator extends AbstractTranslator {
      * Builds the Marian NMT Command for the configuration.
      *
      * @param configPath the path to the configuration file
-     * @param input the input file location
-     * @param output the output file location
-     * @param device the device for inference (i.e. cpu or gpu)
+     * @param input      the input file location
+     * @param output     the output file location
+     * @param device     the device for inference (i.e. cpu or gpu)
      * @return the command to be executed.
      */
-    private List<String> buildMarianCommand(String configPath, File input, File output, String device) {
+    private List<String> buildMarianCommand(String configPath, File input, File output,
+                                            String device) {
         List<String> command = new ArrayList<>();
         command.add(Paths.get(marianPath).toString());
         command.add("-c");
@@ -272,17 +284,18 @@ public class MarianTranslator extends AbstractTranslator {
 
     /**
      * Checks if the approproate Marian engine is available.
+     *
      * @param sourceLanguage The language to translate from (for example, "en").
      * @param targetLanguage The desired language to translate to (for example, "hi").
      * @return
      */
     public boolean isAvailable(String sourceLanguage, String targetLanguage) {
-        String configPath =
-                config.getProperty("translator.marian." + sourceLanguage + "_" + targetLanguage + ".config");
-        String serverSocket =
-                config.getProperty("translator.marian." + sourceLanguage + "_" + targetLanguage + ".server");
-        return (!marianPath.equals(DEFAULT_PATH) && !StringUtils.isEmpty(configPath))
-                || !StringUtils.isEmpty(serverSocket);
+        String configPath = config.getProperty(
+                "translator.marian." + sourceLanguage + "_" + targetLanguage + ".config");
+        String serverSocket = config.getProperty(
+                "translator.marian." + sourceLanguage + "_" + targetLanguage + ".server");
+        return (!marianPath.equals(DEFAULT_PATH) && !StringUtils.isEmpty(configPath)) ||
+                !StringUtils.isEmpty(serverSocket);
     }
 
     /**
@@ -297,8 +310,9 @@ public class MarianTranslator extends AbstractTranslator {
 
         /**
          * Marian Server Web Socket Client.
+         *
          * @param endpointURI the endpoint URI for the Marian Server instance.
-         * @param file the location of the file to write the translation response to.
+         * @param file        the location of the file to write the translation response to.
          */
         public MarianServerClient(URI endpointURI, File file) throws TikaException {
             try {
@@ -311,7 +325,7 @@ public class MarianTranslator extends AbstractTranslator {
         }
 
         @OnOpen
-        public void onOpen(Session session){
+        public void onOpen(Session session) {
             LOG.debug("Opened connection, Session ID: " + session.getId());
             this.session = session;
         }
@@ -324,13 +338,14 @@ public class MarianTranslator extends AbstractTranslator {
         }
 
         @OnClose
-        public void onClose(Session session){
+        public void onClose(Session session) {
             LOG.debug("Closed connection, Session ID: " + session.getId());
             receivedResponse = true;
         }
 
         /**
          * Translate the passed text using the Marian Server.
+         *
          * @param sourceText the source text to translate.
          * @throws IOException on any I/O error calling the server.
          */
@@ -340,6 +355,7 @@ public class MarianTranslator extends AbstractTranslator {
 
         /**
          * Close the connection to the Marian Server.
+         *
          * @throws IOException on any I/O error calling the server.
          */
         public void close() throws IOException {

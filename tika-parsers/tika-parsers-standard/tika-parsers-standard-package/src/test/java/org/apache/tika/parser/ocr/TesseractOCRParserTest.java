@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Disabled;
@@ -173,6 +174,10 @@ public class TesseractOCRParserTest extends TikaTest {
         assertTrue(metadataList.get(1).names().length > 10);
         //test at least one value
         assertEquals("deflate", metadataList.get(1).get("Compression CompressionTypeName"));
+
+        //make sure that tesseract is showing up in the full set of "parsed bys"
+        assertContains(TesseractOCRParser.class.getName(),
+                Arrays.asList(metadataList.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET)));
 
         return contents.toString();
     }

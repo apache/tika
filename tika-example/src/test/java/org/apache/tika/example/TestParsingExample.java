@@ -17,35 +17,26 @@
 
 package org.apache.tika.example;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 
-public class TestParsingExample {
+public class TestParsingExample extends TikaTest {
     ParsingExample parsingExample;
 
-    public static void assertContains(String needle, String haystack) {
-        assertTrue("Should have found " + needle + " in: " + haystack, haystack.contains(needle));
-    }
-
-    public static void assertNotContains(String needle, String haystack) {
-        assertFalse("Should not have found " + needle + " in: " + haystack,
-                haystack.contains(needle));
-    }
-
-    @Before
+    @BeforeEach
     public void setUp() {
         parsingExample = new ParsingExample();
     }
@@ -53,22 +44,22 @@ public class TestParsingExample {
     @Test
     public void testParseToStringExample() throws IOException, SAXException, TikaException {
         String result = parsingExample.parseToStringExample().trim();
-        assertEquals("Expected 'test', but got '" + result + "'", "test", result);
+        assertEquals("test", result, "enough detectors?");
     }
 
     @Test
     public void testParseExample() throws IOException, SAXException, TikaException {
         String result = parsingExample.parseExample().trim();
-        assertEquals("Expected 'test', but got '" + result + "'", "test", result);
+        assertEquals("test", result, "Expected 'test', but got '" + result + "'");
     }
 
     @Test
     public void testNoEmbeddedExample() throws IOException, SAXException, TikaException {
         String result = parsingExample.parseNoEmbeddedExample();
         assertContains("embed_0", result);
-        assertNotContains("embed1/embed1a.txt", result);
-        assertNotContains("embed3/embed3.txt", result);
-        assertNotContains("When in the Course", result);
+        assertNotContained("embed1/embed1a.txt", result);
+        assertNotContained("embed3/embed3.txt", result);
+        assertNotContained("When in the Course", result);
     }
 
     @Test
@@ -84,8 +75,8 @@ public class TestParsingExample {
     public void testRecursiveParserWrapperExample()
             throws IOException, SAXException, TikaException {
         List<Metadata> metadataList = parsingExample.recursiveParserWrapperExample();
-        assertEquals("Number of embedded documents + 1 for the container document", 12,
-                metadataList.size());
+        assertEquals(12, metadataList.size(),
+                "Number of embedded documents + 1 for the container document");
         Metadata m = metadataList.get(6);
         //this is the location the embed3.txt text file within the outer .docx
         assertEquals("/embed1.zip/embed2.zip/embed3.zip/embed3.txt",

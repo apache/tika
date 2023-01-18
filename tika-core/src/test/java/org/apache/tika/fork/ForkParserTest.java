@@ -37,12 +37,19 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -63,6 +70,9 @@ import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 
 public class ForkParserTest extends TikaTest {
+
+    @TempDir
+    Path tempDir;
 
     @Test
     public void testHelloWorld() throws Exception {
@@ -204,6 +214,8 @@ public class ForkParserTest extends TikaTest {
             fail("should have thrown IOException");
         } catch (TikaException e) {
             //failed to communicate with forked parser process"
+        } finally {
+            forkParser.close();
         }
 
         //test setting very short pulse (10 ms) and a parser that takes at least 1000 ms
@@ -223,6 +235,8 @@ public class ForkParserTest extends TikaTest {
             fail("Should have thrown exception");
         } catch (IOException | TikaException e) {
             //"should have thrown IOException lost connection"
+        } finally {
+            forkParser.close();
         }
     }
 
@@ -325,39 +339,33 @@ public class ForkParserTest extends TikaTest {
     public void testToFileHandler() throws Exception {
         //test that a server-side write-to-file works without proxying back the
         //AbstractContentHandlerFactory
-        Path target = Files.createTempFile("fork-to-file-handler-", ".txt");
-        try {
-            ForkParser forkParser = null;
-            try (InputStream is = getResourceAsStream("/test-documents/basic_embedded.xml")) {
-                RecursiveParserWrapper wrapper = new RecursiveParserWrapper(new AutoDetectParser());
-                ToFileHandler toFileHandler =
-                        new ToFileHandler(new SBContentHandlerFactory(), target.toFile());
-                forkParser = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
+        Path target = Files.createTempFile(tempDir, "fork-to-file-handler-", ".txt");
+        try (InputStream is = getResourceAsStream("/test-documents/basic_embedded.xml")) {
+            RecursiveParserWrapper wrapper = new RecursiveParserWrapper(new AutoDetectParser());
+            ToFileHandler toFileHandler =
+                    new ToFileHandler(new SBContentHandlerFactory(), target.toFile());
+            try (ForkParser forkParser = new ForkParser(ForkParserTest.class.getClassLoader(),
+                    wrapper)) {
                 Metadata m = new Metadata();
                 ParseContext context = new ParseContext();
                 forkParser.parse(is, toFileHandler, m, context);
-            } finally {
-                if (forkParser != null) {
-                    forkParser.close();
-                }
             }
-
-            String contents = null;
-            try (Reader reader = Files.newBufferedReader(target, StandardCharsets.UTF_8)) {
-                contents = IOUtils.toString(reader);
-            }
-            assertContainsCount(TikaCoreProperties.TIKA_PARSED_BY.getName() +
-                    " : org.apache.tika.parser.DefaultParser", contents, 2);
-            assertContainsCount(TikaCoreProperties.TIKA_PARSED_BY.getName() +
-                    " : org.apache.tika.parser.mock.MockParser", contents, 2);
-            assertContains("Nikolai Lobachevsky", contents);
-            assertContains("embeddedAuthor", contents);
-            assertContains("main_content", contents);
-            assertContains("some_embedded_content", contents);
-            assertContains("X-TIKA:embedded_resource_path : /embed1.xml", contents);
-        } finally {
-            Files.delete(target);
         }
+
+        String contents = null;
+        try (Reader reader = Files.newBufferedReader(target, StandardCharsets.UTF_8)) {
+            contents = IOUtils.toString(reader);
+        }
+        assertContainsCount(TikaCoreProperties.TIKA_PARSED_BY.getName() +
+                " : org.apache.tika.parser.DefaultParser", contents, 2);
+        assertContainsCount(TikaCoreProperties.TIKA_PARSED_BY.getName() +
+                " : org.apache.tika.parser.mock.MockParser", contents, 2);
+        assertContains("Nikolai Lobachevsky", contents);
+        assertContains("embeddedAuthor", contents);
+        assertContains("main_content", contents);
+        assertContains("some_embedded_content", contents);
+        assertContains("X-TIKA:embedded_resource_path : /embed1.xml", contents);
+
     }
 
     @Test
@@ -426,6 +434,38 @@ public class ForkParserTest extends TikaTest {
             sb.append(1);
         }
         proxy.skippedEntity(sb.toString());
+    }
+
+    @Test
+    public void testForkParserDoesntPreventShutdown() throws Exception {
+        ExecutorService service = Executors.newFixedThreadPool(1);
+        CountDownLatch cdl = new CountDownLatch(1);
+        service.submit(() -> {
+            try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(),
+                    new ForkTestParser.ForkTestParserWaiting())) {
+                Metadata metadata = new Metadata();
+                ContentHandler output = new BodyContentHandler();
+                InputStream stream = new ByteArrayInputStream(new byte[0]);
+                ParseContext context = new ParseContext();
+                cdl.countDown();
+                parser.parse(stream, output, metadata, context);
+                // Don't care about output not planning to get this far
+            } catch (IOException | SAXException | TikaException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        // Wait to make sure submitted runnable is actually running
+        boolean await = cdl.await(1, TimeUnit.SECONDS);
+        if (!await) {
+            // This should never happen but be thorough
+            fail("Future never ran so cannot test cancellation");
+        }
+        // Parse is being called try and shutdown
+        Instant requestShutdown = Instant.now();
+        service.shutdownNow();
+        service.awaitTermination(15, TimeUnit.SECONDS);
+        long secondsSinceShutdown = ChronoUnit.SECONDS.between(requestShutdown, Instant.now());
+        assertTrue(secondsSinceShutdown < 5, "Should have shutdown the service in less than 5 seconds");
     }
 
 

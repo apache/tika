@@ -18,8 +18,6 @@
 
 package org.apache.tika.parser.microsoft.rtf;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +26,9 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
@@ -36,7 +37,6 @@ import org.apache.poi.poifs.filesystem.FileMagic;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.apache.poi.util.IOUtils;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -65,7 +65,7 @@ class RTFObjDataParser {
     /**
      * Parses the embedded object/pict string
      *
-     * @param bytes actual bytes (already converted from the
+     * @param is actual bytes (already converted from the
      *              hex pair string stored in the embedded object data into actual bytes or read
      *              as raw binary bytes)
      * @return a SimpleRTFEmbObj or null
@@ -85,7 +85,7 @@ class RTFObjDataParser {
      */
     protected byte[] parse(byte[] bytes, Metadata metadata, AtomicInteger unknownFilenameCount)
             throws IOException, TikaException {
-        ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+        UnsynchronizedByteArrayInputStream is = new UnsynchronizedByteArrayInputStream(bytes);
         long version = readUInt(is);
         metadata.add(RTFMetadata.EMB_APP_VERSION, Long.toString(version));
 
@@ -119,7 +119,7 @@ class RTFObjDataParser {
             //simple bitmap bytes
             return embObjBytes;
         } else {
-            ByteArrayInputStream embIs = new ByteArrayInputStream(embObjBytes);
+            UnsynchronizedByteArrayInputStream embIs = new UnsynchronizedByteArrayInputStream(embObjBytes);
             boolean hasPoifs = false;
             try {
                 hasPoifs = hasPOIFSHeader(embIs);
@@ -155,7 +155,7 @@ class RTFObjDataParser {
 
             if (root.hasEntry("Package")) {
                 Entry ooxml = root.getEntry("Package");
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                UnsynchronizedByteArrayOutputStream out = new UnsynchronizedByteArrayOutputStream();
                 try (BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb * 1024,
                         new DocumentInputStream((DocumentEntry) ooxml))) {
                     IOUtils.copy(bis, out);
@@ -191,7 +191,7 @@ class RTFObjDataParser {
                     }
                 } else {
 
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    UnsynchronizedByteArrayOutputStream out = new UnsynchronizedByteArrayOutputStream();
                     is.reset();
                     BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb * 1024, is);
                     IOUtils.copy(is, out);
@@ -217,7 +217,7 @@ class RTFObjDataParser {
     private byte[] handlePackage(byte[] pkgBytes, Metadata metadata)
             throws IOException, TikaException {
         //now parse the package header
-        ByteArrayInputStream is = new ByteArrayInputStream(pkgBytes);
+        UnsynchronizedByteArrayInputStream is = new UnsynchronizedByteArrayInputStream(pkgBytes);
         readUShort(is);
 
         String displayName = readAnsiString(is);

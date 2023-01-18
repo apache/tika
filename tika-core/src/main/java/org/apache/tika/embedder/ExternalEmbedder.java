@@ -18,7 +18,6 @@ package org.apache.tika.embedder;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -404,7 +404,7 @@ public class ExternalEmbedder implements Embedder {
             process = Runtime.getRuntime().exec(cmd.toArray(new String[]{}));
         }
 
-        ByteArrayOutputStream stdErrOutputStream = new ByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream stdErrOutputStream = new UnsynchronizedByteArrayOutputStream();
 
         try {
             sendStdErrToOutputStream(process, stdErrOutputStream);

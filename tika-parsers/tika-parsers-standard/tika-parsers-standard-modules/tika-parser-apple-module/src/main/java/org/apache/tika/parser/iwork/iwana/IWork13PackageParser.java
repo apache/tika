@@ -19,24 +19,38 @@ package org.apache.tika.parser.iwork.iwana;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import com.dd.plist.NSArray;
+import com.dd.plist.NSDictionary;
+import com.dd.plist.NSObject;
+import com.dd.plist.PropertyListParser;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 public class IWork13PackageParser extends AbstractParser {
 
@@ -44,10 +58,19 @@ public class IWork13PackageParser extends AbstractParser {
      * All iWork 13 files contain this, so we can detect based on it
      */
     public final static String IWORK13_COMMON_ENTRY = "Metadata/BuildVersionHistory.plist";
+
+    public static final String IWORKS_PREFIX = "iworks:";
+    public static final Property IWORKS_DOC_ID =
+            Property.externalText(IWORKS_PREFIX + "document-id");
+    public static final Property IWORKS_BUILD_VERSION_HISTORY =
+            Property.externalTextBag(IWORKS_PREFIX + "build-version-history");
+
+
     private final static Set<MediaType> supportedTypes = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(IWork13DocumentType.KEYNOTE13.getType(),
                     IWork13DocumentType.NUMBERS13.getType(),
-                    IWork13DocumentType.PAGES13.getType())));
+                    IWork13DocumentType.PAGES13.getType(),
+                    IWork13DocumentType.UNKNOWN13.getType())));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -74,29 +97,172 @@ public class IWork13PackageParser extends AbstractParser {
         } else {
             zipStream = new ZipInputStream(stream);
         }
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
 
-        // For now, just detect
         MediaType type = null;
         if (zipFile != null) {
-            Enumeration<? extends ZipEntry> entries = zipFile.getEntries();
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
-                if (type == null) {
-                    type = IWork13DocumentType.detectIfPossible(entry);
-                }
-            }
-        } else {
-            ZipEntry entry = zipStream.getNextEntry();
-            while (entry != null) {
-                if (type == null) {
-                    type = IWork13DocumentType.detectIfPossible(entry);
-                }
-                entry = zipStream.getNextEntry();
-            }
+            type = processZipFile(zipFile, metadata, xhtml, context);
+        } else if (zipStream != null) {
+            type = processZipStream(zipStream, metadata, xhtml, context);
         }
         if (type != null) {
-            metadata.add(Metadata.CONTENT_TYPE, type.toString());
+            if (type == IWork13DocumentType.UNKNOWN13.getType()) {
+                type = guessTypeByExtension(metadata);
+            }
+            metadata.set(Metadata.CONTENT_TYPE, type.toString());
         }
+        xhtml.endDocument();
+
+    }
+
+    private MediaType processZipStream(ZipInputStream zipStream, Metadata metadata,
+                                       XHTMLContentHandler xhtml, ParseContext parseContext)
+            throws TikaException, IOException, SAXException {
+        MediaType type = null;
+        ZipEntry entry = zipStream.getNextEntry();
+        EmbeddedDocumentExtractor embeddedDocumentExtractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
+        while (entry != null) {
+            if (type == null) {
+                type = IWork13DocumentType.detectIfPossible(entry);
+            }
+            processZipEntry(entry, new CloseShieldInputStream(zipStream), metadata, xhtml,
+                    parseContext,
+                    embeddedDocumentExtractor);
+            entry = zipStream.getNextEntry();
+        }
+        return type;
+    }
+
+    private MediaType processZipFile(ZipFile zipFile, Metadata metadata,
+                                     XHTMLContentHandler xhtml, ParseContext parseContext) throws TikaException {
+        MediaType type = null;
+        EmbeddedDocumentExtractor embeddedDocumentExtractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
+
+        Enumeration<? extends ZipArchiveEntry> entries = zipFile.getEntries();
+        Exception ex = null;
+        while (entries.hasMoreElements()) {
+            ZipArchiveEntry entry = entries.nextElement();
+
+            if (type == null) {
+                type = IWork13DocumentType.detectIfPossible(entry);
+            }
+            try (InputStream is = zipFile.getInputStream(entry)) {
+                processZipEntry(entry, is, metadata, xhtml, parseContext, embeddedDocumentExtractor);
+            } catch (SecurityException e) {
+                throw e;
+            } catch (Exception e) {
+                ex = e;
+            }
+        }
+        if (ex != null) {
+            throw new TikaException("problem processing zip file", ex);
+        }
+        return type;
+    }
+
+    private void processZipEntry(ZipEntry entry,
+                                 InputStream inputStream,
+                                 Metadata metadata, XHTMLContentHandler xhtml,
+                                 ParseContext parseContext,
+                                 EmbeddedDocumentExtractor embeddedDocumentExtractor)
+            throws TikaException, IOException, SAXException {
+        String streamName = entry.getName();
+        if (streamName == null) {
+            return;
+        }
+        if ("Metadata/Properties.plist".equals(streamName)) {
+            extractProperties(inputStream, metadata);
+        } else if ("Metadata/BuildVersionHistory.plist".equals(streamName)) {
+            extractVersionHistory(inputStream, metadata);
+        } else if ("Metadata/DocumentIdentifier".equals(streamName)) {
+            extractDocumentIdentifier(inputStream, metadata);
+        } else if ("preview.jpg".equals(streamName)) {
+            //process thumbnail
+            Metadata embeddedMetadata = new Metadata();
+            embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                    TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+            embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, streamName);
+            handleEmbedded(inputStream, embeddedMetadata, xhtml, embeddedDocumentExtractor);
+        } else if (streamName.equals("preview-micro.jpg") ||
+                streamName.equals("preview-web.jpg")
+                || streamName.endsWith(".iwa")) {
+            //do nothing
+        } else {
+            Metadata embeddedMetadata = new Metadata();
+            embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, streamName);
+            handleEmbedded(inputStream, embeddedMetadata, xhtml, embeddedDocumentExtractor);
+        }
+    }
+
+
+
+    private void handleEmbedded(InputStream inputStream, Metadata embeddedMetadata,
+                                XHTMLContentHandler xhtml,
+                                EmbeddedDocumentExtractor embeddedDocumentExtractor)
+            throws IOException, SAXException {
+        if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+            embeddedDocumentExtractor.parseEmbedded(inputStream, xhtml, embeddedMetadata, true);
+        }
+    }
+
+    private void extractVersionHistory(InputStream inputStream, Metadata metadata) throws TikaException {
+        try {
+            NSObject rootObj = PropertyListParser.parse(inputStream);
+            if (rootObj instanceof NSArray) {
+                for (NSObject obj : ((NSArray)rootObj).getArray()) {
+                    metadata.add(IWORKS_BUILD_VERSION_HISTORY, obj.toString());
+                }
+            }
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new TikaException("problem with plist", e);
+        }
+
+    }
+
+    private void extractProperties(InputStream inputStream, Metadata metadata) throws TikaException {
+        try {
+            NSObject rootObj = PropertyListParser.parse(inputStream);
+            if (rootObj instanceof NSDictionary) {
+                NSDictionary dict = (NSDictionary)rootObj;
+                for (String k : dict.keySet()) {
+                    String v = dict.get(k).toString();
+                    metadata.set(IWORKS_PREFIX + k, v);
+                }
+            }
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new TikaException("problem with plist", e);
+        }
+    }
+
+    private void extractDocumentIdentifier(InputStream inputStream, Metadata metadata)
+            throws IOException {
+        byte[] bytes = new byte[36];
+        int read = IOUtils.read(inputStream, bytes);
+        if (read == 36) {
+            metadata.set(IWORKS_DOC_ID, new String(bytes, StandardCharsets.ISO_8859_1));
+        }
+    }
+
+    private MediaType guessTypeByExtension(Metadata metadata) {
+
+        String fName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        if (fName == null) {
+            return IWork13DocumentType.UNKNOWN13.getType();
+        } else if (fName.toLowerCase(Locale.US).endsWith(".numbers")) {
+            return IWork13DocumentType.NUMBERS13.getType();
+        } else if (fName.toLowerCase(Locale.US).endsWith(".pages")) {
+            return IWork13DocumentType.PAGES13.getType();
+        } else if (fName.toLowerCase(Locale.US).endsWith(".key")) {
+            return IWork13DocumentType.KEYNOTE13.getType();
+        }
+        return IWork13DocumentType.UNKNOWN13.getType();
     }
 
     public enum IWork13DocumentType {

@@ -312,6 +312,10 @@ public class ID3v2Frame implements MP3Frame {
         return new String(data, offset, length, ISO_8859_1);
     }
 
+    public static int getMaxRecordSize() {
+        return MAX_RECORD_SIZE;
+    }
+
     public int getMajorVersion() {
         return majorVersion;
     }

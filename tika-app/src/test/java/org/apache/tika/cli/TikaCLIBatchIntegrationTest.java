@@ -18,10 +18,10 @@
 package org.apache.tika.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -34,9 +34,9 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -56,7 +56,7 @@ public class TikaCLIBatchIntegrationTest {
     private ByteArrayOutputStream errBuffer = null;
     private Path configFile = null;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         tempOutputDir = Files.createTempDirectory("tika-cli-test-batch-");
         outBuffer = new ByteArrayOutputStream();
@@ -76,7 +76,7 @@ public class TikaCLIBatchIntegrationTest {
                 configFile, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         System.setOut(new PrintStream(out, true, UTF_8.name()));
         System.setErr(new PrintStream(err, true, UTF_8.name()));
@@ -98,7 +98,7 @@ public class TikaCLIBatchIntegrationTest {
         String[] params = {
                 "-i", testInputDirForCommandLine,
                 "-o", tempOutputDirForCommandLine,
-                "--config="+configFile.toAbsolutePath().toString()};
+                "--config=" + configFile.toAbsolutePath().toString() };
         TikaCLI.main(params);
         assertFileExists(tempOutputDir.resolve("bad_xml.xml.xml"));
         assertFileExists(tempOutputDir.resolve("coffee.xls.xml"));
@@ -199,7 +199,8 @@ public class TikaCLIBatchIntegrationTest {
     }
 
     private void assertFileExists(Path path) {
-        assertTrue("File doesn't exist: " + path.toAbsolutePath(), Files.isRegularFile(path));
+        assertTrue(Files.isRegularFile(path),
+                "File doesn't exist: " + path.toAbsolutePath());
     }
 
 }

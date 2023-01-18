@@ -36,11 +36,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +61,8 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
     private static final String FETCHER_NAME = "fsf";
     private static FetchEmitTuple.ON_PARSE_EXCEPTION ON_PARSE_EXCEPTION =
             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
+
+    @TempDir
     private static Path TMP_DIR;
     private static Path TMP_OUTPUT_DIR;
     private static String TIKA_CONFIG_XML;
@@ -75,7 +77,6 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
 
     @BeforeAll
     public static void setUpBeforeClass() throws Exception {
-        TMP_DIR = Files.createTempDirectory("tika-emitter-test-");
         Path inputDir = TMP_DIR.resolve("input");
         TMP_OUTPUT_DIR = TMP_DIR.resolve("output");
         Files.createDirectories(inputDir);
@@ -101,34 +102,27 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         TIKA_CONFIG_XML =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
                         "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                        "<params>" + "<name>" + FETCHER_NAME +
-                        "</name>" + "<basePath>" +
-                        inputDir.toAbsolutePath() + "</basePath>" + "</params>" + "</fetcher>" +
+                        "<name>" + FETCHER_NAME + "</name>" +
+                        "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</fetcher>" +
                         "</fetchers>" + "<emitters>" +
                         "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
-                        "<params>" + "<name>" + EMITTER_NAME +
-                        "</name>" +
-
+                        "<name>" + EMITTER_NAME + "</name>" +
                         "<basePath>" +
-                        TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</params>" +
+                        TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" +
                         "</emitter>" +
                         "</emitters>" +
-                        "<server><params><endpoints><endpoint>async</endpoint></endpoints>" +
-                        "<enableUnsecureFeatures>true</enableUnsecureFeatures></params></server>" +
-                        "<async><params><tikaConfig>" +
+                        "<server><endpoints><endpoint>async</endpoint></endpoints>" +
+                        "<enableUnsecureFeatures>true</enableUnsecureFeatures></server>" +
+                        "<async><tikaConfig>" +
                         ProcessUtils.escapeCommandLine(TIKA_CONFIG.toAbsolutePath().toString()) +
                         "</tikaConfig><numClients>10</numClients><forkedJvmArgs><arg>-Xmx256m" +
                         "</arg></forkedJvmArgs><timeoutMillis>5000</timeoutMillis>" +
-                        "</params></async>" +
+                        "</async>" +
                         "</properties>";
 
         FileUtils.write(TIKA_CONFIG.toFile(), TIKA_CONFIG_XML, UTF_8);
     }
 
-    @AfterAll
-    public static void tearDownAfterClass() throws Exception {
-        FileUtils.deleteDirectory(TMP_DIR.toFile());
-    }
 
     @BeforeEach
     public void setUpEachTest() throws Exception {

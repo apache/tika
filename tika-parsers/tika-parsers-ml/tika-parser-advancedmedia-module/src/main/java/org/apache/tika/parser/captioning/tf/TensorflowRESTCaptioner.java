@@ -17,7 +17,6 @@
 
 package org.apache.tika.parser.captioning.tf;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -32,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -138,7 +138,7 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
 
             HttpPost request = new HttpPost(getApiUri(metadata));
 
-            try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream()) {
+            try (UnsynchronizedByteArrayOutputStream byteStream = new UnsynchronizedByteArrayOutputStream()) {
                 //TODO: convert this to stream, this might cause OOM issue
                 // InputStreamEntity is not working
                 // request.setEntity(new InputStreamEntity(stream, -1));

@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>2.2.2-SNAPSHOT</version>
+    <version>2.6.1-SNAPSHOT</version>
     <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -36,6 +36,7 @@
 
   <modules>
     <module>tika-parent</module>
+    <module>tika-bom</module>
     <module>tika-core</module>
     <module>tika-serialization</module>
     <module>tika-parsers</module>
@@ -43,8 +44,8 @@
     <module>tika-xmp</module>
     <module>tika-batch</module>
     <module>tika-langdetect</module>
-    <module>tika-app</module>
     <module>tika-pipes</module>
+    <module>tika-app</module>
     <module>tika-server</module>
     <module>tika-integration-tests</module>
     <module>tika-eval</module>
@@ -52,6 +53,7 @@
     <module>tika-translate</module>
     <module>tika-example</module>
     <module>tika-java7</module>
+    <module>tika-detectors</module>
   </modules>
 
   <profiles>
@@ -95,7 +97,7 @@
                 </goals>
                 <phase>deploy</phase>
                 <configuration>
-                  <tasks>
+                  <target>
                     <mkdir dir="${basedir}/target/${project.version}" />
                     <copy todir="${basedir}/target/${project.version}" flatten="true">
                       <fileset dir="${basedir}">
@@ -159,7 +161,7 @@ least three +1 Tika PMC votes are cast.
                       file://${basedir}/target/vote.txt
                     </echo>
                     <echo />
-                  </tasks>
+                  </target>
                 </configuration>
               </execution>
             </executions>
@@ -188,6 +190,7 @@ least three +1 Tika PMC votes are cast.
             <exclude>README.md</exclude>
             <!-- remove this once we figure out the bundle packaging -->
             <exclude>tika-bundle/src/main/resources/META-INF/MANIFEST.MF</exclude>
+            <exclude>.gitattributes</exclude>
           </excludes>
         </configuration>
       </plugin>

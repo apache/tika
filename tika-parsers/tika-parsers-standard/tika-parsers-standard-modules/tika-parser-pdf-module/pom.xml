@@ -21,7 +21,7 @@
   <parent>
     <artifactId>tika-parsers-standard-modules</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>2.2.2-SNAPSHOT</version>
+    <version>2.6.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -45,6 +45,12 @@
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox-tools</artifactId>
       <version>${pdfbox.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.pdfbox</groupId>
+          <artifactId>pdfbox-debugger</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
@@ -56,13 +62,11 @@
          problems with encrypted PDFs. -->
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcmail-jdk15on</artifactId>
-      <version>${bouncycastle.version}</version>
+      <artifactId>bcmail-jdk18on</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-jdk15on</artifactId>
-      <version>${bouncycastle.version}</version>
+      <artifactId>bcprov-jdk18on</artifactId>
     </dependency>
     <!-- for java 10
        See TIKA-2778 for why we need to do this now.
@@ -72,7 +76,26 @@
     <dependency>
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
-      <version>${jaxb.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.jai-imageio</groupId>
+      <artifactId>jai-imageio-core</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

@@ -151,4 +151,8 @@ public class WordPerfectParser extends AbstractParser {
     public void setIncludeDeletedContent(boolean includeDeletedContent) {
         this.includeDeletedContent = includeDeletedContent;
     }
+
+    public boolean isIncludeDeletedContent() {
+        return includeDeletedContent;
+    }
 }

@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,50 +17,45 @@
 
 package org.apache.tika.language.translate.impl;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.Locale;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import org.apache.tika.language.translate.impl.RTGTranslator;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 
 /**
  * Test harness for the {@link RTGTranslator}.
- * 
  */
 public class RTGTranslatorTest {
 
-	private RTGTranslator translator;
+    private RTGTranslator translator;
 
 
-	@Before
-	public void setUp() {
-		translator = new RTGTranslator();
-	}
+    @BeforeEach
+    public void setUp() {
+        translator = new RTGTranslator();
+    }
 
-	@Test
-	public void testSimpleTranslate() {
-		String source = "hola señor";
-		String expected = "hello, sir.";
+    @Test
+    public void testSimpleTranslate() {
+        assumeTrue(translator.isAvailable());
+        String source = "hola señor";
+        String expected = "hello, sir.";
 
-		String result = null;
-		if (translator.isAvailable()) {
-			try {
-				result = translator.translate(source);
-				assertNotNull(result);
-				assertEquals("Result: [" + result
-						+ "]: not equal to expected: [" + expected + "]",
-					     expected, result.toLowerCase(Locale.getDefault()));
-			} catch (Exception e) {
-				e.printStackTrace();
-				fail(e.getMessage());
-			}
-		}
-	}
-
+        String result = null;
+        try {
+            result = translator.translate(source);
+            assertNotNull(result);
+            assertEquals(expected, result.toLowerCase(Locale.getDefault()),
+                    "Result: [" + result + "]: not equal to expected: [" + expected + "]");
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail(e.getMessage());
+        }
+    }
 }

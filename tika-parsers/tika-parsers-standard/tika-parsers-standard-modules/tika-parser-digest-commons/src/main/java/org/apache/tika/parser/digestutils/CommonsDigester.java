@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.apache.commons.codec.binary.Base32;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -135,8 +136,10 @@ public class CommonsDigester extends CompositeDigester {
                     encoder = new HexEncoder();
                 } else if (parts[1].equals("32")) {
                     encoder = new Base32Encoder();
+                } else if (parts[1].equals("64")) {
+                    encoder = new Base64Encoder();
                 } else {
-                    throw new IllegalArgumentException("Value must be '16' or '32'");
+                    throw new IllegalArgumentException("Value must be '16', '32' or '64'");
                 }
             } else {
                 encoder = new HexEncoder();
@@ -180,6 +183,13 @@ public class CommonsDigester extends CompositeDigester {
         @Override
         public String encode(byte[] bytes) {
             return new Base32().encodeToString(bytes);
+        }
+    }
+
+    private static class Base64Encoder implements DigestingParser.Encoder {
+        @Override
+        public String encode(byte[] bytes) {
+            return new Base64().encodeToString(bytes);
         }
     }
 }

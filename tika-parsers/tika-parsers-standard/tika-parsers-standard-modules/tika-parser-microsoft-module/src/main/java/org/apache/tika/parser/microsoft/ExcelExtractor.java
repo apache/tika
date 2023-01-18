@@ -192,7 +192,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         for (Entry entry : root) {
             if (entry.getName().startsWith("MBD") && entry instanceof DirectoryEntry) {
                 try {
-                    handleEmbeddedOfficeDoc((DirectoryEntry) entry, xhtml);
+                    handleEmbeddedOfficeDoc((DirectoryEntry) entry, xhtml, true);
                 } catch (TikaException e) {
                     // ignore parse errors from embedded documents
                 }

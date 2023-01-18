@@ -46,7 +46,7 @@ public class JsonFetchEmitTupleTest {
                 new EmitKey("my_emitter", "emitKey1"), m,
                 new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
                         HandlerConfig.PARSE_MODE.CONCATENATE,
-                        10000,10),
+                        10000,10, true),
                 FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
@@ -69,7 +69,7 @@ public class JsonFetchEmitTupleTest {
                 new EmitKey("my_emitter", "emitKey1"), m,
                 new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
                         HandlerConfig.PARSE_MODE.CONCATENATE,
-                        10000,10),
+                        10000,10, true),
                 FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);

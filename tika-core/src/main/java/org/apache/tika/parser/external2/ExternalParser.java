@@ -68,11 +68,9 @@ public class ExternalParser extends AbstractParser implements Initializable {
 
     public static final long DEFAULT_TIMEOUT_MS = 60000;
 
-    public static final String INPUT_FILE_TOKEN =
-            org.apache.tika.parser.external.ExternalParser.INPUT_FILE_TOKEN;
+    public static final String INPUT_FILE_TOKEN = "${INPUT_FILE}";
 
-    public static final String OUTPUT_FILE_TOKEN =
-            org.apache.tika.parser.external.ExternalParser.OUTPUT_FILE_TOKEN;
+    public static final String OUTPUT_FILE_TOKEN = "${OUTPUT_FILE}";
 
     private static Pattern INPUT_TOKEN_MATCHER = Pattern.compile("\\$\\{INPUT_FILE}");
     private static Pattern OUTPUT_TOKEN_MATCHER = Pattern.compile("\\$\\{OUTPUT_FILE}");
@@ -106,7 +104,7 @@ public class ExternalParser extends AbstractParser implements Initializable {
         //this may remain null, depending on whether the external parser writes to a file
         Path outFile = null;
         try (TemporaryResources tmp = new TemporaryResources()) {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             Path p = tis.getPath();
             List<String> thisCommandLine = new ArrayList<>();
             Matcher inputMatcher = INPUT_TOKEN_MATCHER.matcher("");
@@ -114,14 +112,13 @@ public class ExternalParser extends AbstractParser implements Initializable {
             boolean outputFileInCommandline = false;
             for (String c : commandLine) {
                 if (inputMatcher.reset(c).find()) {
-                    String updated =
-                            inputMatcher.replaceAll(ProcessUtils.escapeCommandLine(p.toAbsolutePath().toString()));
+                    String updated = c.replace(INPUT_FILE_TOKEN,
+                            ProcessUtils.escapeCommandLine(p.toAbsolutePath().toString()));
                     thisCommandLine.add(updated);
                 } else if (outputMatcher.reset(c).find()) {
                     outFile = Files.createTempFile("tika-external2-", "");
-                    String updated =
-                            outputMatcher.replaceAll(ProcessUtils.escapeCommandLine(
-                                    outFile.toAbsolutePath().toString()));
+                    String updated = c.replace(OUTPUT_FILE_TOKEN,
+                            ProcessUtils.escapeCommandLine(outFile.toAbsolutePath().toString()));
                     thisCommandLine.add(updated);
                     outputFileInCommandline = true;
                 } else {

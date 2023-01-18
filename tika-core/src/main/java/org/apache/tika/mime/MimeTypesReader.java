@@ -16,7 +16,6 @@
  */
 package org.apache.tika.mime;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -36,6 +35,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
 
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -254,7 +254,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
 
     @Override
     public InputSource resolveEntity(String publicId, String systemId) {
-        return new InputSource(new ByteArrayInputStream(new byte[0]));
+        return new InputSource(new UnsynchronizedByteArrayInputStream(new byte[0]));
     }
 
     @Override

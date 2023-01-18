@@ -22,8 +22,6 @@ import static org.apache.tika.pipes.PipesServer.STATUS.READY;
 import static org.apache.tika.pipes.PipesServer.STATUS.lookup;
 import static org.apache.tika.pipes.PipesServer.TIMEOUT_EXIT_CODE;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -41,10 +39,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
@@ -147,7 +146,7 @@ public class PipesClient implements Closeable {
         long start = System.currentTimeMillis();
         FutureTask<PipesResult> futureTask = new FutureTask<>(() -> {
 
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
             try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
                 objectOutputStream.writeObject(t);
             }
@@ -167,7 +166,10 @@ public class PipesClient implements Closeable {
                 throw new InterruptedException("thread interrupt");
             }
             PipesResult result = readResults(t, start);
-            LOG.info("finished reading result ");
+            if (LOG.isDebugEnabled()) {
+                long elapsed = System.currentTimeMillis() - readStart;
+                LOG.debug("finished reading result in {} ms", elapsed);
+            }
 
             if (LOG.isTraceEnabled()) {
                 LOG.trace("pipesClientId={}: timer -- read result: {} ms",
@@ -289,13 +291,13 @@ public class PipesClient implements Closeable {
                 return readMessage(PipesResult.STATUS.FETCH_EXCEPTION);
             case PARSE_SUCCESS:
                 //there may have been a parse exception, but the parse didn't crash
-                LOG.info("pipesClientId={} parse success: {} in {} ms", pipesClientId, t.getId(),
+                LOG.debug("pipesClientId={} parse success: {} in {} ms", pipesClientId, t.getId(),
                         millis);
                 return deserializeEmitData();
             case PARSE_EXCEPTION_NO_EMIT:
                 return readMessage(PipesResult.STATUS.PARSE_EXCEPTION_NO_EMIT);
             case EMIT_SUCCESS:
-                LOG.info("pipesClientId={} emit success: {} in {} ms", pipesClientId, t.getId(),
+                LOG.debug("pipesClientId={} emit success: {} in {} ms", pipesClientId, t.getId(),
                         millis);
                 return PipesResult.EMIT_SUCCESS;
             case EMIT_SUCCESS_PARSE_EXCEPTION:
@@ -328,10 +330,10 @@ public class PipesClient implements Closeable {
         byte[] bytes = new byte[length];
         input.readFully(bytes);
         try (ObjectInputStream objectInputStream = new ObjectInputStream(
-                new ByteArrayInputStream(bytes))) {
+                new UnsynchronizedByteArrayInputStream(bytes))) {
             EmitData emitData = (EmitData) objectInputStream.readObject();
 
-            String stack = getStack(emitData);
+            String stack = emitData.getContainerStackTrace();
             if (StringUtils.isBlank(stack)) {
                 return new PipesResult(emitData);
             } else {
@@ -344,15 +346,9 @@ public class PipesClient implements Closeable {
         }
     }
 
-    private String getStack(EmitData emitData) {
-        if (emitData.getMetadataList() == null || emitData.getMetadataList().size() < 1) {
-            return StringUtils.EMPTY;
-        }
-        return emitData.getMetadataList().get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
-    }
-
     private void restart() throws IOException, InterruptedException, TimeoutException {
         if (process != null) {
+            LOG.debug("process still alive; trying to destroy it");
             destroyForcibly();
             boolean processEnded = process.waitFor(30, TimeUnit.SECONDS);
             if (! processEnded) {
@@ -376,13 +372,19 @@ public class PipesClient implements Closeable {
         }
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        process = pb.start();
 
+        try {
+            process = pb.start();
+        } catch (Exception e) {
+            //Do we ever want this to be not fatal?!
+            LOG.error("failed to start client", e);
+            throw new FailedToStartClientException(e);
+        }
         input = new DataInputStream(process.getInputStream());
         output = new DataOutputStream(process.getOutputStream());
 
         //wait for ready signal
-        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
         FutureTask<Integer> futureTask = new FutureTask<>(() -> {
             int b = input.read();
             int read = 1;
@@ -405,7 +407,7 @@ public class PipesClient implements Closeable {
             }
             if (bos.size() > 0) {
                 LOG.warn("pipesClientId={}: From forked process before start byte: {}",
-                        pipesClientId, new String(bos.toByteArray(), StandardCharsets.UTF_8));
+                        pipesClientId, bos.toString(StandardCharsets.UTF_8));
             }
             return 1;
         });
@@ -425,7 +427,7 @@ public class PipesClient implements Closeable {
             LOG.error("pipesClientId={} didn't receive ready byte from server within " +
                             "StartupTimeoutMillis {}; ms elapsed {}; did read >{}<",
                     pipesClientId, pipesConfig.getStartupTimeoutMillis(),
-                    elapsed, new String(bos.toByteArray(), StandardCharsets.UTF_8));
+                    elapsed, bos.toString(StandardCharsets.UTF_8));
             destroyForcibly();
             throw e;
         } finally {
@@ -433,8 +435,8 @@ public class PipesClient implements Closeable {
         }
     }
 
-    private static String getMsg(String msg, ByteArrayOutputStream bos) {
-        String readSoFar = new String(bos.toByteArray(), StandardCharsets.UTF_8);
+    private static String getMsg(String msg, UnsynchronizedByteArrayOutputStream bos) {
+        String readSoFar = bos.toString(StandardCharsets.UTF_8);
         if (StringUtils.isBlank(readSoFar)) {
             return msg;
         } else {

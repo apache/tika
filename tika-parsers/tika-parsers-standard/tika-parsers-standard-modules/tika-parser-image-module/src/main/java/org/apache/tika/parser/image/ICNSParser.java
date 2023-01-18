@@ -65,6 +65,8 @@ public class ICNSParser extends AbstractParser {
         image_length -= 8;//for the bytes read so far
         if (image_length > MAX_IMAGE_LENGTH_BYTES) {
             throw new TikaMemoryLimitException(image_length, MAX_IMAGE_LENGTH_BYTES);
+        } else if (image_length < 0) {
+            throw new TikaException("image length must be >= 0");
         }
 
         byte[] full_file = new byte[image_length];

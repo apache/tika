@@ -306,9 +306,7 @@ public class ChmCommons {
         if (newLength < 0) {
             throw new IllegalArgumentException(from + " > " + to);
         }
-        if (to > original.length) {
-            throw new TikaException("can't copy beyond array length");
-        }
+
         byte[] copy = new byte[newLength];
         System.arraycopy(original, from, copy, 0, Math.min(original.length - from, newLength));
         return copy;
@@ -323,6 +321,9 @@ public class ChmCommons {
         }
         if (to < 0) {
             throw new IllegalArgumentException(to + " should be > 0");
+        }
+        if (to > original.length) {
+            throw new IllegalArgumentException("can't copy beyond array length");
         }
     }
 

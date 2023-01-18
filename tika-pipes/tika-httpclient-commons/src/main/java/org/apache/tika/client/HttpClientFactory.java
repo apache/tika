@@ -88,6 +88,8 @@ import org.apache.tika.utils.StringUtils;
 public class HttpClientFactory {
 
     public static final String AES_ENV_VAR = "AES_KEY";
+
+    private static final String CIPHER_TYPE = "AES/GCM/PKCS5Padding";
     private static final Logger LOG = LoggerFactory.getLogger(HttpClientFactory.class);
 
     private AES aes = null;
@@ -425,17 +427,16 @@ public class HttpClientFactory {
 
     private static class AES {
         private final SecretKeySpec secretKey;
-        private byte[] key;
 
         private AES() throws TikaConfigException {
             secretKey = setKey(System.getenv(AES_ENV_VAR));
         }
 
-        private SecretKeySpec setKey(String myKey) throws TikaConfigException {
-            MessageDigest sha = null;
+        private static SecretKeySpec setKey(String myKey) throws TikaConfigException {
+            //TODO: sha-256?
             try {
-                key = myKey.getBytes(StandardCharsets.UTF_8);
-                sha = MessageDigest.getInstance("SHA-1");
+                byte[] key = myKey.getBytes(StandardCharsets.UTF_8);
+                MessageDigest sha = MessageDigest.getInstance("SHA-1");
                 key = sha.digest(key);
                 key = Arrays.copyOf(key, 16);
                 return new SecretKeySpec(key, "AES");
@@ -446,7 +447,7 @@ public class HttpClientFactory {
 
         public String encrypt(String strToEncrypt) throws TikaConfigException {
             try {
-                Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+                Cipher cipher = Cipher.getInstance(CIPHER_TYPE);
                 cipher.init(Cipher.ENCRYPT_MODE, secretKey);
                 return Base64.getEncoder().encodeToString(
                         cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
@@ -458,7 +459,7 @@ public class HttpClientFactory {
 
         public String decrypt(String strToDecrypt) throws TikaConfigException {
             try {
-                Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
+                Cipher cipher = Cipher.getInstance(CIPHER_TYPE);
                 cipher.init(Cipher.DECRYPT_MODE, secretKey);
                 return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)),
                         StandardCharsets.UTF_8);

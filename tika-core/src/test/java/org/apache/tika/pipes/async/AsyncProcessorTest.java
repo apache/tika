@@ -27,10 +27,9 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.FetchEmitTuple;
@@ -60,8 +59,15 @@ public class AsyncProcessorTest {
             "<system_exit/>" + "</mock>";
 
     private final int totalFiles = 100;
+
     private Path tikaConfigPath;
+
+    @TempDir
     private Path inputDir;
+
+    @TempDir
+    private Path configDir;
+
     private int ok = 0;
     private int oom = 0;
     private int timeouts = 0;
@@ -70,23 +76,22 @@ public class AsyncProcessorTest {
 
     @BeforeEach
     public void setUp() throws SQLException, IOException {
-        inputDir = Files.createTempDirectory("tika-async-");
-        tikaConfigPath = Files.createTempFile("tika-config-", ".xml");
+        tikaConfigPath = Files.createTempFile(configDir, "tika-config-", ".xml");
         String xml =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<properties>" + "  <emitters>" +
                 "  <emitter class=\"org.apache.tika.pipes.async.MockEmitter\">\n" +
-                "    <params>\n" + "      <name>mock</name>\n" + "    </params>" + "  </emitter>" +
+                "         <name>mock</name>\n" + "  </emitter>" +
                 "  </emitters>" + "  <fetchers>" +
                 "    <fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                "      <params><name>mock</name>\n" + "      <basePath>" +
+                "      <name>mock</name>\n" + "      <basePath>" +
                 ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString()) +
-                "</basePath></params>\n" + "    </fetcher>" + "  </fetchers>" +
-                        "<async><params><tikaConfig>" +
+                "</basePath>\n" + "    </fetcher>" + "  </fetchers>" +
+                        "<async><tikaConfig>" +
                         ProcessUtils.escapeCommandLine(tikaConfigPath.toAbsolutePath().toString()) +
                         "</tikaConfig><forkedJvmArgs><arg>-Xmx512m</arg" +
                         "></forkedJvmArgs><maxForEmitBatchBytes>1000000</maxForEmitBatchBytes>" +
                         "<timeoutMillis>5000</timeoutMillis>" +
-                        "<numClients>4</numClients></params></async>" +
+                        "<numClients>4</numClients></async>" +
                         "</properties>";
         Files.write(tikaConfigPath, xml.getBytes(StandardCharsets.UTF_8));
         Random r = new Random();
@@ -120,11 +125,6 @@ public class AsyncProcessorTest {
         }
     }
 */
-    @AfterEach
-    public void tearDown() throws SQLException, IOException {
-        Files.delete(tikaConfigPath);
-        FileUtils.deleteDirectory(inputDir.toFile());
-    }
 
     @Test
     public void testBasic() throws Exception {

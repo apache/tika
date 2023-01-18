@@ -16,14 +16,14 @@
  */
 package org.apache.tika.batch.fs;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.ParallelFileProcessingResult;
@@ -47,7 +47,7 @@ public class OutputStreamFactoryTest extends FSBatchTestBase {
                 illegalState = true;
             }
         }
-        assertTrue("Should have been an illegal state exception", illegalState);
+        assertTrue(illegalState, "Should have been an illegal state exception");
     }
 
     @Test

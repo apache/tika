@@ -87,6 +87,20 @@ public class RTFParserTest extends TikaTest {
         }
         assertEquals("C:\\Users\\tallison\\AppData\\Local\\Temp\\testJPEG_普林斯顿.jpg",
                 metadataList.get(46).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+        List<String> parsedByFullSet =
+                Arrays.asList(metadataList.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET));
+
+        assertContains("org.apache.tika.parser.DefaultParser", parsedByFullSet);
+        assertContains("org.apache.tika.parser.microsoft.rtf.RTFParser", parsedByFullSet);
+        assertContains("org.apache.tika.parser.microsoft.OfficeParser", parsedByFullSet);
+        assertContains("org.apache.tika.parser.microsoft.EMFParser", parsedByFullSet);
+        assertContains("org.apache.tika.parser.microsoft.WMFParser", parsedByFullSet);
+        assertContains("org.apache.tika.parser.csv.TextAndCSVParser", parsedByFullSet);
+        assertContains("org.apache.tika.parser.microsoft.ooxml.OOXMLParser", parsedByFullSet);
+        assertContains("org.apache.tika.parser.pkg.PackageParser", parsedByFullSet);
+        assertContains("org.apache.tika.parser.html.HtmlParser", parsedByFullSet);
+        assertContains("org.apache.tika.parser.image.JpegParser", parsedByFullSet);
+        assertContains("org.apache.tika.parser.pdf.PDFParser", parsedByFullSet);
     }
 
     //TIKA-1010 test regular (not "embedded") images/picts
@@ -120,8 +134,9 @@ public class RTFParserTest extends TikaTest {
         assertEquals("false", meta_jpg_exif.get(RTFMetadata.THUMBNAIL));
 
         //need flexibility for if tesseract is installed or not
-        assertTrue(meta_jpg.names().length >= 50 && meta_jpg.names().length <= 51);
-        assertTrue(meta_jpg_exif.names().length >= 109 && meta_jpg_exif.names().length <= 110);
+        //TODO -- fix this test.  It is too fragile.
+        assertTrue(meta_jpg.names().length >= 52 && meta_jpg.names().length <= 53);
+        assertTrue(meta_jpg_exif.names().length >= 111 && meta_jpg_exif.names().length <= 112);
     }
 
     private static class Pair {

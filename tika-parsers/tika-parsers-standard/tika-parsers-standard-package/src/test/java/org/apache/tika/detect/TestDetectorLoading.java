@@ -32,13 +32,11 @@ public class TestDetectorLoading {
         //integration test
         Detector detector = TikaConfig.getDefaultConfig().getDetector();
         List<Detector> detectors = ((CompositeDetector) detector).getDetectors();
-        assertEquals(7, detectors.size());
-        assertEquals("org.apache.tika.detect.OverrideDetector",
-                detectors.get(0).getClass().getName());
-        assertEquals("org.gagravarr.tika.OggDetector", detectors.get(1).getClass().getName());
+        assertEquals(6, detectors.size());
+        assertEquals("org.gagravarr.tika.OggDetector", detectors.get(0).getClass().getName());
 
         assertEquals("org.apache.tika.detect.microsoft.POIFSContainerDetector",
-                detectors.get(3).getClass().getName());
-        assertEquals("org.apache.tika.mime.MimeTypes", detectors.get(6).getClass().getName());
+                detectors.get(2).getClass().getName());
+        assertEquals("org.apache.tika.mime.MimeTypes", detectors.get(5).getClass().getName());
     }
 }

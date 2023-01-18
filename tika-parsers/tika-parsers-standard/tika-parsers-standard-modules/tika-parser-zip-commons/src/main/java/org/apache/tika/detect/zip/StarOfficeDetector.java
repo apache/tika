@@ -16,8 +16,6 @@
  */
 package org.apache.tika.detect.zip;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -26,6 +24,7 @@ import java.util.Map;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -34,7 +33,6 @@ import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.StoppingEarlyException;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -61,7 +59,7 @@ public class StarOfficeDetector implements ZipContainerDetector {
     static MediaType detectStarOfficeX(InputStream is) {
         StarOfficeXHandler handler = new StarOfficeXHandler();
         try {
-            XMLReaderUtils.parseSAX(is, new OfflineContentHandler(handler), new ParseContext());
+            XMLReaderUtils.parseSAX(is, handler, new ParseContext());
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
@@ -93,11 +91,11 @@ public class StarOfficeDetector implements ZipContainerDetector {
         //"as is" can cause the iteration of the entries to stop early
         //without exception or warning.  So, copy the full stream, then
         //process.  TIKA-3061
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
         BoundedInputStream bis = new BoundedInputStream(MAX_MANIFEST, zis);
         IOUtils.copy(bis, bos);
 
-        return detectStarOfficeX(new ByteArrayInputStream(bos.toByteArray()));
+        return detectStarOfficeX(bos.toInputStream());
 
     }
 

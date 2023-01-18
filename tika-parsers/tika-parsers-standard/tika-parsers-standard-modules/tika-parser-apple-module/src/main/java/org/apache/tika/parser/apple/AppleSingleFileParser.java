@@ -100,7 +100,7 @@ public class AppleSingleFileParser extends AbstractParser {
                 // stream to ensure that not more than contentFieldInfo.length bytes
                 // are read
                 ex.parseEmbedded(new CloseShieldInputStream(stream), xhtml, embeddedMetadata,
-                        false);
+                        true);
             }
         }
         xhtml.endDocument();

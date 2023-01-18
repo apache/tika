@@ -28,5 +28,10 @@
     <Root level="info">
       <AppenderRef ref="Console"/>
     </Root>
+    <!-- turn this off, we know richtext isn't supported -->
+    <Logger name="org.apache.poi.xssf.streaming.SXSSFCreationHelper" level="error">
+      <AppenderRef ref="Console"/>
+    </Logger>
+
   </Loggers>
 </Configuration>

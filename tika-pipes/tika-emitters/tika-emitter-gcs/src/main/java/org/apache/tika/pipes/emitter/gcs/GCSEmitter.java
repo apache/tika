@@ -18,7 +18,6 @@ package org.apache.tika.pipes.emitter.gcs;
 
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -33,6 +32,7 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,14 +74,15 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
         if (metadataList == null || metadataList.size() == 0) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
         }
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try (Writer writer = new OutputStreamWriter(bos, StandardCharsets.UTF_8)) {
-            JsonMetadataList.toJson(metadataList, writer);
-        } catch (IOException e) {
-            throw new TikaEmitterException("can't jsonify", e);
-        }
+        try (UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream()) {
+            try (Writer writer = new OutputStreamWriter(bos, StandardCharsets.UTF_8)) {
+                JsonMetadataList.toJson(metadataList, writer);
+            } catch (IOException e) {
+                throw new TikaEmitterException("can't jsonify", e);
+            }
 
-        write(emitKey, new Metadata(), bos.toByteArray());
+            write(emitKey, new Metadata(), bos.toByteArray());
+        }
 
     }
 
@@ -98,9 +99,10 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
         if (is instanceof TikaInputStream && ((TikaInputStream) is).hasFile()) {
             write(path, userMetadata, Files.readAllBytes(((TikaInputStream) is).getPath()));
         } else {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            IOUtils.copy(is, bos);
-            write(path, userMetadata, bos.toByteArray());
+            try (UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream()) {
+                IOUtils.copy(is, bos);
+                write(path, userMetadata, bos.toByteArray());
+            }
         }
     }
 

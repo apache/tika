@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 import java.util.Arrays;
@@ -55,6 +56,7 @@ import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.mime.MediaType;
@@ -65,6 +67,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
+import org.apache.tika.utils.ExceptionUtils;
 
 /**
  * Test case for parsing pdf files.
@@ -234,7 +237,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("true", metadata.get("pdf:encrypted"));
         //pdf:encrypted, X-Parsed-By and Content-Type
-        assertEquals(3, metadata.names().length, "very little metadata should be parsed");
+        assertEquals(4, metadata.names().length, "very little metadata should be parsed");
         assertEquals(0, handler.toString().length());
     }
 
@@ -658,7 +661,6 @@ public class PDFParserTest extends TikaTest {
         Set<String> versions = new HashSet<>(Arrays.asList(r.metadata.getValues("dc:format")));
 
         for (String hit : new String[]{"application/pdf; version=1.7",
-                "application/pdf; version=\"A-1b\"",
                 "application/pdf; version=\"1.7 Adobe Extension Level 8\""}) {
             assertTrue(versions.contains(hit), hit);
         }
@@ -713,7 +715,8 @@ public class PDFParserTest extends TikaTest {
         }
         assertEquals(2, inline);
         assertEquals(2, attach);
-
+        assertEquals(1, metadatas.get(1).getInt(TikaPagedText.PAGE_NUMBER));
+        assertEquals(66, metadatas.get(2).getInt(TikaPagedText.PAGE_NUMBER));
         //now try turning off inline
 
         context.set(org.apache.tika.extractor.DocumentSelector.class, new AvoidInlineSelector());
@@ -1210,6 +1213,15 @@ public class PDFParserTest extends TikaTest {
         assertContains("transport mined materials", xml);
     }
 
+    @Test
+    public void testAnglesOnPageRotation() throws Exception {
+        PDFParserConfig pdfParserConfig = new PDFParserConfig();
+        pdfParserConfig.setDetectAngles(true);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(PDFParserConfig.class, pdfParserConfig);
+        String xml = getXML("testPDF_rotated.pdf", parseContext).xml;
+        assertContains("until a further review indicates that the infrastructure", xml);
+    }
 
     @Test
     public void testUnmappedUnicodeStats() throws Exception {
@@ -1217,11 +1229,19 @@ public class PDFParserTest extends TikaTest {
         Metadata m = metadataList.get(0);
         int[] totalChars = m.getIntValues(PDF.CHARACTERS_PER_PAGE);
         int[] unmappedUnicodeChars = m.getIntValues(PDF.UNMAPPED_UNICODE_CHARS_PER_PAGE);
+        int totalUnmappedChars = m.getInt(PDF.TOTAL_UNMAPPED_UNICODE_CHARS);
+        float overallPercentage =
+                Float.parseFloat(m.get(PDF.OVERALL_PERCENTAGE_UNMAPPED_UNICODE_CHARS));
+
         //weird issue with pdfbox 2.0.20
         //this test passes in my IDE, but does not pass with mvn clean install from commandline
         if (totalChars[15] > 0) {
             assertEquals(3805, totalChars[15]);
             assertEquals(120, unmappedUnicodeChars[15]);
+            assertEquals(126, totalUnmappedChars);
+            assertEquals(0.00146, overallPercentage, 0.0001f);
+            assertTrue(Boolean.parseBoolean(m.get(PDF.CONTAINS_NON_EMBEDDED_FONT)));
+            assertFalse(Boolean.parseBoolean(m.get(PDF.CONTAINS_DAMAGED_FONT)));
         }
         //confirm all works with angles
         PDFParserConfig pdfParserConfig = new PDFParserConfig();
@@ -1355,7 +1375,32 @@ public class PDFParserTest extends TikaTest {
         assertEquals("application/x-shockwave-flash", metadata.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals("TestMovie02.swf", metadata.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("15036", metadata.get(1).get(Metadata.CONTENT_LENGTH));
+        assertEquals("RichMedia", metadata.get(0).getValues(PDF.ANNOTATION_SUBTYPES)[0]);
+        assertEquals("RM1", metadata.get(0).getValues(PDF.ANNOTATION_TYPES)[0]);
     }
+
+
+    @Test
+    public void testCustomGraphicsEngineFactory() throws Exception {
+        try (InputStream is =
+                     getResourceAsStream(
+                             "tika-config-custom-graphics-engine.xml")) {
+            assertNotNull(is);
+            TikaConfig tikaConfig = new TikaConfig(is);
+            Parser p = new AutoDetectParser(tikaConfig);
+            try {
+                List<Metadata> metadataList = getRecursiveMetadata("testPDF_JBIG2.pdf", p);
+                fail("should have thrown a runtime exception");
+            } catch (TikaException e) {
+                String stack = ExceptionUtils.getStackTrace(e);
+                assertContains("testing123", stack);
+            }
+        }
+    }
+
+    /**
+     * TODO -- need to test signature extraction
+     */
 
     /**
     @Test
