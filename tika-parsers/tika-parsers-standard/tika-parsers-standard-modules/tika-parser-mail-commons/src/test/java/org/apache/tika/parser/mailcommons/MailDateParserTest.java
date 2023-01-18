@@ -87,7 +87,8 @@ public class MailDateParserTest {
         s = "Tue, 9 Jun 2009 23:58:45 -0400";
 
         //System.out.println(RFC)
-        try {//turn this back on when we upgrade
+        try {
+            //turn this back on when we upgrade
             //System.out.println("mime4j: " + DateTimeFieldLenientImpl.RFC_5322.parse(s));
         } catch (Exception e) {
             System.out.println("mime4j: null");
