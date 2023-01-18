@@ -1,2 +1,4 @@
 FROM openjdk
-COPY . /app
+COPY tika-server/tika-server-standard/target/tika-server-standard-*-SNAPSHOT.jar /app/tika.jar
+EXPOSE 9998
+CMD java -jar /app/tika.jar -host 0.0.0.0 -port 9998

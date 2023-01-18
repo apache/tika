@@ -1,0 +1,55 @@
+name: Build Docker Image
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '17' ]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get Tag
+        shell: bash
+        run: |
+          releaseTag="${GITHUB_REF:10}"
+          echo "TAG=${releaseTag}" >> $GITHUB_ENV
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+      - name: Inform Slack channel
+        run: |
+          curl -X POST https://hooks.slack.com/services/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 -H 'Content-Type: application/json' -d '{ "text": "Tika ${{ env.TAG }} is being built."}'
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: aiimilabs
+          password: ${{ secrets.AIIMI_LABS_DOCKER }}
+      - name: Build with Maven
+        run: ./build.sh
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: DockerFile
+          push: true
+          tags: "labsaiimi/tika:${{ env.TAG }}"
+      - name: Upload jar to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: tika-server/tika-server-standard/target/tika-server-standard-*-SNAPSHOT.jar
+          tag: ${{ inputs.tag }}
+          overwrite: true
+          file_glob: true
+      - name: Notify Slack
+        run: |
+          curl -X POST https://hooks.slack.com/services/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 -H 'Content-Type: application/json' -d '{"blocks":[{"type":"section","text":{"type":"mrkdwn","text":"Tika *${{ env.TAG }}* is now available."},"accessory":{"type":"button","text":{"type":"plain_text","text":"${{ env.TAG }} :rocket:"},"url":"https://github.com/AiimiLtd/tika/releases/tag/${{ env.TAG }}","action_id":"button-action"}}]}'

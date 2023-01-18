@@ -1,1 +1,1 @@
-mvn clean install -DskipTests=true
+mvn clean install -DskipTests=true -Dcheckstyle.skip

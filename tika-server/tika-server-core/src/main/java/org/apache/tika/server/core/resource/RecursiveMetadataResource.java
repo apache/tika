@@ -197,7 +197,7 @@ public class RecursiveMetadataResource {
                         HandlerConfig.PARSE_MODE.RMETA))).build();*/
 						
 		Metadata metadata = new Metadata();
-		return runTask(TikaResource.getInputStream(is, metadata, httpHeaders), metadata, httpHeaders.getRequestHeaders(), info, handlerTypeName, timeout);
+		return runTask(TikaResource.getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info, handlerTypeName, timeout);
     }
 
     private MetadataList parseMetadataToMetadataList(InputStream is, Metadata metadata,
