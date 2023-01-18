@@ -365,8 +365,8 @@
     <lucene.version>8.11.2</lucene.version>
     <metadata.extractor.version>2.18.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
-    <!-- 0.8.6 is built with java 11 and does not work with Java 8 -->
-    <mime4j.version>0.8.9</mime4j.version>
+    <!-- 0.8.5 is built with java 11 and does not work with Java 8 -->
+    <mime4j.version>0.8.4</mime4j.version>
     <mockito.version>4.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <openjson.version>1.0.12</openjson.version>
