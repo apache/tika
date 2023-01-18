@@ -47,7 +47,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: tika-server/tika-server-standard/target/tika-server-standard-*-SNAPSHOT.jar
-          tag: ${{ env.tag }}
+          tag: "${{ env.tag }}"
           overwrite: true
           file_glob: true
       - name: Notify Slack
