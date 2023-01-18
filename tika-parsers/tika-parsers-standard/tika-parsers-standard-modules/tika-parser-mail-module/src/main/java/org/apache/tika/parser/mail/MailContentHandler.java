@@ -16,15 +16,8 @@
  */
 package org.apache.tika.parser.mail;
 
-import static org.apache.tika.utils.DateUtils.MIDDAY;
-import static org.apache.tika.utils.DateUtils.UTC;
-
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.DateFormat;
-import java.text.DateFormatSymbols;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -32,9 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Stack;
-import java.util.TimeZone;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
@@ -86,38 +76,6 @@ class MailContentHandler implements ContentHandler {
 
     private static final String MULTIPART_ALTERNATIVE = "multipart/alternative";
 
-    private static final DateFormatInfo[] ALTERNATE_DATE_FORMATS = new DateFormatInfo[] {
-            //note that the string is "cleaned" before processing:
-            //1) condense multiple whitespace to single space
-            //2) trim()
-            //3) strip out commas
-            //4) insert space before am/pm
-            new DateFormatInfo("MMM dd yy hh:mm a"),
-
-            //this is a standard pattern handled by mime4j;
-            //but mime4j fails with leading whitespace
-            new DateFormatInfo("EEE d MMM yy HH:mm:ss Z", UTC),
-
-            new DateFormatInfo("EEE d MMM yy HH:mm:ss z", UTC),
-
-            new DateFormatInfo("EEE d MMM yy HH:mm:ss", null),// no timezone
-
-            new DateFormatInfo("EEEEE MMM d yy hh:mm a", null),// Sunday, May 15 2016 1:32 PM
-
-            //16 May 2016 at 09:30:32  GMT+1 (Mac Mail TIKA-1970)
-            new DateFormatInfo("d MMM yy 'at' HH:mm:ss z", UTC),   // UTC/Zulu
-
-            new DateFormatInfo("yy-MM-dd HH:mm:ss", null),
-
-            new DateFormatInfo("MM/dd/yy hh:mm a", null, false),
-
-            //now dates without times
-            new DateFormatInfo("MMM d yy", MIDDAY, false),
-            new DateFormatInfo("EEE d MMM yy", MIDDAY, false),
-            new DateFormatInfo("d MMM yy", MIDDAY, false),
-            new DateFormatInfo("yy/MM/dd", MIDDAY, false),
-            new DateFormatInfo("MM/dd/yy", MIDDAY, false)};
-
     private final XHTMLContentHandler handler;
     private final Metadata metadata;
     private final ParseContext parseContext;
@@ -144,16 +102,6 @@ class MailContentHandler implements ContentHandler {
         // Was an EmbeddedDocumentExtractor explicitly supplied?
         this.extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         this.detector = detector;
-    }
-
-    private static DateFormat createDateFormat(DateFormatInfo dateFormatInfo) {
-        SimpleDateFormat sdf = new SimpleDateFormat(dateFormatInfo.pattern,
-                new DateFormatSymbols(Locale.US));
-        if (dateFormatInfo.timeZone != null) {
-            sdf.setTimeZone(dateFormatInfo.timeZone);
-        }
-        sdf.setLenient(dateFormatInfo.lenient);
-        return sdf;
     }
 
     @Override
@@ -398,13 +346,11 @@ class MailContentHandler implements ContentHandler {
                 Date date = null;
                 try {
                     date = MailDateParser.parseDateLenient(dateBody);
+                    metadata.set(TikaCoreProperties.CREATED, date);
                 } catch (SecurityException e) {
                     throw e;
                 } catch (Exception e) {
                     //swallow
-                }
-                if (date != null) {
-                    metadata.set(TikaCoreProperties.CREATED, date);
                 }
             } else {
                 metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + parsedField.getName(),
@@ -616,26 +562,6 @@ class MailContentHandler implements ContentHandler {
             super(null);
             this.metadata = metadata;
             this.bytes = bytes;
-        }
-    }
-
-    private static class DateFormatInfo {
-        String pattern;
-        TimeZone timeZone;
-        boolean lenient;
-
-        public DateFormatInfo(String pattern) {
-            this(pattern, null, true);
-        }
-
-        public DateFormatInfo(String pattern, TimeZone timeZone) {
-            this(pattern, timeZone, true);
-        }
-
-        public DateFormatInfo(String pattern, TimeZone timeZone, boolean lenient) {
-            this.pattern = pattern;
-            this.timeZone = timeZone;
-            this.lenient = lenient;
         }
     }
 }

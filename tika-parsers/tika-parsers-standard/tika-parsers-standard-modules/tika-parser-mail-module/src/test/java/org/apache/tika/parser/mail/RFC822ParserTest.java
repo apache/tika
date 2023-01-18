@@ -32,13 +32,7 @@ import static org.mockito.Mockito.verify;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
-import java.text.DateFormatSymbols;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
 
 import org.apache.james.mime4j.stream.MimeConfig;
 import org.junit.jupiter.api.BeforeAll;
@@ -549,6 +543,9 @@ public class RFC822ParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testRFC822-ARC");
         assertEquals(1, metadataList.size());
         assertEquals("message/rfc822", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+
+        //Also, test that this date has been parsed: Wed, 26 Jan 2022 09:14:37 +0100 (CET)
+        assertTrue(metadataList.get(0).get(TikaCoreProperties.CREATED).startsWith("2022-01-"));
     }
 
     @Test

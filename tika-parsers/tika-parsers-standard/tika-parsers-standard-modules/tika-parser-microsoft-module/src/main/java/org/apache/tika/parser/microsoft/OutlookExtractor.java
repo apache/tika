@@ -23,7 +23,6 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -257,10 +256,12 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
                             // See if we can parse it as a normal mail date
                             try {
-                                Date d = MailDateParser.parseDate(date);
+                                Date d = MailDateParser.parseDateLenient(date);
                                 metadata.set(TikaCoreProperties.CREATED, d);
                                 metadata.set(TikaCoreProperties.MODIFIED, d);
-                            } catch (ParseException e) {
+                            } catch (SecurityException e ) {
+                                throw e;
+                            } catch (Exception e) {
                                 // Store it as-is, and hope for the best...
                                 metadata.set(TikaCoreProperties.CREATED, date);
                                 metadata.set(TikaCoreProperties.MODIFIED, date);
