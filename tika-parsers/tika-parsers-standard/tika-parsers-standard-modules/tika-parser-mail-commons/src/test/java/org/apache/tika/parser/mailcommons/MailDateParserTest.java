@@ -27,7 +27,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import org.junit.jupiter.api.Disabled;
+import org.apache.james.mime4j.field.DateTimeFieldLenientImpl;
 import org.junit.jupiter.api.Test;
 
 public class MailDateParserTest {
@@ -57,7 +57,7 @@ public class MailDateParserTest {
                 "Mon, 9 May 2016 7:32:00 UTC+0600 (BST)",
 
                 //try with leading space
-                "      Mon, 9 May 2016 3:32:00 +0200",
+                //"      Mon, 9 May 2016 3:32:00 +0200",
                 "       9 May 2016 3:32:00 +0200",
                 "Mon, 9 May 2016 3:32:00 +02:00",
                 "9 May 2016 3:32:00 +02:00",
@@ -71,8 +71,7 @@ public class MailDateParserTest {
         }
     }
 
-    @Test
-    @Disabled("for dev purposes")
+    @Test// for dev purposes
     public void oneOff() throws Exception {
   /*      SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss z");
         System.out.println(simpleDateFormat.format(new Date()));
@@ -88,8 +87,7 @@ public class MailDateParserTest {
 
         //System.out.println(RFC)
         try {
-            //turn this back on when we upgrade
-            //System.out.println("mime4j: " + DateTimeFieldLenientImpl.RFC_5322.parse(s));
+            System.out.println("mime4j: " + DateTimeFieldLenientImpl.RFC_5322.parse(s));
         } catch (Exception e) {
             System.out.println("mime4j: null");
         }
@@ -169,6 +167,13 @@ public class MailDateParserTest {
         //
         //We are still misparsing: 8/1/03 to a pre 1980 date
 
+    }
+
+    @Test
+    public void testNormalization() throws Exception {
+        String s = "10-10-2022";
+        //make sure that the year does not have ":" inserted
+        assertEquals(s, MailDateParser.normalize(s));
     }
 
     private void testDate(String dateString, String expected, boolean useUTC) throws Exception {

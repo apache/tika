@@ -56,9 +56,14 @@ import org.apache.tika.utils.StringUtils;
 
 /**
  * Dates in emails are a mess.  There are at least two major date related bugs in JDK 8.
+ * And, I've found differing behavior, bug or not, between JDK 8 and JDK 11/17.
  * This class does its best to parse date strings.  It does have a US-based date bias.
- * Please open a ticket to fix this.  We can also add overrides via the parser config
- * to manage custom dates.
+ * Please open a ticket to fix this as needed.  We can also add overrides via the parser config
+ * to manage customization of date formats.
+ *
+ * This code does not spark joy especially given the diffs in behavior between jdk versions.
+ *
+ * At some point, we should probably try joda or, heaven forfend, a pile of regexes.
  */
 public class MailDateParser {
 
@@ -70,8 +75,13 @@ public class MailDateParser {
 
     //this is used to strip junk after a fairly full offset:
     // Wed, 26 Jan 2022 09:14:37 +0100 (CET)
+    // Also insert colon to avoid, ahem, behavior that is different in jdk 11 and jdk 17 than jdk8
+    // with "Mon, 9 May 2016 3:32:00 +0200"
+
+    //we add the first pattern -\\d\\d-\\d\\d\\d\\d so that we skip over 10-10-2000 via
+    //the while loop.
     private static final Pattern OFFSET_PATTERN =
-            Pattern.compile("[-+]\\s*\\d?\\d:?\\d\\d");
+            Pattern.compile("(?:(?:-\\d\\d-\\d{4})|([-+])\\s*(\\d?\\d):?(\\d\\d))");
 
     private static final Pattern DAYS_OF_WEEK =
             Pattern.compile("(?:\\A| )(MON|MONDAY|TUE|TUES|TUESDAY|WED|WEDNESDAY|THU|THUR|THURS" +
@@ -519,7 +529,6 @@ public class MailDateParser {
             }
         }
 
-
         for (DateTimeFormatter dateFormatter : DATE_FORMATTERS) {
             try {
                 TemporalAccessor temporalAccessor = dateFormatter.parse(normalized);
@@ -545,17 +554,24 @@ public class MailDateParser {
         }
     }
 
-    private static String normalize(String text) {
+    protected static String normalize(String text) {
 
         text = text.toUpperCase(Locale.US);
 
         //strip out commas
         text = text.replaceAll(",", "");
 
-        //strip off extra stuff after +0800, e.g. "Mon, 9 May 2016 7:32:00 UTC+0600 (BST)",
+        //1) strip off extra stuff after +0800, e.g. "Mon, 9 May 2016 7:32:00 UTC+0600 (BST)",
+        //2) insert a colon btwn hrs and minutes to avoid a difference in behavior
+        // between jdk 8 and jdk 11+17
         Matcher matcher = OFFSET_PATTERN.matcher(text);
-        if (matcher.find()) {
-            text = text.substring(0, matcher.end());
+        while (matcher.find()) {
+            if (matcher.group(1) != null) {
+                text = text.substring(0, matcher.start());
+                text += matcher.group(1) + StringUtils.leftPad(matcher.group(2), 2, '0') + ":" +
+                        matcher.group(3);
+                break;
+            }
         }
 
         matcher = LOCALIZED_OFFSET_PATTERN.matcher(text);
