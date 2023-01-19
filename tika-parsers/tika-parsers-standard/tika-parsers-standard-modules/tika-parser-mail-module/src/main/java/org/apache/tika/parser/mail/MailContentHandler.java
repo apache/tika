@@ -16,15 +16,8 @@
  */
 package org.apache.tika.parser.mail;
 
-import static org.apache.tika.utils.DateUtils.MIDDAY;
-import static org.apache.tika.utils.DateUtils.UTC;
-
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.DateFormat;
-import java.text.DateFormatSymbols;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -32,9 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Stack;
-import java.util.TimeZone;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
@@ -47,7 +37,6 @@ import org.apache.james.mime4j.dom.address.AddressList;
 import org.apache.james.mime4j.dom.address.Mailbox;
 import org.apache.james.mime4j.dom.address.MailboxList;
 import org.apache.james.mime4j.dom.field.AddressListField;
-import org.apache.james.mime4j.dom.field.DateTimeField;
 import org.apache.james.mime4j.dom.field.MailboxListField;
 import org.apache.james.mime4j.dom.field.ParsedField;
 import org.apache.james.mime4j.dom.field.UnstructuredField;
@@ -71,6 +60,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.csv.TextAndCSVParser;
 import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.mailcommons.MailDateParser;
 import org.apache.tika.parser.mailcommons.MailUtil;
 import org.apache.tika.parser.txt.TXTParser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -85,46 +75,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 class MailContentHandler implements ContentHandler {
 
     private static final String MULTIPART_ALTERNATIVE = "multipart/alternative";
-
-    //TIKA-1970 Mac Mail's format
-    private static final Pattern GENERAL_TIME_ZONE_NO_MINUTES_PATTERN =
-            Pattern.compile("(?:UTC|GMT)([+-])(\\d?\\d)\\Z");
-
-    //find a time ending in am/pm without a space: 10:30am and
-    //use this pattern to insert space: 10:30 am
-    private static final Pattern AM_PM = Pattern.compile("(?i)(\\d)([ap]m)\\b");
-
-    private static final DateFormatInfo[] ALTERNATE_DATE_FORMATS = new DateFormatInfo[] {
-            //note that the string is "cleaned" before processing:
-            //1) condense multiple whitespace to single space
-            //2) trim()
-            //3) strip out commas
-            //4) insert space before am/pm
-            new DateFormatInfo("MMM dd yy hh:mm a"),
-
-            //this is a standard pattern handled by mime4j;
-            //but mime4j fails with leading whitespace
-            new DateFormatInfo("EEE d MMM yy HH:mm:ss Z", UTC),
-
-            new DateFormatInfo("EEE d MMM yy HH:mm:ss z", UTC),
-
-            new DateFormatInfo("EEE d MMM yy HH:mm:ss", null),// no timezone
-
-            new DateFormatInfo("EEEEE MMM d yy hh:mm a", null),// Sunday, May 15 2016 1:32 PM
-
-            //16 May 2016 at 09:30:32  GMT+1 (Mac Mail TIKA-1970)
-            new DateFormatInfo("d MMM yy 'at' HH:mm:ss z", UTC),   // UTC/Zulu
-
-            new DateFormatInfo("yy-MM-dd HH:mm:ss", null),
-
-            new DateFormatInfo("MM/dd/yy hh:mm a", null, false),
-
-            //now dates without times
-            new DateFormatInfo("MMM d yy", MIDDAY, false),
-            new DateFormatInfo("EEE d MMM yy", MIDDAY, false),
-            new DateFormatInfo("d MMM yy", MIDDAY, false),
-            new DateFormatInfo("yy/MM/dd", MIDDAY, false),
-            new DateFormatInfo("MM/dd/yy", MIDDAY, false)};
 
     private final XHTMLContentHandler handler;
     private final Metadata metadata;
@@ -152,45 +102,6 @@ class MailContentHandler implements ContentHandler {
         // Was an EmbeddedDocumentExtractor explicitly supplied?
         this.extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         this.detector = detector;
-    }
-
-    private static DateFormat createDateFormat(DateFormatInfo dateFormatInfo) {
-        SimpleDateFormat sdf = new SimpleDateFormat(dateFormatInfo.pattern,
-                new DateFormatSymbols(Locale.US));
-        if (dateFormatInfo.timeZone != null) {
-            sdf.setTimeZone(dateFormatInfo.timeZone);
-        }
-        sdf.setLenient(dateFormatInfo.lenient);
-        return sdf;
-    }
-
-    private static Date tryOtherDateFormats(String text) {
-        if (text == null) {
-            return null;
-        }
-        text = text.replaceAll("\\s+", " ").trim();
-        //strip out commas
-        text = text.replaceAll(",", "");
-
-        Matcher matcher = GENERAL_TIME_ZONE_NO_MINUTES_PATTERN.matcher(text);
-        if (matcher.find()) {
-            text = matcher.replaceFirst("GMT$1$2:00");
-        }
-
-        matcher = AM_PM.matcher(text);
-        if (matcher.find()) {
-            text = matcher.replaceFirst("$1 $2");
-        }
-
-        for (DateFormatInfo formatInfo : ALTERNATE_DATE_FORMATS) {
-            try {
-                DateFormat format = createDateFormat(formatInfo);
-                return format.parse(text);
-            } catch (ParseException e) {
-                //continue
-            }
-        }
-        return null;
     }
 
     @Override
@@ -431,12 +342,16 @@ class MailContentHandler implements ContentHandler {
                             field.getBody());
                 }
             } else if (fieldname.equalsIgnoreCase("Date")) {
-                DateTimeField dateField = (DateTimeField) parsedField;
-                Date date = dateField.getDate();
-                if (date == null) {
-                    date = tryOtherDateFormats(field.getBody());
+                String dateBody = parsedField.getBody();
+                Date date = null;
+                try {
+                    date = MailDateParser.parseDateLenient(dateBody);
+                    metadata.set(TikaCoreProperties.CREATED, date);
+                } catch (SecurityException e) {
+                    throw e;
+                } catch (Exception e) {
+                    //swallow
                 }
-                metadata.set(TikaCoreProperties.CREATED, date);
             } else {
                 metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + parsedField.getName(),
                         field.getBody());
@@ -647,26 +562,6 @@ class MailContentHandler implements ContentHandler {
             super(null);
             this.metadata = metadata;
             this.bytes = bytes;
-        }
-    }
-
-    private static class DateFormatInfo {
-        String pattern;
-        TimeZone timeZone;
-        boolean lenient;
-
-        public DateFormatInfo(String pattern) {
-            this(pattern, null, true);
-        }
-
-        public DateFormatInfo(String pattern, TimeZone timeZone) {
-            this(pattern, timeZone, true);
-        }
-
-        public DateFormatInfo(String pattern, TimeZone timeZone, boolean lenient) {
-            this.pattern = pattern;
-            this.timeZone = timeZone;
-            this.lenient = lenient;
         }
     }
 }

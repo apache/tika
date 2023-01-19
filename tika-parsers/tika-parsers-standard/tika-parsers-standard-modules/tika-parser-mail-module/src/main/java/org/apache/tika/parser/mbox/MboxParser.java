@@ -16,13 +16,12 @@
  */
 package org.apache.tika.parser.mbox;
 
-import static org.apache.tika.parser.mailcommons.MailDateParser.parseDate;
+import static org.apache.tika.parser.mailcommons.MailDateParser.parseDateLenient;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.text.ParseException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -194,9 +193,13 @@ public class MboxParser extends AbstractParser {
             metadata.add(TikaCoreProperties.SUBJECT, headerContent);
         } else if (headerTag.equalsIgnoreCase("Date")) {
             try {
-                Date date = parseDate(headerContent);
-                metadata.set(TikaCoreProperties.CREATED, date);
-            } catch (ParseException e) {
+                Date date = parseDateLenient(headerContent);
+                if (date != null) {
+                    metadata.set(TikaCoreProperties.CREATED, date);
+                }
+            } catch (SecurityException e) {
+                throw e;
+            } catch (Exception e) {
                 // ignoring date because format was not understood
             }
         } else if (headerTag.equalsIgnoreCase("Message-Id")) {
