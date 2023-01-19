@@ -1,5 +1,7 @@
 Release 2.7.0 - ???
 
+   * Improve handling of text-based attachments inside .eml files (TIKA-3959).
+
    * Add tika-parser-nlp-package to release artifacts (TIKA-3958).
 
    * Remove need for <params/> element in classes that extend ConfigBase (TIKA-3946).

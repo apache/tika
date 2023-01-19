@@ -54,6 +54,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -120,24 +121,7 @@ class MailContentHandler implements ContentHandler {
             submd.set(Message.MULTIPART_BOUNDARY, parts.peek().getBoundary());
         }
         if (body instanceof MaximalBodyDescriptor) {
-            MaximalBodyDescriptor maximalBody = (MaximalBodyDescriptor) body;
-            String contentDispositionType = maximalBody.getContentDispositionType();
-            if (contentDispositionType != null && !contentDispositionType.isEmpty()) {
-                StringBuilder contentDisposition = new StringBuilder(contentDispositionType);
-                Map<String, String> contentDispositionParameters =
-                        maximalBody.getContentDispositionParameters();
-                for (Entry<String, String> param : contentDispositionParameters.entrySet()) {
-                    contentDisposition.append("; ").append(param.getKey()).append("=\"")
-                            .append(param.getValue()).append('"');
-                }
-
-                String contentDispositionFileName = maximalBody.getContentDispositionFilename();
-                if (contentDispositionFileName != null) {
-                    submd.set(TikaCoreProperties.RESOURCE_NAME_KEY, contentDispositionFileName);
-                }
-
-                submd.set(Metadata.CONTENT_DISPOSITION, contentDisposition.toString());
-            }
+            handleMaximalBodyDescriptor((MaximalBodyDescriptor)body, submd);
         }
         //if we're in a multipart/alternative or any one of its children
         //add the bodypart to the latest that was added
@@ -153,7 +137,7 @@ class MailContentHandler implements ContentHandler {
             UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
             IOUtils.copy(is, bos);
             final byte[] bytes = bos.toByteArray();
-            if (detectTextOrHtml(submd, bytes)) {
+            if (detectInlineTextOrHtml(submd, bytes)) {
                 handleInlineBodyPart(new BodyContents(submd, bytes));
             } else {
                 //else handle as you would any other embedded content
@@ -169,7 +153,48 @@ class MailContentHandler implements ContentHandler {
         }
     }
 
-    private boolean detectTextOrHtml(Metadata submd, byte[] bytes) {
+    private void handleMaximalBodyDescriptor(MaximalBodyDescriptor body, Metadata submd) {
+        String contentDispositionType = body.getContentDispositionType();
+        if (contentDispositionType != null && !contentDispositionType.isEmpty()) {
+            StringBuilder contentDisposition = new StringBuilder(contentDispositionType);
+            if ("attachment".equalsIgnoreCase(contentDispositionType)) {
+                submd.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                        TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
+            }
+            Map<String, String> contentDispositionParameters =
+                    body.getContentDispositionParameters();
+            for (Entry<String, String> param : contentDispositionParameters.entrySet()) {
+                contentDisposition.append("; ").append(param.getKey()).append("=\"")
+                        .append(param.getValue()).append('"');
+                if ("creation-date".equalsIgnoreCase(param.getKey())) {
+                    tryToAddDate(param.getValue(), TikaCoreProperties.CREATED, submd);
+                } else if ("modification-date".equalsIgnoreCase(param.getKey())) {
+                    tryToAddDate(param.getValue(), TikaCoreProperties.MODIFIED, submd);
+                }
+                //do anything with "size"?
+            }
+
+            String contentDispositionFileName = body.getContentDispositionFilename();
+            if (contentDispositionFileName != null) {
+                submd.set(TikaCoreProperties.RESOURCE_NAME_KEY, contentDispositionFileName);
+            }
+            submd.set(Metadata.CONTENT_DISPOSITION, contentDisposition.toString());
+        }
+    }
+
+    private void tryToAddDate(String value, Property property, Metadata metadata) {
+        Date d = MailDateParser.parseDateLenient(value);
+        if (d != null) {
+            metadata.set(property, d);
+        }
+    }
+
+    private boolean detectInlineTextOrHtml(Metadata submd, byte[] bytes) {
+        String attachmentType = submd.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
+        if (TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString().equals(attachmentType)) {
+            return false;
+        }
+
         String mediaTypeString = submd.get(Metadata.CONTENT_TYPE);
         if (mediaTypeString != null) {
             if (mediaTypeString.startsWith("text")) {
@@ -178,6 +203,8 @@ class MailContentHandler implements ContentHandler {
                 return false;
             }
         }
+
+
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             MediaType mediaType = detector.detect(tis, submd);
             if (mediaType != null) {
@@ -426,7 +453,6 @@ class MailContentHandler implements ContentHandler {
     @Override
     public void startMultipart(BodyDescriptor descr) throws MimeException {
         parts.push(descr);
-
         if (!extractAllAlternatives) {
             if (alternativePartBuffer.size() == 0 &&
                     MULTIPART_ALTERNATIVE.equalsIgnoreCase(descr.getMimeType())) {
@@ -437,7 +463,6 @@ class MailContentHandler implements ContentHandler {
                 Part parent = alternativePartBuffer.peek();
                 Part part = new Part(descr);
                 alternativePartBuffer.push(part);
-
 
                 if (parent != null) {
                     parent.children.add(part);
@@ -459,7 +484,6 @@ class MailContentHandler implements ContentHandler {
         if (part == null) {
             return;
         }
-
         if (part instanceof BodyContents) {
             handleInlineBodyPart((BodyContents) part);
             return;
@@ -551,6 +575,11 @@ class MailContentHandler implements ContentHandler {
 
         public Part(BodyDescriptor bodyDescriptor) {
             this.bodyDescriptor = bodyDescriptor;
+        }
+
+        @Override
+        public String toString() {
+            return "Part{" + "bodyDescriptor=" + bodyDescriptor + ", children=" + children + '}';
         }
     }
 

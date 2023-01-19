@@ -1,0 +1,47 @@
+From: Bugs Bunny <Bugs.Bunny@acme.com>
+To: Bugs Bunny <Bugs.Bunny@acme.com>
+Subject: EML 1
+Content-Type: multipart/mixed;
+	boundary="_005_AS8PR01MB7920FE9D6119D105F19C44A195049AS8PR01MB7920eurp_"
+MIME-Version: 1.0
+
+--_005_AS8PR01MB7920FE9D6119D105F19C44A195049AS8PR01MB7920eurp_
+Content-Type: multipart/alternative;
+	boundary="_000_AS8PR01MB7920FE9D6119D105F19C44A195049AS8PR01MB7920eurp_"
+
+--_000_AS8PR01MB7920FE9D6119D105F19C44A195049AS8PR01MB7920eurp_
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+SGksDQoNClRoaXMgaXMgdGVzdCBlbWFpbCBmb3IgRU1MMQ0KDQpUaGFua3MsDQpDaGV0YW7igILi
+gILigILigILigILigIINCg==
+
+--_000_AS8PR01MB7920FE9D6119D105F19C44A195049AS8PR01MB7920eurp_
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+PGh0bWw+CjxoZWFkPgo8bWV0YSBodHRwLWVxdWl2PSJDb250ZW50LVR5cGUiIGNvbnRlbnQ9InRleHQvaHRtbDsgY2hhcnNldD11dGYtOCI+CjwvaGVhZD4KPGJvZHk+ClRoaXMgaXMgdGhlIGh0bWwgYm9keSBvZiB0aGUgbWFpbiBtc2cuCjwvYm9keT4KPC9odG1sPg==
+
+--_000_AS8PR01MB7920FE9D6119D105F19C44A195049AS8PR01MB7920eurp_--
+
+--_005_AS8PR01MB7920FE9D6119D105F19C44A195049AS8PR01MB7920eurp_
+Content-Type: text/plain; name="Test TxtA.txt"
+Content-Description: Test TxtA.txt
+Content-Disposition: attachment; filename="Test TxtA.txt"; size=214;
+	creation-date="Tue, 15 Nov 2022 15:53:41 GMT";
+	modification-date="Tue, 15 Nov 2022 15:54:12 GMT"
+Content-Transfer-Encoding: base64
+
+VGhpcyBpcyBUZXN0IFRYVEEgRmlsZSBmb3IgcGFyc2Vy
+
+--_005_AS8PR01MB7920FE9D6119D105F19C44A195049AS8PR01MB7920eurp_
+Content-Type: text/plain; name="Test TxtB.txt"
+Content-Description: Test TxtB.txt
+Content-Disposition: attachment; filename="Test TxtB.txt"; size=214;
+	creation-date="Tue, 15 Nov 2022 15:53:41 GMT";
+	modification-date="Tue, 15 Nov 2022 15:54:12 GMT"
+Content-Transfer-Encoding: base64
+
+VGhpcyBpcyBUZXN0IFRYVEIgRmlsZSBmb3IgcGFyc2Vy
+
+--_005_AS8PR01MB7920FE9D6119D105F19C44A195049AS8PR01MB7920eurp_--

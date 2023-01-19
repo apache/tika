@@ -557,10 +557,43 @@ public class RFC822ParserTest extends TikaTest {
 
     @Test
     public void testGroupwise() throws Exception {
-        //TODO -- this should treat attachments as attachments, no?
         List<Metadata> metadataList = getRecursiveMetadata("testGroupWiseEml.eml");
-        assertEquals(1, metadataList.size());
-        assertContains("ssssss", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals(2, metadataList.size());
+        assertContains("ssssss", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    @Test
+    public void testMultipartTextAttachment() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testRFC822_multipart_attachments.eml");
+        assertEquals(3, metadataList.size());
+        assertContains("This is the html body of the main msg.",
+                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+
+        assertContains("This is Test TXTA File for parser",
+                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotContained("This is Test TXTA File for parser",
+                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("/Test TxtA.txt", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        //make sure we extracted creation and modified dates
+        assertTrue(metadataList.get(1).get(TikaCoreProperties.CREATED).startsWith("2022-11-"));
+        assertTrue(metadataList.get(1).get(TikaCoreProperties.MODIFIED).startsWith("2022-11-"));
+
+
+        assertContains("This is Test TXTB File for parser",
+                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotContained("This is Test TXTB File for parser",
+                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("/Test TxtB.txt",
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        //make sure we extracted creation and modified dates
+        assertTrue(metadataList.get(2).get(TikaCoreProperties.CREATED).startsWith("2022-11-"));
+        assertTrue(metadataList.get(2).get(TikaCoreProperties.MODIFIED).startsWith("2022-11-"));
     }
 
 }
