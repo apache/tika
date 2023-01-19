@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Stack;
@@ -75,6 +74,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  */
 class MailContentHandler implements ContentHandler {
 
+    //TODO -- specific handling for other multipart subtypes?  mixed, parallel, digest
     private static final String MULTIPART_ALTERNATIVE = "multipart/alternative";
 
     private final XHTMLContentHandler handler;
@@ -160,6 +160,9 @@ class MailContentHandler implements ContentHandler {
             if ("attachment".equalsIgnoreCase(contentDispositionType)) {
                 submd.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                         TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
+            } else if ("inline".equalsIgnoreCase(contentDispositionType)) {
+                submd.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                        TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
             }
             Map<String, String> contentDispositionParameters =
                     body.getContentDispositionParameters();
@@ -204,7 +207,6 @@ class MailContentHandler implements ContentHandler {
             }
         }
 
-
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             MediaType mediaType = detector.detect(tis, submd);
             if (mediaType != null) {
@@ -223,16 +225,7 @@ class MailContentHandler implements ContentHandler {
     private void handleEmbedded(TikaInputStream tis, Metadata metadata)
             throws MimeException, IOException {
 
-        String disposition = metadata.get(Metadata.CONTENT_DISPOSITION);
-        boolean isInline = false;
-        if (disposition != null) {
-            if (disposition.toLowerCase(Locale.US).contains("inline")) {
-                metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                        TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
-                isInline = true;
-            }
-        }
-        if (!isInline) {
+        if (metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE) == null) {
             metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
         }
