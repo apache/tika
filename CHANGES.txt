@@ -1,4 +1,6 @@
-Release 2.6.1 - ???
+Release 2.7.0 - ???
+
+   * Add tika-parser-nlp-package to release artifacts (TIKA-3958).
 
    * Remove need for <params/> element in classes that extend ConfigBase (TIKA-3946).
 
@@ -10,7 +12,11 @@ Release 2.6.1 - ???
    * Remove log4j 1.2.x (and slf4j-log4j12 which now redirects to slf4j-reload4j) from
      all modules (TIKA-3935).
 
-   * Add SVG detection for svg files lacking the xml header (TIKA-3308).
+   * Add SVG detection for svg files that lack the xml header (TIKA-3308).
+
+   * Upgrade mime4j to 0.8.9 (TIKA-3950).
+
+   * Refactor date parsing for emails (TIKA-3957)
 
    * Upgrade to Bouncy Castle 1.71 and jdk18on jars (TIKA-3933).
 
