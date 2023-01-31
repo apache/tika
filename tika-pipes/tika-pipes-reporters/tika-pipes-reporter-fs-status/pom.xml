@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-pipes-reporters</artifactId>
-    <version>2.7.0</version>
+    <version>2.7.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -138,6 +138,6 @@
   </build>
 
   <scm>
-    <tag>2.7.0-rc1</tag>
+    <tag>2.2.1-rc2</tag>
   </scm>
 </project>
