@@ -1257,7 +1257,16 @@ public class HtmlParserTest extends TikaTest {
 
         assertEquals("John Doe", m.get(TikaCoreProperties.CREATOR));
         assertEquals("John Doe", m.get("author"));
+    }
 
+    @Test
+    public void testPreferenceForTitleElement() throws Exception {
+        //this tests that the <title> element is preferred over the title attribute
+        List<Metadata> metadataList = getRecursiveMetadata("testHTML_metadata_two_titles.html");
+        Metadata m = metadataList.get(0);
+
+        assertEquals("ActualTitle", m.get(TikaCoreProperties.TITLE));
+        assertEquals("OldMetaTitle", m.get("title"));
     }
 
     private class EncodingDetectorRunner implements Callable<String> {

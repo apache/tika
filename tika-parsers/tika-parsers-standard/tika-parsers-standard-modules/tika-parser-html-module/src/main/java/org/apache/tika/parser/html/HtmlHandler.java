@@ -227,7 +227,10 @@ class HtmlHandler extends TextContentHandler {
         String lcName = name.toLowerCase(Locale.US);
         if (META_HEADER_MAPPINGS.containsKey(lcName)) {
             Property property = META_HEADER_MAPPINGS.get(lcName);
-            if (property.isMultiValuePermitted()) {
+            if (property.equals(TikaCoreProperties.TITLE) && isTitleSetToMetadata) {
+                //prefer the title element if it is already set
+                //do nothing
+            } else if (property.isMultiValuePermitted()) {
                 metadata.add(property, value);
             } else {
                 metadata.set(property, value);
