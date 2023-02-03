@@ -382,7 +382,7 @@
             </goals>
             <configuration>
               <createDependencyReducedPom>
-                false
+                true
               </createDependencyReducedPom>
               <artifactSet>
                 <includes>
