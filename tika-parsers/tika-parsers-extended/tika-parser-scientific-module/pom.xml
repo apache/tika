@@ -53,7 +53,10 @@
     <dependency>
       <groupId>org.opengis</groupId>
       <artifactId>geoapi</artifactId>
-      <version>${geoapi.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.measure</groupId>
+      <artifactId>unit-api</artifactId>
     </dependency>
     <!-- edu.ucar dependencies -->
     <dependency>
