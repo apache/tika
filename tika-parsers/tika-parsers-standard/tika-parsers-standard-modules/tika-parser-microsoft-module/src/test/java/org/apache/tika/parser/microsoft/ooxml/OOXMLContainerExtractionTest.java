@@ -300,7 +300,7 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
         assertEquals("image1.emf", handler.filenames.get(0));
         assertEquals(TYPE_EMF, handler.mediaTypes.get(0));
 
-        assertNull(handler.filenames.get(1));
+        assertEquals("Acrobat Document", handler.filenames.get(1));
         assertEquals(TYPE_PDF, handler.mediaTypes.get(1));
     }
 

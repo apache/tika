@@ -17,13 +17,17 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.xml.namespace.QName;
 
+import com.microsoft.schemas.vml.impl.CTShapeImpl;
+import org.apache.poi.ooxml.POIXMLDocumentPart;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
@@ -65,10 +69,13 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.FormattingUtils;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.WordExtractor.TagAndStyle;
+import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
@@ -89,6 +96,8 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private XWPFDocument document;
     private XWPFStyles styles;
     private Metadata metadata;
+
+    private Map<String, EmbeddedPartMetadata> embeddedPartMetadataMap = new HashMap<>();
 
     public XWPFWordExtractorDecorator(Metadata metadata, ParseContext context,
                                       XWPFWordExtractor extractor) {
@@ -142,6 +151,11 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         if (hfPolicy != null && config.isIncludeHeadersAndFooters()) {
             extractFooters(xhtml, hfPolicy, listManager);
         }
+    }
+
+    @Override
+    protected Map<String, EmbeddedPartMetadata> getEmbeddedPartMetadataMap() {
+        return embeddedPartMetadataMap;
     }
 
     private void extractIBodyText(IBody bodyElement, XWPFListManager listManager,
@@ -209,43 +223,9 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         writeParagraphNumber(paragraph, listManager, xhtml);
+
         // Output placeholder for any embedded docs:
-
-        // TODO: replace w/ XPath/XQuery:
-        for (XWPFRun run : paragraph.getRuns()) {
-            XmlCursor c = run.getCTR().newCursor();
-            c.selectPath("./*");
-            while (c.toNextSelection()) {
-                XmlObject o = c.getObject();
-                if (o instanceof CTObject) {
-                    XmlCursor c2 = o.newCursor();
-                    c2.selectPath("./*");
-                    while (c2.toNextSelection()) {
-                        XmlObject o2 = c2.getObject();
-
-                        XmlObject embedAtt = o2.selectAttribute(new QName("Type"));
-                        if (embedAtt != null &&
-                                embedAtt.getDomNode().getNodeValue().equals("Embed")) {
-                            // Type is "Embed"
-                            XmlObject relIDAtt = o2.selectAttribute(new QName(
-                                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-                                    "id"));
-                            if (relIDAtt != null) {
-                                String relID = relIDAtt.getDomNode().getNodeValue();
-                                AttributesImpl attributes = new AttributesImpl();
-                                attributes.addAttribute("", "class", "class", "CDATA", "embedded");
-                                attributes.addAttribute("", "id", "id", "CDATA", relID);
-                                xhtml.startElement("div", attributes);
-                                xhtml.endElement("div");
-                            }
-                        }
-                    }
-                    c2.dispose();
-                }
-            }
-
-            c.dispose();
-        }
+        processEmbeddedObjects(paragraph.getRuns(), xhtml);
 
         // Attach bookmarks for the paragraph
         // (In future, we might put them in the right place, for now
@@ -337,6 +317,112 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         if (headerFooterPolicy != null && config.isIncludeHeadersAndFooters()) {
             extractFooters(xhtml, headerFooterPolicy, listManager);
         }
+    }
+
+    private void processEmbeddedObjects(List<XWPFRun> runs, XHTMLContentHandler xhtml)
+            throws SAXException {
+        // TODO: replace w/ XPath/XQuery:
+        for (XWPFRun run : runs) {
+            try (XmlCursor c = run.getCTR().newCursor()) {
+                c.selectPath("./*");
+                while (c.toNextSelection()) {
+                    XmlObject o = c.getObject();
+                    if (o instanceof CTObject) {
+                        try (XmlCursor objectCursor = o.newCursor()) {
+                            processObject(objectCursor, xhtml);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void processObject(XmlCursor cursor, XHTMLContentHandler xhtml) throws SAXException {
+
+        cursor.selectPath("./*");
+        String objectRelId = null;
+        String progId = null;
+        EmbeddedPartMetadata embeddedPartMetadata = null;
+        while (cursor.toNextSelection()) {
+            XmlObject o2 = cursor.getObject();
+            XmlObject embedAtt = o2.selectAttribute(new QName("Type"));
+            if (embedAtt != null &&
+                    embedAtt.getDomNode().getNodeValue().equals("Embed")) {
+                //TODO: get ProgID, while we're here?
+                // Type is "Embed"
+                XmlObject relIDAtt = o2.selectAttribute(new QName(
+                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+                        "id"));
+                if (relIDAtt != null) {
+                    objectRelId = relIDAtt.getDomNode().getNodeValue();
+                }
+
+                XmlObject progIDAtt = o2.selectAttribute(new QName("ProgID"));
+                if (progIDAtt != null) {
+                    progId = progIDAtt.getDomNode().getNodeValue();
+                }
+            } else if (o2 instanceof CTShapeImpl) {
+                XmlObject[] imagedata = o2.selectChildren(
+                        new QName("urn:schemas" +
+                                "-microsoft-com:vml","imagedata"));
+                if (imagedata.length > 0) {
+                    XmlObject relIDAtt = imagedata[0].selectAttribute(new QName(
+                            "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+                            "id"));
+                    if (relIDAtt != null) {
+                        String rid = relIDAtt.getDomNode().getNodeValue();
+                        embeddedPartMetadata = new EmbeddedPartMetadata(rid);
+                        tryToParseEmbeddedName(rid, embeddedPartMetadata);
+                    }
+                }
+            }
+        }
+        if (objectRelId == null) {
+            return;
+        }
+        if (! StringUtils.isBlank(progId)) {
+            embeddedPartMetadata.setProgId(progId);
+        }
+
+        if (embeddedPartMetadata != null) {
+            embeddedPartMetadataMap.put(objectRelId, embeddedPartMetadata);
+        }
+        AttributesImpl attributes = new AttributesImpl();
+        attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+        attributes.addAttribute("", "id", "id", "CDATA", objectRelId);
+        if (!StringUtils.isBlank(embeddedPartMetadata.getFullName())) {
+            attributes.addAttribute("", "name", "name", "CDATA",
+                    embeddedPartMetadata.getFullName());
+        }
+        xhtml.startElement("div", attributes);
+        xhtml.endElement("div");
+    }
+
+    private String tryToParseEmbeddedName(String rid, EmbeddedPartMetadata embeddedPartMetadata) {
+        //This tries to parse the embedded name out of a comment
+        //field in an emf
+        POIXMLDocumentPart part = document.getRelationById(rid);
+        if (part == null || part.getPackagePart() == null
+                || part.getPackagePart().getContentType() == null) {
+            return null;
+        }
+        PackagePart packagePart = part.getPackagePart();
+        if ("image/x-emf".equals(packagePart.getContentType())) {
+            try (InputStream is = packagePart.getInputStream()) {
+                EMFParser p = new EMFParser();
+                Metadata m = new Metadata();
+                ParseContext pc = new ParseContext();
+                ToTextContentHandler toTextContentHandler = new ToTextContentHandler();
+                p.parse(is, toTextContentHandler, m, pc);
+                embeddedPartMetadata.setRenderedName(toTextContentHandler.toString().trim());
+                embeddedPartMetadata.setFullName(m.get(EMFParser.EMF_ICON_STRING));
+            } catch (SecurityException e) {
+                throw e;
+            } catch (Exception e) {
+                //we tried
+            }
+        }
+        return null;
     }
 
     private void writeParagraphNumber(XWPFParagraph paragraph, XWPFListManager listManager,
