@@ -97,6 +97,9 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private XWPFStyles styles;
     private Metadata metadata;
 
+    //This is a map of the rIds of embedded files and the EmbeddedPartMetadata
+    //that may be associated with the embedded file. The EmbeddedPartMetadata
+    //is populated during the parse of the main document.
     private Map<String, EmbeddedPartMetadata> embeddedPartMetadataMap = new HashMap<>();
 
     public XWPFWordExtractorDecorator(Metadata metadata, ParseContext context,
