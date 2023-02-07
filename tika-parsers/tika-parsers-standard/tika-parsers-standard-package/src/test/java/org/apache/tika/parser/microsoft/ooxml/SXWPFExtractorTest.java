@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -32,43 +33,24 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 
-public class OOXMLParserTest extends TikaTest {
+public class SXWPFExtractorTest extends TikaTest {
 
-    @Test
-    public void testEmbeddedPDFInPPTX() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx");
-        Metadata pdfMetadata1 = metadataList.get(4);
-        assertContains("Apache Tika", pdfMetadata1.get(TikaCoreProperties.TIKA_CONTENT));
-        Metadata pdfMetadata2 = metadataList.get(5);
-        assertContains("Hello World", pdfMetadata2.get(TikaCoreProperties.TIKA_CONTENT));
-    }
+    private ParseContext parseContext;
 
-    @Test
-    public void testEmbeddedPDFInXLSX() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testExcel_embeddedPDF.xlsx");
-        Metadata pdfMetadata = metadataList.get(1);
-        assertContains("Hello World", pdfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
-    }
-
-    @Test
-    public void testEmbeddedPDFInStreamingPPTX() throws Exception {
-        ParseContext parseContext = new ParseContext();
+    @BeforeEach
+    public void setUp() {
+        parseContext = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setUseSAXDocxExtractor(true);
         officeParserConfig.setUseSAXPptxExtractor(true);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
 
-        List<Metadata> metadataList =
-                getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", parseContext);
-        Metadata pdfMetadata1 = metadataList.get(4);
-        assertContains("Apache Tika", pdfMetadata1.get(TikaCoreProperties.TIKA_CONTENT));
-        Metadata pdfMetadata2 = metadataList.get(5);
-        assertContains("Hello World", pdfMetadata2.get(TikaCoreProperties.TIKA_CONTENT));
     }
-
     @Test
+    @Disabled("TODO -- implement TIKA-3968 for SXWPFExtractor")
     public void testEMFAssociatedWithAttachments() throws Exception {
         //TIKA-3968
-        List<Metadata> metadataList = getRecursiveMetadata("testWORD_EMFAndAttachments.docx");
+        List<Metadata> metadataList = getRecursiveMetadata("testWORD_EMFAndAttachments.docx", parseContext);
 
         assertEquals("true", metadataList.get(1).get(EMFParser.EMF_ICON_ONLY));
         assertEquals("true", metadataList.get(3).get(EMFParser.EMF_ICON_ONLY));
@@ -114,12 +96,5 @@ public class OOXMLParserTest extends TikaTest {
                 metadataList.get(3).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.name(),
                 metadataList.get(5).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-    }
-
-    @Disabled("TODO figure out why this doesn't work")
-    @Test//(expected = org.apache.tika.exception.TikaException.class)
-    public void testCorruptedZip() throws Exception {
-        //TIKA_2446
-        getRecursiveMetadata("testZIP_corrupted_oom.zip");
     }
 }

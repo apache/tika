@@ -1,5 +1,7 @@
 Release 2.7.1 - ???
 
+   * Improve extraction of embedded file names in .docx (TIKA-3968).
+
    * Normalize author, title, subject and description to their Dublin Core
      properties in the HTMLParser (TIKA-3963).
 

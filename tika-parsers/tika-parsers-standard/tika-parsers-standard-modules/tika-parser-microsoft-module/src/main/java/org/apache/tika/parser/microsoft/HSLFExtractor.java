@@ -573,6 +573,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
     private void handleDataStream(InputStream dataStream, String objID, String progId,
                                   XHTMLContentHandler xhtml) {
+        //TODO -- inject progId into the metadata of the embedded file
         try (TikaInputStream stream = TikaInputStream.get(dataStream)) {
             String mediaType = null;
             if ("Excel.Chart.8".equals(progId)) {

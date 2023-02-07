@@ -23,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -56,6 +57,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParser;
@@ -64,6 +66,7 @@ import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -135,12 +138,16 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         buildXHTML(xhtml);
 
         // Now do any embedded parts
-        handleEmbeddedParts(xhtml, metadata);
+        handleEmbeddedParts(xhtml, metadata, getEmbeddedPartMetadataMap());
 
         // thumbnail
         handleThumbnail(xhtml, metadata);
 
         xhtml.endDocument();
+    }
+
+    protected Map<String, EmbeddedPartMetadata> getEmbeddedPartMetadataMap() {
+        return Collections.emptyMap();
     }
 
     protected String getJustFileName(String desc) {
@@ -199,7 +206,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         }
     }
 
-    private void handleEmbeddedParts(XHTMLContentHandler xhtml, Metadata metadata)
+    private void handleEmbeddedParts(XHTMLContentHandler xhtml, Metadata metadata,
+                                     Map<String, EmbeddedPartMetadata> embeddedPartMetadataMap)
             throws TikaException, IOException, SAXException {
         //keep track of media items that have been handled
         //there can be multiple relationships pointing to the
@@ -214,7 +222,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 }
                 for (PackageRelationship rel : source.getRelationships()) {
                     try {
-                        handleEmbeddedPart(source, rel, xhtml, metadata, handledTarget);
+                        handleEmbeddedPart(source, rel, xhtml, metadata,
+                                embeddedPartMetadataMap, handledTarget);
                     } catch (SAXException | SecurityException e) {
                         throw e;
                     } catch (Exception e) {
@@ -229,6 +238,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
     private void handleEmbeddedPart(PackagePart source, PackageRelationship rel,
                                     XHTMLContentHandler xhtml, Metadata parentMetadata,
+                                    Map<String, EmbeddedPartMetadata> embeddedPartMetadataMap,
                                     Set<String> handledTarget)
             throws IOException, SAXException, TikaException, InvalidFormatException {
         URI targetURI = rel.getTargetURI();
@@ -260,19 +270,28 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         } catch (IllegalArgumentException ex) {
             return;
         }
-
+        EmbeddedPartMetadata embeddedPartMetadata = embeddedPartMetadataMap.get(rel.getId());
         String type = rel.getRelationshipType();
         if (POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type) &&
                 TYPE_OLE_OBJECT.equals(target.getContentType())) {
-            handleEmbeddedOLE(target, xhtml, sourceDesc + rel.getId(), parentMetadata);
+            handleEmbeddedOLE(target, xhtml, sourceDesc + rel.getId(), parentMetadata,
+                    embeddedPartMetadata);
+            if (targetURI != null) {
+                handledTarget.add(targetURI.toString());
+            }
+        } else if (PackageRelationshipTypes.IMAGE_PART.equals(type)) {
+            handleEmbeddedFile(target, xhtml, sourceDesc + rel.getId(),
+                    embeddedPartMetadata, TikaCoreProperties.EmbeddedResourceType.INLINE);
             if (targetURI != null) {
                 handledTarget.add(targetURI.toString());
             }
         } else if (RELATION_MEDIA.equals(type) || RELATION_VIDEO.equals(type) ||
-                RELATION_AUDIO.equals(type) || PackageRelationshipTypes.IMAGE_PART.equals(type) ||
+                RELATION_AUDIO.equals(type) ||
                 POIXMLDocument.PACK_OBJECT_REL_TYPE.equals(type) ||
                 POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)) {
-            handleEmbeddedFile(target, xhtml, sourceDesc + rel.getId());
+            handleEmbeddedFile(target, xhtml, sourceDesc + rel.getId(),
+                    embeddedPartMetadata,
+                    TikaCoreProperties.EmbeddedResourceType.ATTACHMENT);
             if (targetURI != null) {
                 handledTarget.add(targetURI.toString());
             }
@@ -289,7 +308,9 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      * Handles an embedded OLE object in the document
      */
     private void handleEmbeddedOLE(PackagePart part, XHTMLContentHandler xhtml, String rel,
-                                   Metadata parentMetadata) throws IOException, SAXException {
+                                   Metadata parentMetadata,
+                                   EmbeddedPartMetadata embeddedPartMetadata) throws IOException,
+            SAXException {
         // A POIFSFileSystem needs to be at least 3 blocks big to be valid
         if (part.getSize() >= 0 && part.getSize() < 512 * 3) {
             // Too small, skip
@@ -308,6 +329,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         TikaInputStream stream = null;
         try {
             Metadata metadata = new Metadata();
+            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                    TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
             metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, rel);
 
             DirectoryNode root = fs.getRoot();
@@ -315,10 +338,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
             String packageEntryName = getPackageEntryName(root);
             if (packageEntryName != null) {
-                // TIKA-704: OLE 2.0 embedded non-Office document?
-                //TODO: figure out if the equivalent of OLE 1.0's
-                //getCommand() and getFileName() exist for OLE 2.0 to populate
-                //TikaCoreProperties.ORIGINAL_RESOURCE_NAME
+                //OLE 2.0
+                updateMetadata(metadata, embeddedPartMetadata);
                 stream = TikaInputStream.get(fs.createDocumentInputStream(packageEntryName));
                 if (embeddedExtractor.shouldParseEmbedded(metadata)) {
                     embeddedExtractor
@@ -348,7 +369,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                                     true);
                 }
             } else {
-                handleEmbeddedFile(part, xhtml, rel);
+                handleEmbeddedFile(part, xhtml, rel, embeddedPartMetadata,
+                        TikaCoreProperties.EmbeddedResourceType.ATTACHMENT);
             }
         } catch (FileNotFoundException e) {
             // There was no CONTENTS entry, so skip this part
@@ -364,6 +386,16 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 stream.close();
             }
         }
+    }
+
+    private void updateMetadata(Metadata metadata, EmbeddedPartMetadata embeddedPartMetadata) {
+        if (embeddedPartMetadata == null) {
+            return;
+        }
+        if (! StringUtils.isBlank(embeddedPartMetadata.getProgId())) {
+            metadata.set(Office.PROG_ID, embeddedPartMetadata.getProgId());
+        }
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, embeddedPartMetadata.getFullName());
     }
 
     private String getPackageEntryName(DirectoryNode root) {
@@ -386,15 +418,18 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     /**
      * Handles an embedded file in the document
      */
-    protected void handleEmbeddedFile(PackagePart part, XHTMLContentHandler xhtml, String rel)
+    protected void handleEmbeddedFile(PackagePart part, XHTMLContentHandler xhtml,
+                                      String rel,
+                                      EmbeddedPartMetadata embeddedPartMetadata,
+                                      TikaCoreProperties.EmbeddedResourceType embeddedResourceType)
             throws SAXException, IOException {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, rel);
+        metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                embeddedResourceType.name());
 
         // Get the name
-        String name = part.getPartName().getName();
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                name.substring(name.lastIndexOf('/') + 1));
+        updateResourceName(part, embeddedPartMetadata, metadata);
 
         // Get the content type
         metadata.set(Metadata.CONTENT_TYPE, part.getContentType());
@@ -406,6 +441,28 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                         .parseEmbedded(tis, xhtml, metadata, true);
             }
         }
+    }
+
+    private void updateResourceName(PackagePart part, EmbeddedPartMetadata embeddedPartMetadata,
+                                    Metadata metadata) {
+
+        if (embeddedPartMetadata != null) {
+            if (! StringUtils.isBlank(embeddedPartMetadata.getProgId())) {
+                metadata.set(Office.PROG_ID, embeddedPartMetadata.getProgId());
+            }
+            String fullName = embeddedPartMetadata.getFullName();
+            if (!StringUtils.isBlank(fullName)) {
+                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fullName);
+                return;
+            }
+        }
+        //TODO -- should we record the literal name of the embedded file?
+        String name = part.getPartName().getName();
+        int lastSlash = name.lastIndexOf('/');
+        if (lastSlash > -1) {
+            name = name.substring(lastSlash + 1);
+        }
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
     }
 
     /**

@@ -41,6 +41,18 @@ public class EMFParserTest extends TikaTest {
                 emfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
+    @Test
+    public void testIconOnly() throws Exception {
+        String fullFileName = "some word doc with a very long name that should be wrapped.docx";
+        //test file contributed by Ross Spencer on TIKA-3968
+        List<Metadata> metadataList = getRecursiveMetadata("testEMF_iconOnlyLongFilename.emf");
+        assertEquals("true", metadataList.get(0).get(EMFParser.EMF_ICON_ONLY));
+        assertEquals(fullFileName, metadataList.get(0).get(EMFParser.EMF_ICON_STRING));
+        assertContains("some word doc", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("a very long name that should be wrapped.docx",
+                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
 
 }
 
