@@ -36,6 +36,7 @@ import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructureTreeRoot;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
@@ -68,6 +69,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
+import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaIllustrator;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
@@ -180,6 +182,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             boolean hasMarkedContent = hasMarkedContent(pdfDocument, metadata);
             extractMetadata(pdfDocument, metadata, context);
             extractSignatures(pdfDocument, metadata);
+            checkIllustrator(pdfDocument, metadata);
             AccessChecker checker = localConfig.getAccessChecker();
             checker.check(metadata);
             renderPagesBeforeParse(tstream, handler, metadata, context, localConfig);
@@ -220,6 +223,37 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             }
         }
     }
+
+    private void checkIllustrator(final PDDocument pdfDocument, Metadata metadata) {
+
+        PDPage page = null;
+        try {
+            page = pdfDocument.getPage(0);
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            //things can go wrong
+            return;
+        }
+        COSDictionary pieceInfoDict = page.getCOSObject().getCOSDictionary(COSName.PIECE_INFO);
+        if (pieceInfoDict == null) {
+            return;
+        }
+
+        COSDictionary illustratorDict = pieceInfoDict.getCOSDictionary(COSName.ILLUSTRATOR);
+        if (illustratorDict == null) {
+            return;
+        }
+
+        COSDictionary privateDict = illustratorDict.getCOSDictionary(COSName.PRIVATE);
+        if (privateDict == null) {
+            return;
+        }
+        metadata.set(Metadata.CONTENT_TYPE, XMPSchemaIllustrator.ILLUSTRATOR);
+        //TODO -- consider parsing the metadata
+        //COSStream aiMetaData = privateDict.getCOSStream(COSName.AI_META_DATA);
+    }
+
     private void extractSignatures(PDDocument pdfDocument, Metadata metadata) {
         boolean hasSignature = false;
         try {
