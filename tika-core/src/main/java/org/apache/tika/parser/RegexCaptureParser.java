@@ -65,6 +65,8 @@ public class RegexCaptureParser extends AbstractParser implements Initializable 
         return SUPPORTED_TYPES;
     }
 
+    private boolean writeContent = false;
+
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
@@ -98,6 +100,10 @@ public class RegexCaptureParser extends AbstractParser implements Initializable 
                     if (e.getValue().reset(line).find()) {
                         metadata.set(e.getKey(), "true");
                     }
+                }
+                if (writeContent) {
+                    char[] chars = line.toCharArray();
+                    handler.characters(chars, 0, chars.length);
                 }
                 line = reader.readLine();
             }
@@ -134,5 +140,10 @@ public class RegexCaptureParser extends AbstractParser implements Initializable 
             Pattern pattern = Pattern.compile(e.getValue());
             matchMap.put(field, pattern);
         }
+    }
+
+    @Field
+    public void setWriteContent(boolean writeContent) {
+        this.writeContent = writeContent;
     }
 }
