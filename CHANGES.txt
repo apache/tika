@@ -1,5 +1,8 @@
 Release 2.7.1 - ???
 
+   * Fix bug in closing <a> elements in the presence of <b> elements
+     in RTF files (TIKA-3972).
+
    * Improve extraction of embedded file names in .docx (TIKA-3968).
 
    * Normalize author, title, subject and description to their Dublin Core
