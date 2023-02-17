@@ -1,5 +1,8 @@
 Release 2.7.1 - ???
 
+   * Users may now avoid the ZeroByteFileException via a
+     setting on the AutoDetectParserConfig (TIKA-3976).
+
    * Fix bug in closing <a> elements in the presence of <b> elements
      in RTF files (TIKA-3972).
 
