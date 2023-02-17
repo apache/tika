@@ -47,6 +47,7 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaIllustrator;
 import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaPDFUA;
 import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaPDFVT;
 import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaPDFX;
@@ -83,6 +84,26 @@ public class PDMetadataExtractor {
         extractPDFX(xmp, metadata);
         extractPDFVT(xmp, metadata);
         extractPDFUA(xmp, metadata);
+        extractIllustrator(xmp, metadata);
+    }
+
+    private static void extractIllustrator(XMPMetadata xmp, Metadata metadata) {
+        xmp.addXMLNSMapping(XMPSchemaIllustrator.NAMESPACE_URI, XMPSchemaIllustrator.class);
+        XMPSchemaIllustrator schema = null;
+        try {
+            schema = (XMPSchemaIllustrator) xmp.getSchemaByClass(XMPSchemaIllustrator.class);
+        } catch (IOException e) {
+            metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
+                    "" + e);
+        }
+
+        if (schema == null) {
+            return;
+        }
+        String type = schema.getType();
+        if (! StringUtils.isBlank(type)) {
+            metadata.set(PDF.ILLUSTRATOR_TYPE, type);
+        }
     }
 
     private static void extractDublin(XMPMetadata xmp, Metadata metadata) {

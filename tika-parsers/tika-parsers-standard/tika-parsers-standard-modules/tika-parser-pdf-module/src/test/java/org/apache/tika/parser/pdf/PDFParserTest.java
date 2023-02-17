@@ -1398,6 +1398,17 @@ public class PDFParserTest extends TikaTest {
         }
     }
 
+    @Test
+    public void testAI() throws Exception {
+        //This is file 1508.ai on PDFBOX-3385
+        //I changed the extension to pdf to make sure that the detection is
+        //coming from the structural chek we're now doing.
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_AdobeIllustrator.pdf");
+        assertEquals("application/illustrator", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        //we should try to find a small illustrator file xmp and the structural
+        //components we're looking for.
+    }
+
     /**
      * TODO -- need to test signature extraction
      */
