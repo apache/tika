@@ -27,5 +27,6 @@
       <markLimit>100000</markLimit>
       <algorithmString>sha256:32,md5</algorithmString>
     </digesterFactory>
+    <throwOnZeroBytes>false</throwOnZeroBytes>
   </autoDetectParserConfig>
 </properties>
