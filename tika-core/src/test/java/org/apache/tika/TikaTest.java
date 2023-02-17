@@ -342,29 +342,33 @@ public abstract class TikaTest {
 
     protected List<Metadata> getRecursiveMetadata(Path path, ParseContext context,
                                                   boolean suppressException) throws Exception {
-        try (TikaInputStream tis = TikaInputStream.get(path)) {
-            return getRecursiveMetadata(tis, AUTO_DETECT_PARSER, new Metadata(), context,
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(path, metadata)) {
+            return getRecursiveMetadata(tis, AUTO_DETECT_PARSER, metadata, context,
                     suppressException);
         }
     }
 
     protected List<Metadata> getRecursiveMetadata(Path path, Parser parser,
                                                   boolean suppressException) throws Exception {
-        try (TikaInputStream tis = TikaInputStream.get(path)) {
-            return getRecursiveMetadata(tis, parser, new Metadata(), new ParseContext(),
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(path, metadata)) {
+            return getRecursiveMetadata(tis, parser, metadata, new ParseContext(),
                     suppressException);
         }
     }
 
     protected List<Metadata> getRecursiveMetadata(Path p, boolean suppressException)
             throws Exception {
-        try (TikaInputStream tis = TikaInputStream.get(p)) {
-            return getRecursiveMetadata(tis, new Metadata(), new ParseContext(), suppressException);
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(p, metadata)) {
+            return getRecursiveMetadata(tis, metadata, new ParseContext(), suppressException);
         }
     }
 
     protected List<Metadata> getRecursiveMetadata(Path filePath) throws Exception {
-        try (TikaInputStream tis = TikaInputStream.get(filePath)) {
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(filePath, metadata)) {
             return getRecursiveMetadata(tis, true);
         }
     }

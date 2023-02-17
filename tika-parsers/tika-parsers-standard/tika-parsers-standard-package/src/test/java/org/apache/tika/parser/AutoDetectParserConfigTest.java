@@ -19,6 +19,8 @@ package org.apache.tika.parser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -104,7 +106,7 @@ public class AutoDetectParserConfigTest extends TikaTest {
         //test to make sure that the decorator is only applied once for
         //legacy (e.g. not RecursiveParserWrapperHandler) parsing
         TikaConfig tikaConfig = null;
-        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
+        try (InputStream is = AutoDetectParserConfigTest.class.getResourceAsStream(
                 "/configs/tika-config-digests.xml")) {
             tikaConfig = new TikaConfig(is);
         }
@@ -137,5 +139,24 @@ public class AutoDetectParserConfigTest extends TikaTest {
                 metadataList.get(0).get("X-TIKA:digest:MD5"));
         assertEquals("org.apache.tika.parser.EmptyParser",
                 metadataList.get(0).get("X-TIKA:Parsed-By"));
+    }
+
+    @Test
+    public void testContainerZeroBytes() throws Exception {
+        Path tmp = Files.createTempFile("tika-test", "");
+        try {
+            TikaConfig tikaConfig = null;
+            try (InputStream is = AutoDetectParserConfigTest.class.getResourceAsStream(
+                    "/configs/tika-config-digests.xml")) {
+                tikaConfig = new TikaConfig(is);
+            }
+            Parser p = new AutoDetectParser(tikaConfig);
+            List<Metadata> metadataList = getRecursiveMetadata(tmp, p, true);
+            assertEquals("d41d8cd98f00b204e9800998ecf8427e",
+                    metadataList.get(0).get("X-TIKA:digest:MD5"));
+            assertEquals("0", metadataList.get(0).get(Metadata.CONTENT_LENGTH));
+        } finally {
+            Files.delete(tmp);
+        }
     }
 }

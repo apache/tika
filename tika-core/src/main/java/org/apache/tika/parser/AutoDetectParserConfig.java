@@ -100,6 +100,8 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
     private DigestingParser.DigesterFactory digesterFactory = null;
 
+    private boolean throwOnZeroBytes = true;
+
     /**
      * Creates a SecureContentHandlerConfig using the passed in parameters.
      *
@@ -198,6 +200,14 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
         return this.digesterFactory;
     }
 
+    public void setThrowOnZeroBytes(boolean throwOnZeroBytes) {
+        this.throwOnZeroBytes = throwOnZeroBytes;
+    }
+
+    public boolean getThrowOnZeroBytes() {
+        return throwOnZeroBytes;
+    }
+
     @Override
     public String toString() {
         return "AutoDetectParserConfig{" + "spoolToDisk=" + spoolToDisk + ", outputThreshold=" +
@@ -206,7 +216,8 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
                 maximumPackageEntryDepth + ", metadataWriteFilterFactory=" +
                 metadataWriteFilterFactory + ", embeddedDocumentExtractorFactory=" +
                 embeddedDocumentExtractorFactory + ", contentHandlerDecoratorFactory=" +
-                contentHandlerDecoratorFactory + ", digesterFactory=" + digesterFactory + '}';
+                contentHandlerDecoratorFactory + ", digesterFactory=" + digesterFactory +
+                ", throwOnZeroBytes=" + throwOnZeroBytes + '}';
     }
 }
 
