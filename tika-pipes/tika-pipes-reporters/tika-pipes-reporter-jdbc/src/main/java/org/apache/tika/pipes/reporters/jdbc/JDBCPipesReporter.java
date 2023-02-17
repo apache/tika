@@ -25,6 +25,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -60,6 +61,8 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
     private static final long MAX_WAIT_MILLIS = 120000;
 
     private String connectionString;
+
+    private Optional<String> postConnectionString = Optional.empty();
     private final ArrayBlockingQueue<KeyStatusPair> queue =
             new ArrayBlockingQueue(ARRAY_BLOCKING_QUEUE_SIZE);
     CompletableFuture<Void> reportWorkerFuture;
@@ -70,7 +73,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         if (StringUtils.isBlank(connectionString)) {
             throw new TikaConfigException("Must specify a connectionString");
         }
-        ReportWorker reportWorker = new ReportWorker(connectionString, queue);
+        ReportWorker reportWorker = new ReportWorker(connectionString, postConnectionString, queue);
         reportWorker.init();
         reportWorkerFuture = CompletableFuture.runAsync(reportWorker);
     }
@@ -87,6 +90,18 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         this.connectionString = connection;
     }
 
+    /**
+     * This sql will be called immediately after the connection is made. This was
+     * initially added for setting pragmas on sqlite3, but may be used for other
+     * connection configuration in other dbs. Note: This is called before the table is
+     * created if it needs to be created.
+     *
+     * @param postConnection
+     */
+    @Field
+    public void setPostConnection(String postConnection) {
+        this.postConnectionString = Optional.of(postConnection);
+    }
 
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
@@ -155,13 +170,17 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
 
         private static final int MAX_TRIES = 3;
         private final String connectionString;
+        private final Optional<String> postConnectionString;
         private final ArrayBlockingQueue<KeyStatusPair> queue;
         List<KeyStatusPair> cache = new ArrayList<>();
         private Connection connection;
         private PreparedStatement insert;
 
-        public ReportWorker(String connectionString, ArrayBlockingQueue<KeyStatusPair> queue) {
+        public ReportWorker(String connectionString,
+                            Optional<String> postConnectionString,
+                            ArrayBlockingQueue<KeyStatusPair> queue) {
             this.connectionString = connectionString;
+            this.postConnectionString = postConnectionString;
             this.queue = queue;
         }
 
@@ -186,23 +205,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                     return;
                 }
                 if (p == KeyStatusPair.END_SEMAPHORE) {
-                    LOG.trace("received end semaphore");
-                    try {
-                        reportNow();
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                    LOG.trace("about to close");
-                    try {
-                        insert.close();
-                        connection.close();
-                        LOG.trace("successfully closed resources");
-                    } catch (SQLException e) {
-                        LOG.warn("problem shutting down reporter", e);
-                    }
-
+                    shutdownNow();
                     return;
                 }
                 cache.add(p);
@@ -217,6 +220,29 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                 }
             }
 
+        }
+
+        private void shutdownNow() {
+            LOG.trace("received end semaphore");
+            try {
+                reportNow();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                return;
+            }
+            LOG.trace("about to close");
+            try {
+                insert.close();
+            } catch (SQLException e) {
+                LOG.warn("problem shutting down insert statement in reporter", e);
+            }
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                LOG.warn("problem shutting down connection in reporter", e);
+            }
+            LOG.trace("successfully closed resources");
         }
 
         private void reportNow() throws SQLException, InterruptedException {
@@ -254,22 +280,46 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
             SQLException ex = null;
             while (++attempts < 3) {
                 try {
+                    tryClose();
                     createConnection();
                     createPreparedStatement();
+                    LOG.debug("success reconnecting after {} attempts", attempts);
                     return;
                 } catch (SQLException e) {
                     LOG.warn("problem reconnecting", e);
-                    //if there's a failure, wait 10 seconds
+                    //if there's a failure, wait 30 seconds
                     //and hope the db is back up.
-                    Thread.sleep(10000);
+                    Thread.sleep(30000);
                     ex = e;
                 }
             }
             throw ex;
         }
 
+        private void tryClose() {
+            if (insert != null) {
+                try {
+                    insert.close();
+                } catch (SQLException e) {
+                    LOG.warn("exception closing insert statement", insert);
+                }
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    LOG.warn("exception closing connection", e);
+                }
+            }
+        }
+
         private void createConnection() throws SQLException {
             connection = DriverManager.getConnection(connectionString);
+            if (postConnectionString.isPresent()) {
+                try (Statement st = connection.createStatement()) {
+                    st.execute(postConnectionString.get());
+                }
+            }
         }
 
         private void createPreparedStatement() throws SQLException {
