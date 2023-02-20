@@ -72,6 +72,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -1236,6 +1237,36 @@ public class HtmlParserTest extends TikaTest {
             assertContains("alert( 'Hello, world!' );",
                     metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         }
+    }
+
+    @Test
+    public void testMetadataMapping() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testHTML_metadata.html");
+        Metadata m = metadataList.get(0);
+        assertEquals("Free Web tutorials", m.get(TikaCoreProperties.DESCRIPTION));
+        assertEquals("Free Web tutorials", m.get("description"));
+
+        assertEquals("HTML,CSS,XML,JavaScript", m.get(TikaCoreProperties.SUBJECT));
+        assertEquals("HTML,CSS,XML,JavaScript", m.get("keywords"));
+
+        assertEquals("HTML,CSS,XML,JavaScript", m.get(Office.KEYWORDS));
+        assertEquals("HTML,CSS,XML,JavaScript", m.get(Office.KEYWORDS));
+
+        assertEquals("OldMetaTitle", m.get(TikaCoreProperties.TITLE));
+        assertEquals("OldMetaTitle", m.get("title"));
+
+        assertEquals("John Doe", m.get(TikaCoreProperties.CREATOR));
+        assertEquals("John Doe", m.get("author"));
+    }
+
+    @Test
+    public void testPreferenceForTitleElement() throws Exception {
+        //this tests that the <title> element is preferred over the title attribute
+        List<Metadata> metadataList = getRecursiveMetadata("testHTML_metadata_two_titles.html");
+        Metadata m = metadataList.get(0);
+
+        assertEquals("ActualTitle", m.get(TikaCoreProperties.TITLE));
+        assertEquals("OldMetaTitle", m.get("title"));
     }
 
     private class EncodingDetectorRunner implements Callable<String> {

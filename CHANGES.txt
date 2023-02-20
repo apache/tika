@@ -1,4 +1,22 @@
-Release 2.7.0 - ???
+Release 2.7.1 - ???
+
+   * Users may now avoid the ZeroByteFileException via a
+     setting on the AutoDetectParserConfig (TIKA-3976).
+
+   * Fix bug in closing <a> elements in the presence of <b> elements
+     in RTF files (TIKA-3972).
+
+   * Improve extraction of embedded file names in .docx (TIKA-3968).
+
+   * Normalize author, title, subject and description to their Dublin Core
+     properties in the HTMLParser (TIKA-3963).
+
+
+Release 2.7.0 - 1/31/2023
+
+   * Add SVG detection for svg files that lack the xml header (TIKA-3308).
+
+   * Migrate to a live fork of Universal Charset Detector (TIKA-3213).
 
    * Improve handling of text-based attachments inside .eml files (TIKA-3959).
 
@@ -13,8 +31,6 @@ Release 2.7.0 - ???
 
    * Remove log4j 1.2.x (and slf4j-log4j12 which now redirects to slf4j-reload4j) from
      all modules (TIKA-3935).
-
-   * Add SVG detection for svg files that lack the xml header (TIKA-3308).
 
    * Upgrade mime4j to 0.8.9 (TIKA-3950).
 

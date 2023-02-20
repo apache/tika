@@ -605,13 +605,7 @@ final class TextExtractor {
             localInParagraph = true;
         }
         if (!localInParagraph) {
-            // Ensure </i></b> order
-            if (groupState.italic) {
-                end("i");
-            }
-            if (groupState.bold) {
-                end("b");
-            }
+            endStyles(groupState);
             if (pendingListEnd != 0 && groupState.list != pendingListEnd) {
                 endList(pendingListEnd);
                 pendingListEnd = 0;
@@ -626,14 +620,7 @@ final class TextExtractor {
                 start(P);
                 pushParagraphTag(P);
             }
-
-            // Ensure <b><i> order
-            if (groupState.bold) {
-                start("b");
-            }
-            if (groupState.italic) {
-                start("i");
-            }
+            startStyles(groupState);
             inParagraph = true;
         }
     }
@@ -696,12 +683,7 @@ final class TextExtractor {
             if (preserveStyles && (groupState.bold || groupState.italic)) {
                 start(P);
                 pushParagraphTag(P);
-                if (groupState.bold) {
-                    start("b");
-                }
-                if (groupState.italic) {
-                    start("i");
-                }
+                startStyles(groupState);
                 inParagraph = true;
             } else {
                 inParagraph = false;
@@ -1199,10 +1181,7 @@ final class TextExtractor {
                         end("i");
                     }
                     groupState.bold = true;
-                    start("b");
-                    if (groupState.italic) {
-                        start("i");
-                    }
+                    startStyles(groupState);
                 }
             } else if (equals("i")) {
                 if (!groupState.italic) {
@@ -1218,14 +1197,7 @@ final class TextExtractor {
         if (equals("pard")) {
             // Reset styles
             pushText();
-            if (groupState.italic) {
-                end("i");
-                groupState.italic = false;
-            }
-            if (groupState.bold) {
-                end("b");
-                groupState.bold = false;
-            }
+            endStyles(groupState);
             if (inList()) { // && (groupStates.size() == 1 || groupStates.peekLast().list < 0))
                 pendingListEnd();
             }
@@ -1233,14 +1205,7 @@ final class TextExtractor {
             if (groupState.italic || groupState.bold) {
                 // Reset styles
                 pushText();
-                if (groupState.italic) {
-                    end("i");
-                    groupState.italic = false;
-                }
-                if (groupState.bold) {
-                    end("b");
-                    groupState.bold = false;
-                }
+                endStyles(groupState);
             }
         } else if (equals("par")) {
             if (!ignored) {
@@ -1396,6 +1361,36 @@ final class TextExtractor {
             pendingURL = null;
             fieldState = 3;
             groupState.ignore = false;
+        }
+    }
+
+    private void startStyles(GroupState groupState)
+            throws TikaException, IOException, SAXException {
+        //don't change styles within a <a > element
+        if (fieldState != 0) {
+            return;
+        }
+        // Ensure <b><i> order
+        if (groupState.bold) {
+            start("b");
+        }
+        if (groupState.italic) {
+            start("i");
+        }
+    }
+    private void endStyles(GroupState groupState) throws TikaException, IOException, SAXException {
+        //don't change styles within a <a > element
+        if (fieldState != 0) {
+            return;
+        }
+        // Ensure </i></b> order
+        if (groupState.italic) {
+            end("i");
+            groupState.italic = false;
+        }
+        if (groupState.bold) {
+            end("b");
+            groupState.bold = false;
         }
     }
 

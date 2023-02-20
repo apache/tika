@@ -74,6 +74,7 @@ public interface PDF {
     Property PDFX_VERSION = Property.internalText("pdfx:version");
 
     Property PDFX_CONFORMANCE = Property.internalText("pdfx:conformance");
+    Property ILLUSTRATOR_TYPE = Property.internalText("pdf:illustrator:type");
 
     Property IS_ENCRYPTED = Property.internalBoolean(PDF_PREFIX + "encrypted");
 

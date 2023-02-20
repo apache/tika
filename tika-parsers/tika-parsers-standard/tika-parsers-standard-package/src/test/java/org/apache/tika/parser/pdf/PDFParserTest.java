@@ -202,7 +202,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals(3, tracker.filenames.size());
         assertEquals(3, tracker.mediaTypes.size());
         assertEquals("image1.emf", tracker.filenames.get(0));
-        assertNull(tracker.filenames.get(1));
+        assertEquals("attached.pdf", tracker.filenames.get(1));
         assertEquals("Test.docx", tracker.filenames.get(2));
         assertEquals(TYPE_EMF, tracker.mediaTypes.get(0));
         assertEquals(TYPE_PDF, tracker.mediaTypes.get(1));

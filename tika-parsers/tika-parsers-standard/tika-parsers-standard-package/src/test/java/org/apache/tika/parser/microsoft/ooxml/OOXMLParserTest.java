@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.util.List;
 
 import org.junit.jupiter.api.Disabled;
@@ -23,8 +26,10 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 
 public class OOXMLParserTest extends TikaTest {
@@ -58,6 +63,57 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("Apache Tika", pdfMetadata1.get(TikaCoreProperties.TIKA_CONTENT));
         Metadata pdfMetadata2 = metadataList.get(5);
         assertContains("Hello World", pdfMetadata2.get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testEMFAssociatedWithAttachments() throws Exception {
+        //TIKA-3968
+        List<Metadata> metadataList = getRecursiveMetadata("testWORD_EMFAndAttachments.docx");
+
+        assertEquals("true", metadataList.get(1).get(EMFParser.EMF_ICON_ONLY));
+        assertEquals("true", metadataList.get(3).get(EMFParser.EMF_ICON_ONLY));
+        assertEquals("true", metadataList.get(5).get(EMFParser.EMF_ICON_ONLY));
+        assertEquals("TestText.txt", metadataList.get(1).get(EMFParser.EMF_ICON_STRING));
+        assertEquals("TestPdf.pdf", metadataList.get(3).get(EMFParser.EMF_ICON_STRING));
+        assertEquals("testWORD123.docx", metadataList.get(5).get(EMFParser.EMF_ICON_STRING));
+
+        assertNull(metadataList.get(2).get(Office.PROG_ID));
+        assertEquals("AcroExch.Document.DC", metadataList.get(4).get(Office.PROG_ID));
+        assertEquals("Word.Document.12", metadataList.get(6).get(Office.PROG_ID));
+
+        assertEquals("TestText.txt", metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("TestPdf.pdf", metadataList.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("testWORD123.docx", metadataList.get(6).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+
+        assertEquals("/TestText.txt",
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/TestPdf.pdf",
+                metadataList.get(4).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/testWORD123.docx",
+                metadataList.get(6).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+
+        assertContains("This is Text File",
+                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+
+        assertContains("This is test PDF document for parser.",
+                metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
+
+        assertContains("This is test word document for parser.",
+                metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT));
+
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name(),
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name(),
+                metadataList.get(4).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name(),
+                metadataList.get(6).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.name(),
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.name(),
+                metadataList.get(3).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.name(),
+                metadataList.get(5).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
     @Disabled("TODO figure out why this doesn't work")

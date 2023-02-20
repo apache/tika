@@ -312,6 +312,14 @@ public class RTFParserTest extends TikaTest {
     }
 
     @Test
+    public void testHyperLinkAndStyles() throws Exception {
+        String content = getXML("testRTFHyperlinkAndStyles.rtf").xml;
+        String needle = "<b><i>DIP</i>: " +
+                "<a href=\"..\\\\..\\\\SAUCES\\\\Dips\\\\Dip, Caesar.doc\">Dip, Caesar.doc</a></b>";
+        assertContains(needle, content);
+    }
+
+    @Test
     public void testIgnoredControlWord() throws Exception {
         assertContains("<p>The quick brown fox jumps over the lazy dog</p>",
                 getXML("testRTFIgnoredControlWord.rtf").xml);

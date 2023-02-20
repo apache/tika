@@ -177,11 +177,13 @@ public class AutoDetectParser extends CompositeParser {
             }
             //check for zero-byte inputstream
             if (tis.getOpenContainer() == null) {
-                tis.mark(1);
-                if (tis.read() == -1) {
-                    throw new ZeroByteFileException("InputStream must have > 0 bytes");
+                if (autoDetectParserConfig.getThrowOnZeroBytes()) {
+                    tis.mark(1);
+                    if (tis.read() == -1) {
+                        throw new ZeroByteFileException("InputStream must have > 0 bytes");
+                    }
+                    tis.reset();
                 }
-                tis.reset();
             }
             handler = decorateHandler(handler, metadata, context, autoDetectParserConfig);
             // TIKA-216: Zip bomb prevention

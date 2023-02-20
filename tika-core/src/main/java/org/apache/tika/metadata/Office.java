@@ -168,4 +168,10 @@ public interface Office {
     Property MAPI_MESSAGE_CLIENT_SUBMIT_TIME = Property.internalDate(
             PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
                     "mapi-msg-client-submit-time");
+
+    /**
+     * Embedded files may have a "progID" associated with them, such as
+     * Word.Document.12 or AcroExch.Document.DC
+     */
+    Property PROG_ID = Property.internalText("msoffice:progID");
 }

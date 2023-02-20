@@ -92,6 +92,7 @@ public class RFC822Parser extends AbstractParser {
                 config.isStrictParsing(), extractAllAlternatives);
         parser.setContentHandler(mch);
         parser.setContentDecoding(true);
+        parser.setNoRecurse();
         xhtml.startDocument();
         TikaInputStream tstream = TikaInputStream.get(stream);
         try {

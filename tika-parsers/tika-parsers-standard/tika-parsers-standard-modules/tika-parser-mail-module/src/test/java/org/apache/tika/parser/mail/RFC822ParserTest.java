@@ -558,10 +558,20 @@ public class RFC822ParserTest extends TikaTest {
     @Test
     public void testGroupwise() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testGroupWiseEml.eml");
-        assertEquals(2, metadataList.size());
-        assertContains("ssssss", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals(3, metadataList.size());
+        assertContains("test<", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("test2", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("/test.eml",
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+
+        assertContains("ssssss", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("/Neues Textdokument.txt",
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+
     }
 
     @Test
