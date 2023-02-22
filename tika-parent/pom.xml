@@ -358,7 +358,7 @@
     <junit5.version>5.9.2</junit5.version>
     <junrar.version>7.5.4</junrar.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.19.0</log4j2.version>
+    <log4j2.version>2.20.0</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
     <!-- lucene >= 9.x requires Java 11 -->
     <lucene.version>8.11.2</lucene.version>
