@@ -324,6 +324,7 @@
     <commons.logging.version>1.2</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.9.0</commons.net.version>
+    <commons.fileupload.version>1.5</commons.fileupload.version>
     <ctakes.version>4.0.0.1</ctakes.version>
     <cxf.version>3.5.5</cxf.version>
     <ddplist.version>1.26</ddplist.version>
@@ -936,6 +937,11 @@
         <groupId>xerces</groupId>
         <artifactId>xercesImpl</artifactId>
         <version>${xerces.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>commons-fileupload</groupId>
+          <artifactId>commons-fileupload</artifactId>
+          <version>${commons.fileupload.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
