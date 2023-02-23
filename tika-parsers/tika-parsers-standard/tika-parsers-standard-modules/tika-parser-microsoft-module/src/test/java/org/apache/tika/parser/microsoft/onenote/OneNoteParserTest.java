@@ -26,6 +26,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -274,5 +275,16 @@ public class OneNoteParserTest extends TikaTest {
         assertNotContained("\u83F2", txt);
         assertNotContained("\u432F", txt);
         assertNotContained("\u01E1", txt);
+    }
+
+    /**
+     * TIKA-3970 - test duplicate text.
+     */
+    @Test
+    public void testDupeText() throws Exception {
+        Metadata metadata = new Metadata();
+        String txt = getText("test-tika-3970-dupetext.one", metadata);
+
+        assertEquals(1, StringUtils.countMatches(txt, "Sunday morning"));
     }
 }
