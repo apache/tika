@@ -510,8 +510,10 @@ class OneNoteTreeWalker {
                 if (propertyValue.propertyId.propertyEnum ==
                         OneNotePropertyEnum.RichEditTextUnicode) {
                     if (!options.isOnlyLatestRevision()
-                            || (parentPropertyId != null && parentPropertyId.propertyEnum != OneNotePropertyEnum.ElementChildNodesOfVersionHistory)) {
-                        // only handle text for the latest revision, unless the options have the onlyLatestRevision = false
+                            || (parentPropertyId != null &&
+                            parentPropertyId.propertyEnum != OneNotePropertyEnum.ElementChildNodesOfVersionHistory)) {
+                        // only handle text for the latest revision, unless the options
+                        // have the onlyLatestRevision = false
                         handleRichEditTextUnicode(content.size());
                     }
                 } else {
