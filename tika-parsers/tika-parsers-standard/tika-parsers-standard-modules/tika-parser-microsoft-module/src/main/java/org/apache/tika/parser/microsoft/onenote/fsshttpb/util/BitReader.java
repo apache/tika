@@ -38,7 +38,7 @@ public class BitReader {
     /**
      * A byte array which contains the bytes need to be read.
      */
-    private BitSet bitSet;
+    private byte[] byteArray;
     /**
      * An offset which is used to keep trace for the current read position in bit.
      */
@@ -54,7 +54,7 @@ public class BitReader {
         this.offset = ((long) index * 8) - 1;
         this.startPosition = this.offset;
         this.length = (long) array.length * 8;
-        this.bitSet = BitSet.valueOf(array);
+        this.byteArray = array;
     }
 
     private static String toBinaryString(BitSet bs, int nbits) {
@@ -70,7 +70,7 @@ public class BitReader {
     }
 
     public boolean getCurrent() {
-        return bitSet.get((int) offset);
+        return (byteArray[(int) offset >> 3] & (1 << ((int) offset & 7))) != 0;
     }
 
     /**
@@ -155,7 +155,7 @@ public class BitReader {
      * Assign the internal read buffer to null.
      */
     public void dispose() {
-        this.bitSet = null;
+        this.byteArray = null;
     }
 
     /**
