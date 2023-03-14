@@ -315,7 +315,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
             insertStatement.setString(++col, emitKey);
             insertStatement.setInt(++col, i);
             for (ColumnDefinition columnDefinition : columns) {
-                updateValue(insertStatement, ++col, columnDefinition, i, metadataList);
+                updateValue(emitKey, insertStatement, ++col, columnDefinition, i, metadataList);
             }
             insertStatement.addBatch();
         }
@@ -330,7 +330,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         }
         insertStatement.setString(++i, emitKey);
         for (ColumnDefinition columnDefinition : columns) {
-            updateValue(insertStatement, ++i, columnDefinition, 0, metadataList);
+            updateValue(emitKey, insertStatement, ++i, columnDefinition, 0, metadataList);
         }
     }
 
@@ -377,7 +377,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         }
     }
 
-    private void updateValue(PreparedStatement insertStatement, int i,
+    private void updateValue(String emitKey, PreparedStatement insertStatement, int i,
                              ColumnDefinition columnDefinition, int metadataListIndex,
                              List<Metadata> metadataList)
             throws SQLException {
@@ -385,7 +385,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         String val = getVal(metadata, columnDefinition);
         switch (columnDefinition.getType()) {
             case Types.VARCHAR:
-                updateVarchar(columnDefinition, insertStatement, i, val);
+                updateVarchar(emitKey, columnDefinition, insertStatement, i, val);
                 break;
             case Types.BOOLEAN:
                 updateBoolean(insertStatement, i, val);
@@ -454,14 +454,15 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         insertStatement.setDouble(i, d);
     }
 
-    private void updateVarchar(ColumnDefinition columnDefinition, PreparedStatement insertStatement,
+    private void updateVarchar(String emitKey, ColumnDefinition columnDefinition, PreparedStatement insertStatement,
                                int i,
                                String val) throws SQLException {
         if (val == null) {
             insertStatement.setNull(i, Types.VARCHAR);
             return;
         }
-        String normalized = stringNormalizer.normalize(val, columnDefinition.getPrecision());
+        String normalized = stringNormalizer.normalize(emitKey,
+                columnDefinition.getColumnName(), val, columnDefinition.getPrecision());
         insertStatement.setString(i, normalized);
     }
 
@@ -603,11 +604,13 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
 
     private static class StringNormalizer {
 
-
-        String normalize(String s, int maxLength) {
+        String normalize(String emitKey, String columnName, String s, int maxLength) {
             if (maxLength < 0 || s.length() < maxLength) {
                 return s;
             }
+            LOGGER.warn("truncating {}->'{}' from {} chars to {} chars",
+                    emitKey, columnName, s.length(), maxLength);
+
             return s.substring(0, maxLength);
         }
     }
@@ -615,9 +618,9 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     private static class PostgresNormalizer extends StringNormalizer {
 
         @Override
-        String normalize(String s, int maxLength) {
+        String normalize(String emitKey, String columnName, String s, int maxLength) {
             s = s.replaceAll("\u0000", " ");
-            return super.normalize(s, maxLength);
+            return super.normalize(emitKey, columnName, s, maxLength);
         }
     }
 
