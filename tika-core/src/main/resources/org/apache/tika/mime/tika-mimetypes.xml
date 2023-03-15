@@ -3181,7 +3181,13 @@
   <mime-type type="application/x-ace-compressed">
     <glob pattern="*.ace"/>
   </mime-type>
-
+  <mime-type type="application/x-activemime">
+    <magic priority="60">
+      <!-- ActiveMime\u0000\u0000 -->
+      <match value="0x4163746976654D696D650000" type="string" offset="0">
+    </match>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-axcrypt">
     <_comment>AxCrypt</_comment>
     <glob pattern="*.axx" />

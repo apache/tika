@@ -20,6 +20,7 @@ org.apache.tika.parser.microsoft.MSOwnerFileParser
 org.apache.tika.parser.microsoft.OfficeParser
 org.apache.tika.parser.microsoft.OldExcelParser
 org.apache.tika.parser.microsoft.TNEFParser
+org.apache.tika.parser.microsoft.activemime.ActiveMimeParser
 org.apache.tika.parser.microsoft.onenote.OneNoteParser
 org.apache.tika.parser.microsoft.ooxml.OOXMLParser
 org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006.Word2006MLParser
