@@ -58,10 +58,12 @@ public class ActiveMimeParser extends AbstractParser {
         //based on: https://mastodon.social/@Ange/110027138524274526
         IOUtils.skipFully(stream, 12); //header
         IOUtils.skipFully(stream, 2); //version
-        IOUtils.skipFully(stream, 4); //flag1 040000
-        IOUtils.skipFully(stream, 4);//reserved ffffff
-        IOUtils.skipFully(stream, 4);//flag2 0000
-        long datasize = LittleEndian.readUInt(stream);//datasize
+        IOUtils.skipFully(stream, 4); //flag1 04000000
+        IOUtils.skipFully(stream, 4);//reserved ffffffff
+        IOUtils.skipFully(stream, 4);//flag2 000006F0
+        // do something with this?  If so, use readUInt
+        // long datasize = LittleEndian.readUInt(stream);
+        IOUtils.skipFully(stream, 4); //datasize
         long zlibOffset = LittleEndian.readUInt(stream);
         IOUtils.skipFully(stream, 4);//flag
         IOUtils.skipFully(stream, 4);//uncompressed size
