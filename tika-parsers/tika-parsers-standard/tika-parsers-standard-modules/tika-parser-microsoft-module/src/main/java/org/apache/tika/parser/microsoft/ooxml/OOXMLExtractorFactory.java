@@ -98,6 +98,9 @@ public class OOXMLExtractorFactory {
         File tmpRepairedCopy = null;
 
         OPCPackage pkg = null;
+        //if the pkg is in the opencontainer of a TikaInputStream, it will get closed.
+        //However, if a regular inputstream has been sent in, we need to revert the pkg.
+        boolean mustRevertPackage = false;
         try {
             OOXMLExtractor extractor = null;
 
@@ -117,6 +120,7 @@ public class OOXMLExtractorFactory {
             } else {
                 //OPCPackage slurps rris into memory so we can close rris
                 //without apparent problems
+                mustRevertPackage = true;
                 try (RereadableInputStream rereadableInputStream = new RereadableInputStream(stream,
                         MAX_BUFFER_LENGTH, false)) {
                     try {
@@ -254,10 +258,10 @@ public class OOXMLExtractorFactory {
         } catch (RuntimeSAXException e) {
             throw (SAXException) e.getCause();
         } finally {
+            if (pkg != null && mustRevertPackage) {
+                pkg.revert();
+            }
             if (tmpRepairedCopy != null) {
-                if (pkg != null) {
-                    pkg.revert();
-                }
                 boolean deleted = tmpRepairedCopy.delete();
                 if (!deleted) {
                     LOG.warn("failed to delete tmp (repair) file: " +
