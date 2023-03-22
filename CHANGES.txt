@@ -1,5 +1,8 @@
 Release 2.7.1 - ???
 
+   * Fix 'image/x-raw-canon' to 'image/x-canon-crw' and add detection
+     magic detection for canon raw file types: crw, cr2 and cr3 (TIKA-3991).
+
    * Add detection and a parser for ActiveMime files (TIKA-3987).
 
    * Users may now avoid the ZeroByteFileException via a
