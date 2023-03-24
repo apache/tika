@@ -137,4 +137,15 @@ class PropertyValue {
         this.rawData = rawData;
         return this;
     }
+
+    @Override
+    public String toString() {
+        return "PropertyValue{" +
+                "propertyId=" + propertyId +
+                ", scalar=" + scalar +
+                ", compactIDs=" + compactIDs +
+                ", propertySet=" + propertySet +
+                ", rawData=" + rawData +
+                '}';
+    }
 }

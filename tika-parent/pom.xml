@@ -291,22 +291,22 @@
     <forbiddenapis.version>3.4</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
-    <maven.assembly.version>3.4.2</maven.assembly.version>
+    <maven.assembly.version>3.5.0</maven.assembly.version>
     <maven.bundle.version>5.1.8</maven.bundle.version>
-    <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
-    <maven.failsafe.version>3.0.0-M9</maven.failsafe.version>
+    <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
+    <maven.failsafe.version>3.0.0</maven.failsafe.version>
     <maven.javadoc.version>3.5.0</maven.javadoc.version>
     <maven.jar.version>3.3.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
-    <maven.surefire.version>3.0.0-M9</maven.surefire.version>
+    <maven.surefire.version>3.0.0</maven.surefire.version>
     <maven.shade.version>3.4.1</maven.shade.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.15</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.18.0</google.cloud.version>
-    <aws.version>1.12.410</aws.version>
+    <google.cloud.version>2.20.2</google.cloud.version>
+    <aws.version>1.12.434</aws.version>
     <asm.version>9.4</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -316,7 +316,7 @@
     <commons.cli.version>1.5.0</commons.cli.version>
     <commons.codec.version>1.15</commons.codec.version>
     <commons.collections4.version>4.4</commons.collections4.version>
-    <commons.compress.version>1.22</commons.compress.version>
+    <commons.compress.version>1.23.0</commons.compress.version>
     <commons.csv.version>1.10.0</commons.csv.version>
     <commons.exec.version>1.3</commons.exec.version>
     <commons.io.version>2.11.0</commons.io.version>
@@ -324,6 +324,7 @@
     <commons.logging.version>1.2</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.9.0</commons.net.version>
+    <commons.fileupload.version>1.5</commons.fileupload.version>
     <ctakes.version>4.0.0.1</ctakes.version>
     <cxf.version>3.5.5</cxf.version>
     <ddplist.version>1.26</ddplist.version>
@@ -350,7 +351,7 @@
     <jbig2.version>3.0.4</jbig2.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
-    <jetty.version>9.4.50.v20221201</jetty.version>
+    <jetty.version>9.4.51.v20230217</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.13.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
@@ -358,7 +359,7 @@
     <junit5.version>5.9.2</junit5.version>
     <junrar.version>7.5.4</junrar.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.19.0</log4j2.version>
+    <log4j2.version>2.20.0</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
     <!-- lucene >= 9.x requires Java 11 -->
     <lucene.version>8.11.2</lucene.version>
@@ -380,28 +381,28 @@
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>5.2.3</poi.version>
     <quartz.version>2.3.2</quartz.version>
-    <reactor.netty.version>1.1.3</reactor.netty.version>
+    <reactor.netty.version>1.1.5</reactor.netty.version>
     <rome.version>1.19.0</rome.version>
-    <scm.version>2.0.0-M3</scm.version>
+    <scm.version>2.0.0</scm.version>
     <sis.version>1.3</sis.version>
-    <slf4j.version>2.0.6</slf4j.version>
+    <slf4j.version>2.0.7</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17 -->
-    <spring.version>5.3.25</spring.version>
-    <sqlite.version>3.40.1.0</sqlite.version>
+    <spring.version>5.3.26</spring.version>
+    <sqlite.version>3.41.2.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.17.6</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
     <twelvemonkeys.version>3.9.4</twelvemonkeys.version>
-    <uima.version>3.4.0</uima.version>
+    <uima.version>3.4.1</uima.version>
     <uimafit.version>3.4.0</uimafit.version>
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <zstd.version>1.5.4-1</zstd.version>
+    <zstd.version>1.5.4-2</zstd.version>
     <kafka.version>3.4.0</kafka.version>
-    <netty.version>4.1.89.Final</netty.version>
+    <netty.version>4.1.90.Final</netty.version>
   </properties>
 
   <dependencyManagement>
@@ -470,17 +471,17 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.20.3</version>
+        <version>12.21.1</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.36.0</version>
+        <version>1.37.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.13.0</version>
+        <version>1.13.1</version>
         <exclusions>
           <exclusion>
             <groupId>io.netty</groupId>
@@ -573,7 +574,7 @@
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
-        <version>3.22.0</version>
+        <version>3.22.2</version>
       </dependency>
       <dependency>
         <groupId>com.h2database</groupId>
@@ -655,7 +656,7 @@
       <dependency>
         <groupId>io.projectreactor</groupId>
         <artifactId>reactor-core</artifactId>
-        <version>3.5.3</version>
+        <version>3.5.4</version>
       </dependency>
       <dependency>
         <groupId>io.projectreactor.netty</groupId>
@@ -670,7 +671,7 @@
       <dependency>
         <groupId>it.unimi.dsi</groupId>
         <artifactId>fastutil</artifactId>
-        <version>8.5.11</version>
+        <version>8.5.12</version>
       </dependency>
       <dependency>
         <groupId>javax.annotation</groupId>
@@ -756,7 +757,7 @@
       <dependency>
         <groupId>org.apache.jackrabbit</groupId>
         <artifactId>oak-jackrabbit-api</artifactId>
-        <version>1.48.0</version>
+        <version>1.50.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
@@ -823,7 +824,7 @@
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-utils</artifactId>
-        <version>3.5.0</version>
+        <version>3.5.1</version>
       </dependency>
       <dependency>
         <groupId>org.freemarker</groupId>
@@ -937,6 +938,11 @@
         <artifactId>xercesImpl</artifactId>
         <version>${xerces.version}</version>
       </dependency>
+      <dependency>
+          <groupId>commons-fileupload</groupId>
+          <artifactId>commons-fileupload</artifactId>
+          <version>${commons.fileupload.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -971,7 +977,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.14.2</version>
+        <version>2.15.0</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
@@ -1002,7 +1008,7 @@
             <dependency>
               <groupId>io.grpc</groupId>
               <artifactId>grpc-core</artifactId>
-              <version>1.52.1</version>
+              <version>1.53.0</version>
             </dependency>
             <exclude>
               <!-- CVE-2018-18928 does affect the java library not just the c/c++ library,
@@ -1121,7 +1127,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>3.0.0-M7</version>
+        <version>3.0.0</version>
         <configuration>
           <autoVersionSubmodules>true</autoVersionSubmodules>
         </configuration>

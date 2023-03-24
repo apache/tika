@@ -100,6 +100,11 @@ class OneNoteTreeWalker {
     private boolean originalAuthorProp = false;
 
     /**
+     * Contains pairs of {Offset,Length} that we have added to the text stream already.
+     */
+    private Set<Pair<Long, Integer>> textAlreadyFetched = new HashSet<>();
+
+    /**
      * Create a one tree walker.
      *
      * @param options         The options for how to walk this tree.
@@ -149,7 +154,7 @@ class OneNoteTreeWalker {
             throws IOException, TikaException, SAXException {
         List<Map<String, Object>> res = new ArrayList<>();
         if (options.isCrawlAllFileNodesFromRoot()) {
-            res.add(walkFileNodeList(oneNoteDocument.root));
+            res.add(walkFileNodeList(oneNoteDocument.root, null));
         } else {
             for (ExtendedGUID revisionListGuid : oneNoteDocument.revisionListOrder) {
                 Map<String, Object> structure = new HashMap<>();
@@ -221,7 +226,7 @@ class OneNoteTreeWalker {
                         child.subType.rootObjectReference.rootObjectReferenceBase.rootRole == 1) {
                     FileNodePtr childFileNodePointer =
                             oneNoteDocument.guidToObject.get(child.gosid);
-                    children.add(walkFileNodePtr(childFileNodePointer));
+                    children.add(walkFileNodePtr(childFileNodePointer, null));
                 }
             }
         }
@@ -239,14 +244,16 @@ class OneNoteTreeWalker {
      * Walk the file node pointer.
      *
      * @param fileNodePtr The file node pointer.
+     * @param parentPropertyId The PropertyId of the parent.
      * @return Returns a map of the main data.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    public Map<String, Object> walkFileNodePtr(FileNodePtr fileNodePtr)
+    public Map<String, Object> walkFileNodePtr(FileNodePtr fileNodePtr,
+                                               OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         if (fileNodePtr != null) {
             FileNode fileNode = fileNodePtr.dereference(oneNoteDocument);
-            return walkFileNode(fileNode);
+            return walkFileNode(fileNode, parentPropertyId);
         }
         return Collections.emptyMap();
     }
@@ -258,7 +265,7 @@ class OneNoteTreeWalker {
      * @return The result.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    public Map<String, Object> walkFileNodeList(FileNodeList fileNodeList)
+    public Map<String, Object> walkFileNodeList(FileNodeList fileNodeList, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         Map<String, Object> structure = new HashMap<>();
         structure.put("oneNoteType", "FileNodeList");
@@ -266,7 +273,7 @@ class OneNoteTreeWalker {
         if (!fileNodeList.children.isEmpty()) {
             List<Map<String, Object>> children = new ArrayList<>();
             for (FileNode child : fileNodeList.children) {
-                children.add(walkFileNode(child));
+                children.add(walkFileNode(child, parentPropertyId));
             }
             structure.put("children", children);
         }
@@ -277,10 +284,12 @@ class OneNoteTreeWalker {
      * Walk a single file node.
      *
      * @param fileNode The file node.
+     * @param parentPropertyId
      * @return Map which is result of the parsed file node.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    public Map<String, Object> walkFileNode(FileNode fileNode)
+    public Map<String, Object> walkFileNode(FileNode fileNode,
+                                            OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         Map<String, Object> structure = new HashMap<>();
         structure.put("oneNoteType", "FileNode");
@@ -293,10 +302,10 @@ class OneNoteTreeWalker {
         structure.put("idDesc", fileNode.idDesc);
         if (fileNode.childFileNodeList != null &&
                 fileNode.childFileNodeList.fileNodeListHeader != null) {
-            structure.put("childFileNodeList", walkFileNodeList(fileNode.childFileNodeList));
+            structure.put("childFileNodeList", walkFileNodeList(fileNode.childFileNodeList, parentPropertyId));
         }
         if (fileNode.propertySet != null) {
-            List<Map<String, Object>> propSet = processPropertySet(fileNode.propertySet);
+            List<Map<String, Object>> propSet = processPropertySet(fileNode.propertySet, parentPropertyId);
             if (!propSet.isEmpty()) {
                 structure.put("propertySet", propSet);
             }
@@ -360,14 +369,17 @@ class OneNoteTreeWalker {
 
     /**
      * @param propertySet
+     * @param parentPropertyId
      * @return
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    private List<Map<String, Object>> processPropertySet(PropertySet propertySet)
+    private List<Map<String, Object>> processPropertySet(PropertySet propertySet,
+                                                         OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         List<Map<String, Object>> propValues = new ArrayList<>();
-        for (PropertyValue propertyValue : propertySet.rgPridsData) {
-            propValues.add(processPropertyValue(propertyValue));
+        for (int i = 0; i < propertySet.rgPridsData.size(); ++i) {
+            PropertyValue propertyValue = propertySet.rgPridsData.get(i);
+            propValues.add(processPropertyValue(propertyValue, parentPropertyId));
         }
         return propValues;
     }
@@ -391,10 +403,12 @@ class OneNoteTreeWalker {
      * engine parsing.
      *
      * @param propertyValue The property value we are parsing.
+     * @param parentPropertyId
      * @return The map parsed by this property value.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    private Map<String, Object> processPropertyValue(PropertyValue propertyValue)
+    private Map<String, Object> processPropertyValue(PropertyValue propertyValue,
+                                                     OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         Map<String, Object> propMap = new HashMap<>();
         propMap.put("oneNoteType", "PropertyValue");
@@ -495,7 +509,13 @@ class OneNoteTreeWalker {
                 }
                 if (propertyValue.propertyId.propertyEnum ==
                         OneNotePropertyEnum.RichEditTextUnicode) {
-                    handleRichEditTextUnicode(content.size());
+                    if (!options.isOnlyLatestRevision()
+                            || (parentPropertyId != null &&
+                            parentPropertyId.propertyEnum != OneNotePropertyEnum.ElementChildNodesOfVersionHistory)) {
+                        // only handle text for the latest revision, unless the options
+                        // have the onlyLatestRevision = false
+                        handleRichEditTextUnicode(content.size());
+                    }
                 } else {
                     //TODO -- these seem to be somewhat broken font files and other
                     //odds and ends...what are they and how should we process them?
@@ -507,14 +527,14 @@ class OneNoteTreeWalker {
             List<Map<String, Object>> children = new ArrayList<>();
             for (CompactID compactID : propertyValue.compactIDs) {
                 FileNodePtr childFileNodePointer = oneNoteDocument.guidToObject.get(compactID.guid);
-                children.add(walkFileNodePtr(childFileNodePointer));
+                children.add(walkFileNodePtr(childFileNodePointer, propertyValue.propertyId));
             }
             if (!children.isEmpty()) {
                 propMap.put("children", children);
             }
         }
         if (propertyValue.propertySet != null && propertyValue.propertySet.rgPridsData != null) {
-            List<Map<String, Object>> propSet = processPropertySet(propertyValue.propertySet);
+            List<Map<String, Object>> propSet = processPropertySet(propertyValue.propertySet, parentPropertyId);
             if (!propSet.isEmpty()) {
                 propMap.put("propertySet", propSet);
             }
@@ -543,7 +563,12 @@ class OneNoteTreeWalker {
     }
 
     private void handleRichEditTextUnicode(int length)
-            throws SAXException, IOException, TikaException {
+            throws SAXException, IOException {
+        if (!textAlreadyFetched.add(Pair.of(dif.position(), length))) {
+            // do not revisit already visited text, as you may encounter references to the same file nodes
+            // while walking the tree.
+            return;
+        }
         //this is a null-ended UTF-16LE string
         ByteBuffer buf = ByteBuffer.allocate(length);
         dif.read(buf);

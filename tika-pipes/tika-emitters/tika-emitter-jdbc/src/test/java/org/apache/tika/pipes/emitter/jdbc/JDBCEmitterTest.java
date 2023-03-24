@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.emitter.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -214,6 +215,43 @@ public class JDBCEmitterTest {
             }
         }
         assertEquals(1, rows);
+    }
+
+    @Test
+    public void testVarcharTruncation(@TempDir Path tmpDir) throws Exception {
+        Files.createDirectories(tmpDir.resolve("db"));
+        Path dbDir = tmpDir.resolve("db/h2");
+        Path config = tmpDir.resolve("tika-config.xml");
+        String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
+
+        writeConfig("/configs/tika-config-jdbc-emitter-trunc.xml",
+                connectionString, config);
+
+        EmitterManager emitterManager = EmitterManager.load(config);
+        Emitter emitter = emitterManager.getEmitter();
+        List<String[]> data = new ArrayList<>();
+        data.add(new String[]{"k1", "abcd"});
+        data.add(new String[]{"k1", "abcdefghijklmnopqrs"});
+        data.add(new String[]{"k1", "abcdefghijk"});
+        int id = 0;
+        for (String[] d : data) {
+            emitter.emit("id" + id++, Collections.singletonList(m(d)));
+        }
+
+        int rows = 0;
+        try (Connection connection = DriverManager.getConnection(connectionString)) {
+            try (Statement st = connection.createStatement()) {
+                try (ResultSet rs = st.executeQuery("select * from test")) {
+                    while (rs.next()) {
+                        String s = rs.getString(2);
+                        assertTrue(s.length() < 13);
+                        assertFalse(s.contains("m"));
+                        rows++;
+                    }
+                }
+            }
+        }
+        assertEquals(3, rows);
     }
 
     private void writeConfig(String srcConfig, String dbDir, Path config) throws IOException {

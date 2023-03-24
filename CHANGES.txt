@@ -1,5 +1,7 @@
 Release 2.7.1 - ???
 
+   * Add detection and a parser for ActiveMime files (TIKA-3987).
+
    * Users may now avoid the ZeroByteFileException via a
      setting on the AutoDetectParserConfig (TIKA-3976).
 
