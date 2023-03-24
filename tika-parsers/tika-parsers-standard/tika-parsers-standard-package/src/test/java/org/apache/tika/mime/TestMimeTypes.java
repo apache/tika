@@ -1306,6 +1306,11 @@ public class TestMimeTypes {
         assertTypeByNameAndData("model/e57", "testE57_header.e57");
     }
 
+    @Test
+    public void testPGPEncrypted() throws Exception {
+        assertTypeDetection("testPGPEncrypted.gpg", "application/pgp-encrypted");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }
