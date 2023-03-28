@@ -733,7 +733,13 @@
 
   <mime-type type="application/pgp-encrypted">
     <alias type="application/pgp"/>
+    <magic>
+      <match value="\x85" type="string" offset="0">
+        <match value="\x03" type="string" offset="3"/>
+      </match>
+    </magic>
     <glob pattern="*.pgp"/>
+    <glob pattern="*.gpg"/>
   </mime-type>
 
   <mime-type type="application/pgp-keys"/>
