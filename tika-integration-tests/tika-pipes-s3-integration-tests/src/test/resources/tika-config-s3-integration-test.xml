@@ -87,6 +87,7 @@
       <secretKey>{SECRET_KEY}</secretKey>
       <endpointConfigurationService>{ENDPOINT_CONFIGURATION_SERVICE}</endpointConfigurationService>
       <pathStyleAccessEnabled>true</pathStyleAccessEnabled>
+      <throttleSeconds>30,120,600,1200</throttleSeconds>
     </fetcher>
   </fetchers>
   <pipesIterator class="org.apache.tika.pipes.pipesiterator.s3.S3PipesIterator">
