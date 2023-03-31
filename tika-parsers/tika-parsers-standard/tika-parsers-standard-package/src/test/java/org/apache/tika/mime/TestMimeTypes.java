@@ -832,7 +832,7 @@ public class TestMimeTypes {
         assertTypeByName("image/x-raw-adobe", "x.DNG");
         assertTypeByName("image/x-raw-hasselblad", "x.3fr");
         assertTypeByName("image/x-raw-fuji", "x.raf");
-        assertTypeByName("image/x-canon-crw", "x.crw");
+        assertTypeByName("image/x-raw-canon", "x.crw");
         assertTypeByName("image/x-canon-cr2", "x.cr2");
         assertTypeByName("image/x-canon-cr3", "x.cr3");
         assertTypeByName("image/x-raw-kodak", "x.k25");

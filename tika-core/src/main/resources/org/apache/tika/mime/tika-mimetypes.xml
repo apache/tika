@@ -6268,7 +6268,8 @@
     <glob pattern="*.raf"/>
   </mime-type>
 
-  <mime-type type="image/x-canon-crw">
+  <mime-type type="image/x-raw-canon">
+    <!-- should we move this to: image/x-canon-crw ? -->
     <_comment>Canon raw image</_comment>
     <magic priority="50">
       <match value="\x49\x49\x1a\x00\x00\x00HEAPCCDR" type="string" offset="0"/>
