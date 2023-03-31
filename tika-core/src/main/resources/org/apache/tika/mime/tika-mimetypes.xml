@@ -5243,10 +5243,14 @@
       <match value="0xfffb" type="string" offset="0"/> <!-- V1, L3      -->
       <match value="0xfffc" type="string" offset="0"/> <!-- V1, L2, CRC -->
       <match value="0xfffd" type="string" offset="0"/> <!-- V1, L2      -->
+      <match value="0xffe3" type="string" offset="0"/> <!-- MP3 2.5 from pronom     -->
       <!-- TIKA-417: This is the UTF-16 LE byte order mark! -->
       <!-- match value="0xfffe" type="string" offset="0"/ --> <!-- V1, L1, CRC -->
       <match value="0xffff" type="string" offset="0"/> <!-- V1, L1      -->
       <match value="ID3" type="string" offset="0"/>
+      <!-- in the wild, 0D0A or quite a few \x00 may precede the magic -->
+      <match value="(?:\\x0D\\x0A|\\x00{1,1024})(?:\\xff[\\xe3\\xf2\\xf3\\xf4\\xf5\\xf6\\xf7\\xf8\\xf9\\xfa\\xfb\\xfc\\xfd\\xfe\\xff]|ID3)"
+             type="regex" offset="0"/>
     </magic>
     <glob pattern="*.mpga"/>
     <glob pattern="*.mp2"/>
