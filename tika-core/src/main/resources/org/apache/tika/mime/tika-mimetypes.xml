@@ -6275,9 +6275,44 @@
   </mime-type>
 
   <mime-type type="image/x-raw-canon">
+    <!-- should we move this to: image/x-canon-crw ? -->
     <_comment>Canon raw image</_comment>
+    <magic priority="50">
+      <match value="\x49\x49\x1a\x00\x00\x00HEAPCCDR" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.crw"/>
+  </mime-type>
+
+  <mime-type type="image/x-canon-cr2">
+    <_comment>Canon raw image, version 2, TIFF-based</_comment>
+    <!-- basically tiff header with 'CR' at offset 8; major version is at offset 9, minor at 10/.
+     priority must be higher than tiff -->
+    <magic priority="60">
+      <!-- MM.* = Big endian (M=Motorola) and 0x002a in big endian    -->
+      <match value="MM\x00\x2a" type="string" offset="0">
+        <match value="CR" type="string" offset="8"/>
+      </match>
+      <!-- II*. = Little endian (I=Intel) and 0x002a in little endian -->
+      <match value="II\x2a\x00" type="string" offset="0">
+        <match value="CR" type="string" offset="8"/>
+      </match>
+      <!-- MM.+ = Big endian (M=Motorola) and 0x002a in big endian-->
+      <match value="MM\x00\x2b" type="string" offset="0">
+        <match value="CR" type="string" offset="8"/>
+      </match>
+    </magic>
+    <sub-class-of type="image/tiff" />
     <glob pattern="*.cr2"/>
+  </mime-type>
+
+  <mime-type type="image/x-canon-cr3">
+    <_comment>Canon raw image, version 3, Quicktime-based</_comment>
+    <glob pattern="*.cr3"/>
+    <!-- needs to be higher than quicktime -->
+    <magic priority="60">
+      <match value="ftypcrx " type="string" offset="4"/>
+    </magic>
+    <sub-class-of type="video/quicktime" />
   </mime-type>
 
   <mime-type type="image/x-raw-kodak">
