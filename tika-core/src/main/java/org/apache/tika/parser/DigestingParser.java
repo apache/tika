@@ -21,7 +21,6 @@ package org.apache.tika.parser;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -29,6 +28,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 public class DigestingParser extends ParserDecorator {
 
