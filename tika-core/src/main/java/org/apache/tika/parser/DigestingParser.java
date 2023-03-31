@@ -21,6 +21,7 @@ package org.apache.tika.parser;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -32,15 +33,16 @@ import org.apache.tika.metadata.Metadata;
 public class DigestingParser extends ParserDecorator {
 
     private final Digester digester;
-
+    private final boolean skipContainerDocument;
     /**
      * Creates a decorator for the given parser.
      *
      * @param parser the parser instance to be decorated
      */
-    public DigestingParser(Parser parser, Digester digester) {
+    public DigestingParser(Parser parser, Digester digester, boolean skipContainerDocument) {
         super(parser);
         this.digester = digester;
+        this.skipContainerDocument = skipContainerDocument;
     }
 
     @Override
@@ -49,7 +51,7 @@ public class DigestingParser extends ParserDecorator {
         TemporaryResources tmp = new TemporaryResources();
         TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
         try {
-            if (digester != null) {
+            if (shouldDigest(metadata)) {
                 digester.digest(tis, metadata, context);
             }
             super.parse(tis, handler, metadata, context);
@@ -58,12 +60,28 @@ public class DigestingParser extends ParserDecorator {
         }
     }
 
+    private boolean shouldDigest(Metadata metadata) {
+        if (digester == null) {
+            return false;
+        }
+        if (! skipContainerDocument) {
+            return true;
+        }
+        Integer parseDepth = metadata.getInt(TikaCoreProperties.EMBEDDED_DEPTH);
+        if (parseDepth == null || parseDepth == 0) {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * This is used in {@link AutoDetectParserConfig} to (optionally)
      * wrap the parser in a digesting parser.
      */
     public interface DigesterFactory {
         Digester build();
+        void setSkipContainerDocument(boolean skipContainerDocument);
+        boolean isSkipContainerDocument();
     }
 
         /**

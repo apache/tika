@@ -17,6 +17,7 @@
 package org.apache.tika.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -117,6 +118,26 @@ public class AutoDetectParserConfigTest extends TikaTest {
 
         assertEquals("a16f14215ebbfa47bd995e799f03cb18",
                 metadataList.get(0).get("X-TIKA:digest:MD5"));
+
+        assertEquals("Q7D3RFV6DNGZ4BQIS6UKNWX4CDIKPIGDU2D7ADBUDVOBYSZHF7FQ====",
+                metadataList.get(6).get("X-TIKA:digest:SHA256"));
+        assertEquals("90a8b249a6d6b6cb127c59e01cef3aaa",
+                metadataList.get(6).get("X-TIKA:digest:MD5"));
+    }
+
+    @Test
+    public void testDigestsSkipContainer() throws Exception {
+        //test to make sure that the decorator is only applied once for
+        //legacy (e.g. not RecursiveParserWrapperHandler) parsing
+        TikaConfig tikaConfig = null;
+        try (InputStream is = AutoDetectParserConfigTest.class.getResourceAsStream(
+                "/configs/tika-config-digests-skip-container.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
+        Parser p = new AutoDetectParser(tikaConfig);
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p);
+        assertNull(metadataList.get(0).get("X-TIKA:digest:SHA256"));
+        assertNull(metadataList.get(0).get("X-TIKA:digest:MD5"));
 
         assertEquals("Q7D3RFV6DNGZ4BQIS6UKNWX4CDIKPIGDU2D7ADBUDVOBYSZHF7FQ====",
                 metadataList.get(6).get("X-TIKA:digest:SHA256"));

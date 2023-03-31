@@ -75,7 +75,7 @@ public class DigestingParserTest extends TikaTest {
         for (CommonsDigester.DigestAlgorithm algo : CommonsDigester.DigestAlgorithm.values()) {
             Metadata m = new Metadata();
             XMLResult xml = getXML("test_recursive_embedded.docx",
-                    new DigestingParser(AUTO_DETECT_PARSER, new CommonsDigester(UNLIMITED, algo)),
+                    new DigestingParser(AUTO_DETECT_PARSER, new CommonsDigester(UNLIMITED, algo), false),
                     m);
             assertEquals(expected.get(algo), m.get(P + algo.toString()), algo.toString());
         }
@@ -103,7 +103,8 @@ public class DigestingParserTest extends TikaTest {
         Metadata m = new Metadata();
         XMLResult xml = getXML("test_recursive_embedded.docx",
                 new DigestingParser(AUTO_DETECT_PARSER,
-                        new CommonsDigester(UNLIMITED, "md5,sha256,sha384,sha512,sha1:32")), m);
+                        new CommonsDigester(UNLIMITED, "md5,sha256,sha384,sha512,sha1:32"), false)
+                , m);
         for (CommonsDigester.DigestAlgorithm algo : new CommonsDigester.DigestAlgorithm[]{
                 CommonsDigester.DigestAlgorithm.MD5, CommonsDigester.DigestAlgorithm.SHA1,
                 CommonsDigester.DigestAlgorithm.SHA256, CommonsDigester.DigestAlgorithm.SHA384,
@@ -120,7 +121,8 @@ public class DigestingParserTest extends TikaTest {
         Metadata m = new Metadata();
         XMLResult xml = getXML("test_recursive_embedded.docx",
                 new DigestingParser(AUTO_DETECT_PARSER,
-                        new CommonsDigester(100, CommonsDigester.DigestAlgorithm.MD5)), m);
+                        new CommonsDigester(100, CommonsDigester.DigestAlgorithm.MD5),false)
+                , m);
         assertEquals(expectedMD5, m.get(P + "MD5"));
     }
 
@@ -131,7 +133,8 @@ public class DigestingParserTest extends TikaTest {
         try {
             XMLResult xml = getXML("test_recursive_embedded.docx",
                     new DigestingParser(AUTO_DETECT_PARSER,
-                            new CommonsDigester(-1, CommonsDigester.DigestAlgorithm.MD5)), m);
+                            new CommonsDigester(-1, CommonsDigester.DigestAlgorithm.MD5),
+                            false), m);
         } catch (IllegalArgumentException e) {
             ex = true;
         }

@@ -392,7 +392,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
         ParseContext context = new ParseContext();
         Parser wrapped = AUTO_DETECT_PARSER;
         if (digester != null) {
-            wrapped = new DigestingParser(wrapped, digester);
+            wrapped = new DigestingParser(wrapped, digester, false);
         }
         RecursiveParserWrapper wrapper =
                 new RecursiveParserWrapper(wrapped, catchEmbeddedExceptions);
