@@ -120,7 +120,12 @@ public class TikaResource {
         final Parser parser = new AutoDetectParser(TIKA_CONFIG);
 
         if (DIGESTER != null) {
-            return new DigestingParser(parser, DIGESTER);
+            boolean skipContainer = false;
+            if (TIKA_CONFIG.getAutoDetectParserConfig().getDigesterFactory() != null &&
+                    TIKA_CONFIG.getAutoDetectParserConfig().getDigesterFactory().isSkipContainerDocument()) {
+                skipContainer = true;
+            }
+            return new DigestingParser(parser, DIGESTER, skipContainer);
         }
         return parser;
     }
