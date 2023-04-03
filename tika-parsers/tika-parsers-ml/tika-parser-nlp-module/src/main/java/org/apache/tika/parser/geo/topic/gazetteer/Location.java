@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.geo.gazetteer;
+package org.apache.tika.parser.geo.topic.gazetteer;
 
 import java.io.Serializable;
 

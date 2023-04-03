@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.geo;
+package org.apache.tika.parser.geo.topic;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tika.parser.geo.gazetteer.Location;
+import org.apache.tika.parser.geo.topic.gazetteer.Location;
 
 public class GeoTag {
     Location location = new Location();

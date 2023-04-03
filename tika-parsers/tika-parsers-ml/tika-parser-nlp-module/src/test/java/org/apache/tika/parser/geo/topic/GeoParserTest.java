@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.geo;
+package org.apache.tika.parser.geo.topic;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -107,7 +107,7 @@ public class GeoParserTest extends TikaTest {
         TikaConfig config = new TikaConfig(
                 getResourceAsStream("/org/apache/tika/config/TIKA-3078-geo.topic.GeoParser.xml"));
         Parser p = config.getParser();
-        GeoParser geoParser = (GeoParser) findParser(p, org.apache.tika.parser.geo.GeoParser.class);
+        GeoParser geoParser = (GeoParser) findParser(p, GeoParser.class);
         assertNotNull(geoParser);
         assertEquals("http://localhost/gazetteerRestEndpoint",
                 geoParser.getGazetteerRestEndpoint());

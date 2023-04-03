@@ -18,9 +18,9 @@
 <properties>
     <parsers>
         <parser class="org.apache.tika.parser.DefaultParser">
-            <parser-exclude class="org.apache.tika.parser.geo.GeoParser"/>
+            <parser-exclude class="org.apache.tika.parser.geo.topic.GeoParser"/>
         </parser>
-        <parser class="org.apache.tika.parser.geo.GeoParser">
+        <parser class="org.apache.tika.parser.geo.topic.GeoParser">
             <params>
                 <param name="gazetteerRestEndpoint" type="string">http://localhost/gazetteerRestEndpoint</param>
                 <param name="nerModelUrl" type="string">file:/ner/model/url</param>

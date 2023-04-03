@@ -13,6 +13,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-org.apache.tika.parser.geo.GeoParser
+org.apache.tika.parser.geo.topic.GeoParser
 org.apache.tika.parser.journal.JournalParser
 org.apache.tika.parser.sentiment.SentimentAnalysisParser

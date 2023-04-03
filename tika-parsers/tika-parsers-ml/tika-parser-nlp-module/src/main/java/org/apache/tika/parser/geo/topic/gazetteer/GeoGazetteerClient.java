@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.geo.gazetteer;
+package org.apache.tika.parser.geo.topic.gazetteer;
 
 import java.lang.reflect.Type;
 import java.util.List;
@@ -33,7 +33,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.parser.geo.GeoParserConfig;
+import org.apache.tika.parser.geo.topic.GeoParserConfig;
 
 
 public class GeoGazetteerClient {

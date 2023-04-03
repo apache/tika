@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.geo;
+package org.apache.tika.parser.geo.topic;
 
 import java.io.File;
 import java.io.IOException;

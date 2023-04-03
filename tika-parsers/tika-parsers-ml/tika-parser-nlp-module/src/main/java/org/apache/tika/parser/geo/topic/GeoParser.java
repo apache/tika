@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.geo;
+package org.apache.tika.parser.geo.topic;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,8 +41,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.geo.gazetteer.GeoGazetteerClient;
-import org.apache.tika.parser.geo.gazetteer.Location;
+import org.apache.tika.parser.geo.topic.gazetteer.GeoGazetteerClient;
+import org.apache.tika.parser.geo.topic.gazetteer.Location;
 
 public class GeoParser extends AbstractParser {
     private static final long serialVersionUID = -2241391757440215491L;
