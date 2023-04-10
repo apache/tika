@@ -109,7 +109,8 @@ public class AutoDetectParser extends CompositeParser {
             return fallback;
         } else {
             return new DigestingParser(fallback,
-                    config.getAutoDetectParserConfig().getDigesterFactory().build());
+                    config.getAutoDetectParserConfig().getDigesterFactory().build(),
+                    config.getAutoDetectParserConfig().getDigesterFactory().isSkipContainerDocument());
         }
 
     }
@@ -119,7 +120,8 @@ public class AutoDetectParser extends CompositeParser {
             return config.getParser();
         }
         return new DigestingParser(config.getParser(),
-                config.getAutoDetectParserConfig().getDigesterFactory().build());
+                config.getAutoDetectParserConfig().getDigesterFactory().build(),
+                config.getAutoDetectParserConfig().getDigesterFactory().isSkipContainerDocument());
     }
 
     /**

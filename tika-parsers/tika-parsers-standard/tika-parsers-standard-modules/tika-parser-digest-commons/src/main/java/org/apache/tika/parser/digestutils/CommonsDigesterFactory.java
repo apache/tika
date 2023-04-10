@@ -28,6 +28,8 @@ public class CommonsDigesterFactory implements DigestingParser.DigesterFactory {
     private int markLimit = 1000000;
     private String algorithmString = "md5";
 
+    private boolean skipContainerDocument = false;
+
     @Override
     public DigestingParser.Digester build() {
         return new CommonsDigester(markLimit, algorithmString);
@@ -41,5 +43,16 @@ public class CommonsDigesterFactory implements DigestingParser.DigesterFactory {
     @Field
     public void setAlgorithmString(String algorithmString) {
         this.algorithmString = algorithmString;
+    }
+
+    @Field
+    @Override
+    public void setSkipContainerDocument(boolean skipContainerDocument) {
+        this.skipContainerDocument = skipContainerDocument;
+    }
+
+    @Override
+    public boolean isSkipContainerDocument() {
+        return skipContainerDocument;
     }
 }

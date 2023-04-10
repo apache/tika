@@ -76,7 +76,7 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
             Metadata m = new Metadata();
             XMLResult xml = getXML("test_recursive_embedded.docx",
                     new DigestingParser(AUTO_DETECT_PARSER,
-                            new BouncyCastleDigester(UNLIMITED, algo)), m);
+                            new BouncyCastleDigester(UNLIMITED, algo), false), m);
             assertEquals(expected.get(algo), m.get(P + algo));
         }
 
@@ -105,7 +105,7 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
         Metadata m = new Metadata();
         XMLResult xml = getXML("test_recursive_embedded.docx",
                 new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(UNLIMITED,
-                        "MD5,SHA256,SHA384,SHA512,SHA3-512,SHA1:32")), m);
+                        "MD5,SHA256,SHA384,SHA512,SHA3-512,SHA1:32"), false), m);
         for (String algo : new String[]{"MD5", "SHA256", "SHA384", "SHA512", "SHA3-512", "SHA1"}) {
             assertEquals(expected.get(algo), m.get(P + algo));
         }
@@ -119,7 +119,7 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
         String expectedMD5 = "59f626e09a8c16ab6dbc2800c685f772";
         Metadata m = new Metadata();
         XMLResult xml = getXML("test_recursive_embedded.docx",
-                new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(100, "MD5")), m);
+                new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(100, "MD5"), false), m);
         assertEquals(expectedMD5, m.get(P + "MD5"));
     }
 
@@ -127,7 +127,7 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
     public void testNegativeMaxMarkLength() throws Exception {
         assertThrows(IllegalArgumentException.class, () -> {
             getXML("test_recursive_embedded.docx",
-                    new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(-1, "MD5")));
+                    new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(-1, "MD5"), false));
         });
     }
 
@@ -135,7 +135,7 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
     public void testUnrecognizedEncodingOptions() throws Exception {
         assertThrows(IllegalArgumentException.class, () -> {
             getXML("test_recursive_embedded.docx", new DigestingParser(AUTO_DETECT_PARSER,
-                    new BouncyCastleDigester(100000, "MD5:33")));
+                    new BouncyCastleDigester(100000, "MD5:33"), false));
         });
     }
 

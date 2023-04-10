@@ -201,7 +201,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
         SwingUtilities.invokeLater(() -> new TikaGUI(
                 new DigestingParser(new AutoDetectParser(finalConfig),
                         new CommonsDigester(MAX_MARK, CommonsDigester.DigestAlgorithm.MD5,
-                                CommonsDigester.DigestAlgorithm.SHA256))).setVisible(true));
+                                CommonsDigester.DigestAlgorithm.SHA256), false)).setVisible(true));
     }
 
     private void addMenuBar() {

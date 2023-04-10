@@ -33,7 +33,11 @@ public class DigestingAutoDetectParserFactory extends ParserFactory {
         if (digester == null) {
             return p;
         }
-        return new DigestingParser(p, digester);
+        boolean skipContainerDocument = false;
+        if (config.getAutoDetectParserConfig().getDigesterFactory() != null) {
+            skipContainerDocument = config.getAutoDetectParserConfig().getDigesterFactory().isSkipContainerDocument();
+        }
+        return new DigestingParser(p, digester, skipContainerDocument);
     }
 
     public void setDigester(DigestingParser.Digester digester) {
