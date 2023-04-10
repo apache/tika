@@ -1312,6 +1312,12 @@ public class TestMimeTypes {
         assertTypeDetection("testPGPEncrypted.gpg", "application/pgp-encrypted");
     }
 
+    @Test
+    public void testONIX() throws Exception {
+        assertTypeByData("application/onix-message+xml", "testONIXMessage.xml");
+        assertTypeByData("application/onix-message+xml", "testONIXMessageShort.xml");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }

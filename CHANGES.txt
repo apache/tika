@@ -2,6 +2,8 @@ Release 2.7.1 - ???
 
    * Add magic detection for canon raw file types: crw, cr2 and cr3 (TIKA-3991).
 
+   * Add detection for ONIX message files (TIKA-4011).
+
    * Add detection and a parser for ActiveMime files (TIKA-3987).
 
    * Users may now avoid the ZeroByteFileException via a

@@ -6700,6 +6700,24 @@
     <sub-class-of type="application/xml"/>
   </mime-type>
 
+  <mime-type type="application/onix-message+xml">
+    <_comment>ONline Information eXchange (ONIX) for books</_comment>
+    <!-- see https://www.loc.gov/preservation/digital/formats/fdd/fdd000488.shtml -->
+    <root-XML localName="ONIXMessage" namespaceURI="http://ns.editeur.org/onix/3.0/reference"/>
+    <!-- do we want a separate mime for this? -->
+    <root-XML localName="ONIXmessage" namespaceURI="http://ns.editeur.org/onix/3.0/short"/>
+    <root-XML localName="ONIXMessage"/>
+    <sub-class-of type="application/xml"/>
+  </mime-type>
+
+  <mime-type type="application/onix-message-short+xml">
+    <_comment>ONline Information eXchange (ONIX) for books</_comment>
+    <!-- see https://www.loc.gov/preservation/digital/formats/fdd/fdd000488.shtml -->
+    <root-XML localName="ONIXMessage" namespaceURI="http://ns.editeur.org/onix/3.0/reference"/>
+    <root-XML localName="ONIXMessage"/>
+    <sub-class-of type="application/xml"/>
+  </mime-type>
+
   <mime-type type="text/x-actionscript">
     <_comment>ActionScript source code</_comment>
     <glob pattern="*.as"/>
