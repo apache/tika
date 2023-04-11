@@ -327,7 +327,7 @@
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <ctakes.version>4.0.0.1</ctakes.version>
     <cxf.version>3.5.5</cxf.version>
-    <ddplist.version>1.26</ddplist.version>
+    <ddplist.version>1.27</ddplist.version>
     <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions &gt; 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
