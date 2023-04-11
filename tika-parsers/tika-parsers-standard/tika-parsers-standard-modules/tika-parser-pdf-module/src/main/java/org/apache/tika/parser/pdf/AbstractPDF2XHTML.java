@@ -683,8 +683,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 }
                 if (annotation instanceof PDAnnotationFileAttachment) {
                     PDAnnotationFileAttachment fann = (PDAnnotationFileAttachment) annotation;
-                    processDocOnAction("", "annotationFileAttachment", fann.getFile(),
-                                new AttributesImpl());
+                    String subtype = "annotationFileAttachment";
+                    AttributesImpl attributes = new AttributesImpl();
+                    attributes.addAttribute("", "source", "source", "CDATA", subtype);
+                    processDocOnAction("", subtype, fann.getFile(),
+                                attributes);
                 } else if (annotation instanceof PDAnnotationWidget) {
                     handleWidget((PDAnnotationWidget) annotation);
                 } else {
@@ -698,9 +701,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                         num3DAnnotations++;
                     }
                     for (COSDictionary fileSpec : findFileSpecs(annotation.getCOSObject())) {
+                        AttributesImpl attributes = new AttributesImpl();
+                        attributes.addAttribute("", "source", "source", "CDATA", annotationSubtype);
                         processDocOnAction("", annotationSubtype,
                                 createFileSpecification(fileSpec),
-                                new AttributesImpl());
+                                attributes);
                     }
                 }
                 // TODO: remove once PDFBOX-1143 is fixed:
