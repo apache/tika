@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ONIXMessage release="3.0" xmlns="http://ns.editeur.org/onix/3.0/reference">
+  <Header>
+    <Sender>
+      <SenderName>Global Bookinfo</SenderName>
+      <ContactName>Someone Or Other, blah</ContactName>
+      <EmailAddress>someone@gmail.com</EmailAddress>
+    </Sender>
+    <Addressee>
+      <AddresseeName>BooksBooksBooks.com</AddresseeName>
+    </Addressee>
+    <MessageNumber>231</MessageNumber>
+    <SentDateTime>20100510T1115-0400</SentDateTime>
+    <MessageNote>Sample message</MessageNote>
+  </Header>
+  <!-- product record 1 of 1 in message -->
+  <Product>
+    <RecordReference>com.globalbookinfo.onix.01734529</RecordReference>
+    <NotificationType>03</NotificationType>
+  </Product>
+</ONIXMessage>

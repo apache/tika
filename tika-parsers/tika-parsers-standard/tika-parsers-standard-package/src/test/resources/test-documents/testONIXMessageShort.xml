@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ONIXmessage release="3.0" xmlns="http://ns.editeur.org/onix/3.0/short">
+  <header>
+    <sender>
+      <x298>Global Bookinfo</x298>
+      <x299>Jane King, +1 555 321 7654</x299>
+      <j272>jbk@globalbookinfo.com</j272>
+    </sender>
+    <addressee>
+      <x300>BooksBooksBooks.com</x300>
+    </addressee>
+    <m180>231</m180>
+    <x307>20100510T1115-0400</x307>
+    <m183>Sample message</m183>
+  </header>
+  <!-- product record 1 of 1 in message -->
+  <product>
+    <a001>com.globalbookinfo.onix.01734529</a001>
+    <a002>03</a002>
+    <a194>04</a194>
+    <recordsourceidentifier>
+    </recordsourceidentifier>
+  </product>
+</ONIXmessage>
