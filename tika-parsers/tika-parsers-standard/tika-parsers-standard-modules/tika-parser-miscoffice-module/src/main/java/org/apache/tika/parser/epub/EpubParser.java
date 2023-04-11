@@ -81,6 +81,8 @@ public class EpubParser extends AbstractParser {
     @Field
     boolean streaming = false;
     private Parser meta = new DcXMLParser();
+
+    private Parser opf = new OPFParser();
     private Parser content = new EpubContentParser();
 
     public Parser getMetaParser() {
@@ -143,7 +145,7 @@ public class EpubParser extends AbstractParser {
             } else if (entry.getName().equals("metadata.xml")) {
                 meta.parse(zip, new DefaultHandler(), metadata, context);
             } else if (entry.getName().endsWith(".opf")) {
-                meta.parse(zip, new DefaultHandler(), metadata, context);
+                opf.parse(zip, new DefaultHandler(), metadata, context);
             } else if (entry.getName().endsWith(".htm") || entry.getName().endsWith(".html") ||
                     entry.getName().endsWith(".xhtml") || entry.getName().endsWith(".xml")) {
                 content.parse(zip, bodyHandler, metadata, context);
@@ -230,7 +232,7 @@ public class EpubParser extends AbstractParser {
         if (zae == null || !zipFile.canReadEntryData(zae)) {
             return false;
         }
-        meta.parse(zipFile.getInputStream(zae), new DefaultHandler(), metadata, context);
+        opf.parse(zipFile.getInputStream(zae), new DefaultHandler(), metadata, context);
 
         ContentOrderScraper contentOrderScraper = new ContentOrderScraper();
         try (InputStream is = zipFile.getInputStream(zae)) {
