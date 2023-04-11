@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.InputStream;
 import java.util.List;
 
+import org.apache.tika.metadata.Epub;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -37,7 +39,7 @@ public class EpubParserTest extends TikaTest {
     public void testXMLParser() throws Exception {
 
         XMLResult xmlResult = getXML("testEPUB.epub");
-
+        assertEquals("2.0", xmlResult.metadata.get(Epub.VERSION));
         assertEquals("application/epub+zip", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("en", xmlResult.metadata.get(TikaCoreProperties.LANGUAGE));
         assertEquals("This is an ePub test publication for Tika.",
@@ -65,6 +67,7 @@ public class EpubParserTest extends TikaTest {
     @Test
     public void testEpubOrder() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testEPUB.epub");
+        assertEquals("2.0", metadataList.get(0).get(Epub.VERSION));
 
         //test attachments
         assertEquals(2, metadataList.size());
@@ -111,7 +114,21 @@ public class EpubParserTest extends TikaTest {
         //TIKA-2310
         List<Metadata> metadataList = getRecursiveMetadata("testEPUB_xml_ext.epub");
         assertEquals(1, metadataList.size());
+        assertEquals("2.0", metadataList.get(0).get(Epub.VERSION));
         assertContains("It was a bright cold day in April",
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    @Disabled("add files to repo?")
+    public void testPrePaginated() throws Exception {
+        //this file has pre-paginated on an itemRef in a spine
+        //https://github.com/IDPF/epub3-samples/releases/download/20170606/cole-voyage-of-life.epub
+
+        //this file has pre-paginated in header metadata
+        //https://github.com/IDPF/epub3-samples/releases/download/20170606/cole-voyage-of-life-tol.epub
+
+        List<Metadata> metadataList = getRecursiveMetadata("cole-voyage-of-life.epub");
+        assertEquals("pre-paginated", metadataList.get(0).get(Epub.RENDITION_LAYOUT));
     }
 }

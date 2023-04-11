@@ -4,6 +4,8 @@ Release 2.7.1 - ???
 
    * Add detection and a parser for ActiveMime files (TIKA-3987).
 
+   * Add extraction of rendition layout value and version from Epub (TIKA-4013).
+
    * Users may now avoid the ZeroByteFileException via a
      setting on the AutoDetectParserConfig (TIKA-3976).
 
