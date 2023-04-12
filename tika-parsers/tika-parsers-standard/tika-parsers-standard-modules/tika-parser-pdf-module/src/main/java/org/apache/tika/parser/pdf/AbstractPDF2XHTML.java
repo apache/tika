@@ -35,6 +35,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -57,6 +58,7 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageTree;
 import org.apache.pdfbox.pdmodel.common.COSObjectable;
 import org.apache.pdfbox.pdmodel.common.PDDestinationOrAction;
+import org.apache.pdfbox.pdmodel.common.PDNameTreeNode;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDFileSpecification;
@@ -338,15 +340,43 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     private void extractEmbeddedDocuments(PDDocument document)
             throws IOException, SAXException, TikaException {
-        //See 14.13.10 fo the 2.0 spec.  Associated files can show up in lots of places...even
+        //See 14.13.10 for the 2.0 spec.  Associated files can show up in lots of places...even
         // streams.
         // It would be great to get more context from the /AF info, but we risk missing files
         //if we don't look everywhere.  With the current method, we're at least getting all
         //filespecs at the cost of losing context (to what was this file attached?).
 
+        //find all Filespecs TIKA-4012
         List<COSObject> objs = document.getDocument().getObjectsByType(COSName.FILESPEC);
+        Set<COSBase> seen = new HashSet<>();
         for (COSObject obj : objs) {
             processDoc("", "", createFileSpecification(obj.getObject()), new AttributesImpl());
+            seen.add(obj.getObject());
+        }
+
+        //now go through the embedded files names tree to get those rare cases where
+        //a file (instead of a filespec) is attached directly to the names tree
+        //or where the filespec is a direct object
+
+        if (document.getDocumentCatalog() == null) {
+            return;
+        }
+        if (document.getDocumentCatalog().getNames() == null) {
+            return;
+        }
+        if (document.getDocumentCatalog().getNames().getEmbeddedFiles() == null) {
+            return;
+        }
+        Map<String, PDComplexFileSpecification> m = new HashMap<>();
+        extractFilesfromEFTree(document.getDocumentCatalog().getNames().getEmbeddedFiles(), m, 0);
+        //this avoids duplication with the above /FileSpec searching, but also in the case
+        //where the same underlying file has different names in the EFTree
+        for (Map.Entry<String, PDComplexFileSpecification> e : m.entrySet()) {
+            if (seen.contains(e.getValue().getCOSObject())) {
+                continue;
+            }
+            processDoc(e.getKey(), "", e.getValue(), new AttributesImpl());
+            seen.add(e.getValue().getCOSObject());
         }
     }
 
@@ -393,7 +423,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (spec == null) {
             return;
         }
-
 
         //current strategy is to pull all, not just first non-null
         extractPDEmbeddedFile(displayName, annotationType, spec,
@@ -445,9 +474,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (!StringUtils.isBlank(spec.getFileDescription())) {
             embeddedMetadata.set(PDF.EMBEDDED_FILE_DESCRIPTION, spec.getFileDescription());
         }
-        if (!StringUtils.isBlank(spec.getCOSObject().getString(AF_RELATIONSHIP))) {
-            embeddedMetadata.set(PDF.ASSOCIATED_FILE_RELATIONSHIP,
-                    spec.getCOSObject().getString(AF_RELATIONSHIP));
+        String afRelationship = spec.getCOSObject().getNameAsString(AF_RELATIONSHIP);
+        if (StringUtils.isBlank(afRelationship)) {
+            afRelationship = spec.getCOSObject().getString(AF_RELATIONSHIP);
+        }
+        if (!StringUtils.isBlank(afRelationship)) {
+            embeddedMetadata.set(PDF.ASSOCIATED_FILE_RELATIONSHIP, afRelationship);
         }
         if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             return;
@@ -808,20 +840,32 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         return PDFDOMUtil.findType(cosDict, types, MAX_RECURSION_DEPTH);
     }
 
-    private void handlePDComplexFileSpec(String attachmentName, String annotationType,
-                                         PDComplexFileSpecification fileSpec) throws IOException {
+    private void extractFilesfromEFTree(PDNameTreeNode efTree,
+                                        Map<String, PDComplexFileSpecification> embeddedFileNames,
+                                        int depth) throws IOException {
+        if (depth > MAX_RECURSION_DEPTH) {
+            throw new IOException("Hit max recursion depth");
+        }
+        Map<String, PDComplexFileSpecification> names = null;
         try {
-            AttributesImpl attributes = new AttributesImpl();
-            attributes.addAttribute("", "source", "source", "CDATA", annotationType);
-            extractMultiOSPDEmbeddedFiles(attachmentName, annotationType, fileSpec, attributes);
-        } catch (SAXException e) {
-            throw new IOException("file embedded in annotation sax exception", e);
-        } catch (TikaException e) {
-            throw new IOException("file embedded in annotation tika exception", e);
+            names = efTree.getNames();
         } catch (IOException e) {
-            handleCatchableIOE(e);
+            //LOG?
+        }
+        if (names != null) {
+            for (Map.Entry<String, PDComplexFileSpecification> e : names.entrySet()) {
+                embeddedFileNames.put(e.getKey(), e.getValue());
+            }
         }
 
+        List<PDNameTreeNode<PDComplexFileSpecification>> kids = efTree.getKids();
+        if (kids == null) {
+            return;
+        } else {
+            for (PDNameTreeNode<PDComplexFileSpecification> node : kids) {
+                extractFilesfromEFTree(node, embeddedFileNames, depth + 1);
+            }
+        }
     }
 
 
