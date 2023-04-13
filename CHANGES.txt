@@ -8,6 +8,8 @@ Release 2.7.1 - ???
 
    * Add extraction of rendition layout value and version from Epub (TIKA-4013).
 
+   * Update to PDFBox 2.0.28 (TIKA-4016).
+
    * Users may now avoid the ZeroByteFileException via a
      setting on the AutoDetectParserConfig (TIKA-3976).
 
