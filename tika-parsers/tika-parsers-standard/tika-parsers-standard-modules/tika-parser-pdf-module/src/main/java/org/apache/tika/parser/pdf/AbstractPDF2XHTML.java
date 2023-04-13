@@ -344,7 +344,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         // streams.
         // It would be great to get more context from the /AF info, but we risk missing files
         //if we don't look everywhere.  With the current method, we're at least getting all
-        //filespecs at the cost of losing context (to what was this file attached?).
+        //filespecs at the cost of losing context (to what was this file attached: doc, page,
+        // stream, etc?).
 
         //find all Filespecs TIKA-4012
         List<COSObject> objs = document.getDocument().getObjectsByType(COSName.FILESPEC);
