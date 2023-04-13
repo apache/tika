@@ -175,4 +175,7 @@ public interface PDF {
      * Number of 3D annotations a PDF contains.  This makes {@link PDF#HAS_3D} redundant.
      */
     Property NUM_3D_ANNOTATIONS = Property.internalInteger(PDF_PREFIX + "num3DAnnotations");
+
+    Property ASSOCIATED_FILE_RELATIONSHIP = Property.internalText(PDF_PREFIX +
+            "associatedFileRelationship");
 }

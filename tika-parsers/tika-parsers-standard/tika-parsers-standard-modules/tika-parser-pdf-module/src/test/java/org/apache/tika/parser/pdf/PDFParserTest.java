@@ -1433,5 +1433,4 @@ public class PDFParserTest extends TikaTest {
         metadata.set(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
         return metadata;
     }*/
-
 }
