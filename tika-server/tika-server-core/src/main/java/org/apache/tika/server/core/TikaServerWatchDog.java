@@ -215,10 +215,11 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
     }
 
     private synchronized ForkedProcess startForkedProcess(int restarts) throws Exception {
+        LOG.debug("attempting to start forked process on {} restarts", restarts);
         int consecutiveRestarts = 0;
-        //if there's a bind exception, retry for 5 seconds to give the OS
+        //if there's a bind exception, retry for 30 seconds to give the OS
         //a chance to release the port
-        int maxBind = 5;
+        int maxBind = 30;
         while (consecutiveRestarts < maxBind && ! shutDown) {
             try {
                 ForkedProcess forkedProcess = new ForkedProcess(restarts);
@@ -229,7 +230,7 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
                         "Will retry {} times.", consecutiveRestarts, maxBind);
                 consecutiveRestarts++;
                 Thread.sleep(1000);
-                if (consecutiveRestarts > maxBind) {
+                if (consecutiveRestarts >= maxBind) {
                     throw e;
                 }
             }

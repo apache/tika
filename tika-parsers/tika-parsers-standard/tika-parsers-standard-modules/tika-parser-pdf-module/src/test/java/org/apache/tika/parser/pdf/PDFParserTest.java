@@ -1034,16 +1034,13 @@ public class PDFParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler(-1);
         Metadata m = new Metadata();
         ParseContext context = new ParseContext();
-        boolean tikaEx = false;
         try (InputStream is = getResourceAsStream("/test-documents/testPDF_bad_page_303226.pdf")) {
             AUTO_DETECT_PARSER.parse(is, handler, m, context);
-        } catch (TikaException e) {
-            tikaEx = true;
         }
+        //as of PDFBox 2.0.28, exceptions are no longer thrown for this problem
         String content = handler.toString();
-        assertTrue(tikaEx, "Should have thrown exception");
-        assertEquals(1, m.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
-        assertContains("Unknown dir", m.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertEquals(0, m.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
+        //assertContains("Unknown dir", m.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
         assertContains("1309.61", content);
 
         //now try throwing exception immediately
@@ -1053,16 +1050,12 @@ public class PDFParserTest extends TikaTest {
 
         handler = new BodyContentHandler(-1);
         m = new Metadata();
-        tikaEx = false;
         try (InputStream is = getResourceAsStream("/test-documents/testPDF_bad_page_303226.pdf")) {
             AUTO_DETECT_PARSER.parse(is, handler, m, context);
-        } catch (TikaException e) {
-            tikaEx = true;
         }
         content = handler.toString();
-        assertTrue(tikaEx, "Should have thrown exception");
         assertEquals(0, m.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
-        assertNotContained("1309.61", content);
+        assertContains("1309.61", content);
     }
 
     @Test
