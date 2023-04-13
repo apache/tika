@@ -377,7 +377,7 @@
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
     <parso.version>2.0.14</parso.version>
     <pax.exam.version>4.13.1</pax.exam.version>
-    <pdfbox.version>2.0.27</pdfbox.version>
+    <pdfbox.version>2.0.28</pdfbox.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>5.2.3</poi.version>
     <quartz.version>2.3.2</quartz.version>
