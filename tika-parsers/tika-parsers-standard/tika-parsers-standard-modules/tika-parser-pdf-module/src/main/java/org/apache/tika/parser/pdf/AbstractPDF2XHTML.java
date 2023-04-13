@@ -367,16 +367,19 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (document.getDocumentCatalog().getNames().getEmbeddedFiles() == null) {
             return;
         }
-        Map<String, PDComplexFileSpecification> m = new HashMap<>();
-        extractFilesfromEFTree(document.getDocumentCatalog().getNames().getEmbeddedFiles(), m, 0);
+        //use a list instead of a name-based map in case there are key collisions
+        //that could hide attachments
+        List<NameSpecTuple> specs = new ArrayList<>();
+        extractFilesfromEFTree(
+                document.getDocumentCatalog().getNames().getEmbeddedFiles(), specs, 0);
         //this avoids duplication with the above /FileSpec searching, but also in the case
         //where the same underlying file has different names in the EFTree
-        for (Map.Entry<String, PDComplexFileSpecification> e : m.entrySet()) {
-            if (seen.contains(e.getValue().getCOSObject())) {
+        for (NameSpecTuple nameSpecTuple : specs) {
+            if (seen.contains(nameSpecTuple.getSpec().getCOSObject())) {
                 continue;
             }
-            processDoc(e.getKey(), "", e.getValue(), new AttributesImpl());
-            seen.add(e.getValue().getCOSObject());
+            processDoc(nameSpecTuple.getName(), "", nameSpecTuple.getSpec(), new AttributesImpl());
+            seen.add(nameSpecTuple.getSpec().getCOSObject());
         }
     }
 
@@ -841,7 +844,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     private void extractFilesfromEFTree(PDNameTreeNode efTree,
-                                        Map<String, PDComplexFileSpecification> embeddedFileNames,
+                                        List<NameSpecTuple> embeddedFileNames,
                                         int depth) throws IOException {
         if (depth > MAX_RECURSION_DEPTH) {
             throw new IOException("Hit max recursion depth");
@@ -854,7 +857,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         if (names != null) {
             for (Map.Entry<String, PDComplexFileSpecification> e : names.entrySet()) {
-                embeddedFileNames.put(e.getKey(), e.getValue());
+                embeddedFileNames.add(new NameSpecTuple(e.getKey(), e.getValue()));
             }
         }
 
@@ -1361,6 +1364,24 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             //swallow for now
         }
         return null;
+    }
+
+    private static class NameSpecTuple {
+        private final String name;
+        private final PDComplexFileSpecification spec;
+
+        public NameSpecTuple(String name, PDComplexFileSpecification spec) {
+            this.name = name;
+            this.spec = spec;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public PDComplexFileSpecification getSpec() {
+            return spec;
+        }
     }
 
     enum ActionTrigger {
