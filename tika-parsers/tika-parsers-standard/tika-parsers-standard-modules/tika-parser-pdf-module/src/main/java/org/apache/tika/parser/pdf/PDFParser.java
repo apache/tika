@@ -19,6 +19,7 @@ package org.apache.tika.parser.pdf;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -34,6 +35,8 @@ import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.io.MemoryUsageSetting;
+import org.apache.pdfbox.io.RandomAccessBufferedFileInputStream;
+import org.apache.pdfbox.io.RandomAccessRead;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -69,6 +72,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
+import org.apache.tika.parser.pdf.updates.StartXRefOffset;
+import org.apache.tika.parser.pdf.updates.StartXRefScanner;
 import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaIllustrator;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
@@ -147,6 +152,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         PDFRenderingState incomingRenderingState = context.get(PDFRenderingState.class);
         TikaInputStream tstream = null;
         boolean shouldClose = false;
+        List<StartXRefOffset> xRefOffsets = new ArrayList<>();
         try {
             if (shouldSpool(localConfig)) {
                 if (stream instanceof TikaInputStream) {
@@ -159,6 +165,8 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             } else {
                 tstream = TikaInputStream.cast(stream);
             }
+            scanXRefOffsets(localConfig, tstream, metadata, xRefOffsets);
+
             password = getPassword(metadata, context);
             MemoryUsageSetting memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
             if (localConfig.getMaxMainMemoryBytes() >= 0) {
@@ -222,6 +230,42 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 }
             }
         }
+    }
+
+    private void scanXRefOffsets(PDFParserConfig localConfig,
+                                 TikaInputStream tikaInputStream,
+                                 Metadata metadata,
+                                 List<StartXRefOffset> xRefOffsets) {
+        if (!localConfig.isParseIncrementalUpdates() &&
+                !localConfig.isExtractIncrementalUpdateInfo()) {
+            return;
+        }
+        try (RandomAccessRead ra =
+                     new RandomAccessBufferedFileInputStream(tikaInputStream.getFile())) {
+            StartXRefScanner xRefScanner = new StartXRefScanner(ra);
+            xRefOffsets.addAll(xRefScanner.scan());
+        } catch (IOException e) {
+            e.printStackTrace();
+            //swallow
+        }
+
+        int startXrefs = 0;
+        for (StartXRefOffset offset : xRefOffsets) {
+            //don't count linearized dummy xref offset
+            //TODO figure out better way of managing this
+            if (offset.getStartxref() == 0) {
+                continue;
+            }
+            startXrefs++;
+            metadata.add(PDF.EOF_OFFSETS, Long.toString(offset.getEndEofOffset()));
+        }
+
+        if (startXrefs > 0) {
+            //don't count the last xref as an incremental update
+            startXrefs--;
+        }
+        metadata.set(PDF.PDF_INCREMENTAL_UPDATES, startXrefs);
+
     }
 
     private void checkIllustrator(final PDDocument pdfDocument, Metadata metadata) {
@@ -289,6 +333,10 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
     private boolean shouldSpool(PDFParserConfig localConfig) {
         if (localConfig.getImageStrategy() == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_BEFORE_PARSE
                 || localConfig.getImageStrategy() == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
+            return true;
+        }
+        if (localConfig.isExtractIncrementalUpdateInfo() ||
+                localConfig.isParseIncrementalUpdates()) {
             return true;
         }
 
@@ -868,6 +916,21 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
     @Field
     public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
         defaultConfig.setMaxMainMemoryBytes(maxMainMemoryBytes);
+    }
+
+    @Field
+    public void setExtractIncrementalUpdateInfo(boolean setExtractIncrementalUpdateInfo) {
+        defaultConfig.setExtractIncrementalUpdateInfo(setExtractIncrementalUpdateInfo);
+    }
+
+    @Field
+    public void setParseIncrementalUpdateInfo(boolean parseIncrementalUpdateInfo) {
+        defaultConfig.setParseIncrementalUpdates(parseIncrementalUpdateInfo);
+    }
+
+    @Field
+    public void set(int maxIncrementalUpdates) {
+        defaultConfig.setMaxIncrementalUpdates(maxIncrementalUpdates);
     }
 
     public long getMaxMainMemoryBytes() {

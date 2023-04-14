@@ -142,6 +142,12 @@ public class PDFParserConfig implements Serializable {
 
     private Renderer renderer;
 
+    private boolean extractIncrementalUpdateInfo = true;
+
+    private boolean parseIncrementalUpdates = true;
+
+    int maxIncrementalUpdates = 10;
+
     /**
      * @return whether or not to extract only inline image metadata and not render the images
      */
@@ -886,7 +892,32 @@ public class PDFParserConfig implements Serializable {
         return imageStrategy;
     }
 
+    public boolean isExtractIncrementalUpdateInfo() {
+        return extractIncrementalUpdateInfo;
+    }
 
+    public void setExtractIncrementalUpdateInfo(boolean extractIncrementalUpdateInfo) {
+        this.extractIncrementalUpdateInfo = extractIncrementalUpdateInfo;
+        userConfigured.add("extractIncrementalUpdateInfo");
+    }
+
+    public boolean isParseIncrementalUpdates() {
+        return parseIncrementalUpdates;
+    }
+
+    public void setParseIncrementalUpdates(boolean parseIncrementalUpdates) {
+        this.parseIncrementalUpdates = parseIncrementalUpdates;
+        userConfigured.add("parseIncrementalUpdates");
+    }
+
+    public int getMaxIncrementalUpdates() {
+        return maxIncrementalUpdates;
+    }
+
+    public void setMaxIncrementalUpdates(int maxIncrementalUpdates) {
+        this.maxIncrementalUpdates = maxIncrementalUpdates;
+        userConfigured.add("maxIncrementalUpdates");
+    }
 
     public enum OCR_STRATEGY {
         AUTO, NO_OCR, OCR_ONLY, OCR_AND_TEXT_EXTRACTION;

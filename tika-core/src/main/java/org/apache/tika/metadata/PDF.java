@@ -27,6 +27,11 @@ public interface PDF {
     String PDFA_PREFIX = "pdfa" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PDFAID_PREFIX = "pdfaid" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
+
+    Property PDF_INCREMENTAL_UPDATES = Property.externalInteger(PDF_PREFIX + "incrementalUpdates");
+
+    Property EOF_OFFSETS = Property.externalRealSeq(PDF_PREFIX + "eofOffsets");
+
     /**
      * Prefix to be used for properties that record what was stored
      * in the docinfo section (as opposed to XMP)
