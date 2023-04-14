@@ -142,9 +142,9 @@ public class PDFParserConfig implements Serializable {
 
     private Renderer renderer;
 
-    private boolean extractIncrementalUpdateInfo = true;
+    private boolean extractIncrementalUpdateInfo = false;
 
-    private boolean parseIncrementalUpdates = true;
+    private boolean parseIncrementalUpdates = false;
 
     int maxIncrementalUpdates = 10;
 

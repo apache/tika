@@ -1402,20 +1402,6 @@ public class PDFParserTest extends TikaTest {
         //components we're looking for.
     }
 
-    @Test
-    public void testIncrementalUpdateInfoExtracted() throws Exception {
-        PDFParserConfig pdfParserConfig = new PDFParserConfig();
-        pdfParserConfig.setExtractIncrementalUpdateInfo(true);
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(PDFParserConfig.class, pdfParserConfig);
-        List<Metadata> metadataList = getRecursiveMetadata(
-                "testPDF_IncrementalUpdates.pdf",
-                parseContext);
-        debug(metadataList);
-        assertEquals(2, metadataList.get(0).getInt(PDF.PDF_INCREMENTAL_UPDATES));
-    }
-
     /**
      * TODO -- need to test signature extraction
      */

@@ -240,6 +240,8 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 !localConfig.isExtractIncrementalUpdateInfo()) {
             return;
         }
+        //TODO -- can we use the PDFBox parser's RandomAccessRead
+        //so that we don't have to reopen from file?
         try (RandomAccessRead ra =
                      new RandomAccessBufferedFileInputStream(tikaInputStream.getFile())) {
             StartXRefScanner xRefScanner = new StartXRefScanner(ra);

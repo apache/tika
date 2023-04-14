@@ -34,7 +34,7 @@
     <Logger name="org.apache.fontbox" level="ERROR" additivity="false">
       <AppenderRef ref="pdfbox-appender"/>
     </Logger>
-    <Logger name="org.apache.pdfbox" level="ERROR" additivity="false">
+    <Logger name="org.apache.pdfbox" level="FATAL" additivity="false">
       <AppenderRef ref="pdfbox-appender"/>
     </Logger>
   </Loggers>

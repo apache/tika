@@ -28,6 +28,8 @@ import org.apache.pdfbox.io.RandomAccessRead;
  * out of PDFs.  It effectively scans the bytestream looking
  * for startxref\\s*(\\d+)\\s*(%%EOF\n?)?  It does not validate that the
  * startxrefs point to actual xrefs.
+ *
+ * The good parts come directly from PDFBox.
  */
 public class StartXRefScanner {
 
@@ -83,6 +85,8 @@ public class StartXRefScanner {
             if (source.getPosition() >= Integer.MAX_VALUE) {
                 throw new IOException("read more than " + Integer.MAX_VALUE + " bytes");
             }
+            //TODO: if we're opening a new file for the source
+            //we shouldn't bother with this.
             source.rewind((int)source.getPosition());
         }
         return offsets;
