@@ -1,4 +1,4 @@
-Release 2.7.1 - ???
+Release 2.8.0 - ???
 
    * Add magic detection for canon raw file types: crw, cr2 and cr3 (TIKA-3991).
 
@@ -9,6 +9,8 @@ Release 2.7.1 - ???
    * Add extraction of rendition layout value and version from Epub (TIKA-4013).
 
    * Improve embedded file extraction from PDFs (TIKA-4012).
+
+   * Improve metadata extraction from WARCs (TIKA-4018).
 
    * Update to PDFBox 2.0.28 (TIKA-4016).
 

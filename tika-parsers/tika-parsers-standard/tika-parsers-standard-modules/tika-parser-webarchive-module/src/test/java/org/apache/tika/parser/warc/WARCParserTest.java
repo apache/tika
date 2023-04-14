@@ -35,9 +35,15 @@ public class WARCParserTest extends TikaTest {
     public void testBasic() throws Exception {
 
         List<Metadata> metadataList = getRecursiveMetadata("cc.warc.gz");
+        debug(metadataList);
         assertEquals(3, metadataList.size());
         assertContains("text/html", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         assertContains("Common Crawl on Twitter", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/warc", metadataList.get(2).get(Metadata.CONTENT_TYPE));
+        assertEquals("<urn:uuid:c3f02271-44d2-4159-9cdb-3e3efeb16ba0>",
+                metadataList.get(1).get("warc:WARC-Warcinfo-ID"));
+        assertEquals("http://commoncrawl.org/",
+                metadataList.get(1).get("warc:WARC-Target-URI"));
+
     }
 }
