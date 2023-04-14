@@ -35,7 +35,6 @@ public class WARCParserTest extends TikaTest {
     public void testBasic() throws Exception {
 
         List<Metadata> metadataList = getRecursiveMetadata("cc.warc.gz");
-        debug(metadataList);
         assertEquals(3, metadataList.size());
         assertContains("text/html", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         assertContains("Common Crawl on Twitter", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
