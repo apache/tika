@@ -28,7 +28,16 @@ import org.apache.pdfbox.io.RandomAccessRead;
  * out of PDFs.  It effectively scans the bytestream looking
  * for startxref\\s*(\\d+)\\s*(%%EOF\n?)?  It does not validate that the
  * startxrefs point to actual xrefs.
+ * <p>
+ * If the number component ends at the literal end of the file
+ * (e.g. the file is truncated or malformed), the startxref
+ * will not be reported.
+ * <p>
+ * There may be false positives, especially in adversarial settings.
+ * For example, there may be a startxref string in a comment
+ * or inside a stream or object.
  *
+ * <p>
  * The good parts come directly from PDFBox.
  */
 public class StartXRefScanner {
@@ -48,8 +57,6 @@ public class StartXRefScanner {
      * ASCII code for carriage return.
      */
     private static final byte ASCII_CR = 13;
-    private static final byte ASCII_ZERO = 48;
-    private static final byte ASCII_NINE = 57;
     private static final byte ASCII_SPACE = 32;
     private final RandomAccessRead source;
 
@@ -59,26 +66,12 @@ public class StartXRefScanner {
 
     public List<StartXRefOffset> scan() throws IOException {
         List<StartXRefOffset> offsets = new ArrayList<>();
-        long read = 0;
-        int match = 0;
         try {
             int b = source.read();
             while (b > -1) {
-                if (b == STARTXREF[match]) {
-                    match++;
-                    if (match >= STARTXREF.length) {
-                        long startXREFOffset = source.getPosition() - STARTXREF.length;
-                        long startxref = readLong();
-                        boolean hasEof = readEOF();
-                        long endOfEOFOffset = source.getPosition();
-                        offsets.add(new StartXRefOffset(startxref,
-                                startXREFOffset, endOfEOFOffset, hasEof));
-                        match = 0;
-                    }
-                } else {
-                    match = 0;
+                if (b == STARTXREF[0]) {
+                    tryStartXRef(offsets);
                 }
-                read++;
                 b = source.read();
             }
         } finally {
@@ -87,9 +80,38 @@ public class StartXRefScanner {
             }
             //TODO: if we're opening a new file for the source
             //we shouldn't bother with this.
-            source.rewind((int)source.getPosition());
+            source.rewind((int) source.getPosition());
         }
         return offsets;
+    }
+
+    private void tryStartXRef(List<StartXRefOffset> offsets) throws IOException {
+        int match = 1;
+        int read = 0;
+        int b = source.read();
+        while (b > -1) {
+            if (b == STARTXREF[match]) {
+                ++match;
+                if (match == STARTXREF.length) {
+                    try {
+                        long startXREFOffset = source.getPosition() - STARTXREF.length;
+                        long startxref = readLong();
+                        boolean hasEof = readEOF();
+                        long endOfEOFOffset = source.getPosition();
+                        offsets.add(new StartXRefOffset(startxref, startXREFOffset, endOfEOFOffset,
+                                hasEof));
+                        return;
+                    } catch (IOException e) {
+                        //swallow
+                        return;
+                    }
+                }
+            } else {
+                source.rewind(1);
+                return;
+            }
+            b = source.read();
+        }
     }
 
     private boolean readEOF() throws IOException {
@@ -115,6 +137,9 @@ public class StartXRefScanner {
             }
             return true;
         }
+        //did not match, we need to rewind some
+        //read = i+1
+        i++;
         if (c == -1) {
             source.rewind(i - 1);
         } else {
@@ -196,6 +221,9 @@ public class StartXRefScanner {
                         "Number '" + buffer + "' is getting too long, stop reading at offset " +
                                 source.getPosition());
             }
+        }
+        if (lastByte == -1) {
+            throw new IOException("number ended at EOF");
         }
         if (lastByte != -1) {
             source.rewind(1);

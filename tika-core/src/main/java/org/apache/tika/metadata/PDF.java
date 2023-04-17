@@ -28,8 +28,20 @@ public interface PDF {
     String PDFAID_PREFIX = "pdfaid" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
 
+    /**
+     * Incremental updates as extracted by the StartXRefScanner.  See
+     * that class for limitations.
+     */
     Property PDF_INCREMENTAL_UPDATES = Property.externalInteger(PDF_PREFIX + "incrementalUpdates");
 
+    /**
+     * Number of %%EOF as extracted by the StartXRefScanner. See
+     * that class for limitations.
+     *
+     * This includes the final %%EOF, which may or may not be at the literal
+     * end of the file.  This does not include an %%EOF
+     * if the startxref=0, as would happen in a dummy %%EOF in a linearized PDF.
+     */
     Property EOF_OFFSETS = Property.externalRealSeq(PDF_PREFIX + "eofOffsets");
 
     /**

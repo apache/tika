@@ -16,16 +16,25 @@
  */
 package org.apache.tika.parser.pdf;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.apache.pdfbox.io.MemoryUsageSetting;
+import org.apache.pdfbox.io.RandomAccessRead;
+import org.apache.pdfbox.io.ScratchFile;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pdf.updates.StartXRefOffset;
+import org.apache.tika.parser.pdf.updates.StartXRefScanner;
 
 public class PDFIncrementalUpdatesTest extends TikaTest {
     /*
@@ -53,11 +62,82 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
                 "testPDF_IncrementalUpdates.pdf",
                 parseContext);
         assertEquals(2, metadataList.get(0).getInt(PDF.PDF_INCREMENTAL_UPDATES));
+        long[] expected = new long[]{16242, 41226, 64872};
+        long[] eofs = metadataList.get(0).getLongValues(PDF.EOF_OFFSETS);
+        assertEquals(3, eofs.length);
+        assertArrayEquals(expected, eofs);
+    }
+
+    @Test
+    public void testTooLongLong() throws Exception {
+        String s = "blah blah startxref 01234567890123456789\n%%EOF blah";
+        assertEquals(0, getOffsets(s).size());
+    }
+
+    @Test
+    public void testMissingEOF() throws Exception {
+        String s = "blah blah startxref 123456\nblah";
+        assertEquals(1, getOffsets(s).size());
+    }
+    @Test
+    public void testBrokenEOF() throws Exception {
+        String s = "blah blah startxref 123456\n%%EO\nstartxref 234567\n%%EOF\nblah";
+        assertEquals(2, getOffsets(s).size());
+    }
+
+    @Test
+    public void testNoSpace1() throws Exception {
+        String s = "blah blah startxref123456\n%%EOF\nblah";
+        assertEquals(1, getOffsets(s).size());
+    }
+
+    @Test
+    public void testNoSpace2() throws Exception {
+        String s = "blah blah startxref 123456%%EOF\nblah";
+        assertEquals(1, getOffsets(s).size());
+    }
+
+    @Test
+    public void testNoStartXref() throws Exception {
+        String s = "blah blah startxref not a startxre";
+        assertEquals(0, getOffsets(s).size());
+    }
+
+    @Test
+    public void testLongAtEOF() throws Exception {
+        //we should not count longs at EOF because
+        //they might be truncated?
+        String s = "blah blah startxref 100";
+        assertEquals(0, getOffsets(s).size());
+    }
+    @Test
+    public void testCommentInsteadOfEOF() throws Exception {
+        String s = "blah blah startxref 123456\n%%regular comment\n%%EOF";
+        assertEquals(1, getOffsets(s).size());
+    }
+
+    @Test
+    public void testStartxStartXref() throws Exception {
+        //make sure that we are rewinding last character
+        String s = "blah blah startxstartxref 123456\n%%EOFblah";
+        assertEquals(1, getOffsets(s).size());
+    }
+
+
+    private List<StartXRefOffset> getOffsets(String s) throws IOException {
+        try (RandomAccessRead randomAccessRead =
+                     getRandomAccessRead(s.getBytes(StandardCharsets.US_ASCII))) {
+            StartXRefScanner scanner = new StartXRefScanner(randomAccessRead);
+            return scanner.scan();
+        }
+    }
+
+    RandomAccessRead getRandomAccessRead(byte[] bytes) throws IOException {
+        MemoryUsageSetting memUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
+        ScratchFile scratchFile = new ScratchFile(memUsageSetting);
+        return scratchFile.createBuffer(new ByteArrayInputStream(bytes));
     }
 
     //TODO: add parsing and tests
     //TODO: embed the incremental updates PDF inside another doc and confirm it works
-
-
-    //TODO -- add tests for the scanner with failed EOF, etc.
 }
