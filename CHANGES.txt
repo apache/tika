@@ -1,5 +1,10 @@
 Release 2.8.0 - ???
 
+   * Turn on the CompositeExternalParser in tika-app and tika-server-standard.
+     This will call exiftool and ffmpeg if those are installed as was
+     the behavior in Tika 1.x. Exclude org.apache.tika.parser.external.CompositeExternalParser
+     if you do not want this behavior (TIKA-4022).
+
    * Add magic detection for canon raw file types: crw, cr2 and cr3 (TIKA-3991).
 
    * Add detection for ONIX message files (TIKA-4011).
