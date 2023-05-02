@@ -171,7 +171,14 @@ public class ImageParser extends AbstractImageParser {
                     try (ImageInputStream imageStream = ImageIO
                             .createImageInputStream(new CloseShieldInputStream(stream))) {
                         reader.setInput(imageStream);
-
+                        try {
+                            int numImages = reader.getNumImages(true);
+                            if (numImages > -1) {
+                                metadata.set(TikaCoreProperties.NUM_IMAGES, numImages);
+                            }
+                        } catch (IllegalStateException e) {
+                            //ignore
+                        }
                         metadata.set(Metadata.IMAGE_WIDTH, Integer.toString(reader.getWidth(0)));
                         metadata.set(Metadata.IMAGE_LENGTH, Integer.toString(reader.getHeight(0)));
                         metadata.set("height", Integer.toString(reader.getHeight(0)));

@@ -291,6 +291,12 @@ public interface TikaCoreProperties {
      */
     Property RATING = XMP.RATING;
 
+    /**
+     * This is the number of images (as in a multi-frame gif) returned by
+     * Java's {@link javax.imageio.ImageReader#getNumImages(boolean)}.  See
+     * the javadocs for known limitations.
+     */
+    Property NUM_IMAGES = Property.internalInteger("imagereader:NumImages");
 
     // Comment and rating properties
     /**
