@@ -340,12 +340,14 @@ public class TikaCLI {
         return false;
     }
 
-    private void extractInlineImagesFromPDFs() {
+    private void configurePDFExtractSettings() {
         if (configFilePath == null && context.get(PDFParserConfig.class) == null) {
             PDFParserConfig pdfParserConfig = new PDFParserConfig();
             pdfParserConfig.setExtractInlineImages(true);
+            pdfParserConfig.setParseIncrementalUpdates(true);
             String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
-                    "inline images for the PDFParser (TIKA-2374).\n" +
+                    "inline images and incremental updates for the PDFParser (TIKA-2374 and " +
+                    "TIKA_4017).\n" +
                     "Aside from the -z option, this is not the default behavior\n" +
                     "in Tika generally or in tika-server.";
             LOG.info(warn);
@@ -452,7 +454,7 @@ public class TikaCLI {
             }
             extractDir = new File(dirPath);
         } else if (arg.equals("-z") || arg.equals("--extract")) {
-            extractInlineImagesFromPDFs();
+            configurePDFExtractSettings();
             type = NO_OUTPUT;
             context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor());
         } else if (arg.equals("-r") || arg.equals("--pretty-print")) {
