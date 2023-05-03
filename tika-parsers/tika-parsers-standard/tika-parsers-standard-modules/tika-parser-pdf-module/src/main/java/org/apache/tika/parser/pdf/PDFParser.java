@@ -19,6 +19,7 @@ package org.apache.tika.parser.pdf;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -34,6 +35,8 @@ import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.io.MemoryUsageSetting;
+import org.apache.pdfbox.io.RandomAccessBufferedFileInputStream;
+import org.apache.pdfbox.io.RandomAccessRead;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -69,6 +72,10 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
+import org.apache.tika.parser.pdf.updates.IncrementalUpdateRecord;
+import org.apache.tika.parser.pdf.updates.IsIncrementalUpdate;
+import org.apache.tika.parser.pdf.updates.StartXRefOffset;
+import org.apache.tika.parser.pdf.updates.StartXRefScanner;
 import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaIllustrator;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
@@ -140,6 +147,8 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         if (localConfig.isSetKCMS()) {
             System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
         }
+        IncrementalUpdateRecord incomingIncrementalUpdateRecord = context.get(IncrementalUpdateRecord.class);
+        context.set(IncrementalUpdateRecord.class, null);
         initRenderer(localConfig, context);
         PDDocument pdfDocument = null;
 
@@ -159,6 +168,8 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             } else {
                 tstream = TikaInputStream.cast(stream);
             }
+            scanXRefOffsets(localConfig, tstream, metadata, context);
+
             password = getPassword(metadata, context);
             MemoryUsageSetting memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
             if (localConfig.getMaxMainMemoryBytes() >= 0) {
@@ -206,6 +217,8 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             metadata.set(PDF.IS_ENCRYPTED, "true");
             throw new EncryptedDocumentException(e);
         } finally {
+            //reset the incrementalUpdateRecord even if null
+            context.set(IncrementalUpdateRecord.class, incomingIncrementalUpdateRecord);
             PDFRenderingState currState = context.get(PDFRenderingState.class);
             try {
                 if (currState != null && currState.getRenderResults() != null) {
@@ -220,6 +233,59 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 if (shouldClose && tstream != null) {
                     tstream.close();
                 }
+            }
+
+        }
+    }
+
+    private void scanXRefOffsets(PDFParserConfig localConfig,
+                                 TikaInputStream tikaInputStream,
+                                 Metadata metadata,
+                                 ParseContext parseContext) {
+
+        if (!localConfig.isParseIncrementalUpdates() &&
+                !localConfig.isExtractIncrementalUpdateInfo()) {
+            return;
+        }
+        //do not scan for xrefoffsets if this is an incremental update
+        if (parseContext.get(IsIncrementalUpdate.class) != null) {
+            //nullify it so that child documents do not see this
+            parseContext.set(IsIncrementalUpdate.class, null);
+            return;
+        }
+        List<StartXRefOffset> xRefOffsets = new ArrayList<>();
+        //TODO -- can we use the PDFBox parser's RandomAccessRead
+        //so that we don't have to reopen from file?
+        try (RandomAccessRead ra =
+                     new RandomAccessBufferedFileInputStream(tikaInputStream.getFile())) {
+            StartXRefScanner xRefScanner = new StartXRefScanner(ra);
+            xRefOffsets.addAll(xRefScanner.scan());
+        } catch (IOException e) {
+            //swallow
+        }
+
+        int startXrefs = 0;
+        for (StartXRefOffset offset : xRefOffsets) {
+            //don't count linearized dummy xref offset
+            //TODO figure out better way of managing this
+            if (offset.getStartxref() == 0) {
+                continue;
+            }
+            startXrefs++;
+            metadata.add(PDF.EOF_OFFSETS, Long.toString(offset.getEndEofOffset()));
+        }
+
+        if (startXrefs > 0) {
+            //don't count the last xref as an incremental update
+            startXrefs--;
+        }
+        metadata.set(PDF.PDF_INCREMENTAL_UPDATES, startXrefs);
+        if (localConfig.isParseIncrementalUpdates()) {
+            try {
+                parseContext.set(IncrementalUpdateRecord.class,
+                        new IncrementalUpdateRecord(tikaInputStream.getPath(), xRefOffsets));
+            } catch (IOException e) {
+                //swallow
             }
         }
     }
@@ -289,6 +355,10 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
     private boolean shouldSpool(PDFParserConfig localConfig) {
         if (localConfig.getImageStrategy() == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_BEFORE_PARSE
                 || localConfig.getImageStrategy() == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
+            return true;
+        }
+        if (localConfig.isExtractIncrementalUpdateInfo() ||
+                localConfig.isParseIncrementalUpdates()) {
             return true;
         }
 
@@ -868,6 +938,36 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
     @Field
     public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
         defaultConfig.setMaxMainMemoryBytes(maxMainMemoryBytes);
+    }
+
+    /**
+     * Whether or not to scan a PDF for incremental updates.
+     * @param setExtractIncrementalUpdateInfo
+     */
+    @Field
+    public void setExtractIncrementalUpdateInfo(boolean setExtractIncrementalUpdateInfo) {
+        defaultConfig.setExtractIncrementalUpdateInfo(setExtractIncrementalUpdateInfo);
+    }
+
+    /**
+     * If set to true, this will parse incremental updates if they exist
+     * within a PDF.  If set to <code>true</code>, this will override
+     * {@link #setExtractIncrementalUpdateInfo(boolean)}.
+     *
+     * @param parseIncrementalUpdates
+     */
+    @Field
+    public void setParseIncrementalUpdates(boolean parseIncrementalUpdates) {
+        defaultConfig.setParseIncrementalUpdates(parseIncrementalUpdates);
+    }
+
+    /**
+     * Set the maximum number of incremental updates to parse
+     * @param maxIncrementalUpdates
+     */
+    @Field
+    public void setMaxIncrementalUpdates(int maxIncrementalUpdates) {
+        defaultConfig.setMaxIncrementalUpdates(maxIncrementalUpdates);
     }
 
     public long getMaxMainMemoryBytes() {

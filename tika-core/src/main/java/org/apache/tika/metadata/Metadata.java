@@ -529,6 +529,30 @@ public class Metadata
     }
 
     /**
+     * Gets the array of ints of the identified "seq" integer metadata property.
+     *
+     * @param property seq integer property definition
+     * @return array of ints
+     * @since Apache Tika 1.21
+     */
+    public long[] getLongValues(Property property) {
+        if (property.getPrimaryProperty().getPropertyType() != PropertyType.SEQ) {
+            throw new PropertyTypeException(PropertyType.SEQ,
+                    property.getPrimaryProperty().getPropertyType());
+        }
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL) {
+            throw new PropertyTypeException(Property.ValueType.REAL,
+                    property.getPrimaryProperty().getValueType());
+        }
+        String[] vals = getValues(property);
+        long[] ret = new long[vals.length];
+        for (int i = 0; i < vals.length; i++) {
+            ret[i] = Long.parseLong(vals[i]);
+        }
+        return ret;
+    }
+
+    /**
      * Sets the real or rational value of the identified metadata property.
      *
      * @param property simple real or simple rational property definition
