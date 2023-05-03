@@ -1,4 +1,9 @@
-Release 2.7.1 - ???
+Release 2.8.0 - ???
+
+   * Turn on the CompositeExternalParser in tika-app and tika-server-standard.
+     This will call exiftool and ffmpeg if those are installed as was
+     the behavior in Tika 1.x. Exclude org.apache.tika.parser.external.CompositeExternalParser
+     if you do not want this behavior (TIKA-4022).
 
    * Add magic detection for canon raw file types: crw, cr2 and cr3 (TIKA-3991).
 
@@ -9,6 +14,8 @@ Release 2.7.1 - ???
    * Add extraction of rendition layout value and version from Epub (TIKA-4013).
 
    * Improve embedded file extraction from PDFs (TIKA-4012).
+
+   * Improve metadata extraction from WARCs (TIKA-4018).
 
    * Update to PDFBox 2.0.28 (TIKA-4016).
 

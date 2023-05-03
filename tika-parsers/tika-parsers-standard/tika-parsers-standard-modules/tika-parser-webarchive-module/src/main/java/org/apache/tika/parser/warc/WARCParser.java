@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -45,11 +47,19 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 public class WARCParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(MediaType.application("warc"))));
+
+    public static String WARC_PREFIX = "warc:";
+    public static String WARC_HTTP_PREFIX = WARC_PREFIX + "http:";
+
+    public static String WARC_HTTP_STATUS = WARC_HTTP_PREFIX + "status";
+
+    public static String WARC_HTTP_STATUS_REASON = WARC_HTTP_PREFIX + "status:reason";
 
     private static String RESPONSE = "response";
     private static String WARCINFO = "warcinfo";
@@ -117,8 +127,8 @@ public class WARCParser extends AbstractParser {
         Metadata metadata = new Metadata();
         setNotNull(WARC.WARC_RECORD_CONTENT_TYPE, warcResponse.contentType(), metadata);
         setNotNull(WARC.WARC_PAYLOAD_CONTENT_TYPE, warcResponse.payloadType(), metadata);
-        processResponseMetadata(warcResponse.http(), metadata);
-        //TODO: process other record metadata
+        processWarcMetadata(warcResponse, metadata);
+        processHttpResponseMetadata(warcResponse.http(), metadata);
 
         String id = warcResponse.id().toString();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, id);
@@ -134,8 +144,24 @@ public class WARCParser extends AbstractParser {
 
     }
 
-    private void processResponseMetadata(HttpResponse http, Metadata metadata) {
-        //TODO -- no-op for now
+    private void processWarcMetadata(WarcResponse warcResponse, Metadata metadata) {
+        for (Map.Entry<String, List<String>> e : warcResponse.headers().map().entrySet()) {
+            for (String val : e.getValue()) {
+                metadata.add(WARC_PREFIX + e.getKey(), val);
+            }
+        }
+    }
+
+    private void processHttpResponseMetadata(HttpResponse http, Metadata metadata) {
+        metadata.set(WARC_HTTP_STATUS, Integer.toString(http.status()));
+        if (!StringUtils.isBlank(http.reason())) {
+            metadata.set(WARC_HTTP_STATUS_REASON, http.reason());
+        }
+        for (Map.Entry<String, List<String>> e : http.headers().map().entrySet()) {
+            for (String val : e.getValue()) {
+                metadata.add(WARC_HTTP_PREFIX + e.getKey(), val);
+            }
+        }
     }
 
     private void setNotNull(Property key, org.netpreserve.jwarc.MediaType contentType,

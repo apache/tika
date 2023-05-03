@@ -55,6 +55,7 @@ public class ImageParserTest extends TikaTest {
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
         assertEquals("8 8 8", metadata.get(Metadata.BITS_PER_SAMPLE));
+        assertEquals(1, metadata.getInt(TikaCoreProperties.NUM_IMAGES));
     }
 
     @Test
@@ -98,6 +99,7 @@ public class ImageParserTest extends TikaTest {
                         "more contributor license agreements.  See the NOTICE file distributed " +
                         "with this work for additional information regarding copyright ownership.",
                 metadata.get(TikaCoreProperties.COMMENTS));
+        assertEquals(1, metadata.getInt(TikaCoreProperties.NUM_IMAGES));
     }
 
     @Test
@@ -149,6 +151,7 @@ public class ImageParserTest extends TikaTest {
                         "more contributor license agreements.  See the NOTICE file distributed " +
                         "with this work for additional information regarding copyright ownership.",
                 metadata.get(TikaCoreProperties.COMMENTS));
+        assertEquals(1, metadata.getInt(TikaCoreProperties.NUM_IMAGES));
     }
 
     @Test
@@ -199,6 +202,7 @@ public class ImageParserTest extends TikaTest {
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
         assertEquals("8 8 8", metadata.get(Metadata.BITS_PER_SAMPLE));
+        assertEquals(1, metadata.getInt(TikaCoreProperties.NUM_IMAGES));
     }
 
     @Test // TIKA-2232
@@ -211,6 +215,7 @@ public class ImageParserTest extends TikaTest {
         assertEquals("78", metadata.get("height"));
         assertEquals("328", metadata.get("width"));
         assertEquals("image/x-jbig2", metadata.get("Content-Type"));
+        assertEquals(1, metadata.getInt(TikaCoreProperties.NUM_IMAGES));
     }
 
     @Test

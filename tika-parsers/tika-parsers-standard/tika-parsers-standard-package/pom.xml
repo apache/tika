@@ -405,6 +405,7 @@
                   <include>org.apache.tika:tika-parser-pdf-module</include>
                   <include>org.apache.tika:tika-parser-pkg-module</include>
                   <include>org.apache.tika:tika-parser-text-module</include>
+                  <include>org.apache.tika:tika-parser-webarchive-module</include>
                   <include>org.apache.tika:tika-parser-xml-module</include>
                   <include>org.apache.tika:tika-parser-xmp-commons</include>
                   <include>org.apache.tika:tika-parser-zip-commons</include>
@@ -435,18 +436,7 @@
                     <Automatic-Module-Name>org.apache.tika.parsers</Automatic-Module-Name>
                   </manifestEntries>
                 </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/services/org.apache.tika.detect.Detector</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/services/org.apache.tika.detect.EncodingDetector</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/services/org.apache.tika.parser.Parser</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/services/org.apache.tika.detect.zip.ZipContainerDetector</resource>
-                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
               </transformers>
             </configuration>
           </execution>
