@@ -43,7 +43,7 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
     Test files with incremental updates?
     testPDF_Version.4.x.pdf 1
     testPDFTwoTextBoxes.pdf 1
-    testPDF_IncrementalUpdates.pdf 2
+    testPDF_incrementalUpdates.pdf 2
     testOptionalHyphen.pdf 1
     testPageNumber.pdf 1
     testPDF_twoAuthors.pdf 1
@@ -61,7 +61,7 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
         ParseContext parseContext = new ParseContext();
         parseContext.set(PDFParserConfig.class, pdfParserConfig);
         List<Metadata> metadataList = getRecursiveMetadata(
-                "testPDF_IncrementalUpdates.pdf",
+                "testPDF_incrementalUpdates.pdf",
                 parseContext);
         assertEquals(2, metadataList.get(0).getInt(PDF.PDF_INCREMENTAL_UPDATES));
         long[] expected = new long[]{16242, 41226, 64872};
@@ -148,7 +148,7 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
         ParseContext parseContext = new ParseContext();
         parseContext.set(PDFParserConfig.class, pdfParserConfig);
         List<Metadata> metadataList = getRecursiveMetadata(
-                "testPDF_IncrementalUpdates.pdf",
+                "testPDF_incrementalUpdates.pdf",
                 parseContext);
         assertEquals(3, metadataList.size());
         assertEquals(2, metadataList.get(0).getInt(PDF.PDF_INCREMENTAL_UPDATES));

@@ -347,7 +347,7 @@ public class TikaCLI {
             pdfParserConfig.setParseIncrementalUpdates(true);
             String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
                     "inline images and incremental updates for the PDFParser (TIKA-2374 and " +
-                    "TIKA_4017).\n" +
+                    "TIKA-4017).\n" +
                     "Aside from the -z option, this is not the default behavior\n" +
                     "in Tika generally or in tika-server.";
             LOG.info(warn);
