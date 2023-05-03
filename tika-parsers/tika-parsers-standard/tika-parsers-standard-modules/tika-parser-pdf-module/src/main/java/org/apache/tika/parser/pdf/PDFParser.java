@@ -72,6 +72,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
+import org.apache.tika.parser.pdf.updates.IncrementalUpdateRecord;
+import org.apache.tika.parser.pdf.updates.IsIncrementalUpdate;
 import org.apache.tika.parser.pdf.updates.StartXRefOffset;
 import org.apache.tika.parser.pdf.updates.StartXRefScanner;
 import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaIllustrator;
@@ -145,6 +147,8 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         if (localConfig.isSetKCMS()) {
             System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
         }
+        IncrementalUpdateRecord incomingIncrementalUpdateRecord = context.get(IncrementalUpdateRecord.class);
+        context.set(IncrementalUpdateRecord.class, null);
         initRenderer(localConfig, context);
         PDDocument pdfDocument = null;
 
@@ -152,7 +156,6 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         PDFRenderingState incomingRenderingState = context.get(PDFRenderingState.class);
         TikaInputStream tstream = null;
         boolean shouldClose = false;
-        List<StartXRefOffset> xRefOffsets = new ArrayList<>();
         try {
             if (shouldSpool(localConfig)) {
                 if (stream instanceof TikaInputStream) {
@@ -165,7 +168,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             } else {
                 tstream = TikaInputStream.cast(stream);
             }
-            scanXRefOffsets(localConfig, tstream, metadata, xRefOffsets);
+            scanXRefOffsets(localConfig, tstream, metadata, context);
 
             password = getPassword(metadata, context);
             MemoryUsageSetting memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
@@ -214,6 +217,8 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             metadata.set(PDF.IS_ENCRYPTED, "true");
             throw new EncryptedDocumentException(e);
         } finally {
+            //reset the incrementalUpdateRecord even if null
+            context.set(IncrementalUpdateRecord.class, incomingIncrementalUpdateRecord);
             PDFRenderingState currState = context.get(PDFRenderingState.class);
             try {
                 if (currState != null && currState.getRenderResults() != null) {
@@ -229,17 +234,26 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                     tstream.close();
                 }
             }
+
         }
     }
 
     private void scanXRefOffsets(PDFParserConfig localConfig,
                                  TikaInputStream tikaInputStream,
                                  Metadata metadata,
-                                 List<StartXRefOffset> xRefOffsets) {
+                                 ParseContext parseContext) {
+
         if (!localConfig.isParseIncrementalUpdates() &&
                 !localConfig.isExtractIncrementalUpdateInfo()) {
             return;
         }
+        //do not scan for xrefoffsets if this is an incremental update
+        if (parseContext.get(IsIncrementalUpdate.class) != null) {
+            //nullify it so that child documents do not see this
+            parseContext.set(IsIncrementalUpdate.class, null);
+            return;
+        }
+        List<StartXRefOffset> xRefOffsets = new ArrayList<>();
         //TODO -- can we use the PDFBox parser's RandomAccessRead
         //so that we don't have to reopen from file?
         try (RandomAccessRead ra =
@@ -247,7 +261,6 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             StartXRefScanner xRefScanner = new StartXRefScanner(ra);
             xRefOffsets.addAll(xRefScanner.scan());
         } catch (IOException e) {
-            e.printStackTrace();
             //swallow
         }
 
@@ -267,7 +280,14 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             startXrefs--;
         }
         metadata.set(PDF.PDF_INCREMENTAL_UPDATES, startXrefs);
-
+        if (localConfig.isParseIncrementalUpdates()) {
+            try {
+                parseContext.set(IncrementalUpdateRecord.class,
+                        new IncrementalUpdateRecord(tikaInputStream.getPath(), xRefOffsets));
+            } catch (IOException e) {
+                //swallow
+            }
+        }
     }
 
     private void checkIllustrator(final PDDocument pdfDocument, Metadata metadata) {
@@ -920,18 +940,33 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         defaultConfig.setMaxMainMemoryBytes(maxMainMemoryBytes);
     }
 
+    /**
+     * Whether or not to scan a PDF for incremental updates.
+     * @param setExtractIncrementalUpdateInfo
+     */
     @Field
     public void setExtractIncrementalUpdateInfo(boolean setExtractIncrementalUpdateInfo) {
         defaultConfig.setExtractIncrementalUpdateInfo(setExtractIncrementalUpdateInfo);
     }
 
+    /**
+     * If set to true, this will parse incremental updates if they exist
+     * within a PDF.  If set to <code>true</code>, this will override
+     * {@link #setExtractIncrementalUpdateInfo(boolean)}.
+     *
+     * @param parseIncrementalUpdates
+     */
     @Field
-    public void setParseIncrementalUpdateInfo(boolean parseIncrementalUpdateInfo) {
-        defaultConfig.setParseIncrementalUpdates(parseIncrementalUpdateInfo);
+    public void setParseIncrementalUpdates(boolean parseIncrementalUpdates) {
+        defaultConfig.setParseIncrementalUpdates(parseIncrementalUpdates);
     }
 
+    /**
+     * Set the maximum number of incremental updates to parse
+     * @param maxIncrementalUpdates
+     */
     @Field
-    public void set(int maxIncrementalUpdates) {
+    public void setMaxIncrementalUpdates(int maxIncrementalUpdates) {
         defaultConfig.setMaxIncrementalUpdates(maxIncrementalUpdates);
     }
 

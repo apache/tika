@@ -30,14 +30,28 @@ public class StartXRefOffset {
         this.hasEof = hasEof;
     }
 
+    /**
+     *
+     * @return the value of the startxref pointer
+     */
     public long getStartxref() {
         return startxref;
     }
 
+    /**
+     *
+     * @return offset in the file for where the startxref string is in the file
+     */
     public long getStartXrefOffset() {
         return startXrefOffset;
     }
 
+
+    /**
+     *
+     * @return offset in the file for where the EOF ends, this includes a trailing newline if
+     * it existed in the file
+     */
     public long getEndEofOffset() {
         return endEofOffset;
     }

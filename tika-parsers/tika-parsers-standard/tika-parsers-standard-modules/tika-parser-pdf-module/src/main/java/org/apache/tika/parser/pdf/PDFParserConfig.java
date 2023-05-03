@@ -914,6 +914,11 @@ public class PDFParserConfig implements Serializable {
         return maxIncrementalUpdates;
     }
 
+    /**
+     * The maximum number of incremental updates to parse.
+     *
+     * @param maxIncrementalUpdates
+     */
     public void setMaxIncrementalUpdates(int maxIncrementalUpdates) {
         this.maxIncrementalUpdates = maxIncrementalUpdates;
         userConfigured.add("maxIncrementalUpdates");

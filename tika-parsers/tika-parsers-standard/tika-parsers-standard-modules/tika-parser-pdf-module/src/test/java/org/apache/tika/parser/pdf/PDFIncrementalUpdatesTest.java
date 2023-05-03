@@ -18,6 +18,7 @@ package org.apache.tika.parser.pdf;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.updates.StartXRefOffset;
 import org.apache.tika.parser.pdf.updates.StartXRefScanner;
@@ -138,6 +140,33 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
         return scratchFile.createBuffer(new ByteArrayInputStream(bytes));
     }
 
-    //TODO: add parsing and tests
+    @Test
+    public void testIncrementalUpdateParsing() throws Exception {
+        PDFParserConfig pdfParserConfig = new PDFParserConfig();
+        pdfParserConfig.setParseIncrementalUpdates(true);
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(PDFParserConfig.class, pdfParserConfig);
+        List<Metadata> metadataList = getRecursiveMetadata(
+                "testPDF_IncrementalUpdates.pdf",
+                parseContext);
+        assertEquals(3, metadataList.size());
+        assertEquals(2, metadataList.get(0).getInt(PDF.PDF_INCREMENTAL_UPDATES));
+        long[] expected = new long[]{16242, 41226, 64872};
+        long[] eofs = metadataList.get(0).getLongValues(PDF.EOF_OFFSETS);
+        assertEquals(3, eofs.length);
+        assertArrayEquals(expected, eofs);
+
+        assertContains("Testing Incremental", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotContained("Testing Incremental",
+                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("Testing Incremental", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+
+        assertNull(metadataList.get(0).get(PDF.INCREMENTAL_UPDATE_NUMBER));
+        assertEquals(0, metadataList.get(1).getInt(PDF.INCREMENTAL_UPDATE_NUMBER));
+        assertEquals(1, metadataList.get(2).getInt(PDF.INCREMENTAL_UPDATE_NUMBER));
+    }
+
     //TODO: embed the incremental updates PDF inside another doc and confirm it works
+
 }

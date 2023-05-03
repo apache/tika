@@ -195,4 +195,6 @@ public interface PDF {
 
     Property ASSOCIATED_FILE_RELATIONSHIP = Property.internalText(PDF_PREFIX +
             "associatedFileRelationship");
+    Property INCREMENTAL_UPDATE_NUMBER = Property.internalInteger(PDF_PREFIX +
+            "incrementalUpdateNumber");
 }
