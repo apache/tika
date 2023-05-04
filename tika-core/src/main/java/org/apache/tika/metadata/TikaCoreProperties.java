@@ -335,6 +335,11 @@ public interface TikaCoreProperties {
      * javascript within PDFActions.  This would not include, e.g., an
      * .exe file embedded in a .zip file.
      * <p>
+     * A VERSION is an earlier version of the file as in incremental updates.
+     * The initial use case for this is incremental updates in PDFs, but
+     * it could be applied to other file formats as well where earlier versions
+     * are recoverable. See also {@link PDF#INCREMENTAL_UPDATE_NUMBER}
+     * <p>
      * Not all parsers have yet implemented this.
      */
     enum EmbeddedResourceType {
@@ -344,6 +349,7 @@ public interface TikaCoreProperties {
         METADATA, //e.g. xmp, xfa
         FONT,//embedded font files
         THUMBNAIL, //TODO: set this in parsers that handle thumbnails
-        RENDERING //if a file has been rendered
+        RENDERING, //if a file has been rendered
+        VERSION //an earlier version of a file
     }
 }

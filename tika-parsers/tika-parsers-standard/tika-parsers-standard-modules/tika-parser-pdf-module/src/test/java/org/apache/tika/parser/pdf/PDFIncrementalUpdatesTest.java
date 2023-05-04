@@ -53,6 +53,10 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
     testPDFVarious.pdf 1
      */
 
+    /*
+        Many thanks to Tyler Thorsted for sharing "testPDF_incrementalUpdates.pdf"
+     */
+
     @Test
     public void testIncrementalUpdateInfoExtracted() throws Exception {
         PDFParserConfig pdfParserConfig = new PDFParserConfig();
@@ -163,8 +167,17 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
         assertContains("Testing Incremental", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
 
         assertNull(metadataList.get(0).get(PDF.INCREMENTAL_UPDATE_NUMBER));
+        assertNull(metadataList.get(0).get(PDF.INCREMENTAL_UPDATE_NUMBER));
         assertEquals(0, metadataList.get(1).getInt(PDF.INCREMENTAL_UPDATE_NUMBER));
         assertEquals(1, metadataList.get(2).getInt(PDF.INCREMENTAL_UPDATE_NUMBER));
+        assertEquals("incremental-update-0", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("incremental-update-1",
+                metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.VERSION.toString(),
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.VERSION.toString(),
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
     //TODO: embed the incremental updates PDF inside another doc and confirm it works
