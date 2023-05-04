@@ -195,6 +195,14 @@ public interface PDF {
 
     Property ASSOCIATED_FILE_RELATIONSHIP = Property.internalText(PDF_PREFIX +
             "associatedFileRelationship");
+    /**
+     * This is a zero-based number for incremental updates within a PDF -- 0 is the first
+     * update, 1 is the second, etc.  The final version of the PDF (e.g. the last update)
+     * does not have an incremental update number.
+     *
+     * This value is populated with the parse incremental updates feature is selected
+     * in the PDFParser.
+     */
     Property INCREMENTAL_UPDATE_NUMBER = Property.internalInteger(PDF_PREFIX +
             "incrementalUpdateNumber");
 }
