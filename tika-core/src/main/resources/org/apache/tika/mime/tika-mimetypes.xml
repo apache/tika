@@ -218,6 +218,30 @@
 
   <mime-type type="application/dns"/>
   <mime-type type="application/dvcs"/>
+
+  <mime-type type="application/x-dvd-ifo">
+    <acronym>IFO</acronym>
+    <_comment>DVD information file</_comment>
+    <magic priority="70">
+      <match value="DVDVIDEO-VTS" type="string" offset="0"/>
+      <match value="DVDVIDEO-VMG" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.ifo"/>
+    <glob pattern="*.bup"/>
+  </mime-type>
+
+  <mime-type type="application/x-ebu-stl">
+    <acronym>EBU-STL</acronym>
+    <_comment>EBU-STL subtitles</_comment>
+    <tika:link>https://tech.ebu.ch/docs/tech/tech3264.pdf</tika:link>
+    <magic priority="70">
+      <match value="STL" type="string" offset="3">
+        <match value=".01" type="string" offset="8" />
+      </match>
+    </magic>
+    <!-- <glob pattern="*.stl"/> conflicts with 3D STL -->
+  </mime-type>
+  
   <mime-type type="application/ecmascript">
     <glob pattern="*.ecma"/>
   </mime-type>
@@ -2761,6 +2785,22 @@
     <sub-class-of type="application/x-tika-staroffice"/>
     <glob pattern="*.vor"/>
   </mime-type>
+
+  <mime-type type="application/x-subrip">
+    <_comment>SubRip (srt) subtitles</_comment>
+    <magic priority="50">
+      <!-- 1[CR|LF|CRLF]00 -->
+      <match value="0x310A3030" type="string" offset="0"/>
+      <match value="0x310D3030" type="string" offset="0"/>
+      <match value="0x310D0A13030" type="string" offset="0"/>
+      <match value="0xEFBBBF310A3030" type="string" offset="0"/>
+      <match value="0xEFBBBF310D3030" type="string" offset="0"/>
+      <match value="0xEFBBBF310D0A13030" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.srt"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+  
   <mime-type type="application/vnd.sun.xml.writer">
     <sub-class-of type="application/zip"/>
     <glob pattern="*.sxw"/>
@@ -2902,6 +2942,13 @@
     <glob pattern="*.ufd"/>
     <glob pattern="*.ufdl"/>
   </mime-type>
+
+  <mime-type type="application/ttml+xml">
+    <root-XML localName="tt"/>
+    <root-XML namespaceURI="http://www.w3.org/ns/ttml"/>
+    <glob pattern="*.ttml"/>
+  </mime-type>
+
   <mime-type type="application/vnd.uiq.theme">
     <glob pattern="*.utz"/>
   </mime-type>
