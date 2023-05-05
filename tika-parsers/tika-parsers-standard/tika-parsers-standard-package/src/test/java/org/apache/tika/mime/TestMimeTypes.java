@@ -198,11 +198,13 @@ public class TestMimeTypes {
 
     @Test
     public void testSRT() throws Exception {
+        assertTypeByData("application/x-subrip", "test_subrip.srt");
         assertTypeByNameAndData("application/x-subrip", "test_subrip.srt");
     }
 
     @Test
     public void testTTML() throws Exception {
+        assertTypeByData("application/ttml+xml", "test_ttml.ttml");
         assertTypeByNameAndData("application/ttml+xml", "test_ttml.ttml");
     }
 

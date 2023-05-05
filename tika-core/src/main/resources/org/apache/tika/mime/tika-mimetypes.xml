@@ -2944,9 +2944,9 @@
   </mime-type>
 
   <mime-type type="application/ttml+xml">
-    <root-XML localName="tt"/>
-    <root-XML namespaceURI="http://www.w3.org/ns/ttml"/>
+    <root-XML localName="tt" namespaceURI="http://www.w3.org/ns/ttml"/>
     <glob pattern="*.ttml"/>
+    <sub-class-of type="application/xml"/>
   </mime-type>
 
   <mime-type type="application/vnd.uiq.theme">
