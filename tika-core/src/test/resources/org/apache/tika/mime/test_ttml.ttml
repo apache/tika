@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tt xmlns="http://www.w3.org/ns/ttml" xmlns:tts="http://www.w3.org/ns/ttml#style" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" ttp:timeBase="media">
+  <head>
+    <metadata><ttm:title>Titre test</ttm:title></metadata>
+    <styling>
+      <style xml:id="s0" tts:backgroundColor="black" tts:fontStyle="normal" tts:fontSize="16" tts:fontFamily="sansSerif" tts:color="white"/>
+    </styling>
+  </head>
+  <body tts:textAlign="center" style="s0">
+    <div xml:lang="fra">
+      <p begin="00:01:14.440" end="00:01:15.760">ESSAI DE SOUS-TITRES</p>
+      <p begin="00:01:15.880" end="00:01:19,520">"Pour tester la reconnaissance,<br/>il faut des lignes de textes."</p>
+      <p begin="00:01:19.680" end="00:01:22.160">On peut écrire avec des accents,</p>
+      <p begin="00:01:22.280" end="00:01:23.440">sur une ou plusieurs lignes.</p>
+      <p begin="00:01:23.600" end="00:01:25.000">C'est du test pur sans prétention.</p>
+      <p begin="00:01:28.880" end="00:01:31.520">Réalisation<br/>TOTO</p>
+      <p begin="00:01:32.480" end="00:01:37.240">Dans le rôle de TOTO<br/>Tutu Titi</p>
+      <p begin="00:01:39.160" end="00:01:41.040">PREMIÈRE PARTIE :  VIE DE TOTO</p>
+      <p begin="00:01:41.160" end="00:01:43.000">1er épisode :<br/>IL FAUT VOIR LE FILM</p>
+      <p begin="00:01:43.120" end="00:01:45.720">2e épisode :<br/>ET LA SUITE</p>
+    </div>
+  </body>
+</tt>

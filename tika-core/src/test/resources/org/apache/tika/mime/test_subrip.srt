@@ -1,0 +1,45 @@
+1
+00:01:14,440 --> 00:01:15,760
+ESSAI DE SOUS-TITRES
+
+2
+00:01:15,880 --> 00:01:19,520
+"Pour tester la reconnaissance,
+il faut des lignes de textes."
+
+3
+00:01:19,680 --> 00:01:22,160
+On peut écrire avec des accents,
+
+4
+00:01:22,280 --> 00:01:23,440
+sur une ou plusieurs lignes.
+
+5
+00:01:23,600 --> 00:01:25,000
+C'est du test pur sans prétention.
+
+6
+00:01:28,880 --> 00:01:31,520
+Réalisation
+TOTO
+
+7
+00:01:32,480 --> 00:01:37,240
+Dans le rôle de TOTO
+Tutu Titi
+
+8
+00:01:39,160 --> 00:01:41,040
+PREMIÈRE PARTIE :  VIE DE TOTO
+
+9
+00:01:41,160 --> 00:01:43,000
+1er épisode :
+IL FAUT VOIR LE FILM
+
+10
+00:01:43,120 --> 00:01:45,720
+2e épisode :
+ET LA SUITE
+
