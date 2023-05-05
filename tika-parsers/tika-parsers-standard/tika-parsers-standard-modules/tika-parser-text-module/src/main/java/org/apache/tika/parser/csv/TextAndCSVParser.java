@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
@@ -228,18 +229,27 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
                     totalRows++;
                 }
                 metadata.set(NUM_ROWS, totalRows);
-            } catch (IllegalStateException e) {
-                //if there's a parse exception
-                //try to get the rest of the content...treat it as text for now
-                //There will be some content lost because of buffering.
-                //TODO -- figure out how to improve this
-                xhtmlContentHandler.endElement(TABLE);
-                xhtmlContentHandler.startElement("div", "name", "after exception");
-                handleText(reader, xhtmlContentHandler);
-                xhtmlContentHandler.endElement("div");
-                xhtmlContentHandler.endDocument();
-                //TODO -- consider dumping what's left in the reader as text
-                throw new TikaException("exception parsing the csv", e);
+            } catch (UncheckedIOException e) {
+                if (e.getCause() != null && e.getCause().getMessage() != null &&
+                        e.getCause().getMessage().contains("encapsulated")) {
+                    //if there's a parse exception
+                    //try to get the rest of the content...treat it as text for now
+                    //There will be some content lost because of buffering.
+                    //TODO -- figure out how to improve this
+                    xhtmlContentHandler.endElement(TABLE);
+                    xhtmlContentHandler.startElement("div", "name", "after exception");
+                    handleText(reader, xhtmlContentHandler);
+                    xhtmlContentHandler.endElement("div");
+                    xhtmlContentHandler.endDocument();
+                    //TODO -- consider dumping what's left in the reader as text
+                    throw new TikaException("exception parsing the csv", e);
+                } else {
+                    if (e.getCause() != null) {
+                        throw new TikaException("exception parsing the csv", e.getCause());
+                    } else {
+                        throw new TikaException("exception parsing the csv", e);
+                    }
+                }
             }
 
             xhtmlContentHandler.endElement(TABLE);
