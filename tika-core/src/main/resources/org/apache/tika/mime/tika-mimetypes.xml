@@ -310,8 +310,8 @@
     <_comment>Adobe Illustrator Artwork -- the older postscript based AI files</_comment>
     <!-- we can do more specific versions by focusing on the integer in the regex below -->
     <tika:link>http://justsolve.archiveteam.org/wiki/Adobe_Illustrator_Artwork</tika:link>
-    <magic priority="50">
-      <match value="[\r\n]%AI5_FileFormat [1-9]" type="regex" offset="0:8192"/>
+    <magic priority="60">
+      <match value="[\r\n]%AI5_FileFormat [1-4][\r\n]" type="regex" offset="0:8192"/>
     </magic>
     <sub-class-of type="application/postscript"/>
   </mime-type>
