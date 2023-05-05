@@ -185,6 +185,16 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testPostscriptBasedIllustrator() throws Exception {
+        //if all we have is the name, default to pdf based illustrator
+        assertTypeByName("application/illustrator", "testAI_PS.ai");
+        //if we have bytes, get it right
+        assertTypeByData("application/illustrator+ps", "testAI_PS.ai");
+        //if we have name and bytes, get it right
+        assertTypeByNameAndData("application/illustrator+ps", "testAI_PS.ai");
+
+    }
+    @Test
     public void testDigiliteFDF() throws Exception {
         //not to be confused with Adobe's .fdf!
         assertTypeByData("application/vnd.digilite.prolights", "testDigilite.fdf");
