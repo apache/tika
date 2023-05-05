@@ -197,6 +197,16 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testSRT() throws Exception {
+        assertTypeByNameAndData("application/x-subrip", "test_subrip.srt");
+    }
+
+    @Test
+    public void testTTML() throws Exception {
+        assertTypeByNameAndData("application/ttml+xml", "test_ttml.ttml");
+    }
+
+    @Test
     public void testXFDF() throws Exception {
         //for an example: https://docs.appligent.com/fdfmerge/fdfmerge-form-data-format/
         assertTypeDetection("testXFDF.xfdf", "application/vnd.adobe.xfdf");
