@@ -8,6 +8,9 @@ Release 2.8.0 - ???
      the behavior in Tika 1.x. Exclude org.apache.tika.parser.external.CompositeExternalParser
      if you do not want this behavior (TIKA-4022).
 
+   * Add detection for and a new mime type for older postscript-based
+     Adobe Illustrator "application/illustrator+ps" files (TIKA-3971).
+
    * Add magic detection for canon raw file types: crw, cr2 and cr3 (TIKA-3991).
 
    * Add detection for ONIX message files (TIKA-4011).
