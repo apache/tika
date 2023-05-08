@@ -66,6 +66,7 @@ import org.apache.tika.parser.txt.TXTParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Bridge between mime4j's content handler and the generic Sax content handler
@@ -177,8 +178,20 @@ class MailContentHandler implements ContentHandler {
                 //do anything with "size"?
             }
 
+            //the embedded file name can be in the content disposition field
+            //or a parameter on the content type field as in:
+            // Content-Type: application/pdf; name=blah.pdf
+            //Or it can be in both
+            //not sure we need this defensive null check?
+            if (body.getContentTypeParameters() != null) {
+                String contentTypeName = body.getContentTypeParameters().get("name");
+                if (!StringUtils.isBlank(contentTypeName)) {
+                    submd.set(TikaCoreProperties.RESOURCE_NAME_KEY, contentTypeName);
+                }
+            }
             String contentDispositionFileName = body.getContentDispositionFilename();
-            if (contentDispositionFileName != null) {
+            if (!StringUtils.isBlank(contentDispositionFileName)) {
+                //prefer the content disposition file name over the "name" param in the content-type
                 submd.set(TikaCoreProperties.RESOURCE_NAME_KEY, contentDispositionFileName);
             }
             submd.set(Metadata.CONTENT_DISPOSITION, contentDisposition.toString());
