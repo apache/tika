@@ -306,7 +306,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.22.1</google.cloud.version>
-    <aws.version>1.12.462</aws.version>
+    <aws.version>1.12.464</aws.version>
     <asm.version>9.5</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -476,12 +476,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.38.0</version>
+        <version>1.39.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.13.2</version>
+        <version>1.13.3</version>
         <exclusions>
           <exclusion>
             <groupId>io.netty</groupId>
@@ -574,7 +574,7 @@
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
-        <version>3.22.3</version>
+        <version>3.22.4</version>
       </dependency>
       <dependency>
         <groupId>com.h2database</groupId>

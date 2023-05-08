@@ -383,17 +383,17 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         if (objectRelId == null) {
             return;
         }
-        if (! StringUtils.isBlank(progId)) {
-            embeddedPartMetadata.setProgId(progId);
-        }
 
         if (embeddedPartMetadata != null) {
+            if (! StringUtils.isBlank(progId)) {
+                embeddedPartMetadata.setProgId(progId);
+            }
             embeddedPartMetadataMap.put(objectRelId, embeddedPartMetadata);
         }
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "class", "class", "CDATA", "embedded");
         attributes.addAttribute("", "id", "id", "CDATA", objectRelId);
-        if (!StringUtils.isBlank(embeddedPartMetadata.getFullName())) {
+        if (embeddedPartMetadata != null && !StringUtils.isBlank(embeddedPartMetadata.getFullName())) {
             attributes.addAttribute("", "name", "name", "CDATA",
                     embeddedPartMetadata.getFullName());
         }
