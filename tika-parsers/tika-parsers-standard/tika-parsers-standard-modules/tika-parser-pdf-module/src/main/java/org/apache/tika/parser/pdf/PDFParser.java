@@ -949,6 +949,14 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         defaultConfig.setExtractIncrementalUpdateInfo(setExtractIncrementalUpdateInfo);
     }
 
+    public long getMaxMainMemoryBytes() {
+        return defaultConfig.getMaxMainMemoryBytes();
+    }
+
+    public boolean isExtractIncrementalUpdateInfo() {
+        return defaultConfig.isExtractIncrementalUpdateInfo();
+    }
+
     /**
      * If set to true, this will parse incremental updates if they exist
      * within a PDF.  If set to <code>true</code>, this will override
@@ -961,6 +969,10 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         defaultConfig.setParseIncrementalUpdates(parseIncrementalUpdates);
     }
 
+    public boolean isParseIncrementalUpdates() {
+        return defaultConfig.isParseIncrementalUpdates();
+    }
+
     /**
      * Set the maximum number of incremental updates to parse
      * @param maxIncrementalUpdates
@@ -970,8 +982,8 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         defaultConfig.setMaxIncrementalUpdates(maxIncrementalUpdates);
     }
 
-    public long getMaxMainMemoryBytes() {
-        return defaultConfig.getMaxMainMemoryBytes();
+    public int getMaxIncrementalUpdates() {
+        return defaultConfig.getMaxIncrementalUpdates();
     }
 
     /**
