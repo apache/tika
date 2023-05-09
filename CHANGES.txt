@@ -1,4 +1,4 @@
-Release 2.8.0 - ???
+Release 2.8.0 - 5/9/2023
 
    * Enable counting and/or parsing of incremental updates in PDFs.  This
      is an experimental feature and may change in later releases (TIKA-4017).
