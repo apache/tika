@@ -323,6 +323,20 @@ public interface TikaCoreProperties {
     Property IS_ENCRYPTED = Property.internalBoolean(TIKA_META_PREFIX + "encrypted");
 
     /**
+     * General metadata key for the count of non-final versions available within a file.  This
+     * was added initially to support generalizing incremental updates in PDF.
+     */
+    Property VERSION_COUNT = Property.externalInteger(TIKA_META_PREFIX + "versionCount");
+
+    /**
+     * General metadata key for the version number of a given file that contains
+     * earlier versions within it.  This number is 0-indexed for the earliest version.
+     * The latest version does not have this metadata value.  This was added initially
+     * to support generalizing incremental updates in PDF.
+     */
+    Property VERSION_NUMBER = Property.externalInteger(TIKA_META_PREFIX + "versionNumber");
+
+    /**
      * A file might contain different types of embedded documents.
      * The most common is the ATTACHMENT.
      * <p>

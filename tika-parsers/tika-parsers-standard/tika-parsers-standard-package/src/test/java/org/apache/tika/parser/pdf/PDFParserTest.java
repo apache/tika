@@ -477,7 +477,9 @@ public class PDFParserTest extends TikaTest {
         parseContext.set(PDFParserConfig.class, pdfParserConfig);
         List<Metadata> metadataList = getRecursiveMetadata("test-incremental-updates.eml", parseContext);
         assertEquals(4, metadataList.size());
-        assertEquals(2, metadataList.get(3).getInt(PDF.PDF_INCREMENTAL_UPDATES));
+        assertEquals(2, metadataList.get(3).getInt(PDF.PDF_INCREMENTAL_UPDATE_COUNT));
+        assertEquals(2,
+                metadataList.get(3).getInt(TikaCoreProperties.VERSION_COUNT));
         long[] expected = new long[]{16242, 41226, 64872};
         long[] eofs = metadataList.get(3).getLongValues(PDF.EOF_OFFSETS);
         assertEquals(3, eofs.length);
@@ -494,9 +496,11 @@ public class PDFParserTest extends TikaTest {
         assertNull(metadataList.get(3).get(PDF.INCREMENTAL_UPDATE_NUMBER));
         assertEquals(0, metadataList.get(1).getInt(PDF.INCREMENTAL_UPDATE_NUMBER));
         assertEquals(1, metadataList.get(2).getInt(PDF.INCREMENTAL_UPDATE_NUMBER));
-        assertEquals("incremental-update-0", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals("incremental-update-1",
-                metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+
+        assertEquals("/testPDF_incrementalUpdates.pdf/version-number-0",
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/testPDF_incrementalUpdates.pdf/version-number-1",
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
         assertEquals(TikaCoreProperties.EmbeddedResourceType.VERSION.toString(),
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));

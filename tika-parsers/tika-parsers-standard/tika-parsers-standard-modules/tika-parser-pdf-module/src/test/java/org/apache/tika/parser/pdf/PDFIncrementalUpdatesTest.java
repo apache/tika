@@ -67,7 +67,8 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata(
                 "testPDF_incrementalUpdates.pdf",
                 parseContext);
-        assertEquals(2, metadataList.get(0).getInt(PDF.PDF_INCREMENTAL_UPDATES));
+        assertEquals(2, metadataList.get(0).getInt(TikaCoreProperties.VERSION_COUNT));
+        assertEquals(2, metadataList.get(0).getInt(PDF.PDF_INCREMENTAL_UPDATE_COUNT));
         long[] expected = new long[]{16242, 41226, 64872};
         long[] eofs = metadataList.get(0).getLongValues(PDF.EOF_OFFSETS);
         assertEquals(3, eofs.length);
@@ -155,7 +156,8 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
                 "testPDF_incrementalUpdates.pdf",
                 parseContext);
         assertEquals(3, metadataList.size());
-        assertEquals(2, metadataList.get(0).getInt(PDF.PDF_INCREMENTAL_UPDATES));
+        assertEquals(2, metadataList.get(0).getInt(PDF.PDF_INCREMENTAL_UPDATE_COUNT));
+        assertEquals(2, metadataList.get(0).getInt(TikaCoreProperties.VERSION_COUNT));
         long[] expected = new long[]{16242, 41226, 64872};
         long[] eofs = metadataList.get(0).getLongValues(PDF.EOF_OFFSETS);
         assertEquals(3, eofs.length);
@@ -170,9 +172,13 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
         assertNull(metadataList.get(0).get(PDF.INCREMENTAL_UPDATE_NUMBER));
         assertEquals(0, metadataList.get(1).getInt(PDF.INCREMENTAL_UPDATE_NUMBER));
         assertEquals(1, metadataList.get(2).getInt(PDF.INCREMENTAL_UPDATE_NUMBER));
-        assertEquals("incremental-update-0", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals("incremental-update-1",
-                metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("/version-number-0",
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/version-number-1",
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+
+        assertNull(metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertNull(metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
         assertEquals(TikaCoreProperties.EmbeddedResourceType.VERSION.toString(),
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));

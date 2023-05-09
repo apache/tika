@@ -1100,7 +1100,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             updateMetadata.set(PDF.INCREMENTAL_UPDATE_NUMBER, count);
             updateMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.VERSION.toString());
-            updateMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "incremental-update-" + count);
             if (embeddedDocumentExtractor.shouldParseEmbedded(updateMetadata)) {
                 try (InputStream tis = TikaInputStream.get(update)) {
                     context.set(IsIncrementalUpdate.class, IsIncrementalUpdate.IS_INCREMENTAL_UPDATE);
