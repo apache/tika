@@ -29,12 +29,6 @@ public interface PDF {
 
 
     /**
-     * Incremental updates as extracted by the StartXRefScanner.  See
-     * that class for limitations.
-     */
-    Property PDF_INCREMENTAL_UPDATES = Property.externalInteger(PDF_PREFIX + "incrementalUpdates");
-
-    /**
      * Number of %%EOF as extracted by the StartXRefScanner. See
      * that class for limitations.
      *
@@ -203,6 +197,16 @@ public interface PDF {
      * This value is populated with the parse incremental updates feature is selected
      * in the PDFParser.
      */
-    Property INCREMENTAL_UPDATE_NUMBER = Property.internalInteger(PDF_PREFIX +
-            "incrementalUpdateNumber");
+    Property INCREMENTAL_UPDATE_NUMBER =
+            Property.composite(Property.internalInteger(PDF_PREFIX + "incrementalUpdateNumber"),
+                new Property[]{ TikaCoreProperties.VERSION_NUMBER });
+
+    /**
+     * Incremental updates as extracted by the StartXRefScanner.  See
+     * that class for limitations.
+     */
+    Property PDF_INCREMENTAL_UPDATE_COUNT =
+            Property.composite( Property.externalInteger(PDF_PREFIX + "incrementalUpdateCount"),
+                    new Property[]{ TikaCoreProperties.VERSION_COUNT });
+
 }

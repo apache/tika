@@ -188,6 +188,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
             objectName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         } else if (metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID) != null) {
             objectName = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
+        } else if (metadata.get(TikaCoreProperties.VERSION_NUMBER) != null) {
+            objectName = "version-number-" + metadata.get(TikaCoreProperties.VERSION_NUMBER);
         } else {
             objectName = "embedded-" + (++state.unknownCount);
         }

@@ -279,7 +279,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             //don't count the last xref as an incremental update
             startXrefs--;
         }
-        metadata.set(PDF.PDF_INCREMENTAL_UPDATES, startXrefs);
+        metadata.set(PDF.PDF_INCREMENTAL_UPDATE_COUNT, startXrefs);
         if (localConfig.isParseIncrementalUpdates()) {
             try {
                 parseContext.set(IncrementalUpdateRecord.class,
