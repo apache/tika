@@ -298,7 +298,7 @@
     <maven.javadoc.version>3.5.0</maven.javadoc.version>
     <maven.jar.version>3.3.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
-    <maven.surefire.version>3.0.0</maven.surefire.version>
+    <maven.surefire.version>3.1.0</maven.surefire.version>
     <maven.shade.version>3.4.1</maven.shade.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
