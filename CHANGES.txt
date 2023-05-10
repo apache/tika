@@ -2,6 +2,8 @@ Release 2.8.1 - ????
 
    * Enable optional extraction of file system metadata in FileSystemFetcher (TIKA-4035).
 
+   * Allow pretty printing in FileSystemEmitter (TIKA-4034).
+
 
 Release 2.8.0 - 5/9/2023
 
