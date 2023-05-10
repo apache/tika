@@ -22,6 +22,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.util.Date;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -34,7 +37,9 @@ import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 
@@ -44,6 +49,8 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
 
     //Warning! basePath can be null!
     private Path basePath = null;
+
+    private boolean extractFileSystemMetadata = false;
 
     static boolean isDescendant(Path root, Path descendant) {
         return descendant.toAbsolutePath().normalize()
@@ -70,6 +77,7 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
         }
 
         metadata.set(TikaCoreProperties.SOURCE_PATH, fetchKey);
+        updateFileSystemMetadata(p, metadata);
 
         if (!Files.isRegularFile(p)) {
             if (basePath != null && !Files.isDirectory(basePath)) {
@@ -80,6 +88,24 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
         }
 
         return TikaInputStream.get(p, metadata);
+    }
+
+    private void updateFileSystemMetadata(Path p, Metadata metadata) throws IOException {
+        if (! extractFileSystemMetadata) {
+            return;
+        }
+        BasicFileAttributes attrs = Files.readAttributes(p, BasicFileAttributes.class);
+        updateFileTime(FileSystem.CREATED, attrs.creationTime(), metadata);
+        updateFileTime(FileSystem.MODIFIED, attrs.lastModifiedTime(), metadata);
+        updateFileTime(FileSystem.ACCESSED, attrs.lastAccessTime(), metadata);
+        //TODO extract owner or group?
+    }
+
+    private void updateFileTime(Property property, FileTime fileTime, Metadata metadata) {
+        if (fileTime == null) {
+            return;
+        }
+        metadata.set(property, new Date(fileTime.toMillis()));
     }
 
     /**
@@ -100,6 +126,17 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
     @Field
     public void setBasePath(String basePath) {
         this.basePath = Paths.get(basePath);
+    }
+
+    /**
+     * Extract file system metadata (created, modified, accessed) when fetching file.
+     * The default is <code>false</code>.
+     *
+     * @param extractFileSystemMetadata
+     */
+    @Field
+    public void setExtractFileSystemMetadata(boolean extractFileSystemMetadata) {
+        this.extractFileSystemMetadata = extractFileSystemMetadata;
     }
 
     @Override
