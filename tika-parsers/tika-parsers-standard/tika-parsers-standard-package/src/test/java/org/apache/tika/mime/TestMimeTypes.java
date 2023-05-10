@@ -572,6 +572,11 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testOS2BitmapArray() throws Exception {
+        assertTypeByData("image/x-os2-graphics; charset=binary", "testOS2BitmapArray");
+    }
+
+    @Test
     public void testPnmDetection() throws Exception {
         assertType("image/x-portable-bitmap", "testPBM.pbm");
         assertType("image/x-portable-graymap", "testPGM.pgm");

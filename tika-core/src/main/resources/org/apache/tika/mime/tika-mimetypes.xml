@@ -5642,8 +5642,21 @@
       <match value="0x762F310102040000" type="string" offset="0"/>
     </magic>
     <glob pattern="*.exr"/>
-  </mime-type> 
+  </mime-type>
 
+  <mime-type type="image/x-os2-graphics; charset=binary">
+    <_comment>OS2 bitmap array</_comment>
+    <tika:link>http://fileformats.archiveteam.org/wiki/OS/2_Bitmap_Array</tika:link>
+    <magic priority="50">
+      <match value="BA" type="string" offset="0">
+        <match value="BM" type="string" offset="14"/>
+        <match value="CI" type="string" offset="14"/>
+        <match value="IC" type="string" offset="14"/>
+        <match value="CP" type="string" offset="14"/>
+        <match value="PT" type="string" offset="14"/>
+      </match>
+    </magic>
+  </mime-type>
   <mime-type type="image/bmp">
     <alias type="image/x-bmp"/>
     <alias type="image/x-ms-bmp"/>
