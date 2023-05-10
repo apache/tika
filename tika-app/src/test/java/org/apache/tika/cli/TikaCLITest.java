@@ -596,8 +596,8 @@ public class TikaCLITest {
         int json = 0;
         for (File f : ASYNC_OUTPUT_DIR.toFile().listFiles()) {
             if (f.getName().endsWith(".json")) {
-                //check first file for pretty print
-                if (json == 0) {
+                //check one file for pretty print
+                if (f.getName().equals("coffee.xls.json")) {
                     checkForPrettyPrint(f);
                 }
                 json++;
