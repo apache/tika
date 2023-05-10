@@ -30,6 +30,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,8 +72,8 @@ public class TikaCLITest {
                 "</basePath>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
                 "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
                 "<name>fse</name>" + "<basePath>" + ASYNC_OUTPUT_DIR.toAbsolutePath() +
-                "</basePath>" + "</emitter>" + "</emitters>" + "<pipesIterator " +
-                "class=\"org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator\">" +
+                "</basePath>" + "<prettyPrint>true</prettyPrint>" + "</emitter>" + "</emitters>" +
+                "<pipesIterator class=\"org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator\">" +
                 "<basePath>" + TEST_DATA_FILE.getAbsolutePath() + "</basePath>" +
                 "<fetcherName>fsf</fetcherName>" + "<emitterName>fse</emitterName>" +
                 "</pipesIterator>" + "</properties>";
@@ -595,10 +596,27 @@ public class TikaCLITest {
         int json = 0;
         for (File f : ASYNC_OUTPUT_DIR.toFile().listFiles()) {
             if (f.getName().endsWith(".json")) {
+                //check first file for pretty print
+                if (json == 0) {
+                    checkForPrettyPrint(f);
+                }
                 json++;
             }
         }
         assertEquals(17, json);
+    }
+
+    private void checkForPrettyPrint(File f) throws IOException {
+        String json = FileUtils.readFileToString(f, UTF_8);
+        int previous = json.indexOf("Content-Length");
+        assertTrue(previous > -1);
+        for (String k : new String[]{"Content-Type", "dc:creator",
+                "dcterms:created", "dcterms:modified", "X-TIKA:content\""}) {
+            int i = json.indexOf(k);
+            assertTrue( i > -1, "should have found " + k);
+            assertTrue(i > previous, "bad order: " + k + " at " + i + " not less than " + previous);
+            previous = i;
+        }
     }
 
 

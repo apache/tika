@@ -40,24 +40,36 @@ public class JsonMetadataList {
      *
      * @param metadataList list of metadata to write
      * @param writer       writer
+     * @param prettyPrint whether or not to pretty print the output
      * @throws org.apache.tika.exception.TikaException if there is an IOException during writing
      */
-    public static void toJson(List<Metadata> metadataList, Writer writer) throws IOException {
+    public static void toJson(List<Metadata> metadataList, Writer writer, boolean prettyPrint) throws IOException {
         if (metadataList == null) {
             writer.write("null");
             return;
         }
         try (JsonGenerator jsonGenerator = new JsonFactory()
                 .createGenerator(new CloseShieldWriter(writer))) {
-            if (PRETTY_PRINT) {
+            if (prettyPrint) {
                 jsonGenerator.useDefaultPrettyPrinter();
             }
             jsonGenerator.writeStartArray();
             for (Metadata m : metadataList) {
-                JsonMetadata.writeMetadataObject(m, jsonGenerator, PRETTY_PRINT);
+                JsonMetadata.writeMetadataObject(m, jsonGenerator, prettyPrint);
             }
             jsonGenerator.writeEndArray();
         }
+    }
+
+    /**
+     * Serializes a Metadata object to Json.  This does not flush or close the writer.
+     *
+     * @param metadataList list of metadata to write
+     * @param writer       writer
+     * @throws org.apache.tika.exception.TikaException if there is an IOException during writing
+     */
+    public static void toJson(List<Metadata> metadataList, Writer writer) throws IOException {
+        toJson(metadataList, writer, PRETTY_PRINT);
     }
 
     /**

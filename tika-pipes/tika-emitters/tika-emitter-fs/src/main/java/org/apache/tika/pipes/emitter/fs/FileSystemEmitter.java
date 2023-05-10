@@ -56,6 +56,9 @@ import org.apache.tika.pipes.emitter.TikaEmitterException;
  *                       options ('skip', 'replace', 'exception')
  *                  default is 'exception' --&gt;
  *                  &lt;param name="onExists" type="string"&gt;skip&lt;/param&gt;
+ *                  &lt;!-- optional; whether or not to pretty print the output
+ *                      default is false --&gt;
+ *                     &lt;param name="prettyPrint" type="boolean"&gt;true&lt;/param&gt;
  *              &lt;/params&gt;
  *          &lt;/emitter&gt;
  *      &lt;/emitters&gt;
@@ -66,6 +69,8 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
     private Path basePath = null;
     private String fileExtension = "json";
     private ON_EXISTS onExists = ON_EXISTS.EXCEPTION;
+
+    private boolean prettyPrint = false;
 
     @Override
     public void emit(String emitKey, List<Metadata> metadataList)
@@ -88,7 +93,7 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
             Files.createDirectories(output.getParent());
         }
         try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
-            JsonMetadataList.toJson(metadataList, writer);
+            JsonMetadataList.toJson(metadataList, writer, prettyPrint);
         }
     }
 
@@ -131,6 +136,11 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
                 throw new IllegalArgumentException("Don't understand '" + onExists +
                                                    "'; must be one of: 'skip', 'replace', 'exception'");
         }
+    }
+
+    @Field
+    public void setPrettyPrint(boolean prettyPrint) {
+        this.prettyPrint = prettyPrint;
     }
 
     @Override
