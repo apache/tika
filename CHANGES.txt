@@ -1,5 +1,7 @@
 Release 2.8.1 - ????
 
+   * Enable optional extraction of file system metadata in FileSystemFetcher (TIKA-4035).
+
 
 Release 2.8.0 - 5/9/2023
 
