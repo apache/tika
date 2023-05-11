@@ -1,19 +1,18 @@
-Release 2.8.1 - ????
-
-   * Enable optional extraction of file system metadata in FileSystemFetcher (TIKA-4035).
-
-   * Allow pretty printing in FileSystemEmitter (TIKA-4034).
-
-
-Release 2.8.0 - 5/9/2023
+Release 2.8.0 - 5/11/2023
 
    * Enable counting and/or parsing of incremental updates in PDFs.  This
      is an experimental feature and may change in later releases (TIKA-4017).
 
-   * Fixed bug that failed to load the CompositeExternalParser in tika-app and
-     tika-server-standard. This fix will call exiftool and ffmpeg if those are installed, as was
+   * Fixed bug that prevented the the loading of CompositeExternalParser in tika-app and
+     tika-server-standard. This parser will call exiftool and ffmpeg if those are installed, as was
      the behavior in Tika 1.x. Exclude org.apache.tika.parser.external.CompositeExternalParser
      if you do not want this behavior (TIKA-4022).
+
+   * Removed the shading of tika-parsers-standard-module (TIKA-4038).
+
+   * Enable optional extraction of file system metadata in FileSystemFetcher (TIKA-4035).
+
+   * Allow pretty printing in FileSystemEmitter (TIKA-4034).
 
    * Add detection for and a new mime type for older postscript-based
      Adobe Illustrator "application/illustrator+ps" files (TIKA-3971).
