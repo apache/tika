@@ -84,7 +84,7 @@ public class SiegfriedDetector implements Detector {
     public static String ERRORS = "errors";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SiegfriedDetector.class);
-    private static final long DEFAULT_TIMEOUT_MS = 6000;
+    private static final long DEFAULT_TIMEOUT_MS = 60000;
     private static final String DEFAULT_SIEGFRIED_PATH = "sf";
 
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
