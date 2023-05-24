@@ -40,9 +40,9 @@ public class OneOffMimeTest extends TikaTest {
     @Test
     public void testOne() throws Exception {
         Path p = Paths.get("");
-        String mime = "application/vnd.isac.fcs";
+        String mime = "audio/x-sap";
         assertByData(mime, p);
-        assertByName("application/vnd.isac.fcs", p);
+        assertByName(mime, p);
     }
 
     private void assertByName(String expected, Path p) throws Exception {
