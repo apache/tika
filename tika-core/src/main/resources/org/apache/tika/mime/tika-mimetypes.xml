@@ -3749,6 +3749,17 @@
     <glob pattern="*.enw"/>
     <glob pattern="*.enr"/>
   </mime-type>
+  <mime-type type="application/x-endnote-style">
+    <magic priority="50">
+      <match value="0x0008" type="string" offset="0">
+        <match value="0x0000" type="string" offset="4">
+          <match value="RSFTSTYL" type="string" offset="8"/>
+          <match value="RENDNENFT" type="string" offset="8"/>
+        </match>
+      </match>
+    </magic>
+    <glob pattern="*.ens"/>
+  </mime-type>
 
   <mime-type type="application/x-killustrator">
     <_comment>KIllustrator File</_comment>
