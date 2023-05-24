@@ -39,8 +39,9 @@ public class OneOffMimeTest extends TikaTest {
             "cannot be added to Tika's repo.")
     @Test
     public void testOne() throws Exception {
-        Path p = Paths.get("");
-        String mime = "audio/x-sap";
+        Path baseDir = Paths.get("");
+        Path p = baseDir.resolve("");
+        String mime = "application/vnd.tcpdump.pcapng";
         assertByData(mime, p);
         assertByName(mime, p);
     }
