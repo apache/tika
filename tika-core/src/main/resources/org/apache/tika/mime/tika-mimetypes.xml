@@ -2918,6 +2918,18 @@
     <glob pattern="*.cap"/>
     <glob pattern="*.dmp"/>
   </mime-type>
+  <mime-type type="application/vnd.tcpdump.pcapng">
+    <_comment>TCPDump next gen pcap packet capture</_comment>
+    <tika:link>https://www.ietf.org/staging/draft-tuexen-opsawg-pcapng-02.html</tika:link>
+    <magic priority="50">
+      <match value="0x0A0D0D0A" type="string" offset="0">
+        <!-- Could only find examples of the second. I have not tested the first -->
+        <match value="0xa1b2c3d4" type="big32" offset="8" />
+        <match value="0x4d3c2b1a" type="string" offset="8" />
+      </match>
+    </magic>
+    <glob pattern="*.pcapng"/>
+  </mime-type>
 
   <mime-type type="application/vnd.tmobile-livetv">
     <glob pattern="*.tmo"/>
