@@ -3266,7 +3266,13 @@
       <match value="0x0606edf5d81d46e5bd31efe7fe74b71d" type="string" offset="0" />
     </magic>
   </mime-type>
-
+  <mime-type type="application/vnd.isac.fcs">
+    <_comment>Flow Cytometry Standard File</_comment>
+    <magic priority="50">
+      <match value="FCS[1-3]\\.[0-9] " type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.fcs"/>
+  </mime-type>
   <mime-type type="application/vnd.adobe.indesign-idml-package">
     <sub-class-of type="application/zip"/>
     <_comment>IDML</_comment>
