@@ -5350,7 +5350,14 @@
     <glob pattern="*.ogg"/>
     <sub-class-of type="audio/ogg"/>
   </mime-type>
-
+  <mime-type type="audio/x-sap">
+    <_comment>Slight Atari Player</_comment>
+    <tika:link>https://asap.sourceforge.net/sap-format.html</tika:link>
+    <magic priority="50">
+      <match value="SAP\r\n" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.sap"/>
+  </mime-type>
   <mime-type type="audio/x-oggflac">
     <_comment>Ogg Packaged Free Lossless Audio Codec</_comment>
     <alias type="audio/x-ogg-flac"/>
