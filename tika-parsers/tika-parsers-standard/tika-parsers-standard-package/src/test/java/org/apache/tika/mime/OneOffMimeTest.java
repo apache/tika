@@ -39,7 +39,7 @@ public class OneOffMimeTest extends TikaTest {
             "cannot be added to Tika's repo.")
     @Test
     public void testOne() throws Exception {
-        Path p = Paths.get("/Users/allison/Desktop/mimes/Beckman_Coulter-Cyan.fcs");
+        Path p = Paths.get("");
         String mime = "application/vnd.isac.fcs";
         assertByData(mime, p);
         assertByName("application/vnd.isac.fcs", p);
