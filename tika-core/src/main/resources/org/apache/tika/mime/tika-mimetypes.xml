@@ -3903,8 +3903,12 @@
   </mime-type>
 
   <mime-type type="application/x-font-otf">
+    <alias type="application/vnd.ms-opentype"/>
     <acronym>OTF</acronym>
     <_comment>OpenType Font</_comment>
+    <magic priority="40">
+      <match value="OTTO\x00" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.otf"/>
   </mime-type>
 
