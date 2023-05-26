@@ -2028,6 +2028,11 @@
   </mime-type>
 
   <mime-type type="application/vnd.ms-fontobject">
+    <magic priority="50">
+      <match value="\x02\x00\x02\x00" type="string" offset="8">
+        <match value="\x4C\x50" type="string" offset="34"/>
+      </match>
+    </magic>
     <glob pattern="*.eot"/>
   </mime-type>
   <mime-type type="application/vnd.ms-htmlhelp">
