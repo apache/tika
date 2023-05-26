@@ -3328,7 +3328,19 @@
     </magic>
     <glob pattern="*.arj"/>
   </mime-type>
-
+  <mime-type type="application/x-asprs">
+    <_comment>ASPRS Lidar Data Exchange Format</_comment>
+    <magic priority="50">
+      <match value="LASF" type="string" offset="0">
+        <!-- version 1.1 -->
+        <match value="\x01\x01" type="string" offset="24"/>
+        <!-- version 1.2 -->
+        <match value="\x01\x02" type="string" offset="24"/>
+      </match>
+    </magic>
+    <glob pattern="*.las"/>
+    <glob pattern="*.laz"/>
+  </mime-type>
   <mime-type type="application/x-authorware-bin">
     <glob pattern="*.aab"/>
     <glob pattern="*.x32"/>
@@ -3584,6 +3596,23 @@
     </magic>
     <glob pattern="*.gtar"/>
     <sub-class-of type="application/x-tar"/>
+  </mime-type>
+
+  <mime-type type="application/x-amiga-disk-format">
+    <_comment>Amiga Disk File</_comment>
+    <glob pattern="*.adf"/>
+    <magic priority="50">
+      <match value="DOS" offset="0" type="string">
+        <match value="\x00" offset="4" type="string"/>
+        <match value="\x01" offset="4" type="string"/>
+        <match value="\x02" offset="4" type="string"/>
+        <match value="\x03" offset="4" type="string"/>
+        <match value="\x04" offset="4" type="string"/>
+        <match value="\x05" offset="4" type="string"/>
+        <match value="\x06" offset="4" type="string"/>
+        <match value="\x07" offset="4" type="string"/>
+      </match>
+    </magic>
   </mime-type>
 
   <mime-type type="application/x-brotli">
@@ -3852,10 +3881,12 @@
   <mime-type type="application/x-font-dos"/>
   <mime-type type="application/x-font-framemaker"/>
   <mime-type type="application/x-font-ghostscript">
+    <!-- conflict with portable sound format -->
     <glob pattern="*.gsf"/>
   </mime-type>
   <mime-type type="application/x-font-libgrx"/>
   <mime-type type="application/x-font-linux-psf">
+    <!-- conflict with portable sound format -->
     <glob pattern="*.psf"/>
   </mime-type>
 
@@ -4086,7 +4117,16 @@
   <mime-type type="application/x-java-pack200">
     <glob pattern="*.pack"/>
   </mime-type>
-
+  <mime-type type="application/x-jeol-jdf">
+    <_comment>JDF NMR Spectroscopy</_comment>
+    <glob pattern="*.jdf"/>
+    <magic priority="50">
+      <!-- big endian -->
+      <match value="JEOL.NMR" offset="0" type="string"/>
+      <!-- little endian -->
+      <match value="RMN.LOEJ" offset="0" type="string"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-kdelnk">
     <magic priority="50">
       <match value="[KDE\ Desktop\ Entry]" type="string" offset="0"/>
@@ -4617,7 +4657,13 @@
       <match value="HEADER RECORD*******LIBRARY HEADER RECORD!!!!!!!" offset="0" />
     </magic>
   </mime-type>
-
+  <mime-type type="application/x-spss-sav">
+    <_comment>SPSS Data File</_comment>
+    <glob pattern="*.sav"/>
+    <magic priority="50">
+      <match value="$FL2@(#)" offset="0" />
+    </magic>
+  </mime-type>
   <mime-type type="application/x-sc">
     <magic priority="50">
       <match value="Spreadsheet" type="string" offset="38"/>
@@ -4659,7 +4705,13 @@
     </magic>
     <glob pattern="*.swf"/>
   </mime-type>
-
+  <mime-type type="application/x-sibelius">
+    <_comment>Sibelius</_comment>
+    <magic priority="50">
+      <match value="\x0FSIBELIUS" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.sib"/>
+  </mime-type>
   <mime-type type="application/x-silverlight-app">
     <glob pattern="*.xap"/>
   </mime-type>
@@ -4676,6 +4728,14 @@
     <_comment>Standard Formatted Data Units (SFDUs) data</_comment>
     <sub-class-of type="text/plain"/>
     <glob pattern="*.sfdu"/>
+  </mime-type>
+
+  <mime-type type="application/x-spectrum-tzx">
+    <_comment>TAP (ZX Spectrum)</_comment>
+    <magic priority="50">
+      <match value="ZXTape!\x1a" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.tzx"/>
   </mime-type>
 
   <mime-type type="application/x-sqlite3">
@@ -5362,6 +5422,42 @@
     <glob pattern="*.ogg"/>
     <sub-class-of type="audio/ogg"/>
   </mime-type>
+  <mime-type type="audio/x-psf">
+    <_comment>Portable Sound Format</_comment>
+    <tika:link>http://web.archive.org/web/20140125155137/http://wiki.neillcorlett.com/PSFFormat</tika:link>
+    <magic priority="50">
+      <match value="PSF" type="string" offset="0">
+        <!-- Playstation (PSF1) -->
+        <match value="\x01" type="string" offset="3"/>
+        <!-- Playstation 2 (PSF2) -->
+        <match value="\x02" type="string" offset="3"/>
+        <!-- Sega Saturn -->
+        <match value="\x11" type="string" offset="3"/>
+        <!-- Sega Dreamcast -->
+        <match value="\x12" type="string" offset="3"/>
+        <!-- Sega Genesis -->
+        <match value="\x13" type="string" offset="3"/>
+        <!-- Nintendo 64-->
+        <match value="\x21" type="string" offset="3"/>
+        <!-- GameBoy Advance -->
+        <match value="\x22" type="string" offset="3"/>
+        <!-- Super NES -->
+        <match value="\x23" type="string" offset="3"/>
+        <!-- Capcom QSound -->
+        <match value="\x41" type="string" offset="3"/>
+      </match>
+    </magic>
+    <!-- conflict with application/x-font-linux-psf
+    <glob pattern="*.psf"/>-->
+    <glob pattern="*.psf1"/>
+    <glob pattern="*.psflib"/>
+    <glob pattern="*.minipsf"/>
+    <glob pattern="*.minipsf1"/>
+    <!-- conflict with application/x-font-ghostscript
+    <glob pattern="*.gsf"/> -->
+    <glob pattern="*.gslib"/>
+    <glob pattern="*.minigsf"/>
+  </mime-type>
   <mime-type type="audio/x-sap">
     <_comment>Slight Atari Player</_comment>
     <tika:link>https://asap.sourceforge.net/sap-format.html</tika:link>
@@ -5670,7 +5766,17 @@
   <mime-type type="chemical/x-xyz">
     <glob pattern="*.xyz"/>
   </mime-type>
-
+  <mime-type type="image/x-3ds">
+    <_comment>3D Studio (V1)</_comment>
+    <magic priority="50">
+      <match value="MM" type="string" offset="0">
+        <match value="\x02\x00\x0A\x00\x00\x00" type="string" offset="6">
+          <match value="==" type="string" offset="16"/>
+        </match>
+      </match>
+    </magic>
+    <glob pattern="*.3ds"/>
+  </mime-type>
   <mime-type type="image/aces">
     <_comment>ACES Image Container File</_comment>
     <magic priority="50">
