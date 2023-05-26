@@ -93,14 +93,15 @@ public class RecursiveParserWrapperTest extends TikaTest {
 
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 70));
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                        70));
         try (InputStream stream =
                     getResourceAsStream("/test-documents/test_recursive_embedded.docx")) {
             wrapper.parse(stream, handler, metadata, context);
         }
         List<Metadata> list = handler.getMetadataList();
 
-        assertEquals(5, list.size());
+        assertEquals(2, list.size());
 
         int wlr = 0;
         for (Metadata m : list) {
@@ -113,14 +114,30 @@ public class RecursiveParserWrapperTest extends TikaTest {
     }
 
     @Test
+    public void testOne() throws Exception {
+        ParseContext context = new ParseContext();
+        Metadata metadata = new Metadata();
+        int writeLimit = 100;
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                        writeLimit, false, context));
+        try (InputStream stream = getResourceAsStream(
+                "/test-documents/test_recursive_embedded" + ".docx")) {
+            wrapper.parse(stream, handler, metadata, context);
+        }
+        List<Metadata> list = handler.getMetadataList();
+        assertEquals(12, list.size());
+    }
+    @Test
     public void testCharLimitNoThrowOnWriteLimit() throws Exception {
         ParseContext context = new ParseContext();
         Metadata metadata = new Metadata();
-
+        int writeLimit = 500;
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 500,
-                        false, context));
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                        writeLimit, false, context));
         try (InputStream stream = getResourceAsStream("/test-documents/test_recursive_embedded" +
                 ".docx")) {
             wrapper.parse(stream, handler, metadata, context);
@@ -131,9 +148,39 @@ public class RecursiveParserWrapperTest extends TikaTest {
 
         assertEquals("true", list.get(0).get(TikaCoreProperties.WRITE_LIMIT_REACHED));
 
-        assertContains("them to the separation", list.get(6).get(TikaCoreProperties.TIKA_CONTENT));
-        assertNotContained("unalienable Rights",
+        assertContains("dissolve the political", list.get(6).get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotContained("them to the separation",
                 list.get(6).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testSpecificLimit() throws Exception {
+        int writeLimit = 60;
+
+        ParseContext context = new ParseContext();
+        Metadata metadata = new Metadata();
+
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                        writeLimit, false, context));
+        try (InputStream stream = getResourceAsStream("/test-documents/testRTFEmbeddedFiles.rtf")) {
+            wrapper.parse(stream, handler, metadata, context);
+        }
+        List<Metadata> list = handler.getMetadataList();
+        assertTrue(writeLimit >= getContentLength(list),
+                "writeLimit=" + writeLimit + " contentLength=" + getContentLength(list));
+    }
+
+    private int getContentLength(List<Metadata> metadataList) {
+        int sz = 0;
+        for (Metadata metadata : metadataList) {
+            String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+            if (content != null) {
+                sz += content.length();
+            }
+        }
+        return sz;
     }
 
     @Test

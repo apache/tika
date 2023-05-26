@@ -1,3 +1,9 @@
+Release 2.8.1 - ???
+
+   * Fixed write limit bug in RecursiveParserWrapper (TIKA-4055).
+
+   * Add mime detection for many files (TIKA-3992).
+
 Release 2.8.0 - 5/11/2023
 
    * Enable counting and/or parsing of incremental updates in PDFs.  This
