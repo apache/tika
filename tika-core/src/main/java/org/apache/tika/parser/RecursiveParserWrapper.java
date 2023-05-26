@@ -372,6 +372,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             }
             int availableLength = Math.min(totalWriteLimit - totalChars, length);
             super.characters(ch, start, availableLength);
+            totalChars += availableLength;
             if (availableLength < length) {
                 handleWriteLimitReached();
             }
@@ -389,6 +390,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             }
             int availableLength = Math.min(totalWriteLimit - totalChars, length);
             super.ignorableWhitespace(ch, start, availableLength);
+            totalChars += availableLength;
             if (availableLength < length) {
                 handleWriteLimitReached();
             }

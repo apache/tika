@@ -69,9 +69,11 @@ public class RecursiveMetadataResource {
         fillMetadata(parser, metadata, httpHeaders);
         fillParseContext(httpHeaders, metadata, context);
         TikaResource.logRequest(LOG, "/rmeta", metadata);
+
         BasicContentHandlerFactory.HANDLER_TYPE type = handlerConfig.getType();
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(type, handlerConfig.getWriteLimit()),
+                new BasicContentHandlerFactory(type, handlerConfig.getWriteLimit(),
+                        handlerConfig.isThrowOnWriteLimitReached(), context),
                 handlerConfig.getMaxEmbeddedResources(),
                 TikaResource.getConfig().getMetadataFilter());
         try {
