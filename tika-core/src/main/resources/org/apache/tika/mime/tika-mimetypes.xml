@@ -3588,6 +3588,13 @@
     <sub-class-of type="application/xml"/>
   </mime-type>
 
+  <mime-type type="application/x-cdf">
+    <_comment>CD Audio</_comment>
+    <magic priority="50">
+      <match value="RIFF$\x00\x00\x00CDDAfmt\x20\x18" type="string" offset="0" />
+      <glob pattern="*.cda"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-gtar">
     <_comment>GNU tar Compressed File Archive (GNU Tape Archive)</_comment>
     <magic priority="50">
