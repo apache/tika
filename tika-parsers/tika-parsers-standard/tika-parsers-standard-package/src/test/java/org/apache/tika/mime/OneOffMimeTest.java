@@ -18,6 +18,7 @@ package org.apache.tika.mime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +29,7 @@ import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -44,6 +46,21 @@ public class OneOffMimeTest extends TikaTest {
         String mime = "application/vnd.tcpdump.pcapng";
         assertByData(mime, p);
         assertByName(mime, p);
+    }
+
+    @Test
+    @Disabled("again for development purposes with files that aren't suitable for the repo")
+    public void testDir() throws Exception {
+        Path root = Paths.get("");
+        Tika tika = new Tika();
+        for (File f : root.toFile().listFiles()) {
+            String fileMime = tika.detect(f);
+            String streamMime = "";
+            try (InputStream is = Files.newInputStream(f.toPath())) {
+                streamMime = tika.detect(is);
+            }
+            System.out.println(f.getName() + " fileMime=" + fileMime + " stream=" + streamMime);
+        }
     }
 
     private void assertByName(String expected, Path p) throws Exception {
