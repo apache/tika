@@ -20,6 +20,8 @@ import org.apache.tika.pipes.emitter.EmitData;
 
 public class PipesResult {
 
+    private boolean intermediate = false;
+
     public enum STATUS {
         CLIENT_UNAVAILABLE_WITHIN_MS,
         FETCHER_INITIALIZATION_EXCEPTION,
@@ -32,7 +34,8 @@ public class PipesResult {
         OOM, TIMEOUT, UNSPECIFIED_CRASH,
         NO_EMITTER_FOUND,
         EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_EXCEPTION,
-        INTERRUPTED_EXCEPTION, NO_FETCHER_FOUND;
+        INTERRUPTED_EXCEPTION, NO_FETCHER_FOUND,
+        INTERMEDIATE_RESULT;
     }
 
     public static final PipesResult CLIENT_UNAVAILABLE_WITHIN_MS =
@@ -48,18 +51,19 @@ public class PipesResult {
     private final EmitData emitData;
     private final String message;
 
-    private PipesResult(STATUS status, EmitData emitData, String message) {
+    private PipesResult(STATUS status, EmitData emitData, String message, boolean intermediate) {
         this.status = status;
         this.emitData = emitData;
         this.message = message;
+        this.intermediate = intermediate;
     }
 
     public PipesResult(STATUS status) {
-        this(status, null, null);
+        this(status, null, null, false);
     }
 
     public PipesResult(STATUS status, String message) {
-        this(status, null, message);
+        this(status, null, message, false);
     }
 
     /**
@@ -68,7 +72,11 @@ public class PipesResult {
      * @param emitData
      */
     public PipesResult(EmitData emitData) {
-        this(STATUS.PARSE_SUCCESS, emitData, null);
+        this(STATUS.PARSE_SUCCESS, emitData, null, false);
+    }
+
+    public PipesResult(STATUS status, EmitData emitData, boolean intermediate) {
+        this(status, emitData, null, intermediate);
     }
 
     /**
@@ -79,7 +87,7 @@ public class PipesResult {
      * @param message
      */
     public PipesResult(EmitData emitData, String message) {
-        this(STATUS.PARSE_SUCCESS_WITH_EXCEPTION, emitData, message);
+        this(STATUS.PARSE_SUCCESS_WITH_EXCEPTION, emitData, message, false);
     }
 
     public STATUS getStatus() {
@@ -94,9 +102,13 @@ public class PipesResult {
         return message;
     }
 
+    public boolean isIntermediate() {
+        return intermediate;
+    }
+
     @Override
     public String toString() {
-        return "PipesResult{" + "status=" + status + ", emitData=" + emitData + ", message='" +
-                message + '\'' + '}';
+        return "PipesResult{" + "intermediate=" + intermediate + ", status=" + status +
+                ", emitData=" + emitData + ", message='" + message + '\'' + '}';
     }
 }

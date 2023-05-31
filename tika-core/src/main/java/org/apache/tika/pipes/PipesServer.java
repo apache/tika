@@ -24,6 +24,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -37,12 +38,17 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DocumentSelector;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -76,6 +82,9 @@ public class PipesServer implements Runnable {
     //this has to be some number not close to 0-3
     //it looks like the server crashes with exit value 3 on OOM, for example
     public static final int TIMEOUT_EXIT_CODE = 17;
+    private DigestingParser.Digester digester;
+
+    private Detector detector;
 
     public enum STATUS {
         READY,
@@ -93,7 +102,8 @@ public class PipesServer implements Runnable {
         EMIT_EXCEPTION,
         OOM,
         TIMEOUT,
-        EMPTY_OUTPUT;
+        EMPTY_OUTPUT,
+        INTERMEDIATE_RESULT;
 
         byte getByte() {
             return (byte) (ordinal() + 1);
@@ -544,6 +554,7 @@ public class PipesServer implements Runnable {
                 handlerConfig.getMaxEmbeddedResources());
         ParseContext parseContext = new ParseContext();
         long start = System.currentTimeMillis();
+        preParse(fetchEmitTuple, stream, metadata, parseContext);
         try {
             rMetaParser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
@@ -561,6 +572,39 @@ public class PipesServer implements Runnable {
             }
         }
         return handler.getMetadataList();
+    }
+
+    private void preParse(FetchEmitTuple t, InputStream stream, Metadata metadata,
+                          ParseContext parseContext) {
+        try (TemporaryResources temporaryResources = new TemporaryResources()) {
+            TikaInputStream tis = TikaInputStream.cast(stream);
+            if (tis == null) {
+                tis = TikaInputStream.get(stream, temporaryResources, metadata);
+            }
+            _preParse(t.getId(), tis, metadata, parseContext);
+        } catch (IOException e) {
+            LOG.warn("something went wrong in pre-parse casting of the inputstream to a " +
+                    "TikaInputStream", e);
+            return;
+        }
+        writeIntermediate(t.getEmitKey(), metadata);
+    }
+
+    private void _preParse(String id, TikaInputStream tis, Metadata metadata,
+                           ParseContext parseContext) {
+        if (digester != null) {
+            try (InputStream is = Files.newInputStream(tis.getPath())) {
+                digester.digest(is, metadata, parseContext);
+            } catch (IOException e) {
+                LOG.warn("problem digesting: " + id, e);
+            }
+        }
+        try {
+            MediaType mt = detector.detect(tis, metadata);
+            metadata.set(Metadata.CONTENT_TYPE, mt.toString());
+        } catch (IOException e) {
+            LOG.warn("problem detecting: " + id, e);
+        }
     }
 
     private void injectUserMetadata(Metadata userMetadata, List<Metadata> metadataList) {
@@ -609,9 +653,28 @@ public class PipesServer implements Runnable {
         this.fetcherManager = FetcherManager.load(tikaConfigPath);
         this.emitterManager = EmitterManager.load(tikaConfigPath);
         this.autoDetectParser = new AutoDetectParser(this.tikaConfig);
+        if (((AutoDetectParser)autoDetectParser).getAutoDetectParserConfig().getDigesterFactory() != null) {
+            this.digester = ((AutoDetectParser) autoDetectParser).
+                    getAutoDetectParserConfig().getDigesterFactory().build();
+        }
+        this.detector = ((AutoDetectParser)this.autoDetectParser).getDetector();
         this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
     }
 
+
+    private void writeIntermediate(EmitKey emitKey, Metadata metadata) {
+        EmitData emitData = new EmitData(emitKey, Collections.singletonList(metadata));
+        try {
+            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
+                objectOutputStream.writeObject(metadata);
+            }
+            write(STATUS.INTERMEDIATE_RESULT, bos.toByteArray());
+        } catch (IOException e) {
+            LOG.error("problem writing intermediate data (forking process shutdown?)", e);
+            exit(1);
+        }
+    }
 
     private void write(EmitData emitData) {
         try {

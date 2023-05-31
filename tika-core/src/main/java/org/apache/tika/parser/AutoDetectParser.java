@@ -157,6 +157,10 @@ public class AutoDetectParser extends CompositeParser {
         this.autoDetectParserConfig = autoDetectParserConfig;
     }
 
+    public AutoDetectParserConfig getAutoDetectParserConfig() {
+        return this.autoDetectParserConfig;
+    }
+
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         if (autoDetectParserConfig.getMetadataWriteFilterFactory() != null) {
