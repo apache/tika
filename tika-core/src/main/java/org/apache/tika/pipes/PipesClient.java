@@ -31,6 +31,7 @@ import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -258,7 +259,9 @@ public class PipesClient implements Closeable {
         try {
             status = lookup(statusByte);
         } catch (IllegalArgumentException e) {
-            throw new IOException("problem reading response from server " + status);
+            throw new IOException("problem reading response from server "
+                    + String.format(Locale.US, "%02x", statusByte),
+                    e);
         }
 
         switch (status) {
