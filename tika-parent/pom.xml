@@ -339,7 +339,6 @@
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.21.16</jackrabbit.version>
     <jackson.version>2.15.2</jackson.version>
-    <jackson.databind.version>2.15.1</jackson.databind.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
     <javax.rest.version>2.1.1</javax.rest.version>
@@ -1048,11 +1047,6 @@
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>2.1.214</version>
-            </exclude>
-            <exclude>
-              <groupId>com.fasterxml.jackson.core</groupId>
-              <artifactId>jackson-core</artifactId>
-              <version>2.14.2</version>
             </exclude>
           </excludeCoordinates>
           <fail>true</fail>
