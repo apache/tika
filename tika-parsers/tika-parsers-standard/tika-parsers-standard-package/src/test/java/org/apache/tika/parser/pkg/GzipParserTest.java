@@ -23,7 +23,12 @@ import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 
 /**
@@ -76,4 +81,37 @@ public class GzipParserTest extends AbstractPkgTest {
         assertContains("Test SVG image", content);
     }
 
+    @Test
+    public void testDecompressConcatenatedDefault() throws Exception {
+        assertContains("<p>ab</p>",
+                getRecursiveMetadata("multiple.gz").get(1)
+                        .get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testDecompressConcatenatedOffInParseContext() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(CompressorParserOptions.class, new CompressorParserOptions() {
+            @Override
+            public boolean decompressConcatenated(Metadata metadata) {
+                return false;
+            }
+        });
+        assertContains("<p>a</p>",
+                getRecursiveMetadata("multiple.gz", parseContext).get(1)
+                        .get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testDecompressConcatenatedOffInTikaConfig() throws Exception {
+
+        TikaConfig tikaConfig = null;
+        try (InputStream is = getResourceAsStream("tika-gzip-config.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
+        Parser p = new AutoDetectParser(tikaConfig);
+        assertContains("<p>a</p>",
+                getRecursiveMetadata("multiple.gz", p).get(1)
+                        .get(TikaCoreProperties.TIKA_CONTENT));
+    }
 }

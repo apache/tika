@@ -86,6 +86,8 @@ public class CompressorParser extends AbstractParser {
     private static Set<MediaType> SUPPORTED_TYPES;
     private static Map<String, String> MIMES_TO_NAME;
 
+    private boolean decompressConcatenated = true;
+
     static {
         Set<MediaType> TMP_SET = new HashSet<>(MediaType
                 .set(BZIP, BZIP2, DEFLATE64, GZIP, GZIP_ALT, LZ4_FRAMED, COMPRESS, XZ, PACK,
@@ -177,7 +179,7 @@ public class CompressorParser extends AbstractParser {
         CompressorInputStream cis;
         try {
             CompressorParserOptions options =
-                    context.get(CompressorParserOptions.class, metadata1 -> false);
+                    context.get(CompressorParserOptions.class, metadata1 -> decompressConcatenated);
             CompressorStreamFactory factory =
                     new CompressorStreamFactory(options.decompressConcatenated(metadata),
                             memoryLimitInKb);
@@ -254,6 +256,15 @@ public class CompressorParser extends AbstractParser {
 
     public int getMemoryLimitInKb() {
         return this.memoryLimitInKb;
+    }
+
+    @Field
+    public void setDecompressConcatenated(boolean decompressConcatenated) {
+        this.decompressConcatenated = decompressConcatenated;
+    }
+
+    public boolean isDecompressConcatenated() {
+        return this.decompressConcatenated;
     }
 
 }
