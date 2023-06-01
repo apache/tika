@@ -47,6 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.utils.ProcessUtils;
@@ -237,10 +238,10 @@ public class PipesClient implements Closeable {
             return result;
         } else {
             if (LOG.isTraceEnabled()) {
-                LOG.trace("intermediate2 result: {}", intermediateResult[0].getEmitData());
+                LOG.trace("intermediate result: {}", intermediateResult[0].getEmitData());
             }
-            intermediateResult[0].getEmitData().getMetadataList().get(0).set("PipesResult",
-                    result.getStatus().toString());
+            intermediateResult[0].getEmitData().getMetadataList().get(0).set(
+                    TikaCoreProperties.PIPES_RESULT, result.getStatus().toString());
             return new PipesResult(result.getStatus(),
                     intermediateResult[0].getEmitData(), true);
         }

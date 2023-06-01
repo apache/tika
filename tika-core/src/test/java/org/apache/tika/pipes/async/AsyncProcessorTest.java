@@ -30,7 +30,9 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.emitter.EmitData;
@@ -87,8 +89,10 @@ public class AsyncProcessorTest {
                 "      <name>mock</name>\n" + "      <basePath>" +
                 ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString()) +
                 "</basePath>\n" + "    </fetcher>" + "  </fetchers>" +
-
-
+                " <autoDetectParserConfig>\n" +
+                        "    <digesterFactory\n" +
+                        "        class=\"org.apache.tika.pipes.async.MockDigesterFactory\"/>\n" +
+                "</autoDetectParserConfig>" +
                 "<async><pipesReporter class=\"org.apache.tika.pipes.async.MockReporter\"/>" +
                         "<emitIntermediateResults>" + emitIntermediateResults +
                         "</emitIntermediateResults>" +
@@ -181,9 +185,19 @@ public class AsyncProcessorTest {
         }
         processor.close();
         Set<String> emitKeys = new HashSet<>();
+        int observedOOM = 0;
         for (EmitData d : MockEmitter.EMIT_DATA) {
             emitKeys.add(d.getEmitKey().getEmitKey());
+            assertEquals(64,
+                    d.getMetadataList().get(0).get("X-TIKA:digest:SHA-256").trim().length());
+            assertEquals("application/mock+xml",
+                    d.getMetadataList().get(0).get(Metadata.CONTENT_TYPE));
+            String val = d.getMetadataList().get(0).get(TikaCoreProperties.PIPES_RESULT);
+            if ("OOM".equals(val)) {
+                observedOOM++;
+            }
         }
         assertEquals(totalFiles, emitKeys.size());
+        assertEquals(oom, observedOOM);
     }
 }

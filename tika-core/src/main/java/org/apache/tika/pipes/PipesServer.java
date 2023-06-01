@@ -593,8 +593,8 @@ public class PipesServer implements Runnable {
     private void _preParse(String id, TikaInputStream tis, Metadata metadata,
                            ParseContext parseContext) {
         if (digester != null) {
-            try (InputStream is = Files.newInputStream(tis.getPath())) {
-                digester.digest(is, metadata, parseContext);
+            try {
+                digester.digest(tis, metadata, parseContext);
             } catch (IOException e) {
                 LOG.warn("problem digesting: " + id, e);
             }
@@ -656,6 +656,9 @@ public class PipesServer implements Runnable {
         if (((AutoDetectParser)autoDetectParser).getAutoDetectParserConfig().getDigesterFactory() != null) {
             this.digester = ((AutoDetectParser) autoDetectParser).
                     getAutoDetectParserConfig().getDigesterFactory().build();
+            //override this value because we'll be digesting before parse
+            ((AutoDetectParser)autoDetectParser).getAutoDetectParserConfig().getDigesterFactory()
+                    .setSkipContainerDocument(true);
         }
         this.detector = ((AutoDetectParser)this.autoDetectParser).getDetector();
         this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
@@ -663,7 +666,6 @@ public class PipesServer implements Runnable {
 
 
     private void writeIntermediate(EmitKey emitKey, Metadata metadata) {
-        EmitData emitData = new EmitData(emitKey, Collections.singletonList(metadata));
         try {
             UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
             try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
