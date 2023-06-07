@@ -172,12 +172,19 @@ public class ContentHandlerDecorator extends DefaultHandler {
      * provides a single place to implement custom exception handling. The
      * default behaviour is simply to re-throw the given exception, but
      * subclasses can also provide alternative ways of handling the situation.
+     * 
+     * If the wrapped handler is itself a ContentHandlerDecorator, the call
+     * is delegated to the wrapped handler's {@link ContentHandlerDecorator#handleException(SAXException)}
      *
      * @param exception the exception that was thrown
      * @throws SAXException the exception (if any) thrown to the client
      */
     protected void handleException(SAXException exception) throws SAXException {
-        throw exception;
+        if (handler instanceof ContentHandlerDecorator) {
+            ((ContentHandlerDecorator)handler).handleException(exception);
+        } else {
+            throw exception;
+        }
     }
 
 }
