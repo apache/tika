@@ -5625,6 +5625,16 @@
   <mime-type type="audio/vorbis-config"/>
   <mime-type type="audio/x-aac">
     <glob pattern="*.aac"/>
+    <magic priority="30">
+      <!-- Without ID3 tags -->
+      <match type="regex" value="FF(F0|F1|F8|F9)(40|41|44|45|48|49|4C|4D|50|51|54|55|58|59|5C|5D|60|61|64|65|68|69|6C|6D|70|71|80|81|84|85|88|89|8C|8D|90|91|94|95|98|99|9C|9D|A0|A1|A4|A5|A8|A9|AC|AD|B0|B1)(00|01|20|40|41|60|80|81|60|A0|C0|C1|E0)" offset="0" />
+    </magic>
+    <magic priority="40">
+      <!-- With ID3 tags at the start -->
+      <match value="ID3" type="string" offset="0">
+         <match type="regex" value="FF(F0|F1|F8|F9)(40|41|44|45|48|49|4C|4D|50|51|54|55|58|59|5C|5D|60|61|64|65|68|69|6C|6D|70|71|80|81|84|85|88|89|8C|8D|90|91|94|95|98|99|9C|9D|A0|A1|A4|A5|A8|A9|AC|AD|B0|B1)(00|01|20|40|41|60|80|81|60|A0|C0|C1|E0)" offset="512:2048" />
+      </match>
+    </magic>
   </mime-type>
 
   <mime-type type="audio/x-adpcm">
