@@ -208,9 +208,10 @@ public class PipesServer implements Runnable {
         //initialize
         try {
             long start = System.currentTimeMillis();
-            initializeParser();
+            initializeResources();
             if (LOG.isTraceEnabled()) {
-                LOG.trace("timer -- initialize parser: {} ms", System.currentTimeMillis() - start);
+                LOG.trace("timer -- initialize parser and other resources: {} ms",
+                        System.currentTimeMillis() - start);
             }
             LOG.debug("pipes server initialized");
         } catch (Throwable t) {
@@ -647,11 +648,18 @@ public class PipesServer implements Runnable {
         return null;
     }
 
-    private void initializeParser() throws TikaException, IOException, SAXException {
+    private void initializeResources() throws TikaException, IOException, SAXException {
         //TODO allowed named configurations in tika config
         this.tikaConfig = new TikaConfig(tikaConfigPath);
         this.fetcherManager = FetcherManager.load(tikaConfigPath);
-        this.emitterManager = EmitterManager.load(tikaConfigPath);
+        //skip initialization of the emitters if emitting
+        //from the pipesserver is turned off.
+        if (maxForEmitBatchBytes > -1) {
+            this.emitterManager = EmitterManager.load(tikaConfigPath);
+        } else {
+            LOG.debug("'maxForEmitBatchBytes' < 0. Not initializing emitters in PipesServer");
+            this.emitterManager = null;
+        }
         this.autoDetectParser = new AutoDetectParser(this.tikaConfig);
         if (((AutoDetectParser)autoDetectParser).getAutoDetectParserConfig().getDigesterFactory() != null) {
             this.digester = ((AutoDetectParser) autoDetectParser).

@@ -306,7 +306,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.22.3</google.cloud.version>
-    <aws.version>1.12.478</aws.version>
+    <aws.version>1.12.483</aws.version>
     <asm.version>9.5</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -390,7 +390,7 @@
     <spring.version>5.3.27</spring.version>
     <sqlite.version>3.42.0.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
-    <test.containers.version>1.18.2</test.containers.version>
+    <test.containers.version>1.18.3</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
     <twelvemonkeys.version>3.9.4</twelvemonkeys.version>
@@ -399,7 +399,7 @@
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <zstd.version>1.5.5-3</zstd.version>
+    <zstd.version>1.5.5-4</zstd.version>
     <kafka.version>3.4.0</kafka.version>
     <netty.version>4.1.93.Final</netty.version>
   </properties>
@@ -475,12 +475,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.39.0</version>
+        <version>1.40.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.13.3</version>
+        <version>1.13.4</version>
         <exclusions>
           <exclusion>
             <groupId>io.netty</groupId>
@@ -976,7 +976,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.15.0</version>
+        <version>2.16.0</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>

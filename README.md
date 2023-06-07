@@ -99,6 +99,8 @@ Contributing via Github
 =======================
 See the [pull request template](https://github.com/apache/tika/blob/main/.github/pull_request_template.md).
 
+**NOTE:** Please open pull requests against the `main` branch.  We locked `master` in September 2020 and no longer use it.
+
 ## Thanks to all the people who have contributed
 
 [![contributors](https://contributors-img.web.app/image?repo=apache/tika)](https://github.com/apache/tika/graphs/contributors)
