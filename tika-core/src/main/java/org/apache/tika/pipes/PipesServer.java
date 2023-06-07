@@ -24,12 +24,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
@@ -418,7 +418,7 @@ public class PipesServer implements Runnable {
         }
     }
 
-    private List<Metadata> parseIt(FetchEmitTuple t, Fetcher fetcher) {
+    protected List<Metadata> parseIt(FetchEmitTuple t, Fetcher fetcher) {
         FetchKey fetchKey = t.getFetchKey();
         if (fetchKey.hasRange()) {
             if (! (fetcher instanceof RangeFetcher)) {
@@ -519,6 +519,7 @@ public class PipesServer implements Runnable {
 
         String containerException = null;
         long start = System.currentTimeMillis();
+        preParse(fetchEmitTuple, stream, metadata, parseContext);
         try {
             autoDetectParser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
@@ -577,17 +578,17 @@ public class PipesServer implements Runnable {
 
     private void preParse(FetchEmitTuple t, InputStream stream, Metadata metadata,
                           ParseContext parseContext) {
-        try (TemporaryResources temporaryResources = new TemporaryResources()) {
+        TemporaryResources tmp = null;
+        try {
             TikaInputStream tis = TikaInputStream.cast(stream);
             if (tis == null) {
-                tis = TikaInputStream.get(stream, temporaryResources, metadata);
+                tis = TikaInputStream.get(stream, tmp, metadata);
             }
             _preParse(t.getId(), tis, metadata, parseContext);
-        } catch (IOException e) {
-            LOG.warn("something went wrong in pre-parse casting of the inputstream to a " +
-                    "TikaInputStream", e);
-            return;
+        } finally {
+            IOUtils.closeQuietly(tmp);
         }
+        //do we want to filter the metadata to digest, length, content-type?
         writeIntermediate(t.getEmitKey(), metadata);
     }
 
@@ -603,6 +604,7 @@ public class PipesServer implements Runnable {
         try {
             MediaType mt = detector.detect(tis, metadata);
             metadata.set(Metadata.CONTENT_TYPE, mt.toString());
+            metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, mt.toString());
         } catch (IOException e) {
             LOG.warn("problem detecting: " + id, e);
         }
@@ -648,7 +650,7 @@ public class PipesServer implements Runnable {
         return null;
     }
 
-    private void initializeResources() throws TikaException, IOException, SAXException {
+    protected void initializeResources() throws TikaException, IOException, SAXException {
         //TODO allowed named configurations in tika config
         this.tikaConfig = new TikaConfig(tikaConfigPath);
         this.fetcherManager = FetcherManager.load(tikaConfigPath);
