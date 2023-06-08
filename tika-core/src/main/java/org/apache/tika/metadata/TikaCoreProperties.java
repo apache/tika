@@ -336,6 +336,7 @@ public interface TikaCoreProperties {
      */
     Property VERSION_NUMBER = Property.externalInteger(TIKA_META_PREFIX + "versionNumber");
 
+    Property PIPES_RESULT = Property.externalText(TIKA_META_PREFIX + "pipes_result");
     /**
      * A file might contain different types of embedded documents.
      * The most common is the ATTACHMENT.

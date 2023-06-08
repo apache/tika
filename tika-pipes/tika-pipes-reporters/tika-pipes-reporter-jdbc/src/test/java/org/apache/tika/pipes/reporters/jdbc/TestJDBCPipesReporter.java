@@ -133,7 +133,7 @@ public class TestJDBCPipesReporter {
         Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
         reporter.close();
         Map<PipesResult.STATUS, Long> total = countReported(connectionString);
-        assertEquals(15, total.size());
+        assertEquals(16, total.size());
         long sum = 0;
         for (Map.Entry<PipesResult.STATUS, Long> e : expected.entrySet()) {
             if (e.getKey() != PARSE_SUCCESS && e.getKey() != PARSE_SUCCESS_WITH_EXCEPTION) {

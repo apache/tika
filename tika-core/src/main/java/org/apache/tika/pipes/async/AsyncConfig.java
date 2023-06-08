@@ -33,6 +33,8 @@ public class AsyncConfig extends PipesConfigBase {
     private int queueSize = 10000;
     private int numEmitters = 1;
 
+    private boolean emitIntermediateResults = false;
+
     private PipesReporter pipesReporter = PipesReporter.NO_OP_REPORTER;
 
     public static AsyncConfig load(Path p) throws IOException, TikaConfigException {
@@ -106,5 +108,13 @@ public class AsyncConfig extends PipesConfigBase {
 
     public void setPipesReporter(PipesReporter pipesReporter) {
         this.pipesReporter = pipesReporter;
+    }
+
+    public void setEmitIntermediateResults(boolean emitIntermediateResults) {
+        this.emitIntermediateResults = emitIntermediateResults;
+    }
+
+    public boolean isEmitIntermediateResults() {
+        return emitIntermediateResults;
     }
 }
