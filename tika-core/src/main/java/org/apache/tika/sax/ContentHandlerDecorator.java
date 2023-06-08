@@ -18,8 +18,10 @@ package org.apache.tika.sax;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -172,12 +174,46 @@ public class ContentHandlerDecorator extends DefaultHandler {
      * provides a single place to implement custom exception handling. The
      * default behaviour is simply to re-throw the given exception, but
      * subclasses can also provide alternative ways of handling the situation.
+     * 
+     * If the wrapped handler is itself a ContentHandlerDecorator, the call
+     * is delegated to the wrapped handler's {@link ContentHandlerDecorator#handleException(SAXException)}
      *
      * @param exception the exception that was thrown
      * @throws SAXException the exception (if any) thrown to the client
      */
     protected void handleException(SAXException exception) throws SAXException {
-        throw exception;
+        if (handler instanceof ContentHandlerDecorator) {
+            ((ContentHandlerDecorator)handler).handleException(exception);
+        } else {
+            throw exception;
+        }
     }
 
+    @Override
+    public void warning (SAXParseException exception) throws SAXException {
+        if (handler instanceof ErrorHandler) {
+            ((ErrorHandler)handler).warning(exception);
+        } else {
+            super.warning(exception);
+        }
+    }
+
+    @Override
+    public void error (SAXParseException exception) throws SAXException {
+        if (handler instanceof ErrorHandler) {
+            ((ErrorHandler)handler).error(exception);
+        } else {
+            super.error(exception);
+        }
+    }
+
+    @Override
+    public void fatalError (SAXParseException exception)
+            throws SAXException {
+        if (handler instanceof ErrorHandler) {
+            ((ErrorHandler)handler).fatalError(exception);
+        } else {
+            super.fatalError(exception);
+        }
+    }
 }

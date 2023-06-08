@@ -3,6 +3,8 @@ Release 2.8.1 - ???
    * Changed default decompressConcatenated to true in CompressorParser.
      Users may revert to legacy behavior via tika-config.xml (TIKA-4048).
 
+   * Allow users to modify the attachment limit size in the /unpack resource (TIKA-4039)
+   
    * Fixed write limit bug in RecursiveParserWrapper (TIKA-4055).
 
    * Add mime detection for many files (TIKA-3992).
