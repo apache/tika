@@ -212,6 +212,15 @@ public class UnpackerResourceTest extends CXFTestBase {
     }
 
     @Test
+    public void testMaxBytes() throws Exception {
+        Response response = WebClient.create(CXFTestBase.endPoint + ALL_PATH)
+                .header(CONTENT_TYPE, APPLICATION_XML)
+                .header(UnpackerResource.UNPACK_MAX_BYTES_KEY, 100).accept("application/zip")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/pic.xls"));
+        assertEquals(422, response.getStatus());
+    }
+
+    @Test
     public void testPDFImages() throws Exception {
         Response response = WebClient.create(CXFTestBase.endPoint + UNPACKER_PATH)
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ExtractInlineImages", "true")

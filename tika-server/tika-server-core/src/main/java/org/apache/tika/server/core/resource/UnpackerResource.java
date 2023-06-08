@@ -21,8 +21,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
 import static org.apache.tika.server.core.resource.TikaResource.fillParseContext;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -45,6 +43,9 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +72,9 @@ public class UnpackerResource {
     public static final String TEXT_FILENAME = "__TEXT__";
     public static final String META_FILENAME = "__METADATA__";
 
-    private static final long MAX_ATTACHMENT_BYTES = 100 * 1024 * 1024;
+    public static final String UNPACK_MAX_BYTES_KEY = "unpackMaxBytes";
+
+    private static final long DEFAULT_MAX_ATTACHMENT_BYTES = 100 * 1024 * 1024;
 
     private static final Logger LOG = LoggerFactory.getLogger(UnpackerResource.class);
 
@@ -115,7 +118,17 @@ public class UnpackerResource {
                                         @Context UriInfo info, boolean saveAll) throws Exception {
         Metadata metadata = new Metadata();
         ParseContext pc = new ParseContext();
-
+        long unpackMaxBytes = DEFAULT_MAX_ATTACHMENT_BYTES;
+        String unpackMaxBytesString = httpHeaders.getRequestHeaders().getFirst(UNPACK_MAX_BYTES_KEY);
+        if (!StringUtils.isBlank(unpackMaxBytesString)) {
+            unpackMaxBytes = Long.parseLong(unpackMaxBytesString);
+            if (unpackMaxBytes > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("Can't request value > than Integer" +
+                        ".MAX_VALUE : " + unpackMaxBytes);
+            } else if (unpackMaxBytes < 0) {
+                throw new IllegalArgumentException("Can't request value < 0: " + unpackMaxBytes);
+            }
+        }
         Parser parser = TikaResource.createParser();
         if (parser instanceof DigestingParser) {
             //no need to digest for unwrapping
@@ -129,7 +142,7 @@ public class UnpackerResource {
         //we need to add this to allow for "inline" use of other parsers.
         pc.set(Parser.class, parser);
         ContentHandler ch;
-        ByteArrayOutputStream text = new ByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream text = new UnsynchronizedByteArrayOutputStream();
 
         if (saveAll) {
             ch = new BodyContentHandler(
@@ -141,7 +154,8 @@ public class UnpackerResource {
         Map<String, byte[]> files = new HashMap<>();
         MutableInt count = new MutableInt();
 
-        pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, files));
+        pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, files, unpackMaxBytes));
+
         TikaResource.parse(parser, LOG, info.getPath(), is, ch, metadata, pc);
 
         if (count.intValue() == 0 && !saveAll) {
@@ -151,7 +165,7 @@ public class UnpackerResource {
         if (saveAll) {
             files.put(TEXT_FILENAME, text.toByteArray());
 
-            ByteArrayOutputStream metaStream = new ByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream metaStream = new UnsynchronizedByteArrayOutputStream();
             metadataToCsv(metadata, metaStream);
 
             files.put(META_FILENAME, metaStream.toByteArray());
@@ -163,12 +177,15 @@ public class UnpackerResource {
     private static class MyEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
         private final MutableInt count;
         private final Map<String, byte[]> zout;
+
+        private final long unpackMaxBytes;
         private final EmbeddedStreamTranslator embeddedStreamTranslator =
                 new DefaultEmbeddedStreamTranslator();
 
-        MyEmbeddedDocumentExtractor(MutableInt count, Map<String, byte[]> zout) {
+        MyEmbeddedDocumentExtractor(MutableInt count, Map<String, byte[]> zout, long unpackMaxBytes) {
             this.count = count;
             this.zout = zout;
+            this.unpackMaxBytes = unpackMaxBytes;
         }
 
         public boolean shouldParseEmbedded(Metadata metadata) {
@@ -177,12 +194,17 @@ public class UnpackerResource {
 
         public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler,
                                   Metadata metadata, boolean b) throws SAXException, IOException {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            BoundedInputStream bis = new BoundedInputStream(MAX_ATTACHMENT_BYTES, inputStream);
+            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+
+            BoundedInputStream bis = new BoundedInputStream(unpackMaxBytes, inputStream);
             IOUtils.copy(bis, bos);
             if (bis.hasHitBound()) {
-                throw new IOException(new TikaMemoryLimitException(MAX_ATTACHMENT_BYTES + 1,
-                        MAX_ATTACHMENT_BYTES));
+                throw new IOException(
+                        new TikaMemoryLimitException("An attachment is longer than " +
+                                "'unpackMaxBytes' (default=100MB, actual=" + unpackMaxBytes + "). " +
+                                "If you need to increase this " +
+                                "limit, add a header to your request, such as: unpackMaxBytes: " +
+                                "1073741824.  There is a hard limit of 2GB."));
             }
             byte[] data = bos.toByteArray();
 
@@ -205,11 +227,11 @@ public class UnpackerResource {
                     LOG.warn("Unexpected MimeTypeException", e);
                 }
             }
-            try (InputStream is = new ByteArrayInputStream(data)) {
+            try (InputStream is = new UnsynchronizedByteArrayInputStream(data)) {
                 if (embeddedStreamTranslator.shouldTranslate(is, metadata)) {
                     InputStream translated = embeddedStreamTranslator
-                            .translate(new ByteArrayInputStream(data), metadata);
-                    ByteArrayOutputStream bos2 = new ByteArrayOutputStream();
+                            .translate(new UnsynchronizedByteArrayInputStream(data), metadata);
+                    UnsynchronizedByteArrayOutputStream bos2 = new UnsynchronizedByteArrayOutputStream();
                     IOUtils.copy(translated, bos2);
                     data = bos2.toByteArray();
                 }
