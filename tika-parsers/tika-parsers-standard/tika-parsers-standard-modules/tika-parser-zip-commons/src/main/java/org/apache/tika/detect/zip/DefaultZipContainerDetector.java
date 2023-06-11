@@ -265,7 +265,7 @@ public class DefaultZipContainerDetector implements Detector {
             throws IOException {
         StreamingDetectContext detectContext = new StreamingDetectContext();
         try (ZipArchiveInputStream zis = new ZipArchiveInputStream(
-                new CloseShieldInputStream(input), "UTF8", false, allowStoredEntries)) {
+                CloseShieldInputStream.wrap(input), "UTF8", false, allowStoredEntries)) {
             ZipArchiveEntry zae = zis.getNextZipEntry();
             while (zae != null) {
                 MediaType mt = detect(zae, zis, detectContext);

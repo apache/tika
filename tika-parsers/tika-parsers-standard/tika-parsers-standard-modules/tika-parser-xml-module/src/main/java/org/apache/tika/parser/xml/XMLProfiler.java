@@ -89,7 +89,7 @@ public class XMLProfiler extends AbstractParser {
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
+        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
                 new XMLProfileHandler(metadata), context);
     }
 

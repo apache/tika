@@ -95,7 +95,7 @@ public class HwpTextExtractorV5 implements Serializable {
 
         POIFSFileSystem fs = null;
         try {
-            fs = new POIFSFileSystem(new CloseShieldInputStream(source));
+            fs = new POIFSFileSystem(CloseShieldInputStream.wrap(source));
 
             DirectoryNode root = fs.getRoot();
             extract0(root, metadata, xhtml);

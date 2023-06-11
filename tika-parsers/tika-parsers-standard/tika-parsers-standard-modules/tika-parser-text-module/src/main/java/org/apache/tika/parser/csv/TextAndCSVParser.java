@@ -290,13 +290,13 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             MediaType mediaType = MediaType.parse(mediaString);
             if (!SUPPORTED_TYPES.contains(mediaType.getBaseType())) {
                 params.setMediaType(mediaType);
-                return new AutoDetectReader(new CloseShieldInputStream(stream), metadata,
+                return new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata,
                         getEncodingDetector(context));
             }
         }
         Reader reader = null;
         if (params.getCharset() == null) {
-            reader = new AutoDetectReader(new CloseShieldInputStream(stream), metadata,
+            reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata,
                     getEncodingDetector(context));
             params.setCharset(((AutoDetectReader) reader).getCharset());
             if (params.isComplete()) {
@@ -304,7 +304,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             }
         } else {
             reader = new BufferedReader(
-                    new InputStreamReader(new CloseShieldInputStream(stream), params.getCharset()));
+                    new InputStreamReader(CloseShieldInputStream.wrap(stream), params.getCharset()));
         }
 
         if (params.getDelimiter() == null &&

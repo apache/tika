@@ -88,7 +88,7 @@ public class FeedParser extends AbstractParser {
             SyndFeedInput input = new SyndFeedInput();
             input.setAllowDoctypes(false);
             SyndFeed feed =
-                    input.build(new InputSource(new CloseShieldInputStream(stream)));
+                    input.build(new InputSource(CloseShieldInputStream.wrap(stream)));
 
             String title = stripTags(feed.getTitleEx());
             String description = stripTags(feed.getDescriptionEx());

@@ -99,7 +99,7 @@ public class AppleSingleFileParser extends AbstractParser {
                 // TODO: we should probably add a readlimiting wrapper around this
                 // stream to ensure that not more than contentFieldInfo.length bytes
                 // are read
-                ex.parseEmbedded(new CloseShieldInputStream(stream), xhtml, embeddedMetadata,
+                ex.parseEmbedded(CloseShieldInputStream.wrap(stream), xhtml, embeddedMetadata,
                         true);
             }
         }

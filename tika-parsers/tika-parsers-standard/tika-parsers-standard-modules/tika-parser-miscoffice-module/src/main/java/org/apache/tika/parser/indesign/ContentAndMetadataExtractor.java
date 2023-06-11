@@ -56,7 +56,7 @@ class ContentAndMetadataExtractor {
 
         // Parse the content using inner content handler
         XMLReaderUtils.parseSAX(
-                new CloseShieldInputStream(stream), new ContentAndMetadataHandler(handler, metadata), context
+                CloseShieldInputStream.wrap(stream), new ContentAndMetadataHandler(handler, metadata), context
         );
     }
 

@@ -127,7 +127,7 @@ public class IWork13PackageParser extends AbstractParser {
             if (type == null) {
                 type = IWork13DocumentType.detectIfPossible(entry);
             }
-            processZipEntry(entry, new CloseShieldInputStream(zipStream), metadata, xhtml,
+            processZipEntry(entry, CloseShieldInputStream.wrap(zipStream), metadata, xhtml,
                     parseContext,
                     embeddedDocumentExtractor);
             entry = zipStream.getNextEntry();
