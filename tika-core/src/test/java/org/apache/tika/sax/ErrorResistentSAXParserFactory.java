@@ -30,8 +30,8 @@ import org.xml.sax.SAXNotSupportedException;
  */
 public class ErrorResistentSAXParserFactory extends SAXParserFactoryImpl {
     
-    public ErrorResistentSAXParserFactory() throws SAXNotRecognizedException, SAXNotSupportedException, ParserConfigurationException
-    {
+    public ErrorResistentSAXParserFactory() throws SAXNotRecognizedException, SAXNotSupportedException,
+            ParserConfigurationException {
         super();
         this.setFeature("http://apache.org/xml/features/continue-after-fatal-error", true);
     }   

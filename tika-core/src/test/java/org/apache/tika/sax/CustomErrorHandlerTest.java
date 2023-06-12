@@ -22,55 +22,57 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
 
 /**
  * Test that validates a custom {@link ContentHandlerDecorator} can handle errors during XML parsing
  *
  * @see <a href="https://issues.apache.org/jira/browse/TIKA-4062">TIKA-4062</a>
  */
-public class CustomErrorHandlerTest extends TikaTest{
+public class CustomErrorHandlerTest extends TikaTest {
 
-	private void extractXml(InputStream blobStream, OutputStream textStream)
-			throws IOException, SAXException, TikaException, ParserConfigurationException {
-		
-		try {
-			ToXMLContentHandler contentHandler = new ToXMLContentHandler(textStream, StandardCharsets.UTF_8.toString());
-			NonValidatingContentHandler handler = new NonValidatingContentHandler(contentHandler);
-			XMLReaderUtils.parseSAX(blobStream, handler, new ParseContext());
-		} finally {
-			textStream.close();
-		}
-	}
+    private void extractXml(InputStream blobStream, OutputStream textStream)
+            throws IOException, SAXException, TikaException, ParserConfigurationException {
 
-	private String extractTestData(String name)
-			throws IOException, SAXException, TikaException, ParserConfigurationException {
-		try (InputStream is = getResourceAsStream("/test-documents/" + name)) {
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			extractXml(is, out);
-			return out.toString(StandardCharsets.UTF_8);
-		}
-	}
+        try {
+            ToXMLContentHandler contentHandler =
+                    new ToXMLContentHandler(textStream, StandardCharsets.UTF_8.toString());
+            NonValidatingContentHandler handler = new NonValidatingContentHandler(contentHandler);
+            XMLReaderUtils.parseSAX(blobStream, handler, new ParseContext());
+        } finally {
+            textStream.close();
+        }
+    }
 
-	@Test
-	void testUndeclaredEntityXML() throws Exception {
-		try {
-			System.setProperty("javax.xml.parsers.SAXParserFactory", "org.apache.tika.sax.ErrorResistentSAXParserFactory");
-			String content = extractTestData("undeclared_entity.xml");		
-			assertContains("START", content);
-			//This assertion passes only if custom error handler is called to handle fatal exception
-			assertContains("END", content);
-		}  catch (SAXException e) {
-			 fail("Exception resturned from parser and not handled in error handler " + e);
-		} 
-	}
+    private String extractTestData(String name)
+            throws IOException, SAXException, TikaException, ParserConfigurationException {
+        try (InputStream is = getResourceAsStream("/test-documents/" + name)) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            extractXml(is, out);
+            return out.toString(StandardCharsets.UTF_8);
+        }
+    }
+
+    @Test
+    void testUndeclaredEntityXML() throws Exception {
+        try {
+            System.setProperty("javax.xml.parsers.SAXParserFactory",
+                    "org.apache.tika.sax.ErrorResistentSAXParserFactory");
+            String content = extractTestData("undeclared_entity.xml");
+            assertContains("START", content);
+            //This assertion passes only if custom error handler is called to handle fatal exception
+            assertContains("END", content);
+        } catch (SAXException e) {
+            fail("Exception resturned from parser and not handled in error handler " + e);
+        }
+    }
 }
