@@ -28,9 +28,9 @@ import org.xml.sax.SAXNotSupportedException;
  * A custom {@link SAXParserFactory} to force the parser to continue even after fatal error
  *
  */
-public class ErrorResistentSAXParserFactory extends SAXParserFactoryImpl {
+public class ErrorResistantSAXParserFactory extends SAXParserFactoryImpl {
     
-    public ErrorResistentSAXParserFactory() throws SAXNotRecognizedException, SAXNotSupportedException,
+    public ErrorResistantSAXParserFactory() throws SAXNotRecognizedException, SAXNotSupportedException,
             ParserConfigurationException {
         super();
         this.setFeature("http://apache.org/xml/features/continue-after-fatal-error", true);

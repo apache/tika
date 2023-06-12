@@ -48,7 +48,7 @@ public class CustomErrorHandlerTest extends TikaTest {
     public static void setUp() throws TikaException {
         DEFAULT_SAX_PARSER_FACTORY = System.getProperty(SAX_PARSER_FACTORY_KEY);
         System.setProperty(SAX_PARSER_FACTORY_KEY,
-                "org.apache.tika.sax.ErrorResistentSAXParserFactory");
+                "org.apache.tika.sax.ErrorResistantSAXParserFactory");
         //forces re-initialization
         XMLReaderUtils.setPoolSize(10);
     }
@@ -93,7 +93,7 @@ public class CustomErrorHandlerTest extends TikaTest {
             //This assertion passes only if custom error handler is called to handle fatal exception
             assertContains("END", content);
         } catch (SAXException e) {
-            fail("Exception resturned from parser and not handled in error handler " + e);
+            fail("Exception returned from parser and not handled in error handler " + e);
         }
     }
 }
