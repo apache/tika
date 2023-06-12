@@ -392,7 +392,9 @@ public class RTFParserTest extends TikaTest {
         assertEquals("1", xml.metadata.get(Office.PAGE_COUNT));
         assertEquals("70", xml.metadata.get(Office.WORD_COUNT));
         assertEquals("401", xml.metadata.get(Office.CHARACTER_COUNT));
-        assertTrue(xml.metadata.get(TikaCoreProperties.CREATED).startsWith("2010-10-13T"));
+        //RTFParser's legacy behavior is to apply local timezone to dates/times.
+        //This needs to be flexible enough to pass in various time-zones TIKA-4043
+        assertTrue(xml.metadata.get(TikaCoreProperties.CREATED).startsWith("2010-10-"));
     }
 
     // TIKA-1192
