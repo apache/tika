@@ -51,7 +51,7 @@ public class PipesServerTest extends TikaTest {
         Path tikaConfig = tmp.resolve("tika-config.xml");
         String xml = IOUtils.toString(
                 PipesServerTest.class.getResourceAsStream("TIKA-3941.xml"), StandardCharsets.UTF_8);
-        xml = xml.replaceAll("BASE_PATH", tmp.toAbsolutePath().toString());
+        xml = xml.replace("BASE_PATH", tmp.toAbsolutePath().toString());
         Files.write(tikaConfig, xml.getBytes(StandardCharsets.UTF_8));
 
         Files.copy(PipesServerTest.class.getResourceAsStream("/test-documents/mock_times.xml"),
