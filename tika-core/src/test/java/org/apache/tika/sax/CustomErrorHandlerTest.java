@@ -25,6 +25,8 @@ import java.nio.charset.StandardCharsets;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
@@ -40,6 +42,27 @@ import org.apache.tika.utils.XMLReaderUtils;
  */
 public class CustomErrorHandlerTest extends TikaTest {
 
+    private static String DEFAULT_SAX_PARSER_FACTORY;
+    private static String SAX_PARSER_FACTORY_KEY = "javax.xml.parsers.SAXParserFactory";
+    @BeforeAll
+    public static void setUp() throws TikaException {
+        DEFAULT_SAX_PARSER_FACTORY = System.getProperty(SAX_PARSER_FACTORY_KEY);
+        System.setProperty(SAX_PARSER_FACTORY_KEY,
+                "org.apache.tika.sax.ErrorResistentSAXParserFactory");
+        //forces re-initialization
+        XMLReaderUtils.setPoolSize(10);
+    }
+
+    @AfterAll
+    public static void tearDown() throws TikaException {
+        if (DEFAULT_SAX_PARSER_FACTORY == null) {
+            System.clearProperty(SAX_PARSER_FACTORY_KEY);
+        } else {
+            System.setProperty(SAX_PARSER_FACTORY_KEY, DEFAULT_SAX_PARSER_FACTORY);
+        }
+        //forces re-initialization
+        XMLReaderUtils.setPoolSize(10);
+    }
     private void extractXml(InputStream blobStream, OutputStream textStream)
             throws IOException, SAXException, TikaException, ParserConfigurationException {
 
@@ -65,8 +88,6 @@ public class CustomErrorHandlerTest extends TikaTest {
     @Test
     void testUndeclaredEntityXML() throws Exception {
         try {
-            System.setProperty("javax.xml.parsers.SAXParserFactory",
-                    "org.apache.tika.sax.ErrorResistentSAXParserFactory");
             String content = extractTestData("undeclared_entity.xml");
             assertContains("START", content);
             //This assertion passes only if custom error handler is called to handle fatal exception
