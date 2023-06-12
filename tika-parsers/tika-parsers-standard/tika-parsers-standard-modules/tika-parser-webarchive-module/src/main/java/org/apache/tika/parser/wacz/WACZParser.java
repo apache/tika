@@ -86,7 +86,7 @@ public class WACZParser extends AbstractParser {
     private void processStream(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
                                EmbeddedDocumentExtractor ex) throws SAXException, IOException {
         try (ZipArchiveInputStream zais = new ZipArchiveInputStream(
-                new CloseShieldInputStream(stream))) {
+                CloseShieldInputStream.wrap(stream))) {
             ZipArchiveEntry zae = zais.getNextZipEntry();
             while (zae != null) {
                 String name = zae.getName();

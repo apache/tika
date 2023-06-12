@@ -68,7 +68,7 @@ public class XMLParser extends AbstractParser {
 
         TaggedContentHandler tagged = new TaggedContentHandler(handler);
         try {
-            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
+            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
                             new EmbeddedContentHandler(
                                     getContentHandler(tagged, metadata, context)),
                     context);

@@ -29,6 +29,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
@@ -37,12 +38,17 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DocumentSelector;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -76,6 +82,9 @@ public class PipesServer implements Runnable {
     //this has to be some number not close to 0-3
     //it looks like the server crashes with exit value 3 on OOM, for example
     public static final int TIMEOUT_EXIT_CODE = 17;
+    private DigestingParser.Digester digester;
+
+    private Detector detector;
 
     public enum STATUS {
         READY,
@@ -93,7 +102,8 @@ public class PipesServer implements Runnable {
         EMIT_EXCEPTION,
         OOM,
         TIMEOUT,
-        EMPTY_OUTPUT;
+        EMPTY_OUTPUT,
+        INTERMEDIATE_RESULT;
 
         byte getByte() {
             return (byte) (ordinal() + 1);
@@ -408,7 +418,7 @@ public class PipesServer implements Runnable {
         }
     }
 
-    private List<Metadata> parseIt(FetchEmitTuple t, Fetcher fetcher) {
+    protected List<Metadata> parseIt(FetchEmitTuple t, Fetcher fetcher) {
         FetchKey fetchKey = t.getFetchKey();
         if (fetchKey.hasRange()) {
             if (! (fetcher instanceof RangeFetcher)) {
@@ -509,6 +519,7 @@ public class PipesServer implements Runnable {
 
         String containerException = null;
         long start = System.currentTimeMillis();
+        preParse(fetchEmitTuple, stream, metadata, parseContext);
         try {
             autoDetectParser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
@@ -545,6 +556,7 @@ public class PipesServer implements Runnable {
                 handlerConfig.getMaxEmbeddedResources());
         ParseContext parseContext = new ParseContext();
         long start = System.currentTimeMillis();
+        preParse(fetchEmitTuple, stream, metadata, parseContext);
         try {
             rMetaParser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
@@ -562,6 +574,40 @@ public class PipesServer implements Runnable {
             }
         }
         return handler.getMetadataList();
+    }
+
+    private void preParse(FetchEmitTuple t, InputStream stream, Metadata metadata,
+                          ParseContext parseContext) {
+        TemporaryResources tmp = null;
+        try {
+            TikaInputStream tis = TikaInputStream.cast(stream);
+            if (tis == null) {
+                tis = TikaInputStream.get(stream, tmp, metadata);
+            }
+            _preParse(t.getId(), tis, metadata, parseContext);
+        } finally {
+            IOUtils.closeQuietly(tmp);
+        }
+        //do we want to filter the metadata to digest, length, content-type?
+        writeIntermediate(t.getEmitKey(), metadata);
+    }
+
+    private void _preParse(String id, TikaInputStream tis, Metadata metadata,
+                           ParseContext parseContext) {
+        if (digester != null) {
+            try {
+                digester.digest(tis, metadata, parseContext);
+            } catch (IOException e) {
+                LOG.warn("problem digesting: " + id, e);
+            }
+        }
+        try {
+            MediaType mt = detector.detect(tis, metadata);
+            metadata.set(Metadata.CONTENT_TYPE, mt.toString());
+            metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, mt.toString());
+        } catch (IOException e) {
+            LOG.warn("problem detecting: " + id, e);
+        }
     }
 
     private void injectUserMetadata(Metadata userMetadata, List<Metadata> metadataList) {
@@ -604,7 +650,7 @@ public class PipesServer implements Runnable {
         return null;
     }
 
-    private void initializeResources() throws TikaException, IOException, SAXException {
+    protected void initializeResources() throws TikaException, IOException, SAXException {
         //TODO allowed named configurations in tika config
         this.tikaConfig = new TikaConfig(tikaConfigPath);
         this.fetcherManager = FetcherManager.load(tikaConfigPath);
@@ -617,9 +663,30 @@ public class PipesServer implements Runnable {
             this.emitterManager = null;
         }
         this.autoDetectParser = new AutoDetectParser(this.tikaConfig);
+        if (((AutoDetectParser)autoDetectParser).getAutoDetectParserConfig().getDigesterFactory() != null) {
+            this.digester = ((AutoDetectParser) autoDetectParser).
+                    getAutoDetectParserConfig().getDigesterFactory().build();
+            //override this value because we'll be digesting before parse
+            ((AutoDetectParser)autoDetectParser).getAutoDetectParserConfig().getDigesterFactory()
+                    .setSkipContainerDocument(true);
+        }
+        this.detector = ((AutoDetectParser)this.autoDetectParser).getDetector();
         this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
     }
 
+
+    private void writeIntermediate(EmitKey emitKey, Metadata metadata) {
+        try {
+            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
+                objectOutputStream.writeObject(metadata);
+            }
+            write(STATUS.INTERMEDIATE_RESULT, bos.toByteArray());
+        } catch (IOException e) {
+            LOG.error("problem writing intermediate data (forking process shutdown?)", e);
+            exit(1);
+        }
+    }
 
     private void write(EmitData emitData) {
         try {

@@ -59,7 +59,7 @@ public class WriteLimitReachedException extends SAXException {
         if (t instanceof WriteLimitReachedException) {
             return true;
         } else {
-            return t.getCause() != null && isWriteLimitReached(t.getCause(), depth + 1);
+            return isWriteLimitReached(t.getCause(), depth + 1);
         }
     }
 
@@ -67,7 +67,7 @@ public class WriteLimitReachedException extends SAXException {
         throwIfWriteLimitReached(ex, 0);
     }
 
-    private static void throwIfWriteLimitReached(Exception ex, int depth) throws SAXException {
+    private static void throwIfWriteLimitReached(Throwable ex, int depth) throws SAXException {
         if (ex == null) {
             return;
         }
@@ -77,7 +77,7 @@ public class WriteLimitReachedException extends SAXException {
         if (ex instanceof WriteLimitReachedException) {
             throw (SAXException) ex;
         } else {
-            isWriteLimitReached(ex.getCause(), depth + 1);
+            throwIfWriteLimitReached(ex.getCause(), depth + 1);
         }
     }
 }

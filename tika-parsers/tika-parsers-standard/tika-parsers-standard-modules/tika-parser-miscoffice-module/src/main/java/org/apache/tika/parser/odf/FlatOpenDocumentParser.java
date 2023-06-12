@@ -71,7 +71,7 @@ public class FlatOpenDocumentParser extends AbstractParser {
         xhtml.startDocument();
         try {
             ContentHandler fodHandler = getContentHandler(xhtml, metadata, context);
-            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
+            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
                     new EmbeddedContentHandler(fodHandler), context);
             //can only detect subtype (text/pres/sheet) during parse.
             //update it here.

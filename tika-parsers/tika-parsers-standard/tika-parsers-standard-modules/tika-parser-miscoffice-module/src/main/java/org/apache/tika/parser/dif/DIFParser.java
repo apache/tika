@@ -60,7 +60,7 @@ public class DIFParser extends AbstractParser {
         xhtml.startElement("p");
         TaggedContentHandler tagged = new TaggedContentHandler(handler);
         try {
-            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
+            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
                             new EmbeddedContentHandler(
                                     getContentHandler(tagged, metadata, context)),
                     context);

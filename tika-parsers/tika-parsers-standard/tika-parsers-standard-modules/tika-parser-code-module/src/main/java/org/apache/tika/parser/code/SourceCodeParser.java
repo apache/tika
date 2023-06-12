@@ -91,7 +91,7 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
+        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
                 metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             String mediaType = metadata.get(Metadata.CONTENT_TYPE);

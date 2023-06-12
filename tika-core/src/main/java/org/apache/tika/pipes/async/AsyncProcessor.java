@@ -302,8 +302,9 @@ public class AsyncProcessor implements Closeable {
                                     System.currentTimeMillis() - start);
                         }
                         long offerStart = System.currentTimeMillis();
-                        if (result.getStatus() == PipesResult.STATUS.PARSE_SUCCESS ||
-                                result.getStatus() == PipesResult.STATUS.PARSE_SUCCESS_WITH_EXCEPTION) {
+
+                        if (shouldEmit(result)) {
+                            LOG.debug("adding result to emitter queue: " + result.getEmitData());
                             boolean offered = emitDataQueue.offer(result.getEmitData(),
                                     MAX_OFFER_WAIT_MS,
                                     TimeUnit.MILLISECONDS);
@@ -322,6 +323,15 @@ public class AsyncProcessor implements Closeable {
                     }
                 }
             }
+        }
+
+        private boolean shouldEmit(PipesResult result) {
+
+            if (result.getStatus() == PipesResult.STATUS.PARSE_SUCCESS ||
+                    result.getStatus() == PipesResult.STATUS.PARSE_SUCCESS_WITH_EXCEPTION) {
+                return true;
+            }
+            return result.isIntermediate() && asyncConfig.isEmitIntermediateResults();
         }
     }
 }

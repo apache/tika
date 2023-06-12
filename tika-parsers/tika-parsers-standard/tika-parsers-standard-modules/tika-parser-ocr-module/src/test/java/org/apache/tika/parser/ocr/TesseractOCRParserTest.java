@@ -105,6 +105,8 @@ public class TesseractOCRParserTest extends TikaTest {
         //tesseract should handle multipage tiffs by itself
         //let's confirm that
         String xml = getXML("testTIFF_multipage.tif", getMetadata(MediaType.image("tiff"))).xml;
+        //TIKA-4043 -- on some OS/versions of tesseract Page?2 is extracted
+        xml = xml.replaceAll("[^A-Za-z0-9]", " ");
         assertContains("Page 2", xml);
     }
 
@@ -117,6 +119,8 @@ public class TesseractOCRParserTest extends TikaTest {
         context.set(TesseractOCRConfig.class, config);
         String xml =
                 getXML("testTIFF_multipage.tif", getMetadata(MediaType.image("tiff")), context).xml;
+        //TIKA-4043 -- on some OS/versions of tesseract Page?2 is extracted
+        xml = xml.replaceAll("[^A-Za-z0-9]", " ");
         assertNotContained("Page 2", xml);
     }
 

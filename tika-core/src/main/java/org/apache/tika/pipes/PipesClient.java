@@ -30,6 +30,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -45,7 +46,10 @@ import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.emitter.EmitData;
+import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
 
@@ -145,6 +149,7 @@ public class PipesClient implements Closeable {
 
     private PipesResult actuallyProcess(FetchEmitTuple t) throws InterruptedException {
         long start = System.currentTimeMillis();
+        final PipesResult[] intermediateResult = new PipesResult[1];
         FutureTask<PipesResult> futureTask = new FutureTask<>(() -> {
 
             UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
@@ -167,6 +172,10 @@ public class PipesClient implements Closeable {
                 throw new InterruptedException("thread interrupt");
             }
             PipesResult result = readResults(t, start);
+            while (result.getStatus().equals(PipesResult.STATUS.INTERMEDIATE_RESULT)) {
+                intermediateResult[0] = result;
+                result = readResults(t, start);
+            }
             if (LOG.isDebugEnabled()) {
                 long elapsed = System.currentTimeMillis() - readStart;
                 LOG.debug("finished reading result in {} ms", elapsed);
@@ -176,6 +185,9 @@ public class PipesClient implements Closeable {
                 LOG.trace("pipesClientId={}: timer -- read result: {} ms",
                         pipesClientId,
                         System.currentTimeMillis() - readStart);
+            }
+            if (result.getStatus() == PipesResult.STATUS.OOM) {
+                return buildFatalResult(result, intermediateResult);
             }
             return result;
         });
@@ -197,7 +209,7 @@ public class PipesClient implements Closeable {
             if (!process.isAlive() && TIMEOUT_EXIT_CODE == process.exitValue()) {
                 LOG.warn("pipesClientId={} server timeout: {} in {} ms", pipesClientId, t.getId(),
                         elapsed);
-                return PipesResult.TIMEOUT;
+                return buildFatalResult(PipesResult.TIMEOUT, intermediateResult);
             }
             process.waitFor(500, TimeUnit.MILLISECONDS);
             if (process.isAlive()) {
@@ -207,15 +219,31 @@ public class PipesClient implements Closeable {
                 LOG.warn("pipesClientId={} crash: {} in {} ms with exit code {}", pipesClientId,
                         t.getId(), elapsed, process.exitValue());
             }
-            return PipesResult.UNSPECIFIED_CRASH;
+            return buildFatalResult(PipesResult.UNSPECIFIED_CRASH, intermediateResult);
         } catch (TimeoutException e) {
             long elapsed = System.currentTimeMillis() - start;
             destroyForcibly();
             LOG.warn("pipesClientId={} client timeout: {} in {} ms", pipesClientId, t.getId(),
                     elapsed);
-            return PipesResult.TIMEOUT;
+            return buildFatalResult(PipesResult.TIMEOUT, intermediateResult);
         } finally {
             futureTask.cancel(true);
+        }
+    }
+
+    private PipesResult buildFatalResult(PipesResult result,
+                                         PipesResult[] intermediateResult) {
+
+        if (intermediateResult[0] == null) {
+            return result;
+        } else {
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("intermediate result: {}", intermediateResult[0].getEmitData());
+            }
+            intermediateResult[0].getEmitData().getMetadataList().get(0).set(
+                    TikaCoreProperties.PIPES_RESULT, result.getStatus().toString());
+            return new PipesResult(result.getStatus(),
+                    intermediateResult[0].getEmitData(), true);
         }
     }
 
@@ -259,9 +287,11 @@ public class PipesClient implements Closeable {
         try {
             status = lookup(statusByte);
         } catch (IllegalArgumentException e) {
-            throw new IOException("problem reading response from server "
-                    + String.format(Locale.US, "%02x", statusByte),
-                    e);
+            String byteString = "-1";
+            if (statusByte > -1) {
+                byteString = String.format(Locale.US, "%02x", (byte)statusByte);
+            }
+            throw new IOException("problem reading response from server: " + byteString, e);
         }
 
         switch (status) {
@@ -292,6 +322,10 @@ public class PipesClient implements Closeable {
                 LOG.warn("pipesClientId={} fetch exception: {} in {} ms", pipesClientId, t.getId(),
                         millis);
                 return readMessage(PipesResult.STATUS.FETCH_EXCEPTION);
+            case INTERMEDIATE_RESULT:
+                LOG.debug("pipesClientId={} intermediate success: {} in {} ms", pipesClientId,
+                        t.getId(), millis);
+                return deserializeIntermediateResult(t.getEmitKey());
             case PARSE_SUCCESS:
                 //there may have been a parse exception, but the parse didn't crash
                 LOG.debug("pipesClientId={} parse success: {} in {} ms", pipesClientId, t.getId(),
@@ -342,6 +376,23 @@ public class PipesClient implements Closeable {
             } else {
                 return new PipesResult(emitData, stack);
             }
+        } catch (ClassNotFoundException e) {
+            LOG.error("class not found exception deserializing data", e);
+            //this should be catastrophic
+            throw new RuntimeException(e);
+        }
+    }
+
+    private PipesResult deserializeIntermediateResult(EmitKey emitKey) throws IOException {
+
+        int length = input.readInt();
+        byte[] bytes = new byte[length];
+        input.readFully(bytes);
+        try (ObjectInputStream objectInputStream = new ObjectInputStream(
+                new UnsynchronizedByteArrayInputStream(bytes))) {
+            Metadata metadata = (Metadata) objectInputStream.readObject();
+            EmitData emitData = new EmitData(emitKey, Collections.singletonList(metadata));
+            return new PipesResult(PipesResult.STATUS.INTERMEDIATE_RESULT, emitData, true);
         } catch (ClassNotFoundException e) {
             LOG.error("class not found exception deserializing data", e);
             //this should be catastrophic

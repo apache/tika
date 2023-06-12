@@ -169,7 +169,7 @@ public class ImageParser extends AbstractImageParser {
                 ImageReader reader = iterator.next();
                 try {
                     try (ImageInputStream imageStream = ImageIO
-                            .createImageInputStream(new CloseShieldInputStream(stream))) {
+                            .createImageInputStream(CloseShieldInputStream.wrap(stream))) {
                         reader.setInput(imageStream);
                         try {
                             int numImages = reader.getNumImages(true);

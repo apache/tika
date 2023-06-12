@@ -161,7 +161,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 if (stream instanceof TikaInputStream) {
                     tstream = (TikaInputStream) stream;
                 } else {
-                    tstream = TikaInputStream.get(new CloseShieldInputStream(stream));
+                    tstream = TikaInputStream.get(CloseShieldInputStream.wrap(stream));
                     shouldClose = true;
                 }
                 context.set(PDFRenderingState.class, new PDFRenderingState(tstream));
@@ -182,7 +182,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                         getPDDocument(tstream.getPath(), password,
                                 memoryUsageSetting, metadata, context);
             } else {
-                pdfDocument = getPDDocument(new CloseShieldInputStream(stream), password,
+                pdfDocument = getPDDocument(CloseShieldInputStream.wrap(stream), password,
                         memoryUsageSetting, metadata, context);
             }
             if (tstream != null) {

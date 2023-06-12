@@ -65,7 +65,7 @@ public class Pkcs7Parser extends AbstractParser {
             DigestCalculatorProvider digestCalculatorProvider =
                     new JcaDigestCalculatorProviderBuilder().setProvider("BC").build();
             CMSSignedDataParser parser = new CMSSignedDataParser(digestCalculatorProvider,
-                    new CloseShieldInputStream(stream));
+                    CloseShieldInputStream.wrap(stream));
             try {
                 CMSTypedStream content = parser.getSignedContent();
                 if (content == null) {

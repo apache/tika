@@ -51,7 +51,7 @@ public class XMPMetadataExtractor {
         try {
             DomXmpParser xmpParser = new DomXmpParser();
             xmpParser.setStrictParsing(false);
-            xmp = xmpParser.parse(new CloseShieldInputStream(stream));
+            xmp = xmpParser.parse(CloseShieldInputStream.wrap(stream));
         } catch (Throwable ex) {
             //swallow
             return;

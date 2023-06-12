@@ -1345,6 +1345,15 @@ public class TestMimeTypes {
         assertTypeByData("application/onix-message+xml", "testONIXMessageShort.xml");
     }
 
+    @Test
+    public void testAACDetection() throws Exception {
+        assertType("audio/x-aac", "testAAC.aac");
+        assertType("audio/x-aac", "testAACid3.aac");
+        assertTypeByData("audio/x-aac", "testAAC.aac");
+        assertTypeByData("audio/x-aac", "testAACid3.aac");
+        assertTypeByName("audio/x-aac", "x.aac");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }
