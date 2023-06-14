@@ -3831,6 +3831,18 @@
     <glob pattern="*.ens"/>
   </mime-type>
 
+  <mime-type type="application/x-fat-diskimage">
+    <_comment>fat disk image; extensions: ima, img, dsk</_comment>
+    <tika:link>https://www.nationalarchives.gov.uk/PRONOM/fmt/1087</tika:link>
+    <magic priority="50">
+      <match value="\xEB" offset="0">
+        <match value="\x90" offset="2">
+          <match value="(\x01|\x02|\x04|\x08|\x10|\x20\x40|x80)" type="regex" offset="14"/>
+        </match>
+      </match>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-killustrator">
     <_comment>KIllustrator File</_comment>
     <glob pattern="*.kil"/>
