@@ -7643,7 +7643,7 @@
   </mime-type>
 
   <mime-type type="text/x-idl">
-    <_comment>Inteface Definition Language</_comment>
+    <_comment>Interface Definition Language</_comment>
     <glob pattern="*.idl"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
