@@ -4166,6 +4166,13 @@
       <match value="RMN.LOEJ" offset="0" type="string"/>
     </magic>
   </mime-type>
+  <mime-type type="application/x-jigdo">
+    <_comment>Jigsaw Download</_comment>
+    <tika:link>http://justsolve.archiveteam.org/wiki/Jigdo</tika:link>
+    <magic priority="50">
+      <match value="JigsawDownload template" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-kdelnk">
     <magic priority="50">
       <match value="[KDE\ Desktop\ Entry]" type="string" offset="0"/>
