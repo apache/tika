@@ -760,7 +760,6 @@
     </magic>
     <glob pattern="*.pdf"/>
   </mime-type>
-
   <mime-type type="application/pgp-encrypted">
     <alias type="application/pgp"/>
     <magic>
@@ -4524,6 +4523,13 @@
     <glob pattern="*.parquet"/>
     <magic priority="50">
       <match value="PAR1" type="string" offset="0" />
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-pds">
+    <_comment>Planetary Data System Version 3 format</_comment>
+    <tika:link>http://fileformats.archiveteam.org/wiki/PDS</tika:link>
+    <magic>
+      <match value="PDS_VERSION_ID" type="string" offset="0"/>
     </magic>
   </mime-type>
   <mime-type type="application/x-pkcs12">
