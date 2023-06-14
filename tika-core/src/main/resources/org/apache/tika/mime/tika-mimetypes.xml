@@ -3633,7 +3633,15 @@
     <glob pattern="*.gtar"/>
     <sub-class-of type="application/x-tar"/>
   </mime-type>
-
+  <mime-type type="application/x-guitar-pro">
+    <_comment>Guitar Pro</_comment>
+    <tika:link>https://dguitar.sourceforge.net/GP4format.html</tika:link>
+    <magic priority="50">
+      <match value="FICHIER GUITARE PRO " type="string" offset="1" />
+      <match value="FICHIER GUITAR PRO " type="string" offset="1" />
+    </magic>
+    <glob pattern="*.gp4"/>
+  </mime-type>
   <mime-type type="application/x-amiga-disk-format">
     <_comment>Amiga Disk File</_comment>
     <glob pattern="*.adf"/>
