@@ -4226,8 +4226,15 @@
   <mime-type type="application/x-lzma">
     <_comment>LZMA compressed archive</_comment>
     <glob pattern="*.lzma"/>
-  </mime-type>  
-
+  </mime-type>
+  <mime-type type="application/x-mach-o">
+    <_comment>Mach-O</_comment>
+    <tika:link>https://www.nationalarchives.gov.uk/PRONOM/fmt/693</tika:link>
+    <magic priority="50">
+      <match value="0xFEEDFACF" offset="0"/>
+      <match value="0xCFFAEDFE" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-memgraph">
     <_comment>Apple Xcode Memgraph</_comment>
     <sub-class-of type="application/x-bplist"/>
