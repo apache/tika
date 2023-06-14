@@ -3275,6 +3275,19 @@
     </match>
     </magic>
   </mime-type>
+  <mime-type type="application/x-atari-floppy-disk-image">
+    <tika:link>http://fileformats.archiveteam.org/wiki/ATR</tika:link>
+    <magic priority="50">
+      <match value="0x9602" offset="0">
+        <match value="0x8000" offset="4">
+          <match value="0x00000000" offset="11"/>
+        </match>
+        <match value="0x0001" offset="4">
+          <match value="0x00000000" offset="11"/>
+        </match>
+      </match>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-axcrypt">
     <_comment>AxCrypt</_comment>
     <glob pattern="*.axx" />
