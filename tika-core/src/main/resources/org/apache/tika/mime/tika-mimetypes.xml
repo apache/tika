@@ -4438,7 +4438,7 @@
     <_comment>Nintendo Entertainment System ROM</_comment>
     <glob pattern="*.nes"/>
     <magic priority="50">
-      <match value="0x4E45531A" type="string" offest="0" />
+      <match value="0x4E45531A" type="string" offset="0" />
     </magic>
   </mime-type>
   <mime-type type="application/x-netcdf">
