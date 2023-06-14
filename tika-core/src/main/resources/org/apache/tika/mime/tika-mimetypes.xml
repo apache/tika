@@ -4253,6 +4253,14 @@
   <mime-type type="application/x-ms-application">
     <glob pattern="*.application"/>
   </mime-type>
+  <mime-type type="application/x-ms-compress-szdd">
+    <_comment>MS-DOS compression szzd</_comment>
+    <tika:link>https://www.nationalarchives.gov.uk/PRONOM/fmt/462</tika:link>
+    <magic priority="50">
+      <!-- SZDD... -->
+      <match value="0x535A444488F0273341" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-ms-owner">
     <_comment>Temporary files created by MSOffice applications</_comment>
     <_comment>PRONOM fmt-473</_comment>
