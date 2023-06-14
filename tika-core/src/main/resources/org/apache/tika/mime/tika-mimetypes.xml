@@ -5175,7 +5175,13 @@
       <match value="\3757zXZ\000" type="string" offset="0"/>
     </magic>
   </mime-type>
-
+  <mime-type type="application/x-zim">
+    <_comment>Zeno IMproved (ZIM)</_comment>
+    <tika:link>https://en.wikipedia.org/wiki/ZIM_(file_format)</tika:link>
+    <magic priority="50">
+      <match value="0x5A494D04" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-zoo">
     <magic priority="50">
       <match value="0xfdc4a7dc" type="little32" offset="20"/>
