@@ -4122,7 +4122,13 @@
     </magic>
     <glob pattern="*.ibooks"/>
   </mime-type>
-
+  <mime-type type="application/x-idl-save-file">
+    <_comment>NV5 Geospatial Interactive Data Language Save File</_comment>
+    <tika:link>https://www.l3harrisgeospatial.com/docs/idl_savefile.html</tika:link>
+    <magic priority="50">
+      <match value="0x535200040000000A000004" type="string" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-internet-archive">
     <acronym>ARC</acronym>
     <_comment>ARC</_comment>
