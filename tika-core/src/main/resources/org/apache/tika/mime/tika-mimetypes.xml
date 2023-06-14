@@ -4943,6 +4943,18 @@
     </magic>
     <glob pattern="*.vf"/>
   </mime-type>
+  <mime-type type="application/x-touhou">
+    <_comment>Touhou Project</_comment>
+    <tika:link>https://en.wikipedia.org/wiki/Touhou_Project</tika:link>
+    <magic priority="50">
+      <match value="0x7431" type="string" offset="0">
+        <match value="[\x72|\x33|\x36|\x35]" type="regex" offset="3">
+          <match value="0x00000000000000" offset="5"/>
+        </match>
+      </match>
+    </magic>
+    <!-- do we want to use this for such a rare format?   <glob pattern="*.rpy"/> -->
+  </mime-type>
 
   <!-- =================================================================== -->
   <!-- Microsoft Office binary file formats                                -->
