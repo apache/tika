@@ -336,7 +336,7 @@
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
     <!-- versions greater than 62.2 are not compatible with icu4j handler in lucene 8.11.1 -->
-    <icu4j.version>62.2</icu4j.version>
+    <icu4j.version>73.2</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.21.16</jackrabbit.version>
     <jackson.version>2.15.2</jackson.version>
