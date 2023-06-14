@@ -3905,7 +3905,16 @@
       </match>
     </magic>
   </mime-type>
-
+  <mime-type type="application/x-mmm-digisonde">
+    <_comment>Modified Maximum Method Digisonde Portable Sounder File format</_comment>
+    <tika:link>http://www.alliancepermanentaccess.org/wp-content/uploads/temp/ionosonde-case-study.pdf</tika:link>
+    <magic priority="50">
+      <match value="0x093C00" type="string" offset="0">
+        <match value="0x0000" type="string" offset="24"/>
+      </match>
+    </magic>
+    <!-- too rare to use? <glob pattern="*.mmm"/> -->
+  </mime-type>
   <mime-type type="application/x-dosexec">
     <_comment>DOS/Windows executable (EXE)</_comment>
     <!-- magic is MZ at offset=0, but that may not be unique enough -->
