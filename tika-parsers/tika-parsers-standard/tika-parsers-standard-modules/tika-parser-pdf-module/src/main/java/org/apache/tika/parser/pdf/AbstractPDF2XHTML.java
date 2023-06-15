@@ -152,7 +152,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     private static final MediaType XFA_MEDIA_TYPE = MediaType.application("vnd.adobe.xdp+xml");
     private static final MediaType XMP_MEDIA_TYPE = MediaType.application("rdf+xml");
 
-    private static final COSName AF_RELATIONSHIP = COSName.getPDFName("AFRelationship");
     final List<IOException> exceptions = new ArrayList<>();
     final PDDocument pdDocument;
     final XHTMLContentHandler xhtml;
@@ -478,9 +477,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (!StringUtils.isBlank(spec.getFileDescription())) {
             embeddedMetadata.set(PDF.EMBEDDED_FILE_DESCRIPTION, spec.getFileDescription());
         }
-        String afRelationship = spec.getCOSObject().getNameAsString(AF_RELATIONSHIP);
+        String afRelationship = spec.getCOSObject().getNameAsString(PDFParser.AF_RELATIONSHIP);
         if (StringUtils.isBlank(afRelationship)) {
-            afRelationship = spec.getCOSObject().getString(AF_RELATIONSHIP);
+            afRelationship = spec.getCOSObject().getString(PDFParser.AF_RELATIONSHIP);
         }
         if (!StringUtils.isBlank(afRelationship)) {
             embeddedMetadata.set(PDF.ASSOCIATED_FILE_RELATIONSHIP, afRelationship);

@@ -1414,6 +1414,12 @@ public class PDFParserTest extends TikaTest {
         });
     }
 
+    @Test
+    public void testAFRelationship() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testMicrosoftIRMServices.pdf");
+        assertEquals(2, metadataList.size());
+        assertEquals("EncryptedPayload", metadataList.get(1).get(PDF.ASSOCIATED_FILE_RELATIONSHIP));
+    }
     /**
      * TODO -- need to test signature extraction
      */

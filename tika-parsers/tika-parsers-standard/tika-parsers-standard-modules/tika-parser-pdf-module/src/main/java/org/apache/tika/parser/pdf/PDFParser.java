@@ -133,7 +133,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
     private static final long serialVersionUID = -752276948656079347L;
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
 
-    private static COSName AF_RELATIONSHIP = COSName.getPDFName("AFRelationship");
+    static COSName AF_RELATIONSHIP = COSName.getPDFName("AFRelationship");
 
     private static COSName ENCRYPTED_PAYLOAD = COSName.getPDFName("EncryptedPayload");
     private PDFParserConfig defaultConfig = new PDFParserConfig();
