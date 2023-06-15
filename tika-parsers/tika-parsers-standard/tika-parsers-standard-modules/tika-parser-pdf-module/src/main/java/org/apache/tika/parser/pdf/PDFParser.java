@@ -174,27 +174,27 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             } else {
                 tstream = TikaInputStream.cast(stream);
             }
+
+
             scanXRefOffsets(localConfig, tstream, metadata, context);
 
             password = getPassword(metadata, context);
-            MemoryUsageSetting memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
+            MemoryUsageSetting memoryUsageSetting = null;
             if (localConfig.getMaxMainMemoryBytes() >= 0) {
                 memoryUsageSetting =
                         MemoryUsageSetting.setupMixed(localConfig.getMaxMainMemoryBytes());
-            }
-            if (tstream != null && tstream.hasFile()) {
-                // File based -- send file directly to PDFBox
-                pdfDocument =
-                        getPDDocument(tstream.getPath(), password,
-                                memoryUsageSetting, metadata, context);
             } else {
-                pdfDocument = getPDDocument(CloseShieldInputStream.wrap(stream), password,
-                        memoryUsageSetting, metadata, context);
+                memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
             }
-            if (tstream != null) {
-                tstream.setOpenContainer(pdfDocument);
-            }
-            checkEncryptedPayload(pdfDocument, localConfig);
+
+            pdfDocument = getPDDocument(stream, tstream, password, memoryUsageSetting, metadata,
+                    context);
+
+
+            boolean hasCollection = hasCollection(pdfDocument, metadata);
+
+            checkEncryptedPayload(pdfDocument, hasCollection, localConfig);
+
             boolean hasXFA = hasXFA(pdfDocument, metadata);
             boolean hasMarkedContent = hasMarkedContent(pdfDocument, metadata);
             extractMetadata(pdfDocument, metadata, context);
@@ -244,9 +244,15 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         }
     }
 
-    private void checkEncryptedPayload(PDDocument pdfDocument, PDFParserConfig localConfig)
+    private void checkEncryptedPayload(PDDocument pdfDocument,
+                                       boolean hasCollection, PDFParserConfig localConfig)
             throws IOException, EncryptedDocumentException {
         if (! localConfig.isThrowOnEncryptedPayload()) {
+            return;
+        }
+        //We require a collection. We could also require that it have View=H(idden)
+        //as the spec suggests for Wrapped encrypted files (7.6.7).
+        if (! hasCollection) {
             return;
         }
         List<COSObject> fileSpecs = pdfDocument.getDocument().getObjectsByType(COSName.FILESPEC);
@@ -446,6 +452,33 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 tstream, metadata, parseContext, PageRangeRequest.RENDER_ALL);
     }
 
+    protected PDDocument getPDDocument(InputStream stream, TikaInputStream tstream, String password,
+                                       MemoryUsageSetting memoryUsageSetting, Metadata metadata,
+                                       ParseContext context)
+            throws IOException, EncryptedDocumentException {
+        try {
+            PDDocument pdDocument = null;
+            if (tstream != null && tstream.hasFile()) {
+                // File based -- send file directly to PDFBox
+                pdDocument =
+                        getPDDocument(tstream.getPath(), password, memoryUsageSetting, metadata,
+                                context);
+            } else {
+                pdDocument = getPDDocument(CloseShieldInputStream.wrap(stream), password,
+                        memoryUsageSetting, metadata, context);
+            }
+            if (tstream != null) {
+                tstream.setOpenContainer(pdDocument);
+            }
+            return pdDocument;
+        } catch (IOException e) {
+            if (e.getMessage() != null &&
+                    e.getMessage().contains("No security handler for filter")) {
+                throw new EncryptedDocumentException(e);
+            }
+            throw e;
+        }
+    }
 
     protected PDDocument getPDDocument(InputStream inputStream, String password,
                                        MemoryUsageSetting memoryUsageSetting, Metadata metadata,
@@ -541,7 +574,6 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 Boolean.toString(ap.canModifyAnnotations()));
         metadata.set(AccessPermissions.CAN_PRINT, Boolean.toString(ap.canPrint()));
         metadata.set(AccessPermissions.CAN_PRINT_DEGRADED, Boolean.toString(ap.canPrintDegraded()));
-        hasCollection(document, metadata);
         metadata.set(PDF.IS_ENCRYPTED, Boolean.toString(document.isEncrypted()));
 
         if (document.getDocumentCatalog().getLanguage() != null) {
