@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -1400,6 +1401,17 @@ public class PDFParserTest extends TikaTest {
         assertEquals("application/illustrator", metadataList.get(0).get(Metadata.CONTENT_TYPE));
         //we should try to find a small illustrator file xmp and the structural
         //components we're looking for.
+    }
+
+    @Test
+    public void testThrowOnEncryptedPayload() throws Exception {
+        PDFParserConfig pdfParserConfig = new PDFParserConfig();
+        pdfParserConfig.setThrowOnEncryptedPayload(true);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(PDFParserConfig.class, pdfParserConfig);
+        assertThrows(EncryptedDocumentException.class, () -> {
+            getRecursiveMetadata("testMicrosoftIRMServices.pdf", parseContext);
+        });
     }
 
     /**

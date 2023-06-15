@@ -148,6 +148,8 @@ public class PDFParserConfig implements Serializable {
 
     int maxIncrementalUpdates = 10;
 
+    private boolean throwOnEncryptedPayload = false;
+
     /**
      * @return whether or not to extract only inline image metadata and not render the images
      */
@@ -922,6 +924,15 @@ public class PDFParserConfig implements Serializable {
     public void setMaxIncrementalUpdates(int maxIncrementalUpdates) {
         this.maxIncrementalUpdates = maxIncrementalUpdates;
         userConfigured.add("maxIncrementalUpdates");
+    }
+
+    public void setThrowOnEncryptedPayload(boolean throwOnEncryptedPayload) {
+        this.throwOnEncryptedPayload = throwOnEncryptedPayload;
+        userConfigured.add("throwOnEncryptedPayload");
+    }
+
+    public boolean isThrowOnEncryptedPayload() {
+        return throwOnEncryptedPayload;
     }
 
     public enum OCR_STRATEGY {
