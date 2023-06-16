@@ -304,7 +304,7 @@ public class AsyncProcessor implements Closeable {
                         long offerStart = System.currentTimeMillis();
 
                         if (shouldEmit(result)) {
-                            LOG.debug("adding result to emitter queue: " + result.getEmitData());
+                            LOG.trace("adding result to emitter queue: " + result.getEmitData());
                             boolean offered = emitDataQueue.offer(result.getEmitData(),
                                     MAX_OFFER_WAIT_MS,
                                     TimeUnit.MILLISECONDS);
