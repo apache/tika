@@ -34,6 +34,8 @@ import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.cos.COSObject;
+import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.io.RandomAccessBufferedFileInputStream;
 import org.apache.pdfbox.io.RandomAccessRead;
@@ -130,6 +132,10 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
      */
     private static final long serialVersionUID = -752276948656079347L;
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
+
+    static COSName AF_RELATIONSHIP = COSName.getPDFName("AFRelationship");
+
+    private static COSName ENCRYPTED_PAYLOAD = COSName.getPDFName("EncryptedPayload");
     private PDFParserConfig defaultConfig = new PDFParserConfig();
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -168,26 +174,26 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             } else {
                 tstream = TikaInputStream.cast(stream);
             }
+
+
             scanXRefOffsets(localConfig, tstream, metadata, context);
 
             password = getPassword(metadata, context);
-            MemoryUsageSetting memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
+            MemoryUsageSetting memoryUsageSetting = null;
             if (localConfig.getMaxMainMemoryBytes() >= 0) {
                 memoryUsageSetting =
                         MemoryUsageSetting.setupMixed(localConfig.getMaxMainMemoryBytes());
-            }
-            if (tstream != null && tstream.hasFile()) {
-                // File based -- send file directly to PDFBox
-                pdfDocument =
-                        getPDDocument(tstream.getPath(), password,
-                                memoryUsageSetting, metadata, context);
             } else {
-                pdfDocument = getPDDocument(CloseShieldInputStream.wrap(stream), password,
-                        memoryUsageSetting, metadata, context);
+                memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
             }
-            if (tstream != null) {
-                tstream.setOpenContainer(pdfDocument);
-            }
+
+            pdfDocument = getPDDocument(stream, tstream, password, memoryUsageSetting, metadata,
+                    context);
+
+
+            boolean hasCollection = hasCollection(pdfDocument, metadata);
+
+            checkEncryptedPayload(pdfDocument, hasCollection, localConfig);
 
             boolean hasXFA = hasXFA(pdfDocument, metadata);
             boolean hasMarkedContent = hasMarkedContent(pdfDocument, metadata);
@@ -235,6 +241,38 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 }
             }
 
+        }
+    }
+
+    private void checkEncryptedPayload(PDDocument pdfDocument,
+                                       boolean hasCollection, PDFParserConfig localConfig)
+            throws IOException, EncryptedDocumentException {
+        if (! localConfig.isThrowOnEncryptedPayload()) {
+            return;
+        }
+        //We require a collection. We could also require that it have View=H(idden)
+        //as the spec suggests for Wrapped encrypted files (7.6.7).
+        if (! hasCollection) {
+            return;
+        }
+        List<COSObject> fileSpecs = pdfDocument.getDocument().getObjectsByType(COSName.FILESPEC);
+        //Do we want to also check that this is a portfolio PDF/contains a "collection"?
+        for (COSObject obj : fileSpecs) {
+            if (obj.getObject() instanceof COSDictionary) {
+                COSBase relationship = obj.getDictionaryObject(AF_RELATIONSHIP);
+                if (relationship != null && relationship.equals(ENCRYPTED_PAYLOAD)) {
+                    String name = "";
+                    COSBase uf = obj.getDictionaryObject(COSName.UF);
+                    COSBase f = obj.getDictionaryObject(COSName.F);
+                    if (uf != null && uf instanceof COSString) {
+                        name = ((COSString)uf).getString();
+                    } else if (f != null && f instanceof COSString) {
+                        name = ((COSString)f).getString();
+                    }
+                    throw new EncryptedDocumentException("PDF file contains an encrypted " +
+                                    "payload: '" + name + "'");
+                }
+            }
         }
     }
 
@@ -414,6 +452,33 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 tstream, metadata, parseContext, PageRangeRequest.RENDER_ALL);
     }
 
+    protected PDDocument getPDDocument(InputStream stream, TikaInputStream tstream, String password,
+                                       MemoryUsageSetting memoryUsageSetting, Metadata metadata,
+                                       ParseContext context)
+            throws IOException, EncryptedDocumentException {
+        try {
+            PDDocument pdDocument = null;
+            if (tstream != null && tstream.hasFile()) {
+                // File based -- send file directly to PDFBox
+                pdDocument =
+                        getPDDocument(tstream.getPath(), password, memoryUsageSetting, metadata,
+                                context);
+            } else {
+                pdDocument = getPDDocument(CloseShieldInputStream.wrap(stream), password,
+                        memoryUsageSetting, metadata, context);
+            }
+            if (tstream != null) {
+                tstream.setOpenContainer(pdDocument);
+            }
+            return pdDocument;
+        } catch (IOException e) {
+            if (e.getMessage() != null &&
+                    e.getMessage().contains("No security handler for filter")) {
+                throw new EncryptedDocumentException(e);
+            }
+            throw e;
+        }
+    }
 
     protected PDDocument getPDDocument(InputStream inputStream, String password,
                                        MemoryUsageSetting memoryUsageSetting, Metadata metadata,
@@ -509,7 +574,6 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 Boolean.toString(ap.canModifyAnnotations()));
         metadata.set(AccessPermissions.CAN_PRINT, Boolean.toString(ap.canPrint()));
         metadata.set(AccessPermissions.CAN_PRINT_DEGRADED, Boolean.toString(ap.canPrintDegraded()));
-        hasCollection(document, metadata);
         metadata.set(PDF.IS_ENCRYPTED, Boolean.toString(document.isEncrypted()));
 
         if (document.getDocumentCatalog().getLanguage() != null) {
@@ -986,6 +1050,29 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         return defaultConfig.getMaxIncrementalUpdates();
     }
 
+    /**
+     * If the file is a 'Collection' and contains an embedded file with a
+     * defined 'AssociatedFile' value of 'EncryptedPayload', then throw an
+     * {@link EncryptedDocumentException}.
+     *<p>
+     * Microsoft IRM v2 wraps the encrypted document inside a container PDF.
+     * See TIKA-4082.
+     * <p>
+     * The goal of this is to make the user experience the same for
+     * traditionally encrypted files and PDFs that are containers
+     * for `EncryptedPayload`s.
+     * <p>
+     * The default value is <code>false</code>.
+     *
+     * @param throwOnEncryptedPayload
+     */
+    public void setThrowOnEncryptedPayload(boolean throwOnEncryptedPayload) {
+        defaultConfig.setThrowOnEncryptedPayload(throwOnEncryptedPayload);
+    }
+
+    public boolean isThrowOnEncryptedPayload() {
+        return defaultConfig.isThrowOnEncryptedPayload();
+    }
     /**
      * This is a no-op.  There is no need to initialize multiple fields.
      * The regular field loading should happen without this.

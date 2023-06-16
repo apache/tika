@@ -1,5 +1,10 @@
 Release 2.8.1 - ???
 
+   * With user configuration, the PDFParser can now throw an EncryptedDocumentException
+     for Microsoft IRM PDF containers with encrypted payloads. Separately,
+     the PDFParser now throws an EncryptedDocumentException instead of an IOException
+     if the security handler cannot be found (TIKA-4082).
+
    * Changed default decompressConcatenated to true in CompressorParser.
      Users may revert to legacy behavior via tika-config.xml (TIKA-4048).
 
