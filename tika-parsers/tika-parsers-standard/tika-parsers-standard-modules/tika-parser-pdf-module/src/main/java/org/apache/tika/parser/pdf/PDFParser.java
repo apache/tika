@@ -1066,6 +1066,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
      *
      * @param throwOnEncryptedPayload
      */
+    @Field
     public void setThrowOnEncryptedPayload(boolean throwOnEncryptedPayload) {
         defaultConfig.setThrowOnEncryptedPayload(throwOnEncryptedPayload);
     }
