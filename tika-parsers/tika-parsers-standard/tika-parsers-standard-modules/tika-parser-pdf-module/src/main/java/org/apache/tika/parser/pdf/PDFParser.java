@@ -1051,8 +1051,9 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
     }
 
     /**
-     * If the file contains an embedded file with a defined 'AssociatedFile'
-     * value of 'EncryptedPayload', then throw an {@link EncryptedDocumentException}.
+     * If the file is a 'Collection' and contains an embedded file with a
+     * defined 'AssociatedFile' value of 'EncryptedPayload', then throw an
+     * {@link EncryptedDocumentException}.
      *<p>
      * Microsoft IRM v2 wraps the encrypted document inside a container PDF.
      * See TIKA-4082.
