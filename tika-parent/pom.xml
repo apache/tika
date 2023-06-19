@@ -1049,6 +1049,12 @@
                 <artifactId>h2</artifactId>
                 <version>2.1.214</version>
             </exclude>
+            <!-- Project disagrees with CVE https://github.com/FasterXML/jackson-databind/issues/3972 -->
+            <exclude>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.15.2</version>
+            </exclude>
           </excludeCoordinates>
           <fail>true</fail>
         </configuration>
