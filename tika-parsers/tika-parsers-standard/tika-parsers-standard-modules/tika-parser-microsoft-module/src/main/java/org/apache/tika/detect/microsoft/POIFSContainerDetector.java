@@ -209,6 +209,40 @@ public class POIFSContainerDetector implements Detector {
         if (names == null || names.size() == 0) {
             return OLE;
         }
+        //figure out if encrypted/pw protected first
+        if (names.contains("\u0006DataSpaces")) {
+            //OLE2 drm encrypted -- TIKA-3666
+            if (findRecursively(root, "\tDRMDataSpace", 0, 10)) {
+                return DRM_ENCRYPTED;
+            }
+        }
+
+        if (names.contains("EncryptedPackage")) {
+            if (names.contains("EncryptionInfo")) {
+                // This is a protected OOXML document, which is an OLE2 file
+                //  with an Encrypted Stream which holds the OOXML data
+                // Without decrypting the stream, we can't tell what kind of
+                //  OOXML file we have. Return a general OOXML Protected type,
+                //  and hope the name based detection can guess the rest!
+
+                // This is the standard issue method of encryption for ooxml and
+                // is supported by POI
+
+                //Until Tika 1.23, we also required: && names.contains("\u0006DataSpaces")
+                //See TIKA-2982
+                return OOXML_PROTECTED;
+            } else if (names.contains("\u0006DataSpaces")) {
+                //Try to look for the DRMEncrypted type (TIKA-3666); as of 5.2.0, this is not
+                // supported by POI, but we should still detect it.
+
+                //Do we also want to look for "DRMEncryptedTransform"?
+                if (findRecursively(root, "DRMEncryptedDataSpace", 0, 10)) {
+                    return DRM_ENCRYPTED;
+                }
+            }
+        }
+
+
         for (String workbookEntryName : InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES) {
             if (names.contains(workbookEntryName)) {
                 MediaType tmp = processCompObjFormatType(root);
@@ -247,33 +281,6 @@ public class POIFSContainerDetector implements Detector {
         } else if (names.contains("Book")) {
             // Excel 95 or older, we won't be able to parse this....
             return XLS;
-        } else if (names.contains("EncryptedPackage")) {
-            if (names.contains("EncryptionInfo")) {
-                // This is a protected OOXML document, which is an OLE2 file
-                //  with an Encrypted Stream which holds the OOXML data
-                // Without decrypting the stream, we can't tell what kind of
-                //  OOXML file we have. Return a general OOXML Protected type,
-                //  and hope the name based detection can guess the rest!
-
-                // This is the standard issue method of encryption for ooxml and
-                // is supported by POI
-
-                //Until Tika 1.23, we also required: && names.contains("\u0006DataSpaces")
-                //See TIKA-2982
-                return OOXML_PROTECTED;
-            } else if (names.contains("\u0006DataSpaces")) {
-                //Try to look for the DRMEncrypted type (TIKA-3666); as of 5.2.0, this is not
-                // supported by POI, but we should still detect it.
-
-                //Do we also want to look for "DRMEncryptedTransform"?
-                if (findRecursively(root, "DRMEncryptedDataSpace", 0, 10)) {
-                    return DRM_ENCRYPTED;
-                } else {
-                    return OLE;
-                }
-            } else {
-                return OLE;
-            }
         } else if (names.contains("WordDocument")) {
             return DOC;
         } else if (names.contains("Quill")) {
