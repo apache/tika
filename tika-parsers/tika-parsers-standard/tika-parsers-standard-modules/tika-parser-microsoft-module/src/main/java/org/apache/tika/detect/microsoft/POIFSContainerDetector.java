@@ -159,62 +159,64 @@ public class POIFSContainerDetector implements Detector {
     //We need to have uppercase for finding/comparison, but we want to maintain
     //the most common general casing for these items
 
-    private static final String ENCRYPTED_PACKAGE = "EncryptedPackage".toUpperCase(Locale.US);
+    private static final String ENCRYPTED_PACKAGE = "EncryptedPackage".toUpperCase(Locale.ROOT);
 
-    private static final String ENCRYPTED_INFO = "EncryptionInfo".toUpperCase(Locale.US);
+    private static final String ENCRYPTED_INFO = "EncryptionInfo".toUpperCase(Locale.ROOT);
 
-    private static final String SW_DOC_CONTENT_MGR = "SwDocContentMgr".toUpperCase(Locale.US);
+    private static final String SW_DOC_CONTENT_MGR = "SwDocContentMgr".toUpperCase(Locale.ROOT);
 
-    private static final String SW_DOC_MGR_TEMP_STORAGE = "SwDocMgrTempStorage".toUpperCase(Locale.US);
+    private static final String SW_DOC_MGR_TEMP_STORAGE = "SwDocMgrTempStorage".toUpperCase(Locale.ROOT);
 
-    private static final String STAR_CALC_DOCUMENT = "StarCalcDocument".toUpperCase(Locale.US);
+    private static final String STAR_CALC_DOCUMENT = "StarCalcDocument".toUpperCase(Locale.ROOT);
 
-    private static final String STAR_WRITER_DOCUMENT = "StarWriterDocument".toUpperCase(Locale.US);
+    private static final String STAR_WRITER_DOCUMENT = "StarWriterDocument".toUpperCase(Locale.ROOT);
 
-    private static final String STAR_DRAW_DOCUMENT_3 = "StarDrawDocument3".toUpperCase(Locale.US);
+    private static final String STAR_DRAW_DOCUMENT_3 = "StarDrawDocument3".toUpperCase(Locale.ROOT);
 
-    private static final String WKS_SSWORK_BOOK = "WksSSWorkBook".toUpperCase(Locale.US);
+    private static final String WKS_SSWORK_BOOK = "WksSSWorkBook".toUpperCase(Locale.ROOT);
 
-    private static final String DATA_SPACES = "\u0006DataSpaces".toUpperCase(Locale.US);
+    private static final String DATA_SPACES = "\u0006DataSpaces".toUpperCase(Locale.ROOT);
 
-    private static final String DRM_ENCRYPTED_DATA_SPACE = "DRMEncryptedDataSpace".toUpperCase(Locale.US);
+    private static final String DRM_ENCRYPTED_DATA_SPACE = "DRMEncryptedDataSpace".toUpperCase(Locale.ROOT);
 
-    private static final String WORD_DOCUMENT = "WordDocument".toUpperCase(Locale.US);
+    private static final String DRM_DATA_SPACE = "\tDRMDataSpace".toUpperCase(Locale.ROOT);
 
-    private static final String QUILL = "Quill".toUpperCase(Locale.US);
+    private static final String WORD_DOCUMENT = "WordDocument".toUpperCase(Locale.ROOT);
 
-    private static final String POWERPOINT_DOCUMENT = "PowerPoint Document".toUpperCase(Locale.US);
+    private static final String QUILL = "Quill".toUpperCase(Locale.ROOT);
 
-    private static final String VISIO_DOCUMENT = "VisioDocument".toUpperCase(Locale.US);
+    private static final String POWERPOINT_DOCUMENT = "PowerPoint Document".toUpperCase(Locale.ROOT);
 
-    private static final String OLE10_NATIVE_STRING = "\u0001Ole10Native".toUpperCase(Locale.US);
+    private static final String VISIO_DOCUMENT = "VisioDocument".toUpperCase(Locale.ROOT);
 
-    private static final String MAT_OST = "MatOST".toUpperCase(Locale.US);
+    private static final String OLE10_NATIVE_STRING = "\u0001Ole10Native".toUpperCase(Locale.ROOT);
 
-    private static final String CONTENTS = "CONTENTS".toUpperCase(Locale.US);
+    private static final String MAT_OST = "MatOST".toUpperCase(Locale.ROOT);
 
-    private static final String SPELLING = "SPELLING".toUpperCase(Locale.US);
+    private static final String CONTENTS = "CONTENTS".toUpperCase(Locale.ROOT);
 
-    private static final String OBJ_INFO = "\u0003ObjInfo".toUpperCase(Locale.US);
+    private static final String SPELLING = "SPELLING".toUpperCase(Locale.ROOT);
 
-    private static final String COMP_OBJ_STRING = "\u0001CompObj".toUpperCase(Locale.US);
+    private static final String OBJ_INFO = "\u0003ObjInfo".toUpperCase(Locale.ROOT);
 
-    private static final String PROPS = "Props".toUpperCase(Locale.US);
+    private static final String COMP_OBJ_STRING = "\u0001CompObj".toUpperCase(Locale.ROOT);
 
-    private static final String PROPS_9 = "Props9".toUpperCase(Locale.US);
+    private static final String PROPS = "Props".toUpperCase(Locale.ROOT);
 
-    private static final String PROPS_12 = "Props12".toUpperCase(Locale.US);
+    private static final String PROPS_9 = "Props9".toUpperCase(Locale.ROOT);
 
-    private static final String EQUATION_NATIVE = "Equation Native".toUpperCase(Locale.US);
+    private static final String PROPS_12 = "Props12".toUpperCase(Locale.ROOT);
 
-    private static final String LAYER = "Layer".toUpperCase(Locale.US);
+    private static final String EQUATION_NATIVE = "Equation Native".toUpperCase(Locale.ROOT);
 
-    private static final String DGN_MF = "Dgn~Mf".toUpperCase(Locale.US);
+    private static final String LAYER = "Layer".toUpperCase(Locale.ROOT);
 
-    private static final String DGN_S = "Dgn~S".toUpperCase(Locale.US);
-    private static final String DGN_H = "Dgn~H".toUpperCase(Locale.US);
+    private static final String DGN_MF = "Dgn~Mf".toUpperCase(Locale.ROOT);
 
-    private static final String SUBSTG_1 = "__substg1.0_".toUpperCase(Locale.US);
+    private static final String DGN_S = "Dgn~S".toUpperCase(Locale.ROOT);
+    private static final String DGN_H = "Dgn~H".toUpperCase(Locale.ROOT);
+
+    private static final String SUBSTG_1 = "__substg1.0_".toUpperCase(Locale.ROOT);
 
     /**
      * An ASCII String "StarImpress"
@@ -280,37 +282,9 @@ public class POIFSContainerDetector implements Detector {
         }
 
         Set<String> ucNames = upperCase(anyCaseNames);
-        //figure out if encrypted/pw protected first
-        if (names.contains("\u0006DataSpaces")) {
-            //OLE2 drm encrypted -- TIKA-3666
-            if (findRecursively(root, "\tDRMDataSpace", 0, 10)) {
-                return DRM_ENCRYPTED;
-            }
-        }
-
-        if (names.contains("EncryptedPackage")) {
-            if (names.contains("EncryptionInfo")) {
-                // This is a protected OOXML document, which is an OLE2 file
-                //  with an Encrypted Stream which holds the OOXML data
-                // Without decrypting the stream, we can't tell what kind of
-                //  OOXML file we have. Return a general OOXML Protected type,
-                //  and hope the name based detection can guess the rest!
-
-                // This is the standard issue method of encryption for ooxml and
-                // is supported by POI
-
-                //Until Tika 1.23, we also required: && names.contains("\u0006DataSpaces")
-                //See TIKA-2982
-                return OOXML_PROTECTED;
-            } else if (names.contains("\u0006DataSpaces")) {
-                //Try to look for the DRMEncrypted type (TIKA-3666); as of 5.2.0, this is not
-                // supported by POI, but we should still detect it.
-
-                //Do we also want to look for "DRMEncryptedTransform"?
-                if (findRecursively(root, "DRMEncryptedDataSpace", 0, 10)) {
-                    return DRM_ENCRYPTED;
-                }
-            }
+        MediaType mediaType = checkEncrypted(ucNames, root);
+        if (mediaType != null) {
+            return mediaType;
         }
 
         for (String workbookEntryName : InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES) {
@@ -421,10 +395,46 @@ public class POIFSContainerDetector implements Detector {
         return OLE;
     }
 
+    private static MediaType checkEncrypted(Set<String> ucNames, DirectoryEntry root) {
+        //figure out if encrypted/pw protected first
+        if (ucNames.contains(DATA_SPACES)) {
+            //OLE2 drm encrypted -- TIKA-3666
+            if (findRecursively(root, DRM_DATA_SPACE, 0, 10)) {
+                return DRM_ENCRYPTED;
+            }
+        }
+
+        if (ucNames.contains(ENCRYPTED_PACKAGE)) {
+            if (ucNames.contains(ENCRYPTED_INFO)) {
+                // This is a protected OOXML document, which is an OLE2 file
+                //  with an Encrypted Stream which holds the OOXML data
+                // Without decrypting the stream, we can't tell what kind of
+                //  OOXML file we have. Return a general OOXML Protected type,
+                //  and hope the name based detection can guess the rest!
+
+                // This is the standard issue method of encryption for ooxml and
+                // is supported by POI
+
+                //Until Tika 1.23, we also required: && names.contains("\u0006DataSpaces")
+                //See TIKA-2982
+                return OOXML_PROTECTED;
+            } else if (ucNames.contains(DATA_SPACES)) {
+                //Try to look for the DRMEncrypted type (TIKA-3666); as of 5.2.0, this is not
+                // supported by POI, but we should still detect it.
+
+                //Do we also want to look for "DRMEncryptedTransform"?
+                if (findRecursively(root, DRM_ENCRYPTED_DATA_SPACE, 0, 10)) {
+                    return DRM_ENCRYPTED;
+                }
+            }
+        }
+        return null;
+    }
+
     private static Set<String> upperCase(Set<String> names) {
         Set<String> uc = new HashSet<>(names.size());
         for (String s : names) {
-            uc.add(s.toUpperCase(Locale.US));
+            uc.add(s.toUpperCase(Locale.ROOT));
         }
         return uc;
     }
@@ -442,7 +452,7 @@ public class POIFSContainerDetector implements Detector {
         if (entry == null) {
             return false;
         }
-        if (entry.getName().toUpperCase(Locale.US).equals(targetName)) {
+        if (entry.getName().toUpperCase(Locale.ROOT).equals(targetName)) {
             return true;
         }
         if (depth >= maxDepth) {
