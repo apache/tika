@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -240,10 +242,10 @@ public class OfficeParser extends AbstractOfficeParser {
                 extractor.parse(xhtml);
                 break;
             case ENCRYPTED:
-                EncryptionInfo info = new EncryptionInfo(root);
-                Decryptor d = Decryptor.getInstance(info);
 
                 try {
+                    EncryptionInfo info = new EncryptionInfo(root);
+                    Decryptor d = Decryptor.getInstance(info);
                     // By default, use the default Office Password
                     String password = Decryptor.DEFAULT_PASSWORD;
 
@@ -270,6 +272,10 @@ public class OfficeParser extends AbstractOfficeParser {
                                 metadata, context);
                     }
                 } catch (GeneralSecurityException ex) {
+                    throw new EncryptedDocumentException(ex);
+                } catch (FileNotFoundException ex) {
+                    //this can happen because POI may not support case-insensitive ole2 object
+                    //lookups
                     throw new EncryptedDocumentException(ex);
                 }
                 break;
@@ -349,6 +355,24 @@ public class OfficeParser extends AbstractOfficeParser {
         public MediaType getType() {
             return type;
         }
+    }
+
+    /**
+     * Looks for entry within root (non-recursive) that has an upper-cased
+     * name that equals ucTarget
+     * @param root
+     * @param ucTarget
+     * @return
+     */
+    public static Entry getUCEntry(DirectoryEntry root, String ucTarget) {
+        Iterator<Entry> it = root.getEntries();
+        while (it.hasNext()) {
+            Entry e = it.next();
+            if (e.getName().toUpperCase(Locale.US).equals(ucTarget)) {
+                return e;
+            }
+        }
+        return null;
     }
 
 }
