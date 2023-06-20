@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -36,6 +37,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -665,5 +667,13 @@ public class WordParserTest extends TikaTest {
         //TIKA-2459
         assertContains("Paragraph one", getXML(
                 "testWORD_specialControlCharacter1415.doc").xml);
+    }
+
+    @Test
+    public void testEncryptedDRM() throws Exception {
+        assertThrows(EncryptedDocumentException.class, () -> {
+            //test file from: https://bz.apache.org/bugzilla/show_bug.cgi?id=62848
+            getRecursiveMetadata("testWORD_protected_drm.doc");
+        });
     }
 }
