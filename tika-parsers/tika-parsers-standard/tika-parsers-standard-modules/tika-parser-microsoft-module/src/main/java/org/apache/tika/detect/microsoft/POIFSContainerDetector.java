@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -43,6 +44,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.microsoft.OfficeParser;
 
 /**
  * A detector that works on a POIFS OLE2 document
@@ -153,6 +155,69 @@ public class POIFSContainerDetector implements Detector {
      * Serial version UID
      */
     private static final long serialVersionUID = -3028021741663605293L;
+
+    //We need to have uppercase for finding/comparison, but we want to maintain
+    //the most common general casing for these items
+
+    private static final String ENCRYPTED_PACKAGE = "EncryptedPackage".toUpperCase(Locale.ROOT);
+
+    private static final String ENCRYPTED_INFO = "EncryptionInfo".toUpperCase(Locale.ROOT);
+
+    private static final String SW_DOC_CONTENT_MGR = "SwDocContentMgr".toUpperCase(Locale.ROOT);
+
+    private static final String SW_DOC_MGR_TEMP_STORAGE = "SwDocMgrTempStorage".toUpperCase(Locale.ROOT);
+
+    private static final String STAR_CALC_DOCUMENT = "StarCalcDocument".toUpperCase(Locale.ROOT);
+
+    private static final String STAR_WRITER_DOCUMENT = "StarWriterDocument".toUpperCase(Locale.ROOT);
+
+    private static final String STAR_DRAW_DOCUMENT_3 = "StarDrawDocument3".toUpperCase(Locale.ROOT);
+
+    private static final String WKS_SSWORK_BOOK = "WksSSWorkBook".toUpperCase(Locale.ROOT);
+
+    private static final String DATA_SPACES = "\u0006DataSpaces".toUpperCase(Locale.ROOT);
+
+    private static final String DRM_ENCRYPTED_DATA_SPACE = "DRMEncryptedDataSpace".toUpperCase(Locale.ROOT);
+
+    private static final String DRM_DATA_SPACE = "\tDRMDataSpace".toUpperCase(Locale.ROOT);
+
+    private static final String WORD_DOCUMENT = "WordDocument".toUpperCase(Locale.ROOT);
+
+    private static final String QUILL = "Quill".toUpperCase(Locale.ROOT);
+
+    private static final String POWERPOINT_DOCUMENT = "PowerPoint Document".toUpperCase(Locale.ROOT);
+
+    private static final String VISIO_DOCUMENT = "VisioDocument".toUpperCase(Locale.ROOT);
+
+    private static final String OLE10_NATIVE_STRING = "\u0001Ole10Native".toUpperCase(Locale.ROOT);
+
+    private static final String MAT_OST = "MatOST".toUpperCase(Locale.ROOT);
+
+    private static final String CONTENTS = "CONTENTS".toUpperCase(Locale.ROOT);
+
+    private static final String SPELLING = "SPELLING".toUpperCase(Locale.ROOT);
+
+    private static final String OBJ_INFO = "\u0003ObjInfo".toUpperCase(Locale.ROOT);
+
+    private static final String COMP_OBJ_STRING = "\u0001CompObj".toUpperCase(Locale.ROOT);
+
+    private static final String PROPS = "Props".toUpperCase(Locale.ROOT);
+
+    private static final String PROPS_9 = "Props9".toUpperCase(Locale.ROOT);
+
+    private static final String PROPS_12 = "Props12".toUpperCase(Locale.ROOT);
+
+    private static final String EQUATION_NATIVE = "Equation Native".toUpperCase(Locale.ROOT);
+
+    private static final String LAYER = "Layer".toUpperCase(Locale.ROOT);
+
+    private static final String DGN_MF = "Dgn~Mf".toUpperCase(Locale.ROOT);
+
+    private static final String DGN_S = "Dgn~S".toUpperCase(Locale.ROOT);
+    private static final String DGN_H = "Dgn~H".toUpperCase(Locale.ROOT);
+
+    private static final String SUBSTG_1 = "__substg1.0_".toUpperCase(Locale.ROOT);
+
     /**
      * An ASCII String "StarImpress"
      */
@@ -201,50 +266,29 @@ public class POIFSContainerDetector implements Detector {
      * detection may need access to the root {@link DirectoryEntry} of that file
      * for best results. The entry can be given as a second, optional argument.
      *
-     * @param names
+     * <p/>
+     * Following
+     *
+     * <a href="https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cfb/60fe8611-66c3-496b-b70d-a504c94c9ace">2.6.1 of MS-CFB </a>,
+     * The detection is performed on case insensitive entry names.
+     *
+     * @param anyCaseNames
      * @param root
      * @return
      */
-    public static MediaType detect(Set<String> names, DirectoryEntry root) {
-        if (names == null || names.size() == 0) {
+    public static MediaType detect(Set<String> anyCaseNames, DirectoryEntry root) {
+        if (anyCaseNames == null || anyCaseNames.size() == 0) {
             return OLE;
         }
-        //figure out if encrypted/pw protected first
-        if (names.contains("\u0006DataSpaces")) {
-            //OLE2 drm encrypted -- TIKA-3666
-            if (findRecursively(root, "\tDRMDataSpace", 0, 10)) {
-                return DRM_ENCRYPTED;
-            }
+
+        Set<String> ucNames = upperCase(anyCaseNames);
+        MediaType mediaType = checkEncrypted(ucNames, root);
+        if (mediaType != null) {
+            return mediaType;
         }
-
-        if (names.contains("EncryptedPackage")) {
-            if (names.contains("EncryptionInfo")) {
-                // This is a protected OOXML document, which is an OLE2 file
-                //  with an Encrypted Stream which holds the OOXML data
-                // Without decrypting the stream, we can't tell what kind of
-                //  OOXML file we have. Return a general OOXML Protected type,
-                //  and hope the name based detection can guess the rest!
-
-                // This is the standard issue method of encryption for ooxml and
-                // is supported by POI
-
-                //Until Tika 1.23, we also required: && names.contains("\u0006DataSpaces")
-                //See TIKA-2982
-                return OOXML_PROTECTED;
-            } else if (names.contains("\u0006DataSpaces")) {
-                //Try to look for the DRMEncrypted type (TIKA-3666); as of 5.2.0, this is not
-                // supported by POI, but we should still detect it.
-
-                //Do we also want to look for "DRMEncryptedTransform"?
-                if (findRecursively(root, "DRMEncryptedDataSpace", 0, 10)) {
-                    return DRM_ENCRYPTED;
-                }
-            }
-        }
-
 
         for (String workbookEntryName : InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES) {
-            if (names.contains(workbookEntryName)) {
+            if (ucNames.contains(workbookEntryName)) {
                 MediaType tmp = processCompObjFormatType(root);
                 if (tmp.equals(MS_GRAPH_CHART)) {
                     return MS_GRAPH_CHART;
@@ -252,14 +296,14 @@ public class POIFSContainerDetector implements Detector {
                 return XLS;
             }
         }
-        if (names.contains("SwDocContentMgr") && names.contains("SwDocMgrTempStorage")) {
+        if (ucNames.contains(SW_DOC_CONTENT_MGR) && ucNames.contains(SW_DOC_MGR_TEMP_STORAGE)) {
             return SLDWORKS;
-        } else if (names.contains("StarCalcDocument")) {
+        } else if (ucNames.contains(STAR_CALC_DOCUMENT)) {
             // Star Office Calc
             return SDC;
-        } else if (names.contains("StarWriterDocument")) {
+        } else if (ucNames.contains(STAR_WRITER_DOCUMENT)) {
             return SDW;
-        } else if (names.contains("StarDrawDocument3")) {
+        } else if (ucNames.contains(STAR_DRAW_DOCUMENT_3)) {
             if (root == null) {
                 /*
                  * This is either StarOfficeDraw or StarOfficeImpress, we have
@@ -273,33 +317,33 @@ public class POIFSContainerDetector implements Detector {
             } else {
                 return processCompObjFormatType(root);
             }
-        } else if (names.contains("WksSSWorkBook")) {
+        } else if (ucNames.contains(WKS_SSWORK_BOOK)) {
             // This check has to be before names.contains("Workbook")
             // Works 7.0 spreadsheet files contain both
             // we want to avoid classifying this as Excel
             return XLR;
-        } else if (names.contains("Book")) {
+        } else if (ucNames.contains("BOOK")) {
             // Excel 95 or older, we won't be able to parse this....
             return XLS;
-        } else if (names.contains("WordDocument")) {
+        } else if (ucNames.contains(WORD_DOCUMENT)) {
             return DOC;
-        } else if (names.contains("Quill")) {
+        } else if (ucNames.contains(QUILL)) {
             return PUB;
-        } else if (names.contains("PowerPoint Document")) {
+        } else if (ucNames.contains(POWERPOINT_DOCUMENT)) {
             return PPT;
-        } else if (names.contains("VisioDocument")) {
+        } else if (ucNames.contains(VISIO_DOCUMENT)) {
             return VSD;
-        } else if (names.contains("\u0001Ole10Native")) {
+        } else if (ucNames.contains(OLE10_NATIVE_STRING)) {
             return OLE10_NATIVE;
-        } else if (names.contains("MatOST")) {
+        } else if (ucNames.contains(MAT_OST)) {
             // this occurs on older Works Word Processor files (versions 3.0 and 4.0)
             return WPS;
-        } else if (names.contains("CONTENTS") && names.contains("SPELLING")) {
+        } else if (ucNames.contains(CONTENTS) && ucNames.contains(SPELLING)) {
             // Newer Works files
             return WPS;
-        } else if (names.contains("Contents") && names.contains("\u0003ObjInfo")) {
+        } else if (ucNames.contains(CONTENTS) && ucNames.contains(OBJ_INFO)) {
             return COMP_OBJ;
-        } else if (names.contains("CONTENTS") && names.contains("\u0001CompObj")) {
+        } else if (ucNames.contains(CONTENTS) && ucNames.contains(COMP_OBJ_STRING)) {
             // CompObj is a general kind of OLE2 embedding, but this may be an old Works file
             // If we have the Directory, check
             if (root != null) {
@@ -314,33 +358,33 @@ public class POIFSContainerDetector implements Detector {
                 // Assume it's a general CompObj embedded resource
                 return COMP_OBJ;
             }
-        } else if (names.contains("CONTENTS")) {
+        } else if (ucNames.contains(CONTENTS)) {
             // CONTENTS without SPELLING nor CompObj normally means some sort
             //  of embedded non-office file inside an OLE2 document
             // This is most commonly triggered on nested directories
             return OLE;
-        } else if (names.contains("\u0001CompObj") &&
-                (names.contains("Props") || names.contains("Props9") ||
-                        names.contains("Props12"))) {
+        } else if (ucNames.contains(COMP_OBJ_STRING) &&
+                (ucNames.contains(PROPS) || ucNames.contains(PROPS_9) ||
+                        ucNames.contains(PROPS_12))) {
             // Could be Project, look for common name patterns
-            for (String name : names) {
+            for (String name : ucNames) {
                 if (mppDataMatch.matcher(name).matches()) {
                     return MPP;
                 }
             }
-        } else if (names.contains("Equation Native")) {
+        } else if (ucNames.contains(EQUATION_NATIVE)) {
             return MS_EQUATION;
-        } else if (names.contains("Layer")) {
+        } else if (ucNames.contains(LAYER)) {
             //in one test file, also saw LayerSmallImage and LayerLargeImage
             //maybe add those if we get false positives?
             //in other test files there was a single entry for "Layer"
             return ESRI_LAYER;
-        } else if (names.contains("Dgn~Mf") && names.contains("Dgn~S") &&
-                names.contains("Dgn~H")) {
+        } else if (ucNames.contains(DGN_MF) && ucNames.contains(DGN_S) &&
+                ucNames.contains(DGN_H)) {
             return DGN_8;
         } else {
-            for (String name : names) {
-                if (name.startsWith("__substg1.0_")) {
+            for (String name : ucNames) {
+                if (name.startsWith(SUBSTG_1)) {
                     return MSG;
                 }
             }
@@ -351,12 +395,64 @@ public class POIFSContainerDetector implements Detector {
         return OLE;
     }
 
+    private static MediaType checkEncrypted(Set<String> ucNames, DirectoryEntry root) {
+        //figure out if encrypted/pw protected first
+        if (ucNames.contains(DATA_SPACES)) {
+            //OLE2 drm encrypted -- TIKA-3666
+            if (findRecursively(root, DRM_DATA_SPACE, 0, 10)) {
+                return DRM_ENCRYPTED;
+            }
+        }
+
+        if (ucNames.contains(ENCRYPTED_PACKAGE)) {
+            if (ucNames.contains(ENCRYPTED_INFO)) {
+                // This is a protected OOXML document, which is an OLE2 file
+                //  with an Encrypted Stream which holds the OOXML data
+                // Without decrypting the stream, we can't tell what kind of
+                //  OOXML file we have. Return a general OOXML Protected type,
+                //  and hope the name based detection can guess the rest!
+
+                // This is the standard issue method of encryption for ooxml and
+                // is supported by POI
+
+                //Until Tika 1.23, we also required: && names.contains("\u0006DataSpaces")
+                //See TIKA-2982
+                return OOXML_PROTECTED;
+            } else if (ucNames.contains(DATA_SPACES)) {
+                //Try to look for the DRMEncrypted type (TIKA-3666); as of 5.2.0, this is not
+                // supported by POI, but we should still detect it.
+
+                //Do we also want to look for "DRMEncryptedTransform"?
+                if (findRecursively(root, DRM_ENCRYPTED_DATA_SPACE, 0, 10)) {
+                    return DRM_ENCRYPTED;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Set<String> upperCase(Set<String> names) {
+        Set<String> uc = new HashSet<>(names.size());
+        for (String s : names) {
+            uc.add(s.toUpperCase(Locale.ROOT));
+        }
+        return uc;
+    }
+
+    /**
+     *
+     * @param entry entry to search
+     * @param targetName Upper cased target name
+     * @param depth current depth
+     * @param maxDepth maximum allowed depth
+     * @return
+     */
     private static boolean findRecursively(Entry entry, String targetName, int depth,
                                            int maxDepth) {
         if (entry == null) {
             return false;
         }
-        if (entry.getName().equals(targetName)) {
+        if (entry.getName().toUpperCase(Locale.ROOT).equals(targetName)) {
             return true;
         }
         if (depth >= maxDepth) {
@@ -381,13 +477,9 @@ public class POIFSContainerDetector implements Detector {
      */
     private static MediaType processCompObjFormatType(DirectoryEntry root) {
         try {
-
-            if (!root.hasEntry("\u0001CompObj")) {
-                return OLE;
-            }
-            Entry e = root.getEntry("\u0001CompObj");
-            if (e != null && e.isDocumentEntry()) {
-                DocumentNode dn = (DocumentNode) e;
+            Entry entry = OfficeParser.getUCEntry(root, COMP_OBJ_STRING);
+            if (entry != null && entry.isDocumentEntry()) {
+                DocumentNode dn = (DocumentNode) entry;
                 DocumentInputStream stream = new DocumentInputStream(dn);
                 byte[] bytes = IOUtils.toByteArray(stream);
                 /*
@@ -421,6 +513,7 @@ public class POIFSContainerDetector implements Detector {
         return OLE;
     }
 
+
     // poor man's search for byte arrays, replace with some library call if
     // you know one without adding new dependencies
     private static boolean arrayContains(byte[] larger, byte[] smaller) {
@@ -441,6 +534,11 @@ public class POIFSContainerDetector implements Detector {
         return false;
     }
 
+    /**
+     * These are the literal top level names in the root. These are not uppercased
+     * @param root
+     * @return
+     */
     private static Set<String> getTopLevelNames(DirectoryNode root) {
         Set<String> names = new HashSet<>();
         for (Entry entry : root) {
