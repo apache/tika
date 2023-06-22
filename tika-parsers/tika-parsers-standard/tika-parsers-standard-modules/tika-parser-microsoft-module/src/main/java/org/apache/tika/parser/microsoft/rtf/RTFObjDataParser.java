@@ -182,7 +182,9 @@ class RTFObjDataParser {
                     try {
                         contentsEntry = (DocumentEntry) root.getEntry("CONTENTS");
                     } catch (FileNotFoundException ioe) {
-                        contentsEntry = (DocumentEntry) root.getEntry("Contents");
+                        //no contents
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(ioe, metadata);
+                        return ret;
                     }
 
                     try (DocumentInputStream inp = new DocumentInputStream(contentsEntry)) {
