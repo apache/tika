@@ -159,8 +159,7 @@ abstract class AbstractPOIFSExtractor {
 
         // Is it an embedded OLE2 document, or an embedded OOXML document?
         //first try for ooxml
-        Entry ooxml = dir.hasEntry("Package") ? dir.getEntry("Package") :
-                (dir.hasEntry("package") ? dir.getEntry("package") : null);
+        Entry ooxml = dir.hasEntry("Package") ? dir.getEntry("Package") : null;
 
         if (ooxml != null) {
             // It's OOXML (has a ZipFile):
@@ -218,16 +217,12 @@ abstract class AbstractPOIFSExtractor {
         //TikaCoreProperties.ORIGINAL_RESOURCE_NAME
 
         // Grab the contents and process
-        DocumentEntry contentsEntry;
+        DocumentEntry contentsEntry = null;
         try {
             contentsEntry = (DocumentEntry) dir.getEntry("CONTENTS");
-        } catch (FileNotFoundException fnfe1) {
-            try {
-                contentsEntry = (DocumentEntry) dir.getEntry("Contents");
-            } catch (FileNotFoundException fnfe2) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(fnfe2, parentMetadata);
-                return;
-            }
+        } catch (FileNotFoundException fnfe) {
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(fnfe, parentMetadata);
+            return;
         }
         int length = contentsEntry.getSize();
         DocumentInputStream inp = null;

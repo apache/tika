@@ -16,6 +16,7 @@
  */
 package org.apache.tika.detect.microsoft;
 
+import static org.apache.poi.hssf.model.InternalWorkbook.BOOK;
 import static org.apache.tika.mime.MediaType.application;
 import static org.apache.tika.mime.MediaType.image;
 
@@ -286,16 +287,11 @@ public class POIFSContainerDetector implements Detector {
         if (mediaType != null) {
             return mediaType;
         }
-
-        for (String workbookEntryName : InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES) {
-            if (ucNames.contains(workbookEntryName)) {
-                MediaType tmp = processCompObjFormatType(root);
-                if (tmp.equals(MS_GRAPH_CHART)) {
-                    return MS_GRAPH_CHART;
-                }
-                return XLS;
-            }
+        mediaType = checkXLS(ucNames, root);
+        if (mediaType != null) {
+            return mediaType;
         }
+
         if (ucNames.contains(SW_DOC_CONTENT_MGR) && ucNames.contains(SW_DOC_MGR_TEMP_STORAGE)) {
             return SLDWORKS;
         } else if (ucNames.contains(STAR_CALC_DOCUMENT)) {
@@ -322,9 +318,6 @@ public class POIFSContainerDetector implements Detector {
             // Works 7.0 spreadsheet files contain both
             // we want to avoid classifying this as Excel
             return XLR;
-        } else if (ucNames.contains("BOOK")) {
-            // Excel 95 or older, we won't be able to parse this....
-            return XLS;
         } else if (ucNames.contains(WORD_DOCUMENT)) {
             return DOC;
         } else if (ucNames.contains(QUILL)) {
@@ -393,6 +386,26 @@ public class POIFSContainerDetector implements Detector {
 
         // Couldn't detect a more specific type
         return OLE;
+    }
+
+    private static MediaType checkXLS(Set<String> ucNames, DirectoryEntry root) {
+        for (String workbookEntryName : InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES) {
+            if (ucNames.contains(workbookEntryName)) {
+                MediaType tmp = processCompObjFormatType(root);
+                if (tmp.equals(MS_GRAPH_CHART)) {
+                    return MS_GRAPH_CHART;
+                }
+                return XLS;
+            }
+        }
+        if (ucNames.contains(BOOK)) {
+            MediaType tmp = processCompObjFormatType(root);
+            if (tmp.equals(MS_GRAPH_CHART)) {
+                return MS_GRAPH_CHART;
+            }
+            return XLS;
+        }
+        return null;
     }
 
     private static MediaType checkEncrypted(Set<String> ucNames, DirectoryEntry root) {

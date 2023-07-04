@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -50,7 +49,6 @@ public class OLE2CasingTest extends TikaTest {
     }
 
     @Test
-    @Disabled("until POI can handle case insensitive entry lookups")
     public void testBasic() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("casing/simple_normal_case.doc");
         assertCloseEnough(metadataList, getRecursiveMetadata("casing/simple_lower_case.doc"));
