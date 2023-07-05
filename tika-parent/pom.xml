@@ -314,7 +314,7 @@
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <commons.cli.version>1.5.0</commons.cli.version>
-    <commons.codec.version>1.15</commons.codec.version>
+    <commons.codec.version>1.16.0</commons.codec.version>
     <commons.collections4.version>4.4</commons.collections4.version>
     <commons.compress.version>1.23.0</commons.compress.version>
     <commons.csv.version>1.10.0</commons.csv.version>
