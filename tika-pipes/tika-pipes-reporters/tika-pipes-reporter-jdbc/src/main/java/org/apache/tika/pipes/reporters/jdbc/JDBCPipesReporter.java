@@ -53,12 +53,17 @@ import org.apache.tika.utils.StringUtils;
 public class JDBCPipesReporter extends PipesReporterBase implements Initializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(JDBCPipesReporter.class);
-    private static final int CACHE_SIZE = 100;
+    private static final int DEFAULT_CACHE_SIZE = 100;
+    private static final long DEFAULT_REPORT_WITHIN_MS = 10000;
     private static final int ARRAY_BLOCKING_QUEUE_SIZE = 1000;
 
     public static final String TABLE_NAME = "tika_status";
 
     private static final long MAX_WAIT_MILLIS = 120000;
+
+    private long reportWithinMs = DEFAULT_REPORT_WITHIN_MS;
+
+    private int cacheSize = DEFAULT_CACHE_SIZE;
 
     private String connectionString;
 
@@ -73,7 +78,8 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         if (StringUtils.isBlank(connectionString)) {
             throw new TikaConfigException("Must specify a connectionString");
         }
-        ReportWorker reportWorker = new ReportWorker(connectionString, postConnectionString, queue);
+        ReportWorker reportWorker = new ReportWorker(connectionString, postConnectionString,
+                queue, cacheSize, reportWithinMs);
         reportWorker.init();
         reportWorkerFuture = CompletableFuture.runAsync(reportWorker);
     }
@@ -88,6 +94,37 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
     @Field
     public void setConnection(String connection) {
         this.connectionString = connection;
+    }
+
+    /**
+     * Commit the reports if the cache is greater than or equal to this size.
+     * <p/>
+     * Default is {@link JDBCPipesReporter#DEFAULT_CACHE_SIZE}.
+     * <p/>
+     * The reports will be committed if the cache size
+     * triggers reporting or if the amount of time since
+     * last reported ({@link JDBCPipesReporter#reportWithinMs}) triggers reporting.
+     * @param cacheSize
+     */
+    @Field
+    public void setCacheSize(int cacheSize) {
+        this.cacheSize = cacheSize;
+    }
+
+
+    /**
+     * Commit the reports if the amount of time elapsed since the last report commit
+     * exceeds this value.
+     * <p/>
+     * Default is {@link JDBCPipesReporter#DEFAULT_REPORT_WITHIN_MS}.
+     * <p/>
+     * The reports will be committed if the cache size triggers reporting or if the amount of
+     * time since last reported triggers reporting.
+     * @param reportWithinMs
+     */
+    @Field
+    public void setReportWithinMs(long reportWithinMs) {
+        this.reportWithinMs = reportWithinMs;
     }
 
     /**
@@ -172,16 +209,23 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         private final String connectionString;
         private final Optional<String> postConnectionString;
         private final ArrayBlockingQueue<KeyStatusPair> queue;
+        private final int cacheSize;
+        private final long reportWithinMs;
+
         List<KeyStatusPair> cache = new ArrayList<>();
         private Connection connection;
         private PreparedStatement insert;
 
+
         public ReportWorker(String connectionString,
                             Optional<String> postConnectionString,
-                            ArrayBlockingQueue<KeyStatusPair> queue) {
+                            ArrayBlockingQueue<KeyStatusPair> queue, int cacheSize,
+                            long reportWithinMs) {
             this.connectionString = connectionString;
             this.postConnectionString = postConnectionString;
             this.queue = queue;
+            this.cacheSize = cacheSize;
+            this.reportWithinMs = reportWithinMs;
         }
 
         public void init() throws TikaConfigException {
@@ -196,6 +240,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
 
         @Override
         public void run() {
+            long lastReported = System.currentTimeMillis();
             while (true) {
                 //blocking
                 KeyStatusPair p = null;
@@ -209,9 +254,12 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                     return;
                 }
                 cache.add(p);
-                if (cache.size() >= CACHE_SIZE) {
+                long elapsed = System.currentTimeMillis() - lastReported;
+
+                if (cache.size() >= cacheSize || elapsed > reportWithinMs) {
                     try {
                         reportNow();
+                        lastReported = System.currentTimeMillis();
                     } catch (SQLException e) {
                         throw new RuntimeException(e);
                     } catch (InterruptedException e) {
@@ -219,7 +267,6 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                     }
                 }
             }
-
         }
 
         private void shutdownNow() {
