@@ -16,6 +16,8 @@
  */
 package org.apache.tika.pipes;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -58,6 +60,8 @@ public class PipesConfigBase extends ConfigBase {
     private List<String> forkedJvmArgs = new ArrayList<>();
     private Path tikaConfig;
     private String javaPath = "java";
+
+    private Path pipesTmpDir = null;
 
     public long getTimeoutMillis() {
         return timeoutMillis;
@@ -170,5 +174,20 @@ public class PipesConfigBase extends ConfigBase {
 
     public void setSleepOnStartupTimeoutMillis(long sleepOnStartupTimeoutMillis) {
         this.sleepOnStartupTimeoutMillis = sleepOnStartupTimeoutMillis;
+    }
+
+    public void setPipesTmpDir(Path pipesTmpDir) {
+        this.pipesTmpDir = pipesTmpDir;
+    }
+
+    public Path getPipesTmpDir() throws IOException {
+        if (pipesTmpDir == null) {
+            pipesTmpDir = Files.createTempDirectory("tika-pipes-tmp-dir");
+        } else {
+            if (! Files.isDirectory(pipesTmpDir)) {
+                Files.createDirectories(pipesTmpDir);
+            }
+        }
+        return pipesTmpDir;
     }
 }

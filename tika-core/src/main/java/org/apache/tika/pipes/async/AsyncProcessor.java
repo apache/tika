@@ -18,6 +18,7 @@ package org.apache.tika.pipes.async;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -30,6 +31,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.commons.io.file.Counters;
+import org.apache.commons.io.file.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -252,6 +255,18 @@ public class AsyncProcessor implements Closeable {
     public void close() throws IOException {
         executorService.shutdownNow();
         asyncConfig.getPipesReporter().close();
+        if (Files.isDirectory(asyncConfig.getPipesTmpDir())) {
+            try {
+                LOG.debug("about to delete the full async temp directory: {}",
+                        asyncConfig.getPipesTmpDir().toAbsolutePath());
+                Counters.PathCounters pathCounters = PathUtils.deleteDirectory(asyncConfig.getPipesTmpDir());
+                LOG.debug("Successfully deleted {} temporary files in {} directories",
+                        pathCounters.getFileCounter().get(),
+                        pathCounters.getDirectoryCounter().get());
+            } catch (IllegalArgumentException e) {
+                throw new IOException(e);
+            }
+        }
     }
 
     public long getTotalProcessed() {
