@@ -755,8 +755,8 @@
     <magic priority="20">
       <!-- Low priority match for %PDF-#.# near the start of the file -->
       <!-- Can trigger false positives, so set the priority rather low here -->
-      <match value="%PDF-1." type="string" offset="1:512"/>
-      <match value="%PDF-2." type="string" offset="1:512"/>
+      <match value="%PDF-1." type="string" offset="1:768"/>
+      <match value="%PDF-2." type="string" offset="1:768"/>
     </magic>
     <glob pattern="*.pdf"/>
   </mime-type>
