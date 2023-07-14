@@ -45,6 +45,7 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
+import org.apache.tika.server.core.config.DocumentSelectorConfig;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
 
@@ -329,6 +330,24 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(i + 1, metadataList.size());
         }
+    }
+
+    // TIKA-3227
+    @Test
+    public void testSkipEmbedded() throws Exception {
+        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                .header(DocumentSelectorConfig.X_TIKA_SKIP_EMBEDDED_HEADER, "false")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(12, metadataList.size());
+
+        response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                .header(DocumentSelectorConfig.X_TIKA_SKIP_EMBEDDED_HEADER, "true")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(1, metadataList.size());
     }
 
     @Test
