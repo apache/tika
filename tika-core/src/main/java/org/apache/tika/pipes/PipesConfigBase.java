@@ -176,13 +176,17 @@ public class PipesConfigBase extends ConfigBase {
         this.sleepOnStartupTimeoutMillis = sleepOnStartupTimeoutMillis;
     }
 
-    public void setPipesTmpDir(Path pipesTmpDir) {
+    public void setPipesTmpDir(String pipesTmpDir) {
+        setPipesTmpDirPath(Paths.get(pipesTmpDir));
+    }
+
+    public void setPipesTmpDirPath(Path pipesTmpDir) {
         this.pipesTmpDir = pipesTmpDir;
     }
 
     public Path getPipesTmpDir() throws IOException {
         if (pipesTmpDir == null) {
-            pipesTmpDir = Files.createTempDirectory("tika-pipes-tmp-dir");
+            pipesTmpDir = Files.createTempDirectory("tika-pipes-tmp-dir-");
         } else {
             if (! Files.isDirectory(pipesTmpDir)) {
                 Files.createDirectories(pipesTmpDir);

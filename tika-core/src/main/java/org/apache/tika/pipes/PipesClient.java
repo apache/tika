@@ -89,7 +89,7 @@ public class PipesClient implements Closeable {
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
         try {
             tmpDir = Files.createTempDirectory(pipesConfig.getPipesTmpDir(),
-                            "client-" + this.pipesClientId);
+                            "client-" + this.pipesClientId + "-");
         } catch (IOException e) {
             throw new RuntimeException("Couldn't create temp dir?!", e);
         }
@@ -444,6 +444,9 @@ public class PipesClient implements Closeable {
                             ": PipesClient closed");
                 }
                 executorService = Executors.newFixedThreadPool(1);
+            }
+            if (! Files.isDirectory(tmpDir)) {
+                Files.createDirectories(tmpDir);
             }
             LOG.info("pipesClientId={}: restarting process", pipesClientId);
         } else {
