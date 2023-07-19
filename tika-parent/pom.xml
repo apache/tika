@@ -338,7 +338,7 @@
     <!-- versions greater than 62.2 are not compatible with icu4j handler in lucene 8.11.1 -->
     <icu4j.version>62.2</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
-    <jackrabbit.version>2.21.16</jackrabbit.version>
+    <jackrabbit.version>2.21.17</jackrabbit.version>
     <jackson.version>2.15.2</jackson.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
@@ -356,7 +356,7 @@
     <jna.version>5.13.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.10.0-RC1</junit5.version>
+    <junit5.version>5.10.0-RC2</junit5.version>
     <junrar.version>7.5.5</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.20.0</log4j2.version>
@@ -861,7 +861,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.25.0</version>
+        <version>0.26.0</version>
       </dependency>
       <dependency>
         <groupId>org.opengis</groupId>
