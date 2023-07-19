@@ -59,7 +59,10 @@ public class Report {
 
     public void writeReport(Connection c, Path reportsRoot) throws SQLException, IOException {
         LOG.info("Writing report: {} to {}", reportName, reportFilename);
+        long start = System.currentTimeMillis();
         dumpXLSX(c, reportsRoot);
+        long elapsed = System.currentTimeMillis() - start;
+        LOG.info("Finished writing {} report in {} ms", reportsRoot, elapsed);
     }
 
     private void dumpXLSX(Connection c, Path reportsRoot) throws IOException, SQLException {
