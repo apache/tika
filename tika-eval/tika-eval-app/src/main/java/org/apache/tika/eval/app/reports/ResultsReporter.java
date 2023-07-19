@@ -305,15 +305,28 @@ public class ResultsReporter {
     public void execute(Connection c, Path reportsDirectory) throws IOException, SQLException {
         try (Statement st = c.createStatement()) {
             for (String sql : before) {
-                LOG.info("processing before: {}", sql);
+                long start = System.currentTimeMillis();
+                LOG.info("processing 'before': {}", sql);
                 st.execute(sql);
+                if (! c.getAutoCommit()) {
+                    c.commit();
+                    LOG.info("committing");
+                }
+                long elapsed = System.currentTimeMillis() - start;
+                LOG.info("finished in {} ms", elapsed);
             }
             for (Report r : reports) {
                 r.writeReport(c, reportsDirectory);
             }
             for (String sql : after) {
-                LOG.info("processing after: {}", sql);
+                LOG.info("processing 'after': {}", sql);
+                long start = System.currentTimeMillis();
                 st.execute(sql);
+                if (! c.getAutoCommit()) {
+                    c.commit();
+                }
+                long elapsed = System.currentTimeMillis() - start;
+                LOG.info("finished in {} ms", elapsed);
             }
         }
     }
