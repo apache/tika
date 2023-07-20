@@ -92,22 +92,24 @@
       on exceptions_compared(mime_id_b);
     </sql>
 
-   <!-- we need to create literal tmp tables in h2 TIKA-4100 -->
-   <sql>drop table if exists exc_count_a;</sql>
+    <!-- we need to create literal tmp tables in h2 TIKA-4100 -->
+    <sql>drop table if exists exc_count_a;</sql>
     <sql>create table exc_count_a (mime_id_a integer, mime_id_b integer, cnt integer);</sql>
     <sql>insert into exc_count_a (
-    select ma.mime_id mime_id_a, mb.mime_id mime_id_b, count(1) as cnt
-    from exceptions_a ea
-    join profiles_a pa on ea.id=pa.id
-    join profiles_b pb on pb.id=pa.id
-    join mimes ma on pa.mime_id=ma.mime_id
-    join mimes mb on pb.mime_id=mb.mime_id
-    group by ma.mime_id, mb.mime_id
-    );</sql>
+      select ma.mime_id mime_id_a, mb.mime_id mime_id_b, count(1) as cnt
+      from exceptions_a ea
+      join profiles_a pa on ea.id=pa.id
+      join profiles_b pb on pb.id=pa.id
+      join mimes ma on pa.mime_id=ma.mime_id
+      join mimes mb on pb.mime_id=mb.mime_id
+      group by ma.mime_id, mb.mime_id
+      );
+    </sql>
     <sql>update exceptions_compared ec set
-    exc_cnt_a = (
-    select cnt from exc_count_a ea
-      where ec.mime_id_a=ea.mime_id_a and ec.mime_id_b=ea.mime_id_b);</sql>
+      exc_cnt_a = (
+      select cnt from exc_count_a ea
+      where ec.mime_id_a=ea.mime_id_a and ec.mime_id_b=ea.mime_id_b);
+    </sql>
     <sql>drop table exc_count_a</sql>
 
     <sql>drop table if exists exc_count_b;</sql>
@@ -120,11 +122,13 @@
       join mimes ma on pa.mime_id=ma.mime_id
       join mimes mb on pb.mime_id=mb.mime_id
       group by ma.mime_id, mb.mime_id
-      );</sql>
+      );
+    </sql>
     <sql>update exceptions_compared ec set
       exc_cnt_b = (
       select cnt from exc_count_b eb
-      where ec.mime_id_a=eb.mime_id_a and ec.mime_id_b=eb.mime_id_b);</sql>
+      where ec.mime_id_a=eb.mime_id_a and ec.mime_id_b=eb.mime_id_b);
+    </sql>
     <sql>drop table exc_count_b</sql>
 
     <sql>
@@ -186,15 +190,17 @@
     <sql>create table tcc_tmp (mime_id_a integer, mime_id_b integer, cnt long default 0);</sql>
     <!-- num_tokens_a -->
     <sql>insert into tcc_tmp (
-    select pa.mime_id, pb.mime_id, sum(num_tokens) as cnt from profiles_a pa
-    join profiles_b pb on pa.id=pb.id
-    join contents_a c on c.id = pa.id
-    group by pa.mime_id, pb.mime_id
-      );</sql>
+      select pa.mime_id, pb.mime_id, sum(num_tokens) as cnt from profiles_a pa
+      join profiles_b pb on pa.id=pb.id
+      join contents_a c on c.id = pa.id
+      group by pa.mime_id, pb.mime_id
+      );
+    </sql>
     <sql>update token_counts_compared tcc set
-    num_tokens_a = (
-    select cnt from tcc_tmp tmp
-      where tcc.mime_id_a=tmp.mime_id_a and tcc.mime_id_b=tmp.mime_id_b);</sql>
+      num_tokens_a = (
+      select cnt from tcc_tmp tmp
+      where tcc.mime_id_a=tmp.mime_id_a and tcc.mime_id_b=tmp.mime_id_b);
+    </sql>
     <sql>truncate table tcc_tmp;</sql>
 
     <!-- num_tokens_b -->
@@ -203,11 +209,13 @@
       join profiles_a pa on pa.id=pb.id
       join contents_b c on c.id = pb.id
       group by pa.mime_id, pb.mime_id
-      );</sql>
+      );
+    </sql>
     <sql>update token_counts_compared tcc set
       num_tokens_b = (
       select cnt from tcc_tmp tmp
-      where tcc.mime_id_a=tmp.mime_id_a and tcc.mime_id_b=tmp.mime_id_b);</sql>
+      where tcc.mime_id_a=tmp.mime_id_a and tcc.mime_id_b=tmp.mime_id_b);
+    </sql>
     <sql>truncate table tcc_tmp;</sql>
 
     <!-- num_tokens_alphabetic_tokens_a -->
@@ -216,11 +224,13 @@
       join profiles_b pb on pa.id=pb.id
       join contents_a c on c.id = pa.id
       group by pa.mime_id, pb.mime_id
-      );</sql>
+      );
+    </sql>
     <sql>update token_counts_compared tcc set
       num_alphabetic_tokens_a = (
       select cnt from tcc_tmp tmp
-      where tcc.mime_id_a=tmp.mime_id_a and tcc.mime_id_b=tmp.mime_id_b);</sql>
+      where tcc.mime_id_a=tmp.mime_id_a and tcc.mime_id_b=tmp.mime_id_b);
+    </sql>
     <sql>truncate table tcc_tmp;</sql>
 
     <!-- num_alphabetic_tokens_b -->
@@ -229,11 +239,13 @@
       join profiles_a pa on pa.id=pb.id
       join contents_b c on c.id = pb.id
       group by pa.mime_id, pb.mime_id
-      );</sql>
+      );
+    </sql>
     <sql>update token_counts_compared tcc set
       num_alphabetic_tokens_b = (
       select cnt from tcc_tmp tmp
-      where tcc.mime_id_a=tmp.mime_id_a and tcc.mime_id_b=tmp.mime_id_b);</sql>
+      where tcc.mime_id_a=tmp.mime_id_a and tcc.mime_id_b=tmp.mime_id_b);
+    </sql>
     <sql>truncate table tcc_tmp;</sql>
 
     <!-- num_common_tokens_a -->
@@ -242,11 +254,13 @@
       join profiles_b pb on pa.id=pb.id
       join contents_a c on c.id = pa.id
       group by pa.mime_id, pb.mime_id
-      );</sql>
+      );
+    </sql>
     <sql>update token_counts_compared tcc set
       num_common_tokens_a = (
       select cnt from tcc_tmp tmp
-      where tcc.mime_id_a=tmp.mime_id_a and tcc.mime_id_b=tmp.mime_id_b);</sql>
+      where tcc.mime_id_a=tmp.mime_id_a and tcc.mime_id_b=tmp.mime_id_b);
+    </sql>
     <sql>truncate table tcc_tmp;</sql>
 
     <!-- num_common_tokens_b -->
@@ -255,11 +269,13 @@
       join profiles_a pa on pa.id=pb.id
       join contents_b c on c.id = pb.id
       group by pa.mime_id, pb.mime_id
-      );</sql>
+      );
+    </sql>
     <sql>update token_counts_compared tcc set
       num_common_tokens_b = (
       select cnt from tcc_tmp tmp
-      where tcc.mime_id_a=tmp.mime_id_a and tcc.mime_id_b=tmp.mime_id_b);</sql>
+      where tcc.mime_id_a=tmp.mime_id_a and tcc.mime_id_b=tmp.mime_id_b);
+    </sql>
     <sql>drop table tcc_tmp;</sql>
     <sql>
       drop table if exists parse_time_compared;
@@ -294,14 +310,16 @@
     <!-- total parse time a -->
     <sql>create table ptc_tmp (mime_id_a integer, mime_id_b integer, total long default 0);</sql>
     <sql>insert into ptc_tmp (
-    select pa.mime_id, pb.mime_id, sum(pa.elapsed_time_millis) as total from profiles_a pa
-    join profiles_b pb on pa.id=pb.id
-    group by pa. mime_id, pb.mime_id
-      );</sql>
+      select pa.mime_id, pb.mime_id, sum(pa.elapsed_time_millis) as total from profiles_a pa
+      join profiles_b pb on pa.id=pb.id
+      group by pa. mime_id, pb.mime_id
+      );
+    </sql>
     <sql>update parse_time_compared ptc set
-    total_a = (
-    select total from ptc_tmp tmp
-      where ptc.mime_id_a=tmp.mime_id_a and ptc.mime_id_b=tmp.mime_id_b);</sql>
+      total_a = (
+      select total from ptc_tmp tmp
+      where ptc.mime_id_a=tmp.mime_id_a and ptc.mime_id_b=tmp.mime_id_b);
+    </sql>
     <sql>truncate table ptc_tmp;</sql>
 
     <!-- total parse time b -->
@@ -309,11 +327,13 @@
       select pa.mime_id, pb.mime_id, sum(pb.elapsed_time_millis) as total from profiles_b pb
       join profiles_a pa on pb.id=pa.id
       group by pa.mime_id, pb.mime_id
-      );</sql>
+      );
+    </sql>
     <sql>update parse_time_compared ptc set
       total_b = (
       select total from ptc_tmp tmp
-      where ptc.mime_id_a=tmp.mime_id_a and ptc.mime_id_b=tmp.mime_id_b);</sql>
+      where ptc.mime_id_a=tmp.mime_id_a and ptc.mime_id_b=tmp.mime_id_b);
+    </sql>
     <sql>drop table ptc_tmp;</sql>
     <sql>
       update parse_time_compared ptc set prcnt_increase=(100.0 *
