@@ -454,7 +454,7 @@
     <sql>
       select concat(ma.mime_string, ' -&gt; ', mb.mime_string) as
       MIME_A_TO_MIME_B,
-      file_path,
+      file_path, a.file_name,
       c.length as CONTAINER_LENGTH,
       a.file_name
       from profiles_a a
@@ -576,6 +576,7 @@
 
     <sql>
       select file_path as FILE_PATH,
+      pa.file_name as FILE_NAME_A,
       c.length as CONTAINER_LENGTH,
       ca.NUM_TOKENS as NUM_TOKENS_A,
       cb.NUM_TOKENS as NUM_TOKENS_B,
@@ -629,6 +630,7 @@
     <sql>
       select
       file_path,
+      pa.file_name as FILE_NAME_A,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_TYPE_A,
       mb.mime_string as MIME_TYPE_B,
@@ -652,6 +654,7 @@
 
     <sql>
       select file_path,
+      pa.file_name as FILE_NAME_A,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_TYPE_A,
       mb.mime_string as MIME_TYPE_B,
@@ -723,6 +726,7 @@
 
     <sql>
       select file_path,
+      pa.file_name as FILE_NAME_A,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_TYPE_A,
       mb.mime_string as MIME_TYPE_B,
@@ -764,6 +768,7 @@
 
     <sql>
       select file_path,
+      p.file_name as FILE_NAME_A,
       c.length as CONTAINER_LENGTH,
       mime_string as MIME_TYPE,
       orig_stack_trace, sort_stack_trace
@@ -783,6 +788,7 @@
 
     <sql>
       select file_path,
+      p.file_name as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       mime_string as MIME_TYPE,
       orig_stack_trace, sort_stack_trace
@@ -940,6 +946,7 @@
 
     <sql>
       select file_path,
+      pa.file_name as FILE_NAME_A,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -990,6 +997,7 @@
 
     <sql>
       select file_path,
+      pa.file_name as FILE_NAME_A,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -1052,6 +1060,7 @@
 
     <sql>
       select file_path,
+      pa.file_name as FILE_NAME_A,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -1155,6 +1164,7 @@
 
     <sql>
       select file_path,
+      pa.file_name as FILE_NAME_A,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -1184,6 +1194,7 @@
 
     <sql>
       select file_path,
+      pa.file_name as FILE_NAME_A,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -1306,6 +1317,7 @@
 
     <sql>
       select file_path,
+      pa.file_name as FILE_NAME_A,
       ma.mime_string as mime_string_a,
       mb.mime_string as mime_string_b,
       pa.num_metadata_values as num_metadata_values_a,
@@ -1349,7 +1361,9 @@
           format="xlsx"
           includeSql="true">
     <sql>
-      select file_path, c.length as CONTAINTER_LENGTH,
+      select file_path,
+      pa.file_name as FILE_NAME_A,
+      c.length as CONTAINTER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
       pa.elapsed_time_millis as TOTAL_MILLIS_A,
