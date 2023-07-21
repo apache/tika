@@ -470,7 +470,9 @@ public class ExtractComparer extends AbstractProfiler {
         if (digestA == null) {
             return -1;
         }
+        String resourceName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
 
+        int cand = -1;
         for (int i = 0; i < metadataListB.size(); i++) {
             if (handledB.contains(i)) {
                 continue;
@@ -478,10 +480,13 @@ public class ExtractComparer extends AbstractProfiler {
             Metadata mB = metadataListB.get(i);
             String digestB = mB.get(sharedDigestKey);
             if (digestA.equalsIgnoreCase(digestB)) {
-                return i;
+                cand = i;
+                if (resourceName != null && resourceName.equals(mB.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
+                    return i;
+                }
             }
         }
-        return -1;
+        return cand;
     }
 
     private void writeContrasts(Map<Cols, String> data, ContrastStatistics contrastStatistics) {
