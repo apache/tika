@@ -1,0 +1,18 @@
+#
+# $RCSfile: properties,v $
+#
+# Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved.
+#
+# Use is subject to license terms.
+#
+# $Revision: 1.2 $
+# $Date: 2005/05/11 00:09:34 $
+# $State: Exp $
+#
+# Internationalization file for com.github.jaiimageio.impl.plugins.png
+
+CLibPNGImageReader0=Decoder cannot decode input.
+
+CLibPNGImageWriteParam0=Best Compression
+CLibPNGImageWriteParam1=Best Speed
+CLibPNGImageWriteParam2=No Compression

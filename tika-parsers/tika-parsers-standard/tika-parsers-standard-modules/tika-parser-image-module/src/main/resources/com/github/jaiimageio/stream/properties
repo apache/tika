@@ -1,0 +1,21 @@
+#
+# $RCSfile: properties,v $
+#
+# Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved.
+#
+# Use is subject to license terms.
+#
+# $Revision: 1.1 $
+# $Date: 2005/02/11 05:01:21 $
+# $State: Exp $
+#
+# Internationalization file for com.github.jaiimageio.stream
+
+RawImageInputStream0=Image offset and dimension arrays must be non-null and \
+have the same length.
+RawImageInputStream1=Incorrect parser configuration.
+RawImageInputStream2=Number of width elements does not equal number of \
+height elements.
+RawImageInputStream3=Image index is out of bounds.
+RawImageInputStream4=Cannot create a ColorModel for the supplied SampleModel.
+
