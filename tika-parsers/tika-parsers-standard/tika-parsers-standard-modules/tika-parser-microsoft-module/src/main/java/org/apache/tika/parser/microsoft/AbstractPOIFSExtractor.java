@@ -45,6 +45,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 abstract class AbstractPOIFSExtractor {
     protected final Metadata parentMetadata;//metadata of the parent/container document
@@ -204,8 +205,14 @@ abstract class AbstractPOIFSExtractor {
             handleCompObj(dir, type, rName, metadata, xhtml, outputHtml);
         } else {
             metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
-            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                    rName + '.' + type.getExtension());
+            if (! StringUtils.isBlank(rName)) {
+                if (StringUtils.isBlank(type.getExtension())) {
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName);
+                } else {
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
+                            rName + '.' + type.getExtension());
+                }
+            }
             parseEmbedded(dir, xhtml, metadata, outputHtml);
         }
     }
@@ -219,6 +226,10 @@ abstract class AbstractPOIFSExtractor {
 
         // Grab the contents and process
         DocumentEntry contentsEntry;
+        /*if (dir.hasEntry("CorelDRAW")) {
+            contentsEntry = (DocumentEntry) dir.getEntry("CorelDRAW");}
+         */
+        //TODO: modify getEntry to case insensitive when available in POI
         try {
             contentsEntry = (DocumentEntry) dir.getEntry("CONTENTS");
         } catch (FileNotFoundException fnfe1) {
@@ -229,6 +240,7 @@ abstract class AbstractPOIFSExtractor {
                 return;
             }
         }
+
         int length = contentsEntry.getSize();
         DocumentInputStream inp = null;
         try {

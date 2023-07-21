@@ -63,6 +63,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
+import org.apache.tika.parser.microsoft.SummaryExtractor;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
@@ -337,9 +338,16 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             POIFSDocumentType type = POIFSDocumentType.detectType(root);
 
             String packageEntryName = getPackageEntryName(root);
+            try {
+                SummaryExtractor summaryExtractor = new SummaryExtractor(metadata);
+                summaryExtractor.parseSummaries(root);
+            } catch (TikaException e) {
+                //swallow -- things happened
+            }
             if (packageEntryName != null) {
                 //OLE 2.0
                 updateMetadata(metadata, embeddedPartMetadata);
+
                 stream = TikaInputStream.get(fs.createDocumentInputStream(packageEntryName));
                 if (embeddedExtractor.shouldParseEmbedded(metadata)) {
                     embeddedExtractor
@@ -412,6 +420,14 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         if (root.hasEntry("package")) {
             return "package";
         }
+        /*
+            raw CorelDraw stream may be in an ole bundle
+            but there can be other resources for the image
+            in other streams under root...think about this...
+            see: AZG2X4VXB3KIEDT3OVZC4R645KU5VSOF
+        if (root.hasEntry("CorelDRAW")) {
+            return "CorelDRAW";
+        }*/
         return null;
     }
 

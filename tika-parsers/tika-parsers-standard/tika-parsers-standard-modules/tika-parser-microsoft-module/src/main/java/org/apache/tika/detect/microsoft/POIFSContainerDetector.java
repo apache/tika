@@ -341,6 +341,8 @@ public class POIFSContainerDetector implements Detector {
         } else if (ucNames.contains(CONTENTS) && ucNames.contains(SPELLING)) {
             // Newer Works files
             return WPS;
+        } else if (ucNames.contains(EQUATION_NATIVE)) {
+            return MS_EQUATION;
         } else if (ucNames.contains(CONTENTS) && ucNames.contains(OBJ_INFO)) {
             return COMP_OBJ;
         } else if (ucNames.contains(CONTENTS) && ucNames.contains(COMP_OBJ_STRING)) {
@@ -372,8 +374,6 @@ public class POIFSContainerDetector implements Detector {
                     return MPP;
                 }
             }
-        } else if (ucNames.contains(EQUATION_NATIVE)) {
-            return MS_EQUATION;
         } else if (ucNames.contains(LAYER)) {
             //in one test file, also saw LayerSmallImage and LayerLargeImage
             //maybe add those if we get false positives?
