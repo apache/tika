@@ -631,6 +631,7 @@
       select
       file_path,
       pa.file_name as FILE_NAME_A,
+      pb.file_name as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_TYPE_A,
       mb.mime_string as MIME_TYPE_B,
@@ -655,6 +656,7 @@
     <sql>
       select file_path,
       pa.file_name as FILE_NAME_A,
+      pb.file_name as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_TYPE_A,
       mb.mime_string as MIME_TYPE_B,
@@ -727,6 +729,7 @@
     <sql>
       select file_path,
       pa.file_name as FILE_NAME_A,
+      pb.file_name as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_TYPE_A,
       mb.mime_string as MIME_TYPE_B,
@@ -947,6 +950,7 @@
     <sql>
       select file_path,
       pa.file_name as FILE_NAME_A,
+      pb.file_name as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -998,6 +1002,7 @@
     <sql>
       select file_path,
       pa.file_name as FILE_NAME_A,
+      pb.file_name as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -1061,6 +1066,7 @@
     <sql>
       select file_path,
       pa.file_name as FILE_NAME_A,
+      pb.file_name as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -1165,6 +1171,7 @@
     <sql>
       select file_path,
       pa.file_name as FILE_NAME_A,
+      pb.file_name as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -1195,6 +1202,7 @@
     <sql>
       select file_path,
       pa.file_name as FILE_NAME_A,
+      pb.file_name as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -1318,6 +1326,7 @@
     <sql>
       select file_path,
       pa.file_name as FILE_NAME_A,
+      pb.file_name as FILE_NAME_B,
       ma.mime_string as mime_string_a,
       mb.mime_string as mime_string_b,
       pa.num_metadata_values as num_metadata_values_a,
@@ -1363,6 +1372,7 @@
     <sql>
       select file_path,
       pa.file_name as FILE_NAME_A,
+      pb.file_name as FILE_NAME_B,
       c.length as CONTAINTER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
