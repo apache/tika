@@ -113,7 +113,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         Set<MediaType> zipSpecializations = new HashSet<>();
         for (String mediaTypeString : new String[]{
                 //specializations of ZIP
-                "application/bizagi-modeler", "application/epub+zip", "application/java-archive",
+                "application/bizagi-modeler", "application/epub+zip",
+                "application/hwp+zip",
+                "application/java-archive",
                 "application/vnd.adobe.air-application-installer-package+zip",
                 "application/vnd.android.package-archive", "application/vnd.apple.iwork",
                 "application/vnd.apple.keynote", "application/vnd.apple.numbers",

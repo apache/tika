@@ -306,7 +306,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.24.0</google.cloud.version>
-    <aws.version>1.12.511</aws.version>
+    <aws.version>1.12.512</aws.version>
     <asm.version>9.5</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -356,7 +356,7 @@
     <jna.version>5.13.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.10.0-RC2</junit5.version>
+    <junit5.version>5.10.0</junit5.version>
     <junrar.version>7.5.5</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.20.0</log4j2.version>
@@ -931,7 +931,7 @@
       <dependency>
         <groupId>org.xerial.snappy</groupId>
         <artifactId>snappy-java</artifactId>
-        <version>1.1.10.2</version>
+        <version>1.1.10.3</version>
       </dependency>
       <dependency>
         <groupId>xerces</groupId>
