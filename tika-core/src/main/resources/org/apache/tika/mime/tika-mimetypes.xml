@@ -4109,7 +4109,11 @@
     <_comment>Hangul Word Processor File v5</_comment>
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
-
+  <mime-type type="application/hwp+zip">
+    <_comment>Hangul Word Processor File, zip based</_comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.hwpx"/>
+  </mime-type>
   <mime-type type="application/x-ibooks+zip">
     <sub-class-of type="application/epub+zip" />
     <acronym>iBooks</acronym>
