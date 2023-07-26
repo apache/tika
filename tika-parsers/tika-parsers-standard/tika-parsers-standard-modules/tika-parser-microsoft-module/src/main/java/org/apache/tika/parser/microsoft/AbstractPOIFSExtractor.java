@@ -16,12 +16,8 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Iterator;
-
-import javax.print.Doc;
 
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.poi.hpsf.ClassID;
