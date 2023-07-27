@@ -861,7 +861,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.26.0</version>
+        <version>0.27.1</version>
       </dependency>
       <dependency>
         <groupId>org.opengis</groupId>
