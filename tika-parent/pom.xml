@@ -351,7 +351,7 @@
     <jbig2.version>3.0.4</jbig2.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
-    <jetty.version>9.4.51.v20230217</jetty.version>
+    <jetty.version>12.0.0</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.13.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
