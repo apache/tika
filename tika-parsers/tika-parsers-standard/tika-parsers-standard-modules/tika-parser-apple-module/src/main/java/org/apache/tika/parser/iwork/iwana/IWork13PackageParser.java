@@ -58,6 +58,7 @@ public class IWork13PackageParser extends AbstractParser {
      * All iWork 13 files contain this, so we can detect based on it
      */
     public final static String IWORK13_COMMON_ENTRY = "Metadata/BuildVersionHistory.plist";
+    public final static String IWORK13_MAIN_ENTRY = "Index/Document.iwa";
 
     public static final String IWORKS_PREFIX = "iworks:";
     public static final Property IWORKS_DOC_ID =
@@ -132,6 +133,9 @@ public class IWork13PackageParser extends AbstractParser {
                     embeddedDocumentExtractor);
             entry = zipStream.getNextEntry();
         }
+        if (type == null) {
+            type = IWork13DocumentType.UNKNOWN13.getType();
+        }
         return type;
     }
 
@@ -156,6 +160,9 @@ public class IWork13PackageParser extends AbstractParser {
             } catch (Exception e) {
                 ex = e;
             }
+        }
+        if (type == null) {
+            type = IWork13DocumentType.UNKNOWN13.getType();
         }
         if (ex != null) {
             throw new TikaException("problem processing zip file", ex);
@@ -310,11 +317,11 @@ public class IWork13PackageParser extends AbstractParser {
             }
 
             // Is it the main document?
-            if (name.equals("Index/Document.iwa")) {
+            if (name.equals(IWORK13_MAIN_ENTRY)) {
                 // TODO Decode the snappy stream, and check for the Message Type
                 // =     2 (TN::SheetArchive), it is a numbers file;
                 // = 10000 (TP::DocumentArchive), that's a pages file
-                return UNKNOWN13.getType();
+                return null;
             }
 
             // Unknown
