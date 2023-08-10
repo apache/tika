@@ -13,6 +13,8 @@ Release 2.8.1 - ???
    * Fixed write limit bug in RecursiveParserWrapper (TIKA-4055).
 
    * Add mime detection for many files with thanks to Gregory Lepore (TIKA-3992).
+   
+   * Fixed iWork 13 keynote detection on files with wrong extension (TIKA-4111).
 
 Release 2.8.0 - 5/11/2023
 
