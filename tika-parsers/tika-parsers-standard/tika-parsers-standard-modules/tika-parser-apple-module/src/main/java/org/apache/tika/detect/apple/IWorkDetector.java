@@ -113,6 +113,10 @@ public class IWorkDetector implements ZipContainerDetector {
         if (entryNames == null) {
             return null;
         }
+        // general iwork 13
+        if (entryNames.names.contains(IWork13PackageParser.IWORK13_MAIN_ENTRY)) {
+            return IWork13PackageParser.IWork13DocumentType.UNKNOWN13.getType();
+        }
         //general iworks
         if (entryNames.names.contains(IWorkPackageParser.IWORK_COMMON_ENTRY)) {
             return MediaType.application("vnd.apple.iwork");
