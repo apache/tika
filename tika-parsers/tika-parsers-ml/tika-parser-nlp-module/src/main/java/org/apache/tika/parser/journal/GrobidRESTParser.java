@@ -41,7 +41,7 @@ public class GrobidRESTParser {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrobidRESTParser.class);
 
-    private static final String GROBID_REST_HOST = "http://localhost:8080";
+    private static final String GROBID_REST_HOST = "http://localhost:8070";
     private static final String GROBID_ISALIVE_PATH = "/api/isalive";
     private static final String GROBID_PROCESSHEADER_PATH = "/api/processHeaderDocument";
     private static final String GROBID_LEGACY_ISALIVE_PATH = "/grobid";

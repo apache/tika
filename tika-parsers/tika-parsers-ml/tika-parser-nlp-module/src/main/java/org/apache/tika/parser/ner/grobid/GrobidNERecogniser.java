@@ -49,7 +49,7 @@ public class GrobidNERecogniser implements NERecogniser {
         }
         };
     private static final Logger LOG = LoggerFactory.getLogger(GrobidNERecogniser.class);
-    private static final String GROBID_REST_HOST = "http://localhost:8080";
+    private static final String GROBID_REST_HOST = "http://localhost:8060";
     private static boolean available = false;
     private String restHostUrlStr;
 
