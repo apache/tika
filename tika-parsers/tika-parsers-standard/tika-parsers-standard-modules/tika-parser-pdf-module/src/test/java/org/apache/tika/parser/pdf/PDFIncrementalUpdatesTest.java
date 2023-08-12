@@ -20,14 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import org.apache.pdfbox.io.MemoryUsageSetting;
+import org.apache.pdfbox.io.RandomAccessBuffer;
 import org.apache.pdfbox.io.RandomAccessRead;
-import org.apache.pdfbox.io.ScratchFile;
+
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -132,17 +131,12 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
 
 
     private List<StartXRefOffset> getOffsets(String s) throws IOException {
+        //TODO PDFBOX30 replace RandomAccessBuffer with RandomAccessReadBuffer
         try (RandomAccessRead randomAccessRead =
-                     getRandomAccessRead(s.getBytes(StandardCharsets.US_ASCII))) {
+                new RandomAccessBuffer(s.getBytes(StandardCharsets.US_ASCII))) {
             StartXRefScanner scanner = new StartXRefScanner(randomAccessRead);
             return scanner.scan();
         }
-    }
-
-    RandomAccessRead getRandomAccessRead(byte[] bytes) throws IOException {
-        MemoryUsageSetting memUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
-        ScratchFile scratchFile = new ScratchFile(memUsageSetting);
-        return scratchFile.createBuffer(new ByteArrayInputStream(bytes));
     }
 
     @Test
