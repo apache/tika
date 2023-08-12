@@ -25,6 +25,7 @@ import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.xmpbox.XMPMetadata;
 import org.apache.xmpbox.schema.DublinCoreSchema;
 import org.apache.xmpbox.schema.XMPBasicSchema;
+import org.apache.xmpbox.type.BadFieldValueException;
 import org.apache.xmpbox.xml.DomXmpParser;
 
 import org.apache.tika.exception.TikaException;
@@ -32,7 +33,6 @@ import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.XMP;
-import org.apache.xmpbox.type.BadFieldValueException;
 
 /**
  * XMP Metadata Extractor based on Apache XmpBox.
