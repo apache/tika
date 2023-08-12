@@ -337,7 +337,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
     }
 
     @Override
-    protected void showGlyph(Matrix textRenderingMatrix, PDFont font, int code, String unicode,
+    protected void showGlyph(Matrix textRenderingMatrix, PDFont font, int code,
                              Vector displacement) throws IOException {
 
         RenderingMode renderingMode = getGraphicsState().getTextState().getRenderingMode();
