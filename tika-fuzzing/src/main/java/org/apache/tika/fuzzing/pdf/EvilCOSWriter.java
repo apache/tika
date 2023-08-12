@@ -88,6 +88,8 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
+//TODO PDFBOX30 replace COSWriterXRefEntry with XReferenceEntry (and much more)
+
 public class EvilCOSWriter implements ICOSVisitor, Closeable {
 
     /**
