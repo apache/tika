@@ -26,7 +26,6 @@ import java.util.List;
 
 import org.apache.pdfbox.io.RandomAccessBuffer;
 import org.apache.pdfbox.io.RandomAccessRead;
-
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -128,7 +127,6 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
         String s = "blah blah startxstartxref 123456\n%%EOFblah";
         assertEquals(1, getOffsets(s).size());
     }
-
 
     private List<StartXRefOffset> getOffsets(String s) throws IOException {
         //TODO PDFBOX30 replace RandomAccessBuffer with RandomAccessReadBuffer
