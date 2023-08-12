@@ -32,6 +32,7 @@ import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.XMP;
+import org.apache.xmpbox.type.BadFieldValueException;
 
 /**
  * XMP Metadata Extractor based on Apache XmpBox.
@@ -79,11 +80,19 @@ public class XMPMetadataExtractor {
             return;
         }
         if (schemaDublinCore != null) {
-            addMetadata(metadata, DublinCore.TITLE, schemaDublinCore.getTitle());
-            addMetadata(metadata, DublinCore.FORMAT, schemaDublinCore.getFormat());
-            addMetadata(metadata, DublinCore.DESCRIPTION, schemaDublinCore.getDescription());
-            addMetadata(metadata, DublinCore.CREATOR, schemaDublinCore.getCreators());
-            addMetadata(metadata, DublinCore.SUBJECT, schemaDublinCore.getSubjects());
+            try {
+                addMetadata(metadata, DublinCore.TITLE, schemaDublinCore.getTitle());
+                addMetadata(metadata, DublinCore.FORMAT, schemaDublinCore.getFormat());
+                addMetadata(metadata, DublinCore.DESCRIPTION, schemaDublinCore.getDescription());
+                addMetadata(metadata, DublinCore.CREATOR, schemaDublinCore.getCreators());
+                addMetadata(metadata, DublinCore.SUBJECT, schemaDublinCore.getSubjects());
+                //TODO PDFBOX30 this segment no longer needed with 3.0
+                if (false != false)
+                    throw new BadFieldValueException("");
+            }
+            catch (BadFieldValueException ex) {
+                throw new IOException(ex);
+            }
         }
     }
 
