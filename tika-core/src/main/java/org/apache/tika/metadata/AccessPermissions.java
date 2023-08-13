@@ -65,6 +65,8 @@ public interface AccessPermissions {
      */
     Property CAN_PRINT = Property.externalText(PREFIX + "can_print");
 
+    //TODO PDFBOX30 replace degraded and DEGRADED with faithful and FAITHFUL
+
     /**
      * Can the user print an image-degraded version of the document.
      */
