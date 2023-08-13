@@ -44,6 +44,8 @@ public class TSDParserTest extends TikaTest {
         assertEquals("application/pdf", list.get(1).get(Metadata.CONTENT_TYPE));
         assertNotNull(list.get(1).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
         //TODO PDFBOX30 adjust the assertion below, compare the old and new stack traces
+        // in PDFBox 3.0 the only PDFBox related line is
+        // "org.apache.pdfbox.io.RandomAccessReadBuffer.<init>"
         assertContains("org.apache.pdfbox.pdmodel.PDDocument.load",
                 list.get(1).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
     }
