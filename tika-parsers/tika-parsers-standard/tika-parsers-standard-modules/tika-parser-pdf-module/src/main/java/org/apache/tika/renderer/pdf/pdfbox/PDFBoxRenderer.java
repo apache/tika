@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
@@ -100,6 +99,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
         if (tis.getOpenContainer() != null) {
             pdDocument = (PDDocument) tis.getOpenContainer();
         } else {
+            //TODO PDFBOX30 use Loader.loadPDF(new RandomAccessReadBuffer(is))
             pdDocument = PDDocument.load(is);
             mustClose = true;
         }
@@ -184,7 +184,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
             } catch (IOException ex) {
                 LOG.warn("couldn't delete " + tmpFile, ex);
             }
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
         return new RenderResult(RenderResult.STATUS.SUCCESS, id, tmpFile, metadata);
     }
