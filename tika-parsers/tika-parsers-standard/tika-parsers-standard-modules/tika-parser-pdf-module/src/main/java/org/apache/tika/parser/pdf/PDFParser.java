@@ -187,6 +187,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
             }
 
+            //TODO PDFBOX30 replace "memoryUsageSetting" with "memoryUsageSetting.streamCache"
             pdfDocument = getPDDocument(stream, tstream, password, memoryUsageSetting, metadata,
                     context);
 
@@ -259,11 +260,12 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         //Do we want to also check that this is a portfolio PDF/contains a "collection"?
         for (COSObject obj : fileSpecs) {
             if (obj.getObject() instanceof COSDictionary) {
-                COSBase relationship = obj.getDictionaryObject(AF_RELATIONSHIP);
+                COSDictionary dict = (COSDictionary) obj.getObject();
+                COSBase relationship = dict.getDictionaryObject(AF_RELATIONSHIP);
                 if (relationship != null && relationship.equals(ENCRYPTED_PAYLOAD)) {
                     String name = "";
-                    COSBase uf = obj.getDictionaryObject(COSName.UF);
-                    COSBase f = obj.getDictionaryObject(COSName.F);
+                    COSBase uf = dict.getDictionaryObject(COSName.UF);
+                    COSBase f = dict.getDictionaryObject(COSName.F);
                     if (uf != null && uf instanceof COSString) {
                         name = ((COSString)uf).getString();
                     } else if (f != null && f instanceof COSString) {
@@ -294,6 +296,8 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         List<StartXRefOffset> xRefOffsets = new ArrayList<>();
         //TODO -- can we use the PDFBox parser's RandomAccessRead
         //so that we don't have to reopen from file?
+        //TODO PDFBOX30 replace RandomAccessBufferedFileInputStream
+        // with RandomAccessReadBufferedFile
         try (RandomAccessRead ra =
                      new RandomAccessBufferedFileInputStream(tikaInputStream.getFile())) {
             StartXRefScanner xRefScanner = new StartXRefScanner(ra);
@@ -381,6 +385,10 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_REASON,
                         signature.getReason(), metadata);
                 hasSignature = true;
+                //TODO PDFBOX30 remove this segment and the exception handling after migration
+                if (false != false) {
+                    throw new IOException();
+                }
             }
         } catch (IOException e) {
             //swallow
@@ -452,6 +460,8 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 tstream, metadata, parseContext, PageRangeRequest.RENDER_ALL);
     }
 
+    //TODO PDFBOX30 replace "MemoryUsageSetting memoryUsageSetting" with
+    // "StreamCacheCreateFunction streamCacheCreateFunction"
     protected PDDocument getPDDocument(InputStream stream, TikaInputStream tstream, String password,
                                        MemoryUsageSetting memoryUsageSetting, Metadata metadata,
                                        ParseContext context)
@@ -480,12 +490,16 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         }
     }
 
+    //TODO PDFBOX30 replace "MemoryUsageSetting memoryUsageSetting" with
+    // "StreamCacheCreateFunction streamCacheCreateFunction"
     protected PDDocument getPDDocument(InputStream inputStream, String password,
                                        MemoryUsageSetting memoryUsageSetting, Metadata metadata,
                                        ParseContext parseContext) throws IOException {
         return PDDocument.load(inputStream, password, memoryUsageSetting);
     }
 
+    //TODO PDFBOX30 replace "MemoryUsageSetting memoryUsageSetting" with
+    // "StreamCacheCreateFunction streamCacheCreateFunction"
     protected PDDocument getPDDocument(Path path, String password,
                                        MemoryUsageSetting memoryUsageSetting, Metadata metadata,
                                        ParseContext parseContext) throws IOException {
@@ -573,7 +587,8 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         metadata.set(AccessPermissions.CAN_MODIFY_ANNOTATIONS,
                 Boolean.toString(ap.canModifyAnnotations()));
         metadata.set(AccessPermissions.CAN_PRINT, Boolean.toString(ap.canPrint()));
-        metadata.set(AccessPermissions.CAN_PRINT_DEGRADED, Boolean.toString(ap.canPrintDegraded()));
+        //TODO PDFBOX30 replace "CAN_PRINT_DEGRADED" with "CAN_PRINT_FAITHFUL"
+        metadata.set(AccessPermissions.CAN_PRINT_DEGRADED, Boolean.toString(ap.canPrintFaithful()));
         metadata.set(PDF.IS_ENCRYPTED, Boolean.toString(document.isEncrypted()));
 
         if (document.getDocumentCatalog().getLanguage() != null) {
