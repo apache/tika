@@ -46,6 +46,7 @@ public class VectorGraphicsOnlyPDFRenderer extends PDFRenderer {
     /**
      * Returns a new PageDrawer instance, using the given parameters. May be overridden.
      */
+    @Override
     protected PageDrawer createPageDrawer(PageDrawerParameters parameters) throws IOException {
         PageDrawer pageDrawer = new VectorGraphicsOnlyDrawer(parameters);
         pageDrawer.setAnnotationFilter(getAnnotationsFilter());
@@ -102,6 +103,7 @@ public class VectorGraphicsOnlyPDFRenderer extends PDFRenderer {
         public void showTextStrings(COSArray array) throws IOException {
         }
 
+        //TODO PDFBOX30 remove exception
         @Override
         protected void applyTextAdjustment(float tx, float ty) throws IOException {
         }
@@ -110,6 +112,7 @@ public class VectorGraphicsOnlyPDFRenderer extends PDFRenderer {
         protected void showText(byte[] string) throws IOException {
         }
 
+        //TODO PDFBOX30 remove
         @Override
         protected void showGlyph(Matrix textRenderingMatrix, PDFont font, int code, String unicode,
                                  Vector displacement) throws IOException {
@@ -120,11 +123,13 @@ public class VectorGraphicsOnlyPDFRenderer extends PDFRenderer {
                                  Vector displacement) throws IOException {
         }
 
+        //TODO PDFBOX30 remove
         @Override
         protected void showFontGlyph(Matrix textRenderingMatrix, PDFont font, int code,
                                      String unicode, Vector displacement) throws IOException {
         }
 
+        //TODO PDFBOX30 remove
         @Override
         protected void showType3Glyph(Matrix textRenderingMatrix, PDType3Font font, int code,
                                       String unicode, Vector displacement) throws IOException {
