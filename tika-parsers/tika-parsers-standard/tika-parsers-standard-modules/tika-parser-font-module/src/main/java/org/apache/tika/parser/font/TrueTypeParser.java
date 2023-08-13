@@ -63,6 +63,7 @@ public class TrueTypeParser extends AbstractParser {
         TrueTypeFont font = null;
         try {
             TTFParser parser = new TTFParser();
+            //TODO PDFBOX30 use new RandomAccessReadBufferedFile and new RandomAccessReadBuffer
             if (tis != null && tis.hasFile()) {
                 font = parser.parse(tis.getFile());
             } else {
