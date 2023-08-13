@@ -1397,9 +1397,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     @Override
-    protected void showGlyph(Matrix textRenderingMatrix, PDFont font, int code, String unicode,
+    protected void showGlyph(Matrix textRenderingMatrix, PDFont font, int code,
                              Vector displacement) throws IOException {
-        super.showGlyph(textRenderingMatrix, font, code, unicode, displacement);
+        super.showGlyph(textRenderingMatrix, font, code, displacement);
+        String unicode = font.toUnicode(code);
         if (unicode == null || unicode.isEmpty()) {
             unmappedUnicodeCharsPerPage++;
             totalUnmappedUnicodeCharacters++;
