@@ -91,6 +91,8 @@ public class POIFSContainerDetector implements Detector {
      */
     public static final MediaType MS_EQUATION = application("vnd.ms-equation");
 
+    public static final String OCX_NAME = "\u0003OCXNAME";
+
     /**
      * Microsoft Excel
      */
@@ -343,6 +345,10 @@ public class POIFSContainerDetector implements Detector {
             return WPS;
         } else if (ucNames.contains(EQUATION_NATIVE)) {
             return MS_EQUATION;
+        } else if (ucNames.contains(OCX_NAME)) {
+            //active x control should be parsed as OLE, not COMP_OBJ -- TIKA-4091
+            //TODO -- create a mime for active x
+            return OLE;
         } else if (ucNames.contains(CONTENTS) && ucNames.contains(OBJ_INFO)) {
             return COMP_OBJ;
         } else if (ucNames.contains(CONTENTS) && ucNames.contains(COMP_OBJ_STRING)) {

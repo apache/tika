@@ -174,4 +174,6 @@ public interface Office {
      * Word.Document.12 or AcroExch.Document.DC
      */
     Property PROG_ID = Property.internalText("msoffice:progID");
+
+    Property OCX_NAME = Property.internalText("msoffice:ocxName");
 }

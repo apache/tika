@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.poi.hpsf.ClassID;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
@@ -27,6 +28,8 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
+import org.apache.poi.util.IOUtils;
+import org.apache.poi.util.StringUtil;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaConfig;
@@ -36,6 +39,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
@@ -48,6 +52,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 
 abstract class AbstractPOIFSExtractor {
+
+    private static final String OCX_NAME = "\u0003OCXNAME";
     protected final Metadata parentMetadata;//metadata of the parent/container document
     protected final OfficeParserConfig officeParserConfig;
     protected final ParseContext context;
@@ -199,6 +205,7 @@ abstract class AbstractPOIFSExtractor {
         }
         POIFSDocumentType type = POIFSDocumentType.detectType(dir);
         String rName = (resourceName == null) ? dir.getName() : resourceName;
+        extractOCXName(dir, metadata);
         if (type == POIFSDocumentType.OLE10_NATIVE) {
             handleOLENative(dir, type, rName, metadata, xhtml, outputHtml);
         } else if (type == POIFSDocumentType.COMP_OBJ) {
@@ -217,6 +224,35 @@ abstract class AbstractPOIFSExtractor {
         }
     }
 
+    private void extractOCXName(DirectoryEntry dir, Metadata metadata) {
+        if (! dir.hasEntry(OCX_NAME)) {
+            return;
+        }
+        try {
+            Entry e = dir.getEntry(OCX_NAME);
+            if (!e.isDocumentEntry()) {
+                return;
+            }
+            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+            try (DocumentInputStream dis = new DocumentInputStream((DocumentEntry) e)) {
+                IOUtils.copy(dis, bos);
+            }
+            byte[] bytes = bos.toByteArray();
+            int charCount = (bytes.length - 4);
+            if (charCount < 0) {
+                return;
+            }
+            if (charCount % 2 != 0) {
+                return;
+            }
+            charCount /= 2;
+            String ocxName = StringUtil.getFromUnicodeLE0Terminated(bytes, 0, charCount);
+            metadata.set(Office.OCX_NAME, ocxName);
+        } catch (IOException e) {
+            //log this?
+        }
+    }
+
     private void handleCompObj(DirectoryEntry dir, POIFSDocumentType type, String rName,
                                Metadata metadata, XHTMLContentHandler xhtml, boolean outputHtml)
             throws IOException, SAXException {
@@ -224,21 +260,19 @@ abstract class AbstractPOIFSExtractor {
         //getCommand() and getFileName() exist for OLE 2.0 to populate
         //TikaCoreProperties.ORIGINAL_RESOURCE_NAME
 
+        String contentsEntryName = getContentsEntryName(dir);
+        if (contentsEntryName == null) {
+            //log or record exception?
+            return;
+        }
         // Grab the contents and process
         DocumentEntry contentsEntry;
-        /*if (dir.hasEntry("CorelDRAW")) {
-            contentsEntry = (DocumentEntry) dir.getEntry("CorelDRAW");}
-         */
-        //TODO: modify getEntry to case insensitive when available in POI
+
         try {
-            contentsEntry = (DocumentEntry) dir.getEntry("CONTENTS");
-        } catch (FileNotFoundException fnfe1) {
-            try {
-                contentsEntry = (DocumentEntry) dir.getEntry("Contents");
-            } catch (FileNotFoundException fnfe2) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(fnfe2, parentMetadata);
-                return;
-            }
+            contentsEntry = (DocumentEntry) dir.getEntry(contentsEntryName);
+        } catch (FileNotFoundException fnfe) {
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(fnfe, parentMetadata);
+            return;
         }
 
         int length = contentsEntry.getSize();
@@ -270,6 +304,26 @@ abstract class AbstractPOIFSExtractor {
         } finally {
             inp.close();
         }
+    }
+
+    private String getContentsEntryName(DirectoryEntry dir) {
+        /*
+        if (dir.hasEntry("CorelDRAW")) {
+            contentsEntry = (DocumentEntry) dir.getEntry("CorelDRAW");}
+         */
+        //TODO: modify getEntry to case insensitive when available in POI
+        if (dir.hasEntry("CONTENTS")) {
+            return "CONTENTS";
+        } else if (dir.hasEntry("Contents")) {
+            return "Contents";
+        } else {
+            for (String n : dir.getEntryNames()) {
+                if ("contents".equalsIgnoreCase(n)) {
+                    return n;
+                }
+            }
+        }
+        return null;
     }
 
 
