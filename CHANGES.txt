@@ -5,6 +5,8 @@ Release 2.8.1 - ???
      the PDFParser now throws an EncryptedDocumentException instead of an IOException
      if the security handler cannot be found (TIKA-4082).
 
+   * Fix bug that led to duplicate extraction of macros from some OLE2 containers (TIKA-4116).
+
    * Changed default decompressConcatenated to true in CompressorParser.
      Users may revert to legacy behavior via tika-config.xml (TIKA-4048).
 
