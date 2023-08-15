@@ -96,8 +96,9 @@ public class GrobidRESTParser {
         try {
             checkMode();
             Response response = WebClient.create(restHostUrlStr +
-                    (legacyMode ? GROBID_LEGACY_PROCESSHEADER_PATH : GROBID_PROCESSHEADER_PATH))
-                    .accept(MediaType.APPLICATION_XML).type(MediaType.MULTIPART_FORM_DATA)
+                            (legacyMode ? GROBID_LEGACY_PROCESSHEADER_PATH : GROBID_PROCESSHEADER_PATH))
+                    .accept(MediaType.APPLICATION_XML)
+                    .type(MediaType.MULTIPART_FORM_DATA)
                     .post(body);
 
 

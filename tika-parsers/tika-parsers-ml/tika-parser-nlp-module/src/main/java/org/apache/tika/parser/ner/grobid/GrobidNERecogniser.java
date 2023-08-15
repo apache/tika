@@ -47,10 +47,11 @@ public class GrobidNERecogniser implements NERecogniser {
             add("NORMALIZED_MEASUREMENTS");
             add("MEASUREMENT_TYPES");
         }
-        };
+    };
     private static final Logger LOG = LoggerFactory.getLogger(GrobidNERecogniser.class);
     private static final String GROBID_REST_HOST = "http://localhost:8060";
-    private static boolean available = false;
+    private static final String ISALIVE_URL = "/service/isalive";
+    private boolean available = false;
     private String restHostUrlStr;
 
 
@@ -62,7 +63,6 @@ public class GrobidNERecogniser implements NERecogniser {
                 restHostUrlStr = readRestUrl();
             } catch (IOException e) {
                 LOG.warn("couldn't read rest url", e);
-
             }
 
             if (restHostUrlStr == null || restHostUrlStr.equals("")) {
@@ -71,18 +71,30 @@ public class GrobidNERecogniser implements NERecogniser {
                 this.restHostUrlStr = restHostUrlStr;
             }
 
-            Response response =
-                    WebClient.create(restHostUrlStr).accept(MediaType.APPLICATION_JSON).get();
-            int responseCode = response.getStatus();
-            if (responseCode == 200) {
-                available = true;
-            } else {
-                LOG.info("Grobid REST Server is not running");
-            }
+            this.available = isServerAlive(restHostUrlStr);
 
         } catch (Exception e) {
             LOG.info(e.getMessage(), e);
         }
+    }
+
+    private static boolean isServerAlive(String restHostUrlStr) {
+        boolean available = false;
+        try {
+            Response response =
+                    WebClient.create(restHostUrlStr + ISALIVE_URL)
+                            .get();
+            int responseCode = response.getStatus();
+            if (responseCode == 200) {
+                available = true;
+            } else {
+                LOG.info("Grobid Quantities REST Server is not running");
+            }
+        } catch (Exception e) {
+            LOG.info("Grobid Quantities REST Server is not running", e);
+        }
+
+        return available;
     }
 
     /**
@@ -173,7 +185,8 @@ public class GrobidNERecogniser implements NERecogniser {
         try {
             String url = restHostUrlStr + readRestEndpoint();
             Response response =
-                    WebClient.create(url).accept(MediaType.APPLICATION_JSON).post("text=" + text);
+                    WebClient.create(url).accept(MediaType.APPLICATION_JSON)
+                            .post("text=" + text);
             int responseCode = response.getStatus();
 
             if (responseCode == 200) {
