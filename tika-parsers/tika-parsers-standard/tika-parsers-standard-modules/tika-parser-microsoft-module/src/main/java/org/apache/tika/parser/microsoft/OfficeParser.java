@@ -155,6 +155,7 @@ public class OfficeParser extends AbstractOfficeParser {
         final DirectoryNode root;
         TikaInputStream tstream = TikaInputStream.cast(stream);
         POIFSFileSystem mustCloseFs = null;
+        boolean isDirectoryNode = false;
         try {
             if (tstream == null) {
                 mustCloseFs = new POIFSFileSystem(CloseShieldInputStream.wrap(stream));
@@ -165,6 +166,7 @@ public class OfficeParser extends AbstractOfficeParser {
                     root = ((POIFSFileSystem) container).getRoot();
                 } else if (container instanceof DirectoryNode) {
                     root = (DirectoryNode) container;
+                    isDirectoryNode = true;
                 } else {
                     POIFSFileSystem fs = null;
                     if (tstream.hasFile()) {
@@ -187,8 +189,12 @@ public class OfficeParser extends AbstractOfficeParser {
 
                 //We might consider not bothering to check for macros in root,
                 //if we know we're processing ppt based on content-type identified in metadata
-                extractMacros(root.getFileSystem(), xhtml,
-                        EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+                if (! isDirectoryNode) {
+                    // if the "root" is a directory node, we assume that the macros have already
+                    // been extracted from the parent's fileSystem -- TIKA-4116
+                    extractMacros(root.getFileSystem(), xhtml,
+                            EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+                }
 
             }
         } finally {
