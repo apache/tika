@@ -260,21 +260,19 @@ abstract class AbstractPOIFSExtractor {
         //getCommand() and getFileName() exist for OLE 2.0 to populate
         //TikaCoreProperties.ORIGINAL_RESOURCE_NAME
 
+        String contentsEntryName = getContentsEntryName(dir);
+        if (contentsEntryName == null) {
+            //log or record exception?
+            return;
+        }
         // Grab the contents and process
         DocumentEntry contentsEntry;
-        /*if (dir.hasEntry("CorelDRAW")) {
-            contentsEntry = (DocumentEntry) dir.getEntry("CorelDRAW");}
-         */
-        //TODO: modify getEntry to case insensitive when available in POI
+
         try {
-            contentsEntry = (DocumentEntry) dir.getEntry("CONTENTS");
-        } catch (FileNotFoundException fnfe1) {
-            try {
-                contentsEntry = (DocumentEntry) dir.getEntry("Contents");
-            } catch (FileNotFoundException fnfe2) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(fnfe2, parentMetadata);
-                return;
-            }
+            contentsEntry = (DocumentEntry) dir.getEntry(contentsEntryName);
+        } catch (FileNotFoundException fnfe) {
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(fnfe, parentMetadata);
+            return;
         }
 
         int length = contentsEntry.getSize();
@@ -306,6 +304,26 @@ abstract class AbstractPOIFSExtractor {
         } finally {
             inp.close();
         }
+    }
+
+    private String getContentsEntryName(DirectoryEntry dir) {
+        /*
+        if (dir.hasEntry("CorelDRAW")) {
+            contentsEntry = (DocumentEntry) dir.getEntry("CorelDRAW");}
+         */
+        //TODO: modify getEntry to case insensitive when available in POI
+        if (dir.hasEntry("CONTENTS")) {
+            return "CONTENTS";
+        } else if (dir.hasEntry("Contents")) {
+            return "Contents";
+        } else {
+            for (String n : dir.getEntryNames()) {
+                if ("contents".equalsIgnoreCase(n)) {
+                    return n;
+                }
+            }
+        }
+        return null;
     }
 
 
