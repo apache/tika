@@ -192,7 +192,8 @@ public class OfficeParser extends AbstractOfficeParser {
                 if (! isDirectoryNode) {
                     // if the "root" is a directory node, we assume that the macros have already
                     // been extracted from the parent's fileSystem -- TIKA-4116
-                    extractMacros(root.getFileSystem(), xhtml, EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+                    extractMacros(root.getFileSystem(), xhtml,
+                            EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
                 }
 
             }
