@@ -3212,6 +3212,12 @@
     <glob pattern="*.warc"/>
   </mime-type>
 
+  <mime-type type="application/warc+gz">
+    <acronym>WARC</acronym>
+    <_comment>WARC</_comment>
+    <glob pattern="*.warc.gz"/>
+  </mime-type>
+
   <mime-type type="application/wasm">
     <acronym>Wasm</acronym>
     <_comment>Web Assembly</_comment>

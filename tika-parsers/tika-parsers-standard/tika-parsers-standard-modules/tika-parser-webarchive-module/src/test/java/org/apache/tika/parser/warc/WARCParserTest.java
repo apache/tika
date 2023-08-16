@@ -18,13 +18,16 @@ package org.apache.tika.parser.warc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 
 public class WARCParserTest extends TikaTest {
 
@@ -35,14 +38,30 @@ public class WARCParserTest extends TikaTest {
     public void testBasic() throws Exception {
 
         List<Metadata> metadataList = getRecursiveMetadata("cc.warc.gz");
-        assertEquals(3, metadataList.size());
+        assertEquals(2, metadataList.size());
+        assertEquals("application/warc+gz", metadataList.get(0).get(Metadata.CONTENT_TYPE));
         assertContains("text/html", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         assertContains("Common Crawl on Twitter", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("application/warc", metadataList.get(2).get(Metadata.CONTENT_TYPE));
         assertEquals("<urn:uuid:c3f02271-44d2-4159-9cdb-3e3efeb16ba0>",
                 metadataList.get(1).get("warc:WARC-Warcinfo-ID"));
         assertEquals("http://commoncrawl.org/",
                 metadataList.get(1).get("warc:WARC-Target-URI"));
+    }
 
+    @Test
+    public void testMultipleRecords() throws Exception {
+        //TIKA-
+        List<Metadata> metadataList = getRecursiveMetadata("testWARC_multiple.warc",
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
+        List<Metadata> gzMetadataList = getRecursiveMetadata("testWARC_multiple.warc.gz",
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
+
+        Set<String> fieldsToIgnore = new HashSet<>();
+        fieldsToIgnore.add("X-TIKA:parse_time_millis");
+        fieldsToIgnore.add("Content-Type");
+        assertMetadataListEquals(metadataList, gzMetadataList, fieldsToIgnore);
+
+        assertEquals("application/warc", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/warc+gz", gzMetadataList.get(0).get(Metadata.CONTENT_TYPE));
     }
 }
