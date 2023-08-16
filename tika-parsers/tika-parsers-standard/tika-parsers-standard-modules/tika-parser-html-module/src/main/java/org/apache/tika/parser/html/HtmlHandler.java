@@ -187,10 +187,11 @@ class HtmlHandler extends TextContentHandler {
                 handleDataURIScheme(value);
             }
         }
-        String srcDoc = atts.getValue("srcdoc");
-        if (! StringUtils.isBlank(srcDoc)) {
-            //check for iframe?
-            handleSrcDoc(srcDoc);
+        if ("IFRAME".equals(name)) {
+            String srcDoc = atts.getValue("srcdoc");
+            if (!StringUtils.isBlank(srcDoc)) {
+                handleSrcDoc(srcDoc);
+            }
         }
     }
 

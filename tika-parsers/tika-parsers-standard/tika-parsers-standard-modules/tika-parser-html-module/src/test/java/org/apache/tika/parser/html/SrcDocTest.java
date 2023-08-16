@@ -33,7 +33,6 @@ public class SrcDocTest extends TikaTest {
     @Test
     public void testBasic() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testSrcDoc.html");
-        debug(metadataList);
         assertEquals(2, metadataList.size());
         assertContains("outside", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("this is the iframe content",
