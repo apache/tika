@@ -82,9 +82,17 @@ public class GzipParserTest extends AbstractPkgTest {
     }
 
     @Test
-    public void testDecompressConcatenatedDefault() throws Exception {
+    public void testDecompressConcatenated() throws Exception {
+        //test default
+        assertEquals(2, getRecursiveMetadata("multiple.gz").size());
+
+        //test config
+        TikaConfig tikaConfig = null;
+        try (InputStream is = getResourceAsStream("/configs/tika-config-multiple-gz.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
         assertContains("<p>ab</p>",
-                getRecursiveMetadata("multiple.gz").get(1)
+                getRecursiveMetadata("multiple.gz", new AutoDetectParser(tikaConfig)).get(1)
                         .get(TikaCoreProperties.TIKA_CONTENT));
     }
 

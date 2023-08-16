@@ -38,7 +38,7 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
     </dependency>
-    <!-- need these for detection/ungzipping and html parsing in tests -->
+    <!-- need these for detection/gunzipping and html+txt parsing in tests -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-html-module</artifactId>
@@ -48,6 +48,12 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-pkg-module</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-text-module</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

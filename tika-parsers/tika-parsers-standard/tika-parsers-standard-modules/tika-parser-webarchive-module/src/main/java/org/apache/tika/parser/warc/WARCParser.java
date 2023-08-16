@@ -52,7 +52,8 @@ import org.apache.tika.utils.StringUtils;
 public class WARCParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(MediaType.application("warc"))));
+            new HashSet<>(Arrays.asList(MediaType.application("warc"),
+                    MediaType.application("warc+gz"))));
 
     public static String WARC_PREFIX = "warc:";
     public static String WARC_HTTP_PREFIX = WARC_PREFIX + "http:";
@@ -137,6 +138,8 @@ public class WARCParser extends AbstractParser {
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(payload.body().size()));
 
         if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
+            //TODO check Content-Encoding on the warcResponse.http.headers and wrap the stream.
+            //May need to sniff first few bytes to confirm accuracy, e.g. gzip compression ?
             try (InputStream tis = TikaInputStream.get(payload.body().stream())) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, metadata, true);
             }
