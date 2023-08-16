@@ -9,8 +9,7 @@ Release 2.8.1 - ???
 
    * Parse iframe's srcdoc as an embedded file (TIKA-3109).
 
-   * Changed default decompressConcatenated to true in CompressorParser.
-     Users may revert to legacy behavior via tika-config.xml (TIKA-4048).
+   * Add detection of warc.gz as a specialization of gz and parse as if a standard WARC (TIKA-4048).
 
    * Allow users to modify the attachment limit size in the /unpack resource (TIKA-4039)
    

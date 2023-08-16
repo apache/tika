@@ -16,6 +16,7 @@
  */
 package org.apache.tika;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -99,6 +100,33 @@ public abstract class TikaTest {
 
     public static <T> void assertNotContained(T needle, Collection<? extends T> haystack) {
         assertFalse(haystack.contains(needle), needle + " unexpectedly found in:\n" + haystack);
+    }
+
+    public static void assertMetadataListEquals(List<Metadata> metadataListA,
+                                          List<Metadata> metadataListB,
+                                    Set<String> fieldsToIgnore) {
+        assertEquals(metadataListA.size(), metadataListB.size(), "different sizes");
+        for (int i = 0; i < metadataListA.size(); i++) {
+            Metadata mA = metadataListA.get(i);
+            Metadata mB = metadataListB.get(i);
+            Set<String> mAFields = new HashSet<>();
+            for (String n : mA.names()) {
+                if (fieldsToIgnore.contains(n)) {
+                    continue;
+                }
+                mAFields.add(n);
+                assertArrayEquals(mA.getValues(n), mB.getValues(n), "problem with " + n +
+                        " in metadata index=" + i);
+            }
+            Set<String> mBFields = new HashSet<>();
+            for (String n : mB.names()) {
+                if (fieldsToIgnore.contains(n)) {
+                    continue;
+                }
+                mBFields.add(n);
+            }
+            assertEquals(mAFields, mBFields);
+        }
     }
 
     /**
@@ -315,6 +343,14 @@ public abstract class TikaTest {
         return getRecursiveMetadata(filePath, new ParseContext());
     }
 
+    protected List<Metadata> getRecursiveMetadata(String filePath,
+                                                  BasicContentHandlerFactory.HANDLER_TYPE handlerType)
+            throws Exception {
+        return getRecursiveMetadata(filePath, TikaTest.AUTO_DETECT_PARSER, new Metadata(),
+                new ParseContext(), true,
+                handlerType);
+    }
+
     protected List<Metadata> getRecursiveMetadata(String filePath, Metadata metadata)
             throws Exception {
         return getRecursiveMetadata(filePath, metadata, new ParseContext());
@@ -337,6 +373,16 @@ public abstract class TikaTest {
                                                   boolean suppressException) throws Exception {
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
             return getRecursiveMetadata(is, wrapped, metadata, context, suppressException);
+        }
+    }
+
+    protected List<Metadata> getRecursiveMetadata(String filePath, Parser wrapped,
+                                                  Metadata metadata, ParseContext context,
+                                                  boolean suppressException,
+                                                  BasicContentHandlerFactory.HANDLER_TYPE handlerType)
+            throws Exception {
+        try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
+            return getRecursiveMetadata(is, wrapped, metadata, context, suppressException, handlerType);
         }
     }
 
@@ -396,6 +442,23 @@ public abstract class TikaTest {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+        try {
+            wrapper.parse(is, handler, metadata, context);
+        } catch (Exception e) {
+            if (!suppressException) {
+                throw e;
+            }
+        }
+        return handler.getMetadataList();
+    }
+
+    protected List<Metadata> getRecursiveMetadata(InputStream is, Parser p, Metadata metadata,
+                                                  ParseContext context, boolean suppressException,
+                                                  BasicContentHandlerFactory.HANDLER_TYPE handlerType)
+            throws Exception {
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(handlerType, -1));
         try {
             wrapper.parse(is, handler, metadata, context);
         } catch (Exception e) {

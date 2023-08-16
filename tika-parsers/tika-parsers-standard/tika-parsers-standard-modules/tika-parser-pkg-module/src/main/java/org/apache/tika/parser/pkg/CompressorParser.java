@@ -86,7 +86,7 @@ public class CompressorParser extends AbstractParser {
     private static Set<MediaType> SUPPORTED_TYPES;
     private static Map<String, String> MIMES_TO_NAME;
 
-    private boolean decompressConcatenated = true;
+    private boolean decompressConcatenated = false;
 
     static {
         Set<MediaType> TMP_SET = new HashSet<>(MediaType
