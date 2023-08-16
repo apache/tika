@@ -187,6 +187,12 @@ class HtmlHandler extends TextContentHandler {
                 handleDataURIScheme(value);
             }
         }
+        if ("IFRAME".equals(name)) {
+            String srcDoc = atts.getValue("srcdoc");
+            if (!StringUtils.isBlank(srcDoc)) {
+                handleSrcDoc(srcDoc);
+            }
+        }
     }
 
     /**
@@ -337,6 +343,22 @@ class HtmlHandler extends TextContentHandler {
         }
         if (discardLevel > 0) {
             discardLevel--;
+        }
+    }
+    private void handleSrcDoc(String string) throws SAXException {
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+        m.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, "text/html");
+        //TODO add metadata about iframe content?
+        EmbeddedDocumentExtractor embeddedDocumentExtractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+            try (InputStream stream = new UnsynchronizedByteArrayInputStream(string.getBytes(StandardCharsets.UTF_8))) {
+                embeddedDocumentExtractor.parseEmbedded(stream, xhtml, m, true);
+            } catch (IOException e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+            }
         }
     }
 

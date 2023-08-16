@@ -7,6 +7,8 @@ Release 2.8.1 - ???
 
    * Fix bug that led to duplicate extraction of macros from some OLE2 containers (TIKA-4116).
 
+   * Parse iframe's srcdoc as an embedded file (TIKA-3109).
+
    * Add detection of warc.gz as a specialization of gz and parse as if a standard WARC (TIKA-4048).
 
    * Allow users to modify the attachment limit size in the /unpack resource (TIKA-4039)
