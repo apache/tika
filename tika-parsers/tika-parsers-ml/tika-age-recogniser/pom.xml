@@ -203,6 +203,7 @@
         <version>${rat.version}</version>
         <configuration>
           <excludes>
+            <exclude>model/opennlp/*.bin</exclude>
             <exclude>model/org/apache/tika/parser/recognition/**</exclude>
           </excludes>
         </configuration>

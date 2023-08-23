@@ -146,6 +146,20 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <version>${rat.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>src/test/resources/org/apache/tika/parser/ner/opennlp/*.bin</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <profiles>
         <profile>
             <id>testSetup</id>
