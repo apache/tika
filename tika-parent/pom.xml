@@ -306,7 +306,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.26.1</google.cloud.version>
-    <aws.version>1.12.535</aws.version>
+    <aws.version>1.12.536</aws.version>
     <asm.version>9.5</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
