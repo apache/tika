@@ -1,3 +1,7 @@
+Release 2.9.1 - ??
+
+   * The InputStreamDigester now calculates stream length (TIKA-4016).
+
 Release 2.9.0 - 8/23/2023
 
    * With user configuration, the PDFParser can now throw an EncryptedDocumentException

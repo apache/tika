@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -37,6 +38,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -113,6 +115,21 @@ public class DigestingParserTest extends TikaTest {
         }
 
         assertNull(m.get(P + CommonsDigester.DigestAlgorithm.MD2.toString()));
+    }
+
+    @Test
+    public void testLengthsCalculated() throws Exception {
+        //This tests that TIKA-4016 added lengths
+        //before TIKA-4016, lengths were missing from 0, 1 and 11
+        TikaConfig config = null;
+        try (InputStream is = getResourceAsStream("/configs/tika-config-digests.xml")) {
+            config = new TikaConfig(is);
+        }
+        Parser p = new AutoDetectParser(config);
+        List<Metadata> metadataList = getRecursiveMetadata("test_recursive_embedded.docx", p);
+        for (Metadata m : metadataList) {
+            assertNotNull(m.get(Metadata.CONTENT_LENGTH));
+        }
     }
 
     @Test

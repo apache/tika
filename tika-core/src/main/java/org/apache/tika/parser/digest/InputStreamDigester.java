@@ -33,6 +33,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.utils.StringUtils;
 
 public class InputStreamDigester implements DigestingParser.Digester {
 
@@ -72,15 +73,23 @@ public class InputStreamDigester implements DigestingParser.Digester {
     /**
      * Copied from commons-codec
      */
-    private static MessageDigest updateDigest(MessageDigest digest, InputStream data)
+    private static MessageDigest updateDigest(MessageDigest digest, InputStream data, Metadata metadata)
             throws IOException {
         byte[] buffer = new byte[1024];
-
+        long total = 0;
         for (int read = data.read(buffer, 0, 1024); read > -1; read = data.read(buffer, 0, 1024)) {
             digest.update(buffer, 0, read);
+            total += read;
         }
-
+        setContentLength(total, metadata);
         return digest;
+    }
+
+    private static void setContentLength(long length, Metadata metadata) {
+        if (StringUtils.isBlank(metadata.get(Metadata.CONTENT_LENGTH))) {
+            //only add it if it hasn't been populated already
+            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+        }
     }
 
     private MessageDigest newMessageDigest() {
@@ -128,7 +137,7 @@ public class InputStreamDigester implements DigestingParser.Digester {
             //and its size is greater than its mark limit,
             //just digest the underlying file.
             if (sz > markLimit) {
-                digestFile(tis.getFile(), metadata);
+                digestFile(tis.getFile(), sz, metadata);
                 return;
             }
         }
@@ -148,12 +157,12 @@ public class InputStreamDigester implements DigestingParser.Digester {
         //if the stream wasn't finished -- if the stream was longer than the mark limit --
         //spool to File and digest that.
         if (tis != null) {
-            digestFile(tis.getFile(), metadata);
+            digestFile(tis.getFile(), -1, metadata);
         } else {
             TemporaryResources tmp = new TemporaryResources();
             try {
                 TikaInputStream tmpTikaInputStream = TikaInputStream.get(is, tmp, metadata);
-                digestFile(tmpTikaInputStream.getFile(), metadata);
+                digestFile(tmpTikaInputStream.getFile(), -1, metadata);
             } finally {
                 try {
                     tmp.dispose();
@@ -169,7 +178,14 @@ public class InputStreamDigester implements DigestingParser.Digester {
                 TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + algorithmKeyName;
     }
 
-    private void digestFile(File f, Metadata m) throws IOException {
+    private void digestFile(File f, long sz, Metadata m) throws IOException {
+        //only add it if it hasn't been populated already
+        if (StringUtils.isBlank(m.get(Metadata.CONTENT_LENGTH))) {
+            if (sz < 0) {
+                sz = f.length();
+            }
+            setContentLength(sz, m);
+        }
         try (InputStream is = new FileInputStream(f)) {
             digestStream(is, m);
         }
@@ -185,7 +201,7 @@ public class InputStreamDigester implements DigestingParser.Digester {
         byte[] digestBytes;
         MessageDigest messageDigest = newMessageDigest();
 
-        updateDigest(messageDigest, is);
+        updateDigest(messageDigest, is, metadata);
         digestBytes = messageDigest.digest();
 
         if (is instanceof BoundedInputStream) {
