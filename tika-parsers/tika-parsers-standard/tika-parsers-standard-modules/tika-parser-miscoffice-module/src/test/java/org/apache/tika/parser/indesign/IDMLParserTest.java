@@ -19,6 +19,7 @@ package org.apache.tika.parser.indesign;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -30,6 +31,7 @@ import org.apache.tika.parser.Parser;
 /**
  * Test case for the IDML Parser.
  */
+@Disabled("until PDFBOX-5649 is fixed")
 public class IDMLParserTest extends TikaTest {
 
     /**
