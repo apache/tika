@@ -22,6 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -1267,6 +1268,19 @@ public class HtmlParserTest extends TikaTest {
 
         assertEquals("ActualTitle", m.get(TikaCoreProperties.TITLE));
         assertEquals("OldMetaTitle", m.get("title"));
+    }
+
+    @Test
+    public void testUnbalancedQuotes() throws Exception {
+        //this tests handling of unbalanced quotes (see TIKA-2328)
+        String testData = "<!DOCTYPE HTML PUBLIC \">";
+        assertThrows(TikaException.class, () -> {
+            new HtmlParser().parse(new ByteArrayInputStream(testData.getBytes()),
+                    new BodyContentHandler(),
+                    new Metadata(),
+                    new ParseContext());
+
+        });
     }
 
     private class EncodingDetectorRunner implements Callable<String> {
