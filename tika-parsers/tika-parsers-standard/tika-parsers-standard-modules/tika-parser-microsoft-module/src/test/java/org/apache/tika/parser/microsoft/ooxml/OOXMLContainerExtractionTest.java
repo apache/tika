@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
@@ -320,5 +321,15 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
             }
             assertTrue(found, "didn't find chart in " + suffix);
         }
+    }
+
+    @Test
+    @Disabled("until we can add test file to repo")
+    public void testAltFileChunk() throws Exception {
+        //not included test file from: https://github.com/jgm/pandoc/files/1290782/Sample_DOCX_using_MHT_container.docx
+        //Tika is not correctly identifying rfc822, but rather, treating it as html. :(
+        List<Metadata> metadataList = getRecursiveMetadata("testAltChunkMHT.docx");
+        assertEquals(2, metadataList.size());
+        assertContains("Example of a table", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
 }
