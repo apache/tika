@@ -89,6 +89,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video";
     static final String RELATION_DIAGRAM_DATA =
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData";
+
+    static final String RELATION_ALTERNATE_FORMAT_CHUNK =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk";
+
     protected static final String[] EMBEDDED_RELATIONSHIPS =
             new String[]{RELATION_AUDIO, PackageRelationshipTypes.IMAGE_PART,
                     POIXMLDocument.PACK_OBJECT_REL_TYPE, PackageRelationshipTypes.CORE_DOCUMENT,
@@ -298,6 +302,14 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             }
         } else if (XSSFRelation.VBA_MACROS.getRelation().equals(type)) {
             handleMacros(target, xhtml);
+            if (targetURI != null) {
+                handledTarget.add(targetURI.toString());
+            }
+        } else if (RELATION_ALTERNATE_FORMAT_CHUNK.equals(type)) {
+            //TODO check for targetMode=INTERNAL?
+            handleEmbeddedFile(target, xhtml, sourceDesc + rel.getId(),
+                    embeddedPartMetadata,
+                    TikaCoreProperties.EmbeddedResourceType.ALTERNATE_FORMAT_CHUNK);
             if (targetURI != null) {
                 handledTarget.add(targetURI.toString());
             }
