@@ -6191,7 +6191,8 @@
   <mime-type type="image/png">
     <acronym>PNG</acronym>
     <_comment>Portable Network Graphics</_comment>
-    <magic priority="50">
+    <!-- slightly above rfc822 -->
+    <magic priority="55">
       <match value="\x89PNG\x0d\x0a\x1a\x0a" type="string" offset="0"/>
     </magic>
     <glob pattern="*.png"/>
