@@ -6864,6 +6864,10 @@
         <match value="X-Mailer:" type="string" offset="0"/>
         <match value="X-Originating-IP:" type="stringignorecase" offset="0"/>
 
+        <match value="\nContent-ID:" type="stringignorecase" offset="0:1024"/>
+        <match value="\nContent-Location:" type="stringignorecase" offset="0:1024"/>
+        <match value="\nContent-Transfer-Encoding:" type="stringignorecase" offset="0:1024"/>
+        <match value="\nContent-Type:" type="stringignorecase" offset="0:1024"/>
         <match value="\nDate:" type="stringignorecase" offset="0:1024"/>
         <match value="\nDelivered-To:" type="string" offset="0:1024"/>
         <match value="\nFrom:" type="stringignorecase" offset="0:1024"/>
