@@ -6191,8 +6191,7 @@
   <mime-type type="image/png">
     <acronym>PNG</acronym>
     <_comment>Portable Network Graphics</_comment>
-    <!-- slightly above rfc822 -->
-    <magic priority="55">
+    <magic priority="50">
       <match value="\x89PNG\x0d\x0a\x1a\x0a" type="string" offset="0"/>
     </magic>
     <glob pattern="*.png"/>
@@ -6849,6 +6848,25 @@
       <match value="X-Notes-Item:" type="string" offset="0">
         <match value="Message-ID:" type="string" offset="0:8192"/>
       </match>
+      <!-- match X- DKIM- ARC- at start of file and then require at least one
+           of the usual: from, received, date...but look farther into the file
+           because of the X|DKIM|ARC headers-->
+      <match value="(X|DKIM|ARC)-" type="regex" offset="0">
+        <match value="\nDate:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nDelivered-To:" type="string" offset="0:8192"/>
+        <match value="\nFrom:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nMessage-ID:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nMIME-Version:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nReceived:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nRelay-Version:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nReturn-Path:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nStatus:" type="string" offset="0:8192"/>
+        <match value="\nUser-Agent:" type="string" offset="0:8192"/>
+        <match value="\nX-Mailer:" type="string" offset="0:8192"/>
+        <match value="\nX-Originating-IP:" type="stringignorecase" offset="0:8192"/>
+      </match>
+    </magic>
+    <magic priority="45">
       <!-- be a bit more flexible, but require two of these -->
       <match minShouldMatch="2">
         <match value="Date:" type="stringignorecase" offset="0"/>
@@ -6884,24 +6902,7 @@
         <match value="\nX-Mailer:" type="string" offset="0:1024"/>
         <match value="\nX-Originating-IP:" type="stringignorecase" offset="0:1024"/>
         <match value="\nDKIM-" type="string" offset="0:1024"/>
-        <match value="\nARC-" type="string" offset="0:1024"/>        
-      </match>
-      <!-- match X- DKIM- ARC- at start of file and then require at least one
-           of the usual: from, received, date...but look farther into the file
-           because of the X|DKIM|ARC headers-->
-      <match value="(X|DKIM|ARC)-" type="regex" offset="0">
-        <match value="\nDate:" type="stringignorecase" offset="0:8192"/>
-        <match value="\nDelivered-To:" type="string" offset="0:8192"/>
-        <match value="\nFrom:" type="stringignorecase" offset="0:8192"/>
-        <match value="\nMessage-ID:" type="stringignorecase" offset="0:8192"/>
-        <match value="\nMIME-Version:" type="stringignorecase" offset="0:8192"/>
-        <match value="\nReceived:" type="stringignorecase" offset="0:8192"/>
-        <match value="\nRelay-Version:" type="stringignorecase" offset="0:8192"/>
-        <match value="\nReturn-Path:" type="stringignorecase" offset="0:8192"/>
-        <match value="\nStatus:" type="string" offset="0:8192"/>
-        <match value="\nUser-Agent:" type="string" offset="0:8192"/>
-        <match value="\nX-Mailer:" type="string" offset="0:8192"/>
-        <match value="\nX-Originating-IP:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nARC-" type="string" offset="0:1024"/>
       </match>
     </magic>
     <magic priority="40">
