@@ -122,4 +122,24 @@ public class OOXMLParserTest extends TikaTest {
         //TIKA_2446
         getRecursiveMetadata("testZIP_corrupted_oom.zip");
     }
+
+    @Test
+    public void testAltFileMHTChunk() throws Exception {
+        //test file with permission from:
+        // https://github.com/jgm/pandoc/files/1290782/Sample_DOCX_using_MHT_container.docx
+        List<Metadata> metadataList = getRecursiveMetadata("testAltChunkMHT.docx");
+        assertEquals(3, metadataList.size());
+        assertContains("Example of a table",
+                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testAltFileHTMLChunk() throws Exception {
+        //test file with permission from:
+        // https://github.com/jgm/pandoc/files/1290782/Sample_DOCX_using_HTML_container.docx
+        List<Metadata> metadataList = getRecursiveMetadata("testAltChunkHTML.docx");
+        assertEquals(2, metadataList.size());
+        assertContains("Example of a table",
+                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+    }
 }
