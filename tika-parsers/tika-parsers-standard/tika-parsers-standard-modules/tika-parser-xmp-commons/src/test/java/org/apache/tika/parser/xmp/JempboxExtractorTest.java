@@ -134,4 +134,14 @@ public class JempboxExtractorTest extends TikaTest {
         }
     }
 
+    @Test
+    public void testModifiedTZ() throws Exception {
+        Metadata m = new Metadata();
+        JempboxExtractor ex = new JempboxExtractor(m);
+        try (InputStream is = getResourceAsStream("/test-documents/testXMP.xmp")) {
+            ex.parse(is);
+        }
+        assertEquals("2014-03-04T22:50:41Z", m.get(XMPMM.HISTORY_WHEN));
+    }
+
 }

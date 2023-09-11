@@ -1,5 +1,8 @@
 Release 2.9.1 - ??
 
+   * Fix bug in DateUtils that stripped timezone information from
+     incoming Calendar objects (TIKA-4126).
+
    * The InputStreamDigester now calculates stream length (TIKA-4016).
 
 Release 2.9.0 - 8/23/2023
