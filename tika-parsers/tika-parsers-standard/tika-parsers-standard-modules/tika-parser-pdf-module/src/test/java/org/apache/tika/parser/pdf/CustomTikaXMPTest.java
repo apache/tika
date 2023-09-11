@@ -64,7 +64,8 @@ public class CustomTikaXMPTest extends TikaTest {
     public void testPDFVT() throws Exception {
         Metadata metadata = extract("testPDFVT.xmp");
         assertEquals("PDF/VT-1", metadata.get(PDF.PDFVT_VERSION));
-        assertEquals("2018-08-06T12:53:12Z", metadata.getDate(PDF.PDFVT_MODIFIED).toInstant().toString());
+        assertEquals("2018-08-06T11:53:12Z",
+                metadata.getDate(PDF.PDFVT_MODIFIED).toInstant().toString());
     }
 
     private Metadata extract(String xmpFileName) throws IOException, TikaException, SAXException {

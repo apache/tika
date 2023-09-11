@@ -1023,9 +1023,9 @@ public class PDFParserTest extends TikaTest {
                         "Preflight", "Preflight"}, m.getValues(XMPMM.HISTORY_SOFTWARE_AGENT));
 
         assertArrayEquals(
-                new String[]{"2014-03-04T23:50:41Z", "2014-03-04T23:50:42Z", "2014-03-04T23:51:34Z",
-                        "2014-03-04T23:51:36Z", "2014-03-04T23:51:37Z", "2014-03-04T23:52:22Z",
-                        "2014-03-04T23:54:48Z"}, m.getValues(XMPMM.HISTORY_WHEN));
+                new String[]{"2014-03-04T22:50:41Z", "2014-03-04T22:50:42Z", "2014-03-04T22:51:34Z",
+                        "2014-03-04T22:51:36Z", "2014-03-04T22:51:37Z", "2014-03-04T22:52:22Z",
+                        "2014-03-04T22:54:48Z"}, m.getValues(XMPMM.HISTORY_WHEN));
     }
 
     @Test
@@ -1296,7 +1296,7 @@ public class PDFParserTest extends TikaTest {
         Metadata m = metadataList.get(0);
         //these two fields derive from the basic schema in the XMP, not dublin core
         assertEquals("Hewlett-Packard MFP", m.get(XMP.CREATOR_TOOL));
-        assertEquals("1998-08-29T13:53:15Z", m.get(XMP.CREATE_DATE));
+        assertEquals("1998-08-29T14:53:15Z", m.get(XMP.CREATE_DATE));
     }
 
     @Test

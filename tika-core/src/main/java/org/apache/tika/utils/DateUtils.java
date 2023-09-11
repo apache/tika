@@ -19,6 +19,7 @@ package org.apache.tika.utils;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -66,11 +67,11 @@ public class DateUtils {
     }
 
     /**
-     * Returns a ISO 8601 representation of the given date. This method
-     * is thread safe and non-blocking.
+     * Returns a ISO 8601 representation of the given date in UTC,
+     * truncated to the seconds unit. This method is thread safe and non-blocking.
      *
      * @param date given date
-     * @return ISO 8601 date string, including timezone details
+     * @return ISO 8601 date string in UTC, truncated to the seconds unit
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
      */
     public static String formatDate(Date date) {
@@ -80,27 +81,25 @@ public class DateUtils {
     }
 
     /**
-     * Returns a ISO 8601 representation of the given date. This method
-     * is thread safe and non-blocking.
+     * Returns a ISO 8601 representation of the given date in UTC,
+     * truncated to the seconds unit. This method is thread safe and non-blocking.
      *
-     * @param date given date
-     * @return ISO 8601 date string, including timezone details
+     * @param date given Calendar
+     * @return ISO 8601 date string in UTC, truncated to the seconds unit
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
      */
     public static String formatDate(Calendar date) {
-        // Explicitly switch it into UTC before formatting
-        date.setTimeZone(UTC);
         return doFormatDate(date);
     }
-
     /**
-     * Returns a ISO 8601 representation of the given date, which is
-     * in an unknown timezone. This method is thread safe and non-blocking.
+     * Returns a ISO 8601 representation of the given date in UTC,
+     * truncated to the seconds unit. This method is thread safe and non-blocking.
      *
      * @param date given date
-     * @return ISO 8601 date string, without timezone details
+     * @return ISO 8601 date string in UTC, truncated to the seconds unit
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
      */
+
     public static String formatDateUnknownTimezone(Date date) {
         // Create the Calendar object in the system timezone
         Calendar calendar = GregorianCalendar.getInstance(TimeZone.getDefault(), Locale.US);
@@ -111,12 +110,14 @@ public class DateUtils {
         return formatted.substring(0, formatted.length() - 1);
     }
 
+
+    /**
+     * Returns ISO-8601 formatted time converted to UTC, truncated to the seconds place
+     * @param calendar
+     * @return
+     */
     private static String doFormatDate(Calendar calendar) {
-        return String
-                .format(Locale.ROOT, "%04d-%02d-%02dT%02d:%02d:%02dZ", calendar.get(Calendar.YEAR),
-                        calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH),
-                        calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE),
-                        calendar.get(Calendar.SECOND));
+        return calendar.toInstant().truncatedTo(ChronoUnit.SECONDS).toString();
     }
 
     private List<DateFormat> loadDateFormats() {
