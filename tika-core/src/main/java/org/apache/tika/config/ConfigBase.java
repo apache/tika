@@ -202,8 +202,9 @@ public abstract class ConfigBase {
                         elementName + " with class name " + className + " must be of type '" +
                                 itemClass.getName() + "'");
             }
-            return (T) clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+            return (T) clazz.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
+                 NoSuchMethodException | InvocationTargetException e) {
             throw new TikaConfigException("problem loading " + elementName +
                     " with class " + itemClass.getName(), e);
         }

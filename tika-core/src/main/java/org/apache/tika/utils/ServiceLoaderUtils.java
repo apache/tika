@@ -55,8 +55,9 @@ public class ServiceLoaderUtils {
      */
     public static <T> T newInstance(String className, ClassLoader loader) {
         try {
-            return ((Class<T>) Class.forName(className, true, loader)).newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            return ((Class<T>) Class.forName(className, true, loader)).getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+                 NoSuchMethodException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
     }
@@ -77,11 +78,12 @@ public class ServiceLoaderUtils {
                 Constructor<T> constructor = klass.getDeclaredConstructor(ServiceLoader.class);
                 return constructor.newInstance(loader);
             } catch (NoSuchMethodException e) {
-                return (T)klass.newInstance();
+                return (T)klass.getDeclaredConstructor().newInstance();
             } catch (InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
+                 InvocationTargetException e) {
             throw new RuntimeException(e);
         }
     }

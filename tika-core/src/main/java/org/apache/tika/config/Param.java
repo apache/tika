@@ -193,8 +193,9 @@ public class Param<T> implements Serializable {
     private static <T> void loadObject(Param<T> ret, Node root, Class clazz) throws TikaConfigException {
 
         try {
-            ret.actualValue = (T)clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            ret.actualValue = (T)clazz.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
+                 InvocationTargetException e) {
             throw new TikaConfigException("can't build class: " + clazz, e);
         }
 

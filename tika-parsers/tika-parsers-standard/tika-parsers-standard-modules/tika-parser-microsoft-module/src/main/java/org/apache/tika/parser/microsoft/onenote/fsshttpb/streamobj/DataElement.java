@@ -18,6 +18,7 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -147,8 +148,9 @@ public class DataElement extends StreamObject {
         if (DATA_ELEMENT_DATA_TYPE_MAPPING.containsKey(this.dataElementType)) {
             try {
                 this.data = (DataElementData) DATA_ELEMENT_DATA_TYPE_MAPPING.get(this.dataElementType)
-                        .newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
+                        .getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
+                     InvocationTargetException e) {
                 throw new TikaException("Could not instantiate a " + dataElementType, e);
             }
 

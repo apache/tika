@@ -88,7 +88,8 @@ public class NamedEntityParser extends AbstractParser {
             className = className.trim();
             LOG.info("going to load, instantiate and bind the instance of {}", className);
             try {
-                NERecogniser recogniser = (NERecogniser) Class.forName(className).newInstance();
+                NERecogniser recogniser =
+                        (NERecogniser) Class.forName(className).getDeclaredConstructor().newInstance();
                 LOG.info("{} is available ? {}", className, recogniser.isAvailable());
                 if (recogniser.isAvailable()) {
                     nerChain.add(recogniser);
