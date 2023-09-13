@@ -20,18 +20,25 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.lucene.analysis.FilteringTokenFilter;
+import org.apache.lucene.analysis.TokenFilterFactory;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.standard.UAX29URLEmailTokenizer;
+import org.apache.lucene.analysis.email.UAX29URLEmailTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
-import org.apache.lucene.analysis.util.TokenFilterFactory;
 
 /**
  * Factory for filter that only allows tokens with characters that "isAlphabetic"  or "isIdeographic" through.
  */
 public class AlphaIdeographFilterFactory extends TokenFilterFactory {
 
+    public static final String NAME = "alphaIdeograph";
+
     private static final int UNDERSCORE = (int) '_';
+
+
+    public AlphaIdeographFilterFactory() {
+        super();
+    }
 
     public AlphaIdeographFilterFactory(Map<String, String> args) {
         super(args);

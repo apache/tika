@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.lucene.index.BinaryDocValues;
+import org.apache.lucene.index.ByteVectorValues;
 import org.apache.lucene.index.CompositeReader;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.DocValues;
@@ -29,6 +30,7 @@ import org.apache.lucene.index.DocValuesType;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.Fields;
+import org.apache.lucene.index.FloatVectorValues;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafMetaData;
 import org.apache.lucene.index.LeafReader;
@@ -45,7 +47,10 @@ import org.apache.lucene.index.SortedDocValues;
 import org.apache.lucene.index.SortedNumericDocValues;
 import org.apache.lucene.index.SortedSetDocValues;
 import org.apache.lucene.index.StoredFieldVisitor;
+import org.apache.lucene.index.StoredFields;
+import org.apache.lucene.index.TermVectors;
 import org.apache.lucene.index.Terms;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.Version;
 
@@ -265,9 +270,40 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
     }
 
     @Override
+    public FloatVectorValues getFloatVectorValues(String s) throws IOException {
+        //TODO figure out how to implement this... if needed
+        return null;
+    }
+
+    @Override
+    public ByteVectorValues getByteVectorValues(String s) throws IOException {
+        //TODO figure out how to implement this... if needed
+        return null;
+    }
+
+    @Override
+    public TopDocs searchNearestVectors(String s, float[] floats, int i, Bits bits, int i1)
+            throws IOException {
+        //TODO figure out how to implement this... if needed
+        return null;
+    }
+
+    @Override
+    public TopDocs searchNearestVectors(String s, byte[] bytes, int i, Bits bits, int i1)
+            throws IOException {
+        //TODO figure out how to implement this... if needed
+        return null;
+    }
+
+    @Override
     public Fields getTermVectors(int docID) throws IOException {
         ensureOpen();
         return in.getTermVectors(docID);
+    }
+
+    @Override
+    public TermVectors termVectors() throws IOException {
+        return in.termVectors();
     }
 
     @Override
@@ -286,6 +322,11 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
     public void document(int docID, StoredFieldVisitor visitor) throws IOException {
         ensureOpen();
         in.document(docID, visitor);
+    }
+
+    @Override
+    public StoredFields storedFields() throws IOException {
+        return in.storedFields();
     }
 
     @Override

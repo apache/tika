@@ -20,11 +20,11 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.lucene.analysis.FilteringTokenFilter;
+import org.apache.lucene.analysis.TokenFilterFactory;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.cjk.CJKBigramFilter;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
-import org.apache.lucene.analysis.util.TokenFilterFactory;
 
 /**
  * Creates a very narrowly focused TokenFilter that limits tokens based on length
@@ -35,9 +35,15 @@ import org.apache.lucene.analysis.util.TokenFilterFactory;
  */
 public class CJKBigramAwareLengthFilterFactory extends TokenFilterFactory {
 
+    public static final String NAME = "cjkBigramAwareLength";
+
 
     private final int min;
     private final int max;
+    public CJKBigramAwareLengthFilterFactory() {
+        min = 3;
+        max = 20;
+    }
 
     public CJKBigramAwareLengthFilterFactory(Map<String, String> args) {
         super(args);
