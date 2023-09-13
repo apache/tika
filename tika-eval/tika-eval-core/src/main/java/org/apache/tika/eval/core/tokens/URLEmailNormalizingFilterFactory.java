@@ -20,11 +20,11 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.lucene.analysis.TokenFilter;
+import org.apache.lucene.analysis.TokenFilterFactory;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.standard.UAX29URLEmailTokenizer;
+import org.apache.lucene.analysis.email.UAX29URLEmailTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
-import org.apache.lucene.analysis.util.TokenFilterFactory;
 
 /**
  * Factory for filter that normalizes urls and emails to __url__ and __email__
@@ -35,11 +35,16 @@ import org.apache.lucene.analysis.util.TokenFilterFactory;
  */
 public class URLEmailNormalizingFilterFactory extends TokenFilterFactory {
 
+    public static final String NAME = "urlEmailNormalizing";
+
     public static final String URL = "___url___";
     public static final String EMAIL = "___email___";
     private static final char[] URL_CHARS = URL.toCharArray();
     private static final char[] EMAIL_CHARS = EMAIL.toCharArray();
 
+    public URLEmailNormalizingFilterFactory() {
+        super();
+    }
     public URLEmailNormalizingFilterFactory(Map<String, String> args) {
         super(args);
     }

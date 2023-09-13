@@ -335,8 +335,7 @@
     <guava.version>32.1.2-jre</guava.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
-    <!-- versions greater than 62.2 are not compatible with icu4j handler in lucene 8.11.1 -->
-    <icu4j.version>62.2</icu4j.version>
+    <icu4j.version>73.2</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.21.19</jackrabbit.version>
     <jackson.version>2.15.2</jackson.version>
@@ -361,8 +360,7 @@
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.20.0</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
-    <!-- lucene >= 9.x requires Java 11 -->
-    <lucene.version>8.11.2</lucene.version>
+    <lucene.version>9.7.0</lucene.version>
     <metadata.extractor.version>2.18.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.9</mime4j.version>
@@ -773,12 +771,12 @@
       </dependency>
       <dependency>
         <groupId>org.apache.lucene</groupId>
-        <artifactId>lucene-analyzers-common</artifactId>
+        <artifactId>lucene-analysis-common</artifactId>
         <version>${lucene.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.lucene</groupId>
-        <artifactId>lucene-analyzers-icu</artifactId>
+        <artifactId>lucene-analysis-icu</artifactId>
         <version>${lucene.version}</version>
       </dependency>
       <dependency>
@@ -1010,8 +1008,6 @@
               <version>1.53.0</version>
             </dependency>
             <exclude>
-              <!-- CVE-2018-18928 does affect the java library not just the c/c++ library,
-              upon further research -->
               <groupId>com.ibm.icu</groupId>
               <artifactId>icu4j</artifactId>
               <version>${icu4j.version}</version>
