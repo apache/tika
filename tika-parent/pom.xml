@@ -300,8 +300,7 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.1.2</maven.surefire.version>
     <maven.shade.version>3.5.0</maven.shade.version>
-    <!-- need above java 8 for 10.[0-2] -->
-    <puppycrawl.version>9.3</puppycrawl.version>
+    <puppycrawl.version>10.12.3</puppycrawl.version>
     <rat.version>0.15</rat.version>
 
     <!-- dependency versions -->
@@ -329,9 +328,8 @@
     <!-- can't update to 3.6.0, needs jdk11 ? -->
     <cxf.version>3.5.6</cxf.version>
     <ddplist.version>1.27</ddplist.version>
-    <dl4j.version>1.0.0-M2</dl4j.version>
-    <!-- fakeload versions &gt; 0.4.0 require java > 8 -->
-    <fakeload.version>0.4.0</fakeload.version>
+    <dl4j.version>1.0.0-M2.1</dl4j.version>
+    <fakeload.version>0.7.0</fakeload.version>
     <guava.version>32.1.2-jre</guava.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
@@ -367,8 +365,8 @@
     <mockito.version>4.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <openjson.version>1.0.13</openjson.version>
-    <!-- 2.0.0 doesn't compile with jdk8 -->
-    <opennlp.version>1.9.4</opennlp.version>
+    <!-- 2.3.0 requires java 17 -->
+    <opennlp.version>2.2.0</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.core.version>6.0.0</osgi.core.version>
