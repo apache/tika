@@ -19,8 +19,6 @@ package org.apache.tika.utils;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -72,10 +70,7 @@ public class AnnotationUtils {
 
         for (final AccessibleObject member : members) {
             if (member.isAnnotationPresent(annotation)) {
-                AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                    member.setAccessible(true);
-                    return null;
-                });
+                member.setAccessible(true);
                 annotatedMembers.add(member);
             }
         }
