@@ -16,6 +16,8 @@
  */
 package org.apache.tika.util;
 
+import java.lang.reflect.InvocationTargetException;
+
 public class ClassLoaderUtil {
 
     @SuppressWarnings("unchecked")
@@ -26,11 +28,12 @@ public class ClassLoaderUtil {
         try {
             clazz = loader.loadClass(className);
             if (iface.isAssignableFrom(clazz)) {
-                return (T) clazz.newInstance();
+                return (T) clazz.getDeclaredConstructor().newInstance();
             }
             throw new IllegalArgumentException(
                     iface + " is not assignable from " + className);
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+                 NoSuchMethodException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
 

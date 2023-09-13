@@ -140,7 +140,7 @@ public class TikaToXMP {
             Class<? extends ITikaToXMPConverter> clazz = getConverterMap().get(type);
             if (clazz != null) {
                 try {
-                    converter = clazz.newInstance();
+                    converter = clazz.getDeclaredConstructor().newInstance();
                 } catch (Exception e) {
                     throw new TikaException(
                             "TikaToXMP converter class cannot be instantiated for mimetype: " +

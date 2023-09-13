@@ -417,7 +417,7 @@ public class MockParser extends AbstractParser {
         Throwable t = null;
         if (msg == null || msg.equals("")) {
             try {
-                t = (Throwable) Class.forName(className).newInstance();
+                t = (Throwable) Class.forName(className).getDeclaredConstructor().newInstance();
             } catch (Exception e) {
                 throw new RuntimeException("couldn't create throwable class:" + className, e);
             }

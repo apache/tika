@@ -18,6 +18,7 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -39,11 +40,12 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
                                                   Class<T> clazz) throws TikaException,
             IOException {
         try {
-            T fsshttpbObject = clazz.newInstance();
+            T fsshttpbObject = clazz.getDeclaredConstructor().newInstance();
             index.addAndGet(fsshttpbObject.deserializeFromByteArray(byteArray, index.get()));
 
             return fsshttpbObject;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
+                 InvocationTargetException e) {
             throw new TikaException("Could not parse basic object", e);
         }
     }

@@ -18,6 +18,7 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -171,8 +172,10 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
             Class headerTypeClass = streamObjectTypeMapping.get(header.type);
             StreamObject streamObject;
             try {
-                streamObject = (StreamObject) headerTypeClass.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
+                streamObject =
+                        (StreamObject) headerTypeClass.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
+                     InvocationTargetException e) {
                 throw new TikaException("Could not instantiate class " + headerTypeClass, e);
             }
 

@@ -1,4 +1,6 @@
-Release 2.9.1 - ??
+Release 3.0.0-BETA - ??
+
+   * Require Java 11 (TIKA-4128).
 
    * Fix bug in DateUtils that stripped timezone information from
      incoming Calendar objects (TIKA-4126).

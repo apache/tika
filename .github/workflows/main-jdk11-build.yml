@@ -18,6 +18,8 @@
 name: main jdk11 build
 
 on:
+  pull_request:
+    branches: [ main ]
   push:
     branches: [ main ]
 

@@ -800,7 +800,7 @@ public class TikaConfig {
         T newInstance(Class<? extends T> loadedClass)
                 throws IllegalAccessException, InstantiationException, NoSuchMethodException,
                 InvocationTargetException {
-            return loadedClass.newInstance();
+            return loadedClass.getDeclaredConstructor().newInstance();
         }
 
         /**
@@ -987,7 +987,7 @@ public class TikaConfig {
                 Constructor ctor = loadedClass.getConstructor(EncodingDetector.class);
                 parser = (Parser) ctor.newInstance(encodingDetector);
             } else {
-                parser = loadedClass.newInstance();
+                parser = loadedClass.getDeclaredConstructor().newInstance();
             }
 
             if (parser instanceof RenderingParser) {

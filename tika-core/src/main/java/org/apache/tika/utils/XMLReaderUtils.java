@@ -707,7 +707,8 @@ public class XMLReaderUtils implements Serializable {
                 //"com.sun.org.apache.xerces.internal.util.SecurityManager",
                 XERCES_SECURITY_MANAGER}) {
             try {
-                Object mgr = Class.forName(securityManagerClassName).newInstance();
+                Object mgr =
+                        Class.forName(securityManagerClassName).getDeclaredConstructor().newInstance();
                 Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit",
                         Integer.TYPE);
                 setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
@@ -750,7 +751,8 @@ public class XMLReaderUtils implements Serializable {
                 //"com.sun.org.apache.xerces.internal.util.SecurityManager",
                 XERCES_SECURITY_MANAGER}) {
             try {
-                Object mgr = Class.forName(securityManagerClassName).newInstance();
+                Object mgr =
+                        Class.forName(securityManagerClassName).getDeclaredConstructor().newInstance();
                 Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
                 setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
 
@@ -902,7 +904,8 @@ public class XMLReaderUtils implements Serializable {
         }
         boolean hasSecurityManager = false;
         try {
-            Object mgr = Class.forName(XERCES_SECURITY_MANAGER).newInstance();
+            Object mgr =
+                    Class.forName(XERCES_SECURITY_MANAGER).getDeclaredConstructor().newInstance();
             Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
             setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
 

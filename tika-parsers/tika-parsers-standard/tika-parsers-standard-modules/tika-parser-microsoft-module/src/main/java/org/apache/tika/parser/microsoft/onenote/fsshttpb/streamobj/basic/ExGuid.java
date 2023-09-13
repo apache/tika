@@ -142,7 +142,7 @@ public class ExGuid extends BasicObject {
      */
     @Override
     public int hashCode() {
-        return this.guid.hashCode() + new Integer(this.value).hashCode();
+        return this.guid.hashCode() + Integer.valueOf(this.value).hashCode();
     }
 
     /**

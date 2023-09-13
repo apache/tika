@@ -71,11 +71,11 @@ public class CSVSnifferTest extends TikaTest {
     public void testCSVBasic() throws Exception {
         List<CSVResult> results = sniff(DELIMITERS, CSV_BASIC, StandardCharsets.UTF_8);
         assertEquals(2, results.size());
-        assertEquals(new Character(','), results.get(0).getDelimiter());
+        assertEquals(Character.valueOf(','), results.get(0).getDelimiter());
 
         results = sniff(DELIMITERS, TSV_BASIC, StandardCharsets.UTF_8);
         assertEquals(2, results.size());
-        assertEquals(new Character('\t'), results.get(0).getDelimiter());
+        assertEquals(Character.valueOf('\t'), results.get(0).getDelimiter());
     }
 
     @Test
@@ -91,11 +91,11 @@ public class CSVSnifferTest extends TikaTest {
         List<CSVResult> results =
                 sniff(DELIMITERS, ALLOW_SPACES_BEFORE_QUOTE, StandardCharsets.UTF_8);
         assertEquals(2, results.size());
-        assertEquals(new Character(','), results.get(0).getDelimiter());
+        assertEquals(Character.valueOf(','), results.get(0).getDelimiter());
 
         results = sniff(DELIMITERS, ALLOW_SPACES_AFTER_QUOTE, StandardCharsets.UTF_8);
         assertEquals(2, results.size());
-        assertEquals(new Character(','), results.get(0).getDelimiter());
+        assertEquals(Character.valueOf(','), results.get(0).getDelimiter());
     }
 
     @Test

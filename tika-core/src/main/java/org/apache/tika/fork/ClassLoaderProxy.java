@@ -125,7 +125,7 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
 
     private void definePackageIfNecessary(String className, Class<?> clazz) {
         String packageName = toPackageName(className);
-        if (packageName != null && getPackage(packageName) == null) {
+        if (packageName != null && getDefinedPackage(packageName) == null) {
             definePackage(packageName, null, null, null, null, null, null, null);
         }
     }

@@ -885,7 +885,7 @@ class OneNotePtr {
         long local8;
         long local16;
         long local32;
-        switch (new Long(stpFormat).intValue()) {
+        switch (Long.valueOf(stpFormat).intValue()) {
             case 0: // 8 bytes, uncompressed
                 data.stp = deserializeLittleEndianLong();
                 break;
@@ -906,7 +906,7 @@ class OneNotePtr {
             default:
                 throw new TikaException("Unknown STP file node format " + stpFormat);
         }
-        switch (new Long(cbFormat).intValue()) {
+        switch (Long.valueOf(cbFormat).intValue()) {
             case 0: // 4 bytes, uncompressed
                 local32 = deserializeLittleEndianInt();
                 data.cb = local32;
