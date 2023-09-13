@@ -62,7 +62,7 @@
          problems with encrypted PDFs. -->
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcmail-jdk18on</artifactId>
+      <artifactId>bcjmail-jdk18on</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
