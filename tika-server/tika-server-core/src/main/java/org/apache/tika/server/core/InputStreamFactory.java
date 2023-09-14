@@ -19,6 +19,7 @@ package org.apache.tika.server.core;
 
 import java.io.IOException;
 import java.io.InputStream;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
 
@@ -33,12 +34,12 @@ import org.apache.tika.metadata.Metadata;
 public interface InputStreamFactory {
 
     /**
-     * @deprecated use {@link #getInputStream(InputStream, Metadata, HttpHeaders, UriInfo)}
      * @param is
      * @param metadata
      * @param httpHeaders
      * @return
      * @throws IOException
+     * @deprecated use {@link #getInputStream(InputStream, Metadata, HttpHeaders, UriInfo)}
      */
     @Deprecated
     InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
@@ -46,7 +47,6 @@ public interface InputStreamFactory {
 
 
     InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders,
-                               UriInfo uriInfo)
-            throws IOException;
+                               UriInfo uriInfo) throws IOException;
 
 }

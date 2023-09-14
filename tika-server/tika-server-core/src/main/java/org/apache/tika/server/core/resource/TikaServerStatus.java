@@ -18,6 +18,7 @@ package org.apache.tika.server.core.resource;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;

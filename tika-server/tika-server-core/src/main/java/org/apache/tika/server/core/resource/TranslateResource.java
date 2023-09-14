@@ -22,13 +22,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +45,9 @@ import org.apache.tika.server.core.ServerStatus;
 public class TranslateResource {
     private static final Logger LOG = LoggerFactory.getLogger(TranslateResource.class);
     private final ServerStatus serverStatus;
+    private final long timeoutMillis;
     private Translator defaultTranslator;
     private ServiceLoader loader;
-    private final long timeoutMillis;
 
     public TranslateResource(ServerStatus serverStatus, long timeoutMillis) {
         this.loader =

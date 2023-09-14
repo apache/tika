@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -38,7 +39,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FilenameUtils;
@@ -100,8 +100,7 @@ public class UnpackerResource {
     public Map<String, byte[]> unpack(InputStream is, @Context HttpHeaders httpHeaders,
                                       @Context UriInfo info) throws Exception {
         return process(TikaResource.getInputStream(is, new Metadata(), httpHeaders, info),
-                httpHeaders,
-                info, false);
+                httpHeaders, info, false);
     }
 
     @Path("/all{id:(/.*)?}")
@@ -110,8 +109,7 @@ public class UnpackerResource {
     public Map<String, byte[]> unpackAll(InputStream is, @Context HttpHeaders httpHeaders,
                                          @Context UriInfo info) throws Exception {
         return process(TikaResource.getInputStream(is, new Metadata(), httpHeaders, info),
-                httpHeaders,
-                info, true);
+                httpHeaders, info, true);
     }
 
     private Map<String, byte[]> process(InputStream is, @Context HttpHeaders httpHeaders,
@@ -119,12 +117,13 @@ public class UnpackerResource {
         Metadata metadata = new Metadata();
         ParseContext pc = new ParseContext();
         long unpackMaxBytes = DEFAULT_MAX_ATTACHMENT_BYTES;
-        String unpackMaxBytesString = httpHeaders.getRequestHeaders().getFirst(UNPACK_MAX_BYTES_KEY);
+        String unpackMaxBytesString =
+                httpHeaders.getRequestHeaders().getFirst(UNPACK_MAX_BYTES_KEY);
         if (!StringUtils.isBlank(unpackMaxBytesString)) {
             unpackMaxBytes = Long.parseLong(unpackMaxBytesString);
             if (unpackMaxBytes > Integer.MAX_VALUE) {
-                throw new IllegalArgumentException("Can't request value > than Integer" +
-                        ".MAX_VALUE : " + unpackMaxBytes);
+                throw new IllegalArgumentException(
+                        "Can't request value > than Integer" + ".MAX_VALUE : " + unpackMaxBytes);
             } else if (unpackMaxBytes < 0) {
                 throw new IllegalArgumentException("Can't request value < 0: " + unpackMaxBytes);
             }
@@ -154,7 +153,8 @@ public class UnpackerResource {
         Map<String, byte[]> files = new HashMap<>();
         MutableInt count = new MutableInt();
 
-        pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, files, unpackMaxBytes));
+        pc.set(EmbeddedDocumentExtractor.class,
+                new MyEmbeddedDocumentExtractor(count, files, unpackMaxBytes));
 
         TikaResource.parse(parser, LOG, info.getPath(), is, ch, metadata, pc);
 
@@ -165,7 +165,8 @@ public class UnpackerResource {
         if (saveAll) {
             files.put(TEXT_FILENAME, text.toByteArray());
 
-            UnsynchronizedByteArrayOutputStream metaStream = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream metaStream =
+                    new UnsynchronizedByteArrayOutputStream();
             metadataToCsv(metadata, metaStream);
 
             files.put(META_FILENAME, metaStream.toByteArray());
@@ -182,7 +183,8 @@ public class UnpackerResource {
         private final EmbeddedStreamTranslator embeddedStreamTranslator =
                 new DefaultEmbeddedStreamTranslator();
 
-        MyEmbeddedDocumentExtractor(MutableInt count, Map<String, byte[]> zout, long unpackMaxBytes) {
+        MyEmbeddedDocumentExtractor(MutableInt count, Map<String, byte[]> zout,
+                                    long unpackMaxBytes) {
             this.count = count;
             this.zout = zout;
             this.unpackMaxBytes = unpackMaxBytes;
@@ -199,12 +201,11 @@ public class UnpackerResource {
             BoundedInputStream bis = new BoundedInputStream(unpackMaxBytes, inputStream);
             IOUtils.copy(bis, bos);
             if (bis.hasHitBound()) {
-                throw new IOException(
-                        new TikaMemoryLimitException("An attachment is longer than " +
-                                "'unpackMaxBytes' (default=100MB, actual=" + unpackMaxBytes + "). " +
-                                "If you need to increase this " +
-                                "limit, add a header to your request, such as: unpackMaxBytes: " +
-                                "1073741824.  There is a hard limit of 2GB."));
+                throw new IOException(new TikaMemoryLimitException("An attachment is longer than " +
+                        "'unpackMaxBytes' (default=100MB, actual=" + unpackMaxBytes + "). " +
+                        "If you need to increase this " +
+                        "limit, add a header to your request, such as: unpackMaxBytes: " +
+                        "1073741824.  There is a hard limit of 2GB."));
             }
             byte[] data = bos.toByteArray();
 
@@ -229,9 +230,10 @@ public class UnpackerResource {
             }
             try (InputStream is = new UnsynchronizedByteArrayInputStream(data)) {
                 if (embeddedStreamTranslator.shouldTranslate(is, metadata)) {
-                    InputStream translated = embeddedStreamTranslator
-                            .translate(new UnsynchronizedByteArrayInputStream(data), metadata);
-                    UnsynchronizedByteArrayOutputStream bos2 = new UnsynchronizedByteArrayOutputStream();
+                    InputStream translated = embeddedStreamTranslator.translate(
+                            new UnsynchronizedByteArrayInputStream(data), metadata);
+                    UnsynchronizedByteArrayOutputStream bos2 =
+                            new UnsynchronizedByteArrayOutputStream();
                     IOUtils.copy(translated, bos2);
                     data = bos2.toByteArray();
                 }

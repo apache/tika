@@ -24,13 +24,13 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +51,7 @@ public class PipesResource {
     private static final Logger LOG = LoggerFactory.getLogger(PipesResource.class);
 
     private final PipesParser pipesParser;
+
     public PipesResource(java.nio.file.Path tikaConfig) throws TikaConfigException, IOException {
         PipesConfig pipesConfig = PipesConfig.load(tikaConfig);
         //this has to be zero. everything must be emitted through the PipesServer
@@ -98,8 +99,8 @@ public class PipesResource {
         PipesResult pipesResult = pipesParser.parse(fetchEmitTuple);
         switch (pipesResult.getStatus()) {
             case CLIENT_UNAVAILABLE_WITHIN_MS:
-                throw new IllegalStateException("client not available within " +
-                        "allotted amount of time");
+                throw new IllegalStateException(
+                        "client not available within " + "allotted amount of time");
             case EMIT_EXCEPTION:
                 return returnEmitException(pipesResult.getMessage());
             case PARSE_SUCCESS:
@@ -110,8 +111,8 @@ public class PipesResource {
             case EMIT_SUCCESS_PARSE_EXCEPTION:
                 return parseException(pipesResult.getMessage(), true);
             case PARSE_EXCEPTION_EMIT:
-                throw new IllegalArgumentException("Should have tried to emit in forked " +
-                        "process?!");
+                throw new IllegalArgumentException(
+                        "Should have tried to emit in forked " + "process?!");
             case PARSE_EXCEPTION_NO_EMIT:
                 return parseException(pipesResult.getMessage(), false);
             case TIMEOUT:
@@ -125,8 +126,9 @@ public class PipesResource {
                         fetchEmitTuple.getEmitKey().getEmitterName());
             }
             default:
-                throw new IllegalArgumentException("I'm sorry, I don't yet handle a status of " +
-                        "this type: " + pipesResult.getStatus());
+                throw new IllegalArgumentException(
+                        "I'm sorry, I don't yet handle a status of " + "this type: " +
+                                pipesResult.getStatus());
         }
     }
 

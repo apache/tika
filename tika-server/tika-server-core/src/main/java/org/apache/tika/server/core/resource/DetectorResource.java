@@ -19,6 +19,7 @@ package org.apache.tika.server.core.resource;
 
 import java.io.IOException;
 import java.io.InputStream;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -26,7 +27,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,8 +62,8 @@ public class DetectorResource {
         long timeoutMillis = TikaResource.getTaskTimeout(parseContext);
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename, timeoutMillis);
 
-        try (TikaInputStream tis = TikaInputStream
-                .get(TikaResource.getInputStream(is, met, httpHeaders, info))) {
+        try (TikaInputStream tis = TikaInputStream.get(
+                TikaResource.getInputStream(is, met, httpHeaders, info))) {
             return TikaResource.getConfig().getDetector().detect(tis, met).toString();
         } catch (IOException e) {
             LOG.warn("Unable to detect MIME type for file. Reason: {} ({})", e.getMessage(),

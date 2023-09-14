@@ -26,14 +26,14 @@ import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.MessageBodyWriter;
 import jakarta.ws.rs.ext.Provider;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.metadata.Metadata;
 

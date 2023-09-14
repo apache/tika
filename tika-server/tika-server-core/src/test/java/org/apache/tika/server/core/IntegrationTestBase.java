@@ -27,8 +27,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import jakarta.ws.rs.core.Response;
 
+import jakarta.ws.rs.core.Response;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.junit.jupiter.api.AfterEach;
@@ -120,7 +120,7 @@ public class IntegrationTestBase extends TikaTest {
                 LOG.debug("tika test client failed to connect to server with status: {}",
                         response.getStatus());
 
-            } catch (javax.ws.rs.ProcessingException e) {
+            } catch (jakarta.ws.rs.ProcessingException e) {
                 LOG.debug("tika test client failed to connect to server", e);
             }
 

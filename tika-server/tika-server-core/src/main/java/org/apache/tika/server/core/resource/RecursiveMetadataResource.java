@@ -22,6 +22,7 @@ import static org.apache.tika.server.core.resource.TikaResource.fillParseContext
 
 import java.io.InputStream;
 import java.util.List;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -34,7 +35,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,6 +91,24 @@ public class RecursiveMetadataResource {
         return handler.getMetadataList();
     }
 
+    static HandlerConfig buildHandlerConfig(MultivaluedMap<String, String> httpHeaders,
+                                            String handlerTypeName,
+                                            HandlerConfig.PARSE_MODE parseMode) {
+        int writeLimit = -1;
+        if (httpHeaders.containsKey("writeLimit")) {
+            writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
+        }
+
+        int maxEmbeddedResources = -1;
+        if (httpHeaders.containsKey("maxEmbeddedResources")) {
+            maxEmbeddedResources = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedResources"));
+        }
+        return new HandlerConfig(
+                BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE),
+                parseMode, writeLimit, maxEmbeddedResources,
+                TikaResource.getThrowOnWriteLimitReached(httpHeaders));
+    }
+
     /**
      * Returns an InputStream that can be deserialized as a list of
      * {@link Metadata} objects.
@@ -122,28 +140,11 @@ public class RecursiveMetadataResource {
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info,
                                              @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws Exception {
-        return Response
-                .ok(parseMetadataToMetadataList(att.getObject(InputStream.class), new Metadata(),
+        return Response.ok(
+                parseMetadataToMetadataList(att.getObject(InputStream.class), new Metadata(),
                         att.getHeaders(), info,
                         buildHandlerConfig(att.getHeaders(), handlerTypeName,
                                 HandlerConfig.PARSE_MODE.RMETA))).build();
-    }
-
-    static HandlerConfig buildHandlerConfig(MultivaluedMap<String, String> httpHeaders,
-                                            String handlerTypeName, HandlerConfig.PARSE_MODE parseMode) {
-        int writeLimit = -1;
-        if (httpHeaders.containsKey("writeLimit")) {
-            writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
-        }
-
-        int maxEmbeddedResources = -1;
-        if (httpHeaders.containsKey("maxEmbeddedResources")) {
-            maxEmbeddedResources = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedResources"));
-        }
-        return new HandlerConfig(
-                BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE),
-                parseMode,
-                writeLimit, maxEmbeddedResources, TikaResource.getThrowOnWriteLimitReached(httpHeaders));
     }
 
     /**

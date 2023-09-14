@@ -25,8 +25,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
-import jakarta.ws.rs.core.Response;
 
+import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
@@ -69,8 +69,7 @@ public class OpenNLPMetadataFilterTest extends CXFTestBase {
 
     @Override
     protected InputStream getTikaConfigInputStream() {
-        return getClass().getResourceAsStream(
-                "/config/tika-config-langdetect-opennlp-filter.xml");
+        return getClass().getResourceAsStream("/config/tika-config-langdetect-opennlp-filter.xml");
     }
 
     @Test

@@ -30,8 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
-import jakarta.ws.rs.core.Response;
 
+import jakarta.ws.rs.core.Response;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -265,10 +265,8 @@ public class UnpackerResourceTest extends CXFTestBase {
                 break;
             }
         }
-        assertEquals("image/png",
-                TikaConfig.getDefaultConfig().getDetector()
-                        .detect(new ByteArrayInputStream(renderedImage), new Metadata()).toString()
-        );
+        assertEquals("image/png", TikaConfig.getDefaultConfig().getDetector()
+                .detect(new ByteArrayInputStream(renderedImage), new Metadata()).toString());
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
             BufferedImage image = ImageIO.read(is);

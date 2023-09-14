@@ -24,13 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MediaType;
@@ -174,7 +174,7 @@ public class TikaMimeTypes {
     }
 
     @GET
-    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
     public String getMimeTypesJSON() throws IOException {
         Map<String, Object> details = new HashMap<>();
 
@@ -197,7 +197,7 @@ public class TikaMimeTypes {
 
     @GET
     @Path("/{type}/{subtype}")
-    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
     public String getMimeTypeDetailsJSON(@PathParam("type") String typePart,
                                          @PathParam("subtype") String subtype) throws IOException {
         MediaTypeDetails type = getMediaType(typePart, subtype);

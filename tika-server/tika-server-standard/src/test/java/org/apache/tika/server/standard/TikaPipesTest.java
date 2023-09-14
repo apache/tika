@@ -30,8 +30,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import jakarta.ws.rs.core.Response;
 
+import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -67,17 +67,14 @@ import org.apache.tika.utils.ProcessUtils;
 public class TikaPipesTest extends CXFTestBase {
 
     private static final String PIPES_PATH = "/pipes";
-
+    private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
     @TempDir
     private static Path TMP_WORKING_DIR;
-
     private static Path TMP_OUTPUT_DIR;
-
     private static Path TMP_OUTPUT_FILE;
     private static Path TIKA_PIPES_LOG4j2_PATH;
     private static Path TIKA_CONFIG_PATH;
     private static String TIKA_CONFIG_XML;
-    private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
     private static FetcherManager FETCHER_MANAGER;
 
     @BeforeAll
@@ -101,23 +98,19 @@ public class TikaPipesTest extends CXFTestBase {
         TIKA_CONFIG_XML =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
                         "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                        "<params>" + "<name>fsf</name>" +
-                        "<basePath>" + inputDir.toAbsolutePath() +
+                        "<params>" + "<name>fsf</name>" + "<basePath>" + inputDir.toAbsolutePath() +
                         "</basePath>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
                         "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
-                        "<params>" + "<name>fse</name>" +
-                        "<basePath>" +
+                        "<params>" + "<name>fse</name>" + "<basePath>" +
                         TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</params>" +
-                        "</emitter>" +
-                        "</emitters>" + "<pipes><params><tikaConfig>" +
-                ProcessUtils.escapeCommandLine(TIKA_CONFIG_PATH.toAbsolutePath().toString()) +
-                        "</tikaConfig><numClients>10</numClients>" +
-                        "<forkedJvmArgs>" +
-                        "<arg>-Xmx256m</arg>" +
-                        "<arg>-Dlog4j.configurationFile=file:" +
-                        ProcessUtils.escapeCommandLine(TIKA_PIPES_LOG4j2_PATH.toAbsolutePath().toString()) + "</arg>" +
-                        "</forkedJvmArgs>" +
-                        "</params></pipes>" + "</properties>";
+                        "</emitter>" + "</emitters>" + "<pipes><params><tikaConfig>" +
+                        ProcessUtils.escapeCommandLine(
+                                TIKA_CONFIG_PATH.toAbsolutePath().toString()) +
+                        "</tikaConfig><numClients>10</numClients>" + "<forkedJvmArgs>" +
+                        "<arg>-Xmx256m</arg>" + "<arg>-Dlog4j.configurationFile=file:" +
+                        ProcessUtils.escapeCommandLine(
+                                TIKA_PIPES_LOG4j2_PATH.toAbsolutePath().toString()) + "</arg>" +
+                        "</forkedJvmArgs>" + "</params></pipes>" + "</properties>";
         Files.write(TIKA_CONFIG_PATH, TIKA_CONFIG_XML.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -166,8 +159,7 @@ public class TikaPipesTest extends CXFTestBase {
     public void testBasic() throws Exception {
 
         FetchEmitTuple t =
-                new FetchEmitTuple("myId",
-                        new FetchKey("fsf", "test_recursive_embedded.docx"),
+                new FetchEmitTuple("myId", new FetchKey("fsf", "test_recursive_embedded.docx"),
                         new EmitKey("fse", ""));
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
@@ -190,10 +182,8 @@ public class TikaPipesTest extends CXFTestBase {
     public void testConcatenated() throws Exception {
 
         FetchEmitTuple t =
-                new FetchEmitTuple("myId",
-                        new FetchKey("fsf", "test_recursive_embedded.docx"),
-                        new EmitKey("fse", ""),
-                        new Metadata(),
+                new FetchEmitTuple("myId", new FetchKey("fsf", "test_recursive_embedded.docx"),
+                        new EmitKey("fse", ""), new Metadata(),
                         new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
                                 HandlerConfig.PARSE_MODE.CONCATENATE, -1, -1000, true),
                         FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);

@@ -17,6 +17,7 @@
 package org.apache.tika.server.core;
 
 import java.util.List;
+
 import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.apache.tika.config.ServiceLoader;
@@ -29,8 +30,9 @@ public class CompositeParseContextConfig implements ParseContextConfig {
     final List<ParseContextConfig> configs;
 
     public CompositeParseContextConfig() {
-        configs = new ServiceLoader(CompositeParseContextConfig.class.getClassLoader())
-                .loadServiceProviders(ParseContextConfig.class);
+        configs = new ServiceLoader(
+                CompositeParseContextConfig.class.getClassLoader()).loadServiceProviders(
+                ParseContextConfig.class);
     }
 
     @Override

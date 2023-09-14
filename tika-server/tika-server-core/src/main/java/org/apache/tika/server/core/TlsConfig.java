@@ -26,9 +26,9 @@ import org.apache.tika.utils.StringUtils;
 
 public class TlsConfig implements Initializable {
 
-    private boolean active = false;
     //TODO make this configurable
     private final boolean passwordsAESEncrypted = false;
+    private boolean active = false;
     private String keyStoreType = null;
     private String keyStorePassword = null;
     private String keyStoreFile = null;
@@ -118,11 +118,11 @@ public class TlsConfig implements Initializable {
             }
             if (hasTrustStore()) {
                 if (StringUtils.isBlank(trustStoreType)) {
-                    throw new TikaConfigException("must initialize trustStoreType " +
-                            "if there's any trustStore info");
+                    throw new TikaConfigException(
+                            "must initialize trustStoreType " + "if there's any trustStore info");
                 } else if (StringUtils.isBlank(trustStoreFile)) {
-                    throw new TikaConfigException("must initialize trustStoreFile " +
-                            "if there's any trustStore info");
+                    throw new TikaConfigException(
+                            "must initialize trustStoreFile " + "if there's any trustStore info");
                 } else if (StringUtils.isBlank(trustStorePassword)) {
                     throw new TikaConfigException("must initialize trustStorePassword " +
                             "if there's any trustStore info");
@@ -164,8 +164,7 @@ public class TlsConfig implements Initializable {
     }
 
     public boolean hasTrustStore() {
-        return ! StringUtils.isBlank(trustStoreType) &&
-                ! StringUtils.isBlank(trustStorePassword) &&
-                ! StringUtils.isBlank(trustStoreFile);
+        return !StringUtils.isBlank(trustStoreType) && !StringUtils.isBlank(trustStorePassword) &&
+                !StringUtils.isBlank(trustStoreFile);
     }
 }

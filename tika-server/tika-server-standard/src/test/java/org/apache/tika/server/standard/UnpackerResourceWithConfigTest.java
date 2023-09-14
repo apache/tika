@@ -28,8 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
-import jakarta.ws.rs.core.Response;
 
+import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
@@ -90,10 +90,8 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
                 break;
             }
         }
-        assertEquals("image/tiff",
-                TikaConfig.getDefaultConfig().getDetector()
-                        .detect(new ByteArrayInputStream(renderedImage), new Metadata()).toString()
-        );
+        assertEquals("image/tiff", TikaConfig.getDefaultConfig().getDetector()
+                .detect(new ByteArrayInputStream(renderedImage), new Metadata()).toString());
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
             BufferedImage image = ImageIO.read(is);
@@ -144,10 +142,8 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
                 break;
             }
         }
-        assertEquals("image/jpeg",
-                TikaConfig.getDefaultConfig().getDetector()
-                        .detect(new ByteArrayInputStream(renderedImage), new Metadata()).toString()
-        );
+        assertEquals("image/jpeg", TikaConfig.getDefaultConfig().getDetector()
+                .detect(new ByteArrayInputStream(renderedImage), new Metadata()).toString());
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
             BufferedImage image = ImageIO.read(is);

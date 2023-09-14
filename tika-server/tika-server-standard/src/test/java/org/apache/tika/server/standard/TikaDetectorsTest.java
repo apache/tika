@@ -23,9 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import jakarta.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
@@ -91,8 +91,8 @@ public class TikaDetectorsTest extends CXFTestBase {
     @SuppressWarnings("unchecked")
     public void testGetJSON() throws Exception {
         Response response = WebClient.create(endPoint + DETECTORS_PATH)
-                .type(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-                .accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).get();
+                .type(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+                .accept(jakarta.ws.rs.core.MediaType.APPLICATION_JSON).get();
 
         String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
         Map<String, Object> json = new ObjectMapper().readerFor(Map.class).readValue(jsonStr);

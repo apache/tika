@@ -163,7 +163,7 @@
                   <exclude>com.sun.istack:istack-commons-runtime:jar:</exclude>
                   <exclude>com.sun.activation:jakarta.activation:jar:</exclude> <!-- NOT SURA these coordinates are correcte -->
                   <exclude>com.fasterxml.jackson.core:jackson-core:jar:</exclude>
-                  <exclude>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:jar:</exclude>
+                  <exclude>com.fasterxml.jackson.jaxrs:jackson-jakarta-rs-json-provider:jar:</exclude>
                   <exclude>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:jar:</exclude>
                   <exclude>com.fasterxml.jackson.module:jackson-module-jaxb-annotations:jar:</exclude>
                   <exclude>com.fasterxml.jackson.core:jackson-annotations:jar:</exclude>

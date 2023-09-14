@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HEAD;
@@ -36,7 +37,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 
 import org.apache.tika.Tika;
@@ -49,8 +49,7 @@ import org.apache.tika.server.core.HTMLHelper;
 public class TikaWelcome {
     private static final String DOCS_URL = "https://wiki.apache.org/tika/TikaJAXRS";
 
-    private static final Map<Class<? extends Annotation>, String> HTTP_METHODS =
-            new HashMap<>();
+    private static final Map<Class<? extends Annotation>, String> HTTP_METHODS = new HashMap<>();
 
     static {
         HTTP_METHODS.put(DELETE.class, "DELETE");

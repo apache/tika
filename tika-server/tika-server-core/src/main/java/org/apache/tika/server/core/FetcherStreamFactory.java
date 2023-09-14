@@ -21,10 +21,10 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +62,20 @@ public class FetcherStreamFactory implements InputStreamFactory {
         this.fetcherManager = fetcherManager;
     }
 
+    /**
+     * Tries to parse a long out of the value.  If the val is blank, it returns -1.
+     * Throws {@link NumberFormatException}
+     *
+     * @param val
+     * @return
+     */
+    private static long getLong(String val) {
+        if (StringUtils.isBlank(val)) {
+            return -1;
+        }
+        return Long.parseLong(val);
+    }
+
     @Override
     public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders,
                                       UriInfo uriInfo) throws IOException {
@@ -80,13 +94,13 @@ public class FetcherStreamFactory implements InputStreamFactory {
                     " fetcherName:" + fetcherName + " and fetchKey:" + fetchKey);
         }
         if (fetchRangeStart < 0 && fetchRangeEnd > -1) {
-            throw new IllegalArgumentException("fetchRangeStart must be > -1 if a fetchRangeEnd " +
-                    "is specified");
+            throw new IllegalArgumentException(
+                    "fetchRangeStart must be > -1 if a fetchRangeEnd " + "is specified");
         }
 
         if (fetchRangeStart > -1 && fetchRangeEnd < 0) {
-            throw new IllegalArgumentException("fetchRangeEnd must be > -1 if a fetchRangeStart " +
-                    "is specified");
+            throw new IllegalArgumentException(
+                    "fetchRangeEnd must be > -1 if a fetchRangeStart " + "is specified");
         }
 
         if (!StringUtils.isBlank(fetcherName)) {
@@ -124,11 +138,11 @@ public class FetcherStreamFactory implements InputStreamFactory {
     }
 
     private String getParam(String paramName, HttpHeaders httpHeaders, MultivaluedMap uriParams) {
-        if (uriParams == null || ! uriParams.containsKey(paramName)) {
+        if (uriParams == null || !uriParams.containsKey(paramName)) {
             return httpHeaders.getHeaderString(paramName);
         }
 
-        return (String)uriParams.getFirst(paramName);
+        return (String) uriParams.getFirst(paramName);
     }
 
     @Override
@@ -136,19 +150,5 @@ public class FetcherStreamFactory implements InputStreamFactory {
             throws IOException {
         return getInputStream(is, metadata, httpHeaders, null);
 
-    }
-
-    /**
-     * Tries to parse a long out of the value.  If the val is blank, it returns -1.
-     * Throws {@link NumberFormatException}
-     *
-     * @param val
-     * @return
-     */
-    private static long getLong(String val) {
-        if (StringUtils.isBlank(val)) {
-            return -1;
-        }
-        return Long.parseLong(val);
     }
 }
