@@ -16,7 +16,7 @@
  */
 package org.apache.tika.server.core.config;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.StringUtils;
 

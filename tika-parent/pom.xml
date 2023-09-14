@@ -337,7 +337,7 @@
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.21.19</jackrabbit.version>
     <jackson.version>2.15.2</jackson.version>
-    <javax.annotation.version>1.3.2</javax.annotation.version>
+    <jakarta.annotation.version>2.1.1</jakarta.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
     <javax.rest.version>2.1.1</javax.rest.version>
     <jaxb.version>4.0.3</jaxb.version>
@@ -673,7 +673,7 @@
       <dependency>
         <groupId>jakarta.annotation</groupId>
         <artifactId>jakarta.annotation-api</artifactId>
-        <version>2.1.1</version>
+        <version>${jakarta.annotation.version}</version>
       </dependency>
       <dependency>
         <groupId>javax.measure</groupId>
@@ -997,7 +997,7 @@
               <artifactId>guava</artifactId>
               <version>32.0.0-jre</version>
             </exclude>
-            <!-- sonatype https://ossindex.sonatype.org/vulnerability/sonatype-2021-0818 
+            <!-- sonatype https://ossindex.sonatype.org/vulnerability/sonatype-2021-0818
             false positive? related bug https://github.com/grpc/grpc-java/issues/8311
             has been fixed -->
             <dependency>

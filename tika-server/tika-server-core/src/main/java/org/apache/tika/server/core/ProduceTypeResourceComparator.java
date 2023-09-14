@@ -19,7 +19,7 @@ package org.apache.tika.server.core;
 
 import java.util.Arrays;
 import java.util.List;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 
 import org.apache.cxf.jaxrs.ext.ResourceComparator;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;

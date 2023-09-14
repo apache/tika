@@ -20,7 +20,7 @@ package org.apache.tika.server.core;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;

@@ -98,9 +98,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>javax.inject</groupId>
-      <artifactId>javax.inject</artifactId>
-      <version>1</version>
+      <groupId>jakarta.inject</groupId>
+      <artifactId>jakarta.inject-api</artifactId>
+      <version>2.0.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -122,9 +122,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.sun.activation</groupId>
-      <artifactId>javax.activation</artifactId>
-      <version>1.2.0</version>
+      <groupId>jakarta.activation</groupId>
+      <artifactId>jakarta.activation-api</artifactId>
     </dependency>
     <dependency>
       <groupId>com.sun.xml.fastinfoset</groupId>
@@ -150,7 +149,7 @@
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Embed-Dependency>*;scope=compile;artifactId=tika-parsers-standard-package|
-              javax.activation|
+              jakarta.activation|
               xerces|
               xercesImpl|
               commons-compress|
@@ -167,10 +166,10 @@
               fontbox|
               jempbox|
               xmpbox|
-              bcmail-jdk15on|
-              bcprov-jdk15on|
-              bcpkix-jdk15on|
-              bcutil-jdk15on|
+              bcjmail-jdk18on|
+              bcprov-jdk18on|
+              bcpkix-jdk18on|
+              bcutil-jdk18on|
               poi|
               poi-scratchpad|
               poi-ooxml|
@@ -256,7 +255,7 @@
               com.sun.tools.javadoc;resolution:=optional,
               de.rototor.pdfbox.graphics2d;resolution:=optional,
               icc;resolution:=optional,
-              javax.annotation;resolution:=optional,
+              jakarta.annotation;resolution:=optional,
               javax.mail;resolution:=optional,
               javax.mail.internet;resolution:=optional,
               javax.net.ssl;resolution:=optional,
@@ -264,7 +263,7 @@
               javax.servlet.annotation;resolution:=optional,
               javax.servlet.http;resolution:=optional,
               javax.measure.converter;resolution:=optional,
-              javax.ws.rs.core;resolution:=optional,
+              jakarta.ws.rs.core;resolution:=optional,
               javax.xml.bind;resolution:=optional,
               javax.xml.bind.annotation;resolution:=optional,
               javax.xml.bind.annotation.adapters;resolution:=optional,
@@ -447,5 +446,3 @@
     <tag>2.2.1-rc2</tag>
   </scm>
 </project>
-
-
