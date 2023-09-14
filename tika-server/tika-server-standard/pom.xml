@@ -161,7 +161,7 @@
                   <exclude>jakarta.xml.bind:jakarta.xml.bind-api:jar:</exclude>
                   <exclude>org.glassfish.jaxb:txw2:jar:</exclude>
                   <exclude>com.sun.istack:istack-commons-runtime:jar:</exclude>
-                  <exclude>com.sun.activation:jakarta.activation:jar:</exclude>
+                  <exclude>com.sun.activation:jakarta.activation:jar:</exclude> <!-- NOT SURA these coordinates are correcte -->
                   <exclude>com.fasterxml.jackson.core:jackson-core:jar:</exclude>
                   <exclude>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:jar:</exclude>
                   <exclude>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:jar:</exclude>

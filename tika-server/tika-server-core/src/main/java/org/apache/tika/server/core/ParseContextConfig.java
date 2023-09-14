@@ -32,7 +32,7 @@
  */
 package org.apache.tika.server.core;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;

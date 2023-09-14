@@ -19,8 +19,8 @@ package org.apache.tika.server.core;
 
 import java.io.IOException;
 import java.io.InputStream;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.apache.tika.metadata.Metadata;
 

@@ -17,7 +17,7 @@
 package org.apache.tika.server.core;
 
 import java.util.List;
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.metadata.Metadata;
