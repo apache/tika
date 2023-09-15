@@ -295,7 +295,7 @@
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
     <maven.failsafe.version>3.1.2</maven.failsafe.version>
-    <maven.javadoc.version>3.5.0</maven.javadoc.version>
+    <maven.javadoc.version>3.6.0</maven.javadoc.version>
     <maven.jar.version>3.3.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.1.2</maven.surefire.version>
@@ -305,8 +305,8 @@
     <rat.version>0.15</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.26.1</google.cloud.version>
-    <aws.version>1.12.549</aws.version>
+    <google.cloud.version>2.27.0</google.cloud.version>
+    <aws.version>1.12.551</aws.version>
     <asm.version>9.5</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -471,7 +471,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.23.1</version>
+        <version>12.24.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
@@ -861,7 +861,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.28.1</version>
+        <version>0.28.2</version>
       </dependency>
       <dependency>
         <groupId>org.opengis</groupId>
@@ -1148,7 +1148,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.3.0</version>
+        <version>3.4.1</version>
         <executions>
           <execution>
             <id>enforce-maven</id>
