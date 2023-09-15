@@ -306,7 +306,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.26.1</google.cloud.version>
-    <aws.version>1.12.549</aws.version>
+    <aws.version>1.12.551</aws.version>
     <asm.version>9.5</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -471,7 +471,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.23.1</version>
+        <version>12.24.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
@@ -861,7 +861,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.28.1</version>
+        <version>0.28.2</version>
       </dependency>
       <dependency>
         <groupId>org.opengis</groupId>
