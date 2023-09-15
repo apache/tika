@@ -338,12 +338,11 @@
     <jackson.version>2.15.2</jackson.version>
     <jakarta.annotation.version>2.1.1</jakarta.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
-    <javax.rest.version>2.1.1</javax.rest.version>
     <jaxb.version>4.0.3</jaxb.version>
     <jbig2.version>3.0.4</jbig2.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
-    <jetty.version>11.0.15</jetty.version>
+    <jetty.version>11.0.16</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.13.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
@@ -375,7 +374,7 @@
     <reactor.netty.version>1.1.11</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.0.1</scm.version>
-    <sis.version>1.3</sis.version>
+    <sis.version>1.4-SNAPSHOT</sis.version>
     <slf4j.version>2.0.9</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17 -->
@@ -1103,7 +1102,7 @@
         <version>${maven.surefire.version}
         </version> <!-- versions greater than this don't like System.exit calls in tika-batch -->
         <configuration>
-          <argLine>-Xmx3072m -Djava.awt.headless=true</argLine>
+          <argLine>-Xmx4g -Djava.awt.headless=true</argLine>
         </configuration>
       </plugin>
       <plugin>
