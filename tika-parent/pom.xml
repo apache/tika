@@ -420,18 +420,6 @@
         <scope>import</scope>
       </dependency>
       <dependency>
-        <!-- Required to add exclusion -->
-        <groupId>org.apache.cxf</groupId>
-        <artifactId>cxf-core</artifactId>
-        <version>${cxf.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-bom</artifactId>
         <version>${log4j2.version}</version>
@@ -1114,7 +1102,7 @@
         <version>${maven.surefire.version}
         </version> <!-- versions greater than this don't like System.exit calls in tika-batch -->
         <configuration>
-          <argLine>-Xmx3072m -Djava.awt.headless=true</argLine>
+          <argLine>-Xmx4g -Djava.awt.headless=true</argLine>
         </configuration>
       </plugin>
       <plugin>
