@@ -305,7 +305,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.27.0</google.cloud.version>
-    <aws.version>1.12.551</aws.version>
+    <aws.version>1.12.552</aws.version>
     <asm.version>9.5</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -820,7 +820,7 @@
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-utils</artifactId>
-        <version>3.5.1</version>
+        <version>4.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.freemarker</groupId>
