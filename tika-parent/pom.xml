@@ -375,7 +375,6 @@
     <rome.version>2.1.0</rome.version>
     <scm.version>2.0.1</scm.version>
     <sis.version>1.4-SNAPSHOT</sis.version>
-    <slf4j.version>2.0.9</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17 -->
     <spring.version>5.3.29</spring.version>
@@ -437,6 +436,13 @@
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
         <version>${junit5.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-bom</artifactId>
+        <version>2.0.9</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -724,16 +730,6 @@
         <version>${commons.math3.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.cxf</groupId>
-        <artifactId>cxf-rt-rs-client</artifactId>
-        <version>${cxf.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.cxf</groupId>
-        <artifactId>cxf-rt-frontend-jaxrs</artifactId>
-        <version>${cxf.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.apache.felix</groupId>
         <artifactId>org.apache.felix.scr.annotations</artifactId>
         <version>1.12.0</version>
@@ -898,21 +894,6 @@
         <artifactId>quartz</artifactId>
         <version>2.3.2</version>
       </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>jcl-over-slf4j</artifactId>
-        <version>${slf4j.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
-        <version>${slf4j.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-simple</artifactId>
-        <version>${slf4j.version}</version>
-      </dependency>
       <!-- need to specify this to avoid
       version clash within ctakes-core 4.0.0 -->
       <dependency>
@@ -936,6 +917,12 @@
         <groupId>xerces</groupId>
         <artifactId>xercesImpl</artifactId>
         <version>${xerces.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
           <groupId>commons-fileupload</groupId>
@@ -1298,6 +1285,17 @@
       </build>
     </profile>
   </profiles>
+  <!-- temporarily add this to grab the SIS snapshot -->
+  <repositories>
+    <repository>
+      <id>apache.snapshots</id>
+      <name>Apache Snapshot Repository</name>
+      <url>https://repository.apache.org/snapshots</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </repository>
+  </repositories>
   <!--
       <connection>scm:git:https://github.com/apache/</connection>
       <developerConnection>scm:git:https://github.com/apache/</developerConnection>
