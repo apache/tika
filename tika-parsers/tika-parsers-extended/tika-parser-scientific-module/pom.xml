@@ -90,7 +90,6 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
-      <version>${commons.csv.version}</version>
     </dependency>
     <!-- for java 10
 See TIKA-2778 for why we need to do this now.
@@ -99,7 +98,6 @@ May the gods of dependency management fix this in the future.
     <dependency>
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
-      <version>${jaxb.version}</version>
     </dependency>
   </dependencies>
 
