@@ -976,52 +976,51 @@
         <configuration>
           <excludeCoordinates>
             <!-- the link from ossindex "divide by zero" points to fixes that were made in 2.18.0 -->
-            <exclude>
+            <coordinate>
               <groupId>com.drewnoakes</groupId>
               <artifactId>metadata-extractor</artifactId>
               <version>2.18.0</version>
-            </exclude>
+            </coordinate>
             <!-- sonatype https://ossindex.sonatype.org/vulnerability/sonatype-2021-0818
             false positive? related bug https://github.com/grpc/grpc-java/issues/8311
             has been fixed -->
-            <dependency>
+            <coordinate>
               <groupId>io.grpc</groupId>
               <artifactId>grpc-core</artifactId>
               <version>1.53.0</version>
-            </dependency>
-            <exclude>
+            </coordinate>
+            <coordinate>
+              <groupId>io.netty</groupId>
+              <artifactId>netty-handler</artifactId>
+              <version>4.1.97.Final</version>
+            </coordinate>
+            <coordinate>
               <!-- the most recent cve in sonatype for this artifact is 2.11.0,
                   not at all the version we're using...smh-->
               <groupId>xerces</groupId>
               <artifactId>xercesImpl</artifactId>
               <version>2.12.2</version>
-            </exclude>
+            </coordinate>
             <!-- these are used by the nlp-module -->
-            <exclude>
+            <coordinate>
               <groupId>org.apache.lucene</groupId>
               <artifactId>lucene-queryparser</artifactId>
               <version>4.0.0</version>
-            </exclude>
+            </coordinate>
             <!-- this one is used in tika-example -->
-            <exclude>
+            <coordinate>
               <!-- sonatype: https://github.com/apache/commons-dbcp/commit/a4c5af0da1de3a7f50c72fc7edaa1f653ca276dd -->
               <groupId>commons-dbcp</groupId>
               <artifactId>commons-dbcp</artifactId>
               <version>1.4</version>
-            </exclude>
+            </coordinate>
             <!-- used only in tests and in tika-eval, and this problem requires the use of the console.
                  https://github.com/h2database/h2database/issues/1294 -->
-            <exclude>
+            <coordinate>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>2.2.222</version>
-            </exclude>
-            <!-- Project disagrees with CVE https://github.com/FasterXML/jackson-databind/issues/3972 -->
-            <exclude>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>2.15.2</version>
-            </exclude>
+            </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
         </configuration>
