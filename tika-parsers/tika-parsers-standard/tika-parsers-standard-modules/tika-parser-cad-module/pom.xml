@@ -53,7 +53,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.parser.code</Automatic-Module-Name>
+              <Automatic-Module-Name>org.apache.tika.parser.cad</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>
