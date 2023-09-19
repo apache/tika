@@ -151,8 +151,6 @@
             </Bundle-Activator>
             <Embed-Dependency>*;scope=compile;artifactId=tika-parsers-standard-package|
               javax.activation|
-              xerces|
-              xercesImpl|
               commons-compress|
               xz|
               commons-codec|
@@ -317,10 +315,6 @@
               org.apache.tools.ant;resolution:=optional,
               org.apache.tools.ant.taskdefs;resolution:=optional,
               org.apache.tools.ant.types;resolution:=optional,
-              org.apache.xerces.parsers;resolution:=optional,
-              org.apache.xerces.util;resolution:=optional,
-              org.apache.xerces.xni;resolution:=optional,
-              org.apache.xerces.xni.parser;resolution:=optional,
               org.apache.xml.resolver;resolution:=optional,
               org.apache.xml.resolver.readers;resolution:=optional,
               org.apache.xml.resolver.tools;resolution:=optional,
@@ -411,9 +405,6 @@
               INFO
             </org.ops4j.pax.logging.DefaultServiceLog.level>
           </systemPropertyVariables>
-          <classpathDependencyExcludes>
-            <classpathDependencyExclude>xerces:xercesImpl</classpathDependencyExclude>
-          </classpathDependencyExcludes>
         </configuration>
       </plugin>
       <plugin>
