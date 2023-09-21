@@ -175,16 +175,13 @@ public class XHTMLContentHandler extends SafeContentHandler {
                 }
             }
 
-            super.startElement(XHTML, "title", "title", EMPTY_ATTRIBUTES);
             String title = metadata.get(TikaCoreProperties.TITLE);
             if (title != null && title.length() > 0) {
+                super.startElement(XHTML, "title", "title", EMPTY_ATTRIBUTES);
                 char[] titleChars = title.toCharArray();
                 super.characters(titleChars, 0, titleChars.length);
-            } else {
-                // TIKA-725: Prefer <title></title> over <title/>
-                super.characters(new char[0], 0, 0);
+                super.endElement(XHTML, "title", "title");
             }
-            super.endElement(XHTML, "title", "title");
             newline();
 
             super.endElement(XHTML, "head", "head");
