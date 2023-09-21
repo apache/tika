@@ -28,14 +28,23 @@
   <artifactId>tika-langdetect-optimaize</artifactId>
   <name>Apache Tika Optimaize langdetect</name>
 
-
   <dependencies>
     <dependency>
       <groupId>com.optimaize.languagedetector</groupId>
       <artifactId>language-detector</artifactId>
       <version>${optimaize.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.intellij</groupId>
+          <artifactId>annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
-
+    <dependency>
+      <groupId>org.jetbrains</groupId>
+      <artifactId>annotations</artifactId>
+      <version>24.0.1</version>
+    </dependency>
     <!-- test dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>
