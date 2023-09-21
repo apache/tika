@@ -52,7 +52,6 @@ public class ContentHandlerExampleTest {
         assertContains("<html", result);
         assertContains("<head>", result);
         assertContains("<meta name=\"dc:creator\"", result);
-        assertContains("<title>", result);
         assertContains("<body>", result);
         assertContains(">test", result);
     }

@@ -180,8 +180,8 @@ public class TikaCLITest {
     public void testHTMLOutput() throws Exception {
         String content = getParamOutContent("-h", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains("html xmlns=\"http://www.w3.org/1999/xhtml"));
-        assertTrue(content.contains("<title></title>"),
-                "Expanded <title></title> element should be present");
+        assertFalse(content.contains("<title"),
+                "There should be no title element");
 
         content = getParamOutContent("-h", "--digest=SHA384", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains(
