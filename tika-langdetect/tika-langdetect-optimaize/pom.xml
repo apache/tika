@@ -43,7 +43,7 @@
     <dependency>
       <groupId>org.jetbrains</groupId>
       <artifactId>annotations</artifactId>
-      <version>17.0.0</version>
+      <version>24.0.1</version>
     </dependency>
     <!-- test dependencies -->
     <dependency>
