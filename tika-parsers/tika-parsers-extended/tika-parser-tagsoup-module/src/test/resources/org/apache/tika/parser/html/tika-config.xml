@@ -16,14 +16,15 @@
   limitations under the License.
 -->
 <properties>
-    <!-- Explicitly request default parsers -->
-    <parsers/>
-    <encodingDetectors>
-        <!-- All detectors except HtmlEncodingDetector -->
-        <encodingDetector class="org.apache.tika.detect.DefaultEncodingDetector">
-            <encodingDetector-exclude class="org.apache.tika.parser.html.tagsoup.HtmlEncodingDetector"/>
-        </encodingDetector>
-        <!-- One other detector, to check ordering -->
-        <encodingDetector class="org.apache.tika.detect.NonDetectingEncodingDetector"/>
-    </encodingDetectors>
+    <parsers>
+        <parser class="org.apache.tika.parser.DefaultParser">
+            <parser-exclude class="org.apache.tika.parser.html.tagsoup.HtmlParser"/>
+        </parser>
+
+        <parser class="org.apache.tika.parser.html.tagsoup.HtmlParser">
+            <params>
+                <param name="extractScripts" type="bool">true</param>
+            </params>
+        </parser>
+    </parsers>
 </properties>
