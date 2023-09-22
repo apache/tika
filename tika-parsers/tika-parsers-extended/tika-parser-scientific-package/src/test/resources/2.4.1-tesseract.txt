@@ -111,7 +111,7 @@ application/vnd.openxmlformats-officedocument.wordprocessingml.document	class or
 application/vnd.openxmlformats-officedocument.wordprocessingml.template	class org.apache.tika.parser.microsoft.ooxml.OOXMLParser
 application/vnd.sun.xml.writer	class org.apache.tika.parser.odf.OpenDocumentParser
 application/vnd.visio	class org.apache.tika.parser.microsoft.OfficeParser
-application/vnd.wap.xhtml+xml	class org.apache.tika.parser.html.HtmlParser
+application/vnd.wap.xhtml+xml	class org.apache.tika.parser.html.JSoupParser
 application/vnd.wordperfect; version=5.0	class org.apache.tika.parser.wordperfect.WordPerfectParser
 application/vnd.wordperfect; version=5.1	class org.apache.tika.parser.wordperfect.WordPerfectParser
 application/vnd.wordperfect; version=6.x	class org.apache.tika.parser.wordperfect.WordPerfectParser
@@ -121,7 +121,7 @@ application/x-7z-compressed	class org.apache.tika.parser.pkg.PackageParser
 application/x-ace2	class org.apache.tika.parser.gdal.GDALParser
 application/x-archive	class org.apache.tika.parser.pkg.PackageParser
 application/x-arj	class org.apache.tika.parser.pkg.PackageParser
-application/x-asp	class org.apache.tika.parser.html.HtmlParser
+application/x-asp	class org.apache.tika.parser.html.JSoupParser
 application/x-bag	class org.apache.tika.parser.gdal.GDALParser
 application/x-blx	class org.apache.tika.parser.gdal.GDALParser
 application/x-bplist	class org.apache.tika.parser.apple.PListParser
@@ -248,7 +248,7 @@ application/x-xliff+zip	class org.apache.tika.parser.xliff.XLZParser
 application/x-xyz	class org.apache.tika.parser.gdal.GDALParser
 application/x-xz	class org.apache.tika.parser.pkg.CompressorParser
 application/x-zmap	class org.apache.tika.parser.gdal.GDALParser
-application/xhtml+xml	class org.apache.tika.parser.html.HtmlParser
+application/xhtml+xml	class org.apache.tika.parser.html.JSoupParser
 application/xml	class org.apache.tika.parser.xml.DcXMLParser
 application/xpm	class org.apache.tika.parser.gdal.GDALParser
 application/zip	class org.apache.tika.parser.pkg.PackageParser
@@ -332,7 +332,7 @@ image/x-xcf	class org.apache.tika.parser.image.ImageParser
 message/rfc822	class org.apache.tika.parser.mail.RFC822Parser
 model/vnd.dwfx+xps	class org.apache.tika.parser.microsoft.ooxml.OOXMLParser
 text/csv	class org.apache.tika.parser.csv.TextAndCSVParser
-text/html	class org.apache.tika.parser.html.HtmlParser
+text/html	class org.apache.tika.parser.html.JSoupParser
 text/iso19139+xml	class org.apache.tika.parser.geoinfo.GeographicInformationParser
 text/plain	class org.apache.tika.parser.csv.TextAndCSVParser
 text/tsv	class org.apache.tika.parser.csv.TextAndCSVParser

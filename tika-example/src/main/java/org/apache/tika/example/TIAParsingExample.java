@@ -47,7 +47,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.html.HtmlMapper;
-import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.parser.html.IdentityHtmlMapper;
 import org.apache.tika.parser.txt.TXTParser;
 import org.apache.tika.parser.xml.XMLParser;
@@ -117,7 +117,7 @@ public class TIAParsingExample {
         ContentHandler handler = new DefaultHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        Parser parser = new HtmlParser();
+        Parser parser = new JSoupParser();
         parser.parse(stream, handler, metadata, context);
     }
 
@@ -126,7 +126,7 @@ public class TIAParsingExample {
         ContentHandler handler = new DefaultHandler();
         ParseContext context = new ParseContext();
         Map<MediaType, Parser> parsersByType = new HashMap<>();
-        parsersByType.put(MediaType.parse("text/html"), new HtmlParser());
+        parsersByType.put(MediaType.parse("text/html"), new JSoupParser());
         parsersByType.put(MediaType.parse("application/xml"), new XMLParser());
 
         CompositeParser parser = new CompositeParser();

@@ -34,7 +34,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -68,9 +68,9 @@ public class ChmParser extends AbstractParser {
         xhtml.startDocument();
 
         Parser htmlParser =
-                EmbeddedDocumentUtil.tryToFindExistingLeafParser(HtmlParser.class, context);
+                EmbeddedDocumentUtil.tryToFindExistingLeafParser(JSoupParser.class, context);
         if (htmlParser == null) {
-            htmlParser = new HtmlParser();
+            htmlParser = new JSoupParser();
         }
 
         for (DirectoryListingEntry entry : chmExtractor.getChmDirList()

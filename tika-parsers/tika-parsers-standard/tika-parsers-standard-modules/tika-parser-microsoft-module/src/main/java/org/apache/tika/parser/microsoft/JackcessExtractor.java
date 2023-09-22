@@ -54,7 +54,7 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -85,9 +85,9 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         shortDateTimeFormatter = DateFormat.getDateInstance(DateFormat.SHORT, locale);
         this.parseContext = context;
         Parser tmpHtmlParser =
-                EmbeddedDocumentUtil.tryToFindExistingLeafParser(HtmlParser.class, context);
+                EmbeddedDocumentUtil.tryToFindExistingLeafParser(JSoupParser.class, context);
         if (tmpHtmlParser == null) {
-            htmlParser = new HtmlParser();
+            htmlParser = new JSoupParser();
         } else {
             htmlParser = tmpHtmlParser;
         }
