@@ -222,7 +222,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-parser-html-commons</artifactId>
+        <artifactId>tika-handler-boilerpipe</artifactId>
         <version>3.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
