@@ -192,7 +192,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
                 handler.startElement(XMLConstants.NULL_NS_URI, node.nodeName(), node.nodeName(),
                         attributes);
             } catch (SAXException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeSAXException(e);
             }
             return FilterResult.CONTINUE;
         }
