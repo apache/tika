@@ -186,7 +186,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parser-html-commons</artifactId>
+      <artifactId>tika-handler-boilerpipe</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
