@@ -19,7 +19,7 @@
     <!-- Explicitly request default parsers -->
     <parsers/>
     <encodingDetectors>
-        <encodingDetector class="org.apache.tika.parser.html.tagsoup.HtmlEncodingDetector">
+        <encodingDetector class="org.apache.tika.parser.html.HtmlEncodingDetector">
             <params>
                 <param name="markLimit" type="int">64000</param>
             </params>
