@@ -44,7 +44,6 @@
     </dependency>
   </dependencies>
   <modules>
-    <module>tika-parser-html-commons</module>
     <module>tika-parser-jdbc-commons</module>
     <module>tika-parser-digest-commons</module>
     <module>tika-parser-mail-commons</module>

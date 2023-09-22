@@ -54,6 +54,7 @@
     <module>tika-example</module>
     <module>tika-java7</module>
     <module>tika-detectors</module>
+    <module>tika-handlers</module>
   </modules>
 
   <profiles>
