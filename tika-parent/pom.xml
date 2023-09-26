@@ -305,7 +305,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.27.0</google.cloud.version>
-    <aws.version>1.12.553</aws.version>
+    <aws.version>1.12.557</aws.version>
     <asm.version>9.5</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -397,7 +397,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.5-5</zstd.version>
     <kafka.version>3.5.1</kafka.version>
-    <netty.version>4.1.97.Final</netty.version>
+    <netty.version>4.1.98.Final</netty.version>
   </properties>
 
   <dependencyManagement>
@@ -926,7 +926,7 @@
       <dependency>
         <groupId>org.xerial.snappy</groupId>
         <artifactId>snappy-java</artifactId>
-        <version>1.1.10.3</version>
+        <version>1.1.10.4</version>
       </dependency>
       <dependency>
           <groupId>commons-fileupload</groupId>
@@ -966,7 +966,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.16.0</version>
+        <version>2.16.1</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
