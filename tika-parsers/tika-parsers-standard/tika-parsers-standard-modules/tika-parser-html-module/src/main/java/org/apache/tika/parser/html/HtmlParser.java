@@ -146,7 +146,11 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
             parser.setContentHandler(new XHTMLDowngradeHandler(
                     new HtmlHandler(mapper, handler, metadata, context, extractScripts)));
 
-            parser.parse(reader.asInputSource());
+            try {
+                parser.parse(reader.asInputSource());
+            } catch (StringIndexOutOfBoundsException e) {
+                throw new TikaException(e.getMessage(), e);
+            }
         }
     }
 
