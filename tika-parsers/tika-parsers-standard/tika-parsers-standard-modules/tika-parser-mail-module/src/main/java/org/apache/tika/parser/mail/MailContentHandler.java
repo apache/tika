@@ -59,7 +59,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.csv.TextAndCSVParser;
-import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.parser.mailcommons.MailDateParser;
 import org.apache.tika.parser.mailcommons.MailUtil;
 import org.apache.tika.parser.txt.TXTParser;
@@ -520,7 +520,7 @@ class MailContentHandler implements ContentHandler {
         boolean inlineText = false;
         if (MediaType.TEXT_HTML.toString().equalsIgnoreCase(contentType)) {
             parser = EmbeddedDocumentUtil
-                    .tryToFindExistingLeafParser(HtmlParser.class, parseContext);
+                    .tryToFindExistingLeafParser(JSoupParser.class, parseContext);
         } else if (MediaType.TEXT_PLAIN.toString().equalsIgnoreCase(contentType)) {
             parser =
                     EmbeddedDocumentUtil.tryToFindExistingLeafParser(TXTParser.class, parseContext);
