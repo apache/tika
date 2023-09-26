@@ -142,8 +142,7 @@ public class XMLTestBase extends TikaTest {
             TaggedContentHandler tagged = new TaggedContentHandler(handler);
             try {
                 SAXParserFactory saxParserFactory = SAXParserFactory
-                        .newInstance("org.apache.xerces.jaxp.SAXParserFactoryImpl",
-                                this.getClass().getClassLoader());
+                        .newInstance();
                 SAXParser parser = saxParserFactory.newSAXParser();
                 parser.parse(stream, new TextContentHandler(handler, true));
             } catch (ParserConfigurationException e) {

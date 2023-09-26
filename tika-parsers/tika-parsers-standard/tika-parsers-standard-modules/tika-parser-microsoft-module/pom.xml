@@ -42,8 +42,6 @@
       <artifactId>tika-parser-text-module</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!-- needed for only for AbstractXML2003Parser, but it ensures that xerces
-        is used -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-xml-module</artifactId>
