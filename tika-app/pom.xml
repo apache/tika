@@ -106,6 +106,7 @@
       </resource>
     </resources>
     <plugins>
+
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <version>${maven.shade.version}</version>
@@ -135,15 +136,15 @@
                     <exclude>CHANGES</exclude>
                     <exclude>README</exclude>
                     <exclude>builddef.lst</exclude>
-                    <!-- clutter not needed in jar -->
+                    <!--  clutter not needed in jar -->
                     <exclude>resources/grib1/nasa/README*.pdf</exclude>
                     <exclude>resources/grib1/**/readme*.txt</exclude>
                     <exclude>resources/grib2/**/readme*.txt</exclude>
-                    <!-- TIKA-763: Workaround to avoid including LGPL classes -->
+                    <!-- TIKA-763: Workaround to avoid including LGPL classes  -->
                     <exclude>ucar/nc2/iosp/fysat/Fysat*.class</exclude>
                     <exclude>ucar/nc2/dataset/transform/VOceanSG1*class</exclude>
                     <exclude>ucar/unidata/geoloc/vertical/OceanSG*.class</exclude>
-                    <!-- https://issues.apache.org/jira/browse/TIKA-3650-->
+                    <!-- https://issues.apache.org/jira/browse/TIKA-3650 -->
                     <exclude>javax/**/*</exclude>
 
                   </excludes>
@@ -178,6 +179,30 @@
         </executions>
       </plugin>
       <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+
+    <artifactId>maven-assembly-plugin</artifactId>
+
+        <configuration>
+          <appendAssemblyId>true</appendAssemblyId>
+          <finalName>tika-app</finalName>
+          <descriptors>
+            <descriptor>assembly.xml</descriptor>
+          </descriptors>
+        </configuration>
+
+    <executions>
+      <execution>
+        <id>make-assembly</id>
+        <!-- bind to the packaging phase -->
+        <phase>package</phase>
+        <goals>
+          <goal>single</goal>
+        </goals>
+      </execution>
+    </executions>
+  </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
@@ -185,6 +210,11 @@
             <manifestEntries>
               <Automatic-Module-Name>org.apache.tika.app</Automatic-Module-Name>
             </manifestEntries>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <classpathPrefix>lib/</classpathPrefix>
+              <mainClass>org.apache.tika.cli.TikaCLI</mainClass>
+            </manifest>
           </archive>
         </configuration>
         <executions>
