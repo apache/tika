@@ -96,12 +96,6 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-    <groupId>xerces</groupId>
-    <artifactId>xercesImpl</artifactId>
-    <version>2.12.2</version>
-    <scope>test</scope>
-</dependency>
   </dependencies>
 
   <build>
@@ -148,9 +142,7 @@
               org.apache.tika.config.TikaActivator
             </Bundle-Activator>
             <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
-            <Import-Package>!sun.misc,org.apache.xerces.util;resolution:=optional,
-              org.apache.commons.io.*;version="[2,3)",
-              *</Import-Package>
+            <Import-Package>!org.apache.commons.io.*;version="[2,3)",*</Import-Package>
             <Export-Package>
               org.apache.tika.*
             </Export-Package>

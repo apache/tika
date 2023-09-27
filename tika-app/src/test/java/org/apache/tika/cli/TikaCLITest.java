@@ -272,7 +272,7 @@ public class TikaCLITest {
 
         assertTrue(json.contains(
                 "\"X-TIKA:Parsed-By\" : [ \"org.apache.tika.parser.DefaultParser\", " +
-                        "\"org.apache.tika.parser.html.HtmlParser\" ],"));
+                        "\"org.apache.tika.parser.html.JSoupParser\" ],"));
         //test legacy alphabetic sort of keys
         int enc = json.indexOf("\"Content-Encoding\"");
         int fb = json.indexOf("fb:admins");
@@ -467,7 +467,7 @@ public class TikaCLITest {
                 getParamOutContent("--config=" + TEST_DATA_FILE.toString() + "/tika-config1.xml",
                         resourcePrefix + "bad_xml.xml");
         assertTrue(content.contains("apple"));
-        assertTrue(content.contains("org.apache.tika.parser.html.HtmlParser"));
+        assertTrue(content.contains("org.apache.tika.parser.html.JSoupParser"));
     }
 
     @Test

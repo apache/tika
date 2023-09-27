@@ -1,6 +1,20 @@
 Release 3.0.0-BETA - ??
 
+   BREAKING CHANGES
+
    * Require Java 11 (TIKA-4128).
+
+   * The boilerpipe handler has been moved to the tika-handler-boiler-pipe
+     package (TIKA-4138).
+
+   * We've migrated HTML parsing to the JSoup parser instead of TagSoup. If
+     you have a custom configuration on the HTMLParser, you'll need to change
+     that to o.a.t.p.html.JSoupParser (TIKA-1599). The TagSoup parser is still
+     available in the tika-parser-tagsoup-module if you prefer the legacy parser.
+
+   * Removed xerces2 as a dependency (TIKA-4135).
+
+   Other Changes/Updates
 
    * Fix bug in DateUtils that stripped timezone information from
      incoming Calendar objects (TIKA-4126).

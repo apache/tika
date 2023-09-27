@@ -98,7 +98,7 @@ public class RTFParserTest extends TikaTest {
         assertContains("org.apache.tika.parser.csv.TextAndCSVParser", parsedByFullSet);
         assertContains("org.apache.tika.parser.microsoft.ooxml.OOXMLParser", parsedByFullSet);
         assertContains("org.apache.tika.parser.pkg.PackageParser", parsedByFullSet);
-        assertContains("org.apache.tika.parser.html.HtmlParser", parsedByFullSet);
+        assertContains("org.apache.tika.parser.html.JSoupParser", parsedByFullSet);
         assertContains("org.apache.tika.parser.image.JpegParser", parsedByFullSet);
         assertContains("org.apache.tika.parser.pdf.PDFParser", parsedByFullSet);
     }

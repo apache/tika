@@ -50,8 +50,8 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-parser-html-commons</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-handler-boilerpipe</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -128,7 +128,7 @@
                   <exclude>org.apache.tika:tika-parsers-standard-package:jar:</exclude>
                   <exclude>org.apache.tika:tika-serialization:jar:</exclude>
                   <exclude>org.apache.tika:tika-langdetect-optimaize:jar:</exclude>
-                  <exclude>org.apache.tika:tika-parser-html-commons:jar:</exclude>
+                  <exclude>org.apache.tika:tika-handler-boilerpipe:jar:</exclude>
                   <exclude>org.apache.tika:tika-parser-digest-commons:jar:</exclude>
                   <exclude>org.apache.tika:tika-parser-zip-commons:jar:</exclude>
                   <exclude>commons-codec:commons-codec:jar:</exclude>

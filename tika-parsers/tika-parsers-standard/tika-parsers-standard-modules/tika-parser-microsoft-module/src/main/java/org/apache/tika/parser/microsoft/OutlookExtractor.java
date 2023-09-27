@@ -66,7 +66,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlEncodingDetector;
-import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.parser.mailcommons.MailDateParser;
 import org.apache.tika.parser.microsoft.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;
@@ -367,9 +367,9 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             }
             if (data != null) {
                 Parser htmlParser = EmbeddedDocumentUtil
-                        .tryToFindExistingLeafParser(HtmlParser.class, parseContext);
+                        .tryToFindExistingLeafParser(JSoupParser.class, parseContext);
                 if (htmlParser == null) {
-                    htmlParser = new HtmlParser();
+                    htmlParser = new JSoupParser();
                 }
                 htmlParser.parse(new UnsynchronizedByteArrayInputStream(data),
                         new EmbeddedContentHandler(new BodyContentHandler(xhtml)), new Metadata(),

@@ -18,10 +18,10 @@
 <properties>
     <parsers>
         <parser class="org.apache.tika.parser.DefaultParser">
-            <parser-exclude class="org.apache.tika.parser.html.HtmlParser"/>
+            <parser-exclude class="org.apache.tika.parser.html.JSoupParser"/>
         </parser>
 
-        <parser class="org.apache.tika.parser.html.HtmlParser">
+        <parser class="org.apache.tika.parser.html.JSoupParser">
             <params>
                 <param name="extractScripts" type="bool">true</param>
             </params>

@@ -31,9 +31,8 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.ccil.cowan.tagsoup</groupId>
-      <artifactId>tagsoup</artifactId>
-      <version>${tagsoup.version}</version>
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
     </dependency>
 
     <dependency>

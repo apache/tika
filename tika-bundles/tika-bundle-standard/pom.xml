@@ -58,7 +58,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parser-html-commons</artifactId>
+      <artifactId>tika-handler-boilerpipe</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -150,8 +150,6 @@
             </Bundle-Activator>
             <Embed-Dependency>*;scope=compile;artifactId=tika-parsers-standard-package|
               jakarta.activation|
-              xerces|
-              xercesImpl|
               commons-compress|
               xz|
               commons-codec|
@@ -316,10 +314,6 @@
               org.apache.tools.ant;resolution:=optional,
               org.apache.tools.ant.taskdefs;resolution:=optional,
               org.apache.tools.ant.types;resolution:=optional,
-              org.apache.xerces.parsers;resolution:=optional,
-              org.apache.xerces.util;resolution:=optional,
-              org.apache.xerces.xni;resolution:=optional,
-              org.apache.xerces.xni.parser;resolution:=optional,
               org.apache.xml.resolver;resolution:=optional,
               org.apache.xml.resolver.readers;resolution:=optional,
               org.apache.xml.resolver.tools;resolution:=optional,

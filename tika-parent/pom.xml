@@ -295,7 +295,7 @@
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
     <maven.failsafe.version>3.1.2</maven.failsafe.version>
-    <maven.javadoc.version>3.5.0</maven.javadoc.version>
+    <maven.javadoc.version>3.6.0</maven.javadoc.version>
     <maven.jar.version>3.3.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.1.2</maven.surefire.version>
@@ -305,8 +305,9 @@
     <scm.version>2.0.1</scm.version>
 
     <!-- dependency versions -->
+    <google.cloud.version>2.27.1</google.cloud.version>
+    <aws.version>1.12.558</aws.version>
     <asm.version>9.5</asm.version>
-    <aws.version>1.12.549</aws.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
     <bouncycastle.version>1.76</bouncycastle.version>
@@ -330,6 +331,7 @@
     <lucene.version>9.7.0</lucene.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.9</mime4j.version>
+    <mockito.version>5.5.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <openjson.version>1.0.13</openjson.version>
     <ops4j.version>1.5.1</ops4j.version>
@@ -343,8 +345,8 @@
     <rome.version>2.1.0</rome.version>
     <sis.version>1.4-SNAPSHOT</sis.version>
     <solrj.version>8.11.2</solrj.version>
-    <!-- NOTE: Spring 6 requires jdk17  -->
-    <spring.version>5.3.29</spring.version>
+    <!-- NOTE: Spring 6 requires jdk17 -->
+    <spring.version>5.3.30</spring.version>
     <sqlite.version>3.43.0.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
@@ -353,6 +355,7 @@
     <vorbis.version>0.8</vorbis.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.5-5</zstd.version>
+    <netty.version>4.1.98.Final</netty.version>
   </properties>
 
   <dependencyManagement>
@@ -368,7 +371,7 @@
       <dependency>
         <groupId>io.netty</groupId>
         <artifactId>netty-bom</artifactId>
-        <version>4.1.97.Final</version>
+        <version>${netty.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -392,6 +395,11 @@
         <version>11.0.16</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jsoup</groupId>
+        <artifactId>jsoup</artifactId>
+        <version>1.16.1</version>
       </dependency>
       <dependency>
         <groupId>org.junit</groupId>
@@ -428,7 +436,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.23.1</version>
+        <version>12.24.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
@@ -515,7 +523,7 @@
       <dependency>
         <groupId>com.h2database</groupId>
         <artifactId>h2</artifactId>
-        <version>2.2.222</version>
+        <version>2.2.224</version>
       </dependency>
       <dependency>
         <groupId>com.healthmarketscience.jackcess</groupId>
@@ -619,6 +627,7 @@
         <artifactId>jakarta.annotation-api</artifactId>
         <version>2.1.1</version>
       </dependency>
+      <!-- can't upgrade higher until geoapi does because of changes in classes after 2.1 -->
       <dependency>
         <groupId>javax.measure</groupId>
         <artifactId>unit-api</artifactId>
@@ -780,7 +789,7 @@
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-utils</artifactId>
-        <version>3.5.1</version>
+        <version>4.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.freemarker</groupId>
@@ -810,7 +819,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.28.1</version>
+        <version>0.28.2</version>
       </dependency>
       <dependency>
         <groupId>org.opengis</groupId>
@@ -865,18 +874,7 @@
       <dependency>
         <groupId>org.xerial.snappy</groupId>
         <artifactId>snappy-java</artifactId>
-        <version>1.1.10.3</version>
-      </dependency>
-      <dependency>
-        <groupId>xerces</groupId>
-        <artifactId>xercesImpl</artifactId>
-        <version>2.12.2</version>
-        <exclusions>
-          <exclusion>
-            <groupId>xml-apis</groupId>
-            <artifactId>xml-apis</artifactId>
-          </exclusion>
-        </exclusions>
+        <version>1.1.10.4</version>
       </dependency>
       <dependency>
           <groupId>commons-fileupload</groupId>
@@ -916,7 +914,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.16.0</version>
+        <version>2.16.1</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
@@ -930,51 +928,54 @@
         <configuration>
           <excludeCoordinates>
             <!-- the link from ossindex "divide by zero" points to fixes that were made in 2.18.0 -->
-            <coordinate>
+            <exclude>
               <groupId>com.drewnoakes</groupId>
               <artifactId>metadata-extractor</artifactId>
               <version>2.18.0</version>
-            </coordinate>
-            <!-- sonatype https://ossindex.sonatype.org/vulnerability/sonatype-2021-0818
+            </exclude>
+            <exclude>
+              <!-- sonatype https://github.com/google/guava/issues/4011 -->
+              <groupId>com.google.guava</groupId>
+              <artifactId>guava</artifactId>
+              <version>32.0.0-jre</version>
+            </exclude>
+            <!-- sonatype https://ossindex.sonatype.org/vulnerability/sonatype-2021-0818 
             false positive? related bug https://github.com/grpc/grpc-java/issues/8311
             has been fixed -->
-            <coordinate>
+            <dependency>
               <groupId>io.grpc</groupId>
               <artifactId>grpc-core</artifactId>
               <version>1.53.0</version>
-            </coordinate>
-            <coordinate>
+            </dependency>
+            <exclude>
+              <groupId>com.ibm.icu</groupId>
+              <artifactId>icu4j</artifactId>
+              <version>${icu4j.version}</version>
+            </exclude>
+            <exclude>
               <groupId>io.netty</groupId>
               <artifactId>netty-handler</artifactId>
-              <version>4.1.97.Final</version>
-            </coordinate>
-            <coordinate>
-              <!-- the most recent cve in sonatype for this artifact is 2.11.0,
-                  not at all the version we're using...smh-->
-              <groupId>xerces</groupId>
-              <artifactId>xercesImpl</artifactId>
-              <version>2.12.2</version>
-            </coordinate>
+            </exclude>
             <!-- these are used by the nlp-module -->
-            <coordinate>
+            <exclude>
               <groupId>org.apache.lucene</groupId>
               <artifactId>lucene-queryparser</artifactId>
               <version>4.0.0</version>
-            </coordinate>
+            </exclude>
             <!-- this one is used in tika-example -->
-            <coordinate>
+            <exclude>
               <!-- sonatype: https://github.com/apache/commons-dbcp/commit/a4c5af0da1de3a7f50c72fc7edaa1f653ca276dd -->
               <groupId>commons-dbcp</groupId>
               <artifactId>commons-dbcp</artifactId>
               <version>1.4</version>
-            </coordinate>
+            </exclude>
             <!-- used only in tests and in tika-eval, and this problem requires the use of the console.
                  https://github.com/h2database/h2database/issues/1294 -->
-            <coordinate>
+            <exclude>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>2.2.222</version>
-            </coordinate>
+            </exclude>
           </excludeCoordinates>
           <fail>true</fail>
         </configuration>
@@ -1068,7 +1069,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.3.0</version>
+        <version>3.4.1</version>
         <executions>
           <execution>
             <id>enforce-maven</id>

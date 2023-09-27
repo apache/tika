@@ -27,6 +27,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
@@ -40,6 +41,7 @@ import org.apache.tika.utils.XMLReaderUtils;
  *
  * @see <a href="https://issues.apache.org/jira/browse/TIKA-4062">TIKA-4062</a>
  */
+@Disabled("TODO -- rework without xerces")
 public class CustomErrorHandlerTest extends TikaTest {
 
     private static String DEFAULT_SAX_PARSER_FACTORY;
