@@ -304,7 +304,7 @@
     <rat.version>0.15</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.27.0</google.cloud.version>
+    <google.cloud.version>2.27.1</google.cloud.version>
     <aws.version>1.12.557</aws.version>
     <asm.version>9.5</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
