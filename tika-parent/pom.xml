@@ -305,8 +305,8 @@
     <rat.version>0.15</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.27.0</google.cloud.version>
-    <aws.version>1.12.552</aws.version>
+    <google.cloud.version>2.27.1</google.cloud.version>
+    <aws.version>1.12.559</aws.version>
     <asm.version>9.5</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -327,7 +327,7 @@
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <ctakes.version>4.0.0.1</ctakes.version>
     <!-- can't update to 3.6.0, needs jdk11 ? -->
-    <cxf.version>3.5.6</cxf.version>
+    <cxf.version>3.5.7</cxf.version>
     <ddplist.version>1.27</ddplist.version>
     <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions &gt; 0.4.0 require java > 8 -->
@@ -402,7 +402,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.5-5</zstd.version>
     <kafka.version>3.5.1</kafka.version>
-    <netty.version>4.1.97.Final</netty.version>
+    <netty.version>4.1.98.Final</netty.version>
   </properties>
 
   <dependencyManagement>
@@ -579,7 +579,7 @@
       <dependency>
         <groupId>com.h2database</groupId>
         <artifactId>h2</artifactId>
-        <version>2.2.222</version>
+        <version>2.2.224</version>
       </dependency>
       <dependency>
         <groupId>com.healthmarketscience.jackcess</groupId>
@@ -861,7 +861,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.28.2</version>
+        <version>0.28.3</version>
       </dependency>
       <dependency>
         <groupId>org.opengis</groupId>
@@ -931,7 +931,7 @@
       <dependency>
         <groupId>org.xerial.snappy</groupId>
         <artifactId>snappy-java</artifactId>
-        <version>1.1.10.3</version>
+        <version>1.1.10.5</version>
       </dependency>
       <dependency>
         <groupId>xerces</groupId>
@@ -1047,7 +1047,7 @@
             <exclude>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
-                <version>2.2.222</version>
+                <version>2.2.224</version>
             </exclude>
             <!-- Project disagrees with CVE https://github.com/FasterXML/jackson-databind/issues/3972 -->
             <exclude>
