@@ -205,7 +205,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
 
         Map<String, String> hyperlinks = loadHyperlinkRelationships(packagePart);
         try (InputStream stream = packagePart.getInputStream()) {
-            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
+            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
                     new OOXMLWordAndPowerPointTextHandler(new XWPFToTextContentHandler(buffer),
                     hyperlinks), new ParseContext());
         }

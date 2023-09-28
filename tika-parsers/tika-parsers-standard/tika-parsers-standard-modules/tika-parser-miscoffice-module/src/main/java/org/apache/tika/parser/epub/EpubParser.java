@@ -178,7 +178,7 @@ public class EpubParser extends AbstractParser {
             }
         } else {
             temporaryResources = new TemporaryResources();
-            tis = TikaInputStream.get(CloseShieldInputStream.wrap(stream), temporaryResources, metadata);
+            tis = TikaInputStream.get(new CloseShieldInputStream(stream), temporaryResources, metadata);
         }
         ZipFile zipFile = null;
         try {

@@ -60,7 +60,7 @@ public class ZipSalvager {
 
             try (ZipArchiveOutputStream outputStream = new ZipArchiveOutputStream(salvagedZip);
                     ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
-                            CloseShieldInputStream.wrap(brokenZip), "UTF8", false,
+                            new CloseShieldInputStream(brokenZip), "UTF8", false,
                             allowStoredEntries)) {
                 ZipArchiveEntry zae = zipArchiveInputStream.getNextZipEntry();
                 try {

@@ -47,7 +47,7 @@ public class EpubContentParser extends AbstractParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         XMLReaderUtils
-                .parseSAX(CloseShieldInputStream.wrap(stream), handler,
+                .parseSAX(new CloseShieldInputStream(stream), handler,
                         context);
     }
 

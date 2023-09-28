@@ -109,7 +109,7 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
     private void parseImpl(InputStream stream, ContentHandler handler, Metadata metadata,
                            ParseContext context) throws IOException, SAXException, TikaException {
         // Automatically detect the character encoding
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
+        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
                 metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             String previous = metadata.get(Metadata.CONTENT_TYPE);

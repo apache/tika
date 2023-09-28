@@ -61,7 +61,7 @@ public class HttpParser extends AbstractParser {
         xhtml.startDocument();
 
         try (ReadableByteChannel channel =
-                     Channels.newChannel(CloseShieldInputStream.wrap(stream))) {
+                     Channels.newChannel(new CloseShieldInputStream(stream))) {
 
             int len = channel.read(buffer);
             buffer.flip();

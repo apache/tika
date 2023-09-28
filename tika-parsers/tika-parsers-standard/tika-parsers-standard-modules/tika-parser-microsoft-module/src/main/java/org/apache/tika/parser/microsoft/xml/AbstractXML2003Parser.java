@@ -94,7 +94,7 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
             //need to get new SAXParser because
             //an attachment might require another SAXParser
             //mid-parse
-            XMLReaderUtils.getSAXParser().parse(CloseShieldInputStream.wrap(stream),
+            XMLReaderUtils.getSAXParser().parse(new CloseShieldInputStream(stream),
                     new EmbeddedContentHandler(
                             getContentHandler(tagged, metadata, context)));
         } catch (SAXException e) {
