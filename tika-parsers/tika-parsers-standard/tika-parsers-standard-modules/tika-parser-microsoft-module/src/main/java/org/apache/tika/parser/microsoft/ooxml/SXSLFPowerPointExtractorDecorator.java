@@ -159,7 +159,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 continue;
             }
             try (InputStream stream = commentAuthorsPart.getInputStream()) {
-                XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
+                XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
                         new XSLFCommentAuthorHandler(), context);
 
             } catch (TikaException | SAXException | IOException e) {
@@ -178,7 +178,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 //        Map<String, String> hyperlinks = loadHyperlinkRelationships(packagePart);
         xhtml.startElement("div", "class", "slide-content");
         try (InputStream stream = slidePart.getInputStream()) {
-            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
+            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
                     new EmbeddedContentHandler(new OOXMLWordAndPowerPointTextHandler(
                             new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships)), context);
 

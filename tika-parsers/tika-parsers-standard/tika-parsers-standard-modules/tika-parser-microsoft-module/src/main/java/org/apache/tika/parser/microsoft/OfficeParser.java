@@ -158,7 +158,7 @@ public class OfficeParser extends AbstractOfficeParser {
         boolean isDirectoryNode = false;
         try {
             if (tstream == null) {
-                mustCloseFs = new POIFSFileSystem(CloseShieldInputStream.wrap(stream));
+                mustCloseFs = new POIFSFileSystem(new CloseShieldInputStream(stream));
                 root = mustCloseFs.getRoot();
             } else {
                 final Object container = tstream.getOpenContainer();
@@ -172,7 +172,7 @@ public class OfficeParser extends AbstractOfficeParser {
                     if (tstream.hasFile()) {
                         fs = new POIFSFileSystem(tstream.getFile(), true);
                     } else {
-                        fs = new POIFSFileSystem(CloseShieldInputStream.wrap(tstream));
+                        fs = new POIFSFileSystem(new CloseShieldInputStream(tstream));
                     }
                     //tstream will close the fs, no need to close this below
                     tstream.setOpenContainer(fs);

@@ -170,10 +170,10 @@ public class CompressorParser extends AbstractParser {
         // any associated resources, but the underlying document stream
         // should not be closed
         if (stream.markSupported()) {
-            stream = CloseShieldInputStream.wrap(stream);
+            stream = new CloseShieldInputStream(stream);
         } else {
             // Ensure that the stream supports the mark feature
-            stream = new BufferedInputStream(CloseShieldInputStream.wrap(stream));
+            stream = new BufferedInputStream(new CloseShieldInputStream(stream));
         }
 
         CompressorInputStream cis;

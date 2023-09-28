@@ -121,7 +121,7 @@ public class IWorkPackageParser extends AbstractParser {
                 metadata.add(Metadata.CONTENT_TYPE, type.getType().toString());
                 xhtml.startDocument();
                 if (contentHandler != null) {
-                    XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(entryStream),
+                    XMLReaderUtils.parseSAX(new CloseShieldInputStream(entryStream),
                             contentHandler, context);
                 }
                 xhtml.endDocument();

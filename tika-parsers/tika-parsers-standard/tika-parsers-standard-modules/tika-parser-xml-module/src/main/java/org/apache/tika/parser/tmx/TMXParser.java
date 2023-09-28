@@ -65,7 +65,7 @@ public class TMXParser extends AbstractParser {
         metadata.set(Metadata.CONTENT_TYPE, TMX_CONTENT_TYPE.toString());
 
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream), new TMXContentHandler(xhtml, metadata), context);
+        XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream), new TMXContentHandler(xhtml, metadata), context);
 
     }
 

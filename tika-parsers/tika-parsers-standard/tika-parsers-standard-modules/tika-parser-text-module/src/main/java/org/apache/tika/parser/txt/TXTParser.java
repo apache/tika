@@ -74,7 +74,7 @@ public class TXTParser extends AbstractEncodingDetectorParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         // Automatically detect the character encoding
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
+        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
                 metadata, getEncodingDetector(context))) {
             //try to get detected content type; could be a subclass of text/plain
             //such as vcal, etc.

@@ -44,7 +44,7 @@ public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetecto
         Set<String> fileNames = new HashSet<>();
         Set<String> directoryNames = new HashSet<>();
         try (ZipArchiveInputStream zipArchiveInputStream =
-                     new ZipArchiveInputStream(CloseShieldInputStream.wrap(is))) {
+                     new ZipArchiveInputStream(new CloseShieldInputStream(is))) {
             ZipArchiveEntry zae = zipArchiveInputStream.getNextZipEntry();
             while (zae != null) {
                 String name = zae.getName();

@@ -62,7 +62,7 @@ public class ISATabUtils {
             throws IOException, TikaException, SAXException {
 
         // Automatically detect the character encoding
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
+        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
                 metadata)) {
             extractMetadata(reader, metadata, studyFileName);
         }
@@ -83,7 +83,7 @@ public class ISATabUtils {
         if (tikaConfig == null) {
             tikaConfig = TikaConfig.getDefaultConfig();
         }
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
+        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(tis),
                 metadata, tikaConfig.getEncodingDetector());
                 CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
             Iterator<CSVRecord> iterator = csvParser.iterator();
@@ -129,7 +129,7 @@ public class ISATabUtils {
         if (tikaConfig == null) {
             tikaConfig = TikaConfig.getDefaultConfig();
         }
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
+        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(tis),
                 metadata, tikaConfig.getEncodingDetector());
                 CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
             xhtml.startElement("table");
