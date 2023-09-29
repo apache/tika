@@ -73,6 +73,7 @@ public abstract class PipesIterator extends ConfigBase
 
     private HandlerConfig.PARSE_MODE parseMode = HandlerConfig.PARSE_MODE.RMETA;
 
+    private boolean throwOnWriteLimitReached = false;
     private int writeLimit = -1;
     private int maxEmbeddedResources = -1;
 
@@ -147,6 +148,11 @@ public abstract class PipesIterator extends ConfigBase
     }
 
     @Field
+    public void setThrowOnWriteLimitReached(boolean throwOnWriteLimitReached) {
+        this.throwOnWriteLimitReached = throwOnWriteLimitReached;
+    }
+
+    @Field
     public void setMaxEmbeddedResources(int maxEmbeddedResources) {
         this.maxEmbeddedResources = maxEmbeddedResources;
     }
@@ -156,8 +162,8 @@ public abstract class PipesIterator extends ConfigBase
         setParseMode(HandlerConfig.PARSE_MODE.parseMode(parseModeString));
     }
 
-    public void setParseMode(HandlerConfig.PARSE_MODE parsePARSEMode) {
-        this.parseMode = parsePARSEMode;
+    public void setParseMode(HandlerConfig.PARSE_MODE parseMode) {
+        this.parseMode = parseMode;
     }
 
     public Integer call() throws Exception {
@@ -168,7 +174,8 @@ public abstract class PipesIterator extends ConfigBase
 
     protected HandlerConfig getHandlerConfig() {
         //TODO: make throwOnWriteLimitReached configurable
-        return new HandlerConfig(handlerType, parseMode, writeLimit, maxEmbeddedResources, false);
+        return new HandlerConfig(handlerType, parseMode, writeLimit, maxEmbeddedResources,
+                throwOnWriteLimitReached);
     }
 
     protected abstract void enqueue() throws IOException, TimeoutException, InterruptedException;

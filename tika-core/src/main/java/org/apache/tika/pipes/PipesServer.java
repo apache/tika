@@ -501,10 +501,14 @@ public class PipesServer implements Runnable {
     private List<Metadata> parseConcatenated(FetchEmitTuple fetchEmitTuple,
                                              HandlerConfig handlerConfig, InputStream stream,
                                              Metadata metadata) {
-        ContentHandlerFactory contentHandlerFactory =
-                new BasicContentHandlerFactory(handlerConfig.getType(), handlerConfig.getWriteLimit());
-        ContentHandler handler = contentHandlerFactory.getNewContentHandler();
         ParseContext parseContext = new ParseContext();
+
+        ContentHandlerFactory contentHandlerFactory =
+                new BasicContentHandlerFactory(handlerConfig.getType(),
+                        handlerConfig.getWriteLimit(), handlerConfig.isThrowOnWriteLimitReached(),
+                        parseContext);
+
+        ContentHandler handler = contentHandlerFactory.getNewContentHandler();
         parseContext.set(DocumentSelector.class, new DocumentSelector() {
             final int maxEmbedded = handlerConfig.maxEmbeddedResources;
             int embedded = 0;
@@ -549,12 +553,14 @@ public class PipesServer implements Runnable {
     private List<Metadata> parseRecursive(FetchEmitTuple fetchEmitTuple,
                                           HandlerConfig handlerConfig, InputStream stream,
                                           Metadata metadata) {
+        ParseContext parseContext = new ParseContext();
         //Intentionally do not add the metadata filter here!
         //We need to let stacktraces percolate
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(handlerConfig.getType(), handlerConfig.getWriteLimit()),
+                new BasicContentHandlerFactory(handlerConfig.getType(),
+                        handlerConfig.getWriteLimit(), handlerConfig.isThrowOnWriteLimitReached(), parseContext),
                 handlerConfig.getMaxEmbeddedResources());
-        ParseContext parseContext = new ParseContext();
+
         long start = System.currentTimeMillis();
         preParse(fetchEmitTuple, stream, metadata, parseContext);
         try {

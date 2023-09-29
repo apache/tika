@@ -41,6 +41,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
     private final ParseContext parseContext;
 
     /**
+     * Create a BasicContentHandlerFactory with {@link #throwOnWriteLimitReached} is true
      * @param type       basic type of handler
      * @param writeLimit max number of characters to store; if < 0,
      *                   the handler will store all characters
