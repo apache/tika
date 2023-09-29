@@ -92,6 +92,8 @@
                     <exclude>META-INF/MANIFEST.MF</exclude>
                     <exclude>META-INF/LICENSE.md</exclude>
                     <exclude>META-INF/NOTICE.md</exclude>
+                    <!--  clutter not needed in jar -->
+                    <exclude>resources/grib1/nasa/README*.pdf</exclude>
                   </excludes>
                 </filter>
               </filters>
