@@ -82,7 +82,8 @@ class PDFEncodedStringDecoder {
     String decode(String value) {
         try {
             byte[] bytes = new String("(" + value + ")").getBytes(ISO_8859_1);
-            InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get();
+            InputStream is =
+                    new UnsynchronizedByteArrayInputStream(bytes);
             //TODO PDFBOX30 replace RandomAccessBuffer with RandomAccessReadBuffer
             COSStringParser p = new COSStringParser(new RandomAccessBuffer(is));
             String parsed = p.myParseCOSString();
