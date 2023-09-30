@@ -299,7 +299,7 @@
     <maven.jar.version>3.3.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.1.2</maven.surefire.version>
-    <maven.shade.version>3.5.0</maven.shade.version>
+    <maven.shade.version>3.5.1</maven.shade.version>
     <puppycrawl.version>10.12.3</puppycrawl.version>
     <rat.version>0.15</rat.version>
 
@@ -358,7 +358,7 @@
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.20.0</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
-    <lucene.version>9.7.0</lucene.version>
+    <lucene.version>9.8.0</lucene.version>
     <metadata.extractor.version>2.18.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.9</mime4j.version>
