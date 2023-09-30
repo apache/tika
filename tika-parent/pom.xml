@@ -306,7 +306,11 @@
     <!-- dependency versions -->
     <google.cloud.version>2.27.1</google.cloud.version>
     <aws.version>1.12.560</aws.version>
-    <asm.version>9.5</asm.version>
+    <!-- WARNING: when you upgrade asm make sure that you update the
+        OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
+        See TIKA-2992.
+    -->
+    <asm.version>9.6</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
     <bouncycastle.version>1.76</bouncycastle.version>
