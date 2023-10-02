@@ -399,7 +399,7 @@
     <uimafit.version>3.4.0</uimafit.version>
     <vorbis.version>0.8</vorbis.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <zstd.version>1.5.5-5</zstd.version>
+    <zstd.version>1.5.5-6</zstd.version>
     <kafka.version>3.5.1</kafka.version>
     <netty.version>4.1.99.Final</netty.version>
     <snappy.java.version>1.1.10.5</snappy.java.version>
