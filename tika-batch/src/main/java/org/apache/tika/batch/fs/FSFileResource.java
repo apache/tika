@@ -16,12 +16,10 @@
  */
 package org.apache.tika.batch.fs;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Locale;
 
 import org.apache.tika.batch.FileResource;
@@ -46,16 +44,6 @@ public class FSFileResource implements FileResource {
     private final String relativePath;
     private final Metadata metadata;
 
-    /**
-     * @param inputRoot
-     * @param fullPath
-     * @see FSFileResource#FSFileResource(Path, Path)
-     * @deprecated to be removed in Tika 2.0
-     */
-    @Deprecated
-    public FSFileResource(File inputRoot, File fullPath) {
-        this(Paths.get(inputRoot.getAbsolutePath()), Paths.get(fullPath.getAbsolutePath()));
-    }
 
     /**
      * Constructor

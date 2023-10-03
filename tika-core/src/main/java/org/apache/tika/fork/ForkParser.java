@@ -36,14 +36,13 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.TeeContentHandler;
 
-public class ForkParser extends AbstractParser implements Closeable {
+public class ForkParser implements Parser, Closeable {
 
     /**
      * Serial version UID
@@ -161,23 +160,6 @@ public class ForkParser extends AbstractParser implements Closeable {
     }
 
     /**
-     * Returns the command used to start the forked server process.
-     *
-     * @return java command line
-     * @see ForkParser#getJavaCommandAsList()
-     * @deprecated since 1.8
-     */
-    @Deprecated
-    public String getJavaCommand() {
-        StringBuilder sb = new StringBuilder();
-        for (String part : getJavaCommandAsList()) {
-            sb.append(part).append(' ');
-        }
-        sb.deleteCharAt(sb.length() - 1);
-        return sb.toString();
-    }
-
-    /**
      * Sets the command used to start the forked server process.
      * The arguments "-jar" and "/path/to/bootstrap.jar"
      * or "-cp" and "/path/to/tika_bin" are
@@ -190,21 +172,6 @@ public class ForkParser extends AbstractParser implements Closeable {
      */
     public void setJavaCommand(List<String> java) {
         this.java = new ArrayList<>(java);
-    }
-
-    /**
-     * Sets the command used to start the forked server process.
-     * The given command line is split on whitespace and the arguments
-     * "-jar" and "/path/to/bootstrap.jar" are appended to it when starting
-     * the process. The default setting is "java -Xmx32m".
-     *
-     * @param java java command line
-     * @see ForkParser#setJavaCommand(List)
-     * @deprecated since 1.8
-     */
-    @Deprecated
-    public void setJavaCommand(String java) {
-        setJavaCommand(Arrays.asList(java.split(" ")));
     }
 
     /**

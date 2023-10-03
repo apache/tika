@@ -28,11 +28,6 @@ public class DoublingContentHandlerDecoratorFactory implements ContentHandlerDec
     private static final char[] NEWLINE = new char[]{'\n'};
 
     @Override
-    public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata) {
-        return decorate(contentHandler, metadata, new ParseContext());
-    }
-
-    @Override
     public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata,
                                    ParseContext parseContext) {
         return new ContentHandlerDecorator(contentHandler) {

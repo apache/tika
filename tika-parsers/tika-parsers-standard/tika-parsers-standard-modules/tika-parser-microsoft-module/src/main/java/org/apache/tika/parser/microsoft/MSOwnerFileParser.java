@@ -30,15 +30,15 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Parser for temporary MSOFfice files.
  * This currently only extracts the owner's name.
  */
-public class MSOwnerFileParser extends AbstractParser {
+public class MSOwnerFileParser implements Parser {
 
     private static final int ASCII_CHUNK_LENGTH = 54;
     private static final MediaType MEDIA_TYPE = MediaType.application("x-ms-owner");

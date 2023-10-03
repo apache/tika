@@ -35,14 +35,14 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 
 /**
  * For now, this parser isn't even registered.  It contains
  * code that will detect the newer 2018 .keynote, .numbers, .pages files.
  */
-public class IWork18PackageParser extends AbstractParser {
+public class IWork18PackageParser implements Parser {
 
     private final static Set<MediaType> supportedTypes = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(IWork18DocumentType.KEYNOTE18.getType(),

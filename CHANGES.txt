@@ -19,6 +19,8 @@ Release 3.0.0-BETA - ??
 
    Other Changes/Updates
 
+   * Deprecated AbstractParser for removal in 4.x (TIKA-4132).
+
    * Fix bug in DateUtils that stripped timezone information from
      incoming Calendar objects (TIKA-4126).
 

@@ -111,17 +111,6 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     /**
-     * @param context
-     * @param extractor
-     * @deprecated use {@link XWPFWordExtractorDecorator#XWPFWordExtractorDecorator(Metadata,
-     * ParseContext, XWPFWordExtractor)}
-     */
-    @Deprecated
-    public XWPFWordExtractorDecorator(ParseContext context, XWPFWordExtractor extractor) {
-        this(new Metadata(), context, extractor);
-    }
-
-    /**
      * @see org.apache.poi.xwpf.extractor.XWPFWordExtractor#getText()
      */
     @Override

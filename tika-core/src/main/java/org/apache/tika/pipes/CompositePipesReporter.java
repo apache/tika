@@ -71,21 +71,11 @@ public class CompositePipesReporter extends PipesReporter implements Initializab
         }
     }
 
-    /**
-     * 
-     * @param pipesReporters
-     * @deprecated use {@link CompositePipesReporter#addPipesReporter(PipesReporter)}
-     */
-    @Field
-    @Deprecated
-    public void setPipesReporters(List<PipesReporter> pipesReporters) {
-        this.pipesReporters = pipesReporters;
-    }
-
     @Field
     public void addPipesReporter(PipesReporter pipesReporter) {
         this.pipesReporters.add(pipesReporter);
     }
+
     public List<PipesReporter> getPipesReporters() {
         return pipesReporters;
     }

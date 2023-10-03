@@ -41,8 +41,8 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
@@ -52,7 +52,7 @@ import org.apache.tika.utils.ProcessUtils;
  * and on the path.  This is not the default rar parser and must
  * be selected via the tika-config.xml.
  */
-public class UnrarParser extends AbstractParser {
+public class UnrarParser implements Parser {
     private static final long serialVersionUID = 6157727985054451501L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =

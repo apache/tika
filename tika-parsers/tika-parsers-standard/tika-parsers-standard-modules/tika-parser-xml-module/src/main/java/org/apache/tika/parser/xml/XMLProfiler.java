@@ -37,8 +37,8 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.XMLReaderUtils;
 
 
@@ -66,7 +66,7 @@ import org.apache.tika.utils.XMLReaderUtils;
  * xmp in other file formats.  Please open a ticket.
  * </p>
  */
-public class XMLProfiler extends AbstractParser {
+public class XMLProfiler implements Parser {
 
 
     private static final Set<MediaType> SUPPORTED_TYPES =

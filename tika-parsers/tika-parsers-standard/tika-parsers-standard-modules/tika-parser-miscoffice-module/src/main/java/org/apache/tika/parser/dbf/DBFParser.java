@@ -37,8 +37,8 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -50,7 +50,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * It caches the first 10 rows and then runs encoding dectection
  * on the "character" cells.
  */
-public class DBFParser extends AbstractParser {
+public class DBFParser implements Parser {
 
     private static final int ROWS_TO_BUFFER_FOR_CHARSET_DETECTION = 10;
     private static final int MAX_CHARS_FOR_CHARSET_DETECTION = 20000;

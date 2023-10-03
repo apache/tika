@@ -67,13 +67,13 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.DateUtils;
 
 
-public class GeographicInformationParser extends AbstractParser {
+public class GeographicInformationParser implements Parser {
 
     public static final String geoInfoType = "text/iso19139+xml";
     private static final Logger LOG = LoggerFactory.getLogger(GeographicInformationParser.class);

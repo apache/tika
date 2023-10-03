@@ -16,7 +16,6 @@
  */
 package org.apache.tika.util;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
@@ -83,31 +82,6 @@ public class PropsUtil {
             //swallow
         }
         return defaultMissing;
-    }
-
-
-    /**
-     * Parses v.  If there is a problem, this returns defaultMissing.
-     *
-     * @param v              string to parse
-     * @param defaultMissing value to return if value is null or unparseable
-     * @return parsed value
-     * @see #getPath(String, Path)
-     */
-    @Deprecated
-    public static File getFile(String v, File defaultMissing) {
-        if (v == null || v.length() == 0) {
-            return defaultMissing;
-        }
-        //trim initial and final " if they exist
-        if (v.startsWith("\"")) {
-            v = v.substring(1);
-        }
-        if (v.endsWith("\"")) {
-            v = v.substring(0, v.length() - 1);
-        }
-
-        return new File(v);
     }
 
     /**

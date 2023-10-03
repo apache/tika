@@ -170,9 +170,5 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
             throw new TikaConfigException(
                     "base path must not contain \u0000. " + "Seriously, what were you thinking?");
         }
-        LOG.info("A FileSystemFetcher ({}) has been initialized. Clients will be able to read " +
-                "all files under '{}' if this process has permission to read them.",
-                getName(),
-                basePath.toAbsolutePath());
     }
 }

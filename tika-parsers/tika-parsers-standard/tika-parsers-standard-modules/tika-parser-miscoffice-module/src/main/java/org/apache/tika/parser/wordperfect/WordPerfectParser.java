@@ -33,8 +33,8 @@ import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.WordPerfect;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -43,7 +43,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  *
  * @author Pascal Essiembre
  */
-public class WordPerfectParser extends AbstractParser {
+public class WordPerfectParser implements Parser {
 
     final static MediaType WP_BASE = MediaType.application("vnd.wordperfect");
     final static MediaType WP_UNK = new MediaType(WP_BASE, "version", "unknown");

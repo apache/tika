@@ -37,8 +37,8 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -47,7 +47,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Uses Rome for parsing the feeds. A feed description is put in a paragraph
  * with its link and title in an anchor.
  */
-public class FeedParser extends AbstractParser {
+public class FeedParser implements Parser {
 
     /**
      * Serial version UID

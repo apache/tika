@@ -76,8 +76,8 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -93,7 +93,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * @since Tika 2.0
  */
 
-public class AmazonTranscribe extends AbstractParser implements Initializable {
+public class AmazonTranscribe implements Parser, Initializable {
     private static final Logger LOG = LoggerFactory.getLogger(AmazonTranscribe.class);
     private AmazonTranscribeAsync amazonTranscribeAsync;
     private AmazonS3 amazonS3;

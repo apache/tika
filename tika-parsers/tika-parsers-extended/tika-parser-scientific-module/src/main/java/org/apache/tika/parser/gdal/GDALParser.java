@@ -47,8 +47,8 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -71,7 +71,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * {@link ContentHandler} in the
  * {@link #parse(InputStream, ContentHandler, Metadata, ParseContext)} method.
  */
-public class GDALParser extends AbstractParser {
+public class GDALParser implements Parser {
 
     private static final long serialVersionUID = -3869130527323941401L;
     private static final Logger LOG = LoggerFactory.getLogger(GDALParser.class);

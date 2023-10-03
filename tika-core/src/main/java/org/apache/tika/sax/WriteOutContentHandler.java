@@ -16,11 +16,8 @@
  */
 package org.apache.tika.sax;
 
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.nio.charset.Charset;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -86,18 +83,6 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      */
     public WriteOutContentHandler(Writer writer) {
         this(writer, -1);
-    }
-
-    /**
-     * Creates a content handler that writes character events to
-     * the given output stream using the default encoding.
-     *
-     * @param stream output stream
-     * @deprecated -- please use {@link WriteOutContentHandler#WriteOutContentHandler(Writer)}
-     */
-    @Deprecated
-    public WriteOutContentHandler(OutputStream stream) {
-        this(new OutputStreamWriter(stream, Charset.defaultCharset()));
     }
 
     /**

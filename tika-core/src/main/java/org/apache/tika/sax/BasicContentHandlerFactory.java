@@ -139,12 +139,6 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
     }
 
     @Override
-    public ContentHandler getNewContentHandler(OutputStream os, String encoding)
-            throws UnsupportedEncodingException {
-        return getNewContentHandler(os, Charset.forName(encoding));
-    }
-
-    @Override
     public ContentHandler getNewContentHandler(OutputStream os, Charset charset) {
 
         if (type == HANDLER_TYPE.IGNORE) {

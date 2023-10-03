@@ -37,8 +37,8 @@ import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -53,7 +53,7 @@ import org.apache.tika.utils.XMLReaderUtils;
  * <li>Numbers format version 1.x. Currently only tested with Numbers version 2.0.x
  * </ol>
  */
-public class IWorkPackageParser extends AbstractParser {
+public class IWorkPackageParser implements Parser {
 
     /**
      * Which files within an iWork file contain the actual content?
