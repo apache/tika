@@ -39,8 +39,8 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -54,7 +54,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * in font and use that information for identifying character sets,
  * inserting spaces and new lines.
  */
-public class EMFParser extends AbstractParser {
+public class EMFParser implements Parser {
 
     public static Property EMF_ICON_ONLY = Property.internalBoolean("emf:iconOnly");
     public static Property EMF_ICON_STRING = Property.internalText("emf:iconString");

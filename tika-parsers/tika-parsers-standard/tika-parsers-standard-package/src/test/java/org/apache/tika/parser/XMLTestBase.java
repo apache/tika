@@ -103,7 +103,7 @@ public class XMLTestBase extends TikaTest {
         parser.parse(is, new DefaultHandler(), new Metadata(), context);
     }
 
-    static class VulnerableDOMParser extends AbstractParser {
+    static class VulnerableDOMParser implements Parser {
 
         @Override
         public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -128,7 +128,7 @@ public class XMLTestBase extends TikaTest {
         }
     }
 
-    static class VulnerableSAXParser extends AbstractParser {
+    static class VulnerableSAXParser implements Parser {
 
         @Override
         public Set<MediaType> getSupportedTypes(ParseContext context) {

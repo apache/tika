@@ -50,8 +50,8 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -63,7 +63,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  *
  * @since 1.25
  */
-public class PListParser extends AbstractParser {
+public class PListParser implements Parser {
 
     private static final String ARR = "array";
     private static final String DATA = "data";

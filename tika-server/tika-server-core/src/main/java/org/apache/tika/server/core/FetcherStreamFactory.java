@@ -131,13 +131,6 @@ public class FetcherStreamFactory implements InputStreamFactory {
         return (String)uriParams.getFirst(paramName);
     }
 
-    @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
-            throws IOException {
-        return getInputStream(is, metadata, httpHeaders, null);
-
-    }
-
     /**
      * Tries to parse a long out of the value.  If the val is blank, it returns -1.
      * Throws {@link NumberFormatException}

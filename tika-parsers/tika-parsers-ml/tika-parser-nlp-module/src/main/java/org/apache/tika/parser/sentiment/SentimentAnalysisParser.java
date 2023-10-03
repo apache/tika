@@ -41,14 +41,14 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 
 /**
  * This parser classifies documents based on the sentiment of document.
  * The classifier is powered by Apache OpenNLP's Maximum Entropy Classifier
  */
-public class SentimentAnalysisParser extends AbstractParser implements Initializable {
+public class SentimentAnalysisParser implements Parser, Initializable {
 
     public static final String DEF_MODEL =
             "https://raw.githubusercontent.com/USCDataScience/SentimentAnalysisParser/master/sentiment-models/src/main/resources/edu/usc/irds/sentiment/en-netflix-sentiment.bin";

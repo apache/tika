@@ -19,7 +19,6 @@ package org.apache.tika.sax;
 
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
 import org.xml.sax.ContentHandler;
@@ -29,13 +28,6 @@ import org.xml.sax.ContentHandler;
  */
 public interface ContentHandlerFactory extends Serializable {
     ContentHandler getNewContentHandler();
-
-    /**
-     * @deprecated use {@link #getNewContentHandler(OutputStream, Charset)}
-     */
-    @Deprecated
-    ContentHandler getNewContentHandler(OutputStream os, String encoding)
-            throws UnsupportedEncodingException;
 
     ContentHandler getNewContentHandler(OutputStream os, Charset charset);
 

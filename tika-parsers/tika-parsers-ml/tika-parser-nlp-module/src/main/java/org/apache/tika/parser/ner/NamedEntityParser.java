@@ -39,8 +39,8 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ner.opennlp.OpenNLPNERecogniser;
 import org.apache.tika.parser.ner.regex.RegexNERecogniser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -56,7 +56,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * @see OpenNLPNERecogniser
  * @see NERecogniser
  */
-public class NamedEntityParser extends AbstractParser {
+public class NamedEntityParser implements Parser {
     public static final Logger LOG = LoggerFactory.getLogger(NamedEntityParser.class);
     public static final Set<MediaType> MEDIA_TYPES = new HashSet<>();
     public static final String MD_KEY_PREFIX = "NER_";

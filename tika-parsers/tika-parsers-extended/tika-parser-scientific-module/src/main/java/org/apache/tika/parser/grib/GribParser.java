@@ -39,11 +39,11 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
-public class GribParser extends AbstractParser {
+public class GribParser implements Parser {
 
     public static final String GRIB_MIME_TYPE = "application/x-grib2";
     private static final long serialVersionUID = 7855458954474247655L;

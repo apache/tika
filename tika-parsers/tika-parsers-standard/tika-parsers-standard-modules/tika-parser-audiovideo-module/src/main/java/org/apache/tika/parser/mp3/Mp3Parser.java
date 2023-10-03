@@ -33,8 +33,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -46,7 +46,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * @see <a href="https://id3.org/id3v2.4.0-structure">MP3 ID3 Version 2.4 Structure Specification</a>
  * @see <a href="https://id3.org/id3v2.4.0-frames">MP3 ID3 Version 2.4 Frames Specification</a>
  */
-public class Mp3Parser extends AbstractParser {
+public class Mp3Parser implements Parser {
 
     /**
      * Serial version UID

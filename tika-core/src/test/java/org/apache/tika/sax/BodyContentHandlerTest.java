@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +49,9 @@ public class BodyContentHandlerTest extends TikaTest {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
         XHTMLContentHandler xhtml =
-                new XHTMLContentHandler(new BodyContentHandler(buffer), new Metadata());
+                new XHTMLContentHandler(new BodyContentHandler(
+                        new OutputStreamWriter(buffer, UTF_8)),
+                        new Metadata());
         xhtml.startDocument();
         xhtml.element("p", "Test text");
         xhtml.endDocument();

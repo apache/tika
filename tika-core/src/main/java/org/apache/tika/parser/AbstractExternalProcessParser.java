@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @since Apache Tika 1.27
  */
-public abstract class AbstractExternalProcessParser extends AbstractParser {
+public abstract class AbstractExternalProcessParser implements Parser {
 
     /**
      * Serial version UID.

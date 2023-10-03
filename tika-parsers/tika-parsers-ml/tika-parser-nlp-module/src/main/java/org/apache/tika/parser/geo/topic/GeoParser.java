@@ -39,12 +39,12 @@ import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.geo.topic.gazetteer.GeoGazetteerClient;
 import org.apache.tika.parser.geo.topic.gazetteer.Location;
 
-public class GeoParser extends AbstractParser {
+public class GeoParser implements Parser {
     private static final long serialVersionUID = -2241391757440215491L;
     private static final Logger LOG = LoggerFactory.getLogger(GeoParser.class);
     private static final MediaType MEDIA_TYPE = MediaType.application("geotopic");

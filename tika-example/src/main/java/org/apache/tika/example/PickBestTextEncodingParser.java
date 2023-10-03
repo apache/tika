@@ -19,7 +19,6 @@ package org.apache.tika.example;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -166,13 +165,6 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
             }
             return handler;
         }
-
-        @Override
-        public ContentHandler getNewContentHandler(OutputStream os, String encoding)
-                throws UnsupportedEncodingException {
-            return getNewContentHandler();
-        }
-
         @Override
         public ContentHandler getNewContentHandler(OutputStream os, Charset charset) {
             return getNewContentHandler();

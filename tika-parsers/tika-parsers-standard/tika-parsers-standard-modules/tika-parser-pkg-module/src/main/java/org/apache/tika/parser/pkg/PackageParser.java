@@ -181,6 +181,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         return Collections.unmodifiableSet(zipSpecializations);
     }
 
+    //not clear what we should use instead?
     @Deprecated
     static MediaType getMediaType(ArchiveInputStream stream) {
         if (stream instanceof JarArchiveInputStream) {

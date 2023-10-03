@@ -48,11 +48,11 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
-public class IWork13PackageParser extends AbstractParser {
+public class IWork13PackageParser implements Parser {
 
     /**
      * All iWork 13 files contain this, so we can detect based on it

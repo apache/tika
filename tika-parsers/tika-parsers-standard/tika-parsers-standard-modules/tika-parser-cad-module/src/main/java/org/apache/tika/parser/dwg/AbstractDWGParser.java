@@ -18,13 +18,11 @@ package org.apache.tika.parser.dwg;
 
 
 import org.apache.tika.config.Field;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 
 
-
-
-public abstract class AbstractDWGParser extends AbstractParser {
+public abstract class AbstractDWGParser implements Parser {
 
 
     /**

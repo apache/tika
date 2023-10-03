@@ -47,7 +47,6 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ExternalProcess;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -64,7 +63,7 @@ import org.apache.tika.utils.ProcessUtils;
  * Further, users can specify a parser to handle the output
  * of the external process.
  */
-public class ExternalParser extends AbstractParser implements Initializable {
+public class ExternalParser implements Parser, Initializable {
 
     public static final long DEFAULT_TIMEOUT_MS = 60000;
 

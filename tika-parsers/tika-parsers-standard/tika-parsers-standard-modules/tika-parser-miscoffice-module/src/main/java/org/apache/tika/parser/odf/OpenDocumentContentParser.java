@@ -29,15 +29,15 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Parser for ODF <code>content.xml</code> files.
  */
-public class OpenDocumentContentParser extends AbstractParser {
+public class OpenDocumentContentParser implements Parser {
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return Collections.emptySet(); // not a top-level parser

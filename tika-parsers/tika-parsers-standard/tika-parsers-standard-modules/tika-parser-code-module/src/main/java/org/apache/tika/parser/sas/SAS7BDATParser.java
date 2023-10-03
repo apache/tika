@@ -41,15 +41,15 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Processes the SAS7BDAT data columnar database file used by SAS and
  * other similar languages.
  */
-public class SAS7BDATParser extends AbstractParser {
+public class SAS7BDATParser implements Parser {
     private static final long serialVersionUID = -2775485539937983150L;
 
     private static final MediaType TYPE_SAS7BDAT = MediaType.application("x-sas-data");

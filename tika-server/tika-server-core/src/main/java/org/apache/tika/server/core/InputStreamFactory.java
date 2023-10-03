@@ -32,19 +32,6 @@ import org.apache.tika.metadata.Metadata;
  */
 public interface InputStreamFactory {
 
-    /**
-     * @deprecated use {@link #getInputStream(InputStream, Metadata, HttpHeaders, UriInfo)}
-     * @param is
-     * @param metadata
-     * @param httpHeaders
-     * @return
-     * @throws IOException
-     */
-    @Deprecated
-    InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
-            throws IOException;
-
-
     InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders,
                                UriInfo uriInfo)
             throws IOException;

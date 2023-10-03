@@ -18,12 +18,7 @@ package org.apache.tika.batch.fs;
 
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,27 +35,6 @@ public class FSListCrawler extends FileResourceCrawler {
 
     private final BufferedReader reader;
     private final Path root;
-
-    /**
-     * @param fileQueue
-     * @param numConsumers
-     * @param root
-     * @param list
-     * @param encoding
-     * @throws FileNotFoundException
-     * @throws UnsupportedEncodingException
-     * @see #FSListCrawler(ArrayBlockingQueue, int, Path, Path, Charset)
-     * @deprecated
-     */
-    @Deprecated
-    public FSListCrawler(ArrayBlockingQueue<FileResource> fileQueue, int numConsumers, File root,
-                         File list, String encoding)
-            throws FileNotFoundException, UnsupportedEncodingException {
-        super(fileQueue, numConsumers);
-        reader = new BufferedReader(new InputStreamReader(new FileInputStream(list), encoding));
-        this.root = Paths.get(root.toURI());
-
-    }
 
     /**
      * Constructor for a crawler that reads a list of files to process.

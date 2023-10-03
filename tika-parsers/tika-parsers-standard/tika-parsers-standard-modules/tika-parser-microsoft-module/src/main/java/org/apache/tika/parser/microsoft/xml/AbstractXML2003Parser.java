@@ -33,8 +33,8 @@ import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xml.ElementMetadataHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.TaggedContentHandler;
@@ -43,7 +43,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
 
-public abstract class AbstractXML2003Parser extends AbstractParser {
+public abstract class AbstractXML2003Parser implements Parser {
 
     final static String MS_OFFICE_PROPERTIES_URN = "urn:schemas-microsoft-com:office:office";
     final static String MS_DOC_PROPERTIES_URN = "urn:schemas-microsoft-com:office:office";

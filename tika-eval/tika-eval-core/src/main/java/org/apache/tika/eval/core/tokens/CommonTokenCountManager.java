@@ -34,7 +34,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,36 +75,6 @@ public class CommonTokenCountManager {
 
         }
     }
-
-    @Deprecated
-    /**
-     * @deprecated use {@link eval.textstats.CommonTokens} instead
-     */
-    public CommonTokenResult countTokenOverlaps(String langCode, Map<String, MutableInt> tokens)
-            throws IOException {
-        String actualLangCode = getActualLangCode(langCode);
-        int numUniqueCommonTokens = 0;
-        int numCommonTokens = 0;
-        int numUniqueAlphabeticTokens = 0;
-        int numAlphabeticTokens = 0;
-        LangModel model = commonTokenMap.get(actualLangCode);
-        for (Map.Entry<String, MutableInt> e : tokens.entrySet()) {
-            String token = e.getKey();
-            int count = e.getValue().intValue();
-            if (AlphaIdeographFilterFactory.isAlphabetic(token.toCharArray(), token.length())) {
-                numAlphabeticTokens += count;
-                numUniqueAlphabeticTokens++;
-            }
-            if (model.contains(token)) {
-                numCommonTokens += count;
-                numUniqueCommonTokens++;
-            }
-
-        }
-        return new CommonTokenResult(actualLangCode, numUniqueCommonTokens, numCommonTokens,
-                numUniqueAlphabeticTokens, numAlphabeticTokens);
-    }
-
 
     public Set<String> getTokens(String lang) {
         return Collections.unmodifiableSet(

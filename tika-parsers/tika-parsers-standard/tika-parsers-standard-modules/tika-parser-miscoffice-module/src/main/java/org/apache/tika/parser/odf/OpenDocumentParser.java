@@ -46,7 +46,6 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -57,7 +56,7 @@ import org.apache.tika.utils.XMLReaderUtils;
 /**
  * OpenOffice parser
  */
-public class OpenDocumentParser extends AbstractParser {
+public class OpenDocumentParser implements Parser {
 
     /**
      * Serial version UID

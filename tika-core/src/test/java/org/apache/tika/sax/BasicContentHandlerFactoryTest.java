@@ -46,7 +46,6 @@ import org.apache.tika.parser.Parser;
  */
 public class BasicContentHandlerFactoryTest {
 
-    private static final String ENCODING = UTF_8.name();
     //default max char len (at least in WriteOutContentHandler is 100k)
     private static final int OVER_DEFAULT = 120000;
 
@@ -57,7 +56,7 @@ public class BasicContentHandlerFactoryTest {
 
     public static void assertNotContains(String needle, byte[] hayStack)
             throws UnsupportedEncodingException {
-        assertNotContains(needle, new String(hayStack, ENCODING));
+        assertNotContains(needle, new String(hayStack, UTF_8));
     }
 
     public static void assertContains(String needle, String haystack) {
@@ -66,7 +65,7 @@ public class BasicContentHandlerFactoryTest {
 
     public static void assertContains(String needle, byte[] hayStack)
             throws UnsupportedEncodingException {
-        assertContains(needle, new String(hayStack, ENCODING));
+        assertContains(needle, new String(hayStack, UTF_8));
     }
 
     @Test
@@ -115,7 +114,7 @@ public class BasicContentHandlerFactoryTest {
         //now test outputstream call
         p = new MockParser(OVER_DEFAULT);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler(os, ENCODING);
+        handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler(os, UTF_8);
         assertTrue(handler instanceof ToTextContentHandler);
         p.parse(null, handler, null, null);
         assertContains("This is the title", os.toByteArray());
@@ -126,7 +125,7 @@ public class BasicContentHandlerFactoryTest {
 
         p = new MockParser(10);
         os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler(os, ENCODING);
+        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler(os, UTF_8);
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
         //When writing to an OutputStream and a write limit is reached,
@@ -159,7 +158,7 @@ public class BasicContentHandlerFactoryTest {
         //now test outputstream call
         p = new MockParser(OVER_DEFAULT);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler(os, ENCODING);
+        handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler(os, UTF_8);
         assertTrue(handler instanceof ToHTMLContentHandler);
         p.parse(null, handler, null, null);
         assertContains("This is the title", os.toByteArray());
@@ -171,7 +170,7 @@ public class BasicContentHandlerFactoryTest {
 
         p = new MockParser(10);
         os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler(os, ENCODING);
+        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler(os, UTF_8);
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
         assertEquals(0, os.toByteArray().length);
@@ -202,7 +201,7 @@ public class BasicContentHandlerFactoryTest {
         //now test outputstream call
         p = new MockParser(OVER_DEFAULT);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler(os, ENCODING);
+        handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler(os, UTF_8);
         assertTrue(handler instanceof ToXMLContentHandler);
         p.parse(null, handler, null, null);
 
@@ -215,7 +214,7 @@ public class BasicContentHandlerFactoryTest {
 
         p = new MockParser(10);
         os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler(os, ENCODING);
+        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler(os, UTF_8);
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
         assertEquals(0, os.toByteArray().length);
@@ -247,7 +246,7 @@ public class BasicContentHandlerFactoryTest {
         //now test outputstream call
         p = new MockParser(OVER_DEFAULT);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler(os, ENCODING);
+        handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler(os, UTF_8);
         assertTrue(handler instanceof BodyContentHandler);
         p.parse(null, handler, null, null);
         assertNotContains("title", os.toByteArray());
@@ -258,7 +257,7 @@ public class BasicContentHandlerFactoryTest {
 
         p = new MockParser(10);
         os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler(os, ENCODING);
+        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler(os, UTF_8);
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
         assertEquals(0, os.toByteArray().length);

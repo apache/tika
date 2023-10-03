@@ -33,14 +33,14 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Parser for AFM Font Files
  */
-public class AdobeFontMetricParser extends AbstractParser {
+public class AdobeFontMetricParser implements Parser {
     // TIKA-1325 Replace these with properties, from a well known standard
     static final String MET_AVG_CHAR_WIDTH = "AvgCharacterWidth";
     static final String MET_DOC_VERSION = "DocVersion";
