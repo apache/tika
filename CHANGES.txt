@@ -1,7 +1,5 @@
 Release 2.9.1 - ??
 
-   * Shaded commons-io in tika-app for compatibility with Hadoop (TIKA-4150).
-
    * Fix bug in DateUtils that stripped timezone information from
      incoming Calendar objects (TIKA-4126).
 
