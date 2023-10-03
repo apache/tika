@@ -24,12 +24,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
+
+import org.apache.tika.config.TikaConfig;
 
 /**
  * Creates instances of MimeTypes.
  */
 public class MimeTypesFactory {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MimeTypesFactory.class);
+
 
     /**
      * System property to set a path to an additional external custom mimetypes
@@ -170,12 +177,17 @@ public class MimeTypesFactory {
         // Get the core URL, and all the extensions URLs
         URL coreURL = classLoader.getResource(classPrefix + coreFilePath);
         List<URL> extensionURLs =
-                Collections.list(classLoader.getResources(classPrefix + extensionFilePath));
+                Collections.list(classLoader.getResources(extensionFilePath));
 
         // Swap that into an Array, and process
         List<URL> urls = new ArrayList<>();
         urls.add(coreURL);
         urls.addAll(extensionURLs);
+        if (LOG.isDebugEnabled()) {
+            urls.stream().forEach( u ->
+                LOG.debug("Loaded custom mimes file: {}", u)
+            );
+        }
 
         String customMimesPath = System.getProperty(CUSTOM_MIMES_SYS_PROP);
         if (customMimesPath != null) {
@@ -186,6 +198,9 @@ public class MimeTypesFactory {
             }
             URL externalURL = externalFile.toURI().toURL();
             urls.add(externalURL);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Loaded external custom mimetypes file: {}", externalFile.getAbsolutePath());
+            }
         }
 
         return create(urls.toArray(new URL[0]));
