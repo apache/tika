@@ -87,8 +87,8 @@ public class ForkParserTikaBinTest extends TikaTest {
                 IOUtils.copy(input, jarOs);
             }
             try (InputStream input = ForkParserTikaBinTest.class
-                    .getResourceAsStream("/org/apache/tika/mime/custom-mimetypes.xml")) {
-                jarOs.putNextEntry(new JarEntry("org/apache/tika/mime/custom-mimetypes.xml"));
+                    .getResourceAsStream("/custom-mimetypes.xml")) {
+                jarOs.putNextEntry(new JarEntry("custom-mimetypes.xml"));
                 IOUtils.copy(input, jarOs);
             }
 

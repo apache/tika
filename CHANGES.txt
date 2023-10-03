@@ -14,6 +14,9 @@ Release 3.0.0-BETA - ??
 
    * Removed xerces2 as a dependency (TIKA-4135).
 
+   * Tika will look for "custom-mimetypes.xml" directly on the classpath, NOT
+     under "/org/apache/tika/mime/". (TIKA-4147).
+
    Other Changes/Updates
 
    * Fix bug in DateUtils that stripped timezone information from
