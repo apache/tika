@@ -377,7 +377,7 @@
             <configuration>
               <archive>
                 <manifestEntries>
-                  <Automatic-Module-Name>org.apache.tika.parsers.standard.package</Automatic-Module-Name>
+                  <Automatic-Module-Name>org.apache.tika.parsers.standard</Automatic-Module-Name>
                 </manifestEntries>
               </archive>
             </configuration>
