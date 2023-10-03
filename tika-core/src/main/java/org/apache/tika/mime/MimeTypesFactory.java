@@ -28,8 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
-import org.apache.tika.config.TikaConfig;
-
 /**
  * Creates instances of MimeTypes.
  */
@@ -185,7 +183,7 @@ public class MimeTypesFactory {
         urls.addAll(extensionURLs);
         if (LOG.isDebugEnabled()) {
             urls.stream().forEach( u ->
-                LOG.debug("Loaded custom mimes file: {}", u)
+                    LOG.debug("Loaded custom mimes file: {}", u)
             );
         }
 
