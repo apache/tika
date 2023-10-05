@@ -1171,6 +1171,24 @@
               <fail>true</fail>
             </configuration>
           </execution>
+          <execution>
+            <id>ban-xerces-and-xml-apis</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>xerces:xercesImpl</exclude>
+                    <exclude>xml-apis:xml-apis</exclude>
+                  </excludes>
+                </bannedDependencies>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
