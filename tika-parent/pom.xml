@@ -306,7 +306,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.27.1</google.cloud.version>
-    <aws.version>1.12.560</aws.version>
+    <aws.version>1.12.564</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -327,14 +327,14 @@
     <commons.lang3.version>3.13.0</commons.lang3.version>
     <commons.logging.version>1.2</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
-    <commons.net.version>3.9.0</commons.net.version>
+    <commons.net.version>3.10.0</commons.net.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <ctakes.version>4.0.0.1</ctakes.version>
     <!-- can't update to 3.6.0, needs jdk11 ? -->
     <cxf.version>3.5.6</cxf.version>
     <ddplist.version>1.27</ddplist.version>
     <dl4j.version>1.0.0-M2</dl4j.version>
-    <!-- fakeload versions &gt; 0.4.0 require java > 8 -->
+    <!-- fakeload versions > 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
     <guava.version>32.1.2-jre</guava.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
@@ -405,7 +405,7 @@
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.5-6</zstd.version>
-    <kafka.version>3.5.1</kafka.version>
+    <kafka.version>3.6.0</kafka.version>
     <netty.version>4.1.99.Final</netty.version>
     <snappy.java.version>1.1.10.5</snappy.java.version>
   </properties>
@@ -829,7 +829,7 @@
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-utils</artifactId>
-        <version>3.5.1</version>
+        <version>4.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.freemarker</groupId>
