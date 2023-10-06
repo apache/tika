@@ -300,7 +300,7 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.1.2</maven.surefire.version>
     <maven.shade.version>3.5.1</maven.shade.version>
-    <puppycrawl.version>10.12.3</puppycrawl.version>
+    <puppycrawl.version>10.12.4</puppycrawl.version>
     <rat.version>0.15</rat.version>
 
     <!-- dependency versions -->
@@ -326,7 +326,7 @@
     <commons.lang3.version>3.13.0</commons.lang3.version>
     <commons.logging.version>1.2</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
-    <commons.net.version>3.9.0</commons.net.version>
+    <commons.net.version>3.10.0</commons.net.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <ctakes.version>4.0.0.1</ctakes.version>
     <!-- can't update to 3.6.0, needs jdk11 ? -->
@@ -400,7 +400,7 @@
     <vorbis.version>0.8</vorbis.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.5-6</zstd.version>
-    <kafka.version>3.5.1</kafka.version>
+    <kafka.version>3.6.0</kafka.version>
     <netty.version>4.1.99.Final</netty.version>
     <snappy.java.version>1.1.10.5</snappy.java.version>
   </properties>
