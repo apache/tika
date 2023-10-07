@@ -97,7 +97,7 @@
       <dependency>
           <groupId>org.apache.zookeeper</groupId>
           <artifactId>zookeeper</artifactId>
-          <version>3.9.0</version>
+          <version>3.9.1</version>
           <exclusions>
               <exclusion>
                   <groupId>io.netty</groupId>
@@ -157,7 +157,6 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -200,7 +199,6 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
-        <version>${rat.version}</version>
         <configuration>
           <excludes>
             <exclude>model/opennlp/*.bin</exclude>
