@@ -305,7 +305,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.27.1</google.cloud.version>
-    <aws.version>1.12.564</aws.version>
+    <aws.version>1.12.565</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -366,7 +366,7 @@
     <metadata.extractor.version>2.18.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.9</mime4j.version>
-    <mockito.version>5.5.0</mockito.version>
+    <mockito.version>5.6.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.3.0 requires java 17 -->
@@ -466,6 +466,7 @@
       <dependency>
         <groupId>biz.aQute.bnd</groupId>
         <artifactId>biz.aQute.bndlib</artifactId>
+        <!-- can't update to 7.0.0: "class file has wrong version 61.0, should be 55.0" -->
         <version>6.4.1</version>
       </dependency>
       <dependency>
@@ -481,7 +482,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.43.0</version>
+        <version>1.44.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
