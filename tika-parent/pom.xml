@@ -467,7 +467,7 @@
         <groupId>biz.aQute.bnd</groupId>
         <artifactId>biz.aQute.bndlib</artifactId>
         <!-- can't update to 7.0.0: "class file has wrong version 61.0, should be 55.0" -->
-        <version>6.4.1</version>
+        <version>7.0.0</version>
       </dependency>
       <dependency>
         <groupId>com.amazonaws</groupId>
