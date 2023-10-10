@@ -150,8 +150,6 @@
             </Bundle-Activator>
             <Embed-Dependency>*;scope=compile;artifactId=tika-parsers-standard-package|
               jakarta.activation|
-              xerces|
-              xercesImpl|
               commons-compress|
               xz|
               commons-codec|
@@ -406,9 +404,6 @@
               INFO
             </org.ops4j.pax.logging.DefaultServiceLog.level>
           </systemPropertyVariables>
-          <classpathDependencyExcludes>
-            <classpathDependencyExclude>xerces:xercesImpl</classpathDependencyExclude>
-          </classpathDependencyExcludes>
         </configuration>
       </plugin>
       <plugin>
