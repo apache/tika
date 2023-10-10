@@ -305,14 +305,8 @@
     <scm.version>2.0.1</scm.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.27.1</google.cloud.version>
-    <aws.version>1.12.565</aws.version>
-    <!-- WARNING: when you upgrade asm make sure that you update the
-        OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
-        See TIKA-2992.
-    -->
     <asm.version>9.6</asm.version>
-    <aws.version>1.12.549</aws.version>
+    <aws.version>1.12.565</aws.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
     <bouncycastle.version>1.76</bouncycastle.version>
@@ -323,6 +317,7 @@
     <ddplist.version>1.27</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
+    <h2.version>2.2.224</h2.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.21.19</jackrabbit.version>
@@ -350,9 +345,7 @@
     <quartz.version>2.3.2</quartz.version>
     <reactor.netty.version>1.1.11</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
-    <scm.version>2.0.1</scm.version>
     <sis.version>1.4</sis.version>
-    <slf4j.version>2.0.9</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17  -->
     <spring.version>5.3.30</spring.version>
@@ -398,10 +391,25 @@
         <scope>import</scope>
       </dependency>
       <dependency>
+        <groupId>org.apache.sis.core</groupId>
+        <artifactId>sis-utility</artifactId>
+        <version>${sis.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.sis.storage</groupId>
+        <artifactId>sis-netcdf</artifactId>
+        <version>${sis.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.sis.core</groupId>
+        <artifactId>sis-metadata</artifactId>
+        <version>${sis.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-bom</artifactId>
         <!-- 12.x requires Java 17 -->
-        <version>11.0.16</version>
+        <version>11.0.17</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -427,7 +435,7 @@
       <dependency>
         <groupId>org.testcontainers</groupId>
         <artifactId>testcontainers-bom</artifactId>
-        <version>1.19.0</version>
+        <version>1.19.1</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -539,7 +547,7 @@
       <dependency>
         <groupId>com.h2database</groupId>
         <artifactId>h2</artifactId>
-        <version>2.2.224</version>
+        <version>${h2.version}</version>
       </dependency>
       <dependency>
         <groupId>com.healthmarketscience.jackcess</groupId>
@@ -606,7 +614,7 @@
       <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
-        <version>2.13.0</version>
+        <version>2.14.0</version>
       </dependency>
       <dependency>
         <groupId>commons-logging</groupId>
@@ -830,7 +838,7 @@
       <dependency>
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
-        <version>5.5.0</version>
+        <version>5.6.0</version>
       </dependency>
       <dependency>
         <groupId>org.netpreserve</groupId>
@@ -893,9 +901,9 @@
         <version>1.1.10.5</version>
       </dependency>
       <dependency>
-          <groupId>commons-fileupload</groupId>
-          <artifactId>commons-fileupload</artifactId>
-          <version>1.5</version>
+        <groupId>commons-fileupload</groupId>
+        <artifactId>commons-fileupload</artifactId>
+        <version>1.5</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -1249,15 +1257,26 @@
   </profiles>
   <!-- temporarily add this to grab the SIS snapshot -->
   <repositories>
-    <repository>
+<!--    <repository>
       <id>apache.snapshots</id>
       <name>Apache Snapshot Repository</name>
       <url>https://repository.apache.org/snapshots</url>
       <releases>
         <enabled>false</enabled>
       </releases>
+    </repository> -->
+    <repository>
+      <id>sis.staging.parent</id>
+      <name>SIS staging repository of Parent POM</name>
+      <url>https://repository.apache.org/content/repositories/orgapachesis-1043</url>
     </repository>
+    <repository>
+        <id>sis.staging.main</id>
+        <name>SIS staging repository of main artifacts</name>
+        <url>https://repository.apache.org/content/repositories/orgapachesis-1049</url>
+      </repository>
   </repositories>
+
   <!--
       <connection>scm:git:https://github.com/apache/</connection>
       <developerConnection>scm:git:https://github.com/apache/</developerConnection>

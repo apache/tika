@@ -38,17 +38,14 @@
     <dependency>
       <groupId>org.apache.sis.core</groupId>
       <artifactId>sis-utility</artifactId>
-      <version>${sis.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.sis.storage</groupId>
       <artifactId>sis-netcdf</artifactId>
-      <version>${sis.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.sis.core</groupId>
       <artifactId>sis-metadata</artifactId>
-      <version>${sis.version}</version>
     </dependency>
     <dependency>
       <groupId>org.opengis</groupId>
