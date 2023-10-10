@@ -201,22 +201,6 @@ public class EmbeddedDocumentUtil implements Serializable {
         return ".bin";
     }
 
-    /**
-     * @return Returns a {@link TikaConfig} -- trying to find it first in the ParseContext
-     * that was included in the initialization, and then creating a new one from
-     * via {@link TikaConfig#getDefaultConfig()} if it can't find one in the
-     * ParseContext.
-     * @deprecated as of 1.17, use {@link #getTikaConfig()} instead
-     */
-    @Deprecated
-    public TikaConfig getConfig() {
-        TikaConfig config = context.get(TikaConfig.class);
-        if (config == null) {
-            config = TikaConfig.getDefaultConfig();
-        }
-        return config;
-    }
-
     public static void recordException(Throwable t, Metadata m) {
         String ex = ExceptionUtils.getFilteredStackTrace(t);
         m.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, ex);

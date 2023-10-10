@@ -136,7 +136,7 @@ public class ODFParserTest extends TikaTest {
         try (InputStream input = getResourceAsStream("/test-documents/testOpenOffice2.odf")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new OpenDocumentParser().parse(input, handler, metadata);
+            new OpenDocumentParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("application/vnd.oasis.opendocument.formula",
                     metadata.get(Metadata.CONTENT_TYPE));
@@ -192,7 +192,7 @@ public class ODFParserTest extends TikaTest {
         try (InputStream input = getResourceAsStream("/test-documents/testODFwithOOo3.odt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new OpenDocumentParser().parse(input, handler, metadata);
+            new OpenDocumentParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("application/vnd.oasis.opendocument.text",
                     metadata.get(Metadata.CONTENT_TYPE));

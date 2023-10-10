@@ -32,15 +32,15 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * A POI-powered Tika Parser for very old versions of Excel, from
  * pre-OLE2 days, such as Excel 4.
  */
-public class OldExcelParser extends AbstractParser {
+public class OldExcelParser implements Parser {
     private static final long serialVersionUID = 4611820730372823452L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(

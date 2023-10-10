@@ -173,7 +173,7 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         // - Built-In Mimetypes
         assertNotNull(resources.get("org/apache/tika/mime/tika-mimetypes.xml"));
         // - Custom Mimetypes
-        assertNotNull(resources.get("org/apache/tika/mime/custom-mimetypes.xml"));
+        assertNotNull(resources.get("custom-mimetypes.xml"));
     }
 
     /**

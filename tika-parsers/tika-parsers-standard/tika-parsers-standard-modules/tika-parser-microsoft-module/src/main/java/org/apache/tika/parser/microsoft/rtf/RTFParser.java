@@ -29,14 +29,14 @@ import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * RTF parser
  */
-public class RTFParser extends AbstractParser {
+public class RTFParser implements Parser {
 
     /**
      * Serial version UID
@@ -55,32 +55,6 @@ public class RTFParser extends AbstractParser {
     private int memoryLimitInKb = EMB_OBJ_MAX_BYTES / 1024;
     @Field
     private boolean ignoreListMarkup = false;
-
-    /**
-     * See {@link #setMaxBytesForEmbeddedObject(int)}.
-     *
-     * @return maximum number of bytes allowed for an embedded object.
-     */
-    @Deprecated
-    public static int getMaxBytesForEmbeddedObject() {
-        return EMB_OBJ_MAX_BYTES;
-    }
-
-    /**
-     * Bytes for embedded objects are currently cached in memory.
-     * If something goes wrong during the parsing of an embedded object,
-     * it is possible that a read length may be crazily too long
-     * and cause a heap crash.
-     *
-     * @param max maximum number of bytes to allow for embedded objects.  If
-     *            the embedded object has more than this number of bytes, skip it.
-     * @deprecated use {@link #setMemoryLimitInKb(int)} instead
-     */
-    @Deprecated
-    public static void setMaxBytesForEmbeddedObject(int max) {
-        EMB_OBJ_MAX_BYTES = max;
-        USE_STATIC = true;
-    }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;

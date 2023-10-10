@@ -38,14 +38,14 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 //JMatIO imports
 
 
-public class MatParser extends AbstractParser {
+public class MatParser implements Parser {
 
     public static final String MATLAB_MIME_TYPE = "application/x-matlab-data";
 

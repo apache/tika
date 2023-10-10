@@ -40,7 +40,7 @@ import org.apache.tika.mime.MediaType;
  *
  * @since Apache Tika 1.14
  */
-public class DummyParameterizedParser extends AbstractParser {
+public class DummyParameterizedParser implements Parser {
 
     private static final Set<MediaType> MIMES = new HashSet<>();
 

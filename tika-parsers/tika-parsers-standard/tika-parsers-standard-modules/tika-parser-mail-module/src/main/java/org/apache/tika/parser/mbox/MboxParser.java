@@ -44,8 +44,8 @@ import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.mailcommons.MailUtil;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -53,7 +53,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Mbox (mailbox) parser. This version extracts each mail from Mbox and uses the
  * DelegatingParser to process each mail.
  */
-public class MboxParser extends AbstractParser {
+public class MboxParser implements Parser {
 
     public static final String MBOX_MIME_TYPE = "application/mbox";
     public static final String MBOX_RECORD_DIVIDER = "From ";

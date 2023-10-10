@@ -31,7 +31,7 @@ import org.apache.tika.mime.MediaType;
  * attempting to parse the given document stream. Useful as a sentinel parser
  * for unknown document types.
  */
-public class ErrorParser extends AbstractParser {
+public class ErrorParser implements Parser {
     /**
      * Singleton instance of this class.
      */

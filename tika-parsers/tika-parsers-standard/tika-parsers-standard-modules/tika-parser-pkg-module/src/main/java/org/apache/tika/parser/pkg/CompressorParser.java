@@ -68,14 +68,14 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Parser for various compression formats.
  */
-public class CompressorParser extends AbstractParser {
+public class CompressorParser implements Parser {
 
     /**
      * Serial version UID

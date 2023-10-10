@@ -701,8 +701,6 @@ public class TikaCLI {
             parser = new AutoDetectParser(config);
             if (digester != null) {
                 parser = new DigestingParser(parser, digester, false);
-                LOG.info("As of Tika 2.5.0, you can set the digester via the AutoDetectParserConfig in " +
-                        "tika-config.xml. We plan to remove this commandline option in 2.8.0");
             }
         }
         detector = config.getDetector();

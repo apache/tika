@@ -252,18 +252,6 @@ public class POIFSContainerDetector implements Detector {
 
     /**
      * Internal detection of the specific kind of OLE2 document, based on the
-     * names of the top level streams within the file.
-     *
-     * @deprecated Use {@link #detect(Set, DirectoryEntry)} and pass the root
-     * entry of the filesystem whose type is to be detected, as a
-     * second argument.
-     */
-    public static MediaType detect(Set<String> names) {
-        return detect(names, null);
-    }
-
-    /**
-     * Internal detection of the specific kind of OLE2 document, based on the
      * names of the top-level streams within the file. In some cases the
      * detection may need access to the root {@link DirectoryEntry} of that file
      * for best results. The entry can be given as a second, optional argument.

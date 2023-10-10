@@ -18,12 +18,10 @@ package org.apache.tika.batch.fs;
 
 
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
@@ -38,18 +36,6 @@ public class FSOutputStreamFactory implements OutputStreamFactory {
     private final Path outputRoot;
     private final String suffix;
     private final COMPRESSION compression;
-    /**
-     * @param outputRoot
-     * @param handleExisting
-     * @param compression
-     * @param suffix
-     * @see #FSOutputStreamFactory(Path, FSUtil.HANDLE_EXISTING, COMPRESSION, String)
-     */
-    @Deprecated
-    public FSOutputStreamFactory(File outputRoot, FSUtil.HANDLE_EXISTING handleExisting,
-                                 COMPRESSION compression, String suffix) {
-        this(Paths.get(outputRoot.toURI()), handleExisting, compression, suffix);
-    }
 
     public FSOutputStreamFactory(Path outputRoot, FSUtil.HANDLE_EXISTING handleExisting,
                                  COMPRESSION compression, String suffix) {

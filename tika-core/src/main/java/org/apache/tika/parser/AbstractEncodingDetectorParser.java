@@ -25,7 +25,7 @@ import org.apache.tika.detect.EncodingDetector;
  * Abstract base class for parsers that use the AutoDetectReader and need
  * to use the {@link EncodingDetector} configured by {@link TikaConfig}
  */
-public abstract class AbstractEncodingDetectorParser extends AbstractParser {
+public abstract class AbstractEncodingDetectorParser implements Parser {
 
 
     private EncodingDetector encodingDetector;

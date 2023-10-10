@@ -36,7 +36,7 @@ public class CustomReaderTest {
     public void testCustomReader() throws Exception {
         MimeTypes mimeTypes = new MimeTypes();
         CustomMimeTypesReader reader = new CustomMimeTypesReader(mimeTypes);
-        try (InputStream is = getClass().getResourceAsStream("custom-mimetypes.xml")) {
+        try (InputStream is = getClass().getResourceAsStream("/custom-mimetypes.xml")) {
             reader.read(is);
         }
         String key = "hello/world-file";
@@ -47,7 +47,7 @@ public class CustomReaderTest {
         assertEquals(0, reader.ignorePatterns.size());
 
         // Now add another resource with conflicting regex
-        try (InputStream is = getClass().getResourceAsStream("custom-mimetypes2.xml")) {
+        try (InputStream is = getClass().getResourceAsStream("/custom-mimetypes2.xml")) {
             reader.read(is);
         }
         key = "another/world-file";

@@ -288,30 +288,37 @@
     <project.build.outputTimestamp>1692799752</project.build.outputTimestamp>
     <!-- plugin versions -->
     <checkstyle.plugin.version>3.3.0</checkstyle.plugin.version>
-    <forbiddenapis.version>3.5.1</forbiddenapis.version>
+    <forbiddenapis.version>3.6</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.6.0</maven.assembly.version>
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
     <maven.failsafe.version>3.1.2</maven.failsafe.version>
-    <maven.javadoc.version>3.5.0</maven.javadoc.version>
+    <maven.javadoc.version>3.6.0</maven.javadoc.version>
     <maven.jar.version>3.3.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.1.2</maven.surefire.version>
-    <maven.shade.version>3.5.0</maven.shade.version>
-    <puppycrawl.version>10.12.3</puppycrawl.version>
+    <maven.shade.version>3.5.1</maven.shade.version>
+    <puppycrawl.version>10.12.4</puppycrawl.version>
     <rat.version>0.15</rat.version>
     <scm.version>2.0.1</scm.version>
 
     <!-- dependency versions -->
-    <asm.version>9.5</asm.version>
+    <google.cloud.version>2.27.1</google.cloud.version>
+    <aws.version>1.12.565</aws.version>
+    <!-- WARNING: when you upgrade asm make sure that you update the
+        OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
+        See TIKA-2992.
+    -->
+    <asm.version>9.6</asm.version>
     <aws.version>1.12.549</aws.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
     <bouncycastle.version>1.76</bouncycastle.version>
+    <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <commons.net.version>3.9.0</commons.net.version>
+    <commons.net.version>3.10.0</commons.net.version>
     <ctakes.version>4.0.0.1</ctakes.version>
     <ddplist.version>1.27</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
@@ -322,12 +329,13 @@
     <javax.jcr.version>2.0</javax.jcr.version>
     <jbig2.version>3.0.4</jbig2.version>
     <jempbox.version>1.8.17</jempbox.version>
+    <jetty.version>9.4.53.v20231009</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <junit5.version>5.10.0</junit5.version>
     <junrar.version>7.5.5</junrar.version>
     <kafka.version>3.5.1</kafka.version>
     <libpst.version>0.9.3</libpst.version>
-    <lucene.version>9.7.0</lucene.version>
+    <lucene.version>9.8.0</lucene.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.9</mime4j.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
@@ -338,13 +346,16 @@
     <pax.exam.version>4.13.5</pax.exam.version>
     <pdfbox.version>2.0.29</pdfbox.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <poi.version>5.2.3</poi.version>
+    <poi.version>5.2.4</poi.version>
+    <quartz.version>2.3.2</quartz.version>
     <reactor.netty.version>1.1.11</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
-    <sis.version>1.4-SNAPSHOT</sis.version>
+    <scm.version>2.0.1</scm.version>
+    <sis.version>1.4</sis.version>
+    <slf4j.version>2.0.9</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17  -->
-    <spring.version>5.3.29</spring.version>
+    <spring.version>5.3.30</spring.version>
     <sqlite.version>3.43.0.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
@@ -394,6 +405,11 @@
         <scope>import</scope>
       </dependency>
       <dependency>
+        <groupId>org.jsoup</groupId>
+        <artifactId>jsoup</artifactId>
+        <version>1.16.1</version>
+      </dependency>
+      <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
         <version>5.10.0</version>
@@ -418,27 +434,34 @@
       <dependency>
         <groupId>biz.aQute.bnd</groupId>
         <artifactId>biz.aQute.bndlib</artifactId>
+        <!-- can't update to 7.0.0: "class file has wrong version 61.0, should be 55.0" -->
         <version>6.4.1</version>
       </dependency>
       <dependency>
         <groupId>com.amazonaws</groupId>
         <artifactId>aws-java-sdk-s3</artifactId>
-        <version>1.12.549</version>
+        <version>${aws.version}</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.23.1</version>
+        <version>12.24.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.43.0</version>
+        <version>1.44.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.13.7</version>
+        <version>1.13.8</version>
+        <exclusions>
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-native-epoll</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>com.drewnoakes</groupId>
@@ -510,12 +533,12 @@
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
-        <version>3.24.3</version>
+        <version>3.24.4</version>
       </dependency>
       <dependency>
         <groupId>com.h2database</groupId>
         <artifactId>h2</artifactId>
-        <version>2.2.222</version>
+        <version>2.2.224</version>
       </dependency>
       <dependency>
         <groupId>com.healthmarketscience.jackcess</groupId>
@@ -780,7 +803,7 @@
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-utils</artifactId>
-        <version>3.5.1</version>
+        <version>4.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.freemarker</groupId>
@@ -810,7 +833,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.28.1</version>
+        <version>0.28.3</version>
       </dependency>
       <dependency>
         <groupId>org.opengis</groupId>
@@ -868,20 +891,9 @@
         <version>1.1.10.3</version>
       </dependency>
       <dependency>
-        <groupId>xerces</groupId>
-        <artifactId>xercesImpl</artifactId>
-        <version>2.12.2</version>
-        <exclusions>
-          <exclusion>
-            <groupId>xml-apis</groupId>
-            <artifactId>xml-apis</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
           <groupId>commons-fileupload</groupId>
           <artifactId>commons-fileupload</artifactId>
-          <version>1.5</version>
+          <version>${commons.fileupload.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -916,7 +928,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.16.0</version>
+        <version>2.16.1</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
@@ -947,13 +959,6 @@
               <groupId>io.netty</groupId>
               <artifactId>netty-handler</artifactId>
               <version>4.1.97.Final</version>
-            </coordinate>
-            <coordinate>
-              <!-- the most recent cve in sonatype for this artifact is 2.11.0,
-                  not at all the version we're using...smh-->
-              <groupId>xerces</groupId>
-              <artifactId>xercesImpl</artifactId>
-              <version>2.12.2</version>
             </coordinate>
             <!-- these are used by the nlp-module -->
             <coordinate>
@@ -1068,7 +1073,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.3.0</version>
+        <version>3.4.1</version>
         <executions>
           <execution>
             <id>enforce-maven</id>
@@ -1095,6 +1100,24 @@
                 <bannedDependencies>
                   <excludes>
                     <exclude>org.apache.logging.log4j:log4j-core:(,2.17.1)</exclude>
+                  </excludes>
+                </bannedDependencies>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+          <execution>
+            <id>ban-xerces-and-xml-apis</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>xerces:xercesImpl</exclude>
+                    <exclude>xml-apis:xml-apis</exclude>
                   </excludes>
                 </bannedDependencies>
               </rules>

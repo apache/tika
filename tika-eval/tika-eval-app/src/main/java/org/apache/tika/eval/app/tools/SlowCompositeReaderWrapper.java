@@ -50,7 +50,7 @@ import org.apache.lucene.index.StoredFieldVisitor;
 import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.index.TermVectors;
 import org.apache.lucene.index.Terms;
-import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.KnnCollector;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.Version;
 
@@ -282,17 +282,15 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
     }
 
     @Override
-    public TopDocs searchNearestVectors(String s, float[] floats, int i, Bits bits, int i1)
+    public void searchNearestVectors(String string, float[] floats, KnnCollector kc, Bits bits)
             throws IOException {
         //TODO figure out how to implement this... if needed
-        return null;
     }
 
     @Override
-    public TopDocs searchNearestVectors(String s, byte[] bytes, int i, Bits bits, int i1)
+    public void searchNearestVectors(String string, byte[] bytes, KnnCollector kc, Bits bits)
             throws IOException {
         //TODO figure out how to implement this... if needed
-        return null;
     }
 
     @Override

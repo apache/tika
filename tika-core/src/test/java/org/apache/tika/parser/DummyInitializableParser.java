@@ -39,7 +39,7 @@ import org.apache.tika.mime.MediaType;
  * This tests that initialize() is called after adding the parameters
  * configured via TikaConfig
  */
-public class DummyInitializableParser extends AbstractParser implements Initializable {
+public class DummyInitializableParser implements Parser, Initializable {
 
     public static String SUM_FIELD = "SUM";
     private static final Set<MediaType> MIMES = new HashSet<>();

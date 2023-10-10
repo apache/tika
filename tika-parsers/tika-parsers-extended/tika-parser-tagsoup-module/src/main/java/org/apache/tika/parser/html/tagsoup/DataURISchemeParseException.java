@@ -14,26 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.sax;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
+package org.apache.tika.parser.html.tagsoup;
 
-import org.apache.xerces.jaxp.SAXParserFactoryImpl;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
+import org.apache.tika.exception.TikaException;
 
-/**
- * 
- * A custom {@link SAXParserFactory} to force the parser to continue even after fatal error
- *
- */
-public class ErrorResistantSAXParserFactory extends SAXParserFactoryImpl {
-    
-    public ErrorResistantSAXParserFactory() throws SAXNotRecognizedException, SAXNotSupportedException,
-            ParserConfigurationException {
-        super();
-        this.setFeature("http://apache.org/xml/features/continue-after-fatal-error", true);
-    }   
+public class DataURISchemeParseException extends TikaException {
+
+    public DataURISchemeParseException(String msg) {
+        super(msg);
+    }
 
 }

@@ -52,7 +52,7 @@ class XHTMLClassVisitor extends ClassVisitor {
     private String packageName;
 
     public XHTMLClassVisitor(ContentHandler handler, Metadata metadata) {
-        super(Opcodes.ASM7);
+        super(Opcodes.ASM9);
         this.xhtml = new XHTMLContentHandler(handler, metadata);
         this.metadata = metadata;
     }

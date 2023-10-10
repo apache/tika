@@ -22,7 +22,6 @@ import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.nio.charset.Charset;
 import java.util.Locale;
 
 import org.xml.sax.Attributes;
@@ -59,17 +58,6 @@ public class ToTextContentHandler extends DefaultHandler {
      */
     public ToTextContentHandler(Writer writer) {
         this.writer = writer;
-    }
-
-    /**
-     * Creates a content handler that writes character events to
-     * the given output stream using the platform default encoding.
-     *
-     * @param stream output stream
-     * @deprecated use {@link ToTextContentHandler#ToTextContentHandler(Writer)}
-     */
-    public ToTextContentHandler(OutputStream stream) {
-        this(new OutputStreamWriter(stream, Charset.defaultCharset()));
     }
 
     /**

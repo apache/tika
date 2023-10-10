@@ -111,20 +111,6 @@ class HtmlHandler extends TextContentHandler {
         this(mapper, new XHTMLContentHandler(handler, metadata), metadata, context, extractScripts);
     }
 
-    /**
-     * @param mapper
-     * @param handler
-     * @param metadata
-     * @deprecated use {@link HtmlHandler#HtmlHandler(HtmlMapper,
-     * ContentHandler, Metadata, ParseContext, boolean)}
-     */
-    @Deprecated
-    public HtmlHandler(HtmlMapper mapper, ContentHandler handler, Metadata metadata) {
-        this(mapper, new XHTMLContentHandler(handler, metadata), metadata, new ParseContext(),
-                false);
-    }
-
-
     @Override
     public void startElement(String uri, String local, String name, Attributes atts)
             throws SAXException {

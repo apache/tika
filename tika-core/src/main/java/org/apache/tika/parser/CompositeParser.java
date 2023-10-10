@@ -48,7 +48,7 @@ import org.apache.tika.utils.ParserUtils;
  * parser is defined for cases where a parser for the given content type is
  * not available.
  */
-public class CompositeParser extends AbstractParser {
+public class CompositeParser implements Parser {
 
     /**
      * Serial version UID

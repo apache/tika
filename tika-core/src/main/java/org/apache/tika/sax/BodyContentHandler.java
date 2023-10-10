@@ -16,7 +16,6 @@
  */
 package org.apache.tika.sax;
 
-import java.io.OutputStream;
 import java.io.Writer;
 
 import org.xml.sax.ContentHandler;
@@ -62,16 +61,6 @@ public class BodyContentHandler extends ContentHandlerDecorator {
      */
     public BodyContentHandler(Writer writer) {
         this(new WriteOutContentHandler(writer));
-    }
-
-    /**
-     * Creates a content handler that writes XHTML body character events to
-     * the given output stream using the default encoding.
-     *
-     * @param stream output stream
-     */
-    public BodyContentHandler(OutputStream stream) {
-        this(new WriteOutContentHandler(stream));
     }
 
     /**

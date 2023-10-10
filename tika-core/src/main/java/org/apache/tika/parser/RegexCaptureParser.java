@@ -41,7 +41,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
-public class RegexCaptureParser extends AbstractParser implements Initializable {
+public class RegexCaptureParser implements Parser, Initializable {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.TEXT_PLAIN);
@@ -113,15 +113,6 @@ public class RegexCaptureParser extends AbstractParser implements Initializable 
                 }
             }
         }
-    }
-
-    @Field
-    @Deprecated
-    /**
-     * @deprecated use setCaptureMap
-     */
-    public void setRegexMap(Map<String, String> map) {
-        setCaptureMap(map);
     }
 
     @Field

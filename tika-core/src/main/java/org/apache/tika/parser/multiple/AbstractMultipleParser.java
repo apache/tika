@@ -41,7 +41,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
@@ -59,7 +58,7 @@ import org.apache.tika.utils.ParserUtils;
  *
  * @since Apache Tika 1.18
  */
-public abstract class AbstractMultipleParser extends AbstractParser {
+public abstract class AbstractMultipleParser implements Parser {
     protected static final String METADATA_POLICY_CONFIG_KEY = "metadataPolicy";
     /**
      * Serial version UID.

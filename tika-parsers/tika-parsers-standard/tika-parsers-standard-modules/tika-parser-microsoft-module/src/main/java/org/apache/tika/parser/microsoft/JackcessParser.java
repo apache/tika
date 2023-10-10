@@ -39,8 +39,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -51,7 +51,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Many, many thanks to LexisNexis®/Health Market Science (HMS), Brian O'Neill,
  * and James Ahlborn for relicensing Jackcess to Apache v2.0!
  */
-public class JackcessParser extends AbstractParser {
+public class JackcessParser implements Parser {
 
     public static final String SUMMARY_PROPERTY_PREFIX =
             "MDB_SUMMARY_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;

@@ -77,7 +77,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
@@ -590,7 +589,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
      * directory, and delegates everything else to another downstream
      * parser.
      */
-    private static class ImageSavingParser extends AbstractParser {
+    private static class ImageSavingParser implements Parser {
         private Map<String, File> wanted = new HashMap<>();
         private Parser downstreamParser;
         private File tmpDir;

@@ -287,15 +287,6 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     }
 
     @Field
-    /**
-     * @deprecated use {@link #setThrottleSeconds(String)} instead
-     */
-    public void setRetries(int retries) {
-        LOGGER.info("retries is deprecated. Use setThrottleSeconds instead.");
-        this.retries = retries;
-    }
-
-    @Field
     public void setCredentialsProvider(String credentialsProvider) {
         if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")
                 && !credentialsProvider.equals("key_secret")) {

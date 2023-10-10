@@ -29,6 +29,21 @@
   <artifactId>tika-parser-jdbc-commons</artifactId>
   <name>Apache Tika jdbc parser commons</name>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>org.apache.tika.parser.jdbc.commons</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
   <scm>
     <tag>2.2.1-rc2</tag>
   </scm>

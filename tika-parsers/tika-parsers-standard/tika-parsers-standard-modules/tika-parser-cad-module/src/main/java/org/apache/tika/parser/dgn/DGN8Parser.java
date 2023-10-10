@@ -32,15 +32,15 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.SummaryExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * This is a VERY LIMITED parser. It parses metadata out of dgn8 files.
  */
-public class DGN8Parser extends AbstractParser {
+public class DGN8Parser implements Parser {
 
     Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.image("vnd.dgn; version=8"));
 

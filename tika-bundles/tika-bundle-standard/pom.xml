@@ -58,7 +58,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parser-html-commons</artifactId>
+      <artifactId>tika-handler-boilerpipe</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -316,10 +316,6 @@
               org.apache.tools.ant;resolution:=optional,
               org.apache.tools.ant.taskdefs;resolution:=optional,
               org.apache.tools.ant.types;resolution:=optional,
-              org.apache.xerces.parsers;resolution:=optional,
-              org.apache.xerces.util;resolution:=optional,
-              org.apache.xerces.xni;resolution:=optional,
-              org.apache.xerces.xni.parser;resolution:=optional,
               org.apache.xml.resolver;resolution:=optional,
               org.apache.xml.resolver.readers;resolution:=optional,
               org.apache.xml.resolver.tools;resolution:=optional,
@@ -426,6 +422,17 @@
           </excludes>
         </configuration>
       </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <configuration>
+              <archive>
+                <manifestEntries>
+                  <Automatic-Module-Name>org.apache.tika.bundle.standard</Automatic-Module-Name>
+                </manifestEntries>
+              </archive>
+            </configuration>
+          </plugin>
     </plugins>
   </build>
 

@@ -30,8 +30,8 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.TextContentHandler;
@@ -41,7 +41,7 @@ import org.apache.tika.utils.XMLReaderUtils;
 /**
  * XML parser.
  */
-public class XMLParser extends AbstractParser {
+public class XMLParser implements Parser {
 
     /**
      * Serial version UID

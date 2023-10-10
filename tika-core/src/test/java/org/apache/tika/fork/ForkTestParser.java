@@ -30,11 +30,11 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.unusedpackage.ClassInUnusedPackage;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
-class ForkTestParser extends AbstractParser {
+class ForkTestParser implements Parser {
 
     /**
      * Serial version UID

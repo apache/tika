@@ -36,14 +36,14 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Parser for Rar files.
  */
-public class RarParser extends AbstractParser {
+public class RarParser implements Parser {
     private static final long serialVersionUID = 6157727985054451501L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =

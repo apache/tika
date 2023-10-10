@@ -215,6 +215,9 @@ public class XMLReaderUtils implements Serializable {
      */
     public static SAXParserFactory getSAXParserFactory() {
         SAXParserFactory factory = SAXParserFactory.newInstance();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("SAXParserFactory class {}", factory.getClass());
+        }
         factory.setNamespaceAware(true);
         factory.setValidating(false);
         trySetSAXFeature(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
@@ -241,6 +244,10 @@ public class XMLReaderUtils implements Serializable {
     public static DocumentBuilderFactory getDocumentBuilderFactory() {
         //borrowed from Apache POI
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("DocumentBuilderFactory class {}", factory.getClass());
+        }
+
         factory.setExpandEntityReferences(false);
         factory.setNamespaceAware(true);
         factory.setValidating(false);
@@ -290,6 +297,9 @@ public class XMLReaderUtils implements Serializable {
      */
     public static XMLInputFactory getXMLInputFactory() {
         XMLInputFactory factory = XMLInputFactory.newFactory();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("XMLInputFactory class {}", factory.getClass());
+        }
 
         tryToSetStaxProperty(factory, XMLInputFactory.IS_NAMESPACE_AWARE, true);
         tryToSetStaxProperty(factory, XMLInputFactory.IS_VALIDATING, false);

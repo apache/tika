@@ -44,7 +44,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
@@ -80,14 +79,6 @@ abstract class AbstractPOIFSExtractor {
 
     protected Detector getDetector() {
         return embeddedDocumentUtil.getDetector();
-    }
-
-    /**
-     * @return mimetypes
-     * @deprecated use {@link #embeddedDocumentUtil}
-     */
-    protected MimeTypes getMimeTypes() {
-        return embeddedDocumentUtil.getMimeTypes();
     }
 
     /**
@@ -290,7 +281,8 @@ abstract class AbstractPOIFSExtractor {
             MediaType mediaType = getDetector().detect(tis, metadata);
             String extension = type.getExtension();
             try {
-                MimeType mimeType = getMimeTypes().forName(mediaType.toString());
+                MimeType mimeType =
+                        embeddedDocumentUtil.getMimeTypes().forName(mediaType.toString());
                 extension = mimeType.getExtension();
             } catch (MimeTypeException mte) {
                 // No details on this type are known

@@ -31,7 +31,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
@@ -56,7 +55,7 @@ public abstract class AbstractPkgTest extends TikaTest {
 
 
     @SuppressWarnings("serial")
-    protected static class EmbeddedTrackingParser extends AbstractParser {
+    protected static class EmbeddedTrackingParser implements Parser {
         protected List<String> filenames = new ArrayList<>();
         protected List<String> mediatypes = new ArrayList<>();
         protected List<String> createdAts = new ArrayList<>();

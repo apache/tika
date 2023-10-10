@@ -32,10 +32,10 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 
-public class EncryptedPrescriptionParser extends AbstractParser {
+public class EncryptedPrescriptionParser implements Parser {
     private static final long serialVersionUID = -7816987249611278541L;
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,

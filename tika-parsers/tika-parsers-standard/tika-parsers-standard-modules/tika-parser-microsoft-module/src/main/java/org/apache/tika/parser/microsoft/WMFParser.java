@@ -36,15 +36,15 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * This parser offers a very rough capability to extract text if there
  * is text stored in the WMF files.
  */
-public class WMFParser extends AbstractParser {
+public class WMFParser implements Parser {
 
     private static final MediaType MEDIA_TYPE = MediaType.image("wmf");
 

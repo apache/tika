@@ -191,4 +191,57 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         filter.filter(m);
         assertEquals("2021-07-23T08:02:24Z", m.get(TikaCoreProperties.CREATED));
     }
+
+    @Test
+    public void testCaptureGroupBasic() throws Exception {
+        TikaConfig config = getConfig("TIKA-4133-capture-group.xml");
+
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "quick brown fox");
+        metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
+
+        MetadataFilter filter = config.getMetadataFilter();
+        filter.filter(metadata);
+        assertEquals("quick brown fox", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("text/html", metadata.get("mime"));
+    }
+
+    @Test
+    public void testCaptureGroupNoSemiColon() throws Exception {
+        TikaConfig config = getConfig("TIKA-4133-capture-group.xml");
+
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "quick brown fox");
+        metadata.set(Metadata.CONTENT_TYPE, "text/html");
+
+        MetadataFilter filter = config.getMetadataFilter();
+        filter.filter(metadata);
+        assertEquals("quick brown fox", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("text/html", metadata.get("mime"));
+    }
+
+    @Test
+    public void testCaptureGroupOverwrite() throws Exception {
+        TikaConfig config = getConfig("TIKA-4133-capture-group-overwrite.xml");
+
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "quick brown fox");
+        metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
+
+        MetadataFilter filter = config.getMetadataFilter();
+        filter.filter(metadata);
+        assertEquals("quick brown fox", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("text/html", metadata.get(Metadata.CONTENT_TYPE));
+
+        // now test that a single match overwrites all the values
+        metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
+        metadata.add(TikaCoreProperties.TIKA_CONTENT.toString(), "text/html; charset=UTF-8");
+        metadata.add(TikaCoreProperties.TIKA_CONTENT.toString(), "text/plain; charset=UTF-8");
+        metadata.add(TikaCoreProperties.TIKA_CONTENT.toString(), "application/pdf; charset=UTF-8");
+
+        filter.filter(metadata);
+        assertEquals(1, metadata.getValues(Metadata.CONTENT_TYPE).length);
+        assertEquals("text/html", metadata.get(Metadata.CONTENT_TYPE));
+    }
+
 }

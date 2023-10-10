@@ -38,8 +38,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStorePackage;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStoreParser;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.AlternativePackaging;
@@ -50,7 +50,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * <p>
  * Based on the Microsoft specs MS-ONE and MS-ONESTORE.
  */
-public class OneNoteParser extends AbstractParser {
+public class OneNoteParser implements Parser {
 
     public static final String ONE_NOTE_PREFIX = "onenote:";
     private static final Map<MediaType, List<String>> TYPES_MAP = new HashMap<>();

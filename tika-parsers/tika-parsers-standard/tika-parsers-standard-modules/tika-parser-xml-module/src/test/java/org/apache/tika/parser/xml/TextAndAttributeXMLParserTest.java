@@ -19,9 +19,9 @@ package org.apache.tika.parser.xml;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
@@ -40,10 +40,10 @@ public class TextAndAttributeXMLParserTest extends TikaTest {
         try (InputStream input = getResourceAsStream("/test-documents/testXML2.xml")) {
             Metadata metadata = new Metadata();
             ParseContext context = new ParseContext();
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            ContentHandler handler = new BodyContentHandler(buffer);
+            StringWriter writer = new StringWriter();
+            ContentHandler handler = new BodyContentHandler(writer);
             new TextAndAttributeXMLParser().parse(input, handler, metadata, context);
-            String output = buffer.toString("UTF-8");
+            String output = writer.toString();
 
             assertEquals("application/xml", metadata.get(Metadata.CONTENT_TYPE));
             assertTrue(output.contains("document type Microsoft Word 2003/2004"));

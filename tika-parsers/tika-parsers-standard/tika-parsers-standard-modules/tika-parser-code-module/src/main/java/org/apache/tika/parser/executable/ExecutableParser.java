@@ -34,14 +34,14 @@ import org.apache.tika.metadata.MachineMetadata;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Parser for executable files. Currently supports ELF and PE
  */
-public class ExecutableParser extends AbstractParser implements MachineMetadata {
+public class ExecutableParser implements Parser, MachineMetadata {
     /**
      * Serial version UID
      */
