@@ -32,7 +32,7 @@ public class RFC822DetectionTest {
     private static final MimeTypes MIME_TYPES = TikaConfig.getDefaultConfig().getMimeRepository();
 
     @Test
-    public void testRFC822() throws Exception {
+    public void testBasic() throws Exception {
         for (String txt : new String[]{
                 "Date: blah\nSent: someone\r\nthis is a test",
                 "date: blah\nSent: someone\r\nthis is a test",
@@ -48,7 +48,12 @@ public class RFC822DetectionTest {
                 "some precursor junk\nDate: blah\nSent: someone\r\nthis is a test",
                 "some precursor junk:\nDate: blah\nSent: someone\r\nthis is a test",
                 //confirm that date is case-insensitive, but delivered-to is case-sensitive
-                "date: blah\ndelivered-To: someone\r\nthis is a test"
+                "date: blah\ndelivered-To: someone\r\nthis is a test",
+                //test that a file that starts only with "Subject:" and no other header is
+                //detected as text/plain
+                "Subject: this is a subject\nand there's some other text",
+                "To: someone\nand there's some other text",
+                "To: someone or other"
         }) {
             assertMime("text/plain", txt);
         }
