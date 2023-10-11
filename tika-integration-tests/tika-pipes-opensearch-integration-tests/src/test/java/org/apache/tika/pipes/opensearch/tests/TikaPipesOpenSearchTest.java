@@ -34,15 +34,14 @@ import org.apache.tika.pipes.xsearch.tests.TikaPipesXSearchBase;
 public class TikaPipesOpenSearchTest extends TikaPipesXSearchBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaPipesOpenSearchTest.class);
-    private static final String DOCKER_IMAGE_NAME = "opensearchproject/opensearch:2.8.0";
+    private static final String DOCKER_IMAGE_NAME = "opensearchproject/opensearch:2.10.0";
 
     @Container
     public static GenericContainer<?> OPEN_SEARCH_CONTAINER =
             new GenericContainer<>(DockerImageName.parse(DOCKER_IMAGE_NAME))
                     .withExposedPorts(9200)
                     .withStartupTimeout(Duration.of(180, ChronoUnit.SECONDS))
-                    .withEnv("discovery.type", "single-node")
-                    .withSharedMemorySize(4294967296l);
+                    .withEnv("discovery.type", "single-node");
 
 
     @BeforeEach
