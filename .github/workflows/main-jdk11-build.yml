@@ -19,7 +19,7 @@ name: main jdk11 build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ branch_2x ]
 
 jobs:
   build:

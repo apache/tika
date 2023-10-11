@@ -19,9 +19,9 @@ name: main pr build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ branch_2x ]
   pull_request:
-    branches: [ main ]
+    branches: [ branch_2x ]
         
 
 jobs:
