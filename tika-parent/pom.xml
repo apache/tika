@@ -401,7 +401,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.5-6</zstd.version>
     <kafka.version>3.6.0</kafka.version>
-    <netty.version>4.1.99.Final</netty.version>
+    <netty.version>4.1.100.Final</netty.version>
     <snappy.java.version>1.1.10.5</snappy.java.version>
   </properties>
 
