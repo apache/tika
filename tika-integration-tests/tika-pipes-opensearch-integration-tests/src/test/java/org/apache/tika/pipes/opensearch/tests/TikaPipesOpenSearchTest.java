@@ -38,7 +38,8 @@ public class TikaPipesOpenSearchTest extends TikaPipesXSearchBase {
             new GenericContainer<>(DockerImageName.parse(DOCKER_IMAGE_NAME))
                     .withExposedPorts(9200)
                     .withStartupTimeout(Duration.of(180, ChronoUnit.SECONDS))
-                    .withEnv("discovery.type", "single-node");
+                    .withEnv("discovery.type", "single-node")
+                    .withSharedMemorySize(3221225472l);
 
 
     @BeforeEach
