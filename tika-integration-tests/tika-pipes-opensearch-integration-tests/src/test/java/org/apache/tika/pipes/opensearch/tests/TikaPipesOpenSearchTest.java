@@ -39,7 +39,7 @@ public class TikaPipesOpenSearchTest extends TikaPipesXSearchBase {
                     .withExposedPorts(9200)
                     .withStartupTimeout(Duration.of(180, ChronoUnit.SECONDS))
                     .withEnv("discovery.type", "single-node")
-                    .withSharedMemorySize(3221225472l);
+                    .withSharedMemorySize(4294967296l);
 
 
     @BeforeEach
