@@ -21,6 +21,8 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -31,6 +33,7 @@ import org.apache.tika.pipes.xsearch.tests.TikaPipesXSearchBase;
 @Testcontainers(disabledWithoutDocker = true)
 public class TikaPipesOpenSearchTest extends TikaPipesXSearchBase {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TikaPipesOpenSearchTest.class);
     private static final String DOCKER_IMAGE_NAME = "opensearchproject/opensearch:2.8.0";
 
     @Container
@@ -45,5 +48,6 @@ public class TikaPipesOpenSearchTest extends TikaPipesXSearchBase {
     @BeforeEach
     public void setupTest() throws Exception {
         setupXSearch(OPEN_SEARCH_CONTAINER, "https://");
+        LOG.info("opensearch container: {}", OPEN_SEARCH_CONTAINER);
     }
 }
