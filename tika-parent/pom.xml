@@ -944,6 +944,11 @@
           <artifactId>commons-fileupload</artifactId>
           <version>${commons.fileupload.version}</version>
       </dependency>
+      <dependency>
+          <groupId>org.apache.zookeeper</groupId>
+          <artifactId>zookeeper</artifactId>
+          <version>3.9.1</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
