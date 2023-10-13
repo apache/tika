@@ -403,6 +403,7 @@
     <kafka.version>3.6.0</kafka.version>
     <netty.version>4.1.100.Final</netty.version>
     <snappy.java.version>1.1.10.5</snappy.java.version>
+    <zookeeper.version>3.9.1</zookeeper.version>
   </properties>
 
   <dependencyManagement>
@@ -947,7 +948,7 @@
       <dependency>
           <groupId>org.apache.zookeeper</groupId>
           <artifactId>zookeeper</artifactId>
-          <version>3.9.1</version>
+          <version>${zookeeper.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
