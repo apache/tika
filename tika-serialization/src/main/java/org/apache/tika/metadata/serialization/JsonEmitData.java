@@ -21,7 +21,9 @@ import java.io.Writer;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -29,7 +31,9 @@ import org.apache.tika.pipes.emitter.EmitKey;
 public class JsonEmitData {
 
     public static void toJson(EmitData emitData, Writer writer) throws IOException {
-        try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
+        try (JsonGenerator jsonGenerator = new JsonFactory()
+                .setStreamReadConstraints(StreamReadConstraints.builder()
+                            .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build()).createGenerator(writer)) {
             jsonGenerator.writeStartObject();
             EmitKey key = emitData.getEmitKey();
             jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITTER, key.getEmitterName());

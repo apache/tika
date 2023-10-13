@@ -27,14 +27,17 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.pipes.FetchEmitTuple;
 
 public class JsonFetchEmitTupleList {
 
     public static List<FetchEmitTuple> fromJson(Reader reader) throws IOException {
         List<FetchEmitTuple> list;
-        try (JsonParser jParser = new JsonFactory().createParser(reader)) {
+        try (JsonParser jParser = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
+                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build()).createParser(reader)) {
             JsonToken token = jParser.nextToken();
             if (token != JsonToken.START_ARRAY) {
                 throw new IOException("require start array, but see: " + token.name());
@@ -56,7 +59,8 @@ public class JsonFetchEmitTupleList {
 
     public static void toJson(List<FetchEmitTuple> list, Writer writer) throws IOException {
 
-        try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
+        try (JsonGenerator jsonGenerator = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
+                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build()).createGenerator(writer)) {
             jsonGenerator.writeStartArray();
             for (FetchEmitTuple t : list) {
                 JsonFetchEmitTuple.writeTuple(t, jsonGenerator);

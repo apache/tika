@@ -27,6 +27,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,8 +47,10 @@ import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -576,6 +580,31 @@ public class TikaResourceTest extends CXFTestBase {
         //test that embedded parsers are appearing in full set of "parsed bys"
         TikaTest.assertContains("org.apache.tika.parser.microsoft.EMFParser",
                 Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET)));
+    }
+
+    @Test
+    public void testLargeJson(@TempDir Path dir) throws Exception {
+        //TIKA-4154
+        TikaConfig tikaConfig = null;
+        try (InputStream is =
+                     JsonMetadata.class.getResourceAsStream("/config/tika-config-json.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 30000000; i++) {
+            sb.append("v");
+        }
+        Path tmp = Files.createTempFile(dir, "long-json-", ".txt");
+        Files.write(tmp, sb.toString().getBytes(UTF_8));
+        Response response =
+                WebClient.create(endPoint + TIKA_PATH + "/text").accept("application/json")
+                        .put(Files.newInputStream(tmp));
+        Metadata metadata = JsonMetadata.fromJson(
+                new InputStreamReader(((InputStream) response.getEntity()),
+                        StandardCharsets.UTF_8));
+        String t = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+        assertEquals(30000000, t.trim().length());
     }
 
     @Test

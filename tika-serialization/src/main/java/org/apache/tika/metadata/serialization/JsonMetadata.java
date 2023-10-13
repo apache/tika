@@ -26,9 +26,11 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import org.apache.commons.io.input.CloseShieldReader;
 import org.apache.commons.io.output.CloseShieldWriter;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
@@ -48,7 +50,10 @@ public class JsonMetadata {
             writer.write("null");
             return;
         }
-        try (JsonGenerator jsonGenerator = new JsonFactory()
+        long max = TikaConfig.getMaxJsonStringFieldLength();
+        try (JsonGenerator jsonGenerator = new JsonFactory().setStreamReadConstraints(
+                        StreamReadConstraints.builder()
+                                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build())
                 .createGenerator(new CloseShieldWriter(writer))) {
             if (PRETTY_PRINT) {
                 jsonGenerator.useDefaultPrettyPrinter();
@@ -92,7 +97,9 @@ public class JsonMetadata {
      */
     public static Metadata fromJson(Reader reader) throws IOException {
         Metadata m = null;
-        try (JsonParser jParser = new JsonFactory().createParser(new CloseShieldReader(reader))) {
+        try (JsonParser jParser = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
+                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build())
+                .createParser(new CloseShieldReader(reader))) {
             m = readMetadataObject(jParser);
         }
         return m;
