@@ -297,8 +297,8 @@ public class TikaConfig {
         return MAX_JSON_STRING_FIELD_LENGTH;
     }
 
-    private void setMaxJsonStringFieldLength(Element element) throws TikaConfigException{
-        NodeList nodeList = element.getChildNodes();
+    private void setMaxJsonStringFieldLength(Element properties) throws TikaConfigException {
+        NodeList nodeList = properties.getChildNodes();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node n = nodeList.item(i);
             if (n.getNodeName().equals(MAX_JSON_STRING_FIELD_LENGTH_ELEMENT_NAME)) {

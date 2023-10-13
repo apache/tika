@@ -33,7 +33,8 @@ public class JsonEmitData {
     public static void toJson(EmitData emitData, Writer writer) throws IOException {
         try (JsonGenerator jsonGenerator = new JsonFactory()
                 .setStreamReadConstraints(StreamReadConstraints.builder()
-                            .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build()).createGenerator(writer)) {
+                            .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
+                        .build()).createGenerator(writer)) {
             jsonGenerator.writeStartObject();
             EmitKey key = emitData.getEmitKey();
             jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITTER, key.getEmitterName());
