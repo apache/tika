@@ -28,10 +28,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -48,7 +48,7 @@ import org.apache.tika.exception.TikaException;
  * <a href="https://isi-nlp.github.io/rtg/#_rtg_serve">
  * REST-based RTG server</a>.</p>
  * To get Docker image:
- *   https://hub.docker.com/repository/docker/tgowda/rtg-model <br/>
+ * https://hub.docker.com/repository/docker/tgowda/rtg-model <br/>
  * <pre>
  * {code
  * # without GPU
@@ -68,7 +68,7 @@ import org.apache.tika.exception.TikaException;
  *      http://localhost:6060/translate
  * }
  * </pre>
- *
+ * <p>
  * RTG requires input to be pre-formatted into sentences, one per line,
  * so this translation implementation takes care of that.
  */

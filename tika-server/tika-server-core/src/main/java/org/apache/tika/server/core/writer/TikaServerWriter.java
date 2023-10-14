@@ -16,7 +16,7 @@
  */
 package org.apache.tika.server.core.writer;
 
-import javax.ws.rs.ext.MessageBodyWriter;
+import jakarta.ws.rs.ext.MessageBodyWriter;
 
 /**
  * Stub interface to allow for SPI loading from other modules

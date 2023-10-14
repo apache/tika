@@ -31,10 +31,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.cxf.attachment.AttachmentUtil;
@@ -351,8 +351,8 @@ public class TikaResourceTest extends CXFTestBase {
 
         response =
                 WebClient.create(endPoint + TIKA_PATH).type("application/pdf").accept("text/plain")
-                        .header(TesseractServerConfig.X_TIKA_OCR_HEADER_PREFIX
-                                .toLowerCase(Locale.ROOT) + "skipocr", "true")
+                        .header(TesseractServerConfig.X_TIKA_OCR_HEADER_PREFIX.toLowerCase(
+                                Locale.ROOT) + "skipocr", "true")
                         .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
         responseMsg = getStringFromInputStream((InputStream) response.getEntity());
 
@@ -393,8 +393,8 @@ public class TikaResourceTest extends CXFTestBase {
         response =
                 WebClient.create(endPoint + TIKA_PATH).type("application/pdf").accept("text/plain")
                         .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "sortByPosition",
-                                "false").put(ClassLoader
-                        .getSystemResourceAsStream("test-documents/testPDFTwoTextBoxes.pdf"));
+                                "false").put(ClassLoader.getSystemResourceAsStream(
+                                "test-documents/testPDFTwoTextBoxes.pdf"));
         responseMsg = getStringFromInputStream((InputStream) response.getEntity());
         responseMsg = responseMsg.replaceAll("[\r\n ]+", " ").trim();
         assertEquals(
@@ -487,8 +487,9 @@ public class TikaResourceTest extends CXFTestBase {
         final String encoded =
                 new Base64().encodeAsString(password.getBytes(StandardCharsets.UTF_8));
         Response response = WebClient.create(endPoint + TIKA_PATH).accept("text/plain")
-                .header(PasswordProviderConfig.PASSWORD_BASE64_UTF8, encoded).put(ClassLoader
-                        .getSystemResourceAsStream("test-documents/testPassword4Spaces.pdf"));
+                .header(PasswordProviderConfig.PASSWORD_BASE64_UTF8, encoded)
+                .put(ClassLoader.getSystemResourceAsStream(
+                        "test-documents/testPassword4Spaces.pdf"));
         String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("Just some text.", responseMsg);
     }
@@ -501,8 +502,9 @@ public class TikaResourceTest extends CXFTestBase {
         final String encoded =
                 new Base64().encodeAsString(password.getBytes(StandardCharsets.UTF_8));
         Response response = WebClient.create(endPoint + TIKA_PATH).accept("text/plain")
-                .header(PasswordProviderConfig.PASSWORD_BASE64_UTF8, encoded).put(ClassLoader
-                        .getSystemResourceAsStream("test-documents/testUnicodePassword.pdf"));
+                .header(PasswordProviderConfig.PASSWORD_BASE64_UTF8, encoded)
+                .put(ClassLoader.getSystemResourceAsStream(
+                        "test-documents/testUnicodePassword.pdf"));
         String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("Just some text.", responseMsg);
     }
@@ -600,8 +602,7 @@ public class TikaResourceTest extends CXFTestBase {
     public void testJsonNoThrowWriteLimitEmbedded() throws Exception {
         Response response =
                 WebClient.create(endPoint + TIKA_PATH + "/html").accept("application/json")
-                        .header("writeLimit", "500")
-                        .header("throwOnWriteLimitReached", "false")
+                        .header("writeLimit", "500").header("throwOnWriteLimitReached", "false")
                         .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
         Metadata metadata = JsonMetadata.fromJson(
                 new InputStreamReader(((InputStream) response.getEntity()),
@@ -620,8 +621,9 @@ public class TikaResourceTest extends CXFTestBase {
     public void testWriteLimitInPDF() throws Exception {
         int writeLimit = 10;
         Response response = WebClient.create(endPoint + TIKA_PATH).accept("application/json")
-                .header("writeLimit", Integer.toString(writeLimit)).put(ClassLoader
-                        .getSystemResourceAsStream("test-documents/testPDFTwoTextBoxes.pdf"));
+                .header("writeLimit", Integer.toString(writeLimit))
+                .put(ClassLoader.getSystemResourceAsStream(
+                        "test-documents/testPDFTwoTextBoxes.pdf"));
 
         assertEquals(200, response.getStatus());
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);

@@ -90,8 +90,8 @@ public class ServerStatusWatcher implements Runnable {
 
         Instant started = Instant.now();
         long elapsed = Duration.between(started, Instant.now()).toMillis();
-        try (FileChannel channel = FileChannel
-                .open(forkedStatusPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+        try (FileChannel channel = FileChannel.open(forkedStatusPath, StandardOpenOption.CREATE,
+                StandardOpenOption.WRITE)) {
             while (elapsed < tikaServerConfig.getTaskTimeoutMillis()) {
                 try (FileLock lock = channel.tryLock()) {
                     if (lock != null) {
@@ -135,14 +135,15 @@ public class ServerStatusWatcher implements Runnable {
                 if (status.fileName.isPresent()) {
                     LOG.error("Timeout task {}, millis elapsed {}, timeoutMillis {}, file id {}" +
                                     "consider increasing the allowable time with the " +
-                                    "<taskTimeoutMillis/> parameter or the {} header", status.task.toString(),
-                            millisElapsed, status.timeoutMillis,
+                                    "<taskTimeoutMillis/> parameter or the {} header",
+                            status.task.toString(), millisElapsed, status.timeoutMillis,
                             status.fileName.get(), TimeoutConfig.X_TIKA_TIMEOUT_MILLIS);
                 } else {
                     LOG.error("Timeout task {}, millis elapsed {}; " +
                                     "consider increasing the allowable time with the " +
-                                    "<taskTimeoutMillis/> parameter or the {} header", status.task.toString(),
-                            millisElapsed, TimeoutConfig.X_TIKA_TIMEOUT_MILLIS);
+                                    "<taskTimeoutMillis/> parameter or the {} header",
+                            status.task.toString(), millisElapsed,
+                            TimeoutConfig.X_TIKA_TIMEOUT_MILLIS);
                 }
             }
         }
