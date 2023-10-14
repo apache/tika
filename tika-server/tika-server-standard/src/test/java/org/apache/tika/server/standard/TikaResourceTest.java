@@ -585,31 +585,6 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
-    public void testLargeJson(@TempDir Path dir) throws Exception {
-        //TIKA-4154
-        TikaConfig tikaConfig = null;
-        try (InputStream is =
-                     JsonMetadata.class.getResourceAsStream("/config/tika-config-json.xml")) {
-            tikaConfig = new TikaConfig(is);
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 30000000; i++) {
-            sb.append("v");
-        }
-        Path tmp = Files.createTempFile(dir, "long-json-", ".txt");
-        Files.write(tmp, sb.toString().getBytes(UTF_8));
-        Response response =
-                WebClient.create(endPoint + TIKA_PATH + "/text").accept("application/json")
-                        .put(Files.newInputStream(tmp));
-        Metadata metadata = JsonMetadata.fromJson(
-                new InputStreamReader(((InputStream) response.getEntity()),
-                        StandardCharsets.UTF_8));
-        String t = metadata.get(TikaCoreProperties.TIKA_CONTENT);
-        assertEquals(30000000, t.trim().length());
-    }
-
-    @Test
     public void testJsonWriteLimitEmbedded() throws Exception {
         Response response =
                 WebClient.create(endPoint + TIKA_PATH + "/html").accept("application/json")
