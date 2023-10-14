@@ -23,9 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
@@ -54,8 +54,8 @@ public class TikaMimeTypesTest extends CXFTestBase {
     @SuppressWarnings("unchecked")
     public void testGetJSON() throws Exception {
         Response response = WebClient.create(endPoint + MIMETYPES_PATH)
-                .type(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-                .accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).get();
+                .type(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+                .accept(jakarta.ws.rs.core.MediaType.APPLICATION_JSON).get();
 
         String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
         Map<String, Map<String, Object>> json =
@@ -76,8 +76,7 @@ public class TikaMimeTypesTest extends CXFTestBase {
 
         String whichParser = bmp.get("parser").toString();
         assertTrue(whichParser.equals("org.apache.tika.parser.ocr.TesseractOCRParser") ||
-                                whichParser.equals("org.apache.tika.parser.image.ImageParser"),
-                "Which parser");
+                whichParser.equals("org.apache.tika.parser.image.ImageParser"), "Which parser");
 
         Map<String, Object> ogm = json.get("video/x-ogm");
         assertEquals("video/ogg", ogm.get("supertype"));

@@ -18,8 +18,7 @@ package org.apache.tika.server.core.config;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import javax.ws.rs.core.MultivaluedMap;
-
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.apache.commons.codec.binary.Base64;
 
 import org.apache.tika.metadata.Metadata;

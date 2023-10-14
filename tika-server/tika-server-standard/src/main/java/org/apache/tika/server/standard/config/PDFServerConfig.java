@@ -20,8 +20,8 @@ import static org.apache.tika.server.core.resource.TikaResource.processHeaderCon
 
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.core.MultivaluedMap;
 
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.tika.metadata.Metadata;

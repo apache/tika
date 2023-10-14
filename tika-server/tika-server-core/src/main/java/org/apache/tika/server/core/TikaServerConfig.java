@@ -46,10 +46,6 @@ import org.apache.tika.utils.XMLReaderUtils;
 
 public class TikaServerConfig extends ConfigBase {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TikaServerConfig.class);
-
-    private static Pattern SYS_PROPS = Pattern.compile("\\$\\{sys:([-_0-9A-Za-z]+)\\}");
-
     public static final int DEFAULT_PORT = 9998;
     public static final String DEFAULT_HOST = "localhost";
     public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
@@ -58,7 +54,6 @@ public class TikaServerConfig extends ConfigBase {
      * etc.) before timing out and shutting down the forked process.
      */
     public static final long DEFAULT_TASK_TIMEOUT_MILLIS = 300000;
-
     /**
      * Clients may not set a timeout less than this amount.  This hinders
      * malicious clients from setting the timeout to a very low value
@@ -66,7 +61,6 @@ public class TikaServerConfig extends ConfigBase {
      * available to untrusted clients is dangerous.
      */
     public static final long DEFAULT_MINIMUM_TIMEOUT_MILLIS = 30000;
-
     /**
      * How often to check to see that the task hasn't timed out
      */
@@ -75,6 +69,7 @@ public class TikaServerConfig extends ConfigBase {
      * Number of milliseconds to wait for forked process to startup
      */
     public static final long DEFAULT_FORKED_STARTUP_MILLIS = 120000;
+    private static final Logger LOG = LoggerFactory.getLogger(TikaServerConfig.class);
     //used in fork mode -- restart after processing this many files
     private static final long DEFAULT_MAX_FILES = 100000;
     private static final int DEFAULT_DIGEST_MARK_LIMIT = 20 * 1024 * 1024;
@@ -88,24 +83,24 @@ public class TikaServerConfig extends ConfigBase {
                     " your emitter endpoints.  See CVE-2015-3271.\n" +
                     "Please make sure you know what you are doing.";
     private static final List<String> ONLY_IN_FORK_MODE = Arrays.asList(
-            new String[]{"taskTimeoutMillis", "taskPulseMillis",
-                    "maxFiles", "javaPath", "maxRestarts", "numRestarts",
-                    "forkedStatusFile", "maxForkedStartupMillis", "tmpFilePrefix"});
+            new String[]{"taskTimeoutMillis", "taskPulseMillis", "maxFiles", "javaPath",
+                    "maxRestarts", "numRestarts", "forkedStatusFile", "maxForkedStartupMillis",
+                    "tmpFilePrefix"});
+    private static Pattern SYS_PROPS = Pattern.compile("\\$\\{sys:([-_0-9A-Za-z]+)\\}");
+    /*
+TODO: integrate these settings:
+ * Number of milliseconds to wait to start forked process.
+public static final long DEFAULT_FORKED_PROCESS_STARTUP_MILLIS = 60000;
 
-        /*
-    TODO: integrate these settings:
-     * Number of milliseconds to wait to start forked process.
-    public static final long DEFAULT_FORKED_PROCESS_STARTUP_MILLIS = 60000;
+ * Maximum number of milliseconds to wait to shutdown forked process to allow
+ * for current parses to complete.
+public static final long DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLIS = 30000;
 
-     * Maximum number of milliseconds to wait to shutdown forked process to allow
-     * for current parses to complete.
-    public static final long DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLIS = 30000;
+private long forkedProcessStartupMillis = DEFAULT_FORKED_PROCESS_STARTUP_MILLIS;
 
-    private long forkedProcessStartupMillis = DEFAULT_FORKED_PROCESS_STARTUP_MILLIS;
+private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLIS;
 
-    private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLIS;
-
-     */
+ */
     private int maxRestarts = -1;
     private long maxFiles = 100000;
     private long taskTimeoutMillis = DEFAULT_TASK_TIMEOUT_MILLIS;
@@ -139,6 +134,7 @@ public class TikaServerConfig extends ConfigBase {
     private boolean preventStopMethod = false;
 
     private TlsConfig tlsConfig = new TlsConfig();
+
     /**
      * Config with only the defaults
      */
@@ -146,8 +142,7 @@ public class TikaServerConfig extends ConfigBase {
         return new TikaServerConfig();
     }
 
-    public static TikaServerConfig load(CommandLine commandLine)
-            throws IOException, TikaException {
+    public static TikaServerConfig load(CommandLine commandLine) throws IOException, TikaException {
 
         TikaServerConfig config = null;
         Set<String> settings = new HashSet<>();
@@ -192,8 +187,8 @@ public class TikaServerConfig extends ConfigBase {
         return config;
     }
 
-    static TikaServerConfig load(Path p, CommandLine commandLine, Set<String> settings) throws IOException,
-            TikaException {
+    static TikaServerConfig load(Path p, CommandLine commandLine, Set<String> settings)
+            throws IOException, TikaException {
         try (InputStream is = Files.newInputStream(p)) {
             TikaServerConfig config = TikaServerConfig.load(is, commandLine, settings);
             if (config.getConfigPath() == null) {
@@ -205,8 +200,7 @@ public class TikaServerConfig extends ConfigBase {
     }
 
     private static TikaServerConfig load(InputStream is, CommandLine commandLine,
-                                       Set<String> settings)
-            throws IOException, TikaException {
+                                         Set<String> settings) throws IOException, TikaException {
         TikaServerConfig tikaServerConfig = new TikaServerConfig();
         Set<String> configSettings = tikaServerConfig.configure("server", is);
         settings.addAll(configSettings);
@@ -244,9 +238,7 @@ public class TikaServerConfig extends ConfigBase {
         }
     }
 
-    private static void loadSupported(Node compound,
-                                      String itemName,
-                                      Set<String> supported) {
+    private static void loadSupported(Node compound, String itemName, Set<String> supported) {
         NodeList children = compound.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node child = children.item(i);
@@ -276,6 +268,35 @@ public class TikaServerConfig extends ConfigBase {
             }
         }
         return null;
+    }
+
+    protected static List<String> interpolateSysProps(List<String> forkedJvmArgs) {
+        List<String> ret = new ArrayList<>();
+        for (String arg : forkedJvmArgs) {
+            if (arg.startsWith("-D")) {
+                String interpolated = interpolate(arg);
+                ret.add(interpolated);
+            } else {
+                ret.add(arg);
+            }
+        }
+        return ret;
+    }
+
+    private static String interpolate(String arg) {
+        StringBuffer sb = new StringBuffer();
+        Matcher m = SYS_PROPS.matcher(arg);
+        while (m.find()) {
+            String prop = System.getProperty(m.group(1));
+            LOG.debug("interpolating {} -> {}", m.group(1), prop);
+            if (prop == null) {
+                LOG.warn("no system property set for {}, falling back to {}", m.group(1), arg);
+                return arg;
+            }
+            m.appendReplacement(sb, Matcher.quoteReplacement(prop));
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 
     public boolean isNoFork() {
@@ -407,7 +428,6 @@ public class TikaServerConfig extends ConfigBase {
         this.forkedJvmArgs = new ArrayList<>(interpolateSysProps(forkedJvmArgs));
     }
 
-
     public String getTempFilePrefix() {
         return tempFilePrefix;
     }
@@ -438,7 +458,8 @@ public class TikaServerConfig extends ConfigBase {
             }
         }
         //add headless if not already configured
-        boolean foundHeadlessOption = forkedJvmArgs.stream().anyMatch(arg -> arg.contains("java.awt.headless"));
+        boolean foundHeadlessOption =
+                forkedJvmArgs.stream().anyMatch(arg -> arg.contains("java.awt.headless"));
         //if user has already specified headless...don't modify
         if (!foundHeadlessOption) {
             forkedJvmArgs.add("-Djava.awt.headless=true");
@@ -539,12 +560,14 @@ public class TikaServerConfig extends ConfigBase {
         this.returnStackTrace = returnStackTrace;
     }
 
-    public void setTlsConfig(TlsConfig tlsConfig) {
-        this.tlsConfig = tlsConfig;
-    }
     public TlsConfig getTlsConfig() {
         return tlsConfig;
     }
+
+    public void setTlsConfig(TlsConfig tlsConfig) {
+        this.tlsConfig = tlsConfig;
+    }
+
     public List<String> getEndpoints() {
         return endpoints;
     }
@@ -595,12 +618,12 @@ public class TikaServerConfig extends ConfigBase {
         this.maxforkedStartupMillis = maxforkedStartupMillis;
     }
 
-    public void setPreventStopMethod(boolean preventStopMethod) {
-        this.preventStopMethod = preventStopMethod;
-    }
-
     public boolean isPreventStopMethod() {
         return preventStopMethod;
+    }
+
+    public void setPreventStopMethod(boolean preventStopMethod) {
+        this.preventStopMethod = preventStopMethod;
     }
 
     public int[] getPorts() {
@@ -635,35 +658,6 @@ public class TikaServerConfig extends ConfigBase {
 
     public Set<String> getSupportedEmitters() {
         return supportedEmitters;
-    }
-
-    protected static List<String> interpolateSysProps(List<String> forkedJvmArgs) {
-        List<String> ret = new ArrayList<>();
-        for (String arg : forkedJvmArgs) {
-            if (arg.startsWith("-D")) {
-                String interpolated = interpolate(arg);
-                ret.add(interpolated);
-            } else {
-                ret.add(arg);
-            }
-        }
-        return ret;
-    }
-
-    private static String interpolate(String arg) {
-        StringBuffer sb = new StringBuffer();
-        Matcher m = SYS_PROPS.matcher(arg);
-        while (m.find()) {
-            String prop = System.getProperty(m.group(1));
-            LOG.debug("interpolating {} -> {}", m.group(1), prop);
-            if (prop == null) {
-                LOG.warn("no system property set for {}, falling back to {}", m.group(1), arg);
-                return arg;
-            }
-            m.appendReplacement(sb, Matcher.quoteReplacement(prop));
-        }
-        m.appendTail(sb);
-        return sb.toString();
     }
 
 }

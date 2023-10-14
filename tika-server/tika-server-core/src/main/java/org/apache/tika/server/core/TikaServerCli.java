@@ -133,7 +133,8 @@ public class TikaServerCli {
             executorService.shutdownNow();
         }
     }
-    public static void stop(String [] args) {
+
+    public static void stop(String[] args) {
         if (PREVENT_STOP) {
             LOG.info("preventStopMethod was set to true in the server config. I'm not stopping.");
         }
@@ -180,8 +181,8 @@ public class TikaServerCli {
     }
 
     public static void noFork(TikaServerConfig tikaServerConfig) throws Exception {
-        List<String> args = tikaServerConfig
-                .getForkedProcessArgs(tikaServerConfig.getPort(), tikaServerConfig.getIdBase());
+        List<String> args = tikaServerConfig.getForkedProcessArgs(tikaServerConfig.getPort(),
+                tikaServerConfig.getIdBase());
         args.add("--noFork");
         TikaServerProcess.main(args.toArray(new String[0]));
     }
