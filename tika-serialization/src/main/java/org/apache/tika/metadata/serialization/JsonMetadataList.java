@@ -26,9 +26,11 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import org.apache.commons.io.input.CloseShieldReader;
 import org.apache.commons.io.output.CloseShieldWriter;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -40,15 +42,18 @@ public class JsonMetadataList {
      *
      * @param metadataList list of metadata to write
      * @param writer       writer
-     * @param prettyPrint whether or not to pretty print the output
+     * @param prettyPrint  whether or not to pretty print the output
      * @throws org.apache.tika.exception.TikaException if there is an IOException during writing
      */
-    public static void toJson(List<Metadata> metadataList, Writer writer, boolean prettyPrint) throws IOException {
+    public static void toJson(List<Metadata> metadataList, Writer writer, boolean prettyPrint)
+            throws IOException {
         if (metadataList == null) {
             writer.write("null");
             return;
         }
-        try (JsonGenerator jsonGenerator = new JsonFactory()
+        try (JsonGenerator jsonGenerator = new JsonFactory().setStreamReadConstraints(
+                        StreamReadConstraints.builder().maxStringLength(
+                                TikaConfig.getMaxJsonStringFieldLength()).build())
                 .createGenerator(new CloseShieldWriter(writer))) {
             if (prettyPrint) {
                 jsonGenerator.useDefaultPrettyPrinter();
@@ -85,7 +90,9 @@ public class JsonMetadataList {
             return ms;
         }
         ms = new ArrayList<>();
-        try (JsonParser jParser = new JsonFactory().createParser(new CloseShieldReader(reader))) {
+        try (JsonParser jParser = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
+                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build())
+                .createParser(new CloseShieldReader(reader))) {
 
             JsonToken token = jParser.nextToken();
             if (token != JsonToken.START_ARRAY) {
