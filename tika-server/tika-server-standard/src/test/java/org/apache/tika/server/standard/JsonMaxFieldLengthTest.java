@@ -68,12 +68,6 @@ public class JsonMaxFieldLengthTest extends CXFTestBase {
     @Test
     public void testLargeJson(@TempDir Path dir) throws Exception {
         //TIKA-4154
-        TikaConfig tikaConfig = null;
-        try (InputStream is =
-                     JsonMetadata.class.getResourceAsStream("/config/tika-config-json.xml")) {
-            tikaConfig = new TikaConfig(is);
-        }
-
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 30000000; i++) {
             sb.append("v");
