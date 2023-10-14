@@ -26,7 +26,9 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
@@ -54,7 +56,8 @@ public class JsonFetchEmitTuple {
 
 
     public static FetchEmitTuple fromJson(Reader reader) throws IOException {
-        try (JsonParser jParser = new JsonFactory().createParser(reader)) {
+        try (JsonParser jParser = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
+                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build()).createParser(reader)) {
             JsonToken token = jParser.nextToken();
             if (token != JsonToken.START_OBJECT) {
                 throw new IOException("require start object, but see: " + token.name());
