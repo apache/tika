@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: main jdk17 build
+name: branch_2x jdk17 build
 
 on:
   push:
