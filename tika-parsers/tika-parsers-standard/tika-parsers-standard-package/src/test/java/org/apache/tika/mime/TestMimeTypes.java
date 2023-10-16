@@ -1023,6 +1023,7 @@ public class TestMimeTypes {
     @Test
     public void testRobots() throws Exception {
         assertTypeByData("text/x-robots", "testRobots.txt");
+        assertTypeByData("text/x-robots", "testRobots2.txt");
     }
 
     @Test

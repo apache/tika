@@ -2135,16 +2135,14 @@
     <!-- should have a higher priority than rfc822 - TIKA-3489 -->
     <magic priority="55">
       <match minShouldMatch="2">
-        <match minShouldMatch="1">
-          <match value="user-agent:" type="stringignorecase" offset="0"/>
-          <match value="sitemap:" type="stringignorecase" offset="0"/>
-        </match>
-        <match minShouldMatch="1">
-          <match value="\nuser-agent:" type="stringignorecase" offset="0:1000"/>
-          <match value="\nallow:" type="stringignorecase" offset="0:1000"/>
-          <match value="\ndisallow:" type="stringignorecase" offset="0:1000"/>
-          <match value="\nsitemap:" type="stringignorecase" offset="0:1000"/>
-        </match>
+        <match value="user-agent:" type="stringignorecase" offset="0"/>
+        <match value="allow:" type="stringignorecase" offset="0"/>
+        <match value="disallow:" type="stringignorecase" offset="0"/>
+        <match value="sitemap:" type="stringignorecase" offset="0"/>
+        <match value="\nuser-agent:" type="stringignorecase" offset="0:1000"/>
+        <match value="\nallow:" type="stringignorecase" offset="0:1000"/>
+        <match value="\ndisallow:" type="stringignorecase" offset="0:1000"/>
+        <match value="\nsitemap:" type="stringignorecase" offset="0:1000"/>
       </match>
     </magic>
     <sub-class-of type="text/plain"/>
