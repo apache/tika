@@ -26,13 +26,13 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.core.Response;
 
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadata;
@@ -61,20 +61,15 @@ public class JsonMaxFieldLengthTest extends CXFTestBase {
     }
     @Override
     protected InputStream getTikaConfigInputStream() {
+        //TIKA-4154
         return getClass().getResourceAsStream("/config/tika-config-json.xml");
     }
 
     @Test
     public void testLargeJson(@TempDir Path dir) throws Exception {
-        //TIKA-4154
-        TikaConfig tikaConfig = null;
-        try (InputStream is =
-                     JsonMetadata.class.getResourceAsStream("/config/tika-config-json.xml")) {
-            tikaConfig = new TikaConfig(is);
-        }
-
+        int len = StreamReadConstraints.DEFAULT_MAX_STRING_LEN + 100;
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 30000000; i++) {
+        for (int i = 0; i < len; i++) {
             sb.append("v");
         }
         Path tmp = Files.createTempFile(dir, "long-json-", ".txt");
@@ -86,6 +81,6 @@ public class JsonMaxFieldLengthTest extends CXFTestBase {
                 new InputStreamReader(((InputStream) response.getEntity()),
                         StandardCharsets.UTF_8));
         String t = metadata.get(TikaCoreProperties.TIKA_CONTENT);
-        assertEquals(30000000, t.trim().length());
+        assertEquals(len, t.trim().length());
     }
 }
