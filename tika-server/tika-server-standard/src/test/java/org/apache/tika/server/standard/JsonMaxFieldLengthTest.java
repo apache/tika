@@ -30,6 +30,7 @@ import com.fasterxml.jackson.core.StreamReadConstraints;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -41,6 +42,7 @@ import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 
+@Disabled("this causes an OOM in github actions")
 public class JsonMaxFieldLengthTest extends CXFTestBase {
 
     private static final String TIKA_PATH = "/tika";
