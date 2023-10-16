@@ -24,7 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
