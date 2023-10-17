@@ -383,7 +383,7 @@
     <pax.exam.version>4.13.5</pax.exam.version>
     <pdfbox.version>2.0.29</pdfbox.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <poi.version>5.2.4</poi.version>
+    <poi.version>5.2.3</poi.version>
     <quartz.version>2.3.2</quartz.version>
     <reactor.netty.version>1.1.12</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
