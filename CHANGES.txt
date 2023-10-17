@@ -1,4 +1,11 @@
-Release 2.9.1 - ??
+Release 2.9.1 - 10/17/2023
+
+   * Dependency upgrades including commons-compress to fix CVE-2023-42503.
+
+   * Improve RFC822 detection (TIKA-4153).
+
+   * Enable configuration of "maxJsonStringFieldLength" in TikaConfig to allow users to
+     avoid DEFAULT_MAX_STRING_LEN exceptions from Jackson (TIKA-4154).
 
    * Fix bug in DateUtils that stripped timezone information from
      incoming Calendar objects (TIKA-4126).
