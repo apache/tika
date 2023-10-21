@@ -306,7 +306,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.28.0</google.cloud.version>
-    <aws.version>1.12.567</aws.version>
+    <aws.version>1.12.561</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -342,7 +342,7 @@
     <!-- versions greater than 62.2 are not compatible with icu4j handler in lucene 8.11.1 -->
     <icu4j.version>62.2</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
-    <jackrabbit.version>2.21.19</jackrabbit.version>
+    <jackrabbit.version>2.21.20</jackrabbit.version>
     <jackson.version>2.15.3</jackson.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
@@ -398,7 +398,7 @@
     <test.containers.version>1.19.1</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
-    <twelvemonkeys.version>3.9.4</twelvemonkeys.version>
+    <twelvemonkeys.version>3.10.0</twelvemonkeys.version>
     <uima.version>3.4.1</uima.version>
     <uimafit.version>3.4.0</uimafit.version>
     <vorbis.version>0.8</vorbis.version>
@@ -488,7 +488,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.44.0</version>
+        <version>1.44.1</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
@@ -769,7 +769,7 @@
       <dependency>
         <groupId>org.apache.jackrabbit</groupId>
         <artifactId>oak-jackrabbit-api</artifactId>
-        <version>1.56.0</version>
+        <version>1.58.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
