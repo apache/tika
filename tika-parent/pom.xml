@@ -362,7 +362,7 @@
     <tagsoup.version>1.2.1</tagsoup.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.9</tukaani.version>
-    <twelvemonkeys.version>3.9.4</twelvemonkeys.version>
+    <twelvemonkeys.version>3.10.0</twelvemonkeys.version>
     <vorbis.version>0.8</vorbis.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.8.3</zookeeper.version>
