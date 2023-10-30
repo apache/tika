@@ -366,7 +366,7 @@
     <vorbis.version>0.8</vorbis.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.8.3</zookeeper.version>
-    <zstd.version>1.5.5-6</zstd.version>
+    <zstd.version>1.5.5-7</zstd.version>
   </properties>
 
   <dependencyManagement>
