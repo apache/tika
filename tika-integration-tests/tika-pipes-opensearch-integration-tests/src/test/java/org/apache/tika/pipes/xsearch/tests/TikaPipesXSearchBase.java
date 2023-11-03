@@ -80,6 +80,8 @@ public abstract class TikaPipesXSearchBase {
         JsonResponse response = CLIENT.deleteIndex(OPEN_SEARCH_ENDPOINT_BASE + TEST_INDEX);
         assertEquals(200, response.getStatus());
         assertTrue(response.getJson().get("acknowledged").asBoolean());
+        //refresh to hope that the underlying index is actually deleted
+        JsonResponse refresh = CLIENT.getJson(OPEN_SEARCH_ENDPOINT_BASE + TEST_INDEX + "/_refresh");
     }
 
     @Test
