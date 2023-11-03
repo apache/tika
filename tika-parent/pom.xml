@@ -419,7 +419,7 @@
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-bom</artifactId>
         <!-- 12.x requires Java 17 -->
-        <version>11.0.17</version>
+        <version>11.0.18</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -755,7 +755,7 @@
       <dependency>
         <groupId>org.apache.jackrabbit</groupId>
         <artifactId>oak-jackrabbit-api</artifactId>
-        <version>1.56.0</version>
+        <version>1.58.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
@@ -838,7 +838,7 @@
       <dependency>
         <groupId>org.glassfish.jaxb</groupId>
         <artifactId>jaxb-runtime</artifactId>
-        <version>4.0.3</version>
+        <version>4.0.4</version>
       </dependency>
       <dependency>
         <groupId>org.jdom</groupId>
@@ -853,7 +853,7 @@
       <dependency>
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
-        <version>5.6.0</version>
+        <version>5.7.0</version>
       </dependency>
       <dependency>
         <groupId>org.netpreserve</groupId>
