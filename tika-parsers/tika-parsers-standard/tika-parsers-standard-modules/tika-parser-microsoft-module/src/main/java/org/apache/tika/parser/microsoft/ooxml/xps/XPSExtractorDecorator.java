@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -56,7 +56,7 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
             "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation";
     private final ParseContext context;
     private final ZipPackage pkg;
-    Map<String, Metadata> embeddedImages = new HashMap<>();
+    Map<String, Metadata> embeddedImages = new LinkedHashMap<>();
 
     public XPSExtractorDecorator(ParseContext context, POIXMLTextExtractor extractor)
             throws TikaException {
