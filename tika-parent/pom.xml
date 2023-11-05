@@ -360,7 +360,7 @@
     <jna.version>5.13.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.10.0</junit5.version>
+    <junit5.version>5.10.1</junit5.version>
     <junrar.version>7.5.5</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.20.0</log4j2.version>
