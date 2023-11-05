@@ -432,7 +432,7 @@
       <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
-        <version>5.10.0</version>
+        <version>${junit5.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
