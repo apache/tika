@@ -332,7 +332,7 @@
     <jbig2.version>3.0.4</jbig2.version>
     <jempbox.version>1.8.17</jempbox.version>
     <jhighlight.version>1.1.0</jhighlight.version>
-    <junit5.version>5.10.0</junit5.version>
+    <junit5.version>5.10.1</junit5.version>
     <junrar.version>7.5.5</junrar.version>
     <kafka.version>3.6.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
