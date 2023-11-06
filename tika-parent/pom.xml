@@ -475,7 +475,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.13.9</version>
+        <version>1.13.10</version>
         <exclusions>
           <exclusion>
             <groupId>io.netty</groupId>
