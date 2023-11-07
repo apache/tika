@@ -905,6 +905,7 @@
         <version>3.4.0</version>
         <scope>provided</scope>
       </dependency>
+      <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
       <dependency>
         <groupId>org.apache.uima</groupId>
         <artifactId>uimaj-core</artifactId>
