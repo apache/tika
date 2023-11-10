@@ -340,7 +340,7 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.9</mime4j.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.1.100.Final</netty.version>
+    <netty.version>4.1.101.Final</netty.version>
     <openjson.version>1.0.13</openjson.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
