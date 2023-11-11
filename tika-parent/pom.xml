@@ -294,19 +294,19 @@
     <maven.assembly.version>3.6.0</maven.assembly.version>
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
-    <maven.failsafe.version>3.2.1</maven.failsafe.version>
+    <maven.failsafe.version>3.2.2</maven.failsafe.version>
     <maven.javadoc.version>3.6.0</maven.javadoc.version>
     <maven.jar.version>3.3.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
-    <maven.surefire.version>3.2.1</maven.surefire.version>
+    <maven.surefire.version>3.2.2</maven.surefire.version>
     <maven.shade.version>3.5.1</maven.shade.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.15</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.29.0</google.cloud.version>
-    <aws.version>1.12.575</aws.version>
+    <google.cloud.version>2.29.1</google.cloud.version>
+    <aws.version>1.12.586</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -398,7 +398,7 @@
     <test.containers.version>1.19.1</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
-    <twelvemonkeys.version>3.10.0</twelvemonkeys.version>
+    <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
     <uima.version>3.4.1</uima.version>
     <uimafit.version>3.4.0</uimafit.version>
     <vorbis.version>0.8</vorbis.version>
@@ -406,7 +406,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.5-6</zstd.version>
     <kafka.version>3.6.0</kafka.version>
-    <netty.version>4.1.100.Final</netty.version>
+    <netty.version>4.1.101.Final</netty.version>
     <snappy.java.version>1.1.10.5</snappy.java.version>
   </properties>
 
@@ -483,12 +483,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.24.0</version>
+        <version>12.25.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.44.1</version>
+        <version>1.45.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
@@ -586,7 +586,7 @@
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
-        <version>3.24.3</version>
+        <version>3.25.0</version>
       </dependency>
       <dependency>
         <groupId>com.h2database</groupId>
