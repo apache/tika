@@ -306,7 +306,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.28.0</google.cloud.version>
-    <aws.version>1.12.587</aws.version>
+    <aws.version>1.12.588</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
