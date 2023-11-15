@@ -1013,6 +1013,14 @@
               <artifactId>h2</artifactId>
               <version>${h2.version}</version>
             </coordinate>
+            <!-- CVE-2023-39913: Uima is used because ctakes is used in the
+            natural language process module. Serialization is only on data that is configured in
+            tika-config.xml. We don't think we'd be vulnerable to crafted user input. -->
+            <coordinate>
+                <groupId>org.apache.uima</groupId>
+                <artifactId>uimaj-core</artifactId>
+                <version>3.4.1</version>
+            </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
         </configuration>
