@@ -39,7 +39,7 @@ public class DL4JVGG16NetTest {
             config = new TikaConfig(is);
         } catch (Exception e) {
             if (e.getMessage() != null && (e.getMessage().contains("Connection refused") ||
-                    e.getMessage().contains("connect timed out"))) {
+                    e.getMessage().contains("connect timed out") || e.getMessage().contains("404"))) {
                 assumeTrue(false, "skipping test because of connection issue");
             }
             throw e;
