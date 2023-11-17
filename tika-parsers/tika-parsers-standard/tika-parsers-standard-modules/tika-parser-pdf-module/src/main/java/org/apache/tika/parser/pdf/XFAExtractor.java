@@ -17,7 +17,6 @@
 package org.apache.tika.parser.pdf;
 
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -76,7 +75,9 @@ class XFAExtractor {
             throws XMLStreamException, SAXException {
         xhtml.startElement("div", "class", "xfa_content");
 
-        Map<String, String> pdfObjRToValues = new HashMap<>();
+        //TODO - replace this with multivalued map? This isn't
+        //actually metadata, just a handy data structure.
+        Metadata pdfObjRToValues = new Metadata();
 
         //for now, store and dump the fields in insertion order
         Map<String, XFAField> namedFields = new LinkedHashMap<>();
@@ -118,23 +119,24 @@ class XFAExtractor {
         for (Map.Entry<String, XFAField> e : namedFields.entrySet()) {
             String fieldName = e.getKey();
             XFAField field = e.getValue();
-            String fieldValue = pdfObjRToValues.get(fieldName);
-            AttributesImpl attrs = new AttributesImpl();
-            attrs.addAttribute("", "fieldName", "fieldName", "CDATA", fieldName);
-
             String displayFieldName =
                     (field.toolTip == null || field.toolTip.trim().length() == 0) ? fieldName :
                             field.toolTip;
+            String[] fieldValues = pdfObjRToValues.getValues(fieldName);
+            for (String fieldValue : fieldValues) {
+                AttributesImpl attrs = new AttributesImpl();
+                attrs.addAttribute("", "fieldName", "fieldName", "CDATA", fieldName);
 
-            sb.append(displayFieldName).append(": ");
-            if (fieldValue != null) {
-                sb.append(fieldValue);
+                sb.append(displayFieldName).append(": ");
+                if (fieldValue != null) {
+                    sb.append(fieldValue);
+                }
+
+                xhtml.startElement("li", attrs);
+                xhtml.characters(sb.toString());
+                xhtml.endElement("li");
+                sb.setLength(0);
             }
-
-            xhtml.startElement("li", attrs);
-            xhtml.characters(sb.toString());
-            xhtml.endElement("li");
-            sb.setLength(0);
         }
         xhtml.endElement("ol");
         xhtml.endElement("div");
@@ -211,7 +213,7 @@ class XFAExtractor {
         return buffer.toString();
     }
 
-    private void loadData(XMLStreamReader reader, Map<String, String> pdfObjRToValues)
+    private void loadData(XMLStreamReader reader, Metadata pdfObjRToValues)
             throws XMLStreamException {
         //reader is at the "xfa:data" element
         //scrape the contents from the text containing nodes
@@ -235,7 +237,7 @@ class XFAExtractor {
                 case (XMLStreamConstants.END_ELEMENT):
                     if (buffer.length() > 0) {
                         String localName = reader.getLocalName();
-                        pdfObjRToValues.put(localName, buffer.toString());
+                        pdfObjRToValues.add(localName, buffer.toString());
                         buffer.setLength(0);
                     }
                     if (XFA_DATA.equals(reader.getName())) {

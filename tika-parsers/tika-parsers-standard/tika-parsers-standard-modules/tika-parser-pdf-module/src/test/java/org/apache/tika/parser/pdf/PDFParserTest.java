@@ -978,6 +978,15 @@ public class PDFParserTest extends TikaTest {
         assertContains("Mount Rushmore National Memorial", r.xml);
         //contains xfa fields and data
         assertContains("<li fieldName=\"School_Name\">School Name: my_school</li>", r.xml);
+        //This file does not have multiple values for a given key.
+        //It is not actually a useful test for TIKA-4171. We should
+        //find a small example test file and run something like this.
+        Matcher matcher = Pattern.compile("<li fieldName=").matcher(r.xml);
+        int listItems = 0;
+        while (matcher.find()) {
+            listItems++;
+        }
+        assertEquals(24, listItems);
     }
 
     @Test
