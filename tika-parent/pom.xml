@@ -305,38 +305,59 @@
     <scm.version>2.0.1</scm.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.28.0</google.cloud.version>
+    <asm.version>9.6</asm.version>
     <aws.version>1.12.590</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
-    <asm.version>9.6</asm.version>
+    <azure.core.version>1.45.0</azure.core.version>
+    <azure.core.http.netty.version>1.13.10</azure.core.http.netty.version>
+    <azure.storage.blob.version>12.25.0</azure.storage.blob.version>
+    <biz.aqute.version>6.4.1</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
     <bouncycastle.version>1.77</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
+    <c3p0.version>0.9.5.5</c3p0.version>
     <commons.net.version>3.10.0</commons.net.version>
     <ctakes.version>4.0.0.1</ctakes.version>
+    <cxf.version>4.0.3</cxf.version>
     <ddplist.version>1.27</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
+    <google.cloud.version>2.29.1</google.cloud.version>
+    <gson.version>2.10.1</gson.version>
+    <guava.version>32.1.3-jre</guava.version>
     <h2.version>2.2.224</h2.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
+    <icu4j.version>74.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.21.20</jackrabbit.version>
     <jackson.version>2.16.0</jackson.version>
+    <jackcess.version>4.0.5</jackcess.version>
+    <jackcess.encrypt.version>4.0.2</jackcess.encrypt.version>
+    <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
     <jbig2.version>3.0.4</jbig2.version>
+    <jcommander.version>1.82</jcommander.version>
     <jempbox.version>1.8.17</jempbox.version>
+    <jetty.version>11.0.18</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
+    <json.simple.version>1.1.1</json.simple.version>
+    <jsoup.version>1.16.2</jsoup.version>
+    <jsr305.version>3.0.2</jsr305.version>
     <junit5.version>5.10.1</junit5.version>
+    <juniversalchardet.version>2.4.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <kafka.version>3.6.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
+    <log4j2.version>2.20.0</log4j2.version>
     <lucene.version>9.8.0</lucene.version>
+    <mchange.version>0.2.20</mchange.version>
+    <metadata.extractor.version>2.18.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.9</mime4j.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
@@ -349,6 +370,7 @@
     <pdfbox.version>2.0.30</pdfbox.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>5.2.4</poi.version>
+    <protobuf.version>3.25.1</protobuf.version>
     <quartz.version>2.3.2</quartz.version>
     <reactor.netty.version>1.1.13</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
@@ -360,10 +382,12 @@
     <spring.version>5.3.31</spring.version>
     <sqlite.version>3.44.0.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
+    <testcontainers.version>1.19.2</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.9</tukaani.version>
     <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
     <vorbis.version>0.8</vorbis.version>
+    <woodstox.core.version>6.5.1</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.3</zookeeper.version>
@@ -390,14 +414,14 @@
       <dependency>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf-bom</artifactId>
-        <version>4.0.3</version>
+        <version>${cxf.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-bom</artifactId>
-        <version>2.20.0</version>
+        <version>${log4j2.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -420,14 +444,14 @@
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-bom</artifactId>
         <!-- 12.x requires Java 17 -->
-        <version>11.0.18</version>
+        <version>${jetty.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.jsoup</groupId>
         <artifactId>jsoup</artifactId>
-        <version>1.16.2</version>
+        <version>${jsoup.version}</version>
       </dependency>
       <dependency>
         <groupId>org.junit</groupId>
@@ -439,14 +463,14 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-bom</artifactId>
-        <version>2.0.9</version>
+        <version>${slf4j.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.testcontainers</groupId>
         <artifactId>testcontainers-bom</artifactId>
-        <version>1.19.2</version>
+        <version>${testcontainers.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -455,7 +479,7 @@
         <groupId>biz.aQute.bnd</groupId>
         <artifactId>biz.aQute.bndlib</artifactId>
         <!-- can't update to 7.0.0: "class file has wrong version 61.0, should be 55.0" -->
-        <version>6.4.1</version>
+        <version>${biz.aqute.version}</version>
       </dependency>
       <dependency>
         <groupId>com.amazonaws</groupId>
@@ -465,17 +489,17 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.25.0</version>
+        <version>${azure.storage.blob.version}</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.45.0</version>
+        <version>${azure.core.version}</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.13.10</version>
+        <version>${azure.core.http.netty.version}</version>
         <exclusions>
           <exclusion>
             <groupId>io.netty</groupId>
@@ -486,63 +510,63 @@
       <dependency>
         <groupId>com.drewnoakes</groupId>
         <artifactId>metadata-extractor</artifactId>
-        <version>2.18.0</version>
+        <version>${metadata.extractor.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.cloud</groupId>
         <artifactId>google-cloud-storage</artifactId>
-        <version>2.29.1</version>
+        <version>${google.cloud.version}</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.woodstox</groupId>
         <artifactId>woodstox-core</artifactId>
-        <version>6.5.1</version>
+        <version>${woodstox.core.version}</version>
       </dependency>
       <dependency>
         <groupId>com.mchange</groupId>
         <artifactId>c3p0</artifactId>
-        <version>0.9.5.5</version>
+        <version>${c3p0.version}</version>
       </dependency>
       <dependency>
         <groupId>com.mchange</groupId>
         <artifactId>mchange-commons-java</artifactId>
-        <version>0.2.20</version>
+        <version>${mchange.version}</version>
       </dependency>
       <dependency>
         <groupId>com.beust</groupId>
         <artifactId>jcommander</artifactId>
-        <version>1.82</version>
+        <version>${jcommander.version}</version>
       </dependency>
       <dependency>
         <groupId>com.github.albfernandez</groupId>
         <artifactId>juniversalchardet</artifactId>
-        <version>2.4.0</version>
+        <version>${juniversalchardet.version}</version>
       </dependency>
       <!-- jai-imageio-core is allowed since LEGAL-304 -->
       <dependency>
         <groupId>com.github.jai-imageio</groupId>
         <artifactId>jai-imageio-core</artifactId>
-        <version>1.4.0</version>
+        <version>${jai.imageio.core.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.code.findbugs</groupId>
         <artifactId>jsr305</artifactId>
-        <version>3.0.2</version>
+        <version>${jsr305.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.code.gson</groupId>
         <artifactId>gson</artifactId>
-        <version>2.10.1</version>
+        <version>${gson.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>32.1.3-jre</version>
+        <version>{guava.version}</version>
       </dependency>
       <dependency>
         <groupId>com.googlecode.json-simple</groupId>
         <artifactId>json-simple</artifactId>
-        <version>1.1.1</version>
+        <version>${json.simple.version}</version>
         <exclusions>
           <exclusion>
             <groupId>junit</groupId>
@@ -553,7 +577,7 @@
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
-        <version>3.25.1</version>
+        <version>${protobuf.version}</version>
       </dependency>
       <dependency>
         <groupId>com.h2database</groupId>
@@ -563,12 +587,12 @@
       <dependency>
         <groupId>com.healthmarketscience.jackcess</groupId>
         <artifactId>jackcess</artifactId>
-        <version>4.0.5</version>
+        <version>${jackcess.version}</version>
       </dependency>
       <dependency>
         <groupId>com.healthmarketscience.jackcess</groupId>
         <artifactId>jackcess-encrypt</artifactId>
-        <version>4.0.2</version>
+        <version>${jackcess.encrypt.version}</version>
         <exclusions>
           <!-- to avoid maven-enforcer convergence error,
             let's make this explicit -->
@@ -585,7 +609,7 @@
       <dependency>
         <groupId>com.ibm.icu</groupId>
         <artifactId>icu4j</artifactId>
-        <version>74.1</version>
+        <version>${icu4j.version}</version>
       </dependency>
       <dependency>
         <groupId>com.twelvemonkeys.common</groupId>
@@ -955,6 +979,8 @@
         </configuration>
       </plugin>
       <!--
+        mvn versions:display-property-updates
+        or if you want too much output to deal with:
         mvn versions:display-plugin-updates
         mvn versions:display-dependency-updates
       -->
