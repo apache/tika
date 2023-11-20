@@ -61,10 +61,6 @@
       <artifactId>tika-handler-boilerpipe</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-    </dependency>
 
     <!-- Test dependencies -->
     <dependency>
@@ -172,8 +168,6 @@
               poi-scratchpad|
               poi-ooxml|
               poi-ooxml-lite|
-              log4j-core|
-              log4j-api|
               commons-math3|
               curvesapi|
               xmlbeans|
@@ -303,10 +297,6 @@
               org.apache.batik.svggen;resolution:=optional,
               org.apache.batik.util;resolution:=optional,
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
-              org.apache.logging.log4j;resolution:=optional,
-              org.apache.logging.log4j.util;resolution:=optional,
-              org.apache.logging.log4j.util.internal;resolution:=optional,
-              org.apache.logging.log4j.spi;resolution:=optional,
               org.apache.maven.model;resolution:=optional,
               org.apache.maven.plugin;resolution:=optional,
               org.apache.maven.plugin.logging;resolution:=optional,
