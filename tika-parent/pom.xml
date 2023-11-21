@@ -384,7 +384,7 @@
     <lucene.version>9.8.0</lucene.version>
     <maven.plugin.annotations.version>3.10.2</maven.plugin.annotations.version>
     <mchange.version>0.2.20</mchange.version>
-    <metadata.extractor.version>2.18.0</metadata.extractor.version>
+    <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.9</mime4j.version>
     <mockito.version>5.7.0</mockito.version>
