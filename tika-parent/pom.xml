@@ -914,7 +914,7 @@
       <dependency>
         <groupId>org.jvnet.staxex</groupId>
         <artifactId>stax-ex</artifactId>
-        <version>{$stax.ex.version}</version>
+        <version>${stax.ex.version}</version>
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>
