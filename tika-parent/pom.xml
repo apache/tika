@@ -299,7 +299,7 @@
     <maven.jar.version>3.3.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.2.2</maven.surefire.version>
-    <maven.shade.version>3.5.0</maven.shade.version>
+    <maven.shade.version>3.5.1</maven.shade.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.15</rat.version>
@@ -339,7 +339,7 @@
     <icu4j.version>62.2</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.21.19</jackrabbit.version>
-    <jackson.version>2.15.2</jackson.version>
+    <jackson.version>2.16.0</jackson.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
     <javax.rest.version>2.1.1</javax.rest.version>
@@ -379,13 +379,13 @@
     <pax.exam.version>4.13.1</pax.exam.version>
     <pdfbox.version>3.0.0</pdfbox.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <poi.version>5.2.3</poi.version>
+    <poi.version>5.2.5</poi.version>
     <quartz.version>2.3.2</quartz.version>
     <reactor.netty.version>1.1.13</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.0.1</scm.version>
     <sis.version>1.3</sis.version>
-    <slf4j.version>2.0.7</slf4j.version>
+    <slf4j.version>2.0.9</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17 -->
     <spring.version>5.3.29</spring.version>
@@ -401,7 +401,7 @@
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <kafka.version>3.5.1</kafka.version>
-    <netty.version>4.1.97.Final</netty.version>
+    <netty.version>4.1.101.Final</netty.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.3</zookeeper.version>
     <zstd.version>1.5.5-5</zstd.version>
@@ -759,7 +759,7 @@
       <dependency>
         <groupId>org.apache.jackrabbit</groupId>
         <artifactId>oak-jackrabbit-api</artifactId>
-        <version>1.54.0</version>
+        <version>1.58.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
