@@ -371,7 +371,7 @@
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.13.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
-    <jsoup.version>1.16.2</jsoup.version>
+    <jsoup.version>1.17.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.10.1</junit5.version>
