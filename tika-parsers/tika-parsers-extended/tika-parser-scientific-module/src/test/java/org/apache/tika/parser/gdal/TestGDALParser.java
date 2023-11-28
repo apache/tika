@@ -71,6 +71,8 @@ public class TestGDALParser extends TikaTest {
         assertNotNull(met.get("Driver"));
         assertEquals(expectedDriver, met.get("Driver"));
         assumeTrue(met.get("Files") != null);
+        //recent version of gdalinfo doesn't include "Coordinate System":
+        // GDAL 3.7.1, released 2023/07/06
         //assertNotNull(met.get("Coordinate System"));
         //assertEquals(expectedCoordinateSystem, met.get("Coordinate System"));
         assertNotNull(met.get("Size"));

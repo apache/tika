@@ -16,7 +16,7 @@
  */
 package org.apache.tika.server.core;
 
-import javax.ws.rs.WebApplicationException;
+import jakarta.ws.rs.WebApplicationException;
 
 /**
  * Simple wrapper exception to be thrown for consistent handling

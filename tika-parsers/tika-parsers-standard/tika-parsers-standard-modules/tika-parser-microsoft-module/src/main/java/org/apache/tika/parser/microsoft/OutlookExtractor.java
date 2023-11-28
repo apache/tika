@@ -50,7 +50,6 @@ import org.apache.poi.hsmf.datatypes.StringChunk;
 import org.apache.poi.hsmf.datatypes.Types;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.CodePageUtil;
 import org.xml.sax.SAXException;
 
@@ -66,7 +65,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlEncodingDetector;
-import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.parser.mailcommons.MailDateParser;
 import org.apache.tika.parser.microsoft.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;
@@ -96,37 +95,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     private final boolean extractAllAlternatives;
     HtmlEncodingDetector detector = new HtmlEncodingDetector();
 
-    /**
-     * @deprecated use {@link OutlookExtractor#OutlookExtractor(DirectoryNode, Metadata, ParseContext)}
-     *      Will be removed after 2.4.0
-     * @param filesystem
-     * @param context
-     * @throws TikaException
-     */
-    @Deprecated
-    public OutlookExtractor(POIFSFileSystem filesystem, ParseContext context) throws TikaException {
-        this(filesystem.getRoot(), context);
-    }
-
-    /**
-     * @deprecated use {@link OutlookExtractor#OutlookExtractor(DirectoryNode, Metadata, ParseContext)}
-     *              Will be removed after 2.4.0
-     * @param root
-     * @param context
-     * @throws TikaException
-     */
-    @Deprecated
-    public OutlookExtractor(DirectoryNode root, ParseContext context) throws TikaException {
-        super(context);
-        this.parseContext = context;
-        this.extractAllAlternatives =
-                context.get(OfficeParserConfig.class).isExtractAllAlternativesFromMSG();
-        try {
-            this.msg = new MAPIMessage(root);
-        } catch (IOException e) {
-            throw new TikaException("Failed to parse Outlook message", e);
-        }
-    }
 
     public OutlookExtractor(DirectoryNode root, Metadata metadata, ParseContext context) throws TikaException {
         super(context, metadata);
@@ -184,26 +152,13 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         }
     }
 
-    public void parse(XHTMLContentHandler xhtml) throws TikaException, SAXException, IOException {
-        parse(xhtml, parentMetadata);
-    }
-
-    /**
-     * @deprecated use {@link #parse(XHTMLContentHandler), will be removed after 2.4.0}
-     * @param xhtml
-     * @param metadata
-     * @throws TikaException
-     * @throws SAXException
-     * @throws IOException
-     */
-    @Deprecated
-    public void parse(XHTMLContentHandler xhtml, Metadata metadata)
+    public void parse(XHTMLContentHandler xhtml)
             throws TikaException, SAXException, IOException {
         try {
             msg.setReturnNullOnMissingChunk(true);
 
             try {
-                metadata.set(Office.MAPI_MESSAGE_CLASS, msg.getMessageClassEnum().name());
+                parentMetadata.set(Office.MAPI_MESSAGE_CLASS, msg.getMessageClassEnum().name());
             } catch (ChunkNotFoundException e) {
                 //swallow
             }
@@ -219,16 +174,16 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             Map<String, String[]> headers = normalizeHeaders(msg.getHeaders());
             String from = msg.getDisplayFrom();
 
-            handleFromTo(headers, metadata);
+            handleFromTo(headers, parentMetadata);
 
-            metadata.set(TikaCoreProperties.TITLE, subject);
-            metadata.set(TikaCoreProperties.SUBJECT, msg.getConversationTopic());
-            metadata.set(TikaCoreProperties.DESCRIPTION, msg.getConversationTopic());
+            parentMetadata.set(TikaCoreProperties.TITLE, subject);
+            parentMetadata.set(TikaCoreProperties.SUBJECT, msg.getConversationTopic());
+            parentMetadata.set(TikaCoreProperties.DESCRIPTION, msg.getConversationTopic());
 
             try {
                 for (String recipientAddress : msg.getRecipientEmailAddressList()) {
                     if (recipientAddress != null) {
-                        metadata.add(Metadata.MESSAGE_RECIPIENT_ADDRESS, recipientAddress);
+                        parentMetadata.add(Metadata.MESSAGE_RECIPIENT_ADDRESS, recipientAddress);
                     }
                 }
             } catch (ChunkNotFoundException he) {
@@ -238,15 +193,15 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             for (Map.Entry<String, String[]> e : headers.entrySet()) {
                 String headerKey = e.getKey();
                 for (String headerValue : e.getValue()) {
-                    metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + headerKey, headerValue);
+                    parentMetadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + headerKey, headerValue);
                 }
             }
 
             // Date - try two ways to find it
             // First try via the proper chunk
             if (msg.getMessageDate() != null) {
-                metadata.set(TikaCoreProperties.CREATED, msg.getMessageDate().getTime());
-                metadata.set(TikaCoreProperties.MODIFIED, msg.getMessageDate().getTime());
+                parentMetadata.set(TikaCoreProperties.CREATED, msg.getMessageDate().getTime());
+                parentMetadata.set(TikaCoreProperties.MODIFIED, msg.getMessageDate().getTime());
             } else {
                 if (headers != null && headers.size() > 0) {
                     for (Map.Entry<String, String[]> header : headers.entrySet()) {
@@ -257,14 +212,14 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                             // See if we can parse it as a normal mail date
                             try {
                                 Date d = MailDateParser.parseDateLenient(date);
-                                metadata.set(TikaCoreProperties.CREATED, d);
-                                metadata.set(TikaCoreProperties.MODIFIED, d);
+                                parentMetadata.set(TikaCoreProperties.CREATED, d);
+                                parentMetadata.set(TikaCoreProperties.MODIFIED, d);
                             } catch (SecurityException e ) {
                                 throw e;
                             } catch (Exception e) {
                                 // Store it as-is, and hope for the best...
-                                metadata.set(TikaCoreProperties.CREATED, date);
-                                metadata.set(TikaCoreProperties.MODIFIED, date);
+                                parentMetadata.set(TikaCoreProperties.CREATED, date);
+                                parentMetadata.set(TikaCoreProperties.MODIFIED, date);
                             }
                             break;
                         }
@@ -367,9 +322,9 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             }
             if (data != null) {
                 Parser htmlParser = EmbeddedDocumentUtil
-                        .tryToFindExistingLeafParser(HtmlParser.class, parseContext);
+                        .tryToFindExistingLeafParser(JSoupParser.class, parseContext);
                 if (htmlParser == null) {
-                    htmlParser = new HtmlParser();
+                    htmlParser = new JSoupParser();
                 }
                 htmlParser.parse(new UnsynchronizedByteArrayInputStream(data),
                         new EmbeddedContentHandler(new BodyContentHandler(xhtml)), new Metadata(),

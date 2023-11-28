@@ -164,7 +164,7 @@ public class XMPMetadataTest {
     public void getInt_IntegerProperty_valueReturned() throws TikaException {
         xmpMeta.process(tikaMetadata);
 
-        assertEquals(new Integer(2), xmpMeta.getInt(Property.get("xmp:Integer")));
+        assertEquals(Integer.valueOf(2), xmpMeta.getInt(Property.get("xmp:Integer")));
     }
 
     @Test

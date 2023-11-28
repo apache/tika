@@ -38,7 +38,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -50,7 +49,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * href="http://www.unidata.ucar.edu/software/netcdf-java/">NetCDF for Java</a>
  * API.
  */
-public class NetCDFParser extends AbstractParser {
+public class NetCDFParser implements Parser {
 
     /**
      * Serial version UID

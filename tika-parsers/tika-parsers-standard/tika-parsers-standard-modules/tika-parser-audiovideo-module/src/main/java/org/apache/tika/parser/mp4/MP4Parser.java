@@ -52,8 +52,8 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 
@@ -63,7 +63,7 @@ import org.apache.tika.utils.StringUtils;
  * <p>
  * This uses Drew Noakes' metadata-extractor: https://github.com/drewnoakes/metadata-extractor
  */
-public class MP4Parser extends AbstractParser {
+public class MP4Parser implements Parser {
     /**
      * Serial version UID
      */

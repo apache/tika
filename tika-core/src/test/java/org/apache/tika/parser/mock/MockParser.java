@@ -58,7 +58,6 @@ import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.Parser;
@@ -77,7 +76,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * See also {@link org.apache.tika.parser.DummyParser} for another option.
  */
 
-public class MockParser extends AbstractParser {
+public class MockParser implements Parser {
 
 
     private static final long serialVersionUID = 1L;
@@ -417,7 +416,7 @@ public class MockParser extends AbstractParser {
         Throwable t = null;
         if (msg == null || msg.equals("")) {
             try {
-                t = (Throwable) Class.forName(className).newInstance();
+                t = (Throwable) Class.forName(className).getDeclaredConstructor().newInstance();
             } catch (Exception e) {
                 throw new RuntimeException("couldn't create throwable class:" + className, e);
             }

@@ -28,15 +28,15 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Parser for XLIFF 1.2 files.
  */
-public class XLIFF12Parser extends AbstractParser {
+public class XLIFF12Parser implements Parser {
 
     /**
      * Serial Version UID.

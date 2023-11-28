@@ -14,27 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.serialization;
+package org.apache.tika.parser.html.tagsoup;
 
-import static org.apache.tika.metadata.serialization.JsonMetadata.writeMetadataObject;
+import java.util.Locale;
 
-import java.io.IOException;
+/**
+ * Alternative HTML mapping rules that pass the input HTML as-is without any
+ * modifications.
+ *
+ * @since Apache Tika 0.8
+ */
+public class IdentityHtmlMapper implements HtmlMapper {
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+    public static final HtmlMapper INSTANCE = new IdentityHtmlMapper();
 
-import org.apache.tika.metadata.Metadata;
-
-public class JsonMetadataSerializer extends StdSerializer<Metadata> {
-
-    public JsonMetadataSerializer() {
-        super(Metadata.class);
+    public boolean isDiscardElement(String name) {
+        return false;
     }
 
-    @Override
-    public void serialize(Metadata metadata, JsonGenerator jsonGenerator,
-                          SerializerProvider serializerProvider) throws IOException {
-        writeMetadataObject(metadata, jsonGenerator, false);
+    public String mapSafeAttribute(String elementName, String attributeName) {
+        return attributeName.toLowerCase(Locale.ENGLISH);
     }
+
+    public String mapSafeElement(String name) {
+        return name.toLowerCase(Locale.ENGLISH);
+    }
+
 }

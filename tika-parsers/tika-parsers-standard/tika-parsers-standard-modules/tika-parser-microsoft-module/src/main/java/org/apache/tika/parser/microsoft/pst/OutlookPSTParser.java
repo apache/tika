@@ -44,15 +44,15 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.OutlookExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Parser for MS Outlook PST email storage files
  */
-public class OutlookPSTParser extends AbstractParser {
+public class OutlookPSTParser implements Parser {
 
     public static final MediaType MS_OUTLOOK_PST_MIMETYPE =
             MediaType.application("vnd.ms-outlook-pst");

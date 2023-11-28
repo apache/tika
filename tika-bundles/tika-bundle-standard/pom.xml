@@ -24,12 +24,12 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-bundles</artifactId>
-    <version>2.9.1-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>tika-bundle-standard</artifactId>
-  <version>2.9.1-SNAPSHOT</version>
+  <version>3.0.0-SNAPSHOT</version>
   <packaging>bundle</packaging>
   <name>Apache Tika OSGi standard bundle</name>
 
@@ -58,12 +58,8 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parser-html-commons</artifactId>
+      <artifactId>tika-handler-boilerpipe</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
     </dependency>
 
     <!-- Test dependencies -->
@@ -94,13 +90,13 @@
     <dependency>
       <groupId>org.ops4j.pax.url</groupId>
       <artifactId>pax-url-aether</artifactId>
-      <version>2.6.1</version>
+      <version>2.6.14</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>javax.inject</groupId>
-      <artifactId>javax.inject</artifactId>
-      <version>1</version>
+      <groupId>jakarta.inject</groupId>
+      <artifactId>jakarta.inject-api</artifactId>
+      <version>2.0.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -122,14 +118,13 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.sun.activation</groupId>
-      <artifactId>javax.activation</artifactId>
-      <version>1.2.0</version>
+      <groupId>jakarta.activation</groupId>
+      <artifactId>jakarta.activation-api</artifactId>
     </dependency>
     <dependency>
       <groupId>com.sun.xml.fastinfoset</groupId>
       <artifactId>FastInfoset</artifactId>
-      <version>2.1.0</version>
+      <version>2.1.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -150,9 +145,7 @@
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Embed-Dependency>*;scope=compile;artifactId=tika-parsers-standard-package|
-              javax.activation|
-              xerces|
-              xercesImpl|
+              jakarta.activation|
               commons-compress|
               xz|
               commons-codec|
@@ -167,16 +160,14 @@
               fontbox|
               jempbox|
               xmpbox|
-              bcmail-jdk15on|
-              bcprov-jdk15on|
-              bcpkix-jdk15on|
-              bcutil-jdk15on|
+              bcjmail-jdk18on|
+              bcprov-jdk18on|
+              bcpkix-jdk18on|
+              bcutil-jdk18on|
               poi|
               poi-scratchpad|
               poi-ooxml|
               poi-ooxml-lite|
-              log4j-core|
-              log4j-api|
               commons-math3|
               curvesapi|
               xmlbeans|
@@ -256,7 +247,7 @@
               com.sun.tools.javadoc;resolution:=optional,
               de.rototor.pdfbox.graphics2d;resolution:=optional,
               icc;resolution:=optional,
-              javax.annotation;resolution:=optional,
+              jakarta.annotation;resolution:=optional,
               javax.mail;resolution:=optional,
               javax.mail.internet;resolution:=optional,
               javax.net.ssl;resolution:=optional,
@@ -264,7 +255,7 @@
               javax.servlet.annotation;resolution:=optional,
               javax.servlet.http;resolution:=optional,
               javax.measure.converter;resolution:=optional,
-              javax.ws.rs.core;resolution:=optional,
+              jakarta.ws.rs.core;resolution:=optional,
               javax.xml.bind;resolution:=optional,
               javax.xml.bind.annotation;resolution:=optional,
               javax.xml.bind.annotation.adapters;resolution:=optional,
@@ -306,10 +297,6 @@
               org.apache.batik.svggen;resolution:=optional,
               org.apache.batik.util;resolution:=optional,
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
-              org.apache.logging.log4j;resolution:=optional,
-              org.apache.logging.log4j.util;resolution:=optional,
-              org.apache.logging.log4j.util.internal;resolution:=optional,
-              org.apache.logging.log4j.spi;resolution:=optional,
               org.apache.maven.model;resolution:=optional,
               org.apache.maven.plugin;resolution:=optional,
               org.apache.maven.plugin.logging;resolution:=optional,
@@ -317,10 +304,6 @@
               org.apache.tools.ant;resolution:=optional,
               org.apache.tools.ant.taskdefs;resolution:=optional,
               org.apache.tools.ant.types;resolution:=optional,
-              org.apache.xerces.parsers;resolution:=optional,
-              org.apache.xerces.util;resolution:=optional,
-              org.apache.xerces.xni;resolution:=optional,
-              org.apache.xerces.xni.parser;resolution:=optional,
               org.apache.xml.resolver;resolution:=optional,
               org.apache.xml.resolver.readers;resolution:=optional,
               org.apache.xml.resolver.tools;resolution:=optional,
@@ -411,9 +394,6 @@
               INFO
             </org.ops4j.pax.logging.DefaultServiceLog.level>
           </systemPropertyVariables>
-          <classpathDependencyExcludes>
-            <classpathDependencyExclude>xerces:xercesImpl</classpathDependencyExclude>
-          </classpathDependencyExcludes>
         </configuration>
       </plugin>
       <plugin>
@@ -427,6 +407,17 @@
           </excludes>
         </configuration>
       </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <configuration>
+              <archive>
+                <manifestEntries>
+                  <Automatic-Module-Name>org.apache.tika.bundle.standard</Automatic-Module-Name>
+                </manifestEntries>
+              </archive>
+            </configuration>
+          </plugin>
     </plugins>
   </build>
 
@@ -447,5 +438,3 @@
     <tag>2.2.1-rc2</tag>
   </scm>
 </project>
-
-

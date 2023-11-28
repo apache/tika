@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>2.9.1-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
     <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -54,6 +54,9 @@
     <module>tika-example</module>
     <module>tika-java7</module>
     <module>tika-detectors</module>
+    <module>tika-handlers</module>
+    <module>tika-parsers/tika-parsers-extended/tika-parser-tagsoup-module</module>
+    <module>tika-parsers/tika-parsers-extended/tika-parser-tagsoup-package</module>
   </modules>
 
   <profiles>

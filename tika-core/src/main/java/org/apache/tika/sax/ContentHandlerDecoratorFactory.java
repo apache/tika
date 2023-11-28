@@ -25,15 +25,6 @@ import org.apache.tika.parser.ParseContext;
 
 public interface ContentHandlerDecoratorFactory extends Serializable {
 
-    /**
-     * @deprecated use {@link ContentHandlerDecoratorFactory#decorate(ContentHandler, Metadata, ParseContext)}
-     *   This will be removed in 2.5.0
-     * @param contentHandler
-     * @param metadata
-     * @return
-     */
-    @Deprecated
-    ContentHandler decorate(ContentHandler contentHandler, Metadata metadata);
     ContentHandler decorate(ContentHandler contentHandler, Metadata metadata,
                             ParseContext parseContext);
 }

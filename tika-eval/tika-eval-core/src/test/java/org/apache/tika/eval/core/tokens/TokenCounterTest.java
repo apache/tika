@@ -110,7 +110,7 @@ public class TokenCounterTest {
         ts.end();
         ts.close();
         assertEquals(7, tokens.size());
-        assertEquals(new Integer(1), tokens.get("林斯"));
+        assertEquals(Integer.valueOf(1), tokens.get("林斯"));
     }
 
     private String generateString() {

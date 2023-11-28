@@ -497,7 +497,7 @@ public class AutoDetectParserTest extends TikaTest {
     }
 
     @SuppressWarnings("serial")
-    private static class MyParser extends AbstractParser {
+    private static class MyParser implements Parser {
         public Set<MediaType> getSupportedTypes(ParseContext context) {
             Set<MediaType> supportedTypes = new HashSet<>();
             supportedTypes.add(MY_MEDIA_TYPE);

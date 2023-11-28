@@ -103,7 +103,7 @@ public class XMLTestBase extends TikaTest {
         parser.parse(is, new DefaultHandler(), new Metadata(), context);
     }
 
-    static class VulnerableDOMParser extends AbstractParser {
+    static class VulnerableDOMParser implements Parser {
 
         @Override
         public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -128,7 +128,7 @@ public class XMLTestBase extends TikaTest {
         }
     }
 
-    static class VulnerableSAXParser extends AbstractParser {
+    static class VulnerableSAXParser implements Parser {
 
         @Override
         public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -142,8 +142,7 @@ public class XMLTestBase extends TikaTest {
             TaggedContentHandler tagged = new TaggedContentHandler(handler);
             try {
                 SAXParserFactory saxParserFactory = SAXParserFactory
-                        .newInstance("org.apache.xerces.jaxp.SAXParserFactoryImpl",
-                                this.getClass().getClassLoader());
+                        .newInstance();
                 SAXParser parser = saxParserFactory.newSAXParser();
                 parser.parse(stream, new TextContentHandler(handler, true));
             } catch (ParserConfigurationException e) {

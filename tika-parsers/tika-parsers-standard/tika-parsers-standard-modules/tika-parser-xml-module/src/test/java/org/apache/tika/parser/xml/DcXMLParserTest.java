@@ -29,6 +29,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
 public class DcXMLParserTest extends TikaTest {
@@ -38,7 +39,7 @@ public class DcXMLParserTest extends TikaTest {
         try (InputStream input = getResourceAsStream("/test-documents/testXML.xml")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new DcXMLParser().parse(input, handler, metadata);
+            new DcXMLParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("application/xml", metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Tika test document", metadata.get(TikaCoreProperties.TITLE));
@@ -73,7 +74,7 @@ public class DcXMLParserTest extends TikaTest {
     public void testXMLParserNonAsciiChars() throws Exception {
         try (InputStream input = getResourceAsStream("/test-documents/testXML.xml")) {
             Metadata metadata = new Metadata();
-            new DcXMLParser().parse(input, new DefaultHandler(), metadata);
+            new DcXMLParser().parse(input, new DefaultHandler(), metadata, new ParseContext());
 
             final String expected =
                     "Archim\u00E8de et Lius \u00E0 Ch\u00E2teauneuf testing chars en \u00E9t\u00E9";

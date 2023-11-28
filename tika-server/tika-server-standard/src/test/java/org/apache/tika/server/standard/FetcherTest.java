@@ -25,8 +25,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
-import javax.ws.rs.core.Response;
 
+import jakarta.ws.rs.core.Response;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;

@@ -40,7 +40,7 @@ import org.apache.tika.parser.multiple.FallbackParser;
  * <p>To decorate several different parsers at the same time, wrap them in
  * a {@link CompositeParser} instance first.
  */
-public class ParserDecorator extends AbstractParser {
+public class ParserDecorator implements Parser {
 
     /**
      * Serial version UID

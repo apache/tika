@@ -66,16 +66,8 @@ public class TestXMLEntityExpansion extends XMLTestBase {
         try {
             parse(testFileName, new ByteArrayInputStream(bytes), parser, context);
         } catch (SAXParseException e) {
-            if (e.getMessage() == null || !e.getMessage().contains("entity expansions")) {
-                throw new RuntimeException("Should have seen 'entity expansions' in the msg", e);
-            }
             ex = true;
         } catch (TikaException e) {
-            Throwable cause = e.getCause();
-            if (cause == null || cause.getMessage() == null ||
-                    !cause.getMessage().contains("entity expansions")) {
-                throw new RuntimeException("Cause should have mentioned 'entity expansions'", e);
-            }
             ex = true;
         }
         assertTrue(ex, "should have had an exception");
@@ -146,7 +138,9 @@ public class TestXMLEntityExpansion extends XMLTestBase {
                 XMLReaderUtils.buildDOM(new ByteArrayInputStream(injected));
                 fail("should never parse!");
             } catch (SAXParseException e) {
-                assertTrue(e.getMessage() != null && e.getMessage().contains("entity expansions"));
+                //can't rely on message content with different xml parsers/java versions
+                //assertTrue(e.getMessage() != null && e.getMessage().contains("entity
+                // expansions"));
             }
         }
     }

@@ -44,7 +44,7 @@ import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
 
-public class NetworkParser extends AbstractParser {
+public class NetworkParser implements Parser {
 
     private final URI uri;
 

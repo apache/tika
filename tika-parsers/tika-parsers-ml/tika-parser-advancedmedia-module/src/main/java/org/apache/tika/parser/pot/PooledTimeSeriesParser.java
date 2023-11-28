@@ -49,7 +49,6 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -64,7 +63,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * <p>See https://wiki.apache.org/tika/PooledTimeSeriesParser for
  * more details and setup instructions.
  */
-public class PooledTimeSeriesParser extends AbstractParser {
+public class PooledTimeSeriesParser implements Parser {
 
     static final boolean isAvailable =
             ExternalParser.check(new String[]{"pooled-time-series", "--help"}, -1);

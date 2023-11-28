@@ -365,6 +365,7 @@ public interface TikaCoreProperties {
         FONT,//embedded font files
         THUMBNAIL, //TODO: set this in parsers that handle thumbnails
         RENDERING, //if a file has been rendered
-        VERSION //an earlier version of a file
+        VERSION, //an earlier version of a file
+        ALTERNATE_FORMAT_CHUNK //OOXML inline alternate format chunk
     }
 }

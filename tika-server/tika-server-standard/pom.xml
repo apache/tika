@@ -19,7 +19,7 @@
   <parent>
     <artifactId>tika-server</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>2.9.1-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -50,8 +50,8 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-parser-html-commons</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-handler-boilerpipe</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -128,7 +128,7 @@
                   <exclude>org.apache.tika:tika-parsers-standard-package:jar:</exclude>
                   <exclude>org.apache.tika:tika-serialization:jar:</exclude>
                   <exclude>org.apache.tika:tika-langdetect-optimaize:jar:</exclude>
-                  <exclude>org.apache.tika:tika-parser-html-commons:jar:</exclude>
+                  <exclude>org.apache.tika:tika-handler-boilerpipe:jar:</exclude>
                   <exclude>org.apache.tika:tika-parser-digest-commons:jar:</exclude>
                   <exclude>org.apache.tika:tika-parser-zip-commons:jar:</exclude>
                   <exclude>commons-codec:commons-codec:jar:</exclude>
@@ -140,10 +140,10 @@
                   <exclude>org.apache.ws.xmlschema:xmlschema-core:jar:</exclude>
                   <exclude>jakarta.ws.rs:jakarta.ws.rs-api:jar:</exclude>
                   <exclude>jakarta.annotation:jakarta.annotation-api:jar:</exclude>
-                  <exclude>org.bouncycastle:bcmail-jdk15on:jar:</exclude>
-                  <exclude>org.bouncycastle:bcutil-jdk15on:jar:</exclude>
-                  <exclude>org.bouncycastle:bcpkix-jdk15on:jar:</exclude>
-                  <exclude>org.bouncycastle:bcprov-jdk15on:jar:</exclude>
+                  <exclude>org.bouncycastle:bcjmail-jdk18on:jar:</exclude>
+                  <exclude>org.bouncycastle:bcutil-jdk18on:jar:</exclude>
+                  <exclude>org.bouncycastle:bcpkix-jdk18on:jar:</exclude>
+                  <exclude>org.bouncycastle:bcprov-jdk18on:jar:</exclude>
                   <exclude>de.l3s.boilerpipe:boilerpipe:jar:</exclude>
                   <exclude>com.optimaize.languagedetector:language-detector:jar:</exclude>
                   <exclude>net.arnx:jsonic:jar:</exclude>
@@ -161,9 +161,9 @@
                   <exclude>jakarta.xml.bind:jakarta.xml.bind-api:jar:</exclude>
                   <exclude>org.glassfish.jaxb:txw2:jar:</exclude>
                   <exclude>com.sun.istack:istack-commons-runtime:jar:</exclude>
-                  <exclude>com.sun.activation:jakarta.activation:jar:</exclude>
+                  <exclude>com.sun.activation:jakarta.activation:jar:</exclude> <!-- NOT SURA these coordinates are correcte -->
                   <exclude>com.fasterxml.jackson.core:jackson-core:jar:</exclude>
-                  <exclude>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:jar:</exclude>
+                  <exclude>com.fasterxml.jackson.jaxrs:jackson-jakarta-rs-json-provider:jar:</exclude>
                   <exclude>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:jar:</exclude>
                   <exclude>com.fasterxml.jackson.module:jackson-module-jaxb-annotations:jar:</exclude>
                   <exclude>com.fasterxml.jackson.core:jackson-annotations:jar:</exclude>

@@ -19,13 +19,13 @@ package org.apache.tika.parser.microsoft;
 import org.apache.poi.util.IOUtils;
 
 import org.apache.tika.config.Field;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 
 /**
  * Intermediate layer to set {@link OfficeParserConfig} uniformly.
  */
-public abstract class AbstractOfficeParser extends AbstractParser {
+public abstract class AbstractOfficeParser implements Parser {
 
     private final OfficeParserConfig defaultOfficeParserConfig = new OfficeParserConfig();
 

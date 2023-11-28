@@ -32,14 +32,14 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * A basic parser class for Apple ICNS icon files
  */
-public class ICNSParser extends AbstractParser {
+public class ICNSParser implements Parser {
     public static final String ICNS_MIME_TYPE = "image/icns";
     private static final long serialVersionUID = 922010233654248327L;
     private static final long MAX_IMAGE_LENGTH_BYTES = 10485760;// 10MB

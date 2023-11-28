@@ -27,14 +27,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.UriInfo;
 
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -54,11 +54,10 @@ import org.apache.tika.pipes.fetcher.FetchKey;
 public class AsyncResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncResource.class);
-
-    long maxQueuePauseMs = 60000;
     private final AsyncProcessor asyncProcessor;
     private final Set<String> supportedFetchers;
     private final EmitterManager emitterManager;
+    long maxQueuePauseMs = 60000;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
     public AsyncResource(java.nio.file.Path tikaConfigPath, Set<String> supportedFetchers)

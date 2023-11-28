@@ -215,6 +215,9 @@ public class XMLReaderUtils implements Serializable {
      */
     public static SAXParserFactory getSAXParserFactory() {
         SAXParserFactory factory = SAXParserFactory.newInstance();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("SAXParserFactory class {}", factory.getClass());
+        }
         factory.setNamespaceAware(true);
         factory.setValidating(false);
         trySetSAXFeature(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
@@ -241,6 +244,10 @@ public class XMLReaderUtils implements Serializable {
     public static DocumentBuilderFactory getDocumentBuilderFactory() {
         //borrowed from Apache POI
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("DocumentBuilderFactory class {}", factory.getClass());
+        }
+
         factory.setExpandEntityReferences(false);
         factory.setNamespaceAware(true);
         factory.setValidating(false);
@@ -290,6 +297,9 @@ public class XMLReaderUtils implements Serializable {
      */
     public static XMLInputFactory getXMLInputFactory() {
         XMLInputFactory factory = XMLInputFactory.newFactory();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("XMLInputFactory class {}", factory.getClass());
+        }
 
         tryToSetStaxProperty(factory, XMLInputFactory.IS_NAMESPACE_AWARE, true);
         tryToSetStaxProperty(factory, XMLInputFactory.IS_VALIDATING, false);
@@ -707,7 +717,8 @@ public class XMLReaderUtils implements Serializable {
                 //"com.sun.org.apache.xerces.internal.util.SecurityManager",
                 XERCES_SECURITY_MANAGER}) {
             try {
-                Object mgr = Class.forName(securityManagerClassName).newInstance();
+                Object mgr =
+                        Class.forName(securityManagerClassName).getDeclaredConstructor().newInstance();
                 Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit",
                         Integer.TYPE);
                 setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
@@ -750,7 +761,8 @@ public class XMLReaderUtils implements Serializable {
                 //"com.sun.org.apache.xerces.internal.util.SecurityManager",
                 XERCES_SECURITY_MANAGER}) {
             try {
-                Object mgr = Class.forName(securityManagerClassName).newInstance();
+                Object mgr =
+                        Class.forName(securityManagerClassName).getDeclaredConstructor().newInstance();
                 Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
                 setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
 
@@ -902,7 +914,8 @@ public class XMLReaderUtils implements Serializable {
         }
         boolean hasSecurityManager = false;
         try {
-            Object mgr = Class.forName(XERCES_SECURITY_MANAGER).newInstance();
+            Object mgr =
+                    Class.forName(XERCES_SECURITY_MANAGER).getDeclaredConstructor().newInstance();
             Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
             setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
 

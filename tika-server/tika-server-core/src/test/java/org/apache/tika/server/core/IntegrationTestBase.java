@@ -27,13 +27,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import javax.ws.rs.core.Response;
 
+import jakarta.ws.rs.core.Response;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +62,6 @@ public class IntegrationTestBase extends TikaTest {
     static Path TEMP_WORKING_DIR;
     static Path LOG_FILE;
     static Path STREAMS_DIR;
-    private SecurityManager existingSecurityManager = null;
     protected Process process = null;
 
     @BeforeAll
@@ -77,30 +75,8 @@ public class IntegrationTestBase extends TikaTest {
         STREAMS_DIR = Files.createTempDirectory(TEMP_WORKING_DIR, "tika-server-integration");
     }
 
-
-    @BeforeEach
-    public void setUp() throws Exception {
-        existingSecurityManager = System.getSecurityManager();
-/*        System.setSecurityManager(new SecurityManager() {
-            @Override
-            public void checkExit(int status) {
-                super.checkExit(status);
-                throw new MyExitException(status);
-            }
-            @Override
-            public void checkPermission(Permission perm) {
-                // all ok
-            }
-            @Override
-            public void checkPermission(Permission perm, Object context) {
-                // all ok
-            }
-        });*/
-    }
-
     @AfterEach
     public void tearDown() throws Exception {
-        System.setSecurityManager(existingSecurityManager);
         if (process != null) {
             process.destroyForcibly();
             process.waitFor(30, TimeUnit.SECONDS);
@@ -144,7 +120,7 @@ public class IntegrationTestBase extends TikaTest {
                 LOG.debug("tika test client failed to connect to server with status: {}",
                         response.getStatus());
 
-            } catch (javax.ws.rs.ProcessingException e) {
+            } catch (jakarta.ws.rs.ProcessingException e) {
                 LOG.debug("tika test client failed to connect to server", e);
             }
 

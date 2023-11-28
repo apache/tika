@@ -38,8 +38,8 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.captioning.CaptionObject;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.AnnotationUtils;
@@ -68,7 +68,7 @@ import org.apache.tika.utils.ServiceLoaderUtils;
  *
  * @since Apache Tika 1.14
  */
-public class ObjectRecognitionParser extends AbstractParser implements Initializable {
+public class ObjectRecognitionParser implements Parser, Initializable {
     public static final String MD_KEY_OBJ_REC = "OBJECT";
     public static final String MD_KEY_IMG_CAP = "CAPTION";
     public static final String MD_REC_IMPL_KEY =

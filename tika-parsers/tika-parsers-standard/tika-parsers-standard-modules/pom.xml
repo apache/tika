@@ -21,7 +21,7 @@
   <parent>
     <artifactId>tika-parsers-standard</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>2.9.1-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -44,7 +44,6 @@
     </dependency>
   </dependencies>
   <modules>
-    <module>tika-parser-html-commons</module>
     <module>tika-parser-jdbc-commons</module>
     <module>tika-parser-digest-commons</module>
     <module>tika-parser-mail-commons</module>

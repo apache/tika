@@ -57,15 +57,15 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.RereadableInputStream;
 
 /**
  * Tika parser for Time Stamped Data Envelope (application/timestamped-data)
  */
-public class TSDParser extends AbstractParser {
+public class TSDParser implements Parser {
     public static final String TSD_MIME_TYPE = "application/timestamped-data";
     private static final long serialVersionUID = 3268158344501763323L;
     private static final Logger LOG = LoggerFactory.getLogger(TSDParser.class);

@@ -35,7 +35,7 @@ import org.apache.tika.mime.MediaType;
  *
  * @since Apache Tika 0.4, major changes in Tika 0.5
  */
-public class DelegatingParser extends AbstractParser {
+public class DelegatingParser implements Parser {
 
     /**
      * Returns the parser instance to which parsing tasks should be delegated.

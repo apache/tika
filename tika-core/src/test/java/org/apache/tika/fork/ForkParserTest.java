@@ -32,7 +32,6 @@ import java.io.PipedOutputStream;
 import java.io.Reader;
 import java.io.Serializable;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -561,12 +560,6 @@ public class ForkParserTest extends TikaTest {
         }
 
         @Override
-        public ContentHandler getNewContentHandler(OutputStream os, String encoding)
-                throws UnsupportedEncodingException {
-            throw new IllegalArgumentException("can't use this option in this test class");
-        }
-
-        @Override
         public ContentHandler getNewContentHandler(OutputStream os, Charset charset) {
             throw new IllegalArgumentException("can't use this option in this test class");
         }
@@ -576,12 +569,6 @@ public class ForkParserTest extends TikaTest {
         @Override
         public ContentHandler getNewContentHandler() {
             return new LyingNonSerializableContentHandler();
-        }
-
-        @Override
-        public ContentHandler getNewContentHandler(OutputStream os, String encoding)
-                throws UnsupportedEncodingException {
-            throw new IllegalArgumentException("can't use this option in this test class");
         }
 
         @Override

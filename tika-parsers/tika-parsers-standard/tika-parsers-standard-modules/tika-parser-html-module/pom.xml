@@ -21,7 +21,7 @@
   <parent>
     <artifactId>tika-parsers-standard-modules</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>2.9.1-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -31,9 +31,8 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.ccil.cowan.tagsoup</groupId>
-      <artifactId>tagsoup</artifactId>
-      <version>${tagsoup.version}</version>
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
     </dependency>
 
     <dependency>

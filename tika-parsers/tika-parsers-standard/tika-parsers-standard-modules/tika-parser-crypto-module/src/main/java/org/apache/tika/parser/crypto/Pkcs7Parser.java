@@ -33,7 +33,6 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -41,7 +40,7 @@ import org.apache.tika.parser.Parser;
 /**
  * Basic parser for PKCS7 data.
  */
-public class Pkcs7Parser extends AbstractParser {
+public class Pkcs7Parser implements Parser {
 
     /**
      * Serial version UID

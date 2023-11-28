@@ -21,11 +21,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
@@ -75,7 +75,7 @@ public class TikaDetectors {
     }
 
     @GET
-    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
     public String getDetectorsJSON() throws IOException {
         Map<String, Object> details = new HashMap<>();
         detectorAsMap(TikaResource.getConfig().getDetector(), details);

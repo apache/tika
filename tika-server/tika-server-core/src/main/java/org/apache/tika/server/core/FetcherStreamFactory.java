@@ -21,10 +21,10 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.UriInfo;
 
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,13 +129,6 @@ public class FetcherStreamFactory implements InputStreamFactory {
         }
 
         return (String)uriParams.getFirst(paramName);
-    }
-
-    @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
-            throws IOException {
-        return getInputStream(is, metadata, httpHeaders, null);
-
     }
 
     /**

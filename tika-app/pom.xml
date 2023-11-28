@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>2.9.1-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -45,7 +45,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parser-html-commons</artifactId>
+      <artifactId>tika-handler-boilerpipe</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -135,15 +135,7 @@
                     <exclude>CHANGES</exclude>
                     <exclude>README</exclude>
                     <exclude>builddef.lst</exclude>
-                    <!-- clutter not needed in jar -->
-                    <exclude>resources/grib1/nasa/README*.pdf</exclude>
-                    <exclude>resources/grib1/**/readme*.txt</exclude>
-                    <exclude>resources/grib2/**/readme*.txt</exclude>
-                    <!-- TIKA-763: Workaround to avoid including LGPL classes -->
-                    <exclude>ucar/nc2/iosp/fysat/Fysat*.class</exclude>
-                    <exclude>ucar/nc2/dataset/transform/VOceanSG1*class</exclude>
-                    <exclude>ucar/unidata/geoloc/vertical/OceanSG*.class</exclude>
-                    <!-- https://issues.apache.org/jira/browse/TIKA-3650-->
+                    <!-- https://issues.apache.org/jira/browse/TIKA-3650 -->
                     <exclude>javax/**/*</exclude>
 
                   </excludes>
@@ -257,7 +249,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>build-helper-maven-plugin</artifactId>
-            <version>3.4.0</version>
+            <version>3.5.0</version>
             <executions>
               <execution>
                 <phase>package</phase>

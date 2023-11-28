@@ -26,6 +26,7 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
 public class PRTParserTest extends TikaTest {
@@ -37,7 +38,7 @@ public class PRTParserTest extends TikaTest {
         try (InputStream input = getResourceAsStream("/test-documents/testCADKEY.prt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new PRTParser().parse(input, handler, metadata);
+            new PRTParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("application/x-prt", metadata.get(Metadata.CONTENT_TYPE));
 
@@ -71,7 +72,7 @@ public class PRTParserTest extends TikaTest {
         try (InputStream input = getResourceAsStream("/test-documents/testCADKEY2.prt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new PRTParser().parse(input, handler, metadata);
+            new PRTParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("application/x-prt", metadata.get(Metadata.CONTENT_TYPE));
 

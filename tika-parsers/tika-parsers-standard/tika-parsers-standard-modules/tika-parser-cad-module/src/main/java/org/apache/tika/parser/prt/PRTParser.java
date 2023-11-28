@@ -33,8 +33,8 @@ import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -42,7 +42,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * format. It outputs text from note entries.
  */
 
-public class PRTParser extends AbstractParser {
+public class PRTParser implements Parser {
 
     public static final String PRT_MIME_TYPE = "application/x-prt";
     /**

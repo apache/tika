@@ -27,13 +27,13 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 
 /**
  * Parser for Java .class files.
  */
-public class ClassParser extends AbstractParser {
+public class ClassParser implements Parser {
 
     /**
      * Serial version UID

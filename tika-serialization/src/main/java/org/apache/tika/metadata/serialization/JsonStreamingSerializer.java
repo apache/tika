@@ -23,7 +23,9 @@ import java.util.Arrays;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 
 
@@ -39,7 +41,10 @@ public class JsonStreamingSerializer implements AutoCloseable {
 
     public void add(Metadata metadata) throws IOException {
         if (!hasStartedArray) {
-            jsonGenerator = new JsonFactory().createGenerator(writer);
+            jsonGenerator =
+                    new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
+                            .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build())
+                            .createGenerator(writer);
             jsonGenerator.writeStartArray();
             hasStartedArray = true;
         }

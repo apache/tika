@@ -44,11 +44,6 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
     private static ContentHandlerDecoratorFactory NOOP_CONTENT_HANDLER_DECORATOR_FACTORY =
             new ContentHandlerDecoratorFactory() {
                 @Override
-                public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata) {
-                    return contentHandler;
-                }
-
-                @Override
                 public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata,
                                                ParseContext parseContext) {
                     return contentHandler;

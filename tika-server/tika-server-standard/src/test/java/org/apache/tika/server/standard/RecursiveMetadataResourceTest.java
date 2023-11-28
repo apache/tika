@@ -28,10 +28,10 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -159,8 +159,8 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
     @Test
     public void testPasswordProtected() throws Exception {
         Response response = WebClient.create(endPoint + META_PATH).type("application/vnd.ms-excel")
-                .accept("application/json").put(ClassLoader
-                        .getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+                .accept("application/json").put(ClassLoader.getSystemResourceAsStream(
+                        TikaResourceTest.TEST_PASSWORD_PROTECTED));
 
         // Won't work, no password given
         assertEquals(200, response.getStatus());
@@ -173,8 +173,9 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION));
         // Try again, this time with the password
         response = WebClient.create(endPoint + META_PATH).type("application/vnd.ms-excel")
-                .accept("application/json").header("Password", "password").put(ClassLoader
-                        .getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+                .accept("application/json").header("Password", "password")
+                .put(ClassLoader.getSystemResourceAsStream(
+                        TikaResourceTest.TEST_PASSWORD_PROTECTED));
 
         // Will work
         assertEquals(200, response.getStatus());
@@ -387,8 +388,9 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
     public void testWriteLimitInPDF() throws Exception {
         int writeLimit = 10;
         Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
-                .header("writeLimit", Integer.toString(writeLimit)).put(ClassLoader
-                        .getSystemResourceAsStream("test-documents/testPDFTwoTextBoxes" + ".pdf"));
+                .header("writeLimit", Integer.toString(writeLimit))
+                .put(ClassLoader.getSystemResourceAsStream(
+                        "test-documents/testPDFTwoTextBoxes" + ".pdf"));
 
         assertEquals(200, response.getStatus());
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);

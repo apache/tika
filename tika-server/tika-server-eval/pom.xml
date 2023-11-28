@@ -19,7 +19,7 @@
   <parent>
     <artifactId>tika-server</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>2.9.1-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -67,8 +67,8 @@
                   <exclude>org.apache.commons:commons-lang3:jar:</exclude>
                   <exclude>org.apache.commons:commons-math3:jar:</exclude>
                   <exclude>org.apache.lucene:lucene-core:jar:</exclude>
-                  <exclude>org.apache.lucene:lucene-analyzers-common:jar:</exclude>
-                  <exclude>org.apache.lucene:lucene-analyzers-icu:jar:</exclude>
+                  <exclude>org.apache.lucene:lucene-analysis-common:jar:</exclude>
+                  <exclude>org.apache.lucene:lucene-analysis-icu:jar:</exclude>
                   <exclude>org.ccil.cowan.tagsoup:tagsoup:jar:</exclude>
                   <exclude>com.ibm.icu:icu4j:jar:</exclude>
                   <exclude>com.fasterxml.jackson.core:jackson-core:jar:</exclude>

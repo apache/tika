@@ -21,21 +21,30 @@
   <parent>
     <artifactId>tika-langdetect</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>2.9.1-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-langdetect-optimaize</artifactId>
   <name>Apache Tika Optimaize langdetect</name>
 
-
   <dependencies>
     <dependency>
       <groupId>com.optimaize.languagedetector</groupId>
       <artifactId>language-detector</artifactId>
       <version>${optimaize.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.intellij</groupId>
+          <artifactId>annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
-
+    <dependency>
+      <groupId>org.jetbrains</groupId>
+      <artifactId>annotations</artifactId>
+      <version>24.1.0</version>
+    </dependency>
     <!-- test dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -44,7 +53,21 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>org.apache.tika.langdetect.optimaize</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
   <scm>
     <tag>2.2.1-rc2</tag>
   </scm>

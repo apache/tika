@@ -21,7 +21,7 @@
   <parent>
     <artifactId>tika-parsers-extended</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>2.9.1-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -38,17 +38,14 @@
     <dependency>
       <groupId>org.apache.sis.core</groupId>
       <artifactId>sis-utility</artifactId>
-      <version>${sis.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.sis.storage</groupId>
       <artifactId>sis-netcdf</artifactId>
-      <version>${sis.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.sis.core</groupId>
       <artifactId>sis-metadata</artifactId>
-      <version>${sis.version}</version>
     </dependency>
     <dependency>
       <groupId>org.opengis</groupId>
@@ -90,7 +87,6 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
-      <version>${commons.csv.version}</version>
     </dependency>
     <!-- for java 10
 See TIKA-2778 for why we need to do this now.
@@ -99,7 +95,6 @@ May the gods of dependency management fix this in the future.
     <dependency>
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
-      <version>${jaxb.version}</version>
     </dependency>
   </dependencies>
 

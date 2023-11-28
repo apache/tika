@@ -1,0 +1,11 @@
+# elevate robots begin
+# robots.txt, added by the Elevate plugin for WordPress
+# file version: 1
+User-agent: *
+Disallow: /wp-admin/
+Disallow: /readme.html
+Disallow: /trackback/
+Allow: /wp-admin/admin-ajax.php
+Allow: /wp-content/uploads
+Sitemap: https://blahdeblah.com/sitemap.xml
+# elevate robots end

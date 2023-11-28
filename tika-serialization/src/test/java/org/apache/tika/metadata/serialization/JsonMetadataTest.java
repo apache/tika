@@ -21,11 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 
 public class JsonMetadataTest {
@@ -109,13 +111,18 @@ public class JsonMetadataTest {
 
     @Test
     public void testLargeValues() throws Exception {
+        //TIKA-4154
+        TikaConfig tikaConfig = null;
+        try (InputStream is =
+                     JsonMetadata.class.getResourceAsStream("/config/tika-config-json.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 30000000; i++) {
             sb.append("v");
         }
         Metadata m = new Metadata();
-        m.add("large_value1", sb.toString());
-        m.add("large_value2", sb.toString());
+        m.add("large_value", sb.toString());
         StringWriter writer = new StringWriter();
         JsonMetadata.toJson(m, writer);
         Metadata deserialized = JsonMetadata.fromJson(new StringReader(writer.toString()));

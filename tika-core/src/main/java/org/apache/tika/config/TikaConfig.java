@@ -87,6 +87,9 @@ import org.apache.tika.utils.XMLReaderUtils;
  */
 public class TikaConfig {
 
+    public static int DEFAULT_MAX_JSON_STRING_FIELD_LENGTH = 20_000_000;//jackson's default
+    public static String MAX_JSON_STRING_FIELD_LENGTH_ELEMENT_NAME = "maxJsonStringFieldLength";
+
     //use this to look for unneeded instantiations of TikaConfig
     protected static final AtomicInteger TIMES_INSTANTIATED = new AtomicInteger();
 
@@ -102,6 +105,8 @@ public class TikaConfig {
     private final Renderer renderer;
     private final MetadataFilter metadataFilter;
     private final AutoDetectParserConfig autoDetectParserConfig;
+
+    private static int MAX_JSON_STRING_FIELD_LENGTH = DEFAULT_MAX_JSON_STRING_FIELD_LENGTH;
 
     public TikaConfig(String file) throws TikaException, IOException, SAXException {
         this(Paths.get(file));
@@ -174,6 +179,7 @@ public class TikaConfig {
         this.metadataFilter = MetadataFilter.load(element, true);
         this.autoDetectParserConfig = AutoDetectParserConfig.load(element);
         this.serviceLoader = loader;
+        setMaxJsonStringFieldLength(element);
         TIMES_INSTANTIATED.incrementAndGet();
     }
 
@@ -273,12 +279,38 @@ public class TikaConfig {
                         executorLoader.loadOverall(element, mimeTypes, serviceLoader);
                 this.metadataFilter = MetadataFilter.load(element, true);
                 this.autoDetectParserConfig = AutoDetectParserConfig.load(element);
+                setMaxJsonStringFieldLength(element);
             } catch (SAXException e) {
                 throw new TikaException("Specified Tika configuration has syntax errors: " + config,
                         e);
             }
         }
         TIMES_INSTANTIATED.incrementAndGet();
+    }
+
+    /**
+     *
+     * @return maximum field length when serializing String fields in Tika's metadata or metadata
+     * list into JSON
+     */
+    public static int getMaxJsonStringFieldLength() {
+        return MAX_JSON_STRING_FIELD_LENGTH;
+    }
+
+    private void setMaxJsonStringFieldLength(Element properties) throws TikaConfigException {
+        NodeList nodeList = properties.getChildNodes();
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Node n = nodeList.item(i);
+            if (n.getNodeName().equals(MAX_JSON_STRING_FIELD_LENGTH_ELEMENT_NAME)) {
+                try {
+                    MAX_JSON_STRING_FIELD_LENGTH = Integer.parseInt(n.getTextContent());
+                } catch (NumberFormatException e) {
+                    throw new TikaConfigException(MAX_JSON_STRING_FIELD_LENGTH_ELEMENT_NAME + " " +
+                            "is not an integer", e);
+                }
+                return;
+            }
+        }
     }
 
     private static MimeTypes getDefaultMimeTypes(ClassLoader loader) {
@@ -540,12 +572,6 @@ public class TikaConfig {
 
     }
 
-    /**
-     * @deprecated Use the {@link #getParser()} method instead
-     */
-    public Parser getParser(MediaType mimeType) {
-        return parser.getParsers().get(mimeType);
-    }
 
     /**
      * Returns the configured parser instance.
@@ -800,7 +826,7 @@ public class TikaConfig {
         T newInstance(Class<? extends T> loadedClass)
                 throws IllegalAccessException, InstantiationException, NoSuchMethodException,
                 InvocationTargetException {
-            return loadedClass.newInstance();
+            return loadedClass.getDeclaredConstructor().newInstance();
         }
 
         /**
@@ -987,7 +1013,7 @@ public class TikaConfig {
                 Constructor ctor = loadedClass.getConstructor(EncodingDetector.class);
                 parser = (Parser) ctor.newInstance(encodingDetector);
             } else {
-                parser = loadedClass.newInstance();
+                parser = loadedClass.getDeclaredConstructor().newInstance();
             }
 
             if (parser instanceof RenderingParser) {

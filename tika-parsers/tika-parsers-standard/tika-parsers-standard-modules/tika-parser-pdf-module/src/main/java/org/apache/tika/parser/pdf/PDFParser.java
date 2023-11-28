@@ -72,8 +72,8 @@ import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
@@ -120,15 +120,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * If your PDFs contain marked content or tags, consider
  * {@link PDFParserConfig#setExtractMarkedContent(boolean)}
  */
-public class PDFParser extends AbstractParser implements RenderingParser, Initializable {
+public class PDFParser implements Parser, RenderingParser, Initializable {
 
-    /**
-     * Metadata key for giving the document password to the parser.
-     *
-     * @since Apache Tika 0.5
-     * @deprecated Supply a {@link PasswordProvider} on the {@link ParseContext} instead
-     */
-    public static final String PASSWORD = "org.apache.tika.parser.pdf.password";
     public static final MediaType MEDIA_TYPE = MediaType.application("pdf");
     /**
      * Serial version UID
@@ -544,15 +537,10 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
     private String getPassword(Metadata metadata, ParseContext context) {
         String password = null;
 
-        // Did they supply a new style Password Provider?
+        // Did they supply a Password Provider?
         PasswordProvider passwordProvider = context.get(PasswordProvider.class);
         if (passwordProvider != null) {
             password = passwordProvider.getPassword(metadata);
-        }
-
-        // Fall back on the old style metadata if set
-        if (password == null && metadata.get(PASSWORD) != null) {
-            password = metadata.get(PASSWORD);
         }
 
         // If no password is given, use an empty string as the default
@@ -744,7 +732,6 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
     /**
      * If true, text in annotations will be extracted.
      *
-     * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean isExtractAnnotationText() {
         return defaultConfig.isExtractAnnotationText();
@@ -761,7 +748,6 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
 
     /**
      * @see #setSuppressDuplicateOverlappingText(boolean)
-     * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean isSuppressDuplicateOverlappingText() {
         return defaultConfig.isSuppressDuplicateOverlappingText();
@@ -783,7 +769,6 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
 
     /**
      * @see #setSortByPosition(boolean)
-     * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean isSortByPosition() {
         return defaultConfig.isSortByPosition();

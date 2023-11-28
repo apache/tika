@@ -35,7 +35,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * <p>
  * See also {@link org.apache.tika.parser.mock.MockParser}.
  */
-public class DummyParser extends AbstractParser {
+public class DummyParser implements Parser {
     private final Set<MediaType> types;
     private final Map<String, String> metadata;
     private final String xmlText;

@@ -41,8 +41,8 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 
 
 /**
@@ -52,7 +52,7 @@ import org.apache.tika.parser.ParseContext;
  * <li>Author Age</li>
  * </ul>
  */
-public class AgeRecogniser extends AbstractParser implements Initializable {
+public class AgeRecogniser implements Parser, Initializable {
 
     public static final String MD_KEY_ESTIMATED_AGE_RANGE = "Estimated-Author-Age-Range";
     public static final String MD_KEY_ESTIMATED_AGE = "Estimated-Author-Age";

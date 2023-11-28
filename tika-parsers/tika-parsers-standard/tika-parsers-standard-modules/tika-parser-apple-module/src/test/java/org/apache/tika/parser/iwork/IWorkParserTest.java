@@ -38,6 +38,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
 /**
@@ -62,7 +63,7 @@ public class IWorkParserTest extends TikaTest {
         InputStream input = getResourceAsStream("/test-documents/testKeynote.key");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata);
+        iWorkParser.parse(input, handler, metadata, new ParseContext());
         input.read();   // Will throw an Exception if the stream was already closed.
     }
 

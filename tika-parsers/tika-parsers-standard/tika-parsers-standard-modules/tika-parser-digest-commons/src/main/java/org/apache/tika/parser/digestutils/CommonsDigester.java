@@ -58,7 +58,6 @@ public class CommonsDigester extends CompositeDigester {
      * @param markLimit  limit for mark/reset; after this limit is hit, the
      *                   stream is reset and spooled to disk
      * @param algorithms algorithms to run
-     * @deprecated use {@link #CommonsDigester(int, String)}
      */
     public CommonsDigester(int markLimit, DigestAlgorithm... algorithms) {
         super(buildDigesters(markLimit, algorithms));
