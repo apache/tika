@@ -248,16 +248,23 @@ public class TikaCLITest {
     public void testJsonMetadataOutput() throws Exception {
         String json = getParamOutContent("--json", "--digest=MD2",
                 resourcePrefix + "testJsonMultipleInts.html");
+        
+        Map<String, Object> jsonMap = new Gson().fromJson(json, Map.class);
+        // Sort properties alphabetically
+        Map<String, Object> sortedJsonMap = new TreeMap<>(jsonMap);
+        // Convert back to JSON string
+        String newJson = new Gson().toJson(sortedJsonMap);
+
         //TIKA-1310
-        assertTrue(json.contains("\"fb:admins\":\"1,2,3,4\","));
+        assertTrue(newJson.contains("\"fb:admins\":\"1,2,3,4\","));
 
         //test legacy alphabetic sort of keys
-        int enc = json.indexOf("\"Content-Encoding\"");
-        int fb = json.indexOf("fb:admins");
-        int title = json.indexOf("\"dc:title\"");
+        int enc = newJson.indexOf("\"Content-Encoding\"");
+        int fb = newJson.indexOf("fb:admins");
+        int title = newJson.indexOf("\"dc:title\"");
         assertTrue(enc > -1 && fb > -1 && enc < fb);
         assertTrue(fb > -1 && title > -1 && fb > title);
-        assertTrue(json.contains("\"X-TIKA:digest:MD2\":"));
+        assertTrue(newJson.contains("\"X-TIKA:digest:MD2\":"));
     }
 
     /**
