@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>3.0.0-SNAPSHOT</version>
+    <version>3.0.0-BETA</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -61,6 +61,6 @@
   </dependencies>
 
   <scm>
-    <tag>2.2.1-rc2</tag>
+    <tag>tika-3.0.0-BETA</tag>
   </scm>
 </project>
