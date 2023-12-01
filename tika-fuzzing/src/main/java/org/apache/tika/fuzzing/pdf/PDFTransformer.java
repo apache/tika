@@ -22,6 +22,8 @@ import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 
@@ -42,7 +44,7 @@ public class PDFTransformer implements Transformer {
 
     @Override
     public void transform(InputStream is, OutputStream os) throws IOException, TikaException {
-        try (PDDocument pdDocument = PDDocument.load(is)) {
+        try (PDDocument pdDocument = Loader.loadPDF(new RandomAccessReadBuffer(is))) {
             //some docs have security which prevents mods and writing
             //given our purposes here, we should remove security
             pdDocument.setAllSecurityToBeRemoved(true);

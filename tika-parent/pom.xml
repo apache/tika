@@ -400,7 +400,7 @@
     <osgi.util.version>1.2.0</osgi.util.version>
     <parso.version>2.0.14</parso.version>
     <pax.exam.version>4.13.5</pax.exam.version>
-    <pdfbox.version>2.0.30</pdfbox.version>
+    <pdfbox.version>3.0.1</pdfbox.version>
     <plexus.version>5.0.0</plexus.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>5.2.5</poi.version>

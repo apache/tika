@@ -21,10 +21,14 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.fontbox.ttf.NameRecord;
 import org.apache.fontbox.ttf.NamingTable;
 import org.apache.fontbox.ttf.TTFParser;
 import org.apache.fontbox.ttf.TrueTypeFont;
+import org.apache.pdfbox.io.RandomAccessRead;
+import org.apache.pdfbox.io.RandomAccessReadBuffer;
+import org.apache.pdfbox.io.RandomAccessReadBufferedFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -63,11 +67,15 @@ public class TrueTypeParser implements Parser {
         TrueTypeFont font = null;
         try {
             TTFParser parser = new TTFParser();
-            //TODO PDFBOX30 use new RandomAccessReadBufferedFile and new RandomAccessReadBuffer
             if (tis != null && tis.hasFile()) {
-                font = parser.parse(tis.getFile());
+                try (RandomAccessRead rar = new RandomAccessReadBufferedFile(tis.getFile())) {
+                    font = parser.parse(rar);
+                }
             } else {
-                font = parser.parse(stream);
+                try (RandomAccessRead rar =
+                             new RandomAccessReadBuffer(CloseShieldInputStream.wrap(tis))) {
+                    font = parser.parse(rar);
+                }
             }
 
             // Report the details of the font

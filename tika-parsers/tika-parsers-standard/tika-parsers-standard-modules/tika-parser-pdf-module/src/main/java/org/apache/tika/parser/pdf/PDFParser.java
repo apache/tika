@@ -30,6 +30,7 @@ import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
@@ -37,8 +38,10 @@ import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSObject;
 import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.io.MemoryUsageSetting;
-import org.apache.pdfbox.io.RandomAccessBufferedFileInputStream;
 import org.apache.pdfbox.io.RandomAccessRead;
+import org.apache.pdfbox.io.RandomAccessReadBuffer;
+import org.apache.pdfbox.io.RandomAccessReadBufferedFile;
+import org.apache.pdfbox.io.RandomAccessStreamCache;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -173,6 +176,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
 
             password = getPassword(metadata, context);
             MemoryUsageSetting memoryUsageSetting = null;
+
             if (localConfig.getMaxMainMemoryBytes() >= 0) {
                 memoryUsageSetting =
                         MemoryUsageSetting.setupMixed(localConfig.getMaxMainMemoryBytes());
@@ -180,9 +184,8 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
                 memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
             }
 
-            //TODO PDFBOX30 replace "memoryUsageSetting" with "memoryUsageSetting.streamCache"
-            pdfDocument = getPDDocument(stream, tstream, password, memoryUsageSetting, metadata,
-                    context);
+            pdfDocument = getPDDocument(stream, tstream, password,
+                    memoryUsageSetting.streamCache, metadata, context);
 
 
             boolean hasCollection = hasCollection(pdfDocument, metadata);
@@ -289,10 +292,8 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         List<StartXRefOffset> xRefOffsets = new ArrayList<>();
         //TODO -- can we use the PDFBox parser's RandomAccessRead
         //so that we don't have to reopen from file?
-        //TODO PDFBOX30 replace RandomAccessBufferedFileInputStream
-        // with RandomAccessReadBufferedFile
         try (RandomAccessRead ra =
-                     new RandomAccessBufferedFileInputStream(tikaInputStream.getFile())) {
+                     new RandomAccessReadBufferedFile(tikaInputStream.getFile())) {
             StartXRefScanner xRefScanner = new StartXRefScanner(ra);
             xRefOffsets.addAll(xRefScanner.scan());
         } catch (IOException e) {
@@ -357,35 +358,29 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
 
     private void extractSignatures(PDDocument pdfDocument, Metadata metadata) {
         boolean hasSignature = false;
-        try {
-            for (PDSignature signature : pdfDocument.getSignatureDictionaries()) {
-                if (signature == null) {
-                    continue;
-                }
-                PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_NAME,
-                        signature.getName(), metadata);
-
-                Calendar date = signature.getSignDate();
-                if (date != null) {
-                    metadata.add(TikaCoreProperties.SIGNATURE_DATE, date);
-                }
-                PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_CONTACT_INFO,
-                        signature.getContactInfo(), metadata);
-                PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_FILTER,
-                        signature.getFilter(), metadata);
-                PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_LOCATION,
-                        signature.getLocation(), metadata);
-                PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_REASON,
-                        signature.getReason(), metadata);
-                hasSignature = true;
-                //TODO PDFBOX30 remove this segment and the exception handling after migration
-                if (false != false) {
-                    throw new IOException();
-                }
+        for (PDSignature signature : pdfDocument.getSignatureDictionaries()) {
+            if (signature == null) {
+                continue;
             }
-        } catch (IOException e) {
-            //swallow
+            PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_NAME, signature.getName(),
+                    metadata);
+
+            Calendar date = signature.getSignDate();
+            if (date != null) {
+                metadata.add(TikaCoreProperties.SIGNATURE_DATE, date);
+            }
+            PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_CONTACT_INFO,
+                    signature.getContactInfo(), metadata);
+            PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_FILTER,
+                    signature.getFilter(), metadata);
+            PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_LOCATION,
+                    signature.getLocation(), metadata);
+            PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_REASON,
+                    signature.getReason(), metadata);
+            hasSignature = true;
+
         }
+
         if (hasSignature) {
             metadata.set(TikaCoreProperties.HAS_SIGNATURE, hasSignature);
         }
@@ -453,10 +448,9 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
                 tstream, metadata, parseContext, PageRangeRequest.RENDER_ALL);
     }
 
-    //TODO PDFBOX30 replace "MemoryUsageSetting memoryUsageSetting" with
-    // "StreamCacheCreateFunction streamCacheCreateFunction"
     protected PDDocument getPDDocument(InputStream stream, TikaInputStream tstream, String password,
-                                       MemoryUsageSetting memoryUsageSetting, Metadata metadata,
+                                       RandomAccessStreamCache.StreamCacheCreateFunction streamCacheCreateFunction,
+                                       Metadata metadata,
                                        ParseContext context)
             throws IOException, EncryptedDocumentException {
         try {
@@ -464,11 +458,11 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
             if (tstream != null && tstream.hasFile()) {
                 // File based -- send file directly to PDFBox
                 pdDocument =
-                        getPDDocument(tstream.getPath(), password, memoryUsageSetting, metadata,
+                        getPDDocument(tstream.getPath(), password, streamCacheCreateFunction, metadata,
                                 context);
             } else {
                 pdDocument = getPDDocument(CloseShieldInputStream.wrap(stream), password,
-                        memoryUsageSetting, metadata, context);
+                        streamCacheCreateFunction, metadata, context);
             }
             if (tstream != null) {
                 tstream.setOpenContainer(pdDocument);
@@ -483,20 +477,18 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         }
     }
 
-    //TODO PDFBOX30 replace "MemoryUsageSetting memoryUsageSetting" with
-    // "StreamCacheCreateFunction streamCacheCreateFunction"
     protected PDDocument getPDDocument(InputStream inputStream, String password,
-                                       MemoryUsageSetting memoryUsageSetting, Metadata metadata,
+                                       RandomAccessStreamCache.StreamCacheCreateFunction streamCacheCreateFunction,
+                                       Metadata metadata,
                                        ParseContext parseContext) throws IOException {
-        return PDDocument.load(inputStream, password, memoryUsageSetting);
+        return Loader.loadPDF(new RandomAccessReadBuffer(inputStream), password, streamCacheCreateFunction);
     }
 
-    //TODO PDFBOX30 replace "MemoryUsageSetting memoryUsageSetting" with
-    // "StreamCacheCreateFunction streamCacheCreateFunction"
     protected PDDocument getPDDocument(Path path, String password,
-                                       MemoryUsageSetting memoryUsageSetting, Metadata metadata,
+                                       RandomAccessStreamCache.StreamCacheCreateFunction
+                                        streamCacheCreateFunction, Metadata metadata,
                                        ParseContext parseContext) throws IOException {
-        return PDDocument.load(path.toFile(), password, memoryUsageSetting);
+        return Loader.loadPDF(path.toFile(), password, streamCacheCreateFunction);
     }
 
     private boolean hasMarkedContent(PDDocument pdDocument, Metadata metadata) {
@@ -575,8 +567,8 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         metadata.set(AccessPermissions.CAN_MODIFY_ANNOTATIONS,
                 Boolean.toString(ap.canModifyAnnotations()));
         metadata.set(AccessPermissions.CAN_PRINT, Boolean.toString(ap.canPrint()));
-        //TODO PDFBOX30 replace "CAN_PRINT_DEGRADED" with "CAN_PRINT_FAITHFUL"
-        metadata.set(AccessPermissions.CAN_PRINT_DEGRADED, Boolean.toString(ap.canPrintFaithful()));
+        metadata.set(AccessPermissions.CAN_PRINT_FAITHFUL,
+                Boolean.toString(ap.canPrintFaithful()));
         metadata.set(PDF.IS_ENCRYPTED, Boolean.toString(document.isEncrypted()));
 
         if (document.getDocumentCatalog().getLanguage() != null) {

@@ -26,6 +26,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
@@ -99,8 +101,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
         if (tis.getOpenContainer() != null) {
             pdDocument = (PDDocument) tis.getOpenContainer();
         } else {
-            //TODO PDFBOX30 use Loader.loadPDF(new RandomAccessReadBuffer(is))
-            pdDocument = PDDocument.load(is);
+            pdDocument = Loader.loadPDF(new RandomAccessReadBuffer(is));
             mustClose = true;
         }
         PageBasedRenderResults results = new PageBasedRenderResults(new TemporaryResources());
