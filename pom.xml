@@ -55,8 +55,6 @@
     <module>tika-java7</module>
     <module>tika-detectors</module>
     <module>tika-handlers</module>
-    <module>tika-parsers/tika-parsers-extended/tika-parser-tagsoup-module</module>
-    <module>tika-parsers/tika-parsers-extended/tika-parser-tagsoup-package</module>
   </modules>
 
   <profiles>
