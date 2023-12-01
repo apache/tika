@@ -311,7 +311,7 @@
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
-    <azure.core.version>1.45.0</azure.core.version>
+    <azure.core.version>1.45.1</azure.core.version>
     <azure.core.http.netty.version>1.13.11</azure.core.http.netty.version>
     <azure.storage.blob.version>12.25.0</azure.storage.blob.version>
     <biz.aqute.version>6.4.1</biz.aqute.version>
