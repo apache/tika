@@ -92,6 +92,17 @@
       <groupId>org.slf4j</groupId>
       <artifactId>jcl-over-slf4j</artifactId>
     </dependency>
+    <dependency>
+          <groupId>com.google.flatbuffers</groupId>
+          <artifactId>flatbuffers-java</artifactId>
+          <version>1.12.0</version>
+          <scope>test</scope>
+      </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
