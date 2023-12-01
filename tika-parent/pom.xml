@@ -408,6 +408,7 @@
     <kafka.version>3.6.0</kafka.version>
     <netty.version>4.1.101.Final</netty.version>
     <snappy.java.version>1.1.10.5</snappy.java.version>
+    <logback.version>1.4.13</logback.version>
   </properties>
 
   <dependencyManagement>
@@ -960,6 +961,17 @@
         <groupId>org.apache.maven.plugin-tools</groupId>
         <artifactId>maven-plugin-annotations</artifactId>
         <version>3.10.2</version>
+      </dependency>
+      <!-- for zookeeper to avoid CVE-2023-6378 -->
+      <dependency>
+          <groupId>ch.qos.logback</groupId>
+          <artifactId>logback-core</artifactId>
+          <version>${logback.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>ch.qos.logback</groupId>
+          <artifactId>logback-classic</artifactId>
+          <version>${logback.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
