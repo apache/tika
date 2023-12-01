@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parsers</artifactId>
-    <version>3.0.0-SNAPSHOT</version>
+    <version>3.0.0-BETA</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -101,6 +101,6 @@
   </build>
 
   <scm>
-    <tag>2.2.1-rc2</tag>
+    <tag>3.0.0-BETA-rc1</tag>
   </scm>
 </project>
