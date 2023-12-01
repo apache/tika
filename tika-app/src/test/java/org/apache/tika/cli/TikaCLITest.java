@@ -250,13 +250,6 @@ public class TikaCLITest {
                 resourcePrefix + "testJsonMultipleInts.html");
         //TIKA-1310
         assertTrue(json.contains("\"fb:admins\":\"1,2,3,4\","));
-
-        //test legacy alphabetic sort of keys
-        int enc = json.indexOf("\"Content-Encoding\"");
-        int fb = json.indexOf("fb:admins");
-        int title = json.indexOf("\"dc:title\"");
-        assertTrue(enc > -1 && fb > -1 && enc < fb);
-        assertTrue(fb > -1 && title > -1 && fb > title);
         assertTrue(json.contains("\"X-TIKA:digest:MD2\":"));
     }
 
@@ -273,7 +266,7 @@ public class TikaCLITest {
         assertTrue(json.contains(
                 "\"X-TIKA:Parsed-By\" : [ \"org.apache.tika.parser.DefaultParser\", " +
                         "\"org.apache.tika.parser.html.JSoupParser\" ],"));
-        //test legacy alphabetic sort of keys
+        //test pretty-print alphabetic sort of keys
         int enc = json.indexOf("\"Content-Encoding\"");
         int fb = json.indexOf("fb:admins");
         int title = json.indexOf("\"dc:title\"");
