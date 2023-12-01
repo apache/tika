@@ -1,4 +1,4 @@
-Release 3.0.0-BETA - ??
+Release 3.0.0-BETA - 12/01/2023
 
    BREAKING CHANGES
 
@@ -19,6 +19,8 @@ Release 3.0.0-BETA - ??
 
    Other Changes/Updates
 
+   * Upgrade PDFBox to 3.0.1 (TIKA-3347)
+   
    * Deprecated AbstractParser for removal in 4.x (TIKA-4132).
 
    * Fix bug in DateUtils that stripped timezone information from
