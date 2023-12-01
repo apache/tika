@@ -312,7 +312,7 @@
         See TIKA-2992.
     -->
     <azure.core.version>1.45.0</azure.core.version>
-    <azure.core.http.netty.version>1.13.10</azure.core.http.netty.version>
+    <azure.core.http.netty.version>1.13.11</azure.core.http.netty.version>
     <azure.storage.blob.version>12.25.0</azure.storage.blob.version>
     <biz.aqute.version>6.4.1</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
