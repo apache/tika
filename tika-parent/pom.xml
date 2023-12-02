@@ -328,9 +328,9 @@
     <commons.csv.version>1.10.0</commons.csv.version>
     <commons.exec.version>1.3</commons.exec.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
-    <commons.io.version>2.15.0</commons.io.version>
+    <commons.io.version>2.15.1</commons.io.version>
     <commons.lang3.version>3.14.0</commons.lang3.version>
-    <commons.logging.version>1.2</commons.logging.version>
+    <commons.logging.version>1.3.0</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.10.0</commons.net.version>
     <ctakes.version>4.0.0.1</ctakes.version>
@@ -432,8 +432,8 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.3</zookeeper.version>
-    <logback.version>1.4.13</logback.version>
-    <zstd.version>1.5.5-10</zstd.version>
+    <logback.version>1.4.14</logback.version>
+    <zstd.version>1.5.5-11</zstd.version>
   </properties>
 
   <dependencyManagement>
