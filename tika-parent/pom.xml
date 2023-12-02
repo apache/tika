@@ -408,7 +408,7 @@
     <kafka.version>3.6.0</kafka.version>
     <netty.version>4.1.101.Final</netty.version>
     <snappy.java.version>1.1.10.5</snappy.java.version>
-    <logback.version>1.4.13</logback.version>
+    <logback.version>1.4.14</logback.version>
   </properties>
 
   <dependencyManagement>
