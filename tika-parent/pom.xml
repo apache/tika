@@ -728,7 +728,6 @@
         <artifactId>jakarta.annotation-api</artifactId>
         <version>${jakarta.annotation.version}</version>
       </dependency>
-      <!-- can't upgrade higher until geoapi does because of changes in classes after 2.1 -->
       <dependency>
         <groupId>javax.measure</groupId>
         <artifactId>unit-api</artifactId>
