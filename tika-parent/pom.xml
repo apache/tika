@@ -426,7 +426,7 @@
     <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
     <uimafit.version>3.4.0</uimafit.version>
     <uimaj.core.version>3.4.1</uimaj.core.version>
-    <unit.api.version>2.1</unit.api.version>
+    <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
     <woodstox.core.version>6.5.1</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
