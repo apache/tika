@@ -391,7 +391,7 @@
     <mockito.version>5.8.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.1.101.Final</netty.version>
-    <oak.jackrabbit.version>1.58.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>1.60.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.2.0</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
