@@ -306,8 +306,8 @@
     <rat.version>0.15</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.30.0</google.cloud.version>
-    <aws.version>1.12.605</aws.version>
+    <google.cloud.version>2.30.1</google.cloud.version>
+    <aws.version>1.12.607</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -485,7 +485,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.25.0</version>
+        <version>12.25.1</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
@@ -771,7 +771,7 @@
       <dependency>
         <groupId>org.apache.jackrabbit</groupId>
         <artifactId>oak-jackrabbit-api</artifactId>
-        <version>1.58.0</version>
+        <version>1.60.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
@@ -875,7 +875,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.28.3</version>
+        <version>0.28.4</version>
       </dependency>
       <dependency>
         <groupId>org.opengis</groupId>
