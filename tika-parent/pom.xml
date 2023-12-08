@@ -378,7 +378,7 @@
     <junit5.version>5.10.1</junit5.version>
     <juniversalchardet.version>2.4.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
-    <jwarc.version>0.28.3</jwarc.version>
+    <jwarc.version>0.28.4</jwarc.version>
     <kafka.version>3.6.1</kafka.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.22.0</log4j2.version>
