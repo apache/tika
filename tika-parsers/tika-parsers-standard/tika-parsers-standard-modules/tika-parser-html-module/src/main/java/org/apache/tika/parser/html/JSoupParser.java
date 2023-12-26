@@ -199,7 +199,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
 
         @Override
         public NodeFilter.FilterResult tail(Node node, int i) {
-            if (node instanceof TextNode) {
+            if (node instanceof TextNode || node instanceof DataNode) {
                 return FilterResult.CONTINUE;
             }
             try {

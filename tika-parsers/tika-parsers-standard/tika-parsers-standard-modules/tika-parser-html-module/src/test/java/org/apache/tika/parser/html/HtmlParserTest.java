@@ -1092,6 +1092,12 @@ public class HtmlParserTest extends TikaTest {
     }
 
     @Test
+    public void testScriptInBody() throws Exception {
+        String xml = getXML("testHTML_script_in_body.html").xml;
+        assertContains("This is a test", xml);
+        assertNotContained("cool", xml);
+    }
+    @Test
     public void testExtractScript() throws Exception {
         JSoupParser p = new JSoupParser();
         p.setExtractScripts(true);
