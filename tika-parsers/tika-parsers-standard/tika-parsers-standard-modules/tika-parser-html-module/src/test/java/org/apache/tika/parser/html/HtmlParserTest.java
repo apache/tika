@@ -1097,6 +1097,7 @@ public class HtmlParserTest extends TikaTest {
         assertContains("This is a test", xml);
         assertNotContained("cool", xml);
     }
+
     @Test
     public void testExtractScript() throws Exception {
         JSoupParser p = new JSoupParser();
