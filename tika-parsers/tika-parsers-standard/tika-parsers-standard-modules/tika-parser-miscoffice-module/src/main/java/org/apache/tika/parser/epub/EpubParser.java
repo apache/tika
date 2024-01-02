@@ -46,7 +46,9 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.FilenameUtils;
@@ -77,6 +79,8 @@ public class EpubParser implements Parser {
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(MediaType.application("epub+zip"),
                     MediaType.application("x-ibooks+zip"))));
+
+    private static final String META_INF_ENCRYPTION = "META-INF/encryption.xml";
     @Field
     boolean streaming = false;
     private Parser meta = new DcXMLParser();
@@ -98,6 +102,11 @@ public class EpubParser implements Parser {
 
     public void setContentParser(Parser content) {
         this.content = content;
+    }
+
+    @Field
+    public void setStreaming(boolean streaming) {
+        this.streaming = streaming;
     }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -135,21 +144,36 @@ public class EpubParser implements Parser {
     private void streamingParse(InputStream stream, ContentHandler bodyHandler, Metadata metadata,
                                 ParseContext context)
             throws IOException, TikaException, SAXException {
-        ZipArchiveInputStream zip = new ZipArchiveInputStream(stream);
+        ZipArchiveInputStream zip = new ZipArchiveInputStream(stream, "UTF-8", false, true, false);
 
         ZipArchiveEntry entry = zip.getNextZipEntry();
+        SAXException sax = null;
         while (entry != null) {
             if (entry.getName().equals("mimetype")) {
                 updateMimeType(zip, metadata);
+            } else if (entry.getName().equals(META_INF_ENCRYPTION)) {
+                checkForDRM(zip);
             } else if (entry.getName().equals("metadata.xml")) {
                 meta.parse(zip, new DefaultHandler(), metadata, context);
             } else if (entry.getName().endsWith(".opf")) {
                 opf.parse(zip, new DefaultHandler(), metadata, context);
             } else if (entry.getName().endsWith(".htm") || entry.getName().endsWith(".html") ||
                     entry.getName().endsWith(".xhtml") || entry.getName().endsWith(".xml")) {
-                content.parse(zip, bodyHandler, metadata, context);
+                try {
+                    content.parse(zip, bodyHandler, metadata, context);
+                } catch (SAXException e) {
+                    if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                        throw e;
+                    }
+                    if (sax == null) {
+                        sax = e;
+                    }
+                }
             }
             entry = zip.getNextZipEntry();
+        }
+        if (sax != null) {
+            throw sax;
         }
     }
 
@@ -223,6 +247,7 @@ public class EpubParser implements Parser {
                                          XHTMLContentHandler xhtml, Metadata metadata,
                                          ParseContext context, boolean isStrict)
             throws IOException, TikaException, SAXException {
+
         String rootOPF = getRoot(zipFile, context);
         if (rootOPF == null) {
             return false;
@@ -265,6 +290,7 @@ public class EpubParser implements Parser {
         }
 
         extractMetadata(zipFile, metadata, context);
+        checkForDRM(zipFile);
         Set<String> processed = new HashSet<>();
         for (String id : contentOrderScraper.contentItems) {
             HRefMediaPair hRefMediaPair = contentOrderScraper.locationMap.get(id);
@@ -306,6 +332,30 @@ public class EpubParser implements Parser {
             }
         }
         return true;
+    }
+
+    private void checkForDRM(ZipFile zipFile) throws IOException, EncryptedDocumentException {
+        ZipArchiveEntry zae = zipFile.getEntry(META_INF_ENCRYPTION);
+        if (zae == null) {
+            return;
+        }
+        try (InputStream is = zipFile.getInputStream(zae)) {
+            new EncryptionParser().parse(is, new DefaultHandler(), new Metadata(), new ParseContext());
+        } catch (EncryptedDocumentException e) {
+            throw e;
+        } catch (TikaException | SAXException e) {
+            //swallow ?!
+        }
+    }
+
+    private void checkForDRM(InputStream is) throws IOException, EncryptedDocumentException {
+        try {
+            new EncryptionParser().parse(is, new DefaultHandler(), new Metadata(), new ParseContext());
+        } catch (EncryptedDocumentException e) {
+            throw e;
+        } catch (TikaException | SAXException e) {
+            //swallow ?!
+        }
     }
 
     private boolean shouldHandleEmbedded(String media) {
