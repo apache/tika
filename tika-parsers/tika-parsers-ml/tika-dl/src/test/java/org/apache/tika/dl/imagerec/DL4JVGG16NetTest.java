@@ -45,7 +45,7 @@ public class DL4JVGG16NetTest {
             throw e;
         }
 
-        assumeTrue(false, "something went wrong loading tika config");
+        assumeTrue(config != null, "something went wrong loading tika config");
         Tika tika = new Tika(config);
         Metadata md = new Metadata();
         try (InputStream is = getClass().getResourceAsStream("lion.jpg")) {
