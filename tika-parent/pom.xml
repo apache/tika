@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <asm.version>9.6</asm.version>
-    <aws.version>1.12.631</aws.version>
+    <aws.version>1.12.632</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -327,7 +327,7 @@
     <commons.collections4.version>4.4</commons.collections4.version>
     <commons.compress.version>1.25.0</commons.compress.version>
     <commons.csv.version>1.10.0</commons.csv.version>
-    <commons.exec.version>1.3</commons.exec.version>
+    <commons.exec.version>1.4.0</commons.exec.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <commons.io.version>2.15.1</commons.io.version>
     <commons.lang3.version>3.14.0</commons.lang3.version>
