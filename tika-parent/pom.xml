@@ -388,9 +388,9 @@
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.9</mime4j.version>
-    <mockito.version>5.8.0</mockito.version>
+    <mockito.version>5.9.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.1.104.Final</netty.version>
+    <netty.version>4.1.105.Final</netty.version>
     <oak.jackrabbit.version>1.60.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.2.0</opennlp.version>
@@ -429,7 +429,7 @@
     <uimaj.core.version>3.4.1</uimaj.core.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
-    <woodstox.core.version>6.5.1</woodstox.core.version>
+    <woodstox.core.version>6.6.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.3</zookeeper.version>
@@ -1003,6 +1003,13 @@
           <groupId>ch.qos.logback</groupId>
           <artifactId>logback-classic</artifactId>
           <version>${logback.version}</version>
+      </dependency>
+      <!-- convergence problems in Apache Tika Azure Blob fetcher,
+        might be removed after update of azure-storage-blob higher than 12.25.1  -->
+      <dependency>
+          <groupId>org.codehaus.woodstox</groupId>
+          <artifactId>stax2-api</artifactId>
+          <version>4.2.2</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
