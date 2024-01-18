@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.31.0</google.cloud.version>
-    <aws.version>1.12.633</aws.version>
+    <aws.version>1.12.639</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -495,7 +495,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.13.8</version>
+        <version>1.13.11</version>
         <exclusions>
           <exclusion>
             <groupId>io.netty</groupId>
@@ -516,7 +516,7 @@
       <dependency>
         <groupId>com.fasterxml.woodstox</groupId>
         <artifactId>woodstox-core</artifactId>
-        <version>6.5.1</version>
+        <version>6.6.0</version>
       </dependency>
       <dependency>
         <groupId>com.mchange</groupId>
@@ -973,6 +973,13 @@
           <groupId>ch.qos.logback</groupId>
           <artifactId>logback-classic</artifactId>
           <version>${logback.version}</version>
+      </dependency>
+      <!-- convergence problems in Apache Tika Azure Blob fetcher,
+        might be removed after update of azure-storage-blob higher than 12.25.1  -->
+      <dependency>
+          <groupId>org.codehaus.woodstox</groupId>
+          <artifactId>stax2-api</artifactId>
+          <version>4.2.2</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
