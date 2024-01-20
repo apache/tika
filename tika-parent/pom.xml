@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <asm.version>9.6</asm.version>
-    <aws.version>1.12.640</aws.version>
+    <aws.version>1.12.641</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -390,7 +390,7 @@
     <mime4j.version>0.8.9</mime4j.version>
     <mockito.version>5.9.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.1.105.Final</netty.version>
+    <netty.version>4.1.106.Final</netty.version>
     <oak.jackrabbit.version>1.60.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.2.0</opennlp.version>
