@@ -20,7 +20,7 @@ Tika jars can be fetched from Maven Central or your favourite Maven mirror.
 
 **Tika 1.X reached End of Life (EOL) on September 30, 2022.**  
 
-Tika is based on **Java 8** and uses the [Maven 3](https://maven.apache.org) build system. 
+Tika is based on **Java 11** and uses the [Maven 3](https://maven.apache.org) build system. 
 **N.B.** [Docker](https://www.docker.com/products/personal) is used for tests in tika-integration-tests.
 As of Tika 2.5.1, if Docker is not installed, those tests are skipped.  Docker is required for a successful
 build on earlier 2.x versions.
@@ -50,7 +50,7 @@ Maven Dependencies
 
 Apache Tika provides *Bill of Material* (BOM) artifact to align Tika module versions and simplify version management. 
 To avoid convergence errors in your own project, import this
-bom or Tika's parent pom.xml in your dependencey management section.
+bom or Tika's parent pom.xml in your dependency management section.
 
 If you use Apache Maven:
 
@@ -170,7 +170,7 @@ Notification on all code changes are sent to the following mailing list:
 The mailing lists are open to anyone and publicly archived.
 
 You can subscribe the mailing lists by sending a message to 
-[LIST]-subscribe@tika.apache.org (for example user-subscribe@...).  
+[LIST]-subscribe@tika.apache.org (for example, user-subscribe@...).  
 To unsubscribe, send a message to [LIST]-unsubscribe@tika.apache.org.  
 For more instructions, send a message to [LIST]-help@tika.apache.org.
 
