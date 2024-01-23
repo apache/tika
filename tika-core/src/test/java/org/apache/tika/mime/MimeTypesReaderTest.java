@@ -370,40 +370,32 @@ public class MimeTypesReaderTest {
     }
 
     @Test
-    public void testBadMinShouldMatch1() throws Exception {
+    public void testBadMinShouldMatch1() {
         System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
                 "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch1.xml");
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
-        });
+        assertThrows(IllegalArgumentException.class, () -> MimeTypes.getDefaultMimeTypes(new CustomClassLoader()));
     }
 
     @Test
-    public void testBadMinShouldMatch2() throws Exception {
+    public void testBadMinShouldMatch2() {
         System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
                 "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch2.xml");
-        assertThrows(IllegalArgumentException.class, () -> {
-            MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
-        });
+        assertThrows(IllegalArgumentException.class, () -> MimeTypes.getDefaultMimeTypes(new CustomClassLoader()));
     }
 
     @Test
-    public void testBadMinShouldMatch3() throws Exception {
+    public void testBadMinShouldMatch3() {
         System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
                 "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch3.xml");
-        assertThrows(IllegalArgumentException.class, () -> {
-            MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
-        });
+        assertThrows(IllegalArgumentException.class, () -> MimeTypes.getDefaultMimeTypes(new CustomClassLoader()));
     }
 
     @Test
-    public void testBadMinShouldMatch4() throws Exception {
+    public void testBadMinShouldMatch4() {
         System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
                 "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch4.xml");
-        assertThrows(IllegalArgumentException.class, () -> {
-            MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
-        });
+        assertThrows(IllegalArgumentException.class, () -> MimeTypes.getDefaultMimeTypes(new CustomClassLoader()));
     }
 
     private static class CustomClassLoader extends ClassLoader {
