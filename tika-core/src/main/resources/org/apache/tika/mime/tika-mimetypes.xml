@@ -366,15 +366,18 @@
     <glob pattern="*.ser"/>
   </mime-type>
 
-  <mime-type type="application/javascript">
+  <mime-type type="text/javascript">
+    <alias type="application/javascript"/>
     <alias type="application/x-javascript"/>
-    <alias type="text/javascript"/>
     <sub-class-of type="text/plain"/>
     <_comment>JavaScript Source Code</_comment>
+    <!-- From RFC 9239: https://www.rfc-editor.org/rfc/rfc9239.html#name-text-javascript -->
+    <!-- File extension(s): .js, .mjs -->
     <glob pattern="*.js"/>
+    <glob pattern="*.mjs"/>
 
     <!-- Note - there is no Unique Magic for JavaScript files! -->
-    <!-- Generally you can only detect JS with the filename -->
+    <!-- Generally, you can only detect JS with the filename -->
     <!-- However... A few common JS libraries accidentally trigger -->
     <!--  the HTML priority=20 magic incorrectly. So, for those only, -->
     <!--  we list "magic" for those specific files -->

@@ -16,6 +16,9 @@ Release 3.0.0-BETA - 12/01/2023
    * Tika will look for "custom-mimetypes.xml" directly on the classpath, NOT
      under "/org/apache/tika/mime/". (TIKA-4147).
 
+   * Return media type "text/javascript" instead of "application/javascript"
+     to follow RFC-9239. (TIKA-4119).
+
    Other Changes/Updates
 
    * Upgrade PDFBox to 3.0.1 (TIKA-3347)

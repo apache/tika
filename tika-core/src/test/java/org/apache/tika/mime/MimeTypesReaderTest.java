@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -277,6 +278,24 @@ public class MimeTypesReaderTest {
         String ext = mt.getExtension();
         assertEquals(".ppt", ext);
         assertEquals(".ppt", mt.getExtensions().get(0));
+    }
+
+    @Test
+    public void testGetExtensionForJavaScript() throws Exception {
+        MimeType mt = this.mimeTypes.forName("text/javascript");
+        assertEquals(".js", mt.getExtension());
+        assertEquals(List.of(".js", ".mjs"), mt.getExtensions());
+    }
+
+    @Test
+    public void testGetAliasForJavaScript() throws Exception {
+        MimeType mt = this.mimeTypes.forName("text/javascript");
+        Set<String> aliases = mimeTypes.getMediaTypeRegistry()
+                .getAliases(mt.getType())
+                .stream()
+                .map(MediaType::toString)
+                .collect(Collectors.toSet());
+        assertEquals(Set.of("application/javascript", "application/x-javascript"), aliases);
     }
 
     @Test

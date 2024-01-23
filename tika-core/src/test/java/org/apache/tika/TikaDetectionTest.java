@@ -56,7 +56,8 @@ public class TikaDetectionTest {
         assertEquals("application/java-archive", tika.detect("x.jar"));
         assertEquals("application/java-serialized-object", tika.detect("x.ser"));
         assertEquals("application/java-vm", tika.detect("x.class"));
-        assertEquals("application/javascript", tika.detect("x.js"));
+        assertEquals("text/javascript", tika.detect("x.js"));
+        assertEquals("text/javascript", tika.detect("x.mjs"));
         assertEquals("application/json", tika.detect("x.json"));
         assertEquals("application/lost+xml", tika.detect("x.lostxml"));
         assertEquals("application/mac-binhex40", tika.detect("x.hqx"));

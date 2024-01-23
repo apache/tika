@@ -246,6 +246,6 @@ public class ProbabilisticMimeDetectionTest {
                         "} catch (e) {\n" + "    console.log(e);\n" + "}")
                         .getBytes(StandardCharsets.UTF_8));
         MediaType detect = new ProbabilisticMimeDetectionSelector().detect(input, metadata);
-        assertEquals(MediaType.application("javascript"), detect);
+        assertEquals(MediaType.text("javascript"), detect);
     }
 }
