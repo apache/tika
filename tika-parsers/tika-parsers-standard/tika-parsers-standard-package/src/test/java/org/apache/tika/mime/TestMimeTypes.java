@@ -718,8 +718,8 @@ public class TestMimeTypes {
         assertTypeByName("text/html", "testHTML.html");
         assertType("text/html", "testHTML.html");
 
-        assertTypeByName("application/javascript", "testJS.js");
-        assertType("application/javascript", "testJS.js");
+        assertTypeByName("text/javascript", "testJS.js");
+        assertType("text/javascript", "testJS.js");
 
         assertType("text/vnd.graphviz", "testGRAPHVIZd.dot");
         assertType("text/vnd.graphviz", "testGRAPHVIZg.dot");
@@ -1148,10 +1148,10 @@ public class TestMimeTypes {
         assertTypeByData("text/x-matlab", "testMATLAB_barcast.m");
 
         // By name, or by name+data, gets it as JS
-        assertTypeByName("application/javascript", "testJS.js");
-        assertTypeByName("application/javascript", "testJS_HTML.js");
-        assertType("application/javascript", "testJS.js");
-        assertType("application/javascript", "testJS_HTML.js");
+        assertTypeByName("text/javascript", "testJS.js");
+        assertTypeByName("text/javascript", "testJS_HTML.js");
+        assertType("text/javascript", "testJS.js");
+        assertType("text/javascript", "testJS_HTML.js");
 
         // With data only, because we have no JS file magic, can't be
         //  detected. One will come through as plain text, the other

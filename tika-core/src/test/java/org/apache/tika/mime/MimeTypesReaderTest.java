@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -280,6 +281,24 @@ public class MimeTypesReaderTest {
     }
 
     @Test
+    public void testGetExtensionForJavaScript() throws Exception {
+        MimeType mt = this.mimeTypes.forName("text/javascript");
+        assertEquals(".js", mt.getExtension());
+        assertEquals(List.of(".js", ".mjs"), mt.getExtensions());
+    }
+
+    @Test
+    public void testGetAliasForJavaScript() throws Exception {
+        MimeType mt = this.mimeTypes.forName("text/javascript");
+        Set<String> aliases = mimeTypes.getMediaTypeRegistry()
+                .getAliases(mt.getType())
+                .stream()
+                .map(MediaType::toString)
+                .collect(Collectors.toSet());
+        assertEquals(Set.of("application/javascript", "application/x-javascript"), aliases);
+    }
+
+    @Test
     public void testGetRegisteredMimesWithParameters() throws Exception {
         //TIKA-1692
 
@@ -351,40 +370,32 @@ public class MimeTypesReaderTest {
     }
 
     @Test
-    public void testBadMinShouldMatch1() throws Exception {
+    public void testBadMinShouldMatch1() {
         System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
                 "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch1.xml");
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
-        });
+        assertThrows(IllegalArgumentException.class, () -> MimeTypes.getDefaultMimeTypes(new CustomClassLoader()));
     }
 
     @Test
-    public void testBadMinShouldMatch2() throws Exception {
+    public void testBadMinShouldMatch2() {
         System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
                 "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch2.xml");
-        assertThrows(IllegalArgumentException.class, () -> {
-            MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
-        });
+        assertThrows(IllegalArgumentException.class, () -> MimeTypes.getDefaultMimeTypes(new CustomClassLoader()));
     }
 
     @Test
-    public void testBadMinShouldMatch3() throws Exception {
+    public void testBadMinShouldMatch3() {
         System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
                 "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch3.xml");
-        assertThrows(IllegalArgumentException.class, () -> {
-            MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
-        });
+        assertThrows(IllegalArgumentException.class, () -> MimeTypes.getDefaultMimeTypes(new CustomClassLoader()));
     }
 
     @Test
-    public void testBadMinShouldMatch4() throws Exception {
+    public void testBadMinShouldMatch4() {
         System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
                 "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch4.xml");
-        assertThrows(IllegalArgumentException.class, () -> {
-            MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
-        });
+        assertThrows(IllegalArgumentException.class, () -> MimeTypes.getDefaultMimeTypes(new CustomClassLoader()));
     }
 
     private static class CustomClassLoader extends ClassLoader {
