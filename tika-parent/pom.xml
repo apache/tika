@@ -388,7 +388,7 @@
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.9</mime4j.version>
-    <mockito.version>5.9.0</mockito.version>
+    <mockito.version>5.10.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.1.106.Final</netty.version>
     <oak.jackrabbit.version>1.60.0</oak.jackrabbit.version>
