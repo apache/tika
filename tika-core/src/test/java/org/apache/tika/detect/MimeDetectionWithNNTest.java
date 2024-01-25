@@ -17,6 +17,7 @@
 package org.apache.tika.detect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -100,7 +101,7 @@ public class MimeDetectionWithNNTest {
 
     private void testStream(String expected, String urlOrFileName, InputStream in)
             throws IOException {
-        assertNotNull("Test stream: [" + urlOrFileName + "] is null!", in);
+        assertNotNull(in, "Test stream: [" + urlOrFileName + "] is null!");
         if (!in.markSupported()) {
             in = new java.io.BufferedInputStream(in);
         }
@@ -118,11 +119,6 @@ public class MimeDetectionWithNNTest {
         } finally {
             in.close();
         }
-    }
-
-    private void assertNotNull(String string, InputStream in) {
-        // TODO Auto-generated method stub
-
     }
 
     /**

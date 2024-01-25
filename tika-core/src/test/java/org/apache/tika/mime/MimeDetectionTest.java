@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -162,7 +163,7 @@ public class MimeDetectionTest {
 
     private void testStream(String expected, String urlOrFileName, InputStream in)
             throws IOException {
-        assertNotNull("Test stream: [" + urlOrFileName + "] is null!", in);
+        assertNotNull(in, "Test stream: [" + urlOrFileName + "] is null!");
         if (!in.markSupported()) {
             in = new java.io.BufferedInputStream(in);
         }
@@ -180,11 +181,6 @@ public class MimeDetectionTest {
         } finally {
             in.close();
         }
-    }
-
-    private void assertNotNull(String string, InputStream in) {
-        // TODO Auto-generated method stub
-
     }
 
     /**
