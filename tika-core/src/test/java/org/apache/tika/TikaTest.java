@@ -328,6 +328,10 @@ public abstract class TikaTest {
         }
     }
 
+    protected List<Metadata> getRecursiveMetadataFromFullPath(String path) throws Exception {
+        return getRecursiveMetadata(Paths.get(path), true);
+    }
+
     protected List<Metadata> getRecursiveMetadata(String filePath, boolean suppressException)
             throws Exception {
         return getRecursiveMetadata(filePath, new Metadata(), new ParseContext(),
