@@ -17,6 +17,8 @@
 package org.apache.tika.parser.sqlite3;
 
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.InputStream;
 
 import org.junit.jupiter.api.Test;
@@ -46,6 +48,8 @@ public class SQLite3ParserTest extends TikaTest {
         String s = handler.toString();
         TikaTest.assertContains("0\t2.3\t2.4\tlorem", s);
         TikaTest.assertContains("tempor\n", s);
+        assertEquals("0", metadata.get(SQLite3Parser.SQLITE_APPLICATION_ID));
+        assertEquals("0", metadata.get(SQLite3Parser.SQLITE_USER_VERSION));
     }
 
     @Test
