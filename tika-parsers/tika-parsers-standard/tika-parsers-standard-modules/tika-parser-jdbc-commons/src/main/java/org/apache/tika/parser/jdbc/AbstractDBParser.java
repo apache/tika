@@ -78,6 +78,9 @@ public abstract class AbstractDBParser implements Parser {
             //add table names to parent metadata
             metadata.add(Database.TABLE_NAME, tableName);
         }
+
+        extractMetadata(connection, metadata);
+
         xHandler = new XHTMLContentHandler(handler, metadata);
         xHandler.startDocument();
 
@@ -112,6 +115,17 @@ public abstract class AbstractDBParser implements Parser {
                 xHandler.endDocument();
             }
         }
+    }
+
+    /**
+     * This is called before parsing the tables to extract metadata from the db, if any.
+     * Override this for db specific metadata. This implementation is a no-op
+     *
+     * @param connection
+     * @param metadata
+     */
+    protected void extractMetadata(Connection connection, Metadata metadata) {
+
     }
 
     /**

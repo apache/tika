@@ -4858,11 +4858,114 @@
   </mime-type>
 
   <mime-type type="application/x-sqlite3">
+    <!--sqlite subtypes are from: https://www.sqlite.org/src/artifact?ci=trunk&filename=magic.txt -->
     <magic priority="50">
       <match value="SQLite format 3\x00" type="string" offset="0"/>
     </magic>
   </mime-type>
-
+  <!-- geo package >= 1.2.x -->
+  <mime-type type="application/x-geopackage">
+    <url>https://www.geopackage.org/</url>
+    <!-- should be higher than application/x-sqlite3 -->
+    <magic priority="60">
+      <match value="SQLite format 3\x00" type="string" offset="0">
+        <match value="0x47504b47" type="string" offset="68"/>
+      </match>
+    </magic>
+    <glob pattern="*.gpkg"/>
+    <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
+  <!-- geo package 1.0.x or 1.1.x -->
+  <mime-type type="application/x-geopackage; version=1.1Or1.0">
+    <url>https://www.geopackage.org/</url>
+    <magic priority="60">
+      <match value="SQLite format 3\x00" type="string" offset="0">
+        <match value="0x47503130" type="string" offset="68"/>
+      </match>
+    </magic>
+    <glob pattern="*.gpkg"/>
+    <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
+  <mime-type type="application/x-fossil-checkout">
+    <magic priority="60">
+      <match value="SQLite format 3\x00" type="string" offset="0">
+        <match value="0x0f055112" type="string" offset="68"/>
+      </match>
+    </magic>
+    <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
+  <mime-type type="application/x-fossil-checkout">
+    <magic priority="60">
+      <match value="SQLite format 3\x00" type="string" offset="0">
+        <match value="0x0f055112" type="string" offset="68"/>
+      </match>
+    </magic>
+    <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
+  <mime-type type="application/x-fossil-global-conf">
+    <magic priority="60">
+      <match value="SQLite format 3\x00" type="string" offset="0">
+        <match value="0x0f055113" type="string" offset="68"/>
+      </match>
+    </magic>
+    <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
+  <mime-type type="application/x-fossil-repository">
+    <magic priority="60">
+      <match value="SQLite format 3\x00" type="string" offset="0">
+        <match value="0x0f055111" type="string" offset="68"/>
+      </match>
+    </magic>
+    <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
+  <mime-type type="application/x-bentley-besqlite">
+    <magic priority="60">
+      <match value="SQLite format 3\x00" type="string" offset="0">
+        <match value="0x42654462" type="string" offset="68"/>
+      </match>
+    </magic>
+    <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
+  <mime-type type="application/x-bentley-localization">
+    <magic priority="60">
+      <match value="SQLite format 3\x00" type="string" offset="0">
+        <match value="0x42654c6e" type="string" offset="68"/>
+      </match>
+    </magic>
+    <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
+  <mime-type type="application/x-monotone-source-repo">
+    <magic priority="60">
+      <match value="SQLite format 3\x00" type="string" offset="0">
+        <match value="0x5f4d544e" type="string" offset="68"/>
+      </match>
+    </magic>
+    <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
+  <mime-type type="application/x-esri-spatially-enabled-db">
+    <magic priority="60">
+      <match value="SQLite format 3\x00" type="string" offset="0">
+        <match value="0x45737269" type="string" offset="68"/>
+      </match>
+    </magic>
+    <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
+  <mime-type type="application/x-mbtiles">
+    <magic priority="60">
+      <match value="SQLite format 3\x00" type="string" offset="0">
+        <match value="0x4d504258" type="string" offset="68"/>
+      </match>
+    </magic>
+    <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
+  <mime-type type="application/x-texnicard">
+    <magic priority="60">
+      <match value="SQLite format 3\x00" type="string" offset="0">
+        <match value="0x6a035744" type="string" offset="68"/>
+      </match>
+    </magic>
+    <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
   <mime-type type="application/x-stata-do">
     <_comment>Stata DTA Script</_comment>
     <acronym>DO</acronym>

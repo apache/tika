@@ -21,6 +21,8 @@ Release 3.0.0-BETA - 12/01/2023
 
    Other Changes/Updates
 
+   * Improve detection of sqlite3-based file formats (TIKA-4187).
+
    * Upgrade PDFBox to 3.0.1 (TIKA-3347)
    
    * Deprecated AbstractParser for removal in 4.x (TIKA-4132).
