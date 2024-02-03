@@ -303,11 +303,11 @@
     <maven.project.info.reports.version>3.5.0</maven.project.info.reports.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
-    <rat.version>0.16</rat.version>
+    <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
     <google.cloud.version>2.31.0</google.cloud.version>
-    <aws.version>1.12.641</aws.version>
+    <aws.version>1.12.651</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -396,7 +396,7 @@
     <spring.version>5.3.31</spring.version>
     <sqlite.version>3.45.0.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
-    <test.containers.version>1.19.3</test.containers.version>
+    <test.containers.version>1.19.4</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
     <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
@@ -490,12 +490,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.45.1</version>
+        <version>1.46.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.13.11</version>
+        <version>1.14.0</version>
         <exclusions>
           <exclusion>
             <groupId>io.netty</groupId>
