@@ -97,9 +97,11 @@ public class CallablePipesIterator implements Callable<Long> {
                 added++;
             }
             for (int i = 0; i < numConsumers; i++) {
-                boolean offered = queue.offer(PipesIterator.COMPLETED_SEMAPHORE);
+                boolean offered = queue.offer(PipesIterator.COMPLETED_SEMAPHORE, timeoutMillis,
+                        TimeUnit.MILLISECONDS);
                 if (!offered) {
-                    throw new TimeoutException("timed out trying to offer tuple");
+                    throw new TimeoutException("timed out trying to offer the completed " +
+                            "semaphore");
                 }
             }
         } else {
