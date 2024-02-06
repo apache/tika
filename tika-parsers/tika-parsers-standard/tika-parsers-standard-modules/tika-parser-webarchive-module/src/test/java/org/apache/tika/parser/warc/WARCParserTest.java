@@ -31,7 +31,7 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 
 public class WARCParserTest extends TikaTest {
 
-    // the cc.warc.gz and gzip_extra_sl.warc.gz files come
+    // the cc.warc.gz and gzip_extra_sl.warc.gz and the testARC.arc files come
     // from the jwarc unit tests.
 
     @Test
@@ -63,5 +63,16 @@ public class WARCParserTest extends TikaTest {
 
         assertEquals("application/warc", metadataList.get(0).get(Metadata.CONTENT_TYPE));
         assertEquals("application/warc+gz", gzMetadataList.get(0).get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testARC() throws Exception {
+        //test file comes from:
+        // https://github.com/iipc/jwarc/blob/master/test/org/netpreserve/jwarc/apitests/ArcTest.java
+
+        List<Metadata> metadataList = getRecursiveMetadata("testARC.arc",
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
+        debug(metadataList);
+
     }
 }

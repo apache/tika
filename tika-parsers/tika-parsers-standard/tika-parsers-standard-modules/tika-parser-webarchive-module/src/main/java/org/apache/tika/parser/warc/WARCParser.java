@@ -49,11 +49,14 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 
+/**
+ * This uses jwarc to parse warc files and arc files
+ */
 public class WARCParser implements Parser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(MediaType.application("warc"),
-                    MediaType.application("warc+gz"))));
+                    MediaType.application("warc+gz"), MediaType.application("x-internet-archive"))));
 
     public static String WARC_PREFIX = "warc:";
     public static String WARC_HTTP_PREFIX = WARC_PREFIX + "http:";
