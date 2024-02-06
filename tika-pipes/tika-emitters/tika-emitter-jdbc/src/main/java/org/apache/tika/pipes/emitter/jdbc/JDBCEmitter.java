@@ -304,7 +304,17 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
                 insertAll(d.getEmitKey().getEmitKey(), d.getMetadataList());
             }
         }
-        insertStatement.executeBatch();
+        if (LOGGER.isDebugEnabled()) {
+            long start = System.currentTimeMillis();
+            insertStatement.executeBatch();
+            connection.commit();
+            LOGGER.debug("took {}ms to insert {} rows ", System.currentTimeMillis() - start,
+                    emitData.size());
+        } else {
+            insertStatement.executeBatch();
+            connection.commit();
+        }
+
     }
 
     private void insertAll(String emitKey, List<Metadata> metadataList) throws SQLException {
@@ -361,6 +371,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
 
         if (connection != null) {
             try {
+                connection.commit();
                 connection.close();
             } catch (SQLException e) {
                 LOGGER.warn("exception closing connection", e);
@@ -370,6 +381,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
 
     private void createConnection() throws SQLException {
         connection = DriverManager.getConnection(connectionString);
+        connection.setAutoCommit(false);
         if (postConnectionString.isPresent()) {
             try (Statement st = connection.createStatement()) {
                 st.execute(postConnectionString.get());
