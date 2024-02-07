@@ -18,6 +18,7 @@ package org.apache.tika.parser.warc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -72,7 +73,12 @@ public class WARCParserTest extends TikaTest {
 
         List<Metadata> metadataList = getRecursiveMetadata("testARC.arc",
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
-        debug(metadataList);
-
+        assertEquals(2, metadataList.size());
+        assertContains("The document has moved here",
+                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("http://www.uq.edu.au/robots.txt",
+                metadataList.get(1).get("warc:WARC-Target-URI"));
+        assertEquals("http://www.uq.edu.au/",
+                metadataList.get(1).get("warc:http:Location"));
     }
 }
