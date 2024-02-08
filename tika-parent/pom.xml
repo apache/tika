@@ -306,8 +306,8 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.31.0</google.cloud.version>
-    <aws.version>1.12.651</aws.version>
+    <google.cloud.version>2.33.0</google.cloud.version>
+    <aws.version>1.12.654</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -343,7 +343,7 @@
     <!-- versions greater than 62.2 are not compatible with icu4j handler in lucene 8.11.1 -->
     <icu4j.version>62.2</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
-    <jackrabbit.version>2.21.22</jackrabbit.version>
+    <jackrabbit.version>2.21.23</jackrabbit.version>
     <jackson.version>2.16.1</jackson.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
@@ -361,7 +361,7 @@
     <jna.version>5.14.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.10.1</junit5.version>
+    <junit5.version>5.10.2</junit5.version>
     <junrar.version>7.5.5</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.20.0</log4j2.version>
@@ -394,7 +394,7 @@
     <solrj.version>8.11.2</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17 -->
     <spring.version>5.3.31</spring.version>
-    <sqlite.version>3.45.0.0</sqlite.version>
+    <sqlite.version>3.45.1.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.19.4</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
@@ -685,7 +685,7 @@
       <dependency>
         <groupId>it.unimi.dsi</groupId>
         <artifactId>fastutil</artifactId>
-        <version>8.5.12</version>
+        <version>8.5.13</version>
       </dependency>
       <dependency>
         <groupId>javax.annotation</groupId>
