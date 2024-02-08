@@ -48,6 +48,9 @@ public class TikaEvalMetadataFilter extends MetadataFilter {
     public static Property NUM_ALPHA_TOKENS =
             Property.externalInteger(TIKA_EVAL_NS + "numAlphaTokens");
 
+    public static Property NUM_COMMON_TOKENS =
+            Property.externalInteger(TIKA_EVAL_NS + "numCommonTokens");
+
     public static Property NUM_UNIQUE_ALPHA_TOKENS =
             Property.externalInteger(TIKA_EVAL_NS + "numUniqueAlphaTokens");
 
@@ -90,6 +93,7 @@ public class TikaEvalMetadataFilter extends MetadataFilter {
         CommonTokenResult commonTokenResult = (CommonTokenResult) results.get(CommonTokens.class);
         metadata.set(NUM_ALPHA_TOKENS, commonTokenResult.getAlphabeticTokens());
         metadata.set(NUM_UNIQUE_ALPHA_TOKENS, commonTokenResult.getUniqueAlphabeticTokens());
+        metadata.set(NUM_COMMON_TOKENS, commonTokenResult.getCommonTokens());
         if (commonTokenResult.getAlphabeticTokens() > 0) {
             metadata.set(OUT_OF_VOCABULARY, commonTokenResult.getOOV());
         } else {
