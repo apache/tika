@@ -31,7 +31,7 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 
 public class WARCParserTest extends TikaTest {
 
-    // the cc.warc.gz and gzip_extra_sl.warc.gz files come
+    // the cc.warc.gz and gzip_extra_sl.warc.gz and the testARC.arc files come
     // from the jwarc unit tests.
 
     @Test
@@ -63,5 +63,34 @@ public class WARCParserTest extends TikaTest {
 
         assertEquals("application/warc", metadataList.get(0).get(Metadata.CONTENT_TYPE));
         assertEquals("application/warc+gz", gzMetadataList.get(0).get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testARC() throws Exception {
+        //test file comes from:
+        // https://github.com/iipc/jwarc/blob/master/test/org/netpreserve/jwarc/apitests/ArcTest.java
+
+        List<Metadata> metadataList = getRecursiveMetadata("testARC.arc",
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
+        assertEquals(2, metadataList.size());
+        assertContains("The document has moved here",
+                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("http://www.uq.edu.au/robots.txt",
+                metadataList.get(1).get("warc:WARC-Target-URI"));
+        assertEquals("http://www.uq.edu.au/",
+                metadataList.get(1).get("warc:http:Location"));
+    }
+
+    @Test
+    public void testArcGZ() throws Exception {
+        //test file from https://github.com/webrecorder/warcio/blob/master/test/data/example.arc.gz
+        List<Metadata> metadataList = getRecursiveMetadata("example.arc.gz",
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
+        assertEquals(2, metadataList.size());
+        assertEquals("application/arc+gz", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertContains("This domain is established",
+                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+
+        //TODO -- we should try to find an example gz with multiple arcs
     }
 }

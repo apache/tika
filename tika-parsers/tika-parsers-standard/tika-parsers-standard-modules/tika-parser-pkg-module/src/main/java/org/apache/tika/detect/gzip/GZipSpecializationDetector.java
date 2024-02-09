@@ -38,6 +38,8 @@ public class GZipSpecializationDetector implements Detector {
     public static MediaType GZ = MediaType.application("gzip");
     public static MediaType WARC_GZ = MediaType.application("warc+gz");
 
+    public static MediaType ARC_GZ = MediaType.application("arc+gz");
+
     @Override
     public MediaType detect(InputStream input, Metadata metadata) throws IOException {
         if (input == null) {
@@ -84,6 +86,8 @@ public class GZipSpecializationDetector implements Detector {
         String s = new String(bytes.toByteArray(), StandardCharsets.UTF_8);
         if (s.startsWith("WARC/")) {
             return WARC_GZ;
+        } else if (s.startsWith("filedesc://")) {
+            return ARC_GZ;
         }
         return GZ;
     }
