@@ -18,7 +18,6 @@ package org.apache.tika.parser.warc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -80,5 +79,16 @@ public class WARCParserTest extends TikaTest {
                 metadataList.get(1).get("warc:WARC-Target-URI"));
         assertEquals("http://www.uq.edu.au/",
                 metadataList.get(1).get("warc:http:Location"));
+    }
+
+    @Test
+    public void testExampleARC() throws Exception {
+        //test file from https://github.com/webrecorder/warcio/blob/master/test/data/example.arc.gz
+        List<Metadata> metadataList = getRecursiveMetadata("example.arc.gz",
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
+        assertEquals(2, metadataList.size());
+        assertEquals("application/arc+gz", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertContains("This domain is established",
+                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
 }
