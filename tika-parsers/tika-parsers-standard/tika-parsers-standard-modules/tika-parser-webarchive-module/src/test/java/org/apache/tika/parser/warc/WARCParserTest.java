@@ -82,7 +82,7 @@ public class WARCParserTest extends TikaTest {
     }
 
     @Test
-    public void testExampleARC() throws Exception {
+    public void testArcGZ() throws Exception {
         //test file from https://github.com/webrecorder/warcio/blob/master/test/data/example.arc.gz
         List<Metadata> metadataList = getRecursiveMetadata("example.arc.gz",
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
@@ -90,5 +90,7 @@ public class WARCParserTest extends TikaTest {
         assertEquals("application/arc+gz", metadataList.get(0).get(Metadata.CONTENT_TYPE));
         assertContains("This domain is established",
                 metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+
+        //TODO -- we should try to find an example gz with multiple arcs
     }
 }
