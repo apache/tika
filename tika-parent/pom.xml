@@ -323,7 +323,7 @@
     <brotli.version>0.1.2</brotli.version>
     <c3p0.version>0.9.5.5</c3p0.version>
     <commons.cli.version>1.6.0</commons.cli.version>
-    <commons.codec.version>1.16.0</commons.codec.version>
+    <commons.codec.version>1.16.1</commons.codec.version>
     <commons.collections4.version>4.4</commons.collections4.version>
     <commons.compress.version>1.25.0</commons.compress.version>
     <commons.csv.version>1.10.0</commons.csv.version>
