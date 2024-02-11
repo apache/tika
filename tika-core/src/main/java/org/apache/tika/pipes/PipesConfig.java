@@ -25,6 +25,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 
 public class PipesConfig extends PipesConfigBase {
@@ -43,6 +44,12 @@ public class PipesConfig extends PipesConfigBase {
                     "config file; will use {} for pipes", tikaConfig);
             pipesConfig.setTikaConfig(tikaConfig);
         }
+        return pipesConfig;
+    }
+
+    public static PipesConfig load(InputStream tikaConfigInputStream) throws IOException, TikaConfigException {
+        PipesConfig pipesConfig = new PipesConfig();
+        pipesConfig.configure("pipes", tikaConfigInputStream);
         return pipesConfig;
     }
 

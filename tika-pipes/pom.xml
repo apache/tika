@@ -36,6 +36,7 @@
     <module>tika-pipes-iterators</module>
     <module>tika-pipes-reporters</module>
     <module>tika-async-cli</module>
+    <module>tika-grpc</module>
   </modules>
   <dependencies>
     <dependency>
