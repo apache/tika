@@ -5147,6 +5147,8 @@
     <!-- Always seem to have a version integer as their first entry, -->
     <!--  normally 00, 01 or 02, check for that -->
     <magic priority="40">
+      <match value="0x3080020100" type="string"
+              mask="0xFFFFFFFFFC" offset="0"/>
       <match value="0x3081FF020100" type="string"
               mask="0xFFFF00FFFFFC" offset="0"/>
       <match value="0x3082FFFF020100" type="string"
