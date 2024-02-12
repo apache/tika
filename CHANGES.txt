@@ -13,6 +13,8 @@ Release 3.0.0-BETA - 12/01/2023
 
    * Removed xerces2 as a dependency (TIKA-4135).
 
+   * tika-core now has a scope of "provided" in most non-app modules (TIKA-4191).
+
    * Tika will look for "custom-mimetypes.xml" directly on the classpath, NOT
      under "/org/apache/tika/mime/". (TIKA-4147).
 
