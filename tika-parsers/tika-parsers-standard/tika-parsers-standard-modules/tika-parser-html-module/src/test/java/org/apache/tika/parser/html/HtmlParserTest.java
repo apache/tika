@@ -1055,7 +1055,7 @@ public class HtmlParserTest extends TikaTest {
         }
 
         assertEquals(1, (int) tagFrequencies.get("title"));
-        assertEquals(9, (int) tagFrequencies.get("meta"));
+        assertEquals(11, (int) tagFrequencies.get("meta"));
         assertEquals(12, (int) tagFrequencies.get("link"));
         assertEquals(6, (int) tagFrequencies.get("script"));
     }

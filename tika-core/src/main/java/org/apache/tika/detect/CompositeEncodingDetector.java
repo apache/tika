@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 public class CompositeEncodingDetector implements EncodingDetector, Serializable {
 
@@ -64,6 +65,12 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
         for (EncodingDetector detector : getDetectors()) {
             Charset detected = detector.detect(input, metadata);
             if (detected != null) {
+                metadata.set(TikaCoreProperties.DETECTED_ENCODING, detected.name());
+                //if this has been set by a leaf detector, do not overwrite
+                if (! detector.getClass().getSimpleName().equals("CompositeEncodingDetector")) {
+                    metadata.set(TikaCoreProperties.ENCODING_DETECTOR,
+                            detector.getClass().getSimpleName());
+                }
                 return detected;
             }
         }

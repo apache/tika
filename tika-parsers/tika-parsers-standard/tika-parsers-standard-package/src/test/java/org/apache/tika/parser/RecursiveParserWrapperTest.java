@@ -148,8 +148,9 @@ public class RecursiveParserWrapperTest extends TikaTest {
 
         assertEquals("true", list.get(0).get(TikaCoreProperties.WRITE_LIMIT_REACHED));
 
-        assertContains("dissolve the political", list.get(6).get(TikaCoreProperties.TIKA_CONTENT));
-        assertNotContained("them to the separation",
+        assertContains("necessary for one people",
+                list.get(6).get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotContained("dissolve the political",
                 list.get(6).get(TikaCoreProperties.TIKA_CONTENT));
     }
 

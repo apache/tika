@@ -22,8 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.util.Collections;
-import java.util.List;
 
 import org.xml.sax.InputSource;
 
@@ -31,6 +29,7 @@ import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
 
@@ -68,26 +67,27 @@ public class AutoDetectReader extends BufferedReader {
     /**
      * @param stream    stream from which to read -- make sure that it supports mark!
      * @param metadata
-     * @param detectors
+     * @param detector
      * @param handler
      * @throws IOException
      * @throws TikaException
      */
     private AutoDetectReader(InputStream stream, Metadata metadata,
-                             List<EncodingDetector> detectors, LoadErrorHandler handler)
+                             EncodingDetector detector, LoadErrorHandler handler)
             throws IOException, TikaException {
-        this(stream, detect(stream, metadata, detectors, handler));
+        this(stream, detect(stream, metadata, detector, handler));
     }
 
     public AutoDetectReader(InputStream stream, Metadata metadata,
                             EncodingDetector encodingDetector) throws IOException, TikaException {
-        this(getBuffered(stream), metadata, Collections.singletonList(encodingDetector),
+        this(getBuffered(stream), metadata, encodingDetector,
                 DEFAULT_LOADER.getLoadErrorHandler());
     }
 
     public AutoDetectReader(InputStream stream, Metadata metadata, ServiceLoader loader)
             throws IOException, TikaException {
-        this(getBuffered(stream), metadata, loader.loadServiceProviders(EncodingDetector.class),
+        this(getBuffered(stream), metadata,
+                new CompositeEncodingDetector(loader.loadServiceProviders(EncodingDetector.class)),
                 loader.getLoadErrorHandler());
     }
 
@@ -101,19 +101,17 @@ public class AutoDetectReader extends BufferedReader {
     }
 
     private static Charset detect(InputStream input, Metadata metadata,
-                                  List<EncodingDetector> detectors, LoadErrorHandler handler)
+                                  EncodingDetector detector, LoadErrorHandler handler)
             throws IOException, TikaException {
         // Ask all given detectors for the character encoding
-        for (EncodingDetector detector : detectors) {
-            try {
-                Charset charset = detector.detect(input, metadata);
-                if (charset != null) {
-                    return charset;
-                }
-            } catch (NoClassDefFoundError e) {
-                // TIKA-1041: Detector dependencies not present.
-                handler.handleLoadError(detector.getClass().getName(), e);
+        try {
+            Charset charset = detector.detect(input, metadata);
+            if (charset != null) {
+                return charset;
             }
+        } catch (NoClassDefFoundError e) {
+            // TIKA-1041: Detector dependencies not present.
+            handler.handleLoadError(detector.getClass().getName(), e);
         }
 
         // Try determining the encoding based on hints in document metadata
@@ -122,7 +120,11 @@ public class AutoDetectReader extends BufferedReader {
             String charset = type.getParameters().get("charset");
             if (charset != null) {
                 try {
-                    return CharsetUtils.forName(charset);
+                    Charset cs = CharsetUtils.forName(charset);
+                    metadata.set(TikaCoreProperties.DETECTED_ENCODING, cs.name());
+                    metadata.set(TikaCoreProperties.ENCODING_DETECTOR,
+                            "AutoDetectReader-charset-metadata-fallback");
+                    return cs;
                 } catch (IllegalArgumentException e) {
                     // ignore
                 }

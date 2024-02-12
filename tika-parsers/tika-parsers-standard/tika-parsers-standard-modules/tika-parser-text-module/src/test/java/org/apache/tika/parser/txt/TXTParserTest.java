@@ -106,6 +106,8 @@ public class TXTParserTest extends TikaTest {
         parser.parse(new ByteArrayInputStream(windows.getBytes("ISO-8859-15")),
                 new DefaultHandler(), metadata, new ParseContext());
         assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("UniversalEncodingDetector", metadata.get(TikaCoreProperties.ENCODING_DETECTOR));
+        assertEquals("windows-1252", metadata.get(TikaCoreProperties.DETECTED_ENCODING));
 
         metadata = new Metadata();
         parser.parse(new ByteArrayInputStream(unix.getBytes("ISO-8859-15")), new DefaultHandler(),
