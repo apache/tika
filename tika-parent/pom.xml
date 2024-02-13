@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.33.0</google.cloud.version>
-    <aws.version>1.12.655</aws.version>
+    <aws.version>1.12.657</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -368,7 +368,7 @@
     <log4j2.version>2.20.0</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
     <!-- lucene >= 9.x requires Java 11 -->
-    <lucene.version>8.11.2</lucene.version>
+    <lucene.version>8.11.3</lucene.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.9</mime4j.version>
