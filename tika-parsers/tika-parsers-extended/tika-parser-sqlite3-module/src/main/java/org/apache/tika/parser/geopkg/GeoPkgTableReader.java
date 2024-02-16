@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.sqlite3;
+package org.apache.tika.parser.geopkg;
 
 
 import java.io.IOException;
@@ -24,58 +24,51 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.rowset.serial.SerialBlob;
 
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.jdbc.JDBCTableReader;
+import org.apache.tika.parser.sqlite3.SQLite3TableReader;
 
 
 /**
- * Concrete class for SQLLite table parsing.  This overrides
- * column type handling from JDBCRowHandler.
+ * Concrete class for GeoPkg parsing.  This overrides blob handling to skip "geom" and "data"
+ * columns
  * <p/>
  * For now, this silently skips cells of type CLOB, because xerial's jdbc connector
  * does not currently support them.
  */
-public class SQLite3TableReader extends JDBCTableReader {
+class GeoPkgTableReader extends SQLite3TableReader {
 
-
-    public SQLite3TableReader(Connection connection, String tableName,
-                              EmbeddedDocumentUtil embeddedDocumentUtil) {
+    private static final String GEOM = "geom";
+    private static final String DATA = "data";
+    public GeoPkgTableReader(Connection connection, String tableName,
+                             EmbeddedDocumentUtil embeddedDocumentUtil) {
         super(connection, tableName, embeddedDocumentUtil);
     }
 
 
-    /**
-     * No-op for now in {@link SQLite3TableReader}.
-     *
-     * @param tableName
-     * @param fieldName
-     * @param rowNum
-     * @param resultSet
-     * @param columnIndex
-     * @param handler
-     * @param context
-     * @throws java.sql.SQLException
-     * @throws java.io.IOException
-     * @throws org.xml.sax.SAXException
-     */
-    @Override
-    protected void handleClob(String tableName, String fieldName, int rowNum, ResultSet resultSet,
-                              int columnIndex, ContentHandler handler, ParseContext context)
-            throws SQLException, IOException, SAXException {
-        //no-op for now.
-    }
 
     @Override
-    protected Blob getBlob(ResultSet resultSet, int columnIndex, Metadata m) throws SQLException {
-        byte[] bytes = resultSet.getBytes(columnIndex);
-        if (!resultSet.wasNull()) {
-            return new SerialBlob(bytes);
+    protected void handleBlob(String tableName, String columnName, int rowNum, ResultSet resultSet,
+                              int columnIndex, ContentHandler handler, ParseContext context)
+            throws SQLException, IOException, SAXException {
+        if (GEOM.equals(columnName) || DATA.equals(columnName)) {
+            Attributes attrs = new AttributesImpl();
+            ((AttributesImpl) attrs).addAttribute("", "type", "type", "CDATA", "blob");
+            ((AttributesImpl) attrs)
+                    .addAttribute("", "column_name", "column_name", "CDATA", columnName);
+            ((AttributesImpl) attrs).addAttribute("", "row_number", "row_number", "CDATA",
+                    Integer.toString(rowNum));
+            handler.startElement("", "span", "span", attrs);
+            handler.endElement("", "span", "span");
+            return;
         }
-        return null;
+        super.handleBlob(tableName, columnName, rowNum, resultSet, columnIndex, handler, context);
     }
 }
