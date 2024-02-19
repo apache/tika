@@ -91,8 +91,8 @@ public class IWorkPackageParser implements Parser {
                 continue;
             }
 
-            InputStream entryStream = new BufferedInputStream(zip, 8192);
-            entryStream.mark(8192);
+            InputStream entryStream = new BufferedInputStream(zip, 9216);
+            entryStream.mark(9216);
             IWORKDocumentType type = IWORKDocumentType.detectType(entryStream);
             entryStream.reset(); // 4096 fails on github
 
