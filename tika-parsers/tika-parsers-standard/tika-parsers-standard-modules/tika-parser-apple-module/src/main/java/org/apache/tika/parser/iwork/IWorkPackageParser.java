@@ -91,10 +91,10 @@ public class IWorkPackageParser implements Parser {
                 continue;
             }
 
-            InputStream entryStream = new BufferedInputStream(zip, 4096);
-            entryStream.mark(4096);
+            InputStream entryStream = new BufferedInputStream(zip, 8192);
+            entryStream.mark(8192);
             IWORKDocumentType type = IWORKDocumentType.detectType(entryStream);
-            entryStream.reset();
+            entryStream.reset(); // 4096 fails on github
 
             if (type != null) {
                 XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
