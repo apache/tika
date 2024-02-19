@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -83,11 +83,11 @@ public class IWorkPackageParser implements Parser {
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         ZipArchiveInputStream zip = new ZipArchiveInputStream(stream);
-        ZipArchiveEntry entry = zip.getNextZipEntry();
+        ZipArchiveEntry entry = zip.getNextEntry();
 
         while (entry != null) {
             if (!IWORK_CONTENT_ENTRIES.contains(entry.getName())) {
-                entry = zip.getNextZipEntry();
+                entry = zip.getNextEntry();
                 continue;
             }
 
@@ -127,7 +127,7 @@ public class IWorkPackageParser implements Parser {
                 xhtml.endDocument();
             }
 
-            entry = zip.getNextZipEntry();
+            entry = zip.getNextEntry();
         }
         // Don't close the zip InputStream (TIKA-1117).
     }
