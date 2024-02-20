@@ -20,22 +20,22 @@ package org.apache.tika.parser.geopkg;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Initializable;
+import org.apache.tika.config.Field;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.sqlite3.SQLite3Parser;
 
 /**
@@ -52,10 +52,13 @@ public class GeoPkgParser extends SQLite3Parser {
 
     private static final Set<MediaType> SUPPORTED_TYPES;
 
+
     static {
         SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
     }
 
+    private static final Set<String> DEFAULT_IGNORE_BLOB_COLUMNS = Set.of("geom", "data");
+    private Set<String> ignoreBlobColumns = new HashSet<>(DEFAULT_IGNORE_BLOB_COLUMNS);
     /**
      * Checks to see if class is available for org.sqlite.JDBC.
      * <p/>
@@ -73,10 +76,15 @@ public class GeoPkgParser extends SQLite3Parser {
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        GeoPkgDBParser p = new GeoPkgDBParser();
+        GeoPkgDBParser p = new GeoPkgDBParser(ignoreBlobColumns);
         p.parse(stream, handler, metadata, context);
     }
 
+    @Field
+    public void setIgnoreBlobColumns(List<String> ignoreBlobColumns) {
+        this.ignoreBlobColumns.clear();
+        this.ignoreBlobColumns.addAll(ignoreBlobColumns);
+    }
     /**
      * No-op
      *

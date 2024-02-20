@@ -16,29 +16,11 @@
  */
 package org.apache.tika.parser.geopkg;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import org.sqlite.SQLiteConfig;
-
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.jdbc.AbstractDBParser;
 import org.apache.tika.parser.jdbc.JDBCTableReader;
 import org.apache.tika.parser.sqlite3.SQLite3DBParser;
 
@@ -50,15 +32,23 @@ import org.apache.tika.parser.sqlite3.SQLite3DBParser;
  */
 class GeoPkgDBParser extends SQLite3DBParser {
 
+    private final Set<String> ignoreBlobColumns;
+
+    GeoPkgDBParser(Set<String> ignoreBlobColumns) {
+        this.ignoreBlobColumns = ignoreBlobColumns;
+    }
+
     @Override
     public JDBCTableReader getTableReader(Connection connection, String tableName,
                                           ParseContext context) {
-        return new GeoPkgTableReader(connection, tableName, new EmbeddedDocumentUtil(context));
+        return new GeoPkgTableReader(connection, tableName, new EmbeddedDocumentUtil(context),
+                ignoreBlobColumns);
     }
 
     @Override
     protected JDBCTableReader getTableReader(Connection connection, String tableName,
                                              EmbeddedDocumentUtil embeddedDocumentUtil) {
-        return new GeoPkgTableReader(connection, tableName, embeddedDocumentUtil);
+        return new GeoPkgTableReader(connection, tableName, embeddedDocumentUtil,
+                ignoreBlobColumns);
     }
 }

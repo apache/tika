@@ -18,11 +18,10 @@ package org.apache.tika.parser.geopkg;
 
 
 import java.io.IOException;
-import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import javax.sql.rowset.serial.SerialBlob;
+import java.util.Set;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -30,9 +29,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.jdbc.JDBCTableReader;
 import org.apache.tika.parser.sqlite3.SQLite3TableReader;
 
 
@@ -45,11 +42,12 @@ import org.apache.tika.parser.sqlite3.SQLite3TableReader;
  */
 class GeoPkgTableReader extends SQLite3TableReader {
 
-    private static final String GEOM = "geom";
-    private static final String DATA = "data";
+    private final Set<String> ignoreBlobColumns;
+
     public GeoPkgTableReader(Connection connection, String tableName,
-                             EmbeddedDocumentUtil embeddedDocumentUtil) {
+                             EmbeddedDocumentUtil embeddedDocumentUtil, Set<String> ignoreBlobColumns) {
         super(connection, tableName, embeddedDocumentUtil);
+        this.ignoreBlobColumns = ignoreBlobColumns;
     }
 
 
@@ -58,7 +56,7 @@ class GeoPkgTableReader extends SQLite3TableReader {
     protected void handleBlob(String tableName, String columnName, int rowNum, ResultSet resultSet,
                               int columnIndex, ContentHandler handler, ParseContext context)
             throws SQLException, IOException, SAXException {
-        if (GEOM.equals(columnName) || DATA.equals(columnName)) {
+        if (ignoreBlobColumns.contains(columnName)) {
             Attributes attrs = new AttributesImpl();
             ((AttributesImpl) attrs).addAttribute("", "type", "type", "CDATA", "blob");
             ((AttributesImpl) attrs)
