@@ -521,21 +521,6 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         }
 
         @Override
-        public byte[] readAllBytes() throws IOException {
-            return in.readAllBytes();
-        }
-
-        @Override
-        public byte[] readNBytes(int len) throws IOException  {
-            return in.readNBytes(len);
-        }
-
-        @Override
-        public int readNBytes(byte[] b, int off, int len) throws IOException {
-            return in.readNBytes(b, off, len);
-        }
-
-        @Override
         public long skip(long n) throws IOException {
             return in.skip(n);
         }
@@ -553,11 +538,6 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         @Override
         public boolean markSupported() {
             return in.markSupported();
-        }
-
-        @Override
-        public long transferTo(OutputStream out) throws IOException {
-            return in.transferTo(out);
         }
         
         

@@ -124,16 +124,6 @@ public class BoundedInputStream extends InputStream {
     }
 
     @Override
-    public byte[] readNBytes(int len) throws IOException {
-        return in.readNBytes(len);
-    }
-
-    @Override
-    public int readNBytes(byte[] b, int off, int len) throws IOException {
-        return in.readNBytes(b, off, len);
-    }
-
-    @Override
     public int available() throws IOException {
         return in.available();
     }
@@ -143,9 +133,5 @@ public class BoundedInputStream extends InputStream {
         return in.markSupported();
     }
 
-    @Override
-    public long transferTo(OutputStream out) throws IOException {
-        return in.transferTo(out);
-    }
 }
 
