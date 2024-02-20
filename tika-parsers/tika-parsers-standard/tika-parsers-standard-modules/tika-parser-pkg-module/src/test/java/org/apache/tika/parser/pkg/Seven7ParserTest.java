@@ -47,6 +47,14 @@ public class Seven7ParserTest extends AbstractPkgTest {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
 
+        // helped with debugging the problems in commons-compress 1.25.0 -> 1.26.0
+        ParseRecord parserRecord = recursingContext.get(ParseRecord.class);
+        List<Exception> exceptions = parserRecord.getExceptions();
+        if (!exceptions.isEmpty()) {
+            System.out.println("Exceptions:");
+            exceptions.forEach(e -> e.printStackTrace());
+        }
+
         // Should have found all 9 documents, but not the directory
         assertEquals(9, tracker.filenames.size());
         assertEquals(9, tracker.mediatypes.size());
