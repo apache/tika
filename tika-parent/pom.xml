@@ -1105,11 +1105,6 @@
               <artifactId>uimaj-core</artifactId>
               <version>3.4.1</version>
             </coordinate>
-            <coordinate>
-              <groupId>org.apache.commons</groupId>
-              <artifactId>commons-compress</artifactId>
-              <version>1.25.0</version>
-            </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
         </configuration>
