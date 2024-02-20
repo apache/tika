@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import javax.crypto.Cipher;
 
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
 
@@ -129,7 +131,6 @@ public class Seven7ParserTest extends AbstractPkgTest {
         // Will be empty
         assertEquals("", handler.toString());
 
-        ex = false;
         // Right password works fine if JCE Unlimited Strength has been installed!!!
         if (isStrongCryptoAvailable()) {
             recursingContext.set(PasswordProvider.class, metadata12 -> "Tika");
@@ -137,6 +138,14 @@ public class Seven7ParserTest extends AbstractPkgTest {
             try (InputStream stream = getResourceAsStream(
                     "/test-documents/test7Z_protected_passTika.7z")) {
                 AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
+            }
+
+            // help debugging problems with commons-compress 1.25.0 -> 1.26.0
+            ParseRecord parserRecord = recursingContext.get(ParseRecord.class);
+            List<Exception> exceptions = parserRecord.getExceptions();
+            if (!exceptions.isEmpty()) {
+                System.out.println("Exceptions:");
+                exceptions.forEach(e -> e.printStackTrace());
             }
 
             assertEquals(TYPE_7ZIP.toString(), metadata.get(Metadata.CONTENT_TYPE));

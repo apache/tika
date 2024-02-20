@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <asm.version>9.6</asm.version>
-    <aws.version>1.12.660</aws.version>
+    <aws.version>1.12.662</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -326,7 +326,9 @@
     <commons.cli.version>1.6.0</commons.cli.version>
     <commons.codec.version>1.16.1</commons.codec.version>
     <commons.collections4.version>4.4</commons.collections4.version>
-    <commons.compress.version>1.25.0</commons.compress.version>
+    <!-- TODO: after 1.26.0 test whether the changes made in PR 1605 are still needed
+         (PackageParser and IWorkPackageParser) -->
+    <commons.compress.version>1.26.0</commons.compress.version>
     <commons.csv.version>1.10.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
@@ -435,7 +437,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.3</zookeeper.version>
-    <logback.version>1.4.14</logback.version>
+    <logback.version>1.5.0</logback.version>
     <zstd.version>1.5.5-11</zstd.version>
   </properties>
 
