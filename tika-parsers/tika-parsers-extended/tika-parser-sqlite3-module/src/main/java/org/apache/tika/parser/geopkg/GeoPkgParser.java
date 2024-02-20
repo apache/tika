@@ -39,7 +39,31 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.sqlite3.SQLite3Parser;
 
 /**
- * customization of sqlite parser to skip certain common blob columns
+ * Customization of sqlite parser to skip certain common blob columns.
+ * <p>
+ * The motivation is that "geom" and "data" columns are intrinsic to geopkg
+ * and are not regular embedded files. Tika treats all blob columns as, potentially,
+ * embedded files -- this can add dramatically to the time to parse geopkg
+ * files, which might have hundreds of thousands of uninteresting blobs.
+ * <p>
+ * Users may modify which columns are ignored or turn off "ignoring"
+ * of all solumns.
+ * <p>
+ * To add a column to the default "ignore blob columns" via tika-config.xml:
+ *  <pre>{@code}
+ *   <parsers>
+ *     <parser class="org.apache.tika.parser.DefaultParser"/>
+ *     <parser class="org.apache.tika.parser.geopkg.GeoPkgParser">
+ *       <param name="ignoreBlobColumns" type="list">
+ *         <string>geom</string>
+ *         <string>data</string>
+ *         <string>something</string>
+ *       </param>
+ *     </parser>
+ *   </parsers>
+ *   }</pre>
+ * <p>
+ *   Or use an empty list to parse all columns.
  */
 public class GeoPkgParser extends SQLite3Parser {
 
