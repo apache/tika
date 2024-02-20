@@ -76,23 +76,25 @@ public class IWorkPackageParser extends AbstractParser {
                     IWORKDocumentType.KEYNOTE.getType(), IWORKDocumentType.NUMBERS.getType(),
                     IWORKDocumentType.PAGES.getType())));
 
+    @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return supportedTypes;
     }
 
+    @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         ZipArchiveInputStream zip = new ZipArchiveInputStream(stream);
-        ZipArchiveEntry entry = zip.getNextZipEntry();
+        ZipArchiveEntry entry = zip.getNextEntry();
 
         while (entry != null) {
             if (!IWORK_CONTENT_ENTRIES.contains(entry.getName())) {
-                entry = zip.getNextZipEntry();
+                entry = zip.getNextEntry();
                 continue;
             }
 
-            InputStream entryStream = new BufferedInputStream(zip, 4096);
-            entryStream.mark(4096);
+            InputStream entryStream = new BufferedInputStream(zip, 9216);
+            entryStream.mark(9216);
             IWORKDocumentType type = IWORKDocumentType.detectType(entryStream);
             entryStream.reset();
 
@@ -121,13 +123,13 @@ public class IWorkPackageParser extends AbstractParser {
                 metadata.add(Metadata.CONTENT_TYPE, type.getType().toString());
                 xhtml.startDocument();
                 if (contentHandler != null) {
-                    XMLReaderUtils.parseSAX(new CloseShieldInputStream(entryStream),
+                    XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(entryStream),
                             contentHandler, context);
                 }
                 xhtml.endDocument();
             }
 
-            entry = zip.getNextZipEntry();
+            entry = zip.getNextEntry();
         }
         // Don't close the zip InputStream (TIKA-1117).
     }
