@@ -29,7 +29,9 @@ import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -68,6 +70,7 @@ public class IWorkPackageParser implements Parser {
      * Serial version UID
      */
     private static final long serialVersionUID = -2160322853809682372L;
+    private static final int MARK_LIMIT = 1096;
     /**
      * This parser handles all iWorks formats.
      */
@@ -91,9 +94,9 @@ public class IWorkPackageParser implements Parser {
                 continue;
             }
 
-            InputStream entryStream = new BufferedInputStream(zip, 9216);
-            entryStream.mark(9216);
-            IWORKDocumentType type = IWORKDocumentType.detectType(entryStream);
+            InputStream entryStream = new BufferedInputStream(zip);
+            entryStream.mark(MARK_LIMIT);
+            IWORKDocumentType type = detectType(entryStream, MARK_LIMIT);
             entryStream.reset(); // 4096 fails on github
 
             if (type != null) {
@@ -130,6 +133,25 @@ public class IWorkPackageParser implements Parser {
             entry = zip.getNextEntry();
         }
         // Don't close the zip InputStream (TIKA-1117).
+    }
+
+    private IWORKDocumentType detectType(InputStream entryStream, int markLimit) throws IOException {
+        byte[] bytes = new byte[markLimit];
+        try {
+            int read = IOUtils.read(entryStream, bytes, 0, markLimit);
+            try (InputStream bis = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes)
+                    .setOffset(0).setLength(read).get()) {
+                return IWORKDocumentType.detectType(bis);
+            }
+        } catch (UnsupportedZipFeatureException e) {
+            // There was a problem with extracting the root type
+            // Password Protected iWorks files are funny, but we can usually
+            //  spot them because they encrypt part of the zip stream
+
+            // Compression field was likely encrypted
+            return IWORKDocumentType.ENCRYPTED;
+        }
+
     }
 
     public enum IWORKDocumentType {
@@ -188,17 +210,6 @@ public class IWorkPackageParser implements Parser {
                     if (type.getNamespace().equals(uri) && type.getPart().equals(local)) {
                         return type;
                     }
-                }
-            } else {
-                // There was a problem with extracting the root type
-                // Password Protected iWorks files are funny, but we can usually
-                //  spot them because they encrypt part of the zip stream
-                try {
-                    stream.read();
-                } catch (UnsupportedZipFeatureException e) {
-                    // Compression field was likely encrypted
-                    return ENCRYPTED;
-                } catch (Exception ignored) {
                 }
             }
             return null;
