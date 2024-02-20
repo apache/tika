@@ -38,7 +38,7 @@ public class TruncatedOOXMLTest extends TikaTest {
         //this tests that there's a backoff to the pkg parser
         List<Metadata> metadataList =
                 getRecursiveMetadata(truncate("testWORD_various.docx", 13138), true);
-        assertEquals(19, metadataList.size());
+        assertEquals(18, metadataList.size()); // 19 before commons-compress 1.26.0, last one useless
         Metadata m = metadataList.get(0);
         assertEquals("application/x-tika-ooxml", m.get(Metadata.CONTENT_TYPE));
     }
@@ -48,7 +48,16 @@ public class TruncatedOOXMLTest extends TikaTest {
         //this is really truncated
         List<Metadata> metadataList =
                 getRecursiveMetadata(truncate("testWORD_various.docx", 774), true);
-        assertEquals(4, metadataList.size());
+
+        // for debuging problems in commons compress 1.25.0 -> 1.26.0
+        metadataList.forEach(m -> {
+            System.out.println("depth: " + m.get("X-TIKA:embedded_depth"));
+            System.out.println("relid: " + m.get("embeddedRelationshipId"));
+            System.out.println("res:   " + m.get("resourceName"));
+            System.out.println("cont:  " + m.get("X-TIKA:content"));
+        });
+
+        assertEquals(3, metadataList.size()); // 4 before commons-compress 1.26.0, last one useless
         Metadata m = metadataList.get(0);
         assertEquals("application/x-tika-ooxml", m.get(Metadata.CONTENT_TYPE));
     }
