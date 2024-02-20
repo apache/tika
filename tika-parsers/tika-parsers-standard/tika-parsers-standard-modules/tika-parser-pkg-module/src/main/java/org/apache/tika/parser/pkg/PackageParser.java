@@ -29,7 +29,6 @@ import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Date;

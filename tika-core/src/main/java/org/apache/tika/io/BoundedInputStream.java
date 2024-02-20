@@ -18,7 +18,6 @@ package org.apache.tika.io;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 /**
  * Very slight modification of Commons' BoundedInputStream
