@@ -449,6 +449,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 TemporaryResources tmp = new TemporaryResources();
                 try {
                     TikaInputStream tis = TikaInputStream.get(archive, tmp, entrydata);
+                    tis.getPath(); // fixes troubles with commons-compress 1.26.0
                     extractor.parseEmbedded(tis, xhtml, entrydata, true);
                 } finally {
                     tmp.dispose();
