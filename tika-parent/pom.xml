@@ -299,7 +299,7 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.failsafe.version>3.2.5</maven.failsafe.version>
     <maven.surefire.version>3.2.5</maven.surefire.version>
-    <maven.shade.version>3.5.1</maven.shade.version>
+    <maven.shade.version>3.5.2</maven.shade.version>
     <maven.project.info.reports.version>3.5.0</maven.project.info.reports.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.34.0</google.cloud.version>
-    <aws.version>1.12.660</aws.version>
+    <aws.version>1.12.663</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -410,7 +410,7 @@
     <kafka.version>3.6.1</kafka.version>
     <netty.version>4.1.107.Final</netty.version>
     <snappy.java.version>1.1.10.5</snappy.java.version>
-    <logback.version>1.4.14</logback.version>
+    <logback.version>1.5.0</logback.version>
   </properties>
 
   <dependencyManagement>
