@@ -282,10 +282,11 @@ public class PackageParser extends AbstractEncodingDetectorParser {
 
                 SevenZFile sevenz;
                 try {
+                    SevenZFile.Builder builder = new SevenZFile.Builder().setFile(tstream.getFile());
                     if (password == null) {
-                        sevenz = new SevenZFile(tstream.getFile());
+                        sevenz = builder.get();
                     } else {
-                        sevenz = new SevenZFile(tstream.getFile(), password.toCharArray());
+                        sevenz = builder.setPassword(password.toCharArray()).get();
                     }
                 } catch (PasswordRequiredException e) {
                     throw new EncryptedDocumentException(e);
