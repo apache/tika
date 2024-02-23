@@ -388,7 +388,7 @@
     <log4j2.version>2.23.0</log4j2.version>
     <lucene.version>9.10.0</lucene.version>
     <maven.plugin.annotations.version>3.11.0</maven.plugin.annotations.version>
-    <mchange.version>0.2.20</mchange.version>
+    <mchange.version>0.3.0</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.9</mime4j.version>
