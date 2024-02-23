@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.pdf;
 
+import static org.apache.tika.metadata.PDF.OCR_PAGE_COUNT;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -158,6 +160,8 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         PDFRenderingState incomingRenderingState = context.get(PDFRenderingState.class);
         TikaInputStream tstream = null;
         boolean shouldClose = false;
+        OCRPageCounter prevOCRCounter = context.get(OCRPageCounter.class);
+        context.set(OCRPageCounter.class, new OCRPageCounter());
         try {
             if (shouldSpool(localConfig)) {
                 if (stream instanceof TikaInputStream) {
@@ -220,6 +224,8 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
             metadata.set(PDF.IS_ENCRYPTED, "true");
             throw new EncryptedDocumentException(e);
         } finally {
+            metadata.set(OCR_PAGE_COUNT, context.get(OCRPageCounter.class).getCount());
+            context.set(OCRPageCounter.class, prevOCRCounter);
             //reset the incrementalUpdateRecord even if null
             context.set(IncrementalUpdateRecord.class, incomingIncrementalUpdateRecord);
             PDFRenderingState currState = context.get(PDFRenderingState.class);

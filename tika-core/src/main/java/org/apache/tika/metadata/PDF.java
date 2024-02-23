@@ -209,4 +209,6 @@ public interface PDF {
             Property.composite( Property.externalInteger(PDF_PREFIX + "incrementalUpdateCount"),
                     new Property[]{ TikaCoreProperties.VERSION_COUNT });
 
+    Property OCR_PAGE_COUNT = Property.externalInteger(PDF_PREFIX + "ocrPageCount");
+
 }

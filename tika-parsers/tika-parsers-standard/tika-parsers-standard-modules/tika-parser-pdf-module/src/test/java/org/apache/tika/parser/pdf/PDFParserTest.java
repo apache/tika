@@ -238,7 +238,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("true", metadata.get("pdf:encrypted"));
         //pdf:encrypted, X-Parsed-By and Content-Type
-        assertEquals(4, metadata.names().length, "very little metadata should be parsed");
+        assertEquals(5, metadata.names().length, "very little metadata should be parsed");
         assertEquals(0, handler.toString().length());
     }
 
