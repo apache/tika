@@ -31,6 +31,7 @@ import org.apache.tika.metadata.Property;
  * @deprecated Use the {@link AttributeMetadataHandler} and
  * {@link ElementMetadataHandler} classes instead
  */
+@Deprecated
 public class MetadataHandler extends DefaultHandler {
 
     private final Metadata metadata;
@@ -67,11 +68,13 @@ public class MetadataHandler extends DefaultHandler {
         }
     }
 
+    @Override
     public void endElement(String uri, String localName, String name) {
         addMetadata(buffer.toString());
         buffer.setLength(0);
     }
 
+    @Override
     public void startElement(String uri, String localName, String name, Attributes attributes) {
         for (int i = 0; i < attributes.getLength(); i++) {
             addMetadata(attributes.getValue(i));
@@ -79,6 +82,7 @@ public class MetadataHandler extends DefaultHandler {
     }
 
 
+    @Override
     public void characters(char[] ch, int start, int length) {
         buffer.append(ch, start, length);
     }
