@@ -115,6 +115,7 @@ public class IptcAnpaParser implements Parser {
     /**
      * @deprecated This method will be removed in Apache Tika 1.0.
      */
+    @Deprecated
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
