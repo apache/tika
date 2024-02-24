@@ -120,6 +120,7 @@ public class ParserDecorator implements Parser {
      *
      * @deprecated This has been replaced by {@link FallbackParser}
      */
+    @Deprecated
     public static final Parser withFallbacks(final Collection<? extends Parser> parsers,
                                              final Set<MediaType> types) {
         // Delegate to the new FallbackParser for now, until people upgrade

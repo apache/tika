@@ -177,6 +177,7 @@ public final class MimeTypes implements Detector, Serializable {
      * @return the Mime Content Type of the specified document name
      * @deprecated Use {@link Tika#detect(String)} instead
      */
+    @Deprecated
     public MimeType getMimeType(String name) {
         MimeType type = patterns.matches(name);
         if (type != null) {
@@ -200,6 +201,7 @@ public final class MimeTypes implements Detector, Serializable {
      * @throws IOException       if the file can't be read
      * @deprecated Use {@link Tika#detect(File)} instead
      */
+    @Deprecated
     public MimeType getMimeType(File file) throws MimeTypeException, IOException {
         return forName(new Tika(this).detect(file));
     }
@@ -369,7 +371,7 @@ public final class MimeTypes implements Detector, Serializable {
     /**
      * Returns the registered, normalised media type with the given name (or alias).
      *
-     * <p>Unlike {@link #forName(String)}, this function will <em>not<em> create a
+     * <p>Unlike {@link #forName(String)}, this function will <em>not</em> create a
      * new MimeType and register it. Instead, <code>null</code> will be returned if
      * there is no definition available for the given name.
      *

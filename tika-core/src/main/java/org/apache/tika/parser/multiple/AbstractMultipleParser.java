@@ -252,6 +252,7 @@ public abstract class AbstractMultipleParser implements Parser {
      * @deprecated The {@link ContentHandlerFactory} override is still experimental
      * and the method signature is subject to change before Tika 2.0
      */
+    @Deprecated
     public void parse(InputStream stream, ContentHandlerFactory handlers, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         parse(stream, null, handlers, metadata, context);
