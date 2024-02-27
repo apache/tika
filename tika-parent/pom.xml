@@ -433,7 +433,7 @@
     <uimaj.core.version>3.4.1</uimaj.core.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
-    <woodstox.core.version>6.6.0</woodstox.core.version>
+    <woodstox.core.version>6.6.1</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.3</zookeeper.version>
