@@ -295,7 +295,7 @@
           <plugin>
             <groupId>com.qmino</groupId>
             <artifactId>miredot-plugin</artifactId>
-            <version>2.4.3-Java11</version>
+            <version>2.4.4-Java11</version>
             <executions>
               <execution>
                 <goals>
