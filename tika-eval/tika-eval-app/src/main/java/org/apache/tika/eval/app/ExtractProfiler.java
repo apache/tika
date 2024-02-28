@@ -64,12 +64,15 @@ public class ExtractProfiler extends AbstractProfiler {
                     new ColInfo(Cols.MD5, Types.CHAR, 32), new ColInfo(Cols.LENGTH, Types.BIGINT),
                     new ColInfo(Cols.IS_EMBEDDED, Types.BOOLEAN),
                     new ColInfo(Cols.EMBEDDED_DEPTH, Types.INTEGER),
+                    new ColInfo(Cols.EMBEDDED_FILE_PATH, Types.VARCHAR, 1024),
+                    new ColInfo(Cols.ATTACHMENT_TYPE, Types.VARCHAR, 32),
                     new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12),
                     new ColInfo(Cols.MIME_ID, Types.INTEGER),
                     new ColInfo(Cols.ELAPSED_TIME_MILLIS, Types.INTEGER),
                     new ColInfo(Cols.NUM_ATTACHMENTS, Types.INTEGER),
                     new ColInfo(Cols.NUM_METADATA_VALUES, Types.INTEGER),
                     new ColInfo(Cols.NUM_PAGES, Types.INTEGER),
+                    new ColInfo(Cols.NUM_OCR_PAGES, Types.INTEGER),
                     new ColInfo(Cols.HAS_CONTENT, Types.BOOLEAN));
     public static TableInfo EMBEDDED_FILE_PATH_TABLE =
             new TableInfo("emb_file_names", new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"),
@@ -84,6 +87,7 @@ public class ExtractProfiler extends AbstractProfiler {
                     new ColInfo(Cols.NUM_COMMON_TOKENS, Types.INTEGER),
                     new ColInfo(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS, Types.INTEGER),
                     new ColInfo(Cols.NUM_ALPHABETIC_TOKENS, Types.INTEGER),
+                    new ColInfo(Cols.OOV, Types.DOUBLE),
                     new ColInfo(Cols.TOP_N_TOKENS, Types.VARCHAR, 1024),
                     new ColInfo(Cols.LANG_ID_1, Types.VARCHAR, 12),
                     new ColInfo(Cols.LANG_ID_PROB_1, Types.FLOAT),
