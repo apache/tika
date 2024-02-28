@@ -222,7 +222,7 @@ public class ChmCommons {
      */
     public static final int indexOfResetTableBlock(byte[] text, byte[] pattern)
             throws ChmParsingException {
-        return (indexOf(text, pattern)) - 4;
+        return (indexOfDataSpaceStorageElement(text, pattern)) - 4;
     }
 
     /**
@@ -233,7 +233,7 @@ public class ChmCommons {
      * @return an index, if nothing found returns -1
      * @throws ChmParsingException
      */
-    public static int indexOf(byte[] text, byte[] pattern) throws ChmParsingException {
+    public static int indexOfDataSpaceStorageElement(byte[] text, byte[] pattern) throws ChmParsingException {
         int[] next = null;
         int i = 0, j = -1;
 
@@ -281,15 +281,18 @@ public class ChmCommons {
 
     /**
      * Searches for some pattern in the directory listing entry list
+     * This requires that the entry name start with "::DataSpaceStorage"
+     * See TIKA-4204
      *
      * @param list
      * @param pattern
      * @return an index, if nothing found returns -1
      */
-    public static int indexOf(List<DirectoryListingEntry> list, String pattern) {
+    public static int indexOfDataSpaceStorageElement(List<DirectoryListingEntry> list, String pattern) {
         int place = 0;
         for (DirectoryListingEntry directoryListingEntry : list) {
-            if (directoryListingEntry.toString().contains(pattern)) {
+            if (directoryListingEntry.getName().startsWith("::DataSpace/Storage") &&
+                    directoryListingEntry.getName().contains(pattern)) {
                 return place;
             }
             ++place;
