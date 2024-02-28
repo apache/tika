@@ -16,6 +16,10 @@
  */
 package org.apache.tika.parser.pdf;
 
+/**
+ * This counts the number of pages that OCR would have been
+ * run or was run depending on the settings.
+ */
 public class OCRPageCounter {
 
     private int count;
