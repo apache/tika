@@ -119,7 +119,8 @@ public class ChmExtractor {
             getChmLzxcResetTable().parse(dir_chunk, getChmLzxcResetTable());
 
             setIndexOfContent(ChmCommons
-                    .indexOfDataSpaceStorageElement(getChmDirList().getDirectoryListingEntryList(), ChmConstants.CONTENT));
+                    .indexOfDataSpaceStorageElement(getChmDirList().getDirectoryListingEntryList(),
+                            ChmConstants.CONTENT));
             setLzxBlockOffset(
                     (getChmDirList().getDirectoryListingEntryList().get(getIndexOfContent())
                             .getOffset() + getChmItsfHeader().getDataOffset()));
