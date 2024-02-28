@@ -93,10 +93,8 @@
               </createDependencyReducedPom>
               <artifactSet>
                 <excludes>
-                  <exclude>org.apache.tika:tika-core:jar:</exclude>
                   <exclude>org.apache.tika:tika-serialization:jar:</exclude>
                   <exclude>org.apache.tika:tika-langdetect-opennlp:jar:</exclude>
-                  <exclude>commons-io:commons-io:jar:</exclude>
                   <exclude>commons-codec:commons-codec:jar:</exclude>
                   <exclude>org.apache.commons:commons-lang3:jar:</exclude>
                   <exclude>org.apache.commons:commons-math3:jar:</exclude>
