@@ -307,13 +307,13 @@
 
     <!-- dependency versions -->
     <asm.version>9.6</asm.version>
-    <aws.version>1.12.670</aws.version>
+    <aws.version>1.12.671</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
-    <azure.core.version>1.46.0</azure.core.version>
-    <azure.core.http.netty.version>1.14.0</azure.core.http.netty.version>
+    <azure.core.version>1.47.0</azure.core.version>
+    <azure.core.http.netty.version>1.14.1</azure.core.http.netty.version>
     <azure.storage.blob.version>12.25.2</azure.storage.blob.version>
     <!-- 7.0.0 needs java 17 -->
     <biz.aqute.version>6.4.1</biz.aqute.version>
@@ -392,7 +392,7 @@
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.10</mime4j.version>
-    <mockito.version>5.10.0</mockito.version>
+    <mockito.version>5.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.1.107.Final</netty.version>
     <oak.jackrabbit.version>1.60.0</oak.jackrabbit.version>
