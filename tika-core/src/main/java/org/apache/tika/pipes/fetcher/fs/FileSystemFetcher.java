@@ -43,8 +43,16 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.fetcher.fs.config.FileSystemFetcherConfig;
 
 public class FileSystemFetcher extends AbstractFetcher implements Initializable {
+    public FileSystemFetcher() {
+    }
+
+    public FileSystemFetcher(FileSystemFetcherConfig fileSystemFetcherConfig) {
+        setBasePath(fileSystemFetcherConfig.getBasePath());
+        setExtractFileSystemMetadata(fileSystemFetcherConfig.isExtractFileSystemMetadata());
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemFetcher.class);
 

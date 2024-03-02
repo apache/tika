@@ -45,6 +45,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.fetcher.azblob.config.AZBlobFetcherConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -58,6 +59,16 @@ import org.apache.tika.utils.StringUtils;
  * your requests, your fetchKey will be the complete SAS url pointing to the blob.
  */
 public class AZBlobFetcher extends AbstractFetcher implements Initializable {
+    public AZBlobFetcher() {
+
+    }
+    public AZBlobFetcher(AZBlobFetcherConfig azBlobFetcherConfig) {
+        setContainer(azBlobFetcherConfig.getContainer());
+        setEndpoint(azBlobFetcherConfig.getEndpoint());
+        setSasToken(azBlobFetcherConfig.getSasToken());
+        setSpoolToTemp(azBlobFetcherConfig.isSpoolToTemp());
+        setExtractUserMetadata(azBlobFetcherConfig.isExtractUserMetadata());
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AZBlobFetcher.class);
     private static String PREFIX = "az-blob";

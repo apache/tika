@@ -27,9 +27,5 @@
     </params>
   </pipes>
   <fetchers>
-    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
-      <name>file-system-fetcher-fabd51ef-51c1-447c-818c-96af18b2a893</name>
-      <basePath>C:\Users\nicho\Downloads\000</basePath>
-    </fetcher>
   </fetchers>
 </properties>
