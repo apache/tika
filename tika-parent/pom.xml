@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.34.0</google.cloud.version>
-    <aws.version>1.12.670</aws.version>
+    <aws.version>1.12.671</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -372,6 +372,7 @@
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.10</mime4j.version>
+    <!-- mockito >= 5 requires jdk11 -->
     <mockito.version>4.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <openjson.version>1.0.13</openjson.version>
@@ -491,12 +492,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.46.0</version>
+        <version>1.47.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.14.0</version>
+        <version>1.14.1</version>
         <exclusions>
           <exclusion>
             <groupId>io.netty</groupId>
