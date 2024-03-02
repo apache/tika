@@ -69,13 +69,39 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
+import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
  * Based on Apache httpclient
  */
 public class HttpFetcher extends AbstractFetcher implements Initializable, RangeFetcher {
+    public HttpFetcher() {
 
+    }
+    public HttpFetcher(HttpFetcherConfig httpFetcherConfig) {
+        setConnectTimeout(httpFetcherConfig.getConnectTimeout());
+        setRequestTimeout(httpFetcherConfig.getRequestTimeout());
+        setSocketTimeout(httpFetcherConfig.getSocketTimeout());
+        setOverallTimeout(httpFetcherConfig.getOverallTimeout());
+
+        setMaxErrMsgSize(httpFetcherConfig.getMaxErrMsgSize());
+        setMaxConnections(httpFetcherConfig.getMaxConnections());
+        setMaxConnectionsPerRoute(httpFetcherConfig.getMaxConnectionsPerRoute());
+        setMaxRedirects(httpFetcherConfig.getMaxRedirects());
+        setMaxSpoolSize(httpFetcherConfig.getMaxSpoolSize());
+
+        setHttpHeaders(httpFetcherConfig.getHeaders());
+        setUserAgent(httpFetcherConfig.getUserAgent());
+
+        setUserName(httpFetcherConfig.getUserName());
+        setPassword(httpFetcherConfig.getPassword());
+        setNtDomain(httpFetcherConfig.getNtDomain());
+        setAuthScheme(httpFetcherConfig.getAuthScheme());
+
+        setProxyHost(httpFetcherConfig.getProxyHost());
+        setProxyPort(httpFetcherConfig.getProxyPort());
+    }
     public static String HTTP_HEADER_PREFIX = "http-header:";
 
     public static String HTTP_FETCH_PREFIX = "http-connection:";

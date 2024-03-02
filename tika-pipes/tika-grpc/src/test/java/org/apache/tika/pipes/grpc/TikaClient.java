@@ -29,8 +29,8 @@ import io.grpc.StatusRuntimeException;
 
 import org.apache.tika.CreateFetcherReply;
 import org.apache.tika.CreateFetcherRequest;
-import org.apache.tika.FetchReply;
-import org.apache.tika.FetchRequest;
+import org.apache.tika.FetchAndParseReply;
+import org.apache.tika.FetchAndParseRequest;
 import org.apache.tika.TikaGrpc;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 
@@ -58,10 +58,10 @@ public class TikaClient {
     logger.info("Create fetcher: " + response.getMessage());
   }
 
-  public void fetch(FetchRequest fetchRequest) {
-    FetchReply fetchReply;
+  public void fetchAndParse(FetchAndParseRequest fetchAndParseRequest) {
+    FetchAndParseReply fetchReply;
     try {
-      fetchReply = blockingStub.fetch(fetchRequest);
+      fetchReply = blockingStub.fetchAndParse(fetchAndParseRequest);
     } catch (StatusRuntimeException e) {
       logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
       return;
@@ -96,7 +96,7 @@ public class TikaClient {
               .putParams("extractFileSystemMetadata", "true")
               .build());
 
-      client.fetch(FetchRequest.newBuilder()
+      client.fetchAndParse(FetchAndParseRequest.newBuilder()
                       .setFetcherName(fetcherId)
                       .setFetchKey("000164.pdf")
               .build());

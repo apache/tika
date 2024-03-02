@@ -40,12 +40,21 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.fetcher.gcs.config.GCSFetcherConfig;
 
 /**
  * Fetches files from google cloud storage. Must set projectId and bucket via the config.
  */
 public class GCSFetcher extends AbstractFetcher implements Initializable {
+    public GCSFetcher() {
 
+    }
+    public GCSFetcher(GCSFetcherConfig gcsFetcherConfig) {
+        setBucket(gcsFetcherConfig.getBucket());
+        setProjectId(gcsFetcherConfig.getProjectId());
+        setSpoolToTemp(gcsFetcherConfig.isSpoolToTemp());
+        setExtractUserMetadata(gcsFetcherConfig.isExtractUserMetadata());
+    }
     private static String PREFIX = "gcs";
     private static final Logger LOGGER = LoggerFactory.getLogger(GCSFetcher.class);
     private String projectId;

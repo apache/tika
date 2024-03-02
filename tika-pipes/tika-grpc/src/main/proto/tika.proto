@@ -21,8 +21,12 @@ option objc_class_prefix = "HLW";
 package tika;
 
 service Tika {
-  rpc CreateFetcher (CreateFetcherRequest) returns (CreateFetcherReply) {}
-  rpc Fetch (FetchRequest) returns (FetchReply) {}
+  rpc CreateFetcher(CreateFetcherRequest) returns (CreateFetcherReply) {}
+  rpc UpdateFetcher(UpdateFetcherRequest) returns (UpdateFetcherReply) {}
+  rpc GetFetcher(GetFetcherRequest) returns (GetFetcherReply) {}
+  rpc ListFetchers(ListFetchersRequest) returns (ListFetchersReply) {}
+  rpc DeleteFetcher(DeleteFetcherRequest) returns (DeleteFetcherReply) {}
+  rpc FetchAndParse(FetchAndParseRequest) returns (FetchAndParseReply) {}
 }
 
 message CreateFetcherRequest {
@@ -35,13 +39,50 @@ message CreateFetcherReply {
   string message = 1;
 }
 
-message FetchRequest {
+message UpdateFetcherRequest {
+  string name = 1;
+  string fetcherClass = 2;
+  map<string,string> params = 3;
+}
+
+message UpdateFetcherReply {
+  string message = 1;
+}
+
+message FetchAndParseRequest {
   string fetcherName = 1;
   string fetchKey = 2;
   map<string,string> metadata = 3;
 }
 
-message FetchReply {
+message FetchAndParseReply {
   string fetchKey = 1;
   map<string,string> fields = 2;
+}
+
+message DeleteFetcherRequest {
+  string name = 1;
+}
+
+message DeleteFetcherReply {
+  bool success = 1;
+}
+
+message GetFetcherRequest {
+  string name = 1;
+}
+
+message GetFetcherReply {
+  string name = 1;
+  string fetcherClass = 2;
+  map<string,string> params = 3;
+}
+
+message ListFetchersRequest {
+  int32 pageNumber = 1;
+  int32 numFetchersPerPage = 2;
+}
+
+message ListFetchersReply {
+  repeated GetFetcherReply getFetcherReply = 1;
 }
