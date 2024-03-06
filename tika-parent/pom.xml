@@ -306,8 +306,8 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.34.0</google.cloud.version>
-    <aws.version>1.12.672</aws.version>
+    <google.cloud.version>2.35.0</google.cloud.version>
+    <aws.version>1.12.673</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -398,7 +398,7 @@
     <spring.version>5.3.32</spring.version>
     <sqlite.version>3.45.1.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
-    <test.containers.version>1.19.6</test.containers.version>
+    <test.containers.version>1.19.7</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
     <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
