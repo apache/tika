@@ -449,7 +449,6 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 TemporaryResources tmp = new TemporaryResources();
                 try {
                     TikaInputStream tis = TikaInputStream.get(archive, tmp, entrydata);
-                    tis.getPath(); // fixes troubles with commons-compress 1.26.0
                     extractor.parseEmbedded(tis, xhtml, entrydata, true);
                 } finally {
                     tmp.dispose();
@@ -519,28 +518,6 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         public void close() throws IOException {
             file.close();
         }
-
-        @Override
-        public long skip(long n) throws IOException {
-            return in.skip(n);
-        }
-
-        @Override
-        public int available() throws IOException {
-            return in.available();
-        }
-
-        @Override
-        public synchronized void mark(int readlimit) {
-            in.mark(readlimit);
-        }
-
-        @Override
-        public boolean markSupported() {
-            return in.markSupported();
-        }
-        
-        
     }
 
     /**
