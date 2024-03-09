@@ -69,7 +69,7 @@ public class PipesServerTest extends TikaTest {
                 new FetchKey("fs", "mock.xml"),
                 new EmitKey("", ""));
         Fetcher fetcher = FetcherManager.load(tikaConfig).getFetcher();
-        List<Metadata> metadataList = pipesServer.parseIt(fetchEmitTuple, fetcher);
+        List<Metadata> metadataList = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
         assertEquals("5f3b924303e960ce35d7f705e91d3018dd110a9c3cef0546a91fe013d6dad6fd",
                 metadataList.get(0).get("X-TIKA:digest:SHA-256"));
     }

@@ -32,6 +32,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
+import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -53,6 +54,8 @@ public class JsonFetchEmitTuple {
     private static final String HANDLER_CONFIG_WRITE_LIMIT = "writeLimit";
     private static final String HANDLER_CONFIG_MAX_EMBEDDED_RESOURCES = "maxEmbeddedResources";
     private static final String HANDLER_CONFIG_PARSE_MODE = "parseMode";
+
+    private static final String EMBEDDED_DOCUMENT_BYTES_CONFIG = "embeddedDocumentBytesConfig";
 
 
     public static FetchEmitTuple fromJson(Reader reader) throws IOException {
@@ -84,6 +87,8 @@ public class JsonFetchEmitTuple {
                 FetchEmitTuple.DEFAULT_ON_PARSE_EXCEPTION;
         HandlerConfig handlerConfig = HandlerConfig.DEFAULT_HANDLER_CONFIG;
         Metadata metadata = new Metadata();
+        EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = EmbeddedDocumentBytesConfig.SKIP;
+
         while (token != JsonToken.END_OBJECT) {
             if (token != JsonToken.FIELD_NAME) {
                 throw new IOException("required field name, but see: " + token.name());
@@ -120,6 +125,8 @@ public class JsonFetchEmitTuple {
                 fetchRangeStart = getLong(jParser);
             } else if (FETCH_RANGE_END.equals(name)) {
                 fetchRangeEnd = getLong(jParser);
+            } else if (EMBEDDED_DOCUMENT_BYTES_CONFIG.equals(name)) {
+                embeddedDocumentBytesConfig = getEmbeddedDocumentBytesConfig(jParser);
             }
             token = jParser.nextToken();
         }
@@ -127,7 +134,39 @@ public class JsonFetchEmitTuple {
             id = fetchKey;
         }
         return new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey, fetchRangeStart, fetchRangeEnd),
-                new EmitKey(emitterName, emitKey), metadata, handlerConfig, onParseException);
+                new EmitKey(emitterName, emitKey), metadata, handlerConfig, onParseException,
+                embeddedDocumentBytesConfig);
+    }
+
+    private static EmbeddedDocumentBytesConfig getEmbeddedDocumentBytesConfig(JsonParser jParser) throws IOException {
+        JsonToken token = jParser.nextToken();
+        if (token != JsonToken.START_OBJECT) {
+            throw new IOException("required start object, but see: " + token.name());
+        }
+        String fieldName = jParser.nextFieldName();
+        EmbeddedDocumentBytesConfig config = new EmbeddedDocumentBytesConfig(true);
+        while (fieldName != null) {
+            switch (fieldName) {
+                //TODO: fill in more here!
+                case "extractEmbeddedDocumentBytes":
+                    boolean extract = jParser.nextBooleanValue();
+                    if (! extract) {
+                        return new EmbeddedDocumentBytesConfig(false);
+                    }
+                    break;
+                case "includeOriginal":
+                    config.setIncludeOriginal(jParser.nextBooleanValue());
+                    break;
+                case "emitter":
+                    config.setEmitter(jParser.nextTextValue());
+                    break;
+                default:
+                    throw new IllegalArgumentException("I regret I don't understand '" + fieldName +
+                            "' in the context of an embeddedDocumentBytesConfig");
+            }
+            fieldName = jParser.nextFieldName();
+        }
+        return EmbeddedDocumentBytesConfig.SKIP;
     }
 
     private static HandlerConfig getHandlerConfig(JsonParser jParser) throws IOException {
