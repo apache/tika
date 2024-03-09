@@ -364,7 +364,7 @@
     <jakarta.xml.soap.version>3.0.1</jakarta.xml.soap.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
-    <jaxb.runtime.version>4.0.4</jaxb.runtime.version>
+    <jaxb.runtime.version>4.0.5</jaxb.runtime.version>
     <jbig2.version>3.0.4</jbig2.version>
     <jcommander.version>1.82</jcommander.version>
     <jdom2.version>2.0.6.1</jdom2.version>
