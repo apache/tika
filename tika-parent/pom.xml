@@ -326,9 +326,7 @@
     <commons.cli.version>1.6.0</commons.cli.version>
     <commons.codec.version>1.16.1</commons.codec.version>
     <commons.collections4.version>4.4</commons.collections4.version>
-    <!-- TODO: after 1.26.0 test whether the changes made in PR 1605 are still needed
-         (PackageParser and IWorkPackageParser) -->
-    <commons.compress.version>1.26.0</commons.compress.version>
+    <commons.compress.version>1.26.1</commons.compress.version>
     <commons.csv.version>1.10.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
