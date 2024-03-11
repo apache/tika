@@ -353,7 +353,7 @@
     <icu4j.version>74.2</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.21.25</jackrabbit.version>
-    <jackson.version>2.16.1</jackson.version>
+    <jackson.version>2.16.2</jackson.version>
     <jackcess.version>4.0.5</jackcess.version>
     <jackcess.encrypt.version>4.0.2</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
