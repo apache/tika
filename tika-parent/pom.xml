@@ -337,7 +337,7 @@
     <commons.net.version>3.10.0</commons.net.version>
     <ctakes.version>4.0.0.1</ctakes.version>
     <cxf.version>4.0.3</cxf.version>
-    <ddplist.version>1.27</ddplist.version>
+    <ddplist.version>1.28</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
     <fastutil.version>8.5.13</fastutil.version>
