@@ -291,7 +291,7 @@
     <forbiddenapis.version>3.6</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
-    <maven.assembly.version>3.6.0</maven.assembly.version>
+    <maven.assembly.version>3.7.0</maven.assembly.version>
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.12.1</maven.compiler.plugin.version>
     <maven.javadoc.version>3.6.3</maven.javadoc.version>
@@ -333,7 +333,7 @@
     <ctakes.version>4.0.0.1</ctakes.version>
     <!-- can't update to 3.6.0, needs jdk11 ? -->
     <cxf.version>3.5.7</cxf.version>
-    <ddplist.version>1.27</ddplist.version>
+    <ddplist.version>1.28</ddplist.version>
     <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions > 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
@@ -345,7 +345,7 @@
     <imageio.version>1.4.0</imageio.version>
     <!-- jackrabbit 2.21.23 requires java 11 -->
     <jackrabbit.version>2.21.22</jackrabbit.version>
-    <jackson.version>2.16.1</jackson.version>
+    <jackson.version>2.16.2</jackson.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
     <javax.rest.version>2.1.1</javax.rest.version>
