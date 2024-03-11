@@ -383,7 +383,7 @@
     <jwarc.version>0.29.0</jwarc.version>
     <kafka.version>3.7.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.23.0</log4j2.version>
+    <log4j2.version>2.23.1</log4j2.version>
     <lucene.version>9.10.0</lucene.version>
     <maven.plugin.annotations.version>3.11.0</maven.plugin.annotations.version>
     <mchange.version>0.3.0</mchange.version>
