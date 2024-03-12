@@ -22,6 +22,8 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
@@ -106,8 +108,12 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
                     newStream.setOpenContainer(container);
                 }
             }
-            DELEGATING_PARSER.parse(newStream, new EmbeddedContentHandler(new BodyContentHandler(handler)),
-                    metadata, context);
+            EmbeddedDocumentByteStore store = context.get(EmbeddedDocumentByteStore.class);
+            if (store != null) {
+                parseWithBytes(newStream, handler, metadata);
+            } else {
+                parse(newStream, handler, metadata);
+            }
         } catch (EncryptedDocumentException ede) {
             recordException(ede, context);
         } catch (CorruptedFileException e) {
@@ -122,6 +128,37 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             handler.endElement(XHTML, "div", "div");
         }
     }
+
+    private void parseWithBytes(TikaInputStream stream, ContentHandler handler, Metadata metadata)
+            throws TikaException, IOException, SAXException {
+        Path p = stream.getPath();
+        try {
+            parse(stream, handler, metadata);
+        } finally {
+            storeEmbeddedBytes(p, metadata);
+        }
+    }
+
+    private void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata)
+            throws TikaException, IOException, SAXException {
+        DELEGATING_PARSER.parse(stream,
+                new EmbeddedContentHandler(new BodyContentHandler(handler)),
+                metadata, context);
+    }
+
+    private void storeEmbeddedBytes(Path p, Metadata metadata) {
+        EmbeddedDocumentByteStore embeddedDocumentByteStore =
+                context.get(EmbeddedDocumentByteStore.class);
+        int id = metadata.getInt(TikaCoreProperties.EMBEDDED_ID);
+
+        try {
+            embeddedDocumentByteStore.add(id, metadata, Files.readAllBytes(p));
+        } catch (IOException e) {
+            e.printStackTrace();
+            //log, or better, store embdocstore exception
+        }
+    }
+
 
     private void recordException(Exception e, ParseContext context) {
         ParseRecord record = context.get(ParseRecord.class);

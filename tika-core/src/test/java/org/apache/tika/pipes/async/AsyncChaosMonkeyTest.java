@@ -40,7 +40,7 @@ import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
 import org.apache.tika.utils.ProcessUtils;
 
-public class AsyncProcessorTest {
+public class AsyncChaosMonkeyTest {
 
     private final String OOM = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
             "<throw class=\"java.lang.OutOfMemoryError\">oom message</throw>\n</mock>";

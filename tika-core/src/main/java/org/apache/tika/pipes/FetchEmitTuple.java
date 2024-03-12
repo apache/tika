@@ -20,8 +20,8 @@ import java.io.Serializable;
 import java.util.Objects;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.fetcher.FetchKey;
 
 public class FetchEmitTuple implements Serializable {

@@ -30,30 +30,31 @@ public abstract class AbstractEmbeddedDocumentByteStore implements EmbeddedDocum
 
     List<Integer> ids = new ArrayList<>();
 
-    public String getFetchKey(String containerFetchKey, int embeddedId,
-                              EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig,
-                              Metadata metadata) {
+    public String getEmitKey(String containerEmitKey, int embeddedId,
+                             EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig,
+                             Metadata metadata) {
         String embeddedIdString = embeddedDocumentBytesConfig.getZeroPadName() > 0 ?
                 StringUtils.leftPad(Integer.toString(embeddedId),
                         embeddedDocumentBytesConfig.getZeroPadName(), "0") :
                 Integer.toString(embeddedId);
 
-        StringBuilder fetchKey = new StringBuilder(containerFetchKey)
-                .append(embeddedDocumentBytesConfig.getEmbeddedIdPrefix())
+
+        StringBuilder emitKey = new StringBuilder(containerEmitKey)
+                .append("/").append(containerEmitKey).append(embeddedDocumentBytesConfig.getEmbeddedIdPrefix())
                 .append(embeddedIdString);
 
         if (embeddedDocumentBytesConfig.getSuffixStrategy().equals(
                 EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.EXISTING)) {
             String fName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             String suffix = FilenameUtils.getSuffixFromPath(fName);
-            fetchKey.append(suffix);
+            emitKey.append(suffix);
         }
-        return fetchKey.toString();
+        return emitKey.toString();
     }
 
     @Override
     public void add(int id, Metadata metadata, byte[] bytes) throws IOException {
-           ids.add(id);
+        ids.add(id);
     }
 
     @Override

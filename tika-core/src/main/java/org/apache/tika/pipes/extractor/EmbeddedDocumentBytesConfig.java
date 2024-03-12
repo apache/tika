@@ -16,12 +16,32 @@
  */
 package org.apache.tika.pipes.extractor;
 
-public class EmbeddedDocumentBytesConfig {
+import java.io.Serializable;
+import java.util.Objects;
+
+public class EmbeddedDocumentBytesConfig implements Serializable {
+
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = -3861669115439125268L;
+
 
     public static EmbeddedDocumentBytesConfig SKIP = new EmbeddedDocumentBytesConfig(false);
 
     public enum SUFFIX_STRATEGY {
-            NONE, EXISTING, DETECTED
+            NONE, EXISTING, DETECTED;
+
+        public static SUFFIX_STRATEGY parse(String s) {
+            if (s.equalsIgnoreCase("none")) {
+                return NONE;
+            } else if (s.equalsIgnoreCase("existing")) {
+                return EXISTING;
+            } else if (s.equalsIgnoreCase("detected")) {
+                return DETECTED;
+            }
+            throw new IllegalArgumentException("can't parse " + s);
+        }
     }
     private final boolean extractEmbeddedDocumentBytes;
     //TODO -- add these at some point
@@ -89,5 +109,54 @@ public class EmbeddedDocumentBytesConfig {
 
     public void setIncludeOriginal(boolean includeOriginal) {
         this.includeOriginal = includeOriginal;
+    }
+
+    @Override
+    public String toString() {
+        return "EmbeddedDocumentBytesConfig{" + "extractEmbeddedDocumentBytes=" +
+                extractEmbeddedDocumentBytes + ", zeroPadName=" + zeroPadName +
+                ", suffixStrategy=" + suffixStrategy + ", embeddedIdPrefix='" + embeddedIdPrefix +
+                '\'' + ", emitter='" + emitter + '\'' + ", includeOriginal=" + includeOriginal +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        EmbeddedDocumentBytesConfig that = (EmbeddedDocumentBytesConfig) o;
+
+        if (extractEmbeddedDocumentBytes != that.extractEmbeddedDocumentBytes) {
+            return false;
+        }
+        if (zeroPadName != that.zeroPadName) {
+            return false;
+        }
+        if (includeOriginal != that.includeOriginal) {
+            return false;
+        }
+        if (suffixStrategy != that.suffixStrategy) {
+            return false;
+        }
+        if (!Objects.equals(embeddedIdPrefix, that.embeddedIdPrefix)) {
+            return false;
+        }
+        return Objects.equals(emitter, that.emitter);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (extractEmbeddedDocumentBytes ? 1 : 0);
+        result = 31 * result + zeroPadName;
+        result = 31 * result + (suffixStrategy != null ? suffixStrategy.hashCode() : 0);
+        result = 31 * result + (embeddedIdPrefix != null ? embeddedIdPrefix.hashCode() : 0);
+        result = 31 * result + (emitter != null ? emitter.hashCode() : 0);
+        result = 31 * result + (includeOriginal ? 1 : 0);
+        return result;
     }
 }
