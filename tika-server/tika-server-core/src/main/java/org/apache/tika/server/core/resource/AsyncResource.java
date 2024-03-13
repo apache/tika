@@ -112,6 +112,7 @@ public class AsyncResource {
         }
         Instant start = Instant.now();
         boolean offered = asyncProcessor.offer(request.getTuples(), maxQueuePauseMs);
+        asyncProcessor.getCapacity();
         if (offered) {
             return ok(request.getTuples().size());
         } else {
@@ -130,6 +131,7 @@ public class AsyncResource {
         Map<String, Object> map = new HashMap<>();
         map.put("status", "throttled");
         map.put("msg", "not able to receive request of size " + requestSize + " at this time");
+        map.put("capacity", asyncProcessor.getCapacity());
         return map;
     }
 
