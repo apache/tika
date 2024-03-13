@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +34,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -46,7 +46,6 @@ import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.async.AsyncProcessor;
 import org.apache.tika.pipes.emitter.EmitData;
-import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.fetcher.FetchKey;
 
@@ -107,12 +106,18 @@ public class AsyncResource {
                 return badFetcher(t.getFetchKey());
             }
             if (!emitterManager.getSupported().contains(t.getEmitKey().getEmitterName())) {
-                return badEmitter(t.getEmitKey());
+                return badEmitter(t.getEmitKey().getEmitterName());
+            }
+            if (t.getEmbeddedDocumentBytesConfig().isExtractEmbeddedDocumentBytes() &&
+                    !StringUtils.isAllBlank(t.getEmbeddedDocumentBytesConfig().getEmitter())) {
+                String bytesEmitter = t.getEmbeddedDocumentBytesConfig().getEmitter();
+                if (!emitterManager.getSupported().contains(bytesEmitter)) {
+                    return badEmitter(bytesEmitter);
+                }
             }
         }
-        Instant start = Instant.now();
+        //Instant start = Instant.now();
         boolean offered = asyncProcessor.offer(request.getTuples(), maxQueuePauseMs);
-        asyncProcessor.getCapacity();
         if (offered) {
             return ok(request.getTuples().size());
         } else {
@@ -135,8 +140,8 @@ public class AsyncResource {
         return map;
     }
 
-    private Map<String, Object> badEmitter(EmitKey emitKey) {
-        throw new BadRequestException("can't find emitter for " + emitKey.getEmitterName());
+    private Map<String, Object> badEmitter(String emitterName) {
+        throw new BadRequestException("can't find emitter for " + emitterName);
     }
 
     private Map<String, Object> badFetcher(FetchKey fetchKey) {
