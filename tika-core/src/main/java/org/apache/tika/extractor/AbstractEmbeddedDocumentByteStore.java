@@ -19,6 +19,7 @@ package org.apache.tika.extractor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.metadata.Metadata;
@@ -40,13 +41,16 @@ public abstract class AbstractEmbeddedDocumentByteStore implements EmbeddedDocum
 
 
         StringBuilder emitKey = new StringBuilder(containerEmitKey)
-                .append("/").append(containerEmitKey).append(embeddedDocumentBytesConfig.getEmbeddedIdPrefix())
+                .append("/")
+                .append(FilenameUtils.getName(containerEmitKey))
+                .append(embeddedDocumentBytesConfig.getEmbeddedIdPrefix())
                 .append(embeddedIdString);
 
         if (embeddedDocumentBytesConfig.getSuffixStrategy().equals(
                 EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.EXISTING)) {
             String fName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             String suffix = FilenameUtils.getSuffixFromPath(fName);
+            suffix = suffix.toLowerCase(Locale.US);
             emitKey.append(suffix);
         }
         return emitKey.toString();
