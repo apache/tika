@@ -291,9 +291,9 @@
     <forbiddenapis.version>3.6</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
-    <maven.assembly.version>3.7.0</maven.assembly.version>
+    <maven.assembly.version>3.7.1</maven.assembly.version>
     <maven.bundle.version>5.1.9</maven.bundle.version>
-    <maven.compiler.plugin.version>3.12.1</maven.compiler.plugin.version>
+    <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
     <maven.javadoc.version>3.6.3</maven.javadoc.version>
     <maven.jar.version>3.3.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.36.0</google.cloud.version>
-    <aws.version>1.12.681</aws.version>
+    <aws.version>1.12.682</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -332,7 +332,7 @@
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <ctakes.version>4.0.0.1</ctakes.version>
     <!-- can't update to 3.6.0, needs jdk11 ? -->
-    <cxf.version>3.5.7</cxf.version>
+    <cxf.version>3.5.8</cxf.version>
     <ddplist.version>1.28</ddplist.version>
     <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions > 0.4.0 require java > 8 -->
@@ -477,7 +477,7 @@
         <groupId>org.apache.zookeeper</groupId>
         <artifactId>zookeeper</artifactId>
         <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
-        <version>3.8.3</version>
+        <version>3.8.4</version>
       </dependency>
       <dependency>
         <groupId>com.amazonaws</groupId>
