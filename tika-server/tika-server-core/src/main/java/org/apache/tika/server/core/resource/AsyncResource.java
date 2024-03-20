@@ -45,6 +45,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.async.AsyncProcessor;
+import org.apache.tika.pipes.async.OfferLargerThanQueueSize;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.fetcher.FetchKey;
@@ -117,10 +118,14 @@ public class AsyncResource {
             }
         }
         //Instant start = Instant.now();
-        boolean offered = asyncProcessor.offer(request.getTuples(), maxQueuePauseMs);
-        if (offered) {
-            return ok(request.getTuples().size());
-        } else {
+        try {
+            boolean offered = asyncProcessor.offer(request.getTuples(), maxQueuePauseMs);
+            if (offered) {
+                return ok(request.getTuples().size());
+            } else {
+                return throttle(request.getTuples().size());
+            }
+        } catch (OfferLargerThanQueueSize e) {
             return throttle(request.getTuples().size());
         }
     }
