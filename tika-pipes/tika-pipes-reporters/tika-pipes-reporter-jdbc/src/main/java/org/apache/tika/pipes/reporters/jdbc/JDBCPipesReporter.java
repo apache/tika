@@ -322,7 +322,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                 String sql = "drop table if exists " + TABLE_NAME;
                 st.execute(sql);
                 sql = "create table " + TABLE_NAME + " (id varchar(1024), status varchar(32), " +
-                        "timestamp timestamptz)";
+                        "timestamp timestamp with time zone)";
                 st.execute(sql);
             }
         }
