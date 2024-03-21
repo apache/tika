@@ -344,7 +344,8 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
         for (String relation : new String[]{XSLFRelation.VML_DRAWING.getRelation(),
                 XSLFRelation.SLIDE_LAYOUT.getRelation(), XSLFRelation.NOTES_MASTER.getRelation(),
-                XSLFRelation.NOTES.getRelation()}) {
+                XSLFRelation.NOTES.getRelation(), XSLFRelation.CHART.getRelation(),
+                XSLFRelation.DIAGRAM_DRAWING.getRelation()}) {
             try {
                 for (PackageRelationship packageRelationship : slidePart
                         .getRelationshipsByType(relation)) {
