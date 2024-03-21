@@ -528,7 +528,11 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         hasTesseract = hasTesseract();
-        hasImageMagick = hasImageMagick();
+        if (isEnableImagePreprocessing()) {
+            hasImageMagick = hasImageMagick();
+        } else {
+            hasImageMagick = false;
+        }
         if (preloadLangs) {
             preloadLangs();
             if (!StringUtils.isBlank(defaultConfig.getLanguage())) {
