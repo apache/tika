@@ -49,7 +49,7 @@ public class TikaVersionTest extends CXFTestBase {
                 WebClient.create(endPoint + VERSION_PATH).type("text/plain").accept("text/plain")
                         .get();
 
-        assertEquals(new Tika().toString(),
+        assertEquals(Tika.getString(),
                 getStringFromInputStream((InputStream) response.getEntity()));
     }
 }

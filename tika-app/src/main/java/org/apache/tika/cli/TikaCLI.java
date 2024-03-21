@@ -657,7 +657,7 @@ public class TikaCLI {
     }
 
     private void version() {
-        System.out.println(new Tika().toString());
+        System.out.println(Tika.getString());
     }
 
     private boolean testForHelp(String[] args) {

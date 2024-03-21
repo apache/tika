@@ -123,7 +123,7 @@ public class TikaServerProcess {
     }
 
     public static void main(String[] args) throws Exception {
-        LOG.info("Starting {} server", new Tika());
+        LOG.info("Starting {} server", Tika.getString());
         try {
             Options options = getOptions();
             CommandLineParser cliParser = new DefaultParser();
