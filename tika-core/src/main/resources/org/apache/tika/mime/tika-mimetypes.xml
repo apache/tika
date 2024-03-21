@@ -6702,8 +6702,16 @@
     <acronym>PBM</acronym>
     <_comment>Portable Bit Map</_comment>
     <magic priority="50">
-      <match value="P1" type="string" offset="0"/>
-      <match value="P4" type="string" offset="0"/>
+      <match value="P1" type="string" offset="0">
+        <match value="\x0a" type="string" offset="2"/>
+        <match value="\x0d" type="string" offset="2"/>
+        <match value="\x20" type="string" offset="2"/>
+      </match>
+      <match value="P4" type="regex" offset="0">
+        <match value="\x0a" type="string" offset="2"/>
+        <match value="\x0d" type="string" offset="2"/>
+        <match value="\x20" type="string" offset="2"/>
+      </match>
     </magic>
     <glob pattern="*.pbm"/>
   </mime-type>
@@ -6713,9 +6721,16 @@
     <acronym>PGM</acronym>
     <_comment>Portable Graymap Graphic</_comment>
     <magic priority="50">
-      <match value="P2" type="string" offset="0"/>
-      <match value="P5" type="string" offset="0"/>
-      <match offset="0" type="string" value="\x50\x35\x0a"/>
+      <match value="P2" type="string" offset="0">
+        <match value="\x0a" type="string" offset="2"/>
+        <match value="\x0d" type="string" offset="2"/>
+        <match value="\x20" type="string" offset="2"/>
+      </match>
+      <match value="P5" type="regex" offset="0">
+        <match value="\x0a" type="string" offset="2"/>
+        <match value="\x0d" type="string" offset="2"/>
+        <match value="\x20" type="string" offset="2"/>
+      </match>
     </magic>
     <glob pattern="*.pgm"/>
   </mime-type>
@@ -6725,13 +6740,33 @@
     <acronym>PXM</acronym>
     <_comment>UNIX Portable Bitmap Graphic</_comment>
     <magic priority="50">
-      <match value="P3" type="string" offset="0"/>
-      <match value="P6" type="string" offset="0"/>
-      <match value="P7" type="string" offset="0"/>
-       <match offset="0" type="string" value="\x50\x34\x0a"/>
+      <match value="P3" type="string" offset="0">
+        <match value="\x0a" type="string" offset="2"/>
+        <match value="\x0d" type="string" offset="2"/>
+        <match value="\x20" type="string" offset="2"/>
+      </match>
+      <match value="P6" type="regex" offset="0">
+        <match value="\x0a" type="string" offset="2"/>
+        <match value="\x0d" type="string" offset="2"/>
+        <match value="\x20" type="string" offset="2"/>
+      </match>
     </magic>
     <glob pattern="*.ppm"/>
   </mime-type>
+  <mime-type type="image/x-portable-arbitrarymap">
+    <sub-class-of type="image/x-portable-anymap"/>
+    <acronym>PAM</acronym>
+    <_comment>UNIX Portable Bitmap Graphic Arbitrary Map</_comment>
+    <magic priority="50">
+      <match value="P7" type="string" offset="0">
+        <match value="\x0a" type="string" offset="2"/>
+        <match value="\x0d" type="string" offset="2"/>
+        <match value="\x20" type="string" offset="2"/>
+      </match>
+    </magic>
+    <glob pattern="*.pam"/>
+  </mime-type>
+
 
   <mime-type type="image/x-raw-adobe">
     <acronym>DNG</acronym>

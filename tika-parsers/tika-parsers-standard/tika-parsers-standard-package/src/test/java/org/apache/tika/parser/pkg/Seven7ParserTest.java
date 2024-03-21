@@ -144,7 +144,8 @@ public class Seven7ParserTest extends AbstractPkgTest {
             ParseRecord parserRecord = recursingContext.get(ParseRecord.class);
             List<Exception> exceptions = parserRecord.getExceptions();
             if (!exceptions.isEmpty()) {
-                System.out.println("Exceptions:");
+                // should't happen, but if it does, we'll know more earlier.
+                System.err.println("Exceptions:");
                 exceptions.forEach(e -> e.printStackTrace());
             }
 

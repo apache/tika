@@ -533,7 +533,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     void doOCROnCurrentPage(PDPage pdPage, PDFParserConfig.OCR_STRATEGY ocrStrategy)
             throws IOException, TikaException, SAXException {
         if (ocrStrategy.equals(NO_OCR)) {
+            //I don't think this is reachable?
             return;
+        }
+        //count the number of times that OCR would have been called
+        OCRPageCounter c = context.get(OCRPageCounter.class);
+        if (c != null) {
+            c.increment();
         }
         MediaType ocrImageMediaType = MediaType.image("ocr-" + config.getOcrImageFormatName());
         if (!ocrParser.getSupportedTypes(context).contains(ocrImageMediaType)) {

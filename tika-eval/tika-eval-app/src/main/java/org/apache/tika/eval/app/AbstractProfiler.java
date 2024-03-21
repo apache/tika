@@ -71,6 +71,7 @@ import org.apache.tika.eval.core.util.EvalExceptionUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -387,6 +388,10 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         if (nPages != null) {
             data.put(Cols.NUM_PAGES, Integer.toString(nPages));
         }
+        Integer nOCRPages = m.getInt(PDF.OCR_PAGE_COUNT);
+        if (nOCRPages != null) {
+            data.put(Cols.NUM_OCR_PAGES, Integer.toString(nOCRPages));
+        }
 
         //if the outer wrapper document
         if (i == 0) {
@@ -395,9 +400,16 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             data.put(Cols.EMBEDDED_DEPTH, "0");
         } else {
             data.put(Cols.IS_EMBEDDED, TRUE);
-            data.put(Cols.FILE_NAME, getFileName(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH)));
+            String embeddedFilePath = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
+            if (! StringUtils.isBlank(embeddedFilePath)) {
+                data.put(Cols.FILE_NAME, getFileName(m.get(embeddedFilePath)));
+                data.put(Cols.EMBEDDED_FILE_PATH, embeddedFilePath);
+            }
             if (!StringUtils.isBlank(m.get(TikaCoreProperties.EMBEDDED_DEPTH))) {
                 data.put(Cols.EMBEDDED_DEPTH, m.get(TikaCoreProperties.EMBEDDED_DEPTH));
+            }
+            if (!StringUtils.isBlank(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE))) {
+                data.put(Cols.ATTACHMENT_TYPE, m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
             }
         }
         String ext = FilenameUtils.getExtension(data.get(Cols.FILE_NAME));
@@ -486,6 +498,8 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
                     Integer.toString(commonTokenResult.getUniqueAlphabeticTokens()));
             data.put(Cols.NUM_ALPHABETIC_TOKENS,
                     Integer.toString(commonTokenResult.getAlphabeticTokens()));
+            double oov = commonTokenResult.getAlphabeticTokens() > 0 ? commonTokenResult.getOOV() : -1.0;
+            data.put(Cols.OOV, Double.toString(oov));
         }
         TokenCounts tokenCounts = (TokenCounts) textStats.get(BasicTokenCountStatsCalculator.class);
         if (tokenCounts != null) {
@@ -497,6 +511,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             data.put(Cols.TOKEN_ENTROPY_RATE,
                     Double.toString((Double) textStats.get(TokenEntropy.class)));
         }
+
 
         SummaryStatistics summStats = (SummaryStatistics) textStats.get(TokenLengths.class);
         if (summStats != null) {

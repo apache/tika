@@ -1432,6 +1432,14 @@ public class PDFParserTest extends TikaTest {
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
 
     }
+    @Test
+    public void testDefaultPDFOCR() throws Exception {
+        //test that even with no ocr -- there is no tesseract ocr parser in this module --
+        // AUTO mode would have returned one page that would have been OCR'd had there been OCR.
+        List<Metadata> metadataList = getRecursiveMetadata("testOCR.pdf");
+        assertEquals(1, metadataList.size());
+        assertEquals(1, metadataList.get(0).getInt(PDF.OCR_PAGE_COUNT));
+    }
     /**
      * TODO -- need to test signature extraction
      */

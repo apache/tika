@@ -30,6 +30,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
@@ -74,7 +75,15 @@ public class TesseractOCRParserTest extends TikaTest {
     }
 
     @Test
+    public void testDefaultPDFOCR() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testOCR.pdf");
+        assertEquals(1, metadataList.size());
+        assertEquals(1, metadataList.get(0).getInt(PDF.OCR_PAGE_COUNT));
+    }
+
+    @Test
     public void testPDFOCR() throws Exception {
+        assumeTrue(canRun(), "can run OCR");
         String resource = "testOCR.pdf";
         String[] nonOCRContains = new String[0];
         testBasicOCR(resource, nonOCRContains, 2);
