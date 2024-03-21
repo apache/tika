@@ -146,6 +146,8 @@
             <_runsystempackages>com.sun.xml.bind.marshaller, com.sun.xml.internal.bind.marshaller</_runsystempackages>
             <!--  The file below and the _include entry may be removed once Tika targets OpenJDK 9.0 or above -->
             <_include>src/main/resources/META-INF/MANIFEST.MF</_include>
+            <!-- need to disable annotation scanning because of log4j2 -->
+            <_bundleannotations></_bundleannotations>
             <Bundle-Activator>
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
