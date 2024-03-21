@@ -546,6 +546,7 @@ public class PipesServer implements Runnable {
             return parseContext;
         }
 
+        //TODO: clean this up.
         if (!StringUtils.isBlank(fetchEmitTuple.getEmbeddedDocumentBytesConfig().getEmitter())) {
             parseContext.set(EmbeddedDocumentByteStore.class,
                     new EmbeddedDocumentEmitterStore(fetchEmitTuple.getEmitKey(),
@@ -678,8 +679,8 @@ public class PipesServer implements Runnable {
                 t.getEmbeddedDocumentBytesConfig().isIncludeOriginal()) {
             EmbeddedDocumentByteStore embeddedDocumentByteStore =
                     parseContext.get(EmbeddedDocumentByteStore.class);
-            try {
-                embeddedDocumentByteStore.add(0, metadata, Files.readAllBytes(tis.getPath()));
+            try (InputStream is = Files.newInputStream(tis.getPath())) {
+                embeddedDocumentByteStore.add(0, metadata, is);
             } catch (IOException e) {
                 LOG.warn("problem reading source file into embedded document byte store", e);
             }

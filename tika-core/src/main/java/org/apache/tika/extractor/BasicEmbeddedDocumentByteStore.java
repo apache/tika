@@ -17,8 +17,12 @@
 package org.apache.tika.extractor;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedBufferedInputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
@@ -30,13 +34,15 @@ public class BasicEmbeddedDocumentByteStore extends AbstractEmbeddedDocumentByte
     }
     //this won't scale, but let's start fully in memory for now;
     Map<Integer, byte[]> docBytes = new HashMap<>();
-    public void add(int id, Metadata metadata, byte[] bytes) throws IOException {
-        super.add(id, metadata, bytes);
-        docBytes.put(id, bytes);
+    @Override
+    public void add(int id, Metadata metadata, InputStream is) throws IOException {
+        super.add(id, metadata, is);
+        docBytes.put(id, IOUtils.toByteArray(is));
     }
 
-    public byte[] getDocument(int id) {
-        return docBytes.get(id);
+    @Override
+    public InputStream getDocument(int id) throws IOException {
+        return new UnsynchronizedBufferedInputStream.Builder().setByteArray(docBytes.get(id)).get();
     }
 
     @Override

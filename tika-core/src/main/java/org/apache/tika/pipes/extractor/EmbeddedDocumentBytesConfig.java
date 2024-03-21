@@ -44,11 +44,7 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
         }
     }
     private final boolean extractEmbeddedDocumentBytes;
-    //TODO -- add these at some point
-    /*
-        private Set<String> includeMimeTypes = new HashSet<>();
-        private Set<String> excludeMimeTypes = new HashSet<>();
-    */
+
     private int zeroPadName = 0;
 
     private SUFFIX_STRATEGY suffixStrategy = SUFFIX_STRATEGY.NONE;

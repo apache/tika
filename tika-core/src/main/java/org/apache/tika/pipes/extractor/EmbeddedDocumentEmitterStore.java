@@ -18,9 +18,9 @@ package org.apache.tika.pipes.extractor;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.apache.commons.io.IOExceptionWithCause;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.AbstractEmbeddedDocumentByteStore;
@@ -53,20 +53,19 @@ public class EmbeddedDocumentEmitterStore extends AbstractEmbeddedDocumentByteSt
     }
 
     @Override
-    public void add(int id, Metadata metadata, byte[] bytes) throws IOException {
+    public void add(int id, Metadata metadata, InputStream inputStream) throws IOException {
         //intentionally do not call super.add, because we want the ids list to be empty
         String emitKey = getEmitKey(containerEmitKey.getEmitKey(),
                 id, embeddedDocumentBytesConfig, metadata);
-
         try {
-            emitter.emit(emitKey, new UnsynchronizedByteArrayInputStream(bytes), METADATA);
+            emitter.emit(emitKey, inputStream, METADATA);
         } catch (TikaEmitterException e) {
             throw new IOExceptionWithCause(e);
         }
     }
 
     @Override
-    public byte[] getDocument(int id) {
+    public InputStream getDocument(int id) {
         throw new UnsupportedOperationException("this is emit only.");
     }
 

@@ -17,6 +17,7 @@
 package org.apache.tika.extractor;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -57,7 +58,7 @@ public abstract class AbstractEmbeddedDocumentByteStore implements EmbeddedDocum
     }
 
     @Override
-    public void add(int id, Metadata metadata, byte[] bytes) throws IOException {
+    public void add(int id, Metadata metadata, InputStream bytes) throws IOException {
         ids.add(id);
     }
 

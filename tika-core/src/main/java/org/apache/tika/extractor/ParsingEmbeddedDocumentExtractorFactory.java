@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
@@ -33,6 +34,7 @@ public class ParsingEmbeddedDocumentExtractorFactory implements EmbeddedDocument
     private Set<String> embeddedBytesIncludeEmbeddedResourceTypes = Collections.EMPTY_SET;
     private Set<String> embeddedBytesExcludeEmbeddedResourceTypes = Collections.EMPTY_SET;
 
+    private long maxEmbeddedBytesForExtraction = 10l * 1024l * 1024l * 1024l;//10GB
     @Field
     public void setWriteFileNameToContent(boolean writeFileNameToContent) {
         this.writeFileNameToContent = writeFileNameToContent;
@@ -65,14 +67,32 @@ public class ParsingEmbeddedDocumentExtractorFactory implements EmbeddedDocument
 
     }
 
+    /**
+     * Total number of bytes to write out. A good zip bomb may contain petabytes
+     * compressed into a few kb. Make sure that you can't fill up a disk!
+     *
+     * This does not include the container file in the count of bytes written out.
+     * This only counts the lengths of the embedded files.
+     *
+     * @param maxEmbeddedBytesForExtraction
+     */
+    @Field
+    public void setMaxEmbeddedBytesForExtraction(long maxEmbeddedBytesForExtraction) throws TikaConfigException {
+        if (maxEmbeddedBytesForExtraction < 0) {
+            throw new TikaConfigException("maxEmbeddedBytesForExtraction must be >= 0");
+        }
+        this.maxEmbeddedBytesForExtraction = maxEmbeddedBytesForExtraction;
+    }
 
     @Override
     public EmbeddedDocumentExtractor newInstance(Metadata metadata, ParseContext parseContext) {
-        ParsingEmbeddedDocumentExtractor ex = new ParsingEmbeddedDocumentExtractor(parseContext);
+        ParsingEmbeddedDocumentExtractor ex =
+                new ParsingEmbeddedDocumentExtractor(parseContext, maxEmbeddedBytesForExtraction);
         ex.setWriteFileNameToContent(writeFileNameToContent);
         ex.setEmbeddedBytesSelector(createEmbeddedBytesSelector());
         return ex;
     }
+
 
     private EmbeddedBytesSelector createEmbeddedBytesSelector() {
         if (embeddedBytesIncludeMimeTypes.size() == 0 &&
