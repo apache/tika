@@ -26,6 +26,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -43,6 +45,7 @@ import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
 
 /**
  * Helper class for parsers of package archives or other compound document
@@ -52,6 +55,9 @@ import org.apache.tika.sax.EmbeddedContentHandler;
  */
 public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
 
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(ParsingEmbeddedDocumentExtractor.class);
+
     private static final File ABSTRACT_PATH = new File("");
 
     private static final Parser DELEGATING_PARSER = new DelegatingParser();
@@ -59,6 +65,8 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
     private boolean writeFileNameToContent = true;
 
     private final ParseContext context;
+
+    private EmbeddedBytesSelector embeddedBytesSelector = EmbeddedBytesSelector.ACCEPT_ALL;
 
     public ParsingEmbeddedDocumentExtractor(ParseContext context) {
         this.context = context;
@@ -147,6 +155,14 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
     }
 
     private void storeEmbeddedBytes(Path p, Metadata metadata) {
+        if (! embeddedBytesSelector.select(metadata)) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("skipping embedded bytes {} {}",
+                        metadata.get(Metadata.CONTENT_TYPE),
+                        metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+            }
+            return;
+        }
         EmbeddedDocumentByteStore embeddedDocumentByteStore =
                 context.get(EmbeddedDocumentByteStore.class);
         int id = metadata.getInt(TikaCoreProperties.EMBEDDED_ID);
@@ -154,8 +170,8 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         try {
             embeddedDocumentByteStore.add(id, metadata, Files.readAllBytes(p));
         } catch (IOException e) {
-            e.printStackTrace();
-            //log, or better, store embdocstore exception
+            metadata.set(TikaCoreProperties.EMBEDDED_BYTES_EXCEPTION,
+                    ExceptionUtils.getStackTrace(e));
         }
     }
 
@@ -174,5 +190,13 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
     public void setWriteFileNameToContent(boolean writeFileNameToContent) {
         this.writeFileNameToContent = writeFileNameToContent;
+    }
+
+    public void setEmbeddedBytesSelector(EmbeddedBytesSelector embeddedBytesSelector) {
+        this.embeddedBytesSelector = embeddedBytesSelector;
+    }
+
+    public EmbeddedBytesSelector getEmbeddedBytesSelector() {
+        return embeddedBytesSelector;
     }
 }
