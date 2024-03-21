@@ -126,6 +126,8 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
                     })));
     private static volatile boolean HAS_WARNED = false;
+    private static volatile boolean HAS_CHECKED_FOR_IMAGE_MAGICK = false;
+
     //if a user specifies a custom tess path or tessdata path
     //load the available languages at initialization time
     private final Set<String> langs = new HashSet<>();
@@ -190,7 +192,10 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         return hasTesseract;
     }
 
-    boolean hasImageMagick() throws TikaConfigException {
+    synchronized boolean hasImageMagick() throws TikaConfigException {
+        if (HAS_CHECKED_FOR_IMAGE_MAGICK) {
+            return hasImageMagick;
+        }
         // Fetch where the config says to find ImageMagick Program
         String fullImageMagickPath = imageMagickPath + getImageMagickProg();
 
@@ -208,7 +213,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             LOG.debug("ImageMagick does not appear to be installed " + "(commandline: " +
                     fullImageMagickPath + ")");
         }
-
+        HAS_CHECKED_FOR_IMAGE_MAGICK = true;
         return hasImageMagick;
 
     }
@@ -245,6 +250,11 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             return;
         }
 
+        //if you haven't checked yet, and a per file config requests imagemagick
+        //and if the default is not to use image processing
+        if (! HAS_CHECKED_FOR_IMAGE_MAGICK && config.isEnableImagePreprocessing()) {
+            hasImageMagick = hasImageMagick();
+        }
 
         try (TemporaryResources tmp = new TemporaryResources()) {
             TikaInputStream tikaStream = TikaInputStream.get(stream, tmp, metadata);
@@ -528,7 +538,11 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         hasTesseract = hasTesseract();
-        hasImageMagick = hasImageMagick();
+        if (isEnableImagePreprocessing()) {
+            hasImageMagick = hasImageMagick();
+        } else {
+            hasImageMagick = false;
+        }
         if (preloadLangs) {
             preloadLangs();
             if (!StringUtils.isBlank(defaultConfig.getLanguage())) {
