@@ -91,7 +91,7 @@ import org.apache.tika.utils.ExceptionUtils;
 public class TikaResource {
 
     public static final String GREETING =
-            "This is Tika Server (" + new Tika().toString() + "). Please PUT\n";
+            "This is Tika Server (" + Tika.getString() + "). Please PUT\n";
     private static final String META_PREFIX = "meta_";
     private static final Logger LOG = LoggerFactory.getLogger(TikaResource.class);
     private static Pattern ALLOWABLE_HEADER_CHARS = Pattern.compile("(?i)^[-/_+\\.A-Z0-9 ]+$");

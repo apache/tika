@@ -62,7 +62,7 @@ public class TikaWelcomeTest extends CXFTestBase {
                         .get(String.class);
 
 
-        assertContains(new Tika().toString(), html);
+        assertContains(Tika.getString(), html);
         assertContains("href=\"http", html);
 
         // Check our details were found
@@ -81,7 +81,7 @@ public class TikaWelcomeTest extends CXFTestBase {
                         .get();
 
         String text = getStringFromInputStream((InputStream) response.getEntity());
-        assertContains(new Tika().toString(), text);
+        assertContains(Tika.getString(), text);
 
         // Check our details were found
         assertContains("GET " + WELCOME_PATH, text);
