@@ -487,7 +487,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.25.2</version>
+        <version>12.25.3</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
