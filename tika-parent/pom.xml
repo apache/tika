@@ -392,7 +392,7 @@
     <mime4j.version>0.8.11</mime4j.version>
     <mockito.version>5.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.1.107.Final</netty.version>
+    <netty.version>4.1.108.Final</netty.version>
     <oak.jackrabbit.version>1.60.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.2.0</opennlp.version>
