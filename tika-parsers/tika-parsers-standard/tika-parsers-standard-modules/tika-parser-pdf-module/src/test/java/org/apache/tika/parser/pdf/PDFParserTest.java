@@ -986,7 +986,7 @@ public class PDFParserTest extends TikaTest {
         while (matcher.find()) {
             listItems++;
         }
-        assertEquals(24, listItems);
+        assertEquals(27, listItems);
     }
 
     @Test
