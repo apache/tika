@@ -103,7 +103,7 @@ public class OOXMLParser extends AbstractOfficeParser {
         ZipSecureFile.setMinInflateRatio(-1.0d);
         //bump this to a higher value than POI's default of 1000
         //turn this back on with > 5.2.3
-        //ZipSecureFile.setMaxFileCount(10000);
+        ZipSecureFile.setMaxFileCount(10000);
     }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
