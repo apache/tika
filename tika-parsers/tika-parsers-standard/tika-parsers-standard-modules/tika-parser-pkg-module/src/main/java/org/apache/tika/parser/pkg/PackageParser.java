@@ -61,6 +61,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.detect.zip.TikaArchiveStreamFactory;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -256,14 +257,24 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         String encoding = null;
         try {
             ArchiveStreamFactory factory =
-                    context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory());
-            encoding = factory.getEntryEncoding();
-            // At the end we want to close the archive stream to release
-            // any associated resources, but the underlying document stream
-            // should not be closed
-
-            ais = factory.createArchiveInputStream(new CloseShieldInputStream(stream));
-
+                    context.get(ArchiveStreamFactory.class);
+            //TODO -- fix this when we next upgrade commons-compress
+            //TODO -- we've probably already detected the stream by here. We should
+            //rely on that detection and not re-detect.
+            if (factory != null) {
+                encoding = factory.getEntryEncoding();
+                // At the end we want to close the archive stream to release
+                // any associated resources, but the underlying document stream
+                // should not be closed
+                ais = factory.createArchiveInputStream(new CloseShieldInputStream(stream));
+            } else {
+                TikaArchiveStreamFactory tikaFactory = new TikaArchiveStreamFactory();
+                encoding = tikaFactory.getEntryEncoding();
+                // At the end we want to close the archive stream to release
+                // any associated resources, but the underlying document stream
+                // should not be closed
+                ais = tikaFactory.createArchiveInputStream(new CloseShieldInputStream(stream));
+            }
         } catch (StreamingNotSupportedException sne) {
             // Most archive formats work on streams, but a few need files
             if (sne.getFormat().equals(ArchiveStreamFactory.SEVEN_Z)) {
