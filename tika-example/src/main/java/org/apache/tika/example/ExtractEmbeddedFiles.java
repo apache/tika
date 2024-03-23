@@ -64,7 +64,7 @@ public class ExtractEmbeddedFiles {
         private int fileCount = 0;
 
         private MyEmbeddedDocumentExtractor(Path outputDir, ParseContext context) {
-            super(context);
+            super(context, 1000000l);
             this.outputDir = outputDir;
         }
 

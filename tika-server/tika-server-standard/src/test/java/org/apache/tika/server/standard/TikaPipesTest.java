@@ -16,12 +16,10 @@
  */
 package org.apache.tika.server.standard;
 
-import static org.apache.tika.TikaTest.debug;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -116,7 +114,7 @@ public class TikaPipesTest extends CXFTestBase {
                         "</emitter>" + "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
                         "<params>" + "<name>bytes</name>" + "<basePath>" +
                         TMP_BYTES_DIR.toAbsolutePath() + "</basePath>" + "</params>" +
-                        "</emitter>" +"</emitters>" + "<pipes><params><tikaConfig>" +
+                        "</emitter>" + "</emitters>" + "<pipes><params><tikaConfig>" +
                         ProcessUtils.escapeCommandLine(
                                 TIKA_CONFIG_PATH.toAbsolutePath().toString()) +
                         "</tikaConfig><numClients>10</numClients>" + "<forkedJvmArgs>" +
