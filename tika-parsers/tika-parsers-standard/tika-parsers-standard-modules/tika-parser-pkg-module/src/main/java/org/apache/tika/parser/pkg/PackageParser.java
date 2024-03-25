@@ -253,6 +253,16 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         }
 
         TemporaryResources tmp = new TemporaryResources();
+        try {
+            _parse(stream, handler, metadata, context, tmp);
+        } finally {
+            tmp.close();
+        }
+    }
+
+    private void _parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                ParseContext context, TemporaryResources tmp)
+            throws TikaException, IOException, SAXException {
         ArchiveInputStream ais = null;
         String encoding = null;
         try {
@@ -304,11 +314,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 // Pending a fix for COMPRESS-269 / TIKA-1525, this bit is a little nasty
                 ais = new SevenZWrapper(sevenz);
             } else {
-                tmp.close();
                 throw new TikaException("Unknown non-streaming format " + sne.getFormat(), sne);
             }
         } catch (ArchiveException e) {
-            tmp.close();
             throw new TikaException("Unable to unpack document stream", e);
         }
 
@@ -340,7 +348,6 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             }
         } finally {
             ais.close();
-            tmp.close();
             xhtml.endDocument();
         }
     }
