@@ -2062,6 +2062,12 @@
     <glob pattern="*.ost"/>
   </mime-type>
 
+  <mime-type type="application/vnd.ms-package.3dmanufacturing-3dmodel+xml">
+    <tika:link>https://en.wikipedia.org/wiki/3D_Manufacturing_Format</tika:link>
+    <_comment>3D manufacturing format</_comment>
+    <glob pattern="*.3mf"/>
+  </mime-type>
+
   <mime-type type="application/vnd.ms-pki.seccat">
     <glob pattern="*.cat"/>
   </mime-type>
