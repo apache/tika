@@ -43,6 +43,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.config.Field;
@@ -62,6 +63,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xml.DcXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ParserUtils;
@@ -122,7 +124,8 @@ public class EpubParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         IOException caughtException = null;
-        ContentHandler childHandler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));
+        ContentHandler childHandler = new EmbeddedContentHandler(
+                new EpubNormalizingHandler(new BodyContentHandler(xhtml)));
         Set<String> encryptedItems = Collections.EMPTY_SET;
         if (streaming) {
             try {
@@ -601,5 +604,42 @@ public class EpubParser extends AbstractParser {
     //a zip file
     private static class EpubZipException extends IOException {
 
+    }
+
+    //for now, this simply converts all names to local names to avoid
+    //namespace conflicts in the content handler. This also removes namespaces
+    //from attributes
+    private class EpubNormalizingHandler extends ContentHandlerDecorator {
+        public EpubNormalizingHandler(ContentHandler contentHandler) {
+            super(contentHandler);
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String name, Attributes atts)
+                throws SAXException {
+            //some atts may have namespaces that were not included in the header
+            boolean needToRewrite = false;
+            for (int i = 0; i < atts.getLength(); i++) {
+                if (atts.getQName(i) != null && ! atts.getQName(i).equals(atts.getLocalName(i))) {
+                    needToRewrite = true;
+                    break;
+                }
+            }
+            if (needToRewrite) {
+                AttributesImpl simplifiedAtts = new AttributesImpl();
+                for (int i = 0; i < atts.getLength(); i++) {
+                    simplifiedAtts.addAttribute("", atts.getLocalName(i), atts.getLocalName(i),
+                            atts.getType(i), atts.getValue(i));
+                }
+                super.startElement(uri, localName, localName, simplifiedAtts);
+            } else {
+                super.startElement(uri, localName, localName, atts);
+            }
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String name) throws SAXException {
+            super.endElement(uri, localName, localName);
+        }
     }
 }
