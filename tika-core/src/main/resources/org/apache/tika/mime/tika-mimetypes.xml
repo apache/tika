@@ -3901,6 +3901,11 @@
       </match>
     </magic>
   </mime-type>
+  <mime-type type="application/x-openscad">
+    <tika:link>https://openscad.org/index.html</tika:link>
+    <glob pattern="*.scad"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
   <mime-type type="application/x-executable">
     <sub-class-of type="application/x-elf"/>
     <magic priority="50">
