@@ -56,7 +56,7 @@ import org.apache.commons.compress.compressors.snappy.FramedSnappyCompressorInpu
 import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
-import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.io.input.ClosedInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -170,10 +170,10 @@ public class CompressorParser implements Parser {
         // any associated resources, but the underlying document stream
         // should not be closed
         if (stream.markSupported()) {
-            stream = CloseShieldInputStream.wrap(stream);
+            stream = new TikaCloseShieldInputStream(stream);
         } else {
             // Ensure that the stream supports the mark feature
-            stream = new BufferedInputStream(CloseShieldInputStream.wrap(stream));
+            stream = new BufferedInputStream(new TikaCloseShieldInputStream(stream));
         }
 
         CompressorInputStream cis;
@@ -267,4 +267,58 @@ public class CompressorParser implements Parser {
         return this.decompressConcatenated;
     }
 
+    //TODO -- get rid of this workaround once TIKA-4221/COMPRESS-675 are fixed
+    private class TikaCloseShieldInputStream extends InputStream {
+
+        private InputStream stream;
+        public TikaCloseShieldInputStream(InputStream stream) {
+            this.stream = stream;
+        }
+
+        @Override
+        public void close() throws IOException {
+            this.stream = ClosedInputStream.INSTANCE;
+        }
+
+
+        @Override
+        public int read(byte[] b) throws IOException {
+            return stream.read(b);
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            return stream.read(b, off, len);
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            return stream.skip(n);
+        }
+
+        @Override
+        public int available() throws IOException {
+            return stream.available();
+        }
+
+        @Override
+        public synchronized void mark(int readlimit) {
+            stream.mark(readlimit);
+        }
+
+        @Override
+        public synchronized void reset() throws IOException {
+            stream.reset();
+        }
+
+        @Override
+        public boolean markSupported() {
+            return stream.markSupported();
+        }
+
+        @Override
+        public int read() throws IOException {
+            return stream.read();
+        }
+    }
 }
