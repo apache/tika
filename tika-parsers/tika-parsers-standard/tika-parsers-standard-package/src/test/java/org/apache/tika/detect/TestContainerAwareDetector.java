@@ -263,6 +263,11 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     }
 
     @Test
+    public void test3MF() throws Exception {
+        assertTypeByData("test3mf.3mf", "application/vnd.ms-package.3dmanufacturing-3dmodel+xml");
+        assertTypeByNameAndData("test3mf.3mf", "application/vnd.ms-package.3dmanufacturing-3dmodel+xml");
+    }
+    @Test
     public void testODFDifferentOrder() throws Exception {
         //TIKA-3356
         List<ZipContainerDetector> detectors = new ArrayList<>();
