@@ -288,7 +288,7 @@
     <project.build.outputTimestamp>1697538631</project.build.outputTimestamp>
     <!-- plugin versions -->
     <checkstyle.plugin.version>3.3.1</checkstyle.plugin.version>
-    <forbiddenapis.version>3.6</forbiddenapis.version>
+    <forbiddenapis.version>3.7</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.7.1</maven.assembly.version>
@@ -312,7 +312,7 @@
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
-    <asm.version>9.6</asm.version>
+    <asm.version>9.7</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
     <bouncycastle.version>1.77</bouncycastle.version>
