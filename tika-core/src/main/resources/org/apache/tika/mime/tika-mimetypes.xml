@@ -2069,7 +2069,10 @@
     <glob pattern="*.cat"/>
   </mime-type>
   <mime-type type="application/vnd.ms-pki.stl">
-    <glob pattern="*.stl"/>
+    <!-- on TIKA-4223, we moved this glob to model/x.stl-binary.
+    We think this pki.stl is a subtype of pkcs7-signature?!
+    -->
+    <!--<glob pattern="*.stl"/> -->
   </mime-type>
   <mime-type type="application/vnd.ms-playready.initiator+xml"/>
 
@@ -7130,7 +7133,17 @@
     <glob pattern="*.mesh"/>
     <glob pattern="*.silo"/>
   </mime-type>
-
+  <mime-type type="model/x.stl-ascii">
+    <magic priority="60">
+      <match value="solid " offset="0" type="string">
+        <match value="facet " offset="7:256" type="string"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="model/x.stl-binary">
+    <_comment>no magic available</_comment>
+    <glob pattern="*.stl"/>
+  </mime-type>
   <mime-type type="model/vnd.dwf">
     <acronym>DWF</acronym>
     <_comment>AutoCAD Design Web Format</_comment>
