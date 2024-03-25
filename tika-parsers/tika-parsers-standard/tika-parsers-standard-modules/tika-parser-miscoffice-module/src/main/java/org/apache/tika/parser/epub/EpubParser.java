@@ -352,6 +352,10 @@ public class EpubParser extends AbstractParser {
                 }
             }
         }
+        //throw SAXException if any from the parse of the body contents
+        for (SAXException e : saxExceptions) {
+            throw e;
+        }
         return encryptedItems;
     }
 
