@@ -3283,6 +3283,12 @@
     </match>
     </magic>
   </mime-type>
+  <mime-type type="application/x-amf">
+    <tika:link>https://en.wikipedia.org/wiki/Additive_manufacturing_file_format</tika:link>
+    <root-XML localName="amf"/>
+    <glob pattern="*.amf"/>
+    <sub-class-of type="application/xml"/>
+  </mime-type>
   <mime-type type="application/x-atari-floppy-disk-image">
     <tika:link>http://fileformats.archiveteam.org/wiki/ATR</tika:link>
     <magic priority="50">
