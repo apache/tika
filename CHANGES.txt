@@ -1,3 +1,10 @@
+Release 2.9.2 - ???
+
+   * Dependency upgrades including temporary workarounds for regressions in commons-compress.
+
+   * Add detection for OpenSCAD, 3MF, AMF, STL file formats via Robin Schimpf (TIKA-4222, TIKA-4223,
+     TIKA-4224, TIKA-4225).
+
 Release 2.9.1 - 10/17/2023
 
    * Dependency upgrades including commons-compress to fix CVE-2023-42503.
