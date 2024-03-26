@@ -1,0 +1,16 @@
+solid OpenSCAD_Model
+  facet normal 0 0 -1
+    outer loop
+      vertex -10 -35 0
+      vertex 10 -25 0
+      vertex 10 -35 0
+    endloop
+  endfacet
+  facet normal -0 0 -1
+    outer loop
+      vertex 10 -25 0
+      vertex -10 -35 0
+      vertex -10 -25 0
+    endloop
+  endfacet
+endsolid OpenSCAD_Model
