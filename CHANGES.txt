@@ -1,4 +1,4 @@
-Release 2.9.2 - ???
+Release 2.9.2 - 3/26/2024
 
    * Dependency upgrades including temporary workarounds for regressions in commons-compress.
 
