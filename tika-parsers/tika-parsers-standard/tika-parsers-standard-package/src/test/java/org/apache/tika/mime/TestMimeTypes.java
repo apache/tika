@@ -213,6 +213,12 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testSTL() throws Exception {
+        assertTypeByNameAndData("model/x.stl-binary", "testSTL-binary.stl");
+        assertTypeByNameAndData("model/x.stl-ascii", "testSTL-ascii.stl");
+    }
+
+    @Test
     public void testTTML() throws Exception {
         assertTypeByData("application/ttml+xml", "test_ttml.ttml");
         assertTypeByNameAndData("application/ttml+xml", "test_ttml.ttml");
