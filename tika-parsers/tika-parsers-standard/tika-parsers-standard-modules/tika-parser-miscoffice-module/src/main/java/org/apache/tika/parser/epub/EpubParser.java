@@ -452,9 +452,13 @@ public class EpubParser extends AbstractParser {
 
         xhtml.startElement("div", "class", "embedded");
         try {
+            boolean outputHtml = true;
+            if (hRefMediaPair.media.contains("font") || hRefMediaPair.href.startsWith("fonts")) {
+                outputHtml = false;
+            }
             embeddedDocumentExtractor
                     .parseEmbedded(stream, new EmbeddedContentHandler(xhtml), embeddedMetadata,
-                            true);
+                            outputHtml);
 
         } finally {
             IOUtils.closeQuietly(stream);
