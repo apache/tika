@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.36.1</google.cloud.version>
-    <aws.version>1.12.687</aws.version>
+    <aws.version>1.12.688</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -518,7 +518,7 @@
       <dependency>
         <groupId>com.fasterxml.woodstox</groupId>
         <artifactId>woodstox-core</artifactId>
-        <version>6.6.1</version>
+        <version>6.6.2</version>
       </dependency>
       <dependency>
         <groupId>com.mchange</groupId>
