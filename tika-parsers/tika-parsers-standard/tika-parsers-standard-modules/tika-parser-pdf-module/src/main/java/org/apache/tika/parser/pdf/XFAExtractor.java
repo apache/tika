@@ -123,6 +123,9 @@ class XFAExtractor {
                     (field.toolTip == null || field.toolTip.trim().length() == 0) ? fieldName :
                             field.toolTip;
             String[] fieldValues = pdfObjRToValues.getValues(fieldName);
+            if (fieldValues.length == 0) {
+                fieldValues = new String[]{""};
+            }
             for (String fieldValue : fieldValues) {
                 AttributesImpl attrs = new AttributesImpl();
                 attrs.addAttribute("", "fieldName", "fieldName", "CDATA", fieldName);

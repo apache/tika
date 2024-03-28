@@ -2065,11 +2065,20 @@
     <glob pattern="*.ost"/>
   </mime-type>
 
+  <mime-type type="application/vnd.ms-package.3dmanufacturing-3dmodel+xml">
+    <tika:link>https://en.wikipedia.org/wiki/3D_Manufacturing_Format</tika:link>
+    <_comment>3D manufacturing format</_comment>
+    <glob pattern="*.3mf"/>
+  </mime-type>
+
   <mime-type type="application/vnd.ms-pki.seccat">
     <glob pattern="*.cat"/>
   </mime-type>
   <mime-type type="application/vnd.ms-pki.stl">
-    <glob pattern="*.stl"/>
+    <!-- on TIKA-4223, we moved this glob to model/x.stl-binary.
+    We think this pki.stl is a subtype of pkcs7-signature?!
+    -->
+    <!--<glob pattern="*.stl"/> -->
   </mime-type>
   <mime-type type="application/vnd.ms-playready.initiator+xml"/>
 
@@ -3286,6 +3295,12 @@
     </match>
     </magic>
   </mime-type>
+  <mime-type type="application/x-amf">
+    <tika:link>https://en.wikipedia.org/wiki/Additive_manufacturing_file_format</tika:link>
+    <root-XML localName="amf"/>
+    <glob pattern="*.amf"/>
+    <sub-class-of type="application/xml"/>
+  </mime-type>
   <mime-type type="application/x-atari-floppy-disk-image">
     <tika:link>http://fileformats.archiveteam.org/wiki/ATR</tika:link>
     <magic priority="50">
@@ -3888,6 +3903,11 @@
         <match value="0x0001" type="string" offset="16"/>
       </match>
     </magic>
+  </mime-type>
+  <mime-type type="application/x-openscad">
+    <tika:link>https://openscad.org/index.html</tika:link>
+    <glob pattern="*.scad"/>
+    <sub-class-of type="text/plain"/>
   </mime-type>
   <mime-type type="application/x-executable">
     <sub-class-of type="application/x-elf"/>
@@ -7130,7 +7150,17 @@
     <glob pattern="*.mesh"/>
     <glob pattern="*.silo"/>
   </mime-type>
-
+  <mime-type type="model/x.stl-ascii">
+    <magic priority="60">
+      <match value="solid " offset="0" type="string">
+        <match value="facet " offset="7:256" type="string"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="model/x.stl-binary">
+    <_comment>no magic available</_comment>
+    <glob pattern="*.stl"/>
+  </mime-type>
   <mime-type type="model/vnd.dwf">
     <acronym>DWF</acronym>
     <_comment>AutoCAD Design Web Format</_comment>

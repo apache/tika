@@ -88,6 +88,9 @@ public class OPCPackageDetector implements ZipContainerDetector {
             MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.template");
     static final MediaType XLAM = MediaType.application("vnd.ms-excel.addin.macroEnabled.12");
     static final MediaType XPS = MediaType.application("vnd.ms-xpsdocument");
+
+    static final MediaType THREE_MF = MediaType.application("vnd.ms-package.3dmanufacturing-3dmodel+xml");
+
     static final Set<String> OOXML_HINTS =
             fillSet("word/document.xml", "_rels/.rels", "[Content_Types].xml",
                     "ppt/presentation.xml", "ppt/slides/slide1.xml", "xl/workbook.xml",
@@ -100,6 +103,8 @@ public class OPCPackageDetector implements ZipContainerDetector {
             "http://schemas.openxps.org/oxps/v1.0/fixedrepresentation";
     private static final String STAR_OFFICE_6_WRITER = "application/vnd.sun.xml.writer";
 
+    private static final String THREE_MF_DOCUMENT =
+            "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel";
     static Map<String, MediaType> OOXML_CONTENT_TYPES = new ConcurrentHashMap<>();
 
     static {
@@ -153,29 +158,37 @@ public class OPCPackageDetector implements ZipContainerDetector {
         // Check for the normal Office core document
         PackageRelationshipCollection core =
                 pkg.getRelationshipsByType(PackageRelationshipTypes.CORE_DOCUMENT);
+
         // Otherwise check for some other Office core document types
         if (core.size() == 0) {
             core = pkg.getRelationshipsByType(PackageRelationshipTypes.STRICT_CORE_DOCUMENT);
-        }
-        if (core.size() == 0) {
-            core = pkg.getRelationshipsByType(PackageRelationshipTypes.VISIO_CORE_DOCUMENT);
-        }
-        if (core.size() == 0) {
-            core = pkg.getRelationshipsByType(XPS_DOCUMENT);
-            if (core.size() == 1) {
-                return MediaType.application("vnd.ms-xpsdocument");
-            }
-            core = pkg.getRelationshipsByType(OPEN_XPS_DOCUMENT);
-            if (core.size() == 1) {
-                return MediaType.application("vnd.ms-xpsdocument");
-            }
-        }
 
-        if (core.size() == 0) {
-            core = pkg.getRelationshipsByType(
-                    "http://schemas.autodesk.com/dwfx/2007/relationships/documentsequence");
-            if (core.size() == 1) {
-                return MediaType.parse("model/vnd.dwfx+xps");
+            if (core.size() == 0) {
+                core = pkg.getRelationshipsByType(PackageRelationshipTypes.VISIO_CORE_DOCUMENT);
+            }
+            if (core.size() == 0) {
+                core = pkg.getRelationshipsByType(XPS_DOCUMENT);
+                if (core.size() == 1) {
+                    return MediaType.application("vnd.ms-xpsdocument");
+                }
+                core = pkg.getRelationshipsByType(OPEN_XPS_DOCUMENT);
+                if (core.size() == 1) {
+                    return MediaType.application("vnd.ms-xpsdocument");
+                }
+            }
+
+            if (core.size() == 0) {
+                core = pkg.getRelationshipsByType(
+                        "http://schemas.autodesk.com/dwfx/2007/relationships/documentsequence");
+                if (core.size() == 1) {
+                    return MediaType.parse("model/vnd.dwfx+xps");
+                }
+            }
+            if (core.size() == 0) {
+                core = pkg.getRelationshipsByType(THREE_MF_DOCUMENT);
+                if (core.size() == 1) {
+                    return THREE_MF;
+                }
             }
         }
         // If we didn't find a single core document of any type, skip detection
