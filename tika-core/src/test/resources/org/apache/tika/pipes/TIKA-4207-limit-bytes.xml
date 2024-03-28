@@ -16,14 +16,19 @@
   limitations under the License.
 -->
 <properties>
-  <parsers>
-    <parser class="org.apache.tika.parser.DefaultParser"/>
-  </parsers>
   <autoDetectParserConfig>
-    <spoolToDisk>123450</spoolToDisk>
-    <outputThreshold>678900</outputThreshold>
+    <digesterFactory class="org.apache.tika.pipes.async.MockDigesterFactory">
+      <skipContainerDocument>false</skipContainerDocument>
+    </digesterFactory>
     <embeddedDocumentExtractorFactory class="org.apache.tika.extractor.RUnpackExtractorFactory">
-      <writeFileNameToContent>true</writeFileNameToContent>
+      <writeFileNameToContent>false</writeFileNameToContent>
+      <maxEmbeddedBytesForExtraction>10</maxEmbeddedBytesForExtraction>
     </embeddedDocumentExtractorFactory>
   </autoDetectParserConfig>
+  <fetchers>
+    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
+      <name>fs</name>
+      <basePath>BASE_PATH</basePath>
+    </fetcher>
+  </fetchers>
 </properties>

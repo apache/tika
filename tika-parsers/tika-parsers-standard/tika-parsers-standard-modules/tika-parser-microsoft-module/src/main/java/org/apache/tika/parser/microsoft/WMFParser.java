@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.hwmf.record.HwmfFont;
 import org.apache.poi.hwmf.record.HwmfRecord;
 import org.apache.poi.hwmf.record.HwmfRecordType;
@@ -63,7 +64,7 @@ public class WMFParser implements Parser {
         try {
             HwmfPicture picture = null;
             try {
-                picture = new HwmfPicture(stream);
+                picture = new HwmfPicture(CloseShieldInputStream.wrap(stream));
             } catch (ArrayIndexOutOfBoundsException e) {
                 //POI can throw this on corrupt files
                 throw new TikaException(e.getClass().getSimpleName() + ": " + e.getMessage(), e);

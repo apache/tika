@@ -23,7 +23,16 @@
     <spoolToDisk>123450</spoolToDisk>
     <outputThreshold>678900</outputThreshold>
     <embeddedDocumentExtractorFactory class="org.apache.tika.extractor.RUnpackExtractorFactory">
-      <writeFileNameToContent>true</writeFileNameToContent>
+      <writeFileNameToContent>false</writeFileNameToContent>
+      <embeddedBytesIncludeMimeTypes>
+        <mime>application/pdf</mime>
+        <mime>application/rtf</mime>
+        <mime>text/plain</mime>
+      </embeddedBytesIncludeMimeTypes>
+      <embeddedBytesIncludeEmbeddedResourceTypes>
+        <type>ATTACHMENT</type>
+        <type>INLINE</type>
+      </embeddedBytesIncludeEmbeddedResourceTypes>
     </embeddedDocumentExtractorFactory>
   </autoDetectParserConfig>
 </properties>

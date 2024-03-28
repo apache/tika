@@ -14,30 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.async.cli;
+package org.apache.tika.extractor;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import org.apache.tika.metadata.Metadata;
 
-import org.junit.jupiter.api.Test;
+public interface EmbeddedDocumentBytesHandler extends Closeable {
+    //we need metadata for the emitter store...can we get away without it?
+    void add(int id, Metadata metadata, InputStream inputStream) throws IOException;
 
-import org.apache.tika.exception.TikaConfigException;
-
-public class TikaAsyncCLITest {
-    @Test
-    public void testCrash() throws Exception {
-        Path config = getPath("/configs/tika-config-broken.xml");
-        assertThrows(TikaConfigException.class,
-                () -> TikaAsyncCLI.main(
-                        new String[] {
-                            config.toAbsolutePath().toString()
-                        })
-        );
-    }
-
-    private Path getPath(String file) throws Exception {
-        return Paths.get(this.getClass().getResource(file).toURI());
-    }
+    List<Integer> getIds();
 }

@@ -98,6 +98,10 @@ public interface TikaCoreProperties {
     Property EMBEDDED_EXCEPTION =
             Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_exception");
 
+    //exception handling the raw bytes of an embedded file by an EmbeddedDocumentByteStore
+    Property EMBEDDED_BYTES_EXCEPTION =
+            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_bytes_exception");
+
     //warning while parsing in an embedded file
     Property EMBEDDED_WARNING =
             Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_warning");

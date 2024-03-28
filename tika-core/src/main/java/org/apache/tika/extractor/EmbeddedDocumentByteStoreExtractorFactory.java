@@ -14,30 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.async.cli;
+package org.apache.tika.extractor;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+/**
+ * This factory creates EmbeddedDocumentExtractors that require an
+ * {@link EmbeddedDocumentBytesHandler} in the
+ * {@link org.apache.tika.parser.ParseContext} should extend this.
+ *
+ * This is a shim interface to signal to {@link org.apache.tika.pipes.PipesServer}
+ * to use the {@link @RUnpackExtractor} if the user doesn't configure a custom
+ * EmbeddedDocumentExtractor.
+ *
+ * TODO: Figure out how to simplify this and allow for emitting of the source document.
+ */
+public interface EmbeddedDocumentByteStoreExtractorFactory extends EmbeddedDocumentExtractorFactory {
 
-import org.junit.jupiter.api.Test;
-
-import org.apache.tika.exception.TikaConfigException;
-
-public class TikaAsyncCLITest {
-    @Test
-    public void testCrash() throws Exception {
-        Path config = getPath("/configs/tika-config-broken.xml");
-        assertThrows(TikaConfigException.class,
-                () -> TikaAsyncCLI.main(
-                        new String[] {
-                            config.toAbsolutePath().toString()
-                        })
-        );
-    }
-
-    private Path getPath(String file) throws Exception {
-        return Paths.get(this.getClass().getResource(file).toURI());
-    }
 }

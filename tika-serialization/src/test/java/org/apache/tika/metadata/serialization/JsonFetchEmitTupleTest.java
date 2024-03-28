@@ -28,6 +28,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
@@ -76,5 +77,24 @@ public class JsonFetchEmitTupleTest {
         Reader reader = new StringReader(writer.toString());
         FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(reader);
         assertEquals(t, deserialized);
+    }
+
+    @Test
+    public void testBytes() throws Exception {
+        EmbeddedDocumentBytesConfig bytesConfig = new EmbeddedDocumentBytesConfig(true);
+        bytesConfig.setEmitter("emitter");
+        FetchEmitTuple t = new FetchEmitTuple("my_id",
+                new FetchKey("my_fetcher", "fetchKey1", 10, 1000),
+                new EmitKey("my_emitter", "emitKey1"), new Metadata(),
+                new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
+                        HandlerConfig.PARSE_MODE.CONCATENATE,
+                        10000,10, true),
+                FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP, bytesConfig);
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTuple.toJson(t, writer);
+        Reader reader = new StringReader(writer.toString());
+        FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(reader);
+        assertEquals(t, deserialized);
+
     }
 }

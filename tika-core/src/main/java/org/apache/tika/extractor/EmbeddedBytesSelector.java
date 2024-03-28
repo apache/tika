@@ -14,30 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.async.cli;
+package org.apache.tika.extractor;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.apache.tika.metadata.Metadata;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+public interface EmbeddedBytesSelector {
 
-import org.junit.jupiter.api.Test;
-
-import org.apache.tika.exception.TikaConfigException;
-
-public class TikaAsyncCLITest {
-    @Test
-    public void testCrash() throws Exception {
-        Path config = getPath("/configs/tika-config-broken.xml");
-        assertThrows(TikaConfigException.class,
-                () -> TikaAsyncCLI.main(
-                        new String[] {
-                            config.toAbsolutePath().toString()
-                        })
-        );
+    class AcceptAll implements EmbeddedBytesSelector {
+        @Override
+        public boolean select(Metadata metadata) {
+            return true;
+        }
     }
+    EmbeddedBytesSelector ACCEPT_ALL = new AcceptAll();
 
-    private Path getPath(String file) throws Exception {
-        return Paths.get(this.getClass().getResource(file).toURI());
-    }
+    boolean select(Metadata metadata);
 }

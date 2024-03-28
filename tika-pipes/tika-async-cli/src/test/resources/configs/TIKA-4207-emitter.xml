@@ -16,14 +16,20 @@
   limitations under the License.
 -->
 <properties>
-  <parsers>
-    <parser class="org.apache.tika.parser.DefaultParser"/>
-  </parsers>
-  <autoDetectParserConfig>
-    <spoolToDisk>123450</spoolToDisk>
-    <outputThreshold>678900</outputThreshold>
-    <embeddedDocumentExtractorFactory class="org.apache.tika.extractor.RUnpackExtractorFactory">
-      <writeFileNameToContent>true</writeFileNameToContent>
-    </embeddedDocumentExtractorFactory>
-  </autoDetectParserConfig>
+  <fetchers>
+    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
+      <name>fs</name>
+      <basePath>BASE_PATH</basePath>
+    </fetcher>
+  </fetchers>
+  <emitters>
+    <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
+      <name>json</name>
+      <basePath>JSON_PATH</basePath>
+    </emitter>
+    <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
+      <name>bytes</name>
+      <basePath>BYTES_PATH</basePath>
+    </emitter>
+  </emitters>
 </properties>
