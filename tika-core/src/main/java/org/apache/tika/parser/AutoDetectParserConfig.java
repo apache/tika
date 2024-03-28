@@ -25,7 +25,6 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
 import org.apache.tika.sax.ContentHandlerDecoratorFactory;
@@ -87,8 +86,7 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
     private MetadataWriteFilterFactory metadataWriteFilterFactory = null;
 
-    private EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory =
-            new ParsingEmbeddedDocumentExtractorFactory();
+    private EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory = null;
 
     private ContentHandlerDecoratorFactory contentHandlerDecoratorFactory =
             NOOP_CONTENT_HANDLER_DECORATOR_FACTORY;

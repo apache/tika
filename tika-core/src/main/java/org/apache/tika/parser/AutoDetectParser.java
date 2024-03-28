@@ -28,6 +28,8 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractorFactory;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -197,7 +199,6 @@ public class AutoDetectParser extends CompositeParser {
                     createSecureContentHandler(handler, tis, autoDetectParserConfig) : null;
 
             initializeEmbeddedDocumentExtractor(metadata, context);
-
             try {
                 // Parse the document
                 super.parse(tis, sch, metadata, context);
@@ -267,8 +268,12 @@ public class AutoDetectParser extends CompositeParser {
         if (p == null) {
             context.set(Parser.class, this);
         }
-        EmbeddedDocumentExtractor edx = autoDetectParserConfig.getEmbeddedDocumentExtractorFactory()
-                .newInstance(metadata, context);
+        EmbeddedDocumentExtractorFactory edxf =
+                autoDetectParserConfig.getEmbeddedDocumentExtractorFactory();
+        if (edxf == null) {
+            edxf = new ParsingEmbeddedDocumentExtractorFactory();
+        }
+        EmbeddedDocumentExtractor edx = edxf.newInstance(metadata, context);
         context.set(EmbeddedDocumentExtractor.class, edx);
     }
 

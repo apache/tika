@@ -20,7 +20,7 @@
     <digesterFactory class="org.apache.tika.pipes.async.MockDigesterFactory">
       <skipContainerDocument>false</skipContainerDocument>
     </digesterFactory>
-    <embeddedDocumentExtractorFactory class="org.apache.tika.extractor.ParsingEmbeddedDocumentExtractorFactory">
+    <embeddedDocumentExtractorFactory class="org.apache.tika.extractor.RUnpackExtractorFactory">
       <writeFileNameToContent>false</writeFileNameToContent>
       <maxEmbeddedBytesForExtraction>10</maxEmbeddedBytesForExtraction>
     </embeddedDocumentExtractorFactory>

@@ -28,7 +28,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.utils.StringUtils;
 
-public abstract class AbstractEmbeddedDocumentByteStore implements EmbeddedDocumentByteStore {
+public abstract class AbstractEmbeddedDocumentBytesHandler implements EmbeddedDocumentBytesHandler {
 
     List<Integer> ids = new ArrayList<>();
 

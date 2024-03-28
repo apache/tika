@@ -55,6 +55,15 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
 
     private boolean includeOriginal = false;
 
+    /**
+     * Create an EmbeddedDocumentBytesConfig with
+     * {@link EmbeddedDocumentBytesConfig#extractEmbeddedDocumentBytes}
+     * set to <code>true</code>
+     */
+    public EmbeddedDocumentBytesConfig() {
+        this.extractEmbeddedDocumentBytes = true;
+    }
+
     public EmbeddedDocumentBytesConfig(boolean extractEmbeddedDocumentBytes) {
         this.extractEmbeddedDocumentBytes = extractEmbeddedDocumentBytes;
     }

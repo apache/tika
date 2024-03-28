@@ -45,9 +45,14 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.BasicEmbeddedDocumentByteStore;
+import org.apache.tika.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.extractor.DocumentSelector;
-import org.apache.tika.extractor.EmbeddedDocumentByteStore;
+import org.apache.tika.extractor.EmbeddedDocumentByteStoreExtractorFactory;
+import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
+import org.apache.tika.extractor.RUnpackExtractor;
+import org.apache.tika.extractor.RUnpackExtractorFactory;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -64,7 +69,7 @@ import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.StreamEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
-import org.apache.tika.pipes.extractor.EmbeddedDocumentEmitterStore;
+import org.apache.tika.pipes.extractor.EmittingEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
@@ -381,9 +386,9 @@ public class PipesServer implements Runnable {
             emitParseData(t, parseData);
         } finally {
             if (parseData != null && parseData.hasEmbeddedDocumentByteStore() &&
-                    parseData.getEmbeddedDocumentByteStore() instanceof Closeable) {
+                    parseData.getEmbeddedDocumentBytesHandler() instanceof Closeable) {
                 try {
-                    ((Closeable) parseData.getEmbeddedDocumentByteStore()).close();
+                    ((Closeable) parseData.getEmbeddedDocumentBytesHandler()).close();
                 } catch (IOException e) {
                     LOG.warn("problem closing embedded document byte store", e);
                 }
@@ -536,7 +541,7 @@ public class PipesServer implements Runnable {
         }
 
         return new MetadataListAndEmbeddedBytes(metadataList,
-                parseContext.get(EmbeddedDocumentByteStore.class));
+                parseContext.get(EmbeddedDocumentBytesHandler.class));
     }
 
     private ParseContext createParseContext(FetchEmitTuple fetchEmitTuple)
@@ -545,14 +550,28 @@ public class PipesServer implements Runnable {
         if (! fetchEmitTuple.getEmbeddedDocumentBytesConfig().isExtractEmbeddedDocumentBytes()) {
             return parseContext;
         }
-
-        //TODO: clean this up.
+        EmbeddedDocumentExtractorFactory factory = ((AutoDetectParser)autoDetectParser)
+                .getAutoDetectParserConfig().getEmbeddedDocumentExtractorFactory();
+        if (factory == null) {
+            parseContext.set(EmbeddedDocumentExtractor.class, new RUnpackExtractor(parseContext,
+                    RUnpackExtractorFactory.DEFAULT_MAX_EMBEDDED_BYTES_FOR_EXTRACTION));
+        } else {
+            if (! (factory instanceof EmbeddedDocumentByteStoreExtractorFactory)) {
+                throw new TikaConfigException("EmbeddedDocumentExtractorFactory must be an " +
+                        "instance of EmbeddedDocumentByteStoreExtractorFactory if you want" +
+                        "to extract embedded bytes! I see this embedded doc factory: " +
+                        factory.getClass() + "and a request: " +
+                        fetchEmitTuple.getEmbeddedDocumentBytesConfig());
+            }
+        }
+        //TODO: especially clean this up.
         if (!StringUtils.isBlank(fetchEmitTuple.getEmbeddedDocumentBytesConfig().getEmitter())) {
-            parseContext.set(EmbeddedDocumentByteStore.class,
-                    new EmbeddedDocumentEmitterStore(fetchEmitTuple.getEmitKey(),
+            parseContext.set(EmbeddedDocumentBytesHandler.class,
+                    new EmittingEmbeddedDocumentBytesHandler(fetchEmitTuple.getEmitKey(),
                             fetchEmitTuple.getEmbeddedDocumentBytesConfig(), emitterManager));
         } else {
-            parseContext.set(EmbeddedDocumentByteStore.class, new BasicEmbeddedDocumentByteStore(
+            parseContext.set(EmbeddedDocumentBytesHandler.class,
+                    new BasicEmbeddedDocumentBytesHandler(
                     fetchEmitTuple.getEmbeddedDocumentBytesConfig()));
         }
         return parseContext;
@@ -677,8 +696,8 @@ public class PipesServer implements Runnable {
 
         if (t.getEmbeddedDocumentBytesConfig() != null &&
                 t.getEmbeddedDocumentBytesConfig().isIncludeOriginal()) {
-            EmbeddedDocumentByteStore embeddedDocumentByteStore =
-                    parseContext.get(EmbeddedDocumentByteStore.class);
+            EmbeddedDocumentBytesHandler embeddedDocumentByteStore =
+                    parseContext.get(EmbeddedDocumentBytesHandler.class);
             try (InputStream is = Files.newInputStream(tis.getPath())) {
                 embeddedDocumentByteStore.add(0, metadata, is);
             } catch (IOException e) {
@@ -747,6 +766,14 @@ public class PipesServer implements Runnable {
             //override this value because we'll be digesting before parse
             ((AutoDetectParser) autoDetectParser).getAutoDetectParserConfig().getDigesterFactory()
                     .setSkipContainerDocument(true);
+            //if the user hasn't configured an embedded document extractor, set up the
+            // RUnpackExtractorFactory
+            if (((AutoDetectParser) autoDetectParser).getAutoDetectParserConfig()
+                    .getEmbeddedDocumentExtractorFactory() == null) {
+                ((AutoDetectParser) autoDetectParser)
+                        .getAutoDetectParserConfig().setEmbeddedDocumentExtractorFactory(
+                                new RUnpackExtractorFactory());
+            }
         }
         this.detector = ((AutoDetectParser) this.autoDetectParser).getDetector();
         this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
@@ -809,20 +836,20 @@ public class PipesServer implements Runnable {
 
     class MetadataListAndEmbeddedBytes {
         final List<Metadata> metadataList;
-        final Optional<EmbeddedDocumentByteStore> embeddedDocumentByteStore;
+        final Optional<EmbeddedDocumentBytesHandler> embeddedDocumentBytesHandler;
 
         public MetadataListAndEmbeddedBytes(List<Metadata> metadataList,
-                                            EmbeddedDocumentByteStore embeddedDocumentByteStore) {
+                                            EmbeddedDocumentBytesHandler embeddedDocumentBytesHandler) {
             this.metadataList = metadataList;
-            this.embeddedDocumentByteStore = Optional.ofNullable(embeddedDocumentByteStore);
+            this.embeddedDocumentBytesHandler = Optional.ofNullable(embeddedDocumentBytesHandler);
         }
 
         public List<Metadata> getMetadataList() {
             return metadataList;
         }
 
-        public EmbeddedDocumentByteStore getEmbeddedDocumentByteStore() {
-            return embeddedDocumentByteStore.get();
+        public EmbeddedDocumentBytesHandler getEmbeddedDocumentBytesHandler() {
+            return embeddedDocumentBytesHandler.get();
         }
 
         /**
@@ -832,7 +859,7 @@ public class PipesServer implements Runnable {
          * @return
          */
         public boolean hasEmbeddedDocumentByteStore() {
-            return embeddedDocumentByteStore.isPresent();
+            return embeddedDocumentBytesHandler.isPresent();
         }
 
         /**
@@ -844,7 +871,7 @@ public class PipesServer implements Runnable {
          * @return
          */
         public boolean toBePackagedForStreamEmitter() {
-            return !(embeddedDocumentByteStore.get() instanceof EmbeddedDocumentEmitterStore);
+            return !(embeddedDocumentBytesHandler.get() instanceof EmittingEmbeddedDocumentBytesHandler);
         }
     }
 }

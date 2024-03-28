@@ -23,7 +23,7 @@ import java.io.InputStream;
 import org.apache.commons.io.IOExceptionWithCause;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.extractor.AbstractEmbeddedDocumentByteStore;
+import org.apache.tika.extractor.AbstractEmbeddedDocumentBytesHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.Emitter;
@@ -31,15 +31,15 @@ import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.StreamEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 
-public class EmbeddedDocumentEmitterStore extends AbstractEmbeddedDocumentByteStore {
+public class EmittingEmbeddedDocumentBytesHandler extends AbstractEmbeddedDocumentBytesHandler {
     private final EmitKey containerEmitKey;
     private final EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig;
     private final StreamEmitter emitter;
 
     private static final Metadata METADATA = new Metadata();
-    public EmbeddedDocumentEmitterStore(EmitKey containerEmitKey,
-                                        EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig,
-                                        EmitterManager emitterManager) throws TikaConfigException {
+    public EmittingEmbeddedDocumentBytesHandler(EmitKey containerEmitKey,
+                                                EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig,
+                                                EmitterManager emitterManager) throws TikaConfigException {
         this.containerEmitKey = containerEmitKey;
         this.embeddedDocumentBytesConfig = embeddedDocumentBytesConfig;
         Emitter tmpEmitter =
@@ -62,11 +62,6 @@ public class EmbeddedDocumentEmitterStore extends AbstractEmbeddedDocumentByteSt
         } catch (TikaEmitterException e) {
             throw new IOExceptionWithCause(e);
         }
-    }
-
-    @Override
-    public InputStream getDocument(int id) {
-        throw new UnsupportedOperationException("this is emit only.");
     }
 
     @Override

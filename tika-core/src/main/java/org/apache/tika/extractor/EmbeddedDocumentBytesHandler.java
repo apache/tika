@@ -23,11 +23,9 @@ import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
 
-public interface EmbeddedDocumentByteStore extends Closeable {
+public interface EmbeddedDocumentBytesHandler extends Closeable {
     //we need metadata for the emitter store...can we get away without it?
     void add(int id, Metadata metadata, InputStream inputStream) throws IOException;
-
-    InputStream getDocument(int id) throws IOException;
 
     List<Integer> getIds();
 }

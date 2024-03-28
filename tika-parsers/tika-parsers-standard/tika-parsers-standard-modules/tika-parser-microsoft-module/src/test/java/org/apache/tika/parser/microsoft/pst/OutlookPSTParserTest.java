@@ -150,7 +150,7 @@ public class OutlookPSTParserTest extends TikaTest {
         List<Metadata> trackingMetadata = new ArrayList<>();
 
         public EmbeddedTrackingExtrator(ParseContext context) {
-            super(context, 0);
+            super(context);
         }
 
         @Override

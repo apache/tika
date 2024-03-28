@@ -22,8 +22,12 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -31,6 +35,7 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -43,12 +48,14 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 
 /**
- * Helper class for parsers of package archives or other compound document
- * formats that support embedded or attached component documents.
+ * Recursive Unpacker and text and metadata extractor.
  *
- * @since Apache Tika 0.8
+ * @since Apache Tika 3.0.0
  */
-public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
+public class RUnpackExtractor implements EmbeddedDocumentExtractor {
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(ParsingEmbeddedDocumentExtractor.class);
 
     private static final File ABSTRACT_PATH = new File("");
 
@@ -58,8 +65,14 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
     private final ParseContext context;
 
-    public ParsingEmbeddedDocumentExtractor(ParseContext context) {
+    private EmbeddedBytesSelector embeddedBytesSelector = EmbeddedBytesSelector.ACCEPT_ALL;
+
+    private long bytesExtracted = 0;
+    private final long maxEmbeddedBytesForExtraction;
+
+    public RUnpackExtractor(ParseContext context, long maxEmbeddedBytesForExtraction) {
         this.context = context;
+        this.maxEmbeddedBytesForExtraction = maxEmbeddedBytesForExtraction;
     }
 
     public boolean shouldParseEmbedded(Metadata metadata) {
@@ -99,15 +112,19 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         // Use the delegate parser to parse this entry
         try (TemporaryResources tmp = new TemporaryResources()) {
             final TikaInputStream newStream =
-                    TikaInputStream.get(new CloseShieldInputStream(stream), tmp, metadata);
+                    TikaInputStream.get(CloseShieldInputStream.wrap(stream), tmp, metadata);
             if (stream instanceof TikaInputStream) {
                 final Object container = ((TikaInputStream) stream).getOpenContainer();
                 if (container != null) {
                     newStream.setOpenContainer(container);
                 }
             }
-            DELEGATING_PARSER.parse(newStream, new EmbeddedContentHandler(new BodyContentHandler(handler)),
-                    metadata, context);
+            EmbeddedDocumentBytesHandler bytesHandler = context.get(EmbeddedDocumentBytesHandler.class);
+            if (bytesHandler != null) {
+                parseWithBytes(newStream, handler, metadata);
+            } else {
+                parse(newStream, handler, metadata);
+            }
         } catch (EncryptedDocumentException ede) {
             recordException(ede, context);
         } catch (CorruptedFileException e) {
@@ -123,6 +140,65 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         }
     }
 
+    private void parseWithBytes(TikaInputStream stream, ContentHandler handler, Metadata metadata)
+            throws TikaException, IOException, SAXException {
+        //TODO -- improve the efficiency of this so that we're not
+        //literally writing out a file per request
+        Path p = stream.getPath();
+        try {
+            parse(stream, handler, metadata);
+        } finally {
+            storeEmbeddedBytes(p, metadata);
+        }
+    }
+
+    private void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata)
+            throws TikaException, IOException, SAXException {
+        DELEGATING_PARSER.parse(stream,
+                new EmbeddedContentHandler(new BodyContentHandler(handler)),
+                metadata, context);
+    }
+
+    private void storeEmbeddedBytes(Path p, Metadata metadata) {
+        if (! embeddedBytesSelector.select(metadata)) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("skipping embedded bytes {} <-> {}",
+                        metadata.get(Metadata.CONTENT_TYPE),
+                        metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+            }
+            return;
+        }
+        EmbeddedDocumentBytesHandler embeddedDocumentBytesHandler =
+                context.get(EmbeddedDocumentBytesHandler.class);
+        int id = metadata.getInt(TikaCoreProperties.EMBEDDED_ID);
+        try (InputStream is = Files.newInputStream(p)) {
+            if (bytesExtracted >= maxEmbeddedBytesForExtraction) {
+                throw new IOException("Bytes extracted (" + bytesExtracted +
+                        ") >= max allowed (" + maxEmbeddedBytesForExtraction + ")");
+            }
+            long maxToRead = maxEmbeddedBytesForExtraction - bytesExtracted;
+
+            try (BoundedInputStream boundedIs = new BoundedInputStream(maxToRead, is)) {
+                embeddedDocumentBytesHandler.add(id, metadata, boundedIs);
+                bytesExtracted += boundedIs.getPos();
+                if (boundedIs.hasHitBound()) {
+                    throw new IOException("Bytes extracted (" + bytesExtracted +
+                            ") >= max allowed (" + maxEmbeddedBytesForExtraction + "). Truncated " +
+                            "bytes");
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.warn("problem writing out embedded bytes", e);
+            //info in metadata doesn't actually make it back to the metadata list
+            //because we're filtering and cloning the metadata at the end of the parse
+            //which happens before we try to copy out the files.
+            //TODO fix this
+            //metadata.set(TikaCoreProperties.EMBEDDED_BYTES_EXCEPTION,
+              //      ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+
     private void recordException(Exception e, ParseContext context) {
         ParseRecord record = context.get(ParseRecord.class);
         if (record == null) {
@@ -137,5 +213,13 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
     public void setWriteFileNameToContent(boolean writeFileNameToContent) {
         this.writeFileNameToContent = writeFileNameToContent;
+    }
+
+    public void setEmbeddedBytesSelector(EmbeddedBytesSelector embeddedBytesSelector) {
+        this.embeddedBytesSelector = embeddedBytesSelector;
+    }
+
+    public EmbeddedBytesSelector getEmbeddedBytesSelector() {
+        return embeddedBytesSelector;
     }
 }

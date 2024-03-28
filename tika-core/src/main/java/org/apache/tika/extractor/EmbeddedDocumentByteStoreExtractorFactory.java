@@ -16,25 +16,18 @@
  */
 package org.apache.tika.extractor;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 
-public class ParsingEmbeddedDocumentExtractorFactory
-        implements EmbeddedDocumentExtractorFactory {
+/**
+ * This factory creates EmbeddedDocumentExtractors that require an
+ * {@link EmbeddedDocumentBytesHandler} in the
+ * {@link org.apache.tika.parser.ParseContext} should extend this.
+ *
+ * This is a shim interface to signal to {@link org.apache.tika.pipes.PipesServer}
+ * to use the {@link @RUnpackExtractor} if the user doesn't configure a custom
+ * EmbeddedDocumentExtractor.
+ *
+ * TODO: Figure out how to simplify this and allow for emitting of the source document.
+ */
+public interface EmbeddedDocumentByteStoreExtractorFactory extends EmbeddedDocumentExtractorFactory {
 
-    private boolean writeFileNameToContent = true;
-
-    @Field
-    public void setWriteFileNameToContent(boolean writeFileNameToContent) {
-        this.writeFileNameToContent = writeFileNameToContent;
-    }
-
-    @Override
-    public EmbeddedDocumentExtractor newInstance(Metadata metadata, ParseContext parseContext) {
-        ParsingEmbeddedDocumentExtractor ex =
-                new ParsingEmbeddedDocumentExtractor(parseContext);
-        ex.setWriteFileNameToContent(writeFileNameToContent);
-        return ex;
-    }
 }

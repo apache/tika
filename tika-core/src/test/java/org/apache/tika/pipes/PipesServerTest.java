@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
@@ -117,9 +118,13 @@ public class PipesServerTest extends TikaTest {
         assertEquals(2, parseData.metadataList.size());
 
         byte[] bytes0 =
-                IOUtils.toByteArray(parseData.getEmbeddedDocumentByteStore().getDocument(0));
+                IOUtils.toByteArray(
+                        ((BasicEmbeddedDocumentBytesHandler)parseData.getEmbeddedDocumentBytesHandler())
+                        .getDocument(0));
         byte[] bytes1 =
-                IOUtils.toByteArray(parseData.getEmbeddedDocumentByteStore().getDocument(1));
+                IOUtils.toByteArray(
+                        ((BasicEmbeddedDocumentBytesHandler)parseData.getEmbeddedDocumentBytesHandler())
+                                .getDocument(1));
 
         assertContains("is to trigger mock on the embedded",
                 new String(bytes0, StandardCharsets.UTF_8));
@@ -170,9 +175,13 @@ public class PipesServerTest extends TikaTest {
         assertEquals(2, parseData.metadataList.size());
 
         byte[] bytes0 =
-                IOUtils.toByteArray(parseData.getEmbeddedDocumentByteStore().getDocument(0));
+                IOUtils.toByteArray(
+                        ((BasicEmbeddedDocumentBytesHandler)parseData.getEmbeddedDocumentBytesHandler())
+                                .getDocument(0));
         byte[] bytes1 =
-                IOUtils.toByteArray(parseData.getEmbeddedDocumentByteStore().getDocument(1));
+                IOUtils.toByteArray(
+                        ((BasicEmbeddedDocumentBytesHandler)parseData.getEmbeddedDocumentBytesHandler())
+                                .getDocument(1));
 
         assertContains("is to trigger mock on the embedded",
                 new String(bytes0, StandardCharsets.UTF_8));

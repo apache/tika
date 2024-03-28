@@ -112,7 +112,7 @@ public class PDFRenderingTest extends TikaTest {
         Map<Integer, byte[]> embedded = new HashMap<>();
 
         public RenderCaptureExtractor(ParseContext context) {
-            super(context, 0);
+            super(context);
         }
 
         public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,

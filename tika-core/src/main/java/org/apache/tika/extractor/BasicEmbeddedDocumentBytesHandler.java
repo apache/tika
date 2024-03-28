@@ -27,9 +27,16 @@ import org.apache.commons.io.input.UnsynchronizedBufferedInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 
-public class BasicEmbeddedDocumentByteStore extends AbstractEmbeddedDocumentByteStore {
+/**
+ * For now, this is an in-memory EmbeddedDocumentBytesHandler that stores
+ * all the bytes in memory. Users can retrieve the documents with {@link #getDocument(int)}.
+ *
+ * We'll need to make this cache to disk at some point if there are many bytes of
+ * embedded documents.
+ */
+public class BasicEmbeddedDocumentBytesHandler extends AbstractEmbeddedDocumentBytesHandler {
     private final EmbeddedDocumentBytesConfig config;
-    public BasicEmbeddedDocumentByteStore(EmbeddedDocumentBytesConfig config) {
+    public BasicEmbeddedDocumentBytesHandler(EmbeddedDocumentBytesConfig config) {
         this.config = config;
     }
     //this won't scale, but let's start fully in memory for now;
@@ -40,7 +47,6 @@ public class BasicEmbeddedDocumentByteStore extends AbstractEmbeddedDocumentByte
         docBytes.put(id, IOUtils.toByteArray(is));
     }
 
-    @Override
     public InputStream getDocument(int id) throws IOException {
         return new UnsynchronizedBufferedInputStream.Builder().setByteArray(docBytes.get(id)).get();
     }

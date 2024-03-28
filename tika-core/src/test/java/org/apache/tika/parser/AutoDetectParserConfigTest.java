@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.extractor.EmbeddedBytesSelector;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractorFactory;
+import org.apache.tika.extractor.RUnpackExtractor;
+import org.apache.tika.extractor.RUnpackExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
@@ -41,12 +41,12 @@ public class AutoDetectParserConfigTest {
             config = new TikaConfig(is);
         }
         AutoDetectParserConfig c = config.getAutoDetectParserConfig();
-        ParsingEmbeddedDocumentExtractorFactory f =
-                (ParsingEmbeddedDocumentExtractorFactory) c.getEmbeddedDocumentExtractorFactory();
+        RUnpackExtractorFactory f =
+                (RUnpackExtractorFactory) c.getEmbeddedDocumentExtractorFactory();
 
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
-        ParsingEmbeddedDocumentExtractor ex = (ParsingEmbeddedDocumentExtractor) f.newInstance(metadata, parseContext);
+        RUnpackExtractor ex = (RUnpackExtractor) f.newInstance(metadata, parseContext);
         EmbeddedBytesSelector selector = ex.getEmbeddedBytesSelector();
         assertFalse(selector.select(getMetadata("", "")));
         assertTrue(selector.select(getMetadata("application/pdf", "")));

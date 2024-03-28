@@ -22,7 +22,7 @@
   <autoDetectParserConfig>
     <spoolToDisk>123450</spoolToDisk>
     <outputThreshold>678900</outputThreshold>
-    <embeddedDocumentExtractorFactory class="org.apache.tika.extractor.ParsingEmbeddedDocumentExtractorFactory">
+    <embeddedDocumentExtractorFactory class="org.apache.tika.extractor.RUnpackExtractorFactory">
       <writeFileNameToContent>false</writeFileNameToContent>
     </embeddedDocumentExtractorFactory>
   </autoDetectParserConfig>
