@@ -16,10 +16,10 @@
  */
 package org.apache.tika.pipes.fetchers.microsoftgraph.config;
 
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 
 public class MsGraphFetcherConfig extends AbstractConfig {
     private long[] throttleSeconds;
@@ -27,6 +27,7 @@ public class MsGraphFetcherConfig extends AbstractConfig {
     private AadCredentialConfigBase credentials;
 
     private List<String> scopes = new ArrayList<>();
+
     public boolean isSpoolToTemp() {
         return spoolToTemp;
     }
