@@ -22,7 +22,6 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -79,8 +78,7 @@ public class PipesServerTest extends TikaTest {
     }
 
     @Test
-    public void testEmbeddedStreamEmitter() throws Exception {
-        Path tmp = Paths.get("/home/tallison/Desktop/tmp");
+    public void testEmbeddedStreamEmitter(@TempDir Path tmp) throws Exception {
         if (Files.isDirectory(tmp)) {
             FileUtils.deleteDirectory(tmp.toFile());
         }
@@ -136,8 +134,7 @@ public class PipesServerTest extends TikaTest {
     }
 
     @Test
-    public void testEmbeddedStreamEmitterLimitBytes() throws Exception {
-        Path tmp = Paths.get("/home/tallison/Desktop/tmp");
+    public void testEmbeddedStreamEmitterLimitBytes(@TempDir Path tmp) throws Exception {
         if (Files.isDirectory(tmp)) {
             FileUtils.deleteDirectory(tmp.toFile());
         }

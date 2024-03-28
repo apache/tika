@@ -56,7 +56,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
     private boolean writeFileNameToContent = true;
 
-    private final ParseContext context;
+    protected final ParseContext context;
 
     public ParsingEmbeddedDocumentExtractor(ParseContext context) {
         this.context = context;
@@ -123,7 +123,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         }
     }
 
-    private void recordException(Exception e, ParseContext context) {
+    void recordException(Exception e, ParseContext context) {
         ParseRecord record = context.get(ParseRecord.class);
         if (record == null) {
             return;
@@ -137,5 +137,9 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
     public void setWriteFileNameToContent(boolean writeFileNameToContent) {
         this.writeFileNameToContent = writeFileNameToContent;
+    }
+
+    public boolean isWriteFileNameToContent() {
+        return writeFileNameToContent;
     }
 }

@@ -19,7 +19,6 @@ package org.apache.tika.extractor;
 import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -40,10 +39,7 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.ParseRecord;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 
@@ -52,18 +48,12 @@ import org.apache.tika.sax.EmbeddedContentHandler;
  *
  * @since Apache Tika 3.0.0
  */
-public class RUnpackExtractor implements EmbeddedDocumentExtractor {
+public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(ParsingEmbeddedDocumentExtractor.class);
 
     private static final File ABSTRACT_PATH = new File("");
-
-    private static final Parser DELEGATING_PARSER = new DelegatingParser();
-
-    private boolean writeFileNameToContent = true;
-
-    private final ParseContext context;
 
     private EmbeddedBytesSelector embeddedBytesSelector = EmbeddedBytesSelector.ACCEPT_ALL;
 
@@ -71,27 +61,12 @@ public class RUnpackExtractor implements EmbeddedDocumentExtractor {
     private final long maxEmbeddedBytesForExtraction;
 
     public RUnpackExtractor(ParseContext context, long maxEmbeddedBytesForExtraction) {
-        this.context = context;
+        super(context);
         this.maxEmbeddedBytesForExtraction = maxEmbeddedBytesForExtraction;
     }
 
-    public boolean shouldParseEmbedded(Metadata metadata) {
-        DocumentSelector selector = context.get(DocumentSelector.class);
-        if (selector != null) {
-            return selector.select(metadata);
-        }
 
-        FilenameFilter filter = context.get(FilenameFilter.class);
-        if (filter != null) {
-            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-            if (name != null) {
-                return filter.accept(ABSTRACT_PATH, name);
-            }
-        }
-
-        return true;
-    }
-
+    @Override
     public void parseEmbedded(
             InputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml)
             throws SAXException, IOException {
@@ -102,7 +77,7 @@ public class RUnpackExtractor implements EmbeddedDocumentExtractor {
         }
 
         String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        if (writeFileNameToContent && name != null && name.length() > 0 && outputHtml) {
+        if (isWriteFileNameToContent() && name != null && name.length() > 0 && outputHtml) {
             handler.startElement(XHTML, "h1", "h1", new AttributesImpl());
             char[] chars = name.toCharArray();
             handler.characters(chars, 0, chars.length);
@@ -154,7 +129,7 @@ public class RUnpackExtractor implements EmbeddedDocumentExtractor {
 
     private void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata)
             throws TikaException, IOException, SAXException {
-        DELEGATING_PARSER.parse(stream,
+        getDelegatingParser().parse(stream,
                 new EmbeddedContentHandler(new BodyContentHandler(handler)),
                 metadata, context);
     }
@@ -196,23 +171,6 @@ public class RUnpackExtractor implements EmbeddedDocumentExtractor {
             //metadata.set(TikaCoreProperties.EMBEDDED_BYTES_EXCEPTION,
               //      ExceptionUtils.getStackTrace(e));
         }
-    }
-
-
-    private void recordException(Exception e, ParseContext context) {
-        ParseRecord record = context.get(ParseRecord.class);
-        if (record == null) {
-            return;
-        }
-        record.addException(e);
-    }
-
-    public Parser getDelegatingParser() {
-        return DELEGATING_PARSER;
-    }
-
-    public void setWriteFileNameToContent(boolean writeFileNameToContent) {
-        this.writeFileNameToContent = writeFileNameToContent;
     }
 
     public void setEmbeddedBytesSelector(EmbeddedBytesSelector embeddedBytesSelector) {
