@@ -16,9 +16,17 @@
  */
 package org.apache.tika.pipes.fetchers.microsoftgraph;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+
 import com.azure.identity.ClientCertificateCredentialBuilder;
 import com.azure.identity.ClientSecretCredentialBuilder;
 import com.microsoft.graph.serviceclient.GraphServiceClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -30,13 +38,6 @@ import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.ClientCertificateCredentialsConfig;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.ClientSecretCredentialsConfig;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.MsGraphFetcherConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
 
 /**
  * Fetches files from Microsoft Graph API.
@@ -58,6 +59,7 @@ public class MicrosoftGraphFetcher extends AbstractFetcher implements Initializa
 
     /**
      * Set seconds to throttle retries as a comma-delimited list, e.g.: 30,60,120,600
+     *
      * @param commaDelimitedLongs
      * @throws TikaConfigException
      */
@@ -74,6 +76,7 @@ public class MicrosoftGraphFetcher extends AbstractFetcher implements Initializa
         }
         setThrottleSeconds(seconds);
     }
+
     public void setThrottleSeconds(long[] throttleSeconds) {
         this.throttleSeconds = throttleSeconds;
     }
@@ -82,19 +85,19 @@ public class MicrosoftGraphFetcher extends AbstractFetcher implements Initializa
     public void initialize(Map<String, Param> map) {
         String[] scopes = msGraphFetcherConfig.getScopes().toArray(new String[0]);
         if (msGraphFetcherConfig.getCredentials() instanceof ClientCertificateCredentialsConfig) {
-            ClientCertificateCredentialsConfig credentials = (ClientCertificateCredentialsConfig) msGraphFetcherConfig.getCredentials();
-            graphClient = new GraphServiceClient(new ClientCertificateCredentialBuilder()
-                    .clientId(credentials.getClientId())
-                    .tenantId(credentials.getTenantId())
-                    .pfxCertificate(new ByteArrayInputStream(credentials.getCertificateBytes()))
-                    .clientCertificatePassword(credentials.getCertificatePassword())
-                    .build(), scopes);
+            ClientCertificateCredentialsConfig credentials =
+                    (ClientCertificateCredentialsConfig) msGraphFetcherConfig.getCredentials();
+            graphClient = new GraphServiceClient(
+                    new ClientCertificateCredentialBuilder().clientId(credentials.getClientId())
+                            .tenantId(credentials.getTenantId()).pfxCertificate(
+                                    new ByteArrayInputStream(credentials.getCertificateBytes()))
+                            .clientCertificatePassword(credentials.getCertificatePassword())
+                            .build(), scopes);
         } else if (msGraphFetcherConfig.getCredentials() instanceof ClientSecretCredentialsConfig) {
             ClientSecretCredentialsConfig credentials =
                     (ClientSecretCredentialsConfig) msGraphFetcherConfig.getCredentials();
             graphClient = new GraphServiceClient(
-                    new ClientSecretCredentialBuilder()
-                            .tenantId(credentials.getTenantId())
+                    new ClientSecretCredentialBuilder().tenantId(credentials.getTenantId())
                             .clientId(credentials.getClientId())
                             .clientSecret(credentials.getClientSecret()).build(), scopes);
         }
@@ -115,11 +118,8 @@ public class MicrosoftGraphFetcher extends AbstractFetcher implements Initializa
                 String[] fetchKeySplit = fetchKey.split(",");
                 String siteDriveId = fetchKeySplit[0];
                 String driveItemId = fetchKeySplit[1];
-                InputStream is = graphClient.drives().byDriveId(siteDriveId)
-                        .items()
-                        .byDriveItemId(driveItemId)
-                        .content()
-                        .get();
+                InputStream is = graphClient.drives().byDriveId(siteDriveId).items()
+                        .byDriveItemId(driveItemId).content().get();
 
                 long elapsed = System.currentTimeMillis() - start;
                 LOGGER.debug("Total to fetch {}", elapsed);
