@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.36.1</google.cloud.version>
-    <aws.version>1.12.689</aws.version>
+    <aws.version>1.12.690</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -324,7 +324,7 @@
     <commons.compress.version>1.26.1</commons.compress.version>
     <commons.csv.version>1.10.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
-    <commons.io.version>2.15.1</commons.io.version>
+    <commons.io.version>2.16.0</commons.io.version>
     <commons.lang3.version>3.14.0</commons.lang3.version>
     <commons.logging.version>1.3.1</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
