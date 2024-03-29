@@ -36,6 +36,8 @@ import javax.xml.transform.stream.StreamResult;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -55,6 +57,7 @@ import org.apache.tika.UpdateFetcherReply;
 import org.apache.tika.UpdateFetcherRequest;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.FetchEmitTuple;
@@ -67,6 +70,7 @@ import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
+    private static final Logger LOG = LoggerFactory.getLogger(TikaConfigSerializer.class);
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     /**
      * FetcherID is key, The pair is the Fetcher object and the Metadata
@@ -125,6 +129,74 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
     }
 
+    @Override
+    public void fetchAndParseServerSideStreaming(FetchAndParseRequest request,
+                                                 StreamObserver<FetchAndParseReply> responseObserver) {
+        fetchAndParseImpl(request, responseObserver);
+    }
+
+    @Override
+    public StreamObserver<FetchAndParseRequest> fetchAndParseBiDirectionalStreaming(
+            StreamObserver<FetchAndParseReply> responseObserver) {
+        return new StreamObserver<>() {
+            @Override
+            public void onNext(FetchAndParseRequest fetchAndParseRequest) {
+                fetchAndParseImpl(fetchAndParseRequest, responseObserver);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                LOG.error("Parse error occurred", throwable);
+            }
+
+            @Override
+            public void onCompleted() {
+                responseObserver.onCompleted();
+            }
+        };
+    }
+
+    @Override
+    public void fetchAndParse(FetchAndParseRequest request,
+                              StreamObserver<FetchAndParseReply> responseObserver) {
+        fetchAndParseImpl(request, responseObserver);
+        responseObserver.onCompleted();
+    }
+
+
+    private void fetchAndParseImpl(FetchAndParseRequest request,
+                                   StreamObserver<FetchAndParseReply> responseObserver) {
+        AbstractFetcher fetcher = fetchers.get(request.getFetcherName());
+        if (fetcher == null) {
+            throw new RuntimeException(
+                    "Could not find fetcher with name " + request.getFetcherName());
+        }
+        Metadata tikaMetadata = new Metadata();
+        for (Map.Entry<String, String> entry : request.getMetadataMap().entrySet()) {
+            tikaMetadata.add(entry.getKey(), entry.getValue());
+        }
+        try {
+            PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(),
+                    new FetchKey(fetcher.getName(), request.getFetchKey()), new EmitKey(),
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            for (Metadata metadata : pipesResult.getEmitData().getMetadataList()) {
+                FetchAndParseReply.Builder fetchReplyBuilder =
+                        FetchAndParseReply.newBuilder().setFetchKey(request.getFetchKey());
+                for (String name : metadata.names()) {
+                    String value = metadata.get(name);
+                    if (value != null) {
+                        fetchReplyBuilder.putFields(name, value);
+                    }
+                }
+                responseObserver.onNext(fetchReplyBuilder.build());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     @SuppressWarnings("raw")
     @Override
     public void createFetcher(CreateFetcherRequest request,
@@ -163,17 +235,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             }
             fetchers.put(name, abstractFetcher);
             fetcherConfigs.put(name, configObject);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        } catch (TikaConfigException e) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException | NoSuchMethodException | TikaConfigException e) {
             throw new RuntimeException(e);
         }
     }
@@ -184,41 +247,6 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             tikaParamsMap.put(entry.getKey(), new Param<>(entry.getKey(), entry.getValue()));
         }
         return tikaParamsMap;
-    }
-
-    @Override
-    public void fetchAndParse(FetchAndParseRequest request,
-                              StreamObserver<FetchAndParseReply> responseObserver) {
-        AbstractFetcher fetcher = fetchers.get(request.getFetcherName());
-        if (fetcher == null) {
-            throw new RuntimeException(
-                    "Could not find fetcher with name " + request.getFetcherName());
-        }
-        Metadata tikaMetadata = new Metadata();
-        for (Map.Entry<String, String> entry : request.getMetadataMap().entrySet()) {
-            tikaMetadata.add(entry.getKey(), entry.getValue());
-        }
-        try {
-            PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(),
-                    new FetchKey(fetcher.getName(), request.getFetchKey()), new EmitKey(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            for (Metadata metadata : pipesResult.getEmitData().getMetadataList()) {
-                FetchAndParseReply.Builder fetchReplyBuilder =
-                        FetchAndParseReply.newBuilder().setFetchKey(request.getFetchKey());
-                for (String name : metadata.names()) {
-                    String value = metadata.get(name);
-                    if (value != null) {
-                        fetchReplyBuilder.putFields(name, value);
-                    }
-                }
-                responseObserver.onNext(fetchReplyBuilder.build());
-            }
-            responseObserver.onCompleted();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 
     @Override

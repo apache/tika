@@ -27,6 +27,8 @@ service Tika {
   rpc ListFetchers(ListFetchersRequest) returns (ListFetchersReply) {}
   rpc DeleteFetcher(DeleteFetcherRequest) returns (DeleteFetcherReply) {}
   rpc FetchAndParse(FetchAndParseRequest) returns (FetchAndParseReply) {}
+  rpc FetchAndParseServerSideStreaming(FetchAndParseRequest) returns (stream FetchAndParseReply) {}
+  rpc FetchAndParseBiDirectionalStreaming(stream FetchAndParseRequest) returns (stream FetchAndParseReply) {}
 }
 
 message CreateFetcherRequest {

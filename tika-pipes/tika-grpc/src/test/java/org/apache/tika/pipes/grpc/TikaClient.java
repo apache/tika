@@ -1,9 +1,10 @@
 /*
- * Copyright 2015 The gRPC Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -15,6 +16,7 @@
  */
 package org.apache.tika.pipes.grpc;
 
+import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -66,6 +68,19 @@ public class TikaClient {
             return;
         }
         logger.info("Fetch reply - tika parsed metadata: " + fetchReply.getFieldsMap());
+    }
+
+    public void fetchAndParseServerSideStreaming(FetchAndParseRequest fetchAndParseRequest) {
+        Iterator<FetchAndParseReply> fetchReply;
+        try {
+            fetchReply = blockingStub.fetchAndParseServerSideStreaming(fetchAndParseRequest);
+        } catch (StatusRuntimeException e) {
+            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+            return;
+        }
+        while (fetchReply.hasNext()) {
+            logger.info("Fetch reply - tika parsed metadata: " + fetchReply.next());
+        }
     }
 
     public static void main(String[] args) throws Exception {
