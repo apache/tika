@@ -58,10 +58,8 @@ public class TikaGrpcServerTest {
 
     @Test
     public void testTikaCreateFetcher(Resources resources) throws Exception {
-        // Generate a unique in-process server name.
         String serverName = InProcessServerBuilder.generateName();
 
-        // Create a server, add service, start, and register for automatic graceful shutdown.
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
@@ -84,10 +82,8 @@ public class TikaGrpcServerTest {
 
     @Test
     public void testBiStream(Resources resources) throws Exception {
-        // Generate a unique in-process server name.
         String serverName = InProcessServerBuilder.generateName();
 
-        // Create a server, add service, start, and register for automatic graceful shutdown.
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
@@ -114,7 +110,7 @@ public class TikaGrpcServerTest {
         StreamObserver<FetchAndParseReply> replyStreamObserver = new StreamObserver<>() {
             @Override
             public void onNext(FetchAndParseReply fetchAndParseReply) {
-                LOG.info("Fetched {} with metadata {}", fetchAndParseReply.getFetchKey(),
+                LOG.debug("Fetched {} with metadata {}", fetchAndParseReply.getFetchKey(),
                         fetchAndParseReply.getFieldsMap());
                 fetchAndParseReplys.add(fetchAndParseReply);
             }
@@ -134,7 +130,7 @@ public class TikaGrpcServerTest {
                 tikaStub.fetchAndParseBiDirectionalStreaming(replyStreamObserver);
 
         File testDocumentFolder = new File("target/" + DateTimeFormatter.ofPattern(
-                "yyyy_mm_dd_HH_MM_ssSSS").format(LocalDateTime.now()) + "-" + UUID.randomUUID());
+                "yyyy_MM_dd_HH_mm_ssSSS").format(LocalDateTime.now()) + "-" + UUID.randomUUID());
         assertTrue(testDocumentFolder.mkdir());
         for (int i = 0; i < NUM_TEST_DOCS; ++i) {
             File testFile = new File(testDocumentFolder, "test-" + i + ".html");
