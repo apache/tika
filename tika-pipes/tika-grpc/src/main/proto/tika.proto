@@ -32,7 +32,7 @@ service Tika {
 message CreateFetcherRequest {
   string name = 1;
   string fetcherClass = 2;
-  map<string,string> params = 3;
+  map<string, string> params = 3;
 }
 
 message CreateFetcherReply {
@@ -42,7 +42,7 @@ message CreateFetcherReply {
 message UpdateFetcherRequest {
   string name = 1;
   string fetcherClass = 2;
-  map<string,string> params = 3;
+  map<string, string> params = 3;
 }
 
 message UpdateFetcherReply {
@@ -52,12 +52,12 @@ message UpdateFetcherReply {
 message FetchAndParseRequest {
   string fetcherName = 1;
   string fetchKey = 2;
-  map<string,string> metadata = 3;
+  map<string, string> metadata = 3;
 }
 
 message FetchAndParseReply {
   string fetchKey = 1;
-  map<string,string> fields = 2;
+  map<string, string> fields = 2;
 }
 
 message DeleteFetcherRequest {
@@ -75,7 +75,7 @@ message GetFetcherRequest {
 message GetFetcherReply {
   string name = 1;
   string fetcherClass = 2;
-  map<string,string> params = 3;
+  map<string, string> params = 3;
 }
 
 message ListFetchersRequest {
