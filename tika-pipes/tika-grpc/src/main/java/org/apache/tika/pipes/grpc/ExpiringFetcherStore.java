@@ -16,17 +16,16 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 
-public class ExpiringFetcherStore {
+public class ExpiringFetcherStore implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(ExpiringFetcherStore.class);
     public static final long EXPIRE_JOB_INITIAL_DELAY = 1L;
-    public static final long EXPIRE_JOB_PERIOD = 60L;
-
     private final Map<String, AbstractFetcher> fetchers = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, AbstractConfig> fetcherConfigs = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, Instant> fetcherLastAccessed =
             Collections.synchronizedMap(new HashMap<>());
 
-    ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService executorService =
+            Executors.newSingleThreadScheduledExecutor();
 
     public ExpiringFetcherStore(int expireAfterSeconds, int checkForExpiredFetchersDelaySeconds) {
         executorService.scheduleAtFixedRate(() -> {
@@ -77,5 +76,10 @@ public class ExpiringFetcherStore {
         fetchers.put(fetcher.getName(), fetcher);
         fetcherConfigs.put(fetcher.getName(), config);
         getFetcherAndLogAccess(fetcher.getName());
+    }
+
+    @Override
+    public void close() {
+        executorService.shutdownNow();
     }
 }
