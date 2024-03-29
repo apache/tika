@@ -13,7 +13,8 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
---><properties>
+-->
+<properties>
   <pipes>
     <params>
       <numClients>2</numClients>
@@ -25,5 +26,4 @@
       <maxForEmitBatchBytes>-1</maxForEmitBatchBytes> <!-- disable emit -->
     </params>
   </pipes>
-  <fetchers><fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher"><name>fetcherIdHere</name><basePath>/home/ndipiazza/atolio/tika/tika-pipes/tika-grpc/target</basePath><extractFileSystemMetadata>true</extractFileSystemMetadata></fetcher></fetchers>
 </properties>
