@@ -15,6 +15,10 @@
   limitations under the License.
 -->
 <properties>
+  <async>
+    <staleFetcherTimeoutSeconds>600</staleFetcherTimeoutSeconds>
+    <staleFetcherDelaySeconds>60</staleFetcherDelaySeconds>
+  </async>
   <pipes>
     <params>
       <numClients>2</numClients>
@@ -26,4 +30,6 @@
       <maxForEmitBatchBytes>-1</maxForEmitBatchBytes> <!-- disable emit -->
     </params>
   </pipes>
+  <fetchers>
+  </fetchers>
 </properties>
