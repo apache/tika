@@ -13,29 +13,29 @@ class ExpiringFetcherStoreTest {
 
     @Test
     void createFetcher() {
-        ExpiringFetcherStore expiringFetcherStore = new ExpiringFetcherStore(1, 60);
+        try (ExpiringFetcherStore expiringFetcherStore = new ExpiringFetcherStore(1, 60)) {
+            AbstractFetcher fetcher = new AbstractFetcher() {
+                @Override
+                public InputStream fetch(String fetchKey, Metadata metadata) {
+                    return null;
+                }
+            };
+            fetcher.setName("nick");
+            AbstractConfig config = new AbstractConfig() {
 
-        AbstractFetcher fetcher = new AbstractFetcher() {
-            @Override
-            public InputStream fetch(String fetchKey, Metadata metadata) {
-                return null;
+            };
+            expiringFetcherStore.createFetcher(fetcher, config);
+
+            Assertions.assertNotNull(expiringFetcherStore.getFetchers().get(fetcher.getName()));
+
+            try {
+                Thread.sleep(2000L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-        };
-        fetcher.setName("nick");
-        AbstractConfig config = new AbstractConfig() {
 
-        };
-        expiringFetcherStore.createFetcher(fetcher, config);
-
-        Assertions.assertNotNull(expiringFetcherStore.getFetchers().get(fetcher.getName()));
-
-        try {
-            Thread.sleep(2000L);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            Assertions.assertNull(expiringFetcherStore.getFetchers().get(fetcher.getName()));
+            Assertions.assertNull(expiringFetcherStore.getFetcherConfigs().get(fetcher.getName()));
         }
-
-        Assertions.assertNull(expiringFetcherStore.getFetchers().get(fetcher.getName()));
-        Assertions.assertNull(expiringFetcherStore.getFetcherConfigs().get(fetcher.getName()));
     }
 }
