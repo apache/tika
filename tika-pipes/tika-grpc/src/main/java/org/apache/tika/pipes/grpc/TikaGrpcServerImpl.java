@@ -74,8 +74,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     /**
      * FetcherID is key, The pair is the Fetcher object and the Metadata
      */
-    PipesConfig pipesConfig = PipesConfig.load(Paths.get("tika-config.xml"));
-    PipesClient pipesClient = new PipesClient(pipesConfig);
+    PipesConfig pipesConfig;
+    PipesClient pipesClient;
     ExpiringFetcherStore expiringFetcherStore;
 
     String tikaConfigPath;
@@ -83,6 +83,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     TikaGrpcServerImpl(String tikaConfigPath)
             throws TikaConfigException, IOException, ParserConfigurationException,
             TransformerException, SAXException {
+        pipesConfig = PipesConfig.load(Paths.get(tikaConfigPath));
+        pipesClient = new PipesClient(pipesConfig);
+
         expiringFetcherStore =
                 new ExpiringFetcherStore(pipesConfig.getStaleFetcherTimeoutSeconds(),
                         pipesConfig.getStaleFetcherDelaySeconds());

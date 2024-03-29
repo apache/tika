@@ -21,7 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -38,7 +40,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -55,6 +57,14 @@ import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 public class TikaGrpcServerTest {
     private static final Logger LOG = LoggerFactory.getLogger(TikaGrpcServerTest.class);
     public static final int NUM_TEST_DOCS = 50;
+    static File tikaConfigXmlTemplate = Paths.get("src",
+            "test", "resources", "tika-pipes-test-config.xml").toFile();
+    static File tikaConfigXml = new File("target", "tika-config-" + UUID.randomUUID() + ".xml");
+
+    @BeforeAll
+    static void init() throws IOException {
+        FileUtils.copyFile(tikaConfigXmlTemplate, tikaConfigXml);
+    }
 
     @Test
     public void testTikaCreateFetcher(Resources resources) throws Exception {
@@ -63,7 +73,7 @@ public class TikaGrpcServerTest {
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl("tika-config.xml")).build().start();
+                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath())).build().start();
         resources.register(server, Duration.ofSeconds(10));
 
         ManagedChannel channel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
@@ -77,7 +87,7 @@ public class TikaGrpcServerTest {
                 .putParams("basePath", targetFolder).putParams("extractFileSystemMetadata", "true")
                 .build());
 
-        Assertions.assertEquals(fetcherId, reply.getMessage());
+        assertEquals(fetcherId, reply.getMessage());
     }
 
     @Test
@@ -87,7 +97,7 @@ public class TikaGrpcServerTest {
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl("tika-config.xml")).build().start();
+                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath())).build().start();
         resources.register(server, Duration.ofSeconds(10));
 
         ManagedChannel channel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
@@ -102,7 +112,7 @@ public class TikaGrpcServerTest {
                 .putParams("basePath", targetFolder).putParams("extractFileSystemMetadata", "true")
                 .build());
 
-        Assertions.assertEquals(fetcherId, reply.getMessage());
+        assertEquals(fetcherId, reply.getMessage());
 
         List<FetchAndParseReply> fetchAndParseReplys =
                 Collections.synchronizedList(new ArrayList<>());
@@ -132,20 +142,24 @@ public class TikaGrpcServerTest {
         File testDocumentFolder = new File("target/" + DateTimeFormatter.ofPattern(
                 "yyyy_MM_dd_HH_mm_ssSSS").format(LocalDateTime.now()) + "-" + UUID.randomUUID());
         assertTrue(testDocumentFolder.mkdir());
-        for (int i = 0; i < NUM_TEST_DOCS; ++i) {
-            File testFile = new File(testDocumentFolder, "test-" + i + ".html");
-            FileUtils.writeStringToFile(testFile, "<html><body>test " + i + "</body></html>", StandardCharsets.UTF_8);
-        }
-        File[] testDocuments = testDocumentFolder.listFiles();
-        assertNotNull(testDocuments);
-        for (File testDocument : testDocuments) {
-            requestStreamObserver.onNext(FetchAndParseRequest.newBuilder()
-                            .setFetcherName(fetcherId)
-                            .setFetchKey(testDocument.getAbsolutePath())
-                    .build());
-        }
-        requestStreamObserver.onCompleted();
+        try {
+            for (int i = 0; i < NUM_TEST_DOCS; ++i) {
+                File testFile = new File(testDocumentFolder, "test-" + i + ".html");
+                FileUtils.writeStringToFile(testFile, "<html><body>test " + i + "</body></html>", StandardCharsets.UTF_8);
+            }
+            File[] testDocuments = testDocumentFolder.listFiles();
+            assertNotNull(testDocuments);
+            for (File testDocument : testDocuments) {
+                requestStreamObserver.onNext(FetchAndParseRequest.newBuilder()
+                        .setFetcherName(fetcherId)
+                        .setFetchKey(testDocument.getAbsolutePath())
+                        .build());
+            }
+            requestStreamObserver.onCompleted();
 
-        assertEquals(NUM_TEST_DOCS, fetchAndParseReplys.size());
+            assertEquals(NUM_TEST_DOCS, fetchAndParseReplys.size());
+        } finally {
+            FileUtils.deleteDirectory(testDocumentFolder);
+        }
     }
 }
