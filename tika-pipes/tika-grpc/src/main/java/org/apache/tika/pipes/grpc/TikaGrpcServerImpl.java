@@ -80,7 +80,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         for (var fetcherEntry : fetchers.entrySet()) {
             AbstractFetcher fetcherObject = fetcherEntry.getValue();
             Map<String, Object> fetcherConfigParams =
-                    OBJECT_MAPPER.convertValue(fetcherConfigs.get(fetcherEntry.getKey()), new TypeReference<>() {
+                    OBJECT_MAPPER.convertValue(fetcherConfigs.get(fetcherEntry.getKey()),
+                            new TypeReference<>() {
                             });
             Element fetcher = tikaConfigDoc.createElement("fetcher");
             fetcher.setAttribute("class", fetcherEntry.getValue().getClass().getName());
@@ -230,7 +231,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         Map<String, Object> paramMap =
                 OBJECT_MAPPER.convertValue(abstractConfig, new TypeReference<>() {
                 });
-        paramMap.forEach((k, v) -> getFetcherReply.putParams(Objects.toString(k), Objects.toString(v)));
+        paramMap.forEach(
+                (k, v) -> getFetcherReply.putParams(Objects.toString(k), Objects.toString(v)));
         responseObserver.onNext(getFetcherReply.build());
         responseObserver.onCompleted();
     }
@@ -247,16 +249,18 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         responseObserver.onCompleted();
     }
 
-    private GetFetcherReply.Builder createFetcherReply(Map.Entry<String, AbstractConfig> fetcherConfig) {
+    private GetFetcherReply.Builder createFetcherReply(
+            Map.Entry<String, AbstractConfig> fetcherConfig) {
         AbstractFetcher abstractFetcher = fetchers.get(fetcherConfig.getKey());
         AbstractConfig abstractConfig = fetcherConfigs.get(fetcherConfig.getKey());
-        GetFetcherReply.Builder replyBuilder = GetFetcherReply.newBuilder()
-                .setFetcherClass(abstractFetcher.getClass().getName())
-                .setName(abstractFetcher.getName());
+        GetFetcherReply.Builder replyBuilder =
+                GetFetcherReply.newBuilder().setFetcherClass(abstractFetcher.getClass().getName())
+                        .setName(abstractFetcher.getName());
         Map<String, Object> paramMap =
                 OBJECT_MAPPER.convertValue(abstractConfig, new TypeReference<>() {
                 });
-        paramMap.forEach((k, v) -> replyBuilder.putParams(Objects.toString(k), Objects.toString(v)));
+        paramMap.forEach(
+                (k, v) -> replyBuilder.putParams(Objects.toString(k), Objects.toString(v)));
         return replyBuilder;
     }
 
