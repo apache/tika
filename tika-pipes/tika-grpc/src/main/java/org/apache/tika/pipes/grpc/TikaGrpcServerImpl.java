@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -75,16 +74,18 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     /**
      * FetcherID is key, The pair is the Fetcher object and the Metadata
      */
-    Map<String, AbstractFetcher> fetchers = Collections.synchronizedMap(new HashMap<>());
-    Map<String, AbstractConfig> fetcherConfigs = Collections.synchronizedMap(new HashMap<>());
     PipesConfig pipesConfig = PipesConfig.load(Paths.get("tika-config.xml"));
     PipesClient pipesClient = new PipesClient(pipesConfig);
+    ExpiringFetcherStore expiringFetcherStore;
 
     String tikaConfigPath;
 
     TikaGrpcServerImpl(String tikaConfigPath)
             throws TikaConfigException, IOException, ParserConfigurationException,
             TransformerException, SAXException {
+        expiringFetcherStore =
+                new ExpiringFetcherStore(pipesConfig.getStaleFetcherTimeoutSeconds(),
+                        pipesConfig.getStaleFetcherDelaySeconds());
         this.tikaConfigPath = tikaConfigPath;
         updateTikaConfig();
     }
@@ -93,14 +94,15 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             throws ParserConfigurationException, IOException, SAXException, TransformerException {
         Document tikaConfigDoc =
                 DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(tikaConfigPath);
+
         Element fetchersElement = (Element) tikaConfigDoc.getElementsByTagName("fetchers").item(0);
         for (int i = 0; i < fetchersElement.getChildNodes().getLength(); ++i) {
             fetchersElement.removeChild(fetchersElement.getChildNodes().item(i));
         }
-        for (var fetcherEntry : fetchers.entrySet()) {
+        for (var fetcherEntry : expiringFetcherStore.getFetchers().entrySet()) {
             AbstractFetcher fetcherObject = fetcherEntry.getValue();
             Map<String, Object> fetcherConfigParams =
-                    OBJECT_MAPPER.convertValue(fetcherConfigs.get(fetcherEntry.getKey()),
+                    OBJECT_MAPPER.convertValue(expiringFetcherStore.getFetcherConfigs().get(fetcherEntry.getKey()),
                             new TypeReference<>() {
                             });
             Element fetcher = tikaConfigDoc.createElement("fetcher");
@@ -166,7 +168,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     private void fetchAndParseImpl(FetchAndParseRequest request,
                                    StreamObserver<FetchAndParseReply> responseObserver) {
-        AbstractFetcher fetcher = fetchers.get(request.getFetcherName());
+        AbstractFetcher fetcher = expiringFetcherStore.getFetcherAndLogAccess(request.getFetcherName());
         if (fetcher == null) {
             throw new RuntimeException(
                     "Could not find fetcher with name " + request.getFetcherName());
@@ -233,8 +235,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 Initializable initializable = (Initializable) abstractFetcher;
                 initializable.initialize(tikaParamsMap);
             }
-            fetchers.put(name, abstractFetcher);
-            fetcherConfigs.put(name, configObject);
+            expiringFetcherStore.createFetcher(abstractFetcher, configObject);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                  InvocationTargetException | NoSuchMethodException | TikaConfigException e) {
             throw new RuntimeException(e);
@@ -271,7 +272,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     public void getFetcher(GetFetcherRequest request,
                            StreamObserver<GetFetcherReply> responseObserver) {
         GetFetcherReply.Builder getFetcherReply = GetFetcherReply.newBuilder();
-        AbstractConfig abstractConfig = fetcherConfigs.get(request.getName());
+        AbstractConfig abstractConfig = expiringFetcherStore.getFetcherConfigs().get(request.getName());
         Map<String, Object> paramMap =
                 OBJECT_MAPPER.convertValue(abstractConfig, new TypeReference<>() {
                 });
@@ -285,7 +286,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     public void listFetchers(ListFetchersRequest request,
                              StreamObserver<ListFetchersReply> responseObserver) {
         ListFetchersReply.Builder listFetchersReplyBuilder = ListFetchersReply.newBuilder();
-        for (Map.Entry<String, AbstractConfig> fetcherConfig : fetcherConfigs.entrySet()) {
+        for (Map.Entry<String, AbstractConfig> fetcherConfig : expiringFetcherStore.getFetcherConfigs().entrySet()) {
             GetFetcherReply.Builder replyBuilder = createFetcherReply(fetcherConfig);
             listFetchersReplyBuilder.addGetFetcherReply(replyBuilder.build());
         }
@@ -295,8 +296,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     private GetFetcherReply.Builder createFetcherReply(
             Map.Entry<String, AbstractConfig> fetcherConfig) {
-        AbstractFetcher abstractFetcher = fetchers.get(fetcherConfig.getKey());
-        AbstractConfig abstractConfig = fetcherConfigs.get(fetcherConfig.getKey());
+        AbstractFetcher abstractFetcher = expiringFetcherStore.getFetchers().get(fetcherConfig.getKey());
+        AbstractConfig abstractConfig = expiringFetcherStore.getFetcherConfigs().get(fetcherConfig.getKey());
         GetFetcherReply.Builder replyBuilder =
                 GetFetcherReply.newBuilder().setFetcherClass(abstractFetcher.getClass().getName())
                         .setName(abstractFetcher.getName());
@@ -319,8 +320,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
     }
 
-    private void deleteFetcher(String name) {
-        fetcherConfigs.remove(name);
-        fetchers.remove(name);
+    private void deleteFetcher(String fetcherName) {
+        expiringFetcherStore.deleteFetcher(fetcherName);
     }
 }
