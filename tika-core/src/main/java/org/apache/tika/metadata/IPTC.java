@@ -506,6 +506,7 @@ public interface IPTC {
      *
      * @deprecated
      */
+    @Deprecated
     Property URGENCY = Photoshop.URGENCY;
 
     /**
@@ -518,6 +519,7 @@ public interface IPTC {
      *
      * @deprecated
      */
+    @Deprecated
     Property CATEGORY = Photoshop.CATEGORY;
 
     /**
@@ -528,6 +530,7 @@ public interface IPTC {
      *
      * @deprecated
      */
+    @Deprecated
     Property SUPPLEMENTAL_CATEGORIES = Photoshop.SUPPLEMENTAL_CATEGORIES;
 
     /**
@@ -638,6 +641,7 @@ public interface IPTC {
      *
      * @deprecated
      */
+    @Deprecated
     Property DIGITAL_SOURCE_FILE_TYPE = Property.internalText(
             PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
                     "DigitalSourcefileType");
@@ -690,6 +694,7 @@ public interface IPTC {
     /**
      * @deprecated use {@link IPTC#IMAGE_SUPPLIER_ID}
      */
+    @Deprecated
     String IMAGE_SUPPLIER_ID_WRONG_CASE =
             PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierId";
     /**
@@ -796,6 +801,7 @@ public interface IPTC {
     /**
      * @deprecated use {@link IPTC#COPYRIGHT_OWNER_ID}
      */
+    @Deprecated
     String COPYRIGHT_OWNER_ID_WRONG_CASE =
             PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwnerId";
     /**
@@ -839,6 +845,7 @@ public interface IPTC {
     /**
      * @deprecated use {@link IPTC#IMAGE_CREATOR_ID}
      */
+    @Deprecated
     String IMAGE_CREATOR_ID_WRONG_CASE =
             PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageCreatorId";
     /**
@@ -883,6 +890,7 @@ public interface IPTC {
     /**
      * @deprecated use {@link IPTC#LICENSOR_ID}
      */
+    @Deprecated
     String LICENSOR_ID_WRONG_CASE =
             PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorId";
     /**

@@ -40,7 +40,7 @@ import org.apache.tika.parser.jdbc.JDBCTableReader;
  * For now, this silently skips cells of type CLOB, because xerial's jdbc connector
  * does not currently support them.
  */
-class SQLite3TableReader extends JDBCTableReader {
+public class SQLite3TableReader extends JDBCTableReader {
 
 
     public SQLite3TableReader(Connection connection, String tableName,

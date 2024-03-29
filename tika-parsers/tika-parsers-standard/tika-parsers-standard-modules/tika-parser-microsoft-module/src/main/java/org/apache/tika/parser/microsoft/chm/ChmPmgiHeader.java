@@ -73,7 +73,7 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
         ChmAssert.assertChmAccessorNotNull(chmPmgiHeader);
         ChmAssert.assertPositiveInt(count);
         this.setDataRemained(data.length);
-        index = ChmCommons.indexOf(data, ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8));
+        index = ChmCommons.indexOfDataSpaceStorageElement(data, ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8));
 
         if (index >= 0) {
             System.arraycopy(data, index, chmPmgiHeader.getSignature(), 0, count);

@@ -18,6 +18,7 @@ package org.apache.tika.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Very slight modification of Commons' BoundedInputStream
@@ -121,5 +122,33 @@ public class BoundedInputStream extends InputStream {
     public boolean hasHitBound() {
         return pos >= max;
     }
-}
 
+    @Override
+    public byte[] readNBytes(int len) throws IOException {
+        return in.readNBytes(len);
+    }
+
+    @Override
+    public int readNBytes(byte[] b, int off, int len) throws IOException {
+        return in.readNBytes(b, off, len);
+    }
+
+    @Override
+    public int available() throws IOException {
+        return in.available();
+    }
+
+    @Override
+    public boolean markSupported() {
+        return in.markSupported();
+    }
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        return in.transferTo(out);
+    }
+
+    public long getPos() {
+        return pos;
+    }
+}

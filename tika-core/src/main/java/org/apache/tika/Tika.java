@@ -672,6 +672,10 @@ public class Tika {
     //--------------------------------------------------------------< Object >
 
     public String toString() {
+        return getString();
+    }
+
+    public static String getString() {
         String version = null;
 
         try (InputStream stream = Tika.class

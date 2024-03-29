@@ -25,11 +25,16 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
@@ -49,6 +54,7 @@ import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -72,6 +78,7 @@ public class TikaPipesTest extends CXFTestBase {
     private static Path TMP_WORKING_DIR;
     private static Path TMP_OUTPUT_DIR;
     private static Path TMP_OUTPUT_FILE;
+    private static Path TMP_BYTES_DIR;
     private static Path TIKA_PIPES_LOG4j2_PATH;
     private static Path TIKA_CONFIG_PATH;
     private static String TIKA_CONFIG_XML;
@@ -81,6 +88,7 @@ public class TikaPipesTest extends CXFTestBase {
     public static void setUpBeforeClass() throws Exception {
         Path inputDir = TMP_WORKING_DIR.resolve("input");
         TMP_OUTPUT_DIR = TMP_WORKING_DIR.resolve("output");
+        TMP_BYTES_DIR = TMP_WORKING_DIR.resolve("bytes");
         TMP_OUTPUT_FILE = TMP_OUTPUT_DIR.resolve(TEST_RECURSIVE_DOC + ".json");
 
         Files.createDirectories(inputDir);
@@ -103,6 +111,9 @@ public class TikaPipesTest extends CXFTestBase {
                         "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
                         "<params>" + "<name>fse</name>" + "<basePath>" +
                         TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</params>" +
+                        "</emitter>" + "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
+                        "<params>" + "<name>bytes</name>" + "<basePath>" +
+                        TMP_BYTES_DIR.toAbsolutePath() + "</basePath>" + "</params>" +
                         "</emitter>" + "</emitters>" + "<pipes><params><tikaConfig>" +
                         ProcessUtils.escapeCommandLine(
                                 TIKA_CONFIG_PATH.toAbsolutePath().toString()) +
@@ -202,5 +213,87 @@ public class TikaPipesTest extends CXFTestBase {
         assertEquals(1, metadataList.size());
         assertContains("When in the Course",
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testBytes() throws Exception {
+        EmbeddedDocumentBytesConfig config = new EmbeddedDocumentBytesConfig(true);
+        config.setEmitter("bytes");
+        config.setIncludeOriginal(true);
+        config.setEmbeddedIdPrefix("-");
+        config.setZeroPadNameLength(10);
+        config.setSuffixStrategy(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.EXISTING);
+
+        FetchEmitTuple t =
+                new FetchEmitTuple("myId", new FetchKey("fsf", "test_recursive_embedded.docx"),
+                        new EmitKey("fse", "test_recursive_embedded.docx"), new Metadata(),
+                        new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                                HandlerConfig.PARSE_MODE.RMETA, -1, -1, false),
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, config);
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTuple.toJson(t, writer);
+
+        String getUrl = endPoint + PIPES_PATH;
+        Response response =
+                WebClient.create(getUrl).accept("application/json").post(writer.toString());
+        assertEquals(200, response.getStatus());
+
+        List<Metadata> metadataList = null;
+        try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_FILE)) {
+            metadataList = JsonMetadataList.fromJson(reader);
+        }
+        assertEquals(12, metadataList.size());
+        assertContains("When in the Course",
+                metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT));
+        Map<String, Long> expected = loadExpected();
+        Map<String, Long> byteFileNames = getFileNames(TMP_BYTES_DIR);
+        assertEquals(expected, byteFileNames);
+    }
+
+    private Map<String, Long> loadExpected() {
+        Map<String, Long> m = new HashMap<>();
+        m.put("test_recursive_embedded.docx-0000000009.txt", 8151l);
+        m.put("test_recursive_embedded.docx-0000000007.txt", 8l);
+        m.put("test_recursive_embedded.docx-0000000006.txt", 8l);
+        m.put("test_recursive_embedded.docx-0000000002.zip", 4827l);
+        m.put("test_recursive_embedded.docx-0000000001.emf", 4992l);
+        m.put("test_recursive_embedded.docx-0000000008.zip", 4048l);
+        m.put("test_recursive_embedded.docx-0000000004.txt", 8l);
+        m.put("test_recursive_embedded.docx-0000000000.docx", 27082l);
+        m.put("test_recursive_embedded.docx-0000000003.txt", 8l);
+        m.put("test_recursive_embedded.docx-0000000011.txt", 7l);
+        m.put("test_recursive_embedded.docx-0000000005.zip", 4492l);
+        m.put("test_recursive_embedded.docx-0000000010.zip", 163l);
+        return m;
+    }
+
+    private Map<String, Long> getFileNames(Path p) throws Exception {
+        final Map<String, Long> ret = new HashMap<>();
+        Files.walkFileTree(TMP_BYTES_DIR, new FileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                    throws IOException {
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                ret.put(file.getFileName().toString(), Files.size(file));
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                    throws IOException {
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return ret;
     }
 }

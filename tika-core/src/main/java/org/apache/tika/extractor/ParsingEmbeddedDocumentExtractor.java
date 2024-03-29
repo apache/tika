@@ -56,7 +56,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
     private boolean writeFileNameToContent = true;
 
-    private final ParseContext context;
+    protected final ParseContext context;
 
     public ParsingEmbeddedDocumentExtractor(ParseContext context) {
         this.context = context;
@@ -99,7 +99,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         // Use the delegate parser to parse this entry
         try (TemporaryResources tmp = new TemporaryResources()) {
             final TikaInputStream newStream =
-                    TikaInputStream.get(CloseShieldInputStream.wrap(stream), tmp, metadata);
+                    TikaInputStream.get(new CloseShieldInputStream(stream), tmp, metadata);
             if (stream instanceof TikaInputStream) {
                 final Object container = ((TikaInputStream) stream).getOpenContainer();
                 if (container != null) {
@@ -123,7 +123,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         }
     }
 
-    private void recordException(Exception e, ParseContext context) {
+    void recordException(Exception e, ParseContext context) {
         ParseRecord record = context.get(ParseRecord.class);
         if (record == null) {
             return;
@@ -137,5 +137,9 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
     public void setWriteFileNameToContent(boolean writeFileNameToContent) {
         this.writeFileNameToContent = writeFileNameToContent;
+    }
+
+    public boolean isWriteFileNameToContent() {
+        return writeFileNameToContent;
     }
 }

@@ -21,6 +21,7 @@ import java.util.Objects;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.fetcher.FetchKey;
 
 public class FetchEmitTuple implements Serializable {
@@ -38,6 +39,7 @@ public class FetchEmitTuple implements Serializable {
     private final ON_PARSE_EXCEPTION onParseException;
     private HandlerConfig handlerConfig;
 
+    private EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig;
 
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey) {
         this(id, fetchKey, emitKey, new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG,
@@ -55,12 +57,20 @@ public class FetchEmitTuple implements Serializable {
 
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata,
                           HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException) {
+        this(id, fetchKey, emitKey, metadata, handlerConfig, onParseException,
+                EmbeddedDocumentBytesConfig.SKIP);
+    }
+
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata,
+                          HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException,
+                          EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig) {
         this.id = id;
         this.fetchKey = fetchKey;
         this.emitKey = emitKey;
         this.metadata = metadata;
         this.handlerConfig = handlerConfig;
         this.onParseException = onParseException;
+        this.embeddedDocumentBytesConfig = embeddedDocumentBytesConfig;
     }
 
     public String getId() {
@@ -94,21 +104,40 @@ public class FetchEmitTuple implements Serializable {
         return handlerConfig == null ? HandlerConfig.DEFAULT_HANDLER_CONFIG : handlerConfig;
     }
 
+    public EmbeddedDocumentBytesConfig getEmbeddedDocumentBytesConfig() {
+        return embeddedDocumentBytesConfig;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         FetchEmitTuple that = (FetchEmitTuple) o;
 
-        if (!Objects.equals(id, that.id)) return false;
-        if (!Objects.equals(fetchKey, that.fetchKey))
+        if (!Objects.equals(id, that.id)) {
             return false;
-        if (!Objects.equals(emitKey, that.emitKey)) return false;
-        if (!Objects.equals(metadata, that.metadata))
+        }
+        if (!Objects.equals(fetchKey, that.fetchKey)) {
             return false;
-        if (onParseException != that.onParseException) return false;
-        return Objects.equals(handlerConfig, that.handlerConfig);
+        }
+        if (!Objects.equals(emitKey, that.emitKey)) {
+            return false;
+        }
+        if (!Objects.equals(metadata, that.metadata)) {
+            return false;
+        }
+        if (onParseException != that.onParseException) {
+            return false;
+        }
+        if (!Objects.equals(handlerConfig, that.handlerConfig)) {
+            return false;
+        }
+        return Objects.equals(embeddedDocumentBytesConfig, that.embeddedDocumentBytesConfig);
     }
 
     @Override
@@ -119,13 +148,16 @@ public class FetchEmitTuple implements Serializable {
         result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
         result = 31 * result + (onParseException != null ? onParseException.hashCode() : 0);
         result = 31 * result + (handlerConfig != null ? handlerConfig.hashCode() : 0);
+        result = 31 * result +
+                (embeddedDocumentBytesConfig != null ? embeddedDocumentBytesConfig.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
         return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey=" +
-            emitKey + ", metadata=" + metadata + ", onParseException=" + onParseException +
-            ", handlerConfig=" + handlerConfig + '}';
+                emitKey + ", metadata=" + metadata + ", onParseException=" + onParseException +
+                ", handlerConfig=" + handlerConfig + ", embeddedDocumentBytesConfig=" +
+                embeddedDocumentBytesConfig + '}';
     }
 }

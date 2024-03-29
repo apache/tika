@@ -13,4 +13,5 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+org.apache.tika.parser.geopkg.GeoPkgParser
 org.apache.tika.parser.sqlite3.SQLite3Parser

@@ -42,6 +42,7 @@ public class TikaEvalMetadataFilterTest {
             assertEquals(11, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_UNIQUE_TOKENS));
             assertEquals(10, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_ALPHA_TOKENS));
             assertEquals(9, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_UNIQUE_ALPHA_TOKENS));
+            assertEquals(9, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_COMMON_TOKENS));
 
 
             assertEquals(0.0999,

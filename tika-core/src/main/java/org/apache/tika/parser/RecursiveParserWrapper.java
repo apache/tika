@@ -223,6 +223,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
         @Override
         public void parse(InputStream stream, ContentHandler ignore, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
+
             //Test to see if we should avoid parsing
             if (parserState.recursiveParserWrapperHandler.hasHitMaximumEmbeddedResources()) {
                 return;
@@ -255,6 +256,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             //so that you can return it back to its state at the end of this parse
             ContentHandler preContextHandler = secureContentHandler.handler;
             secureContentHandler.updateContentHandler(localHandler);
+
             try {
                 super.parse(stream, secureContentHandler, metadata, context);
             } catch (SAXException e) {

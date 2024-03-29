@@ -51,6 +51,7 @@ public abstract class AbstractParser implements Parser {
      * @deprecated use the {@link Parser#parse(InputStream, ContentHandler,
      * Metadata, ParseContext)} method instead
      */
+    @Deprecated
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());

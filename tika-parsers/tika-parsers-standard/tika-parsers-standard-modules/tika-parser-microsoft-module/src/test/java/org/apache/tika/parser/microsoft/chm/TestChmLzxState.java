@@ -53,7 +53,8 @@ public class TestChmLzxState {
         ChmDirectoryListingSet chmDirListCont =
                 new ChmDirectoryListingSet(data, chmItsHeader, chmItspHeader);
         int indexOfControlData = ChmCommons
-                .indexOf(chmDirListCont.getDirectoryListingEntryList(), ChmConstants.CONTROL_DATA);
+                .indexOfDataSpaceStorageElement(chmDirListCont.getDirectoryListingEntryList(),
+                        ChmConstants.CONTROL_DATA);
 
         int indexOfResetTable =
                 ChmCommons.indexOfResetTableBlock(data, ChmConstants.LZXC.getBytes(UTF_8));

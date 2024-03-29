@@ -98,6 +98,10 @@ public interface TikaCoreProperties {
     Property EMBEDDED_EXCEPTION =
             Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_exception");
 
+    //exception handling the raw bytes of an embedded file by an EmbeddedDocumentByteStore
+    Property EMBEDDED_BYTES_EXCEPTION =
+            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_bytes_exception");
+
     //warning while parsing in an embedded file
     Property EMBEDDED_WARNING =
             Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_warning");
@@ -321,6 +325,22 @@ public interface TikaCoreProperties {
 
     //is the file encrypted
     Property IS_ENCRYPTED = Property.internalBoolean(TIKA_META_PREFIX + "encrypted");
+
+    /**
+     * When an EncodingDetector detects an encoding, the encoding should be stored in this field.
+     * This is different from {@link Metadata#CONTENT_ENCODING} because that is what a parser
+     * chooses to use for processing a file. If an EncodingDetector returns "null", a parser
+     * may choose to use a default encoding. We want to differentiate between a parser using a
+     * default encoding and the output of an EncodingDetector.
+     */
+    Property DETECTED_ENCODING = Property.externalText(TIKA_META_PREFIX + "detectedEncoding");
+
+
+    /**
+     * This should be the simple class name for the EncodingDetectors whose detected encoding
+     * was used in the parse.
+     */
+    Property ENCODING_DETECTOR = Property.externalText(TIKA_META_PREFIX + "encodingDetector");
 
     /**
      * General metadata key for the count of non-final versions available within a file.  This

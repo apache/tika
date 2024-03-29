@@ -48,6 +48,15 @@ public class TruncatedOOXMLTest extends TikaTest {
         //this is really truncated
         List<Metadata> metadataList =
                 getRecursiveMetadata(truncate("testWORD_various.docx", 774), true);
+
+        // for debuging problems in commons compress 1.25.0 -> 1.26.0
+        metadataList.forEach(m -> {
+            System.out.println("depth: " + m.get("X-TIKA:embedded_depth"));
+            System.out.println("relid: " + m.get("embeddedRelationshipId"));
+            System.out.println("res:   " + m.get("resourceName"));
+            System.out.println("cont:  " + m.get("X-TIKA:content"));
+        });
+
         assertEquals(4, metadataList.size());
         Metadata m = metadataList.get(0);
         assertEquals("application/x-tika-ooxml", m.get(Metadata.CONTENT_TYPE));

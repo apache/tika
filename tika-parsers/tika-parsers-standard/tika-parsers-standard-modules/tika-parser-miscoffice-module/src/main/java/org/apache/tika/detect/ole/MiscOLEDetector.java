@@ -75,6 +75,7 @@ public class MiscOLEDetector implements Detector {
      * entry of the filesystem whose type is to be detected, as a
      * second argument.
      */
+    @Deprecated
     protected static MediaType detect(Set<String> names) {
         return detect(names, null);
     }
@@ -90,7 +91,7 @@ public class MiscOLEDetector implements Detector {
      * @return
      */
     protected static MediaType detect(Set<String> names, DirectoryEntry root) {
-        if (names == null || names.size() == 0) {
+        if (names == null || names.isEmpty()) {
             return OLE;
         } else if (names.contains("\u0005HwpSummaryInformation")) {
             // Hangul Word Processor v5+ (previous aren't OLE2-based)
@@ -162,6 +163,7 @@ public class MiscOLEDetector implements Detector {
         }
     }
 
+    @Override
     public MediaType detect(InputStream input, Metadata metadata) throws IOException {
         // Check if we have access to the document
         if (input == null) {

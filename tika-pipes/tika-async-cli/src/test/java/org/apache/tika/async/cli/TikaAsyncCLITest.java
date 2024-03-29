@@ -28,7 +28,7 @@ import org.apache.tika.exception.TikaConfigException;
 public class TikaAsyncCLITest {
     @Test
     public void testCrash() throws Exception {
-        Path config = getPath("/tika-config-broken.xml");
+        Path config = getPath("/configs/tika-config-broken.xml");
         assertThrows(TikaConfigException.class,
                 () -> TikaAsyncCLI.main(
                         new String[] {

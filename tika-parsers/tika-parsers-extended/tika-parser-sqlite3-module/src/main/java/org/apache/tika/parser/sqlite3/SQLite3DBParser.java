@@ -47,7 +47,7 @@ import org.apache.tika.parser.jdbc.JDBCTableReader;
  * This parser is internal only; it should not be registered in the services
  * file or configured in the TikaConfig xml file.
  */
-class SQLite3DBParser extends AbstractDBParser {
+public class SQLite3DBParser extends AbstractDBParser {
 
     protected static final String SQLITE_CLASS_NAME = "org.sqlite.JDBC";
 

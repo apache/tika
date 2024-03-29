@@ -73,6 +73,7 @@
       <artifactId>tika-emitter-fs</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- this brings in tika-core -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-async-cli</artifactId>

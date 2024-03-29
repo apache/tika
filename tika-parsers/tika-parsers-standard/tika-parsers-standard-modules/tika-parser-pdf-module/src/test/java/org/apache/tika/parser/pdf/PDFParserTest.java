@@ -238,7 +238,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("true", metadata.get("pdf:encrypted"));
         //pdf:encrypted, X-Parsed-By and Content-Type
-        assertEquals(4, metadata.names().length, "very little metadata should be parsed");
+        assertEquals(5, metadata.names().length, "very little metadata should be parsed");
         assertEquals(0, handler.toString().length());
     }
 
@@ -986,7 +986,7 @@ public class PDFParserTest extends TikaTest {
         while (matcher.find()) {
             listItems++;
         }
-        assertEquals(24, listItems);
+        assertEquals(27, listItems);
     }
 
     @Test
@@ -1431,6 +1431,14 @@ public class PDFParserTest extends TikaTest {
         assertContains("EncryptedDocumentException",
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
 
+    }
+    @Test
+    public void testDefaultPDFOCR() throws Exception {
+        //test that even with no ocr -- there is no tesseract ocr parser in this module --
+        // AUTO mode would have returned one page that would have been OCR'd had there been OCR.
+        List<Metadata> metadataList = getRecursiveMetadata("testOCR.pdf");
+        assertEquals(1, metadataList.size());
+        assertEquals(1, metadataList.get(0).getInt(PDF.OCR_PAGE_COUNT));
     }
     /**
      * TODO -- need to test signature extraction
