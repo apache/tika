@@ -291,7 +291,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         ListFetchersReply.Builder listFetchersReplyBuilder = ListFetchersReply.newBuilder();
         for (Map.Entry<String, AbstractConfig> fetcherConfig : expiringFetcherStore.getFetcherConfigs().entrySet()) {
             GetFetcherReply.Builder replyBuilder = createFetcherReply(fetcherConfig);
-            listFetchersReplyBuilder.addGetFetcherReply(replyBuilder.build());
+            listFetchersReplyBuilder.addGetFetcherReplies(replyBuilder.build());
         }
         responseObserver.onNext(listFetchersReplyBuilder.build());
         responseObserver.onCompleted();
