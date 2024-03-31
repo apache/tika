@@ -249,8 +249,8 @@
             </goals>
             <configuration>
               <sources>
-                <source>${basedir}target/generated-sources/protobuf/grpc-java</source>
-                <source>${basedir}target/generated-sources/protobuf/java</source>
+                <source>${basedir}/target/generated-sources/protobuf/grpc-java</source>
+                <source>${basedir}/target/generated-sources/protobuf/java</source>
               </sources>
             </configuration>
           </execution>

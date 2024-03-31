@@ -12,28 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 syntax = "proto3";
+package tika;
 
 option java_multiple_files = true;
 option java_package = "org.apache.tika";
 option java_outer_classname = "TikaProto";
 option objc_class_prefix = "HLW";
 
-package tika;
 
-service Tika {
+service Tika   {
   rpc CreateFetcher(CreateFetcherRequest) returns (CreateFetcherReply) {}
   rpc UpdateFetcher(UpdateFetcherRequest) returns (UpdateFetcherReply) {}
   rpc GetFetcher(GetFetcherRequest) returns (GetFetcherReply) {}
   rpc ListFetchers(ListFetchersRequest) returns (ListFetchersReply) {}
   rpc DeleteFetcher(DeleteFetcherRequest) returns (DeleteFetcherReply) {}
   rpc FetchAndParse(FetchAndParseRequest) returns (FetchAndParseReply) {}
-  rpc FetchAndParseServerSideStreaming(FetchAndParseRequest) returns (stream FetchAndParseReply) {}
-  rpc FetchAndParseBiDirectionalStreaming(stream FetchAndParseRequest) returns (stream FetchAndParseReply) {}
+  rpc FetchAndParseServerSideStreaming(FetchAndParseRequest)
+    returns (stream FetchAndParseReply) {}
+  rpc FetchAndParseBiDirectionalStreaming(stream FetchAndParseRequest) 
+    returns (stream FetchAndParseReply) {}
 }
 
 message CreateFetcherRequest {
   string name = 1;
-  string fetcherClass = 2;
+  string fetcher_class = 2;
   map<string, string> params = 3;
 }
 
@@ -43,7 +45,7 @@ message CreateFetcherReply {
 
 message UpdateFetcherRequest {
   string name = 1;
-  string fetcherClass = 2;
+  string fetcher_class = 2;
   map<string, string> params = 3;
 }
 
@@ -52,13 +54,13 @@ message UpdateFetcherReply {
 }
 
 message FetchAndParseRequest {
-  string fetcherName = 1;
-  string fetchKey = 2;
+  string fetcher_name = 1;
+  string fetch_key = 2;
   map<string, string> metadata = 3;
 }
 
 message FetchAndParseReply {
-  string fetchKey = 1;
+  string fetch_key = 1;
   map<string, string> fields = 2;
 }
 
@@ -76,15 +78,15 @@ message GetFetcherRequest {
 
 message GetFetcherReply {
   string name = 1;
-  string fetcherClass = 2;
+  string fetcher_class = 2;
   map<string, string> params = 3;
 }
 
 message ListFetchersRequest {
-  int32 pageNumber = 1;
-  int32 numFetchersPerPage = 2;
+  int32 page_number = 1;
+  int32 num_fetchers_per_page = 2;
 }
 
 message ListFetchersReply {
-  repeated GetFetcherReply getFetcherReply = 1;
+  repeated GetFetcherReply get_fetcher_replies = 1;
 }
