@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <asm.version>9.7</asm.version>
-    <aws.version>1.12.689</aws.version>
+    <aws.version>1.12.694</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -330,7 +330,7 @@
     <commons.csv.version>1.10.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
-    <commons.io.version>2.15.1</commons.io.version>
+    <commons.io.version>2.16.0</commons.io.version>
     <commons.lang3.version>3.14.0</commons.lang3.version>
     <commons.logging.version>1.3.1</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
@@ -385,7 +385,7 @@
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.23.1</log4j2.version>
     <lucene.version>9.10.0</lucene.version>
-    <maven.plugin.annotations.version>3.11.0</maven.plugin.annotations.version>
+    <maven.plugin.annotations.version>3.12.0</maven.plugin.annotations.version>
     <mchange.version>0.3.0</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
