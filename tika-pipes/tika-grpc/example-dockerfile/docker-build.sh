@@ -21,4 +21,6 @@ cp ${TIKA_SRC_PATH}/tika-pipes/tika-grpc/src/test/resources/tika-pipes-test-conf
 cp ${TIKA_SRC_PATH}/tika-pipes/tika-grpc/example-dockerfile/Dockerfile ${DEST_DIR}/Dockerfile
 
 cd ${TIKA_SRC_PATH}/tika-pipes/tika-grpc/target
-docker build ${DEST_DIR} -t ${TAG_NAME} --platform linux/arm64
+docker buildx create --name mybuilder
+docker buildx build --builder=mybuilder ${DEST_DIR} -t ${TAG_NAME} --platform linux/amd64,linux/arm64 --push
+docker buildx stop mybuilder
