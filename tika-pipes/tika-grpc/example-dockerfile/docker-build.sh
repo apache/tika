@@ -11,7 +11,7 @@ DEST_DIR=${TIKA_SRC_PATH}/tika-pipes/tika-grpc/target/tika-docker
 
 mvn clean install -DskipTests=true -f ${TIKA_SRC_PATH}
 mvn dependency:copy-dependencies -f ${TIKA_SRC_PATH}/tika-pipes/tika-grpc
-rm -rf ${TIKA_SRC_PATH}/tika-pipes/tika-grpc/target/docker
+rm -rf ${DEST_DIR}
 mkdir -p ${DEST_DIR}
 
 cp -r ${TIKA_SRC_PATH}/tika-pipes/tika-grpc/target/dependency ${DEST_DIR}/docker
