@@ -83,7 +83,7 @@ public class OpenSearchClient {
             TikaClientException {
         String requestUrl = openSearchUrl + "/_bulk";
         if (pipeline.isPresent()) {
-            requestUrl += "?pipeline=" + URLEncoder.encode(pipeline.get());
+            requestUrl += "?pipeline=" + URLEncoder.encode(pipeline.get(), StandardCharsets.UTF_8);
         }
         JsonResponse response = postJson(requestUrl, json.toString());
         if (response.getStatus() != 200) {
@@ -97,7 +97,6 @@ public class OpenSearchClient {
             }
         }
     }
-
 
     public void emitDocument(String emitKey, List<Metadata> metadataList,
                              Optional<String> pipeline) throws IOException,

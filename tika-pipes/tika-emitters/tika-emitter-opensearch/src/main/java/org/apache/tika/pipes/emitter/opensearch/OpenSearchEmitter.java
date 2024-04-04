@@ -188,6 +188,11 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
         httpClientFactory.setProxyPort(proxyPort);
     }
 
+    @Field
+    public void setPipeline(String pipeline) {
+        this.pipeline = pipeline;
+    }
+
     public void setUpdateStrategy(UpdateStrategy updateStrategy) {
         this.updateStrategy = updateStrategy;
     }
