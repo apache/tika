@@ -1,7 +1,7 @@
 TAG_NAME=$1
 
 if [ -z "${TAG_NAME}" ]; then
-    echo "Tag name is required"
+    echo "Single command line argument is required which will be used as the -t parameter of the docker build command"
     exit 1
 fi
 
