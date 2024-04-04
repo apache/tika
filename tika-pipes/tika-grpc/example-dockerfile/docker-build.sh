@@ -21,6 +21,7 @@ cp ${TIKA_SRC_PATH}/tika-pipes/tika-grpc/src/test/resources/tika-pipes-test-conf
 cp ${TIKA_SRC_PATH}/tika-pipes/tika-grpc/example-dockerfile/Dockerfile ${DEST_DIR}/Dockerfile
 
 cd ${TIKA_SRC_PATH}/tika-pipes/tika-grpc/target
+# see https://askubuntu.com/questions/1339558/cant-build-dockerfile-for-arm64-due-to-libc-bin-segmentation-fault/1398147#1398147
 # docker run --rm --privileged tonistiigi/binfmt --install amd64
 # docker run --rm --privileged tonistiigi/binfmt --install arm64
 docker buildx create --name mybuilder
