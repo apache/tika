@@ -323,6 +323,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                 if (isCreateTable()) {
                     createTable();
                 }
+                //table must exist for this to work
                 createPreparedStatement();
             } catch (SQLException e) {
                 throw new TikaConfigException("Problem creating connection, etc", e);
