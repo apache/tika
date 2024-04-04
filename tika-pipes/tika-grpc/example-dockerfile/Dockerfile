@@ -1,5 +1,5 @@
 FROM ubuntu:latest
-COPY ./docker/ /tika/libs/
+COPY docker/ /tika/libs/
 COPY tika-config.xml /tika/config/tika-config.xml
 COPY log4j2.xml /tika/config/log4j2.xml
 ARG JRE='openjdk-17-jre-headless'
