@@ -385,7 +385,7 @@
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.23.1</log4j2.version>
     <lucene.version>9.10.0</lucene.version>
-    <maven.plugin.annotations.version>3.11.0</maven.plugin.annotations.version>
+    <maven.plugin.annotations.version>3.12.0</maven.plugin.annotations.version>
     <mchange.version>0.3.0</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
