@@ -21,8 +21,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -68,16 +70,21 @@ public class OpenSearchClient {
     }
 
 
-    public void emitDocuments(List<? extends EmitData> emitData) throws IOException, TikaClientException {
+    public void emitDocuments(List<? extends EmitData> emitData, Optional<String> pipeline) throws IOException,
+            TikaClientException {
         StringBuilder json = new StringBuilder();
         for (EmitData d : emitData) {
             appendDoc(d.getEmitKey().getEmitKey(), d.getMetadataList(), json);
         }
-        emitJson(json);
+        emitJson(json, pipeline);
     }
 
-    private void emitJson(StringBuilder json) throws IOException, TikaClientException {
+    private void emitJson(StringBuilder json, Optional<String> pipeline) throws IOException,
+            TikaClientException {
         String requestUrl = openSearchUrl + "/_bulk";
+        if (pipeline.isPresent()) {
+            requestUrl += "?pipeline=" + URLEncoder.encode(pipeline.get());
+        }
         JsonResponse response = postJson(requestUrl, json.toString());
         if (response.getStatus() != 200) {
             throw new TikaClientException(response.getMsg());
@@ -92,12 +99,13 @@ public class OpenSearchClient {
     }
 
 
-    public void emitDocument(String emitKey, List<Metadata> metadataList) throws IOException,
+    public void emitDocument(String emitKey, List<Metadata> metadataList,
+                             Optional<String> pipeline) throws IOException,
             TikaClientException {
 
         StringBuilder json = new StringBuilder();
         appendDoc(emitKey, metadataList, json);
-        emitJson(json);
+        emitJson(json, pipeline);
     }
 
     private void appendDoc(String emitKey, List<Metadata> metadataList, StringBuilder json)

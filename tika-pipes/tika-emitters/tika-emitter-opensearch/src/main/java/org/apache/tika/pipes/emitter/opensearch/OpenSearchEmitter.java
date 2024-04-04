@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,6 +65,7 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
     private OpenSearchClient openSearchClient;
     private final HttpClientFactory httpClientFactory;
     private String embeddedFileFieldName = DEFAULT_EMBEDDED_FILE_FIELD_NAME;
+    private String pipeline = null;
 
     public OpenSearchEmitter() throws TikaConfigException {
         httpClientFactory = new HttpClientFactory();
@@ -77,7 +79,7 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
         }
         try {
             LOG.debug("about to emit {} docs", emitData.size());
-            openSearchClient.emitDocuments(emitData);
+            openSearchClient.emitDocuments(emitData, Optional.ofNullable(pipeline));
             LOG.info("successfully emitted {} docs", emitData.size());
         } catch (TikaClientException e) {
             LOG.warn("problem emitting docs", e);
@@ -94,7 +96,7 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
         }
         try {
             LOG.debug("about to emit one doc");
-            openSearchClient.emitDocument(emitKey, metadataList);
+            openSearchClient.emitDocument(emitKey, metadataList, Optional.ofNullable(pipeline));
             LOG.info("successfully emitted one doc");
         } catch (TikaClientException e) {
             LOG.warn("problem emitting doc", e);
