@@ -147,6 +147,39 @@ public class TestJDBCPipesReporter {
         assertEquals(numThreads * numIterations, sum);
     }
 
+    @Test
+    public void testAdvanced(@TempDir Path tmpDir) throws Exception {
+        //this only tests configuration. we should add an actual unit test
+        Files.createDirectories(tmpDir.resolve("db"));
+        Path dbDir = tmpDir.resolve("db/h2");
+        Path config = tmpDir.resolve("tika-config.xml");
+        String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
+
+        writeConfig("/configs/tika-config-advanced.xml",
+                connectionString, config);
+
+        //build the table outside of the reporter -- we set createTable=false
+        try (Connection connection = DriverManager.getConnection(connectionString)) {
+            try (Statement st = connection.createStatement()) {
+                st.execute("create table my_tika_status (id varchar(256), status varchar" +
+                        "(256), timestamp timestamp with time zone)");
+            }
+        }
+
+        AsyncConfig asyncConfig = AsyncConfig.load(config);
+        JDBCPipesReporter reporter = (JDBCPipesReporter)asyncConfig.getPipesReporter();
+        assertEquals("update my_tika_status set status=?, timestamp=? where id=?",
+                reporter.getReportSql());
+        assertFalse(reporter.isCreateTable());
+
+        List<String> expected = new ArrayList<>();
+        expected.add("status");
+        expected.add("timestamp");
+        expected.add("id");
+
+        assertEquals(expected, reporter.getReportVariables());
+    }
+
 
     private Map<PipesResult.STATUS, Long> countReported(String connectionString) throws
             SQLException {
