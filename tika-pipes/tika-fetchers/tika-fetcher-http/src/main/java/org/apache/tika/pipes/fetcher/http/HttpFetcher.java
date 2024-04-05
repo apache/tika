@@ -69,8 +69,14 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
+<<<<<<< HEAD
 import org.apache.tika.pipes.fetcher.http.config.AdditionalHttpHeaders;
 import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
+=======
+import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
+import org.apache.tika.pipes.fetcher.http.jwt.JwtPrivateKeyCreds;
+import org.apache.tika.pipes.fetcher.http.jwt.JwtSecretCreds;
+>>>>>>> 819e9320c (jwt generation)
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -155,7 +161,19 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     private int maxErrMsgSize = 10000;
 
     //httpHeaders to capture in the metadata
+<<<<<<< HEAD
     private Set<String> httpHeaders = new HashSet<>();
+=======
+    private final Set<String> httpHeaders = new HashSet<>();
+
+    private String jwtIssuer;
+    private String jwtSubject;
+    private int jwtExpiresInSeconds;
+    private String jwtSecret;
+    private String jwtPrivateKeyBase64;
+
+    JwtGenerator jwtGenerator;
+>>>>>>> 819e9320c (jwt generation)
 
     //When making the request, what User-Agent is sent.
     //By default httpclient adds e.g. "Apache-HttpClient/4.5.13 (Java/x.y.z)"
@@ -170,7 +188,20 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                         .setMaxRedirects(maxRedirects)
                         .setRedirectsEnabled(true).build();
         get.setConfig(requestConfig);
+<<<<<<< HEAD
         putAdditionalHeadersOnRequest(parseContext, get);
+=======
+        if (!StringUtils.isBlank(userAgent)) {
+            get.setHeader(USER_AGENT, userAgent);
+        }
+        if (jwtGenerator != null) {
+            try {
+                get.setHeader("Authorization", "Bearer " + jwtGenerator.jwt());
+            } catch (JOSEException e) {
+                throw new TikaException("Could not generate JWT", e);
+            }
+        }
+>>>>>>> 819e9320c (jwt generation)
         return execute(get, metadata, httpClient, true);
     }
 
@@ -479,6 +510,18 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         HttpClientFactory cp = httpClientFactory.copy();
         cp.setDisableContentCompression(true);
         noCompressHttpClient = cp.build();
+<<<<<<< HEAD
+=======
+        if (!StringUtils.isBlank(jwtPrivateKeyBase64)) {
+            PrivateKey key = JwtPrivateKeyCreds.convertBase64ToPrivateKey(jwtPrivateKeyBase64);
+            jwtGenerator = new JwtGenerator(new JwtPrivateKeyCreds(key, jwtIssuer, jwtSubject,
+                jwtExpiresInSeconds));
+        } else if (!StringUtils.isBlank(jwtSecret)) {
+            jwtGenerator = new JwtGenerator(new JwtSecretCreds(jwtSecret.getBytes(StandardCharsets.UTF_8),
+                jwtIssuer,
+                    jwtSubject, jwtExpiresInSeconds));
+        }
+>>>>>>> 819e9320c (jwt generation)
     }
 
     @Override
