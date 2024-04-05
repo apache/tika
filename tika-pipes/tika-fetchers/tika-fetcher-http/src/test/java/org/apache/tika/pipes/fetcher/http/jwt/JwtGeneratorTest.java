@@ -17,8 +17,8 @@ class JwtGeneratorTest {
     void jwtSecret() throws Exception {
         byte[] randomBytes = new byte[32];
         new SecureRandom().nextBytes(randomBytes);
-        String jwt = JwtGenerator.jwtHS256(new JwtSecretCreds(randomBytes, "nick", "subject",
-                120));
+        String jwt = new JwtGenerator(new JwtSecretCreds(randomBytes, "nick", "subject",
+                120)).jwt();
         SignedJWT signedJWT = SignedJWT.parse(jwt);
         JWSVerifier verifier = new MACVerifier(randomBytes);
         Assertions.assertTrue(signedJWT.verify(verifier));
@@ -31,9 +31,8 @@ class JwtGeneratorTest {
         byte[] randomBytes = new byte[32];
         new SecureRandom().nextBytes(randomBytes);
         KeyPair keyPair = keyPairGenerator.generateKeyPair();
-        String jwt = JwtGenerator.jwtRS256(
-                new JwtPrivateKeyCreds(keyPair.getPrivate(), "nick",
-                        "subject", 120));
+        String jwt = new JwtGenerator(new JwtPrivateKeyCreds(keyPair.getPrivate(), "nick",
+                "subject", 120)).jwt();
         JWSVerifier verifier = new RSASSAVerifier((RSAPublicKey) keyPair.getPublic());
         SignedJWT signedJWT = SignedJWT.parse(jwt);
         Assertions.assertTrue(signedJWT.verify(verifier));

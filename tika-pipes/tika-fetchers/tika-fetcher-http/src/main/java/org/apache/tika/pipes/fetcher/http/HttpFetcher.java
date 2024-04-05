@@ -71,7 +71,6 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
-import org.apache.tika.pipes.fetcher.http.jwt.JwtCreds;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtPrivateKeyCreds;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtSecretCreds;
@@ -142,7 +141,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     private String jwtSecret;
     private String jwtPrivateKeyBase64;
 
-    private JwtCreds jwtCreds;
+    JwtGenerator jwtGenerator;
 
     //When making the request, what User-Agent is sent.
     //By default httpclient adds e.g. "Apache-HttpClient/4.5.13 (Java/x.y.z)"
@@ -159,9 +158,9 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         if (!StringUtils.isBlank(userAgent)) {
             get.setHeader(USER_AGENT, userAgent);
         }
-        if (jwtCreds != null) {
+        if (jwtGenerator != null) {
             try {
-                JwtGenerator.jwt(jwtCreds);
+                get.setHeader("Authorization", "Bearer " + jwtGenerator.jwt());
             } catch (JOSEException e) {
                 throw new TikaException("Could not generate JWT", e);
             }
@@ -510,10 +509,12 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         noCompressHttpClient = cp.build();
         if (!StringUtils.isBlank(jwtPrivateKeyBase64)) {
             PrivateKey key = JwtPrivateKeyCreds.convertBase64ToPrivateKey(jwtPrivateKeyBase64);
-            jwtCreds = new JwtPrivateKeyCreds(key, jwtIssuer, jwtSubject, jwtExpiresInSeconds);
+            jwtGenerator = new JwtGenerator(new JwtPrivateKeyCreds(key, jwtIssuer, jwtSubject,
+                jwtExpiresInSeconds));
         } else if (!StringUtils.isBlank(jwtSecret)) {
-            jwtCreds = new JwtSecretCreds(jwtSecret.getBytes(StandardCharsets.UTF_8), jwtIssuer,
-                    jwtSubject, jwtExpiresInSeconds);
+            jwtGenerator = new JwtGenerator(new JwtSecretCreds(jwtSecret.getBytes(StandardCharsets.UTF_8),
+                jwtIssuer,
+                    jwtSubject, jwtExpiresInSeconds));
         }
     }
 

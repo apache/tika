@@ -14,7 +14,12 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
 public class JwtGenerator {
-    public static String jwt(JwtCreds jwtCreds) throws JOSEException {
+    JwtCreds jwtCreds;
+    public JwtGenerator(JwtCreds jwtCreds) {
+        this.jwtCreds = jwtCreds;
+    }
+
+    public String jwt() throws JOSEException {
         if (jwtCreds instanceof JwtSecretCreds) {
             return jwtHS256((JwtSecretCreds) jwtCreds);
         } else {
@@ -22,7 +27,7 @@ public class JwtGenerator {
         }
     }
 
-    public static String jwtHS256(JwtSecretCreds jwtSecretCreds)
+    String jwtHS256(JwtSecretCreds jwtSecretCreds)
             throws JOSEException {
         JWSSigner signer = new MACSigner(jwtSecretCreds.getSecret());
 
@@ -35,7 +40,7 @@ public class JwtGenerator {
         return signedJWT.serialize();
     }
 
-    public static String jwtRS256(JwtPrivateKeyCreds jwtPrivateKeyCreds)
+    String jwtRS256(JwtPrivateKeyCreds jwtPrivateKeyCreds)
             throws JOSEException {
         JWSSigner signer = new RSASSASigner(jwtPrivateKeyCreds.getPrivateKey());
 
@@ -49,7 +54,7 @@ public class JwtGenerator {
         return signedJWT.serialize();
     }
 
-    private static JWTClaimsSet getJwtClaimsSet(String issuer, String subject, int expiresInSeconds) {
+    private JWTClaimsSet getJwtClaimsSet(String issuer, String subject, int expiresInSeconds) {
         return new JWTClaimsSet.Builder()
                 .subject(subject)
                 .issuer(issuer)
