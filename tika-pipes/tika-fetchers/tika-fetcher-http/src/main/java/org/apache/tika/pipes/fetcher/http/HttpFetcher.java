@@ -155,6 +155,11 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                         .setMaxRedirects(maxRedirects)
                         .setRedirectsEnabled(true).build();
         get.setConfig(requestConfig);
+        populateHeaders(get);
+        return execute(get, metadata, httpClient, true);
+    }
+
+    private void populateHeaders(HttpGet get) throws TikaException {
         if (!StringUtils.isBlank(userAgent)) {
             get.setHeader(USER_AGENT, userAgent);
         }
@@ -165,16 +170,13 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                 throw new TikaException("Could not generate JWT", e);
             }
         }
-        return execute(get, metadata, httpClient, true);
     }
 
     @Override
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
-            throws IOException {
+            throws IOException, TikaException {
         HttpGet get = new HttpGet(fetchKey);
-        if (! StringUtils.isBlank(userAgent)) {
-            get.setHeader(USER_AGENT, userAgent);
-        }
+        populateHeaders(get);
         get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
         return execute(get, metadata, httpClient, true);
     }
