@@ -87,7 +87,7 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
         }
         //TODO: estimate size of metadata list.  Above a certain size,
         //create a temp file?
-        UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
         try (Writer writer = new OutputStreamWriter(bos, StandardCharsets.UTF_8)) {
             JsonMetadataList.toJson(metadataList, writer);
         } catch (IOException e) {
@@ -126,7 +126,7 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
             LOGGER.debug("relying on the content-length set in the metadata object: {}", length);
             write(path, userMetadata, is, length);
         } else {
-            try (UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream()) {
+            try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get()) {
                 IOUtils.copy(is, bos);
                 write(path, userMetadata, bos.toByteArray());
             }

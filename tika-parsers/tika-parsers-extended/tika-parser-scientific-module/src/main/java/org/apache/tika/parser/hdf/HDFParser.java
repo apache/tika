@@ -79,7 +79,7 @@ public class HDFParser extends AbstractParser {
      */
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        UnsynchronizedByteArrayOutputStream os = new UnsynchronizedByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream os = UnsynchronizedByteArrayOutputStream.builder().get();
         IOUtils.copy(stream, os);
 
         String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);

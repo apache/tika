@@ -152,7 +152,7 @@ public class PipesClient implements Closeable {
         final PipesResult[] intermediateResult = new PipesResult[1];
         FutureTask<PipesResult> futureTask = new FutureTask<>(() -> {
 
-            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
                 objectOutputStream.writeObject(t);
             }
@@ -438,7 +438,7 @@ public class PipesClient implements Closeable {
         output = new DataOutputStream(process.getOutputStream());
 
         //wait for ready signal
-        final UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+        final UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
         FutureTask<Integer> futureTask = new FutureTask<>(() -> {
             int b = input.read();
             int read = 1;

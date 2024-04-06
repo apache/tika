@@ -220,7 +220,7 @@ public class JempboxExtractor {
     }
 
     public void parse(InputStream file) throws IOException, TikaException {
-        UnsynchronizedByteArrayOutputStream xmpraw = new UnsynchronizedByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream xmpraw = UnsynchronizedByteArrayOutputStream.builder().get();
         if (!scanner.parse(file, xmpraw)) {
             return;
         }

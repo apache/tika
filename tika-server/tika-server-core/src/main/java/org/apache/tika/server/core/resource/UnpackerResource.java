@@ -142,7 +142,7 @@ public class UnpackerResource {
         //we need to add this to allow for "inline" use of other parsers.
         pc.set(Parser.class, parser);
         ContentHandler ch;
-        UnsynchronizedByteArrayOutputStream text = new UnsynchronizedByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream text = UnsynchronizedByteArrayOutputStream.builder().get();
 
         if (saveAll) {
             ch = new BodyContentHandler(
@@ -165,7 +165,7 @@ public class UnpackerResource {
         if (saveAll) {
             files.put(TEXT_FILENAME, text.toByteArray());
 
-            UnsynchronizedByteArrayOutputStream metaStream = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream metaStream = UnsynchronizedByteArrayOutputStream.builder().get();
             metadataToCsv(metadata, metaStream);
 
             files.put(META_FILENAME, metaStream.toByteArray());
@@ -194,7 +194,7 @@ public class UnpackerResource {
 
         public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler,
                                   Metadata metadata, boolean b) throws SAXException, IOException {
-            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
 
             BoundedInputStream bis = new BoundedInputStream(unpackMaxBytes, inputStream);
             IOUtils.copy(bis, bos);
@@ -231,7 +231,7 @@ public class UnpackerResource {
                 if (embeddedStreamTranslator.shouldTranslate(is, metadata)) {
                     InputStream translated = embeddedStreamTranslator
                             .translate(new UnsynchronizedByteArrayInputStream(data), metadata);
-                    UnsynchronizedByteArrayOutputStream bos2 = new UnsynchronizedByteArrayOutputStream();
+                    UnsynchronizedByteArrayOutputStream bos2 = UnsynchronizedByteArrayOutputStream.builder().get();
                     IOUtils.copy(translated, bos2);
                     data = bos2.toByteArray();
                 }

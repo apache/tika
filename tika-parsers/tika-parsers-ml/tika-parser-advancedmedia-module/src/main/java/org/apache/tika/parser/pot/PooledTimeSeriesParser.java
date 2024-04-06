@@ -157,7 +157,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
     private String computePoT(File input) throws IOException {
 
         CommandLine cmdLine = new CommandLine("pooled-time-series");
-        try (UnsynchronizedByteArrayOutputStream outputStream = new UnsynchronizedByteArrayOutputStream()) {
+        try (UnsynchronizedByteArrayOutputStream outputStream = UnsynchronizedByteArrayOutputStream.builder().get()) {
             cmdLine.addArgument("-f");
             cmdLine.addArgument(input.getAbsolutePath());
             LOG.trace("Executing: {}", cmdLine);

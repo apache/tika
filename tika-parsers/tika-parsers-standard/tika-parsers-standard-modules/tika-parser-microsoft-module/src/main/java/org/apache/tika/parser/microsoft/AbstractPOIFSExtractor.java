@@ -233,7 +233,7 @@ abstract class AbstractPOIFSExtractor {
             if (!e.isDocumentEntry()) {
                 return;
             }
-            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             try (DocumentInputStream dis = new DocumentInputStream((DocumentEntry) e)) {
                 IOUtils.copy(dis, bos);
             }

@@ -60,7 +60,7 @@ public class GZipSpecializationDetector implements Detector {
     private MediaType detectSpecialization(InputStream input, Metadata metadata) throws IOException {
 
         int buffSize = 1024;
-        UnsynchronizedByteArrayOutputStream gzippedBytes = new UnsynchronizedByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream gzippedBytes = UnsynchronizedByteArrayOutputStream.builder().get();
         try {
             IOUtils.copyRange(input, buffSize, gzippedBytes);
         } catch (IOException e) {
@@ -68,7 +68,7 @@ public class GZipSpecializationDetector implements Detector {
         } finally {
             input.reset();
         }
-        UnsynchronizedByteArrayOutputStream bytes = new UnsynchronizedByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream bytes = UnsynchronizedByteArrayOutputStream.builder().get();
         try (InputStream is = new
                      GzipCompressorInputStream(new UnsynchronizedByteArrayInputStream(gzippedBytes.toByteArray()))) {
             int c = is.read();
