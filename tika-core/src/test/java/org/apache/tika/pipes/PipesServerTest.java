@@ -61,7 +61,7 @@ public class PipesServerTest extends TikaTest {
 
         PipesServer pipesServer = new PipesServer(tikaConfig,
                 new UnsynchronizedByteArrayInputStream(new byte[0]),
-                new PrintStream(new UnsynchronizedByteArrayOutputStream(), true,
+                new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
                 -1, 30000, 30000);
 
@@ -96,7 +96,7 @@ public class PipesServerTest extends TikaTest {
 
         PipesServer pipesServer = new PipesServer(tikaConfig,
                 new UnsynchronizedByteArrayInputStream(new byte[0]),
-                new PrintStream(new UnsynchronizedByteArrayOutputStream(), true,
+                new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
                 -1, 30000, 30000);
 
@@ -152,7 +152,7 @@ public class PipesServerTest extends TikaTest {
 
         PipesServer pipesServer = new PipesServer(tikaConfig,
                 new UnsynchronizedByteArrayInputStream(new byte[0]),
-                new PrintStream(new UnsynchronizedByteArrayOutputStream(), true,
+                new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
                 -1, 30000, 30000);
 

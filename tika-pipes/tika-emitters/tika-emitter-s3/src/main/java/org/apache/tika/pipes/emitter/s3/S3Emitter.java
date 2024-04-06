@@ -127,7 +127,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
         }
 
         if (!spoolToTemp) {
-            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             try (Writer writer = new BufferedWriter(
                     new OutputStreamWriter(bos, StandardCharsets.UTF_8))) {
                 JsonMetadataList.toJson(metadataList, writer);
