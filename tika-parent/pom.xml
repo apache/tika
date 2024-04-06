@@ -301,19 +301,19 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.5.2</maven.shade.version>
     <maven.project.info.reports.version>3.5.0</maven.project.info.reports.version>
-    <puppycrawl.version>10.14.2</puppycrawl.version>
+    <puppycrawl.version>10.15.0</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
     <scm.version>2.0.1</scm.version>
 
     <!-- dependency versions -->
     <asm.version>9.7</asm.version>
-    <aws.version>1.12.695</aws.version>
+    <aws.version>1.12.696</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
-    <azure.core.version>1.47.0</azure.core.version>
-    <azure.core.http.netty.version>1.14.1</azure.core.http.netty.version>
+    <azure.core.version>1.48.0</azure.core.version>
+    <azure.core.http.netty.version>1.14.2</azure.core.http.netty.version>
     <azure.storage.blob.version>12.25.3</azure.storage.blob.version>
     <!-- 7.0.0 needs java 17 -->
     <biz.aqute.version>6.4.1</biz.aqute.version>
