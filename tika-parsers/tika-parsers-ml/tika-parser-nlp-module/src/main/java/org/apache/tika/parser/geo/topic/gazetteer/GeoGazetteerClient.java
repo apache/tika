@@ -26,9 +26,9 @@ import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,9 +65,7 @@ public class GeoGazetteerClient {
      * @return Map of input location strings to gazetteer locations
      */
     public Map<String, List<Location>> getLocations(List<String> locations) {
-        HttpClient httpClient = HttpClientBuilder.create().build();
-
-        try {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             URIBuilder uri = new URIBuilder(url + SEARCH_API);
             for (String loc : locations) {
                 uri.addParameter(SEARCH_PARAM, loc);
@@ -96,9 +94,7 @@ public class GeoGazetteerClient {
      * @return true if API is available else returns false
      */
     public boolean checkAvail() {
-        HttpClient httpClient = HttpClientBuilder.create().build();
-
-        try {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpGet httpGet = new HttpGet(url + PING);
 
             HttpResponse resp = httpClient.execute(httpGet);
