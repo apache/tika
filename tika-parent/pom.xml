@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.36.1</google.cloud.version>
-    <aws.version>1.12.695</aws.version>
+    <aws.version>1.12.696</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -492,12 +492,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.47.0</version>
+        <version>1.48.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.14.1</version>
+        <version>1.14.2</version>
         <exclusions>
           <exclusion>
             <groupId>io.netty</groupId>
