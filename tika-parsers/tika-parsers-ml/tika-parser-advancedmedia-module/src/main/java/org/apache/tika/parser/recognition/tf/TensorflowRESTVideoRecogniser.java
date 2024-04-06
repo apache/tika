@@ -26,7 +26,8 @@ import javax.ws.rs.core.UriBuilder;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,13 +75,12 @@ public class TensorflowRESTVideoRecogniser extends TensorflowRESTRecogniser {
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        try {
-            healthUri = URI.create(apiBaseUri + "/ping");
-            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(),
-                    "/classify/video?topn=%1$d&min_confidence=%2$f&mode=%3$s", topN, minConfidence,
-                    mode));
+        healthUri = URI.create(apiBaseUri + "/ping");
+        apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(),
+                "/classify/video?topn=%1$d&min_confidence=%2$f&mode=%3$s", topN, minConfidence,
+                mode));
 
-            DefaultHttpClient client = new DefaultHttpClient();
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpResponse response = client.execute(new HttpGet(healthUri));
             available = response.getStatusLine().getStatusCode() == 200;
 
