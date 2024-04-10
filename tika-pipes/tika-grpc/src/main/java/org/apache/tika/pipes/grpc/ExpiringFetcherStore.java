@@ -65,10 +65,11 @@ public class ExpiringFetcherStore implements AutoCloseable {
         }, EXPIRE_JOB_INITIAL_DELAY, checkForExpiredFetchersDelaySeconds, TimeUnit.SECONDS);
     }
     
-    public void deleteFetcher(String fetcherName) {
-        fetchers.remove(fetcherName);
+    public boolean deleteFetcher(String fetcherName) {
+        boolean success = fetchers.remove(fetcherName) != null;
         fetcherConfigs.remove(fetcherName);
         fetcherLastAccessed.remove(fetcherName);
+        return success;
     }
 
     public Map<String, AbstractFetcher> getFetchers() {
