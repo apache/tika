@@ -1111,9 +1111,15 @@
             </coordinate>
             <!-- provided dependency brought in by org.deeplearning4j:deeplearning4j-utility-iterators -->
             <coordinate>
-              <groupId>threetenbp</groupId>
-              <artifactId>org.threeten</artifactId>
+              <groupId>org.threeten</groupId>
+              <artifactId>threetenbp</artifactId>
               <version>1.3.3</version>
+            </coordinate>
+            <!-- brought in by gcs fetcher -->
+            <coordinate>
+              <groupId>org.threeten</groupId>
+              <artifactId>threetenbp</artifactId>
+              <version>1.6.8</version>
             </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
