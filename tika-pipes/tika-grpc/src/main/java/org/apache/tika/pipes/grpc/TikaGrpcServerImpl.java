@@ -44,8 +44,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.CreateFetcherReply;
-import org.apache.tika.CreateFetcherRequest;
 import org.apache.tika.DeleteFetcherReply;
 import org.apache.tika.DeleteFetcherRequest;
 import org.apache.tika.FetchAndParseReply;
@@ -54,9 +52,9 @@ import org.apache.tika.GetFetcherReply;
 import org.apache.tika.GetFetcherRequest;
 import org.apache.tika.ListFetchersReply;
 import org.apache.tika.ListFetchersRequest;
+import org.apache.tika.SaveFetcherReply;
+import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
-import org.apache.tika.UpdateFetcherReply;
-import org.apache.tika.UpdateFetcherRequest;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaConfigSerializer;
@@ -175,10 +173,10 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private void fetchAndParseImpl(FetchAndParseRequest request,
                                    StreamObserver<FetchAndParseReply> responseObserver) {
         AbstractFetcher fetcher =
-                expiringFetcherStore.getFetcherAndLogAccess(request.getFetcherName());
+                expiringFetcherStore.getFetcherAndLogAccess(request.getFetcherId());
         if (fetcher == null) {
             throw new RuntimeException(
-                    "Could not find fetcher with name " + request.getFetcherName());
+                    "Could not find fetcher with name " + request.getFetcherId());
         }
         Metadata tikaMetadata = new Metadata();
         for (Map.Entry<String, String> entry : request.getMetadataMap().entrySet()) {
@@ -208,13 +206,13 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     @SuppressWarnings("raw")
     @Override
-    public void createFetcher(CreateFetcherRequest request,
-                              StreamObserver<CreateFetcherReply> responseObserver) {
-        CreateFetcherReply reply =
-                CreateFetcherReply.newBuilder().setMessage(request.getName()).build();
+    public void saveFetcher(SaveFetcherRequest request,
+                              StreamObserver<SaveFetcherReply> responseObserver) {
+        SaveFetcherReply reply =
+                SaveFetcherReply.newBuilder().setFetcherId(request.getFetcherId()).build();
         Map<String, Param> tikaParamsMap = createTikaParamMap(request.getParamsMap());
         try {
-            createFetcher(request.getName(), request.getFetcherClass(), request.getParamsMap(),
+            saveFetcher(request.getFetcherId(), request.getFetcherClass(), request.getParamsMap(),
                     tikaParamsMap);
             updateTikaConfig();
         } catch (Exception e) {
@@ -224,7 +222,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         responseObserver.onCompleted();
     }
 
-    private void createFetcher(String name, String fetcherClassName, Map<String, String> paramsMap,
+    private void saveFetcher(String name, String fetcherClassName, Map<String, String> paramsMap,
                                Map<String, Param> tikaParamsMap) {
         try {
             if (paramsMap == null) {
@@ -245,6 +243,11 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 Initializable initializable = (Initializable) abstractFetcher;
                 initializable.initialize(tikaParamsMap);
             }
+            if (expiringFetcherStore.deleteFetcher(name)) {
+                LOG.info("Updating fetcher {}", name);
+            } else {
+                LOG.info("Creating new fetcher {}", name);
+            }
             expiringFetcherStore.createFetcher(abstractFetcher, configObject);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                  InvocationTargetException | NoSuchMethodException | TikaConfigException e) {
@@ -260,24 +263,6 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         return tikaParamsMap;
     }
 
-    @Override
-    public void updateFetcher(UpdateFetcherRequest request,
-                              StreamObserver<UpdateFetcherReply> responseObserver) {
-        UpdateFetcherReply reply =
-                UpdateFetcherReply.newBuilder().setMessage(request.getName()).build();
-        Map<String, Param> tikaParamsMap = createTikaParamMap(request.getParamsMap());
-        try {
-            deleteFetcher(request.getName());
-            createFetcher(request.getName(), request.getFetcherClass(), request.getParamsMap(),
-                    tikaParamsMap);
-            updateTikaConfig();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        responseObserver.onNext(reply);
-        responseObserver.onCompleted();
-    }
-
     static Status notFoundStatus(String fetcherId) {
         return Status.newBuilder()
                 .setCode(io.grpc.Status.Code.NOT_FOUND.value())
@@ -290,13 +275,13 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                            StreamObserver<GetFetcherReply> responseObserver) {
         GetFetcherReply.Builder getFetcherReply = GetFetcherReply.newBuilder();
         AbstractConfig abstractConfig =
-                expiringFetcherStore.getFetcherConfigs().get(request.getName());
-        AbstractFetcher abstractFetcher = expiringFetcherStore.getFetchers().get(request.getName());
+                expiringFetcherStore.getFetcherConfigs().get(request.getFetcherId());
+        AbstractFetcher abstractFetcher = expiringFetcherStore.getFetchers().get(request.getFetcherId());
         if (abstractFetcher == null || abstractConfig == null) {
-            responseObserver.onError(StatusProto.toStatusException(notFoundStatus(request.getName())));
+            responseObserver.onError(StatusProto.toStatusException(notFoundStatus(request.getFetcherId())));
             return;
         }
-        getFetcherReply.setName(request.getName());
+        getFetcherReply.setFetcherId(request.getFetcherId());
         getFetcherReply.setFetcherClass(abstractFetcher.getClass().getName());
         Map<String, Object> paramMap =
                 OBJECT_MAPPER.convertValue(abstractConfig, new TypeReference<>() {
@@ -314,14 +299,14 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         ListFetchersReply.Builder listFetchersReplyBuilder = ListFetchersReply.newBuilder();
         for (Map.Entry<String, AbstractConfig> fetcherConfig : expiringFetcherStore.getFetcherConfigs()
                 .entrySet()) {
-            GetFetcherReply.Builder replyBuilder = createFetcherReply(fetcherConfig);
+            GetFetcherReply.Builder replyBuilder = saveFetcherReply(fetcherConfig);
             listFetchersReplyBuilder.addGetFetcherReplies(replyBuilder.build());
         }
         responseObserver.onNext(listFetchersReplyBuilder.build());
         responseObserver.onCompleted();
     }
 
-    private GetFetcherReply.Builder createFetcherReply(
+    private GetFetcherReply.Builder saveFetcherReply(
             Map.Entry<String, AbstractConfig> fetcherConfig) {
         AbstractFetcher abstractFetcher =
                 expiringFetcherStore.getFetchers().get(fetcherConfig.getKey());
@@ -329,7 +314,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 expiringFetcherStore.getFetcherConfigs().get(fetcherConfig.getKey());
         GetFetcherReply.Builder replyBuilder =
                 GetFetcherReply.newBuilder().setFetcherClass(abstractFetcher.getClass().getName())
-                        .setName(abstractFetcher.getName());
+                        .setFetcherId(abstractFetcher.getName());
         loadParamsIntoReply(abstractConfig, replyBuilder);
         return replyBuilder;
     }
@@ -348,7 +333,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void deleteFetcher(DeleteFetcherRequest request,
                               StreamObserver<DeleteFetcherReply> responseObserver) {
-        boolean successfulDelete = deleteFetcher(request.getName());
+        boolean successfulDelete = deleteFetcher(request.getFetcherId());
         if (successfulDelete) {
             try {
                 updateTikaConfig();

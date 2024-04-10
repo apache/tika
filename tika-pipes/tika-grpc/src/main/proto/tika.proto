@@ -21,8 +21,7 @@ option objc_class_prefix = "HLW";
 
 
 service Tika   {
-  rpc CreateFetcher(CreateFetcherRequest) returns (CreateFetcherReply) {}
-  rpc UpdateFetcher(UpdateFetcherRequest) returns (UpdateFetcherReply) {}
+  rpc SaveFetcher(SaveFetcherRequest) returns (SaveFetcherReply) {}
   rpc GetFetcher(GetFetcherRequest) returns (GetFetcherReply) {}
   rpc ListFetchers(ListFetchersRequest) returns (ListFetchersReply) {}
   rpc DeleteFetcher(DeleteFetcherRequest) returns (DeleteFetcherReply) {}
@@ -33,28 +32,18 @@ service Tika   {
     returns (stream FetchAndParseReply) {}
 }
 
-message CreateFetcherRequest {
-  string name = 1;
+message SaveFetcherRequest {
+  string fetcher_id = 1;
   string fetcher_class = 2;
   map<string, string> params = 3;
 }
 
-message CreateFetcherReply {
-  string message = 1;
-}
-
-message UpdateFetcherRequest {
-  string name = 1;
-  string fetcher_class = 2;
-  map<string, string> params = 3;
-}
-
-message UpdateFetcherReply {
-  string message = 1;
+message SaveFetcherReply {
+  string fetcher_id = 1;
 }
 
 message FetchAndParseRequest {
-  string fetcher_name = 1;
+  string fetcher_id = 1;
   string fetch_key = 2;
   map<string, string> metadata = 3;
 }
@@ -65,7 +54,7 @@ message FetchAndParseReply {
 }
 
 message DeleteFetcherRequest {
-  string name = 1;
+  string fetcher_id = 1;
 }
 
 message DeleteFetcherReply {
@@ -73,11 +62,11 @@ message DeleteFetcherReply {
 }
 
 message GetFetcherRequest {
-  string name = 1;
+  string fetcher_id = 1;
 }
 
 message GetFetcherReply {
-  string name = 1;
+  string fetcher_id = 1;
   string fetcher_class = 2;
   map<string, string> params = 3;
 }

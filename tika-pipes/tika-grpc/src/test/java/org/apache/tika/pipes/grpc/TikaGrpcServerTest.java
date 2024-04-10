@@ -51,14 +51,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.CreateFetcherReply;
-import org.apache.tika.CreateFetcherRequest;
 import org.apache.tika.DeleteFetcherReply;
 import org.apache.tika.DeleteFetcherRequest;
 import org.apache.tika.FetchAndParseReply;
 import org.apache.tika.FetchAndParseRequest;
 import org.apache.tika.GetFetcherReply;
 import org.apache.tika.GetFetcherRequest;
+import org.apache.tika.SaveFetcherReply;
+import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 
@@ -95,19 +95,33 @@ public class TikaGrpcServerTest {
         // create fetchers
         for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
             String fetcherId = "fetcherIdHere" + i;
-            CreateFetcherReply reply = blockingStub.createFetcher(
-                    CreateFetcherRequest.newBuilder().setName(fetcherId)
+            SaveFetcherReply reply = blockingStub.saveFetcher(
+                    SaveFetcherRequest.newBuilder().setFetcherId(fetcherId)
                             .setFetcherClass(FileSystemFetcher.class.getName())
                             .putParams("basePath", targetFolder)
                             .putParams("extractFileSystemMetadata", "true").build());
-            assertEquals(fetcherId, reply.getMessage());
+            assertEquals(fetcherId, reply.getFetcherId());
         }
+        // update fetchers
+        for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
+            String fetcherId = "fetcherIdHere" + i;
+            SaveFetcherReply reply = blockingStub.saveFetcher(
+                    SaveFetcherRequest.newBuilder().setFetcherId(fetcherId)
+                            .setFetcherClass(FileSystemFetcher.class.getName())
+                            .putParams("basePath", targetFolder)
+                            .putParams("extractFileSystemMetadata", "false").build());
+            assertEquals(fetcherId, reply.getFetcherId());
+            GetFetcherReply getFetcherReply =
+                    blockingStub.getFetcher(GetFetcherRequest.newBuilder().setFetcherId(fetcherId).build());
+            assertEquals("false", getFetcherReply.getParamsMap().get("extractFileSystemMetadata"));
+        }
+
         // get fetchers
         for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
             String fetcherId = "fetcherIdHere" + i;
             GetFetcherReply getFetcherReply =
-                    blockingStub.getFetcher(GetFetcherRequest.newBuilder().setName(fetcherId).build());
-            assertEquals(fetcherId, getFetcherReply.getName());
+                    blockingStub.getFetcher(GetFetcherRequest.newBuilder().setFetcherId(fetcherId).build());
+            assertEquals(fetcherId, getFetcherReply.getFetcherId());
             assertEquals(FileSystemFetcher.class.getName(), getFetcherReply.getFetcherClass());
         }
 
@@ -115,11 +129,11 @@ public class TikaGrpcServerTest {
         for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
             String fetcherId = "fetcherIdHere" + i;
             DeleteFetcherReply deleteFetcherReply =
-                    blockingStub.deleteFetcher(DeleteFetcherRequest.newBuilder().setName(fetcherId).build());
+                    blockingStub.deleteFetcher(DeleteFetcherRequest.newBuilder().setFetcherId(fetcherId).build());
             Assertions.assertTrue(deleteFetcherReply.getSuccess());
             StatusRuntimeException statusRuntimeException =
                     Assertions.assertThrows(StatusRuntimeException.class, () ->
-                    blockingStub.getFetcher(GetFetcherRequest.newBuilder().setName(fetcherId).build()));
+                    blockingStub.getFetcher(GetFetcherRequest.newBuilder().setFetcherId(fetcherId).build()));
             Assertions.assertEquals(Status.NOT_FOUND.getCode().value(),
                     statusRuntimeException.getStatus().getCode().value());
         }
@@ -142,13 +156,13 @@ public class TikaGrpcServerTest {
 
         String fetcherId = "fetcherIdHere";
         String targetFolder = new File("target").getAbsolutePath();
-        CreateFetcherReply reply = blockingStub.createFetcher(
-                CreateFetcherRequest.newBuilder().setName(fetcherId)
+        SaveFetcherReply reply = blockingStub.saveFetcher(
+                SaveFetcherRequest.newBuilder().setFetcherId(fetcherId)
                         .setFetcherClass(FileSystemFetcher.class.getName())
                         .putParams("basePath", targetFolder)
                         .putParams("extractFileSystemMetadata", "true").build());
 
-        assertEquals(fetcherId, reply.getMessage());
+        assertEquals(fetcherId, reply.getFetcherId());
 
         List<FetchAndParseReply> fetchAndParseReplys =
                 Collections.synchronizedList(new ArrayList<>());
@@ -190,7 +204,7 @@ public class TikaGrpcServerTest {
             assertNotNull(testDocuments);
             for (File testDocument : testDocuments) {
                 requestStreamObserver.onNext(
-                        FetchAndParseRequest.newBuilder().setFetcherName(fetcherId)
+                        FetchAndParseRequest.newBuilder().setFetcherId(fetcherId)
                                 .setFetchKey(testDocument.getAbsolutePath()).build());
             }
             requestStreamObserver.onCompleted();
