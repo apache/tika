@@ -22,6 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,6 +35,8 @@ import javax.xml.transform.stream.StreamResult;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.rpc.Status;
+import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +74,7 @@ import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaConfigSerializer.class);
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     /**
      * FetcherID is key, The pair is the Fetcher object and the Metadata
      */
@@ -86,9 +90,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         pipesConfig = PipesConfig.load(Paths.get(tikaConfigPath));
         pipesClient = new PipesClient(pipesConfig);
 
-        expiringFetcherStore =
-                new ExpiringFetcherStore(pipesConfig.getStaleFetcherTimeoutSeconds(),
-                        pipesConfig.getStaleFetcherDelaySeconds());
+        expiringFetcherStore = new ExpiringFetcherStore(pipesConfig.getStaleFetcherTimeoutSeconds(),
+                pipesConfig.getStaleFetcherDelaySeconds());
         this.tikaConfigPath = tikaConfigPath;
         updateTikaConfig();
     }
@@ -104,10 +107,10 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
         for (var fetcherEntry : expiringFetcherStore.getFetchers().entrySet()) {
             AbstractFetcher fetcherObject = fetcherEntry.getValue();
-            Map<String, Object> fetcherConfigParams =
-                    OBJECT_MAPPER.convertValue(expiringFetcherStore.getFetcherConfigs().get(fetcherEntry.getKey()),
-                            new TypeReference<>() {
-                            });
+            Map<String, Object> fetcherConfigParams = OBJECT_MAPPER.convertValue(
+                    expiringFetcherStore.getFetcherConfigs().get(fetcherEntry.getKey()),
+                    new TypeReference<>() {
+                    });
             Element fetcher = tikaConfigDoc.createElement("fetcher");
             fetcher.setAttribute("class", fetcherEntry.getValue().getClass().getName());
             Element fetcherName = tikaConfigDoc.createElement("name");
@@ -171,7 +174,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     private void fetchAndParseImpl(FetchAndParseRequest request,
                                    StreamObserver<FetchAndParseReply> responseObserver) {
-        AbstractFetcher fetcher = expiringFetcherStore.getFetcherAndLogAccess(request.getFetcherName());
+        AbstractFetcher fetcher =
+                expiringFetcherStore.getFetcherAndLogAccess(request.getFetcherName());
         if (fetcher == null) {
             throw new RuntimeException(
                     "Could not find fetcher with name " + request.getFetcherName());
@@ -223,6 +227,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private void createFetcher(String name, String fetcherClassName, Map<String, String> paramsMap,
                                Map<String, Param> tikaParamsMap) {
         try {
+            if (paramsMap == null) {
+                paramsMap = new LinkedHashMap<>();
+            }
             Class<? extends AbstractFetcher> fetcherClass =
                     (Class<? extends AbstractFetcher>) Class.forName(fetcherClassName);
             String configClassName =
@@ -271,16 +278,32 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         responseObserver.onCompleted();
     }
 
+    static Status notFoundStatus(String fetcherId) {
+        return Status.newBuilder()
+                .setCode(io.grpc.Status.Code.NOT_FOUND.value())
+                .setMessage("Could not find fetcher with id:" + fetcherId)
+                .build();
+    }
+
     @Override
     public void getFetcher(GetFetcherRequest request,
                            StreamObserver<GetFetcherReply> responseObserver) {
         GetFetcherReply.Builder getFetcherReply = GetFetcherReply.newBuilder();
-        AbstractConfig abstractConfig = expiringFetcherStore.getFetcherConfigs().get(request.getName());
+        AbstractConfig abstractConfig =
+                expiringFetcherStore.getFetcherConfigs().get(request.getName());
+        AbstractFetcher abstractFetcher = expiringFetcherStore.getFetchers().get(request.getName());
+        if (abstractFetcher == null || abstractConfig == null) {
+            responseObserver.onError(StatusProto.toStatusException(notFoundStatus(request.getName())));
+            return;
+        }
+        getFetcherReply.setName(request.getName());
+        getFetcherReply.setFetcherClass(abstractFetcher.getClass().getName());
         Map<String, Object> paramMap =
                 OBJECT_MAPPER.convertValue(abstractConfig, new TypeReference<>() {
                 });
         paramMap.forEach(
                 (k, v) -> getFetcherReply.putParams(Objects.toString(k), Objects.toString(v)));
+
         responseObserver.onNext(getFetcherReply.build());
         responseObserver.onCompleted();
     }
@@ -289,7 +312,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     public void listFetchers(ListFetchersRequest request,
                              StreamObserver<ListFetchersReply> responseObserver) {
         ListFetchersReply.Builder listFetchersReplyBuilder = ListFetchersReply.newBuilder();
-        for (Map.Entry<String, AbstractConfig> fetcherConfig : expiringFetcherStore.getFetcherConfigs().entrySet()) {
+        for (Map.Entry<String, AbstractConfig> fetcherConfig : expiringFetcherStore.getFetcherConfigs()
+                .entrySet()) {
             GetFetcherReply.Builder replyBuilder = createFetcherReply(fetcherConfig);
             listFetchersReplyBuilder.addGetFetcherReplies(replyBuilder.build());
         }
@@ -299,31 +323,44 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     private GetFetcherReply.Builder createFetcherReply(
             Map.Entry<String, AbstractConfig> fetcherConfig) {
-        AbstractFetcher abstractFetcher = expiringFetcherStore.getFetchers().get(fetcherConfig.getKey());
-        AbstractConfig abstractConfig = expiringFetcherStore.getFetcherConfigs().get(fetcherConfig.getKey());
+        AbstractFetcher abstractFetcher =
+                expiringFetcherStore.getFetchers().get(fetcherConfig.getKey());
+        AbstractConfig abstractConfig =
+                expiringFetcherStore.getFetcherConfigs().get(fetcherConfig.getKey());
         GetFetcherReply.Builder replyBuilder =
                 GetFetcherReply.newBuilder().setFetcherClass(abstractFetcher.getClass().getName())
                         .setName(abstractFetcher.getName());
+        loadParamsIntoReply(abstractConfig, replyBuilder);
+        return replyBuilder;
+    }
+
+    private static void loadParamsIntoReply(AbstractConfig abstractConfig,
+                                            GetFetcherReply.Builder replyBuilder) {
         Map<String, Object> paramMap =
                 OBJECT_MAPPER.convertValue(abstractConfig, new TypeReference<>() {
                 });
-        paramMap.forEach(
-                (k, v) -> replyBuilder.putParams(Objects.toString(k), Objects.toString(v)));
-        return replyBuilder;
+        if (paramMap != null) {
+            paramMap.forEach(
+                    (k, v) -> replyBuilder.putParams(Objects.toString(k), Objects.toString(v)));
+        }
     }
 
     @Override
     public void deleteFetcher(DeleteFetcherRequest request,
                               StreamObserver<DeleteFetcherReply> responseObserver) {
-        deleteFetcher(request.getName());
-        try {
-            updateTikaConfig();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        boolean successfulDelete = deleteFetcher(request.getName());
+        if (successfulDelete) {
+            try {
+                updateTikaConfig();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
+        responseObserver.onNext(DeleteFetcherReply.newBuilder().setSuccess(successfulDelete).build());
+        responseObserver.onCompleted();
     }
 
-    private void deleteFetcher(String fetcherName) {
-        expiringFetcherStore.deleteFetcher(fetcherName);
+    private boolean deleteFetcher(String fetcherName) {
+        return expiringFetcherStore.deleteFetcher(fetcherName);
     }
 }

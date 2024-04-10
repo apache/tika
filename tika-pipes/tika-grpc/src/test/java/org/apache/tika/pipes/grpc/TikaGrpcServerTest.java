@@ -38,10 +38,13 @@ import com.asarkar.grpc.test.GrpcCleanupExtension;
 import com.asarkar.grpc.test.Resources;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,8 +53,12 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.CreateFetcherReply;
 import org.apache.tika.CreateFetcherRequest;
+import org.apache.tika.DeleteFetcherReply;
+import org.apache.tika.DeleteFetcherRequest;
 import org.apache.tika.FetchAndParseReply;
 import org.apache.tika.FetchAndParseRequest;
+import org.apache.tika.GetFetcherReply;
+import org.apache.tika.GetFetcherRequest;
 import org.apache.tika.TikaGrpc;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 
@@ -68,8 +75,10 @@ public class TikaGrpcServerTest {
         FileUtils.copyFile(tikaConfigXmlTemplate, tikaConfigXml);
     }
 
+    static final int NUM_FETCHERS_TO_CREATE = 10;
+
     @Test
-    public void testTikaCreateFetcher(Resources resources) throws Exception {
+    public void testFetcherCrud(Resources resources) throws Exception {
         String serverName = InProcessServerBuilder.generateName();
 
         Server server = InProcessServerBuilder.forName(serverName).directExecutor()
@@ -82,15 +91,38 @@ public class TikaGrpcServerTest {
         resources.register(channel, Duration.ofSeconds(10));
         TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
 
-        String fetcherId = "fetcherIdHere";
         String targetFolder = new File("target").getAbsolutePath();
-        CreateFetcherReply reply = blockingStub.createFetcher(
-                CreateFetcherRequest.newBuilder().setName(fetcherId)
-                        .setFetcherClass(FileSystemFetcher.class.getName())
-                        .putParams("basePath", targetFolder)
-                        .putParams("extractFileSystemMetadata", "true").build());
+        // create fetchers
+        for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
+            String fetcherId = "fetcherIdHere" + i;
+            CreateFetcherReply reply = blockingStub.createFetcher(
+                    CreateFetcherRequest.newBuilder().setName(fetcherId)
+                            .setFetcherClass(FileSystemFetcher.class.getName())
+                            .putParams("basePath", targetFolder)
+                            .putParams("extractFileSystemMetadata", "true").build());
+            assertEquals(fetcherId, reply.getMessage());
+        }
+        // get fetchers
+        for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
+            String fetcherId = "fetcherIdHere" + i;
+            GetFetcherReply getFetcherReply =
+                    blockingStub.getFetcher(GetFetcherRequest.newBuilder().setName(fetcherId).build());
+            assertEquals(fetcherId, getFetcherReply.getName());
+            assertEquals(FileSystemFetcher.class.getName(), getFetcherReply.getFetcherClass());
+        }
 
-        assertEquals(fetcherId, reply.getMessage());
+        // delete fetchers
+        for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
+            String fetcherId = "fetcherIdHere" + i;
+            DeleteFetcherReply deleteFetcherReply =
+                    blockingStub.deleteFetcher(DeleteFetcherRequest.newBuilder().setName(fetcherId).build());
+            Assertions.assertTrue(deleteFetcherReply.getSuccess());
+            StatusRuntimeException statusRuntimeException =
+                    Assertions.assertThrows(StatusRuntimeException.class, () ->
+                    blockingStub.getFetcher(GetFetcherRequest.newBuilder().setName(fetcherId).build()));
+            Assertions.assertEquals(Status.NOT_FOUND.getCode().value(),
+                    statusRuntimeException.getStatus().getCode().value());
+        }
     }
 
     @Test
@@ -144,9 +176,9 @@ public class TikaGrpcServerTest {
                 tikaStub.fetchAndParseBiDirectionalStreaming(replyStreamObserver);
 
         File testDocumentFolder = new File("target/" +
-                DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ssSSS", Locale.getDefault()).format(LocalDateTime.now(
-                        ZoneId.systemDefault())) +
-                "-" + UUID.randomUUID());
+                DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ssSSS", Locale.getDefault())
+                        .format(LocalDateTime.now(ZoneId.systemDefault())) + "-" +
+                UUID.randomUUID());
         assertTrue(testDocumentFolder.mkdir());
         try {
             for (int i = 0; i < NUM_TEST_DOCS; ++i) {
