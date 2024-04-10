@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.PrivateKey;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.nimbusds.jose.JOSEException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.http.ConnectionClosedException;
@@ -70,6 +72,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
 import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
+import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
+import org.apache.tika.pipes.fetcher.http.jwt.JwtPrivateKeyCreds;
+import org.apache.tika.pipes.fetcher.http.jwt.JwtSecretCreds;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -154,12 +159,19 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     private int maxErrMsgSize = 10000;
 
     //httpHeaders to capture in the metadata
-    private Set<String> httpHeaders = new HashSet<>();
+    private final Set<String> httpHeaders = new HashSet<>();
+
+    private String jwtIssuer;
+    private String jwtSubject;
+    private int jwtExpiresInSeconds;
+    private String jwtSecret;
+    private String jwtPrivateKeyBase64;
+
+    JwtGenerator jwtGenerator;
 
     //When making the request, what User-Agent is sent.
     //By default httpclient adds e.g. "Apache-HttpClient/4.5.13 (Java/x.y.z)"
     private String userAgent = null;
-
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata) throws IOException, TikaException {
@@ -169,19 +181,28 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                         .setMaxRedirects(maxRedirects)
                         .setRedirectsEnabled(true).build();
         get.setConfig(requestConfig);
-        if (! StringUtils.isBlank(userAgent)) {
+        populateHeaders(get);
+        return execute(get, metadata, httpClient, true);
+    }
+
+    private void populateHeaders(HttpGet get) throws TikaException {
+        if (!StringUtils.isBlank(userAgent)) {
             get.setHeader(USER_AGENT, userAgent);
         }
-        return execute(get, metadata, httpClient, true);
+        if (jwtGenerator != null) {
+            try {
+                get.setHeader("Authorization", "Bearer " + jwtGenerator.jwt());
+            } catch (JOSEException e) {
+                throw new TikaException("Could not generate JWT", e);
+            }
+        }
     }
 
     @Override
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
-            throws IOException {
+            throws IOException, TikaException {
         HttpGet get = new HttpGet(fetchKey);
-        if (! StringUtils.isBlank(userAgent)) {
-            get.setHeader(USER_AGENT, userAgent);
-        }
+        populateHeaders(get);
         get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
         return execute(get, metadata, httpClient, true);
     }
@@ -463,17 +484,75 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         this.userAgent = userAgent;
     }
 
+    public String getJwtIssuer() {
+        return jwtIssuer;
+    }
+
+    @Field
+    public void setJwtIssuer(String jwtIssuer) {
+        this.jwtIssuer = jwtIssuer;
+    }
+
+    public String getJwtSubject() {
+        return jwtSubject;
+    }
+
+    @Field
+    public void setJwtSubject(String jwtSubject) {
+        this.jwtSubject = jwtSubject;
+    }
+
+    public int getJwtExpiresInSeconds() {
+        return jwtExpiresInSeconds;
+    }
+
+    @Field
+    public void setJwtExpiresInSeconds(int jwtExpiresInSeconds) {
+        this.jwtExpiresInSeconds = jwtExpiresInSeconds;
+    }
+
+    public String getJwtSecret() {
+        return jwtSecret;
+    }
+
+    @Field
+    public void setJwtSecret(String jwtSecret) {
+        this.jwtSecret = jwtSecret;
+    }
+
+    public String getJwtPrivateKeyBase64() {
+        return jwtPrivateKeyBase64;
+    }
+
+    @Field
+    public void setJwtPrivateKeyBase64(String jwtPrivateKeyBase64) {
+        this.jwtPrivateKeyBase64 = jwtPrivateKeyBase64;
+    }
+
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         httpClient = httpClientFactory.build();
         HttpClientFactory cp = httpClientFactory.copy();
         cp.setDisableContentCompression(true);
         noCompressHttpClient = cp.build();
+        if (!StringUtils.isBlank(jwtPrivateKeyBase64)) {
+            PrivateKey key = JwtPrivateKeyCreds.convertBase64ToPrivateKey(jwtPrivateKeyBase64);
+            jwtGenerator = new JwtGenerator(new JwtPrivateKeyCreds(key, jwtIssuer, jwtSubject,
+                jwtExpiresInSeconds));
+        } else if (!StringUtils.isBlank(jwtSecret)) {
+            jwtGenerator = new JwtGenerator(new JwtSecretCreds(jwtSecret.getBytes(StandardCharsets.UTF_8),
+                jwtIssuer,
+                    jwtSubject, jwtExpiresInSeconds));
+        }
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
+        if (!StringUtils.isBlank(jwtSecret) && !StringUtils.isBlank(jwtPrivateKeyBase64)) {
+            throw new TikaConfigException("Both JWT secret and JWT private key base 64 were " +
+                    "specified. Only one or the other is supported");
+        }
     }
 
     // For test purposes
