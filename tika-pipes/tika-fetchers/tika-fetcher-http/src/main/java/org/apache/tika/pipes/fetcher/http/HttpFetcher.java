@@ -106,6 +106,12 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
 
         setProxyHost(httpFetcherConfig.getProxyHost());
         setProxyPort(httpFetcherConfig.getProxyPort());
+
+        setJwtIssuer(httpFetcherConfig.getJwtIssuer());
+        setJwtExpiresInSeconds(httpFetcherConfig.getJwtExpiresInSeconds());
+        setJwtSecret(httpFetcherConfig.getJwtIssuer());
+        setJwtPrivateKeyBase64(httpFetcherConfig.getJwtPrivateKeyBase64());
+        setJwtSubject(httpFetcherConfig.getJwtSubject());
     }
     public static String HTTP_HEADER_PREFIX = "http-header:";
 

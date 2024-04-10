@@ -38,6 +38,12 @@ public class HttpFetcherConfig extends AbstractConfig {
     private long overallTimeout;
     private int maxErrMsgSize;
     private String userAgent;
+    private String jwtIssuer;
+    private String jwtSubject;
+    private int jwtExpiresInSeconds;
+    private String jwtSecret;
+    private String jwtPrivateKeyBase64;
+
 
     public String getUserName() {
         return userName;
@@ -189,6 +195,51 @@ public class HttpFetcherConfig extends AbstractConfig {
 
     public HttpFetcherConfig setUserAgent(String userAgent) {
         this.userAgent = userAgent;
+        return this;
+    }
+
+    public String getJwtIssuer() {
+        return jwtIssuer;
+    }
+
+    public HttpFetcherConfig setJwtIssuer(String jwtIssuer) {
+        this.jwtIssuer = jwtIssuer;
+        return this;
+    }
+
+    public String getJwtSubject() {
+        return jwtSubject;
+    }
+
+    public HttpFetcherConfig setJwtSubject(String jwtSubject) {
+        this.jwtSubject = jwtSubject;
+        return this;
+    }
+
+    public int getJwtExpiresInSeconds() {
+        return jwtExpiresInSeconds;
+    }
+
+    public HttpFetcherConfig setJwtExpiresInSeconds(int jwtExpiresInSeconds) {
+        this.jwtExpiresInSeconds = jwtExpiresInSeconds;
+        return this;
+    }
+
+    public String getJwtSecret() {
+        return jwtSecret;
+    }
+
+    public HttpFetcherConfig setJwtSecret(String jwtSecret) {
+        this.jwtSecret = jwtSecret;
+        return this;
+    }
+
+    public String getJwtPrivateKeyBase64() {
+        return jwtPrivateKeyBase64;
+    }
+
+    public HttpFetcherConfig setJwtPrivateKeyBase64(String jwtPrivateKeyBase64) {
+        this.jwtPrivateKeyBase64 = jwtPrivateKeyBase64;
         return this;
     }
 }
