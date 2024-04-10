@@ -57,6 +57,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
+import org.apache.tika.pipes.fetcher.s3.config.S3FetcherConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -65,6 +66,29 @@ import org.apache.tika.utils.StringUtils;
  * initialization, and the fetch key is "path/to/my_file.pdf".
  */
 public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFetcher {
+    public S3Fetcher() {
+
+    }
+
+    public S3Fetcher(S3FetcherConfig s3FetcherConfig) {
+        setBucket(s3FetcherConfig.getBucket());
+        setRegion(s3FetcherConfig.getRegion());
+        setProfile(s3FetcherConfig.getProfile());
+        setAccessKey(s3FetcherConfig.getAccessKey());
+        setSecretKey(s3FetcherConfig.getSecretKey());
+        setPrefix(s3FetcherConfig.getPrefix());
+
+        setCredentialsProvider(s3FetcherConfig.getCredentialsProvider());
+        setEndpointConfigurationService(s3FetcherConfig.getEndpointConfigurationService());
+
+        setMaxConnections(s3FetcherConfig.getMaxConnections());
+        setSpoolToTemp(s3FetcherConfig.isSpoolToTemp());
+        setThrottleSeconds(s3FetcherConfig.getThrottleSeconds());
+        setMaxLength(s3FetcherConfig.getMaxLength());
+
+        setExtractUserMetadata(s3FetcherConfig.isExtractUserMetadata());
+        setPathStyleAccessEnabled(s3FetcherConfig.isPathStyleAccessEnabled());
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3Fetcher.class);
     private static final String PREFIX = "s3";

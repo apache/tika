@@ -54,7 +54,10 @@ public class PipesConfigBase extends ConfigBase {
     private int numClients = DEFAULT_NUM_CLIENTS;
 
     private int maxFilesProcessedPerProcess = DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS;
-
+    public static final int DEFAULT_STALE_FETCHER_TIMEOUT_SECONDS = 600;
+    private int staleFetcherTimeoutSeconds = DEFAULT_STALE_FETCHER_TIMEOUT_SECONDS;
+    public static final int DEFAULT_STALE_FETCHER_DELAY_SECONDS = 60;
+    private int staleFetcherDelaySeconds = DEFAULT_STALE_FETCHER_DELAY_SECONDS;
     private List<String> forkedJvmArgs = new ArrayList<>();
     private Path tikaConfig;
     private String javaPath = "java";
@@ -170,5 +173,21 @@ public class PipesConfigBase extends ConfigBase {
 
     public void setSleepOnStartupTimeoutMillis(long sleepOnStartupTimeoutMillis) {
         this.sleepOnStartupTimeoutMillis = sleepOnStartupTimeoutMillis;
+    }
+
+    public int getStaleFetcherTimeoutSeconds() {
+        return staleFetcherTimeoutSeconds;
+    }
+
+    public void setStaleFetcherTimeoutSeconds(int staleFetcherTimeoutSeconds) {
+        this.staleFetcherTimeoutSeconds = staleFetcherTimeoutSeconds;
+    }
+
+    public int getStaleFetcherDelaySeconds() {
+        return staleFetcherDelaySeconds;
+    }
+
+    public void setStaleFetcherDelaySeconds(int staleFetcherDelaySeconds) {
+        this.staleFetcherDelaySeconds = staleFetcherDelaySeconds;
     }
 }
