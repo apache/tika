@@ -81,7 +81,7 @@ public class BOMDetectorTest extends TikaTest {
     }
 
     private UnsynchronizedByteArrayOutputStream createStream(ByteOrderMark bom) throws IOException {
-        UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
         IOUtils.write(bom.getBytes(), bos);
         for (int i = 0; i < 100; i++) {
             bos.write(' ');

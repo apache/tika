@@ -69,6 +69,14 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
 
     private String connectionString;
 
+    private boolean createTable = true;
+
+    private String tableName = TABLE_NAME;
+
+    private String reportSql;
+
+    private List<String> reportVariables;
+
     private Optional<String> postConnectionString = Optional.empty();
     private final ArrayBlockingQueue<IdStatusPair> queue =
             new ArrayBlockingQueue(ARRAY_BLOCKING_QUEUE_SIZE);
@@ -79,6 +87,15 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         super.initialize(params);
         if (StringUtils.isBlank(connectionString)) {
             throw new TikaConfigException("Must specify a connectionString");
+        }
+        if (reportVariables == null) {
+            reportVariables = new ArrayList<>();
+            reportVariables.add("id");
+            reportVariables.add("status");
+            reportVariables.add("timestamp");
+        }
+        if (reportSql == null) {
+            reportSql = "insert into " + getTableName() + " (id, status, timestamp) values (?,?,?)";
         }
         ReportWorker reportWorker = new ReportWorker(connectionString, postConnectionString,
                 queue, cacheSize, reportWithinMs);
@@ -113,6 +130,76 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         this.cacheSize = cacheSize;
     }
 
+    /**
+     * The default is true. In a distributed setting with multiple
+     * servers, this should be set to false, and you'll need to set up
+     * the table on your own.
+     * <p/>
+     * <b>NOTE</b> The default behavior is to drop the table if it exists and
+     * then create it. Make sure to set this to false if you do not want
+     * to drop the table.
+     * @param createTable
+     */
+    @Field
+    public void setCreateTable(boolean createTable) {
+        this.createTable = createTable;
+    }
+
+    /**
+     * The default is {@link JDBCPipesReporter#TABLE_NAME}
+     * @param tableName
+     */
+    @Field
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    /**
+     * This is the sql for the prepared statement to execute
+     * to store the report record. the default is:
+     * <code>insert into tika_status (id, status, timestamp) values (?,?,?)</code>
+     *
+     * This can be modified for specific dialects of SQL or to run an upsert, merge or update
+     * instead of the default insert.
+     *
+     * Users need to coordinate this with {@link #setReportVariables(List)}
+     * @param reportSql
+     */
+    @Field
+    public void setReportSql(String reportSql) {
+        this.reportSql = reportSql;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public List<String> getReportVariables() {
+        return reportVariables;
+    }
+
+    public String getReportSql() {
+        return reportSql;
+    }
+
+    public boolean isCreateTable() {
+        return createTable;
+    }
+    /**
+     * ADVANCED: This is used to set the variables in the prepared statement for
+     * the report. This needs to be coordinated with {@link #setReportSql(String)}.
+     * The available variables are "id, status, timestamp". If you're modifying to an update
+     * statement like "update table tika_status set status=?, timestamp=? where id = ?"
+     * then the values for this would be ["status", "timestamp", "id"].
+     * <p/>
+     * The default for the insert is ["id", "status", "timestamp"]
+     * @param variables
+     */
+
+    @Field
+    public void setReportVariables(List<String> variables) {
+        reportVariables = variables;
+    }
 
     /**
      * Commit the reports if the amount of time elapsed since the last report commit
@@ -205,7 +292,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         }
     }
 
-    private static class ReportWorker implements Runnable {
+    private class ReportWorker implements Runnable {
 
         private static final int MAX_TRIES = 3;
         private final String connectionString;
@@ -233,7 +320,10 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         public void init() throws TikaConfigException {
             try {
                 createConnection();
-                createTable();
+                if (isCreateTable()) {
+                    createTable();
+                }
+                //table must exist for this to work
                 createPreparedStatement();
             } catch (SQLException e) {
                 throw new TikaConfigException("Problem creating connection, etc", e);
@@ -301,9 +391,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                 try {
                     for (IdStatusPair p : cache) {
                         insert.clearParameters();
-                        insert.setString(1, p.id);
-                        insert.setString(2, p.status.name());
-                        insert.setTimestamp(3, Timestamp.from(Instant.now()));
+                        updateInsert(insert, p.id, p.status.name(), Timestamp.from(Instant.now()));
                         insert.addBatch();
                     }
                     insert.executeBatch();
@@ -317,11 +405,31 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
             }
         }
 
+        private void updateInsert(PreparedStatement insert, String id,
+                                  String status,
+                                  Timestamp timestamp) throws SQLException {
+            //there has to be a more efficient way than this
+            for (int i = 0; i < reportVariables.size(); i++) {
+                String name = reportVariables.get(i);
+                if (name.equals("timestamp")) {
+                    insert.setTimestamp(i + 1, timestamp);
+                } else if (name.equals("id")) {
+                    insert.setString(i + 1, id);
+                } else if (name.equals("status")) {
+                    insert.setString(i + 1, status);
+                } else {
+                    throw new IllegalArgumentException("I expected one of (id, status, timestamp)" +
+                            ", but I got: " + name);
+                }
+            }
+
+        }
+
         private void createTable() throws SQLException {
             try (Statement st = connection.createStatement()) {
-                String sql = "drop table if exists " + TABLE_NAME;
+                String sql = "drop table if exists " + getTableName();
                 st.execute(sql);
-                sql = "create table " + TABLE_NAME + " (id varchar(1024), status varchar(32), " +
+                sql = "create table " + getTableName() + " (id varchar(1024), status varchar(32), " +
                         "timestamp timestamp with time zone)";
                 st.execute(sql);
             }
@@ -375,9 +483,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         }
 
         private void createPreparedStatement() throws SQLException {
-            //do we want to do an upsert?
-            String sql = "insert into " + TABLE_NAME + " (id, status, timestamp) values (?,?,?)";
-            insert = connection.prepareStatement(sql);
+            insert = connection.prepareStatement(getReportSql());
         }
     }
 

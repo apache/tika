@@ -337,7 +337,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             return "";
         }
         try (InputStream is = response.getEntity().getContent()) {
-            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             IOUtils.copyLarge(is, bos, 0, maxErrMsgSize);
             return bos.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {

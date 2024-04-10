@@ -155,7 +155,7 @@ class RTFObjDataParser {
 
             if (root.hasEntry("Package")) {
                 Entry ooxml = root.getEntry("Package");
-                UnsynchronizedByteArrayOutputStream out = new UnsynchronizedByteArrayOutputStream();
+                UnsynchronizedByteArrayOutputStream out = UnsynchronizedByteArrayOutputStream.builder().get();
                 try (BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb * 1024,
                         new DocumentInputStream((DocumentEntry) ooxml))) {
                     IOUtils.copy(bis, out);
@@ -191,7 +191,7 @@ class RTFObjDataParser {
                     }
                 } else {
 
-                    UnsynchronizedByteArrayOutputStream out = new UnsynchronizedByteArrayOutputStream();
+                    UnsynchronizedByteArrayOutputStream out = UnsynchronizedByteArrayOutputStream.builder().get();
                     is.reset();
                     BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb * 1024, is);
                     IOUtils.copy(is, out);

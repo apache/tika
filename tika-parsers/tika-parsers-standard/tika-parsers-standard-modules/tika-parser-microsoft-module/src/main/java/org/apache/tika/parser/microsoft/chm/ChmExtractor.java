@@ -252,7 +252,7 @@ public class ChmExtractor {
      */
     public byte[] extractChmEntry(DirectoryListingEntry directoryListingEntry)
             throws TikaException {
-        UnsynchronizedByteArrayOutputStream buffer = new UnsynchronizedByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream buffer = UnsynchronizedByteArrayOutputStream.builder().get();
         ChmLzxBlock lzxBlock = null;
         try {
             /* UNCOMPRESSED type is easiest one */

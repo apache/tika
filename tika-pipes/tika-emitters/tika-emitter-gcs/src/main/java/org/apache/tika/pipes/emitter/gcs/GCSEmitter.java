@@ -74,7 +74,7 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
         if (metadataList == null || metadataList.size() == 0) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
         }
-        try (UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream()) {
+        try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get()) {
             try (Writer writer = new OutputStreamWriter(bos, StandardCharsets.UTF_8)) {
                 JsonMetadataList.toJson(metadataList, writer);
             } catch (IOException e) {
@@ -99,7 +99,7 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
         if (is instanceof TikaInputStream && ((TikaInputStream) is).hasFile()) {
             write(path, userMetadata, Files.readAllBytes(((TikaInputStream) is).getPath()));
         } else {
-            try (UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream()) {
+            try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get()) {
                 IOUtils.copy(is, bos);
                 write(path, userMetadata, bos.toByteArray());
             }

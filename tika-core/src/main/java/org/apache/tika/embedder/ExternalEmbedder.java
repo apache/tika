@@ -404,7 +404,7 @@ public class ExternalEmbedder implements Embedder {
             process = Runtime.getRuntime().exec(cmd.toArray(new String[]{}));
         }
 
-        UnsynchronizedByteArrayOutputStream stdErrOutputStream = new UnsynchronizedByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream stdErrOutputStream = UnsynchronizedByteArrayOutputStream.builder().get();
 
         try {
             sendStdErrToOutputStream(process, stdErrOutputStream);

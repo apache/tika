@@ -36,7 +36,8 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -104,13 +105,12 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        try {
-            healthUri = URI.create(apiBaseUri + "/ping");
-            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(),
-                    "/caption/image?beam_size=%1$d&max_caption_length=%2$d", captions,
-                    maxCaptionLength));
+        healthUri = URI.create(apiBaseUri + "/ping");
+        apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(),
+                "/caption/image?beam_size=%1$d&max_caption_length=%2$d", captions,
+                maxCaptionLength));
 
-            DefaultHttpClient client = new DefaultHttpClient();
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpResponse response = client.execute(new HttpGet(healthUri));
             available = response.getStatusLine().getStatusCode() == 200;
 
@@ -133,12 +133,11 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
                                          Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         List<CaptionObject> capObjs = new ArrayList<>();
-        try {
-            DefaultHttpClient client = new DefaultHttpClient();
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
 
             HttpPost request = new HttpPost(getApiUri(metadata));
 
-            try (UnsynchronizedByteArrayOutputStream byteStream = new UnsynchronizedByteArrayOutputStream()) {
+            try (UnsynchronizedByteArrayOutputStream byteStream = UnsynchronizedByteArrayOutputStream.builder().get()) {
                 //TODO: convert this to stream, this might cause OOM issue
                 // InputStreamEntity is not working
                 // request.setEntity(new InputStreamEntity(stream, -1));
