@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
+import io.grpc.protobuf.services.ProtoReflectionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +37,10 @@ public class TikaGrpcServer {
         /* The port on which the server should run */
         int port = Integer.parseInt(System.getProperty("server.port", "50051"));
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
-                .addService(new TikaGrpcServerImpl(tikaConfigPath)).build().start();
+                .addService(new TikaGrpcServerImpl(tikaConfigPath))
+                .addService(ProtoReflectionService.newInstance()) // Enable reflection
+                .build()
+                .start();
         LOGGER.info("Server started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             // Use stderr here since the logger may have been reset by its JVM shutdown hook.
@@ -69,6 +73,10 @@ public class TikaGrpcServer {
      * Main launches the server from the command line.
      */
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            System.err.println("Usage: TikaGrpcServer {path-to-tika-config-xml-file}");
+            System.exit(1);
+        }
         tikaConfigPath = args[0];
         final TikaGrpcServer server = new TikaGrpcServer();
         server.start();
