@@ -752,6 +752,11 @@
         <version>${jakarta.xml.soap.version}</version>
       </dependency>
       <dependency>
+        <groupId>joda-time</groupId>
+        <artifactId>joda-time</artifactId>
+        <version>2.12.7</version>
+      </dependency>
+      <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
         <version>${junit4.version}</version>
@@ -1120,6 +1125,11 @@
               <groupId>org.threeten</groupId>
               <artifactId>threetenbp</artifactId>
               <version>1.6.8</version>
+            </coordinate>
+            <coordinate>
+              <groupId>joda-time</groupId>
+              <artifactId>joda-time</artifactId>
+              <version>2.12.7</version>
             </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
