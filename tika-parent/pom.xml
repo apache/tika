@@ -435,7 +435,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.4</zookeeper.version>
-    <logback.version>1.5.3</logback.version>
+    <logback.version>1.5.4</logback.version>
     <zstd.version>1.5.6-2</zstd.version>
   </properties>
 
