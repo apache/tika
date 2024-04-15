@@ -303,7 +303,7 @@
     <maven.project.info.reports.version>3.5.0</maven.project.info.reports.version>
     <puppycrawl.version>10.15.0</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
-    <scm.version>2.0.1</scm.version>
+    <scm.version>2.1.0</scm.version>
 
     <!-- dependency versions -->
     <asm.version>9.7</asm.version>
