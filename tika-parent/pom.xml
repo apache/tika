@@ -404,7 +404,7 @@
     <parso.version>2.0.14</parso.version>
     <pax.exam.version>4.13.5</pax.exam.version>
     <pdfbox.version>3.0.2</pdfbox.version>
-    <plexus.version>5.0.0</plexus.version>
+    <plexus.version>4.0.1</plexus.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>5.2.5</poi.version>
     <protobuf.version>3.25.3</protobuf.version>
