@@ -404,7 +404,6 @@
     <parso.version>2.0.14</parso.version>
     <pax.exam.version>4.13.5</pax.exam.version>
     <pdfbox.version>3.0.2</pdfbox.version>
-    <plexus.version>5.0.0</plexus.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>5.2.5</poi.version>
     <protobuf.version>3.25.3</protobuf.version>
@@ -898,11 +897,6 @@
         <groupId>org.ccil.cowan.tagsoup</groupId>
         <artifactId>tagsoup</artifactId>
         <version>${tagsoup.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-utils</artifactId>
-        <version>${plexus.version}</version>
       </dependency>
       <dependency>
         <groupId>org.freemarker</groupId>
