@@ -56,13 +56,6 @@
       <groupId>com.github.junrar</groupId>
       <artifactId>junrar</artifactId>
       <version>${junrar.version}</version>
-      <exclusions>
-        <!-- TIKA-2504 exclude to avoid vulnerability in plexus-utils -->
-        <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-vfs2</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
