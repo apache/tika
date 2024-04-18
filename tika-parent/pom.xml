@@ -396,7 +396,7 @@
     <solrj.version>8.11.3</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17 -->
     <spring.version>5.3.33</spring.version>
-    <sqlite.version>3.45.2.0</sqlite.version>
+    <sqlite.version>3.45.3.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.19.7</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
@@ -672,7 +672,7 @@
       <dependency>
         <groupId>io.projectreactor</groupId>
         <artifactId>reactor-core</artifactId>
-        <version>3.6.4</version>
+        <version>3.6.5</version>
       </dependency>
       <dependency>
         <groupId>io.projectreactor.netty</groupId>
