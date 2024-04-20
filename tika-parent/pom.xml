@@ -306,8 +306,8 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.36.1</google.cloud.version>
-    <aws.version>1.12.703</aws.version>
+    <google.cloud.version>2.37.0</google.cloud.version>
+    <aws.version>1.12.705</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -1107,7 +1107,7 @@
             <coordinate>
               <groupId>org.threeten</groupId>
               <artifactId>threetenbp</artifactId>
-              <version>1.6.8</version>
+              <version>1.6.9</version>
             </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
