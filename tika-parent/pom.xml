@@ -321,13 +321,13 @@
     <biz.aqute.version>6.4.1</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
-    <bouncycastle.version>1.78</bouncycastle.version>
+    <bouncycastle.version>1.78.1</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <c3p0.version>0.9.5.5</c3p0.version>
-    <commons.cli.version>1.6.0</commons.cli.version>
+    <commons.cli.version>1.7.0</commons.cli.version>
     <commons.codec.version>1.16.1</commons.codec.version>
-    <commons.collections4.version>4.4</commons.collections4.version>
+    <commons.collections4.version>4.5.0-M1</commons.collections4.version>
     <commons.compress.version>1.26.1</commons.compress.version>
     <commons.csv.version>1.10.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
@@ -351,7 +351,7 @@
     <h2.version>2.2.224</h2.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
-    <icu4j.version>74.2</icu4j.version>
+    <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.21.25</jackrabbit.version>
     <jackson.version>2.17.0</jackson.version>
@@ -393,7 +393,7 @@
     <mime4j.version>0.8.11</mime4j.version>
     <mockito.version>5.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.1.108.Final</netty.version>
+    <netty.version>4.1.109.Final</netty.version>
     <oak.jackrabbit.version>1.62.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.2.0</opennlp.version>
@@ -412,7 +412,7 @@
     <reactor.core.version>3.6.5</reactor.core.version>
     <reactor.netty.version>1.1.18</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
-    <scm.version>2.0.1</scm.version>
+    <scm.version>2.1.0</scm.version>
     <slf4j.version>2.0.13</slf4j.version>
     <sis.version>1.4</sis.version>
     <snappy.version>1.1.10.5</snappy.version>
@@ -435,7 +435,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.4</zookeeper.version>
-    <logback.version>1.5.5</logback.version>
+    <logback.version>1.5.6</logback.version>
     <zstd.version>1.5.6-2</zstd.version>
   </properties>
 
