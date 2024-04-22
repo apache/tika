@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -70,8 +69,9 @@ public class TikaGrpcServerTest {
             Paths.get("src", "test", "resources", "tika-pipes-test-config.xml").toFile();
     static File tikaConfigXml = new File("target", "tika-config-" + UUID.randomUUID() + ".xml");
 
+
     @BeforeAll
-    static void init() throws IOException {
+    static void init() throws Exception {
         FileUtils.copyFile(tikaConfigXmlTemplate, tikaConfigXml);
     }
 

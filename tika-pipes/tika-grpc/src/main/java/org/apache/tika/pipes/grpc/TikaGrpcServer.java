@@ -33,7 +33,7 @@ public class TikaGrpcServer {
     private Server server;
     private static String tikaConfigPath;
 
-    private void start() throws Exception {
+    public void start() throws Exception {
         /* The port on which the server should run */
         int port = Integer.parseInt(System.getProperty("server.port", "50051"));
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
@@ -54,7 +54,7 @@ public class TikaGrpcServer {
         }));
     }
 
-    private void stop() throws InterruptedException {
+    public void stop() throws InterruptedException {
         if (server != null) {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
         }
@@ -63,7 +63,7 @@ public class TikaGrpcServer {
     /**
      * Await termination on the main thread since the grpc library uses daemon threads.
      */
-    private void blockUntilShutdown() throws InterruptedException {
+    public void blockUntilShutdown() throws InterruptedException {
         if (server != null) {
             server.awaitTermination();
         }
@@ -78,8 +78,12 @@ public class TikaGrpcServer {
             System.exit(1);
         }
         tikaConfigPath = args[0];
-        final TikaGrpcServer server = new TikaGrpcServer();
+        TikaGrpcServer server = new TikaGrpcServer();
         server.start();
         server.blockUntilShutdown();
+    }
+
+    public static void setTikaConfigPath(String tikaConfigPath) {
+        TikaGrpcServer.tikaConfigPath = tikaConfigPath;
     }
 }
