@@ -26,17 +26,17 @@ public class HttpFetcherConfig extends AbstractConfig {
     private String ntDomain;
     private String authScheme;
     private String proxyHost;
-    private int proxyPort;
-    private int connectTimeout;
-    private int requestTimeout;
-    private int socketTimeout;
-    private int maxConnections;
-    int maxConnectionsPerRoute;
-    private long maxSpoolSize;
-    private int maxRedirects;
-    private List<String> headers;
-    private long overallTimeout;
-    private int maxErrMsgSize;
+    private Integer proxyPort;
+    private Integer connectTimeout;
+    private Integer requestTimeout;
+    private Integer socketTimeout;
+    private Integer maxConnections;
+    private Integer maxConnectionsPerRoute;
+    private Long maxSpoolSize;
+    private Integer maxRedirects;
+    private List<String> httpHeaders;
+    private Long overallTimeout;
+    private Integer maxErrMsgSize;
     private String userAgent;
 
     public String getUserName() {
@@ -84,101 +84,101 @@ public class HttpFetcherConfig extends AbstractConfig {
         return this;
     }
 
-    public int getProxyPort() {
+    public Integer getProxyPort() {
         return proxyPort;
     }
 
-    public HttpFetcherConfig setProxyPort(int proxyPort) {
+    public HttpFetcherConfig setProxyPort(Integer proxyPort) {
         this.proxyPort = proxyPort;
         return this;
     }
 
-    public int getConnectTimeout() {
+    public Integer getConnectTimeout() {
         return connectTimeout;
     }
 
-    public HttpFetcherConfig setConnectTimeout(int connectTimeout) {
+    public HttpFetcherConfig setConnectTimeout(Integer connectTimeout) {
         this.connectTimeout = connectTimeout;
         return this;
     }
 
-    public int getRequestTimeout() {
+    public Integer getRequestTimeout() {
         return requestTimeout;
     }
 
-    public HttpFetcherConfig setRequestTimeout(int requestTimeout) {
+    public HttpFetcherConfig setRequestTimeout(Integer requestTimeout) {
         this.requestTimeout = requestTimeout;
         return this;
     }
 
-    public int getSocketTimeout() {
+    public Integer getSocketTimeout() {
         return socketTimeout;
     }
 
-    public HttpFetcherConfig setSocketTimeout(int socketTimeout) {
+    public HttpFetcherConfig setSocketTimeout(Integer socketTimeout) {
         this.socketTimeout = socketTimeout;
         return this;
     }
 
-    public int getMaxConnections() {
+    public Integer getMaxConnections() {
         return maxConnections;
     }
 
-    public HttpFetcherConfig setMaxConnections(int maxConnections) {
+    public HttpFetcherConfig setMaxConnections(Integer maxConnections) {
         this.maxConnections = maxConnections;
         return this;
     }
 
-    public int getMaxConnectionsPerRoute() {
+    public Integer getMaxConnectionsPerRoute() {
         return maxConnectionsPerRoute;
     }
 
-    public HttpFetcherConfig setMaxConnectionsPerRoute(int maxConnectionsPerRoute) {
+    public HttpFetcherConfig setMaxConnectionsPerRoute(Integer maxConnectionsPerRoute) {
         this.maxConnectionsPerRoute = maxConnectionsPerRoute;
         return this;
     }
 
-    public long getMaxSpoolSize() {
+    public Long getMaxSpoolSize() {
         return maxSpoolSize;
     }
 
-    public HttpFetcherConfig setMaxSpoolSize(long maxSpoolSize) {
+    public HttpFetcherConfig setMaxSpoolSize(Long maxSpoolSize) {
         this.maxSpoolSize = maxSpoolSize;
         return this;
     }
 
-    public int getMaxRedirects() {
+    public Integer getMaxRedirects() {
         return maxRedirects;
     }
 
-    public HttpFetcherConfig setMaxRedirects(int maxRedirects) {
+    public HttpFetcherConfig setMaxRedirects(Integer maxRedirects) {
         this.maxRedirects = maxRedirects;
         return this;
     }
 
-    public List<String> getHeaders() {
-        return headers;
+    public List<String> getHttpHeaders() {
+        return httpHeaders;
     }
 
-    public HttpFetcherConfig setHeaders(List<String> headers) {
-        this.headers = headers;
+    public HttpFetcherConfig setHttpHeaders(List<String> httpHeaders) {
+        this.httpHeaders = httpHeaders;
         return this;
     }
 
-    public long getOverallTimeout() {
+    public Long getOverallTimeout() {
         return overallTimeout;
     }
 
-    public HttpFetcherConfig setOverallTimeout(long overallTimeout) {
+    public HttpFetcherConfig setOverallTimeout(Long overallTimeout) {
         this.overallTimeout = overallTimeout;
         return this;
     }
 
-    public int getMaxErrMsgSize() {
+    public Integer getMaxErrMsgSize() {
         return maxErrMsgSize;
     }
 
-    public HttpFetcherConfig setMaxErrMsgSize(int maxErrMsgSize) {
+    public HttpFetcherConfig setMaxErrMsgSize(Integer maxErrMsgSize) {
         this.maxErrMsgSize = maxErrMsgSize;
         return this;
     }

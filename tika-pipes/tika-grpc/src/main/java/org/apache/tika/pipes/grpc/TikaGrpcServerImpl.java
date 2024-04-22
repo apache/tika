@@ -33,6 +33,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.rpc.Status;
@@ -71,7 +72,10 @@ import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaConfigSerializer.class);
-    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    static {
+        OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    }
 
     /**
      * FetcherID is key, The pair is the Fetcher object and the Metadata
@@ -186,17 +190,17 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(),
                     new FetchKey(fetcher.getName(), request.getFetchKey()), new EmitKey(),
                     FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            FetchAndParseReply.Builder fetchReplyBuilder =
+                    FetchAndParseReply.newBuilder().setFetchKey(request.getFetchKey());
             for (Metadata metadata : pipesResult.getEmitData().getMetadataList()) {
-                FetchAndParseReply.Builder fetchReplyBuilder =
-                        FetchAndParseReply.newBuilder().setFetchKey(request.getFetchKey());
                 for (String name : metadata.names()) {
                     String value = metadata.get(name);
                     if (value != null) {
                         fetchReplyBuilder.putFields(name, value);
                     }
                 }
-                responseObserver.onNext(fetchReplyBuilder.build());
             }
+            responseObserver.onNext(fetchReplyBuilder.build());
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
@@ -210,10 +214,10 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                               StreamObserver<SaveFetcherReply> responseObserver) {
         SaveFetcherReply reply =
                 SaveFetcherReply.newBuilder().setFetcherId(request.getFetcherId()).build();
-        Map<String, Param> tikaParamsMap = createTikaParamMap(request.getParamsMap());
         try {
-            saveFetcher(request.getFetcherId(), request.getFetcherClass(), request.getParamsMap(),
-                    tikaParamsMap);
+            Map<String, Object> fetcherConfigMap = OBJECT_MAPPER.readValue(request.getFetcherConfigJson(), new TypeReference<>() {});
+            Map<String, Param> tikaParamsMap = createTikaParamMap(fetcherConfigMap);
+            saveFetcher(request.getFetcherId(), request.getFetcherClass(), fetcherConfigMap, tikaParamsMap);
             updateTikaConfig();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -222,8 +226,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         responseObserver.onCompleted();
     }
 
-    private void saveFetcher(String name, String fetcherClassName, Map<String, String> paramsMap,
-                               Map<String, Param> tikaParamsMap) {
+    private void saveFetcher(String name, String fetcherClassName, Map<String, Object> paramsMap, Map<String, Param> tikaParamsMap) {
         try {
             if (paramsMap == null) {
                 paramsMap = new LinkedHashMap<>();
@@ -255,9 +258,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
     }
 
-    private static Map<String, Param> createTikaParamMap(Map<String, String> paramsMap) {
+    private static Map<String, Param> createTikaParamMap(Map<String, Object> fetcherConfigMap) {
         Map<String, Param> tikaParamsMap = new HashMap<>();
-        for (Map.Entry<String, String> entry : paramsMap.entrySet()) {
+        for (Map.Entry<String, Object> entry : fetcherConfigMap.entrySet()) {
             tikaParamsMap.put(entry.getKey(), new Param<>(entry.getKey(), entry.getValue()));
         }
         return tikaParamsMap;
@@ -283,12 +286,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
         getFetcherReply.setFetcherId(request.getFetcherId());
         getFetcherReply.setFetcherClass(abstractFetcher.getClass().getName());
-        Map<String, Object> paramMap =
-                OBJECT_MAPPER.convertValue(abstractConfig, new TypeReference<>() {
-                });
+        Map<String, Object> paramMap = OBJECT_MAPPER.convertValue(abstractConfig, new TypeReference<>() {});
         paramMap.forEach(
                 (k, v) -> getFetcherReply.putParams(Objects.toString(k), Objects.toString(v)));
-
         responseObserver.onNext(getFetcherReply.build());
         responseObserver.onCompleted();
     }

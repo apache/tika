@@ -337,7 +337,9 @@ public class HttpClientFactory {
             authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
                     .register("ntlm", new NTLMSchemeFactory()).build();
         }
-        provider.setCredentials(AuthScope.ANY, credentials);
+        if (credentials != null) {
+            provider.setCredentials(AuthScope.ANY, credentials);
+        }
         builder.setDefaultCredentialsProvider(provider);
         builder.setDefaultAuthSchemeRegistry(authSchemeRegistry);
 
