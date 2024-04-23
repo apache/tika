@@ -28,4 +28,4 @@ RUN set -eux \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 EXPOSE 50051
-ENTRYPOINT [ "/bin/sh", "-c", "exec java -Dlog4j.configurationFile=/tika/config/log4j2.xml -Dserver.port=50051 -cp \"/tika/libs/*\" org.apache.tika.pipes.grpc.TikaGrpcServer /tika/config/tika-config.xml"]
+ENTRYPOINT [ "/bin/sh", "-c", "exec java -Dlog4j.configurationFile=/tika/config/log4j2.xml -cp \"/tika/libs/*\" org.apache.tika.pipes.grpc.TikaGrpcServer --port 50051 --tika-config /tika/config/tika-config.xml"]
