@@ -45,17 +45,20 @@ public class TikaGrpcServer {
     @Parameter(names = {"-s", "--secure"}, description = "Enable credentials required to access this grpc server")
     private boolean secure;
 
-    @Parameter(names = {"--cert-chain"}, description = "Certificate chain file, example cert-chain.p12")
+    @Parameter(names = {"--cert-chain"}, description = "Certificate chain file. Example: server1.pem See: https://github.com/grpc/grpc-java/tree/b3ffb5078df361d7460786e134db7b5c00939246/examples/example-tls")
     private File certChain;
 
-    @Parameter(names = {"--private-key"}, description = "Private key store, example private-key.p12")
+    @Parameter(names = {"--private-key"}, description = "Private key store. Example: server1.key See: https://github.com/grpc/grpc-java/tree/b3ffb5078df361d7460786e134db7b5c00939246/examples/example-tls")
     private File privateKey;
 
-    @Parameter(names = {"--private-key-password"}, description = "Private key password, if applicable")
+    @Parameter(names = {"--private-key-password"}, description = "Private key password, if needed")
     private String privateKeyPassword;
 
-    @Parameter(names = {"--trust-store"}, description = "The trust store. Example trust.jks")
-    private File trustStore;
+    @Parameter(names = {"--trust-cert-collection"}, description = "The trust certificate collection (root certs). Example: ca.pem See: https://github.com/grpc/grpc-java/tree/b3ffb5078df361d7460786e134db7b5c00939246/examples/example-tls")
+    private File trustCertCollection;
+
+    @Parameter(names = {"--client-auth-required"}, description = "Is Mutual TLS required?")
+    private boolean clientAuthRequired;
 
     @Parameter(names = {"-h", "-H", "--help"}, description = "Display help menu")
     private boolean help;
@@ -65,9 +68,11 @@ public class TikaGrpcServer {
         if (secure) {
             TlsServerCredentials.Builder channelCredBuilder = TlsServerCredentials.newBuilder();
             channelCredBuilder.keyManager(certChain, privateKey, privateKeyPassword);
-            if (trustStore != null && trustStore.exists()) {
-                channelCredBuilder.trustManager(trustStore);
-                channelCredBuilder.clientAuth(TlsServerCredentials.ClientAuth.REQUIRE);
+            if (trustCertCollection != null && trustCertCollection.exists()) {
+                channelCredBuilder.trustManager(trustCertCollection);
+                if (clientAuthRequired) {
+                    channelCredBuilder.clientAuth(TlsServerCredentials.ClientAuth.REQUIRE);
+                }
             }
             creds = channelCredBuilder.build();
         } else {
@@ -162,8 +167,13 @@ public class TikaGrpcServer {
         return this;
     }
 
-    public TikaGrpcServer setTrustStore(File trustStore) {
-        this.trustStore = trustStore;
+    public TikaGrpcServer setTrustCertCollection(File trustCertCollection) {
+        this.trustCertCollection = trustCertCollection;
+        return this;
+    }
+
+    public TikaGrpcServer setClientAuthRequired(boolean clientAuthRequired) {
+        this.clientAuthRequired = clientAuthRequired;
         return this;
     }
 }

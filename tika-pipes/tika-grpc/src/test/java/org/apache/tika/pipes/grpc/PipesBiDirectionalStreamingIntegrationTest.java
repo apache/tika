@@ -33,8 +33,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import io.grpc.Grpc;
-import io.grpc.InsecureChannelCredentials;
 import io.grpc.ManagedChannel;
+import io.grpc.TlsChannelCredentials;
+import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.Awaitility;
@@ -106,17 +107,29 @@ class PipesBiDirectionalStreamingIntegrationTest {
     static void setUpGrpcServer() throws Exception {
         grpcPort = findAvailablePort();
         FileUtils.copyFile(tikaConfigXmlTemplate, tikaConfigXml);
+
         grpcServer = new TikaGrpcServer();
         grpcServer.setTikaConfigXml(tikaConfigXml);
         grpcServer.setPort(grpcPort);
+        grpcServer.setSecure(true);
+        grpcServer.setCertChain(Paths.get("src", "test", "resources", "certs", "server1.pem").toFile());
+        grpcServer.setPrivateKey(Paths.get("src", "test", "resources", "certs", "server1.key").toFile());
+        grpcServer.setTrustCertCollection(Paths.get("src", "test", "resources", "certs", "ca.pem").toFile());
+        grpcServer.setClientAuthRequired(true);
         grpcServer.start();
 
         String target = InetAddress
                 .getByName("localhost")
                 .getHostAddress() + ":" + grpcPort;
 
+        TlsChannelCredentials.Builder channelCredBuilder = TlsChannelCredentials.newBuilder();
+        File clientCertChain = Paths.get("src", "test", "resources", "certs", "client.pem").toFile();
+        File clientPrivateKey = Paths.get("src", "test", "resources", "certs", "client.key").toFile();
+        channelCredBuilder.keyManager(clientCertChain, clientPrivateKey);
+        channelCredBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE.getTrustManagers());
+
         ManagedChannel channel = Grpc
-                .newChannelBuilder(target, InsecureChannelCredentials.create())
+                .newChannelBuilder(target, channelCredBuilder.build())
                 .build();
 
         tikaBlockingStub = TikaGrpc.newBlockingStub(channel);
