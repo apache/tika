@@ -121,11 +121,14 @@ public class AsyncResource {
         try {
             boolean offered = asyncProcessor.offer(request.getTuples(), maxQueuePauseMs);
             if (offered) {
+                LOG.info("accepted {} tuples, capacity={}", request.getTuples().size(), asyncProcessor.getCapacity());
                 return ok(request.getTuples().size());
             } else {
+                LOG.info("throttling {} tuples, capacity={}", request.getTuples().size(), asyncProcessor.getCapacity());
                 return throttle(request.getTuples().size());
             }
         } catch (OfferLargerThanQueueSize e) {
+            LOG.info("throttling {} tuples, capacity={}", request.getTuples().size(), asyncProcessor.getCapacity());
             return throttle(request.getTuples().size());
         }
     }

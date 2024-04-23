@@ -22,6 +22,7 @@
     <protoc.version>3.24.0</protoc.version>
     <asarkar-grpc-test.version>1.2.2</asarkar-grpc-test.version>
     <maven.compiler.release>11</maven.compiler.release>
+    <awaitility.version>4.2.1</awaitility.version>
   </properties>
 
   <dependencyManagement>
@@ -173,7 +174,11 @@
       <groupId>org.apache.tomcat</groupId>
       <artifactId>annotations-api</artifactId>
       <version>6.0.53</version>
-      <scope>provided</scope> <!-- not needed at runtime -->
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.beust</groupId>
+      <artifactId>jcommander</artifactId>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
@@ -202,6 +207,18 @@
       <groupId>com.asarkar.grpc</groupId>
       <artifactId>grpc-test</artifactId>
       <version>${asarkar-grpc-test.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>${awaitility.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   <build>
