@@ -105,11 +105,10 @@ class PipesBiDirectionalStreamingIntegrationTest {
     @BeforeAll
     static void setUpGrpcServer() throws Exception {
         grpcPort = findAvailablePort();
-        System.setProperty("server.port", String.valueOf(grpcPort));
-
         FileUtils.copyFile(tikaConfigXmlTemplate, tikaConfigXml);
-        TikaGrpcServer.setTikaConfigPath(tikaConfigXml.getAbsolutePath());
         grpcServer = new TikaGrpcServer();
+        grpcServer.setTikaConfigXml(tikaConfigXml);
+        grpcServer.setPort(grpcPort);
         grpcServer.start();
 
         String target = InetAddress
@@ -126,12 +125,16 @@ class PipesBiDirectionalStreamingIntegrationTest {
 
     @AfterAll
     static void stopHttpServer() throws Exception {
-        httpServer.stop();
+        if (httpServer != null) {
+            httpServer.stop();
+        }
     }
 
     @AfterAll
     static void stopGrpcServer() throws Exception {
-        grpcServer.stop();
+        if (grpcServer != null) {
+            grpcServer.stop();
+        }
     }
 
     @BeforeEach
