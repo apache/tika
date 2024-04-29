@@ -108,7 +108,6 @@ public class OutlookPSTParser implements Parser {
 
     private void parseFolder(XHTMLContentHandler handler, PSTFolder pstFolder, String folderPath,
                              EmbeddedDocumentExtractor embeddedExtractor) throws Exception {
-
         if (pstFolder.getContentCount() > 0) {
             PSTMessage pstMail = (PSTMessage) pstFolder.getNextChild();
             while (pstMail != null) {

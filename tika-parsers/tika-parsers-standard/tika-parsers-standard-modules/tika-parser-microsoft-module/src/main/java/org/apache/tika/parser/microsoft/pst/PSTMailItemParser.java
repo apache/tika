@@ -93,12 +93,12 @@ public class PSTMailItemParser implements Parser {
         handler.startElement("div", attributes);
         handler.element("h1", pstMsg.getSubject());
 
-        parserMailItem(pstMsg, handler, metadata, context);
+        parseMailItem(pstMsg, handler, metadata, context);
         parseMailAttachments(pstMsg, handler, metadata, context, embeddedExtractor);
         handler.endElement("div");
     }
 
-    private void parserMailItem(PSTMessage pstMail, XHTMLContentHandler xhtml,
+    private void parseMailItem(PSTMessage pstMail, XHTMLContentHandler xhtml,
                                 Metadata metadata, ParseContext context) throws SAXException, IOException, TikaException {
         extractMetadata(pstMail, metadata);
         //try the html first. It preserves logical paragraph markers
@@ -220,14 +220,16 @@ public class PSTMailItemParser implements Parser {
             TikaException, SAXException {
 
         PSTMessage attachedEmail = attachment.getEmbeddedPSTMessage();
+        attachment.getAttachMethod();
         //check for whether this is a binary attachment or an embedded pst msg
         if (attachedEmail != null) {
             try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
                 tis.setOpenContainer(attachedEmail);
-                Metadata attachedMetadata = new Metadata();
-                attachedMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
-                attachedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, attachedEmail.getInternetMessageId());
-                embeddedExtractor.parseEmbedded(tis, xhtml, attachedMetadata, true);
+                Metadata attachMetadata = new Metadata();
+                attachMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
+                attachMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, attachedEmail.getInternetMessageId());
+                attachMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
+                embeddedExtractor.parseEmbedded(tis, xhtml, attachMetadata, true);
             }
             return;
         }
@@ -243,6 +245,7 @@ public class PSTMailItemParser implements Parser {
         Metadata attachMeta = new Metadata();
         attachMeta.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         attachMeta.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, filename);
+        attachMeta.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "class", "class", "CDATA", "embedded");
         attributes.addAttribute("", "id", "id", "CDATA", filename);
@@ -263,6 +266,5 @@ public class PSTMailItemParser implements Parser {
             }
         }
         xhtml.endElement("div");
-
     }
 }
