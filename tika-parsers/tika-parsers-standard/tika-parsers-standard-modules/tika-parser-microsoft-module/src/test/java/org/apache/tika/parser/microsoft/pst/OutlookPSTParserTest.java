@@ -17,31 +17,22 @@
 package org.apache.tika.parser.microsoft.pst;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.PST;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.ToHTMLContentHandler;
 
 public class OutlookPSTParserTest extends TikaTest {
 
@@ -54,52 +45,21 @@ public class OutlookPSTParserTest extends TikaTest {
     }
 
     @Test
-    public void testParse() throws Exception {
-        Metadata metadata = new Metadata();
-        ContentHandler handler = new ToHTMLContentHandler();
-
-        ParseContext context = new ParseContext();
-        EmbeddedTrackingExtrator trackingExtrator = new EmbeddedTrackingExtrator(context);
-        context.set(EmbeddedDocumentExtractor.class, trackingExtrator);
-        context.set(Parser.class, new AutoDetectParser());
-
-        AUTO_DETECT_PARSER
-                .parse(getResourceAsStream("/test-documents/testPST.pst"), handler, metadata,
-                        context);
-
-        String output = handler.toString();
-
-        assertFalse(output.isEmpty());
-        assertTrue(output.contains("<meta name=\"Content-Length\" content=\"2302976\">"));
-        assertTrue(output.contains(
-                "<meta name=\"Content-Type\" content=\"application/vnd.ms-outlook-pst\">"));
+    public void testLegacyXML() throws Exception {
+        String output = getXML("testPST.pst").xml;
+        assertTrue(output.contains("<meta name=\"Content-Length\" content=\"2302976\""));
+        assertTrue(output.contains("<meta name=\"Content-Type\" content=\"application/vnd.ms-outlook-pst\""));
 
         assertTrue(output.contains("<body><div class=\"email-folder\"><h1>"));
+        assertTrue(output.contains("<div class=\"embedded\" id=\"&lt;530D9CAC.5080901@gmail.com&gt;\">" + "<h1>Re: Feature Generators</h1>"));
         assertTrue(output.contains(
-                "<div class=\"embedded\" id=\"&lt;530D9CAC.5080901@gmail.com&gt;\">" +
-                        "<h1>Re: Feature Generators</h1>"));
-        assertTrue(output.contains(
-                "<div class=\"embedded\" id=\"&lt;1393363252.28814.YahooMailNeo@web140906.mail" +
-                        ".bf1.yahoo.com&gt;\"><h1>Re: init tokenizer fails: \"Bad type in " +
+                "<div class=\"embedded\" id=\"&lt;1393363252.28814.YahooMailNeo@web140906.mail" + ".bf1.yahoo.com&gt;\"><h1>Re: init tokenizer fails: \"Bad type in " +
                         "putfield/putstatic\"</h1>"));
         assertTrue(output.contains("Gary Murphy commented on TIKA-1250:"));
 
-        assertTrue(
-                output.contains("<div class=\"email-folder\"><h1>Racine (pour la recherche)</h1>"));
+        assertTrue(output.contains("<div class=\"email-folder\"><h1>Racine (pour la recherche)</h1>"));
 
         assertTrue(output.contains("This is a docx attachment."));
-
-        List<Metadata> metaList = trackingExtrator.trackingMetadata;
-        assertEquals(9, metaList.size());
-
-        Metadata firstMail = metaList.get(0);
-        assertEquals("Jörn Kottmann", firstMail.get(TikaCoreProperties.CREATOR));
-        assertEquals("Re: Feature Generators", firstMail.get(TikaCoreProperties.TITLE));
-        assertEquals("kottmann@gmail.com", firstMail.get("senderEmailAddress"));
-        assertEquals("users@opennlp.apache.org", firstMail.get("displayTo"));
-        assertEquals("", firstMail.get("displayCC"));
-        assertEquals("", firstMail.get("displayBCC"));
-
     }
 
     @Test
@@ -107,10 +67,16 @@ public class OutlookPSTParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testPST.pst");
         Metadata m1 = metadataList.get(1);
         assertEquals("Jörn Kottmann", m1.get(Message.MESSAGE_FROM_NAME));
+        assertEquals("Jörn Kottmann", m1.get(TikaCoreProperties.CREATOR));
+        assertEquals("Re: Feature Generators", m1.get(TikaCoreProperties.TITLE));
+        assertEquals("users@opennlp.apache.org", m1.get(Message.MESSAGE_TO_DISPLAY_NAME));
+        assertEquals("", m1.get(Message.MESSAGE_CC_DISPLAY_NAME));
+        assertEquals("", m1.get(Message.MESSAGE_BCC_DISPLAY_NAME));
         assertEquals("kottmann@gmail.com", m1.get(Message.MESSAGE_FROM_EMAIL));
         assertEquals("Jörn Kottmann", m1.get(Office.MAPI_FROM_REPRESENTING_NAME));
         assertEquals("kottmann@gmail.com", m1.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
         assertEquals("NOTE", m1.get(Office.MAPI_MESSAGE_CLASS));
+        assertEquals("/Début du fichier de données Outlook", m1.get(PST.PST_FOLDER_PATH));
 
         Metadata m6 = metadataList.get(6);
         assertEquals("Couchbase", m6.get(Message.MESSAGE_FROM_NAME));
@@ -118,6 +84,9 @@ public class OutlookPSTParserTest extends TikaTest {
         assertEquals("Couchbase", m6.get(Office.MAPI_FROM_REPRESENTING_NAME));
         assertEquals("couchbase@couchbase.com", m6.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
         assertEquals("NOTE", m1.get(Office.MAPI_MESSAGE_CLASS));
+        assertNull(m1.get(Office.MAPI_RECIPIENTS_STRING));
+        assertContains("2014-02-26", m1.get(Office.MAPI_MESSAGE_CLIENT_SUBMIT_TIME));
+
         //test full EX email
         assertEquals(
                 "/o=ExchangeLabs/ou=Exchange Administrative Group (FYDIBOHF23SPDLT)" +
@@ -127,7 +96,11 @@ public class OutlookPSTParserTest extends TikaTest {
 
         assertEquals("Couchbase", m6.get(Message.MESSAGE_FROM_NAME));
         assertEquals("couchbase@couchbase.com", m6.get(Message.MESSAGE_FROM_EMAIL));
-        assertContains("2014-02-26", m1.get(Office.MAPI_MESSAGE_CLIENT_SUBMIT_TIME));
+
+        Metadata m7 = metadataList.get(7);
+        assertEquals("/<2915856a7d3449e68529f3e61b8d26bc@pf.gov.br>/<3148510c2360443396a78d35e0888de9@pf.gov.br>/attachment.docx",
+                m7.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/7/8/9", m7.get(TikaCoreProperties.EMBEDDED_ID_PATH));
     }
 
     @Test
@@ -144,25 +117,5 @@ public class OutlookPSTParserTest extends TikaTest {
         }
         //TODO: figure out why the bold markup isn't coming through if we do extract then parse
         // the bodyhtml
-    }
-
-    private static class EmbeddedTrackingExtrator extends ParsingEmbeddedDocumentExtractor {
-        List<Metadata> trackingMetadata = new ArrayList<>();
-
-        public EmbeddedTrackingExtrator(ParseContext context) {
-            super(context);
-        }
-
-        @Override
-        public boolean shouldParseEmbedded(Metadata metadata) {
-            return true;
-        }
-
-        @Override
-        public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
-                                  boolean outputHtml) throws SAXException, IOException {
-            this.trackingMetadata.add(metadata);
-            super.parseEmbedded(stream, handler, metadata, outputHtml);
-        }
     }
 }
