@@ -143,10 +143,24 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                         .setMaxRedirects(maxRedirects)
                         .setRedirectsEnabled(true).build();
         get.setConfig(requestConfig);
-        if (! StringUtils.isBlank(userAgent)) {
+        setHttpRequestHeaders(metadata, get);
+        return execute(get, metadata, httpClient, true);
+    }
+
+    private void setHttpRequestHeaders(Metadata metadata, HttpGet get) {
+        if (!StringUtils.isBlank(userAgent)) {
             get.setHeader(USER_AGENT, userAgent);
         }
-        return execute(get, metadata, httpClient, true);
+        // additional http request headers can be sent in here.
+        String[] httpRequestHeaders = metadata.getValues("httpRequestHeaders");
+        if (httpRequestHeaders != null) {
+            for (String httpRequestHeader : httpRequestHeaders) {
+                int idxOfEquals = httpRequestHeader.indexOf('=');
+                String headerKey = httpRequestHeader.substring(0, idxOfEquals);
+                String headerValue = httpRequestHeader.substring(idxOfEquals + 1);
+                get.setHeader(headerKey, headerValue);
+            }
+        }
     }
 
     @Override
@@ -455,4 +469,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         this.httpClientFactory = httpClientFactory;
     }
 
+    void setHttpClient(HttpClient httpClient) {
+        this.httpClient = httpClient;
+    }
 }

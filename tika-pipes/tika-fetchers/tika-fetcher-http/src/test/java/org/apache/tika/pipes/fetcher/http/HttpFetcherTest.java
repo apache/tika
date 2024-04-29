@@ -37,24 +37,31 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.protocol.HttpContext;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 
-public class HttpFetcherTest extends TikaTest {
-
+class HttpFetcherTest extends TikaTest {
     private static final String TEST_URL = "wontbecalled";
     private static final String CONTENT = "request content";
 
@@ -62,6 +69,7 @@ public class HttpFetcherTest extends TikaTest {
 
     @BeforeEach
     public void before() throws Exception {
+        httpFetcher = new HttpFetcher();
         final HttpResponse mockResponse = buildMockResponse(HttpStatus.SC_OK,
                 IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
 
@@ -96,6 +104,42 @@ public class HttpFetcherTest extends TikaTest {
         // Meta still populated
         assertEquals("403", meta.get("http-header:status-code"));
         assertEquals(TEST_URL, meta.get("http-connection:target-url"));
+    }
+
+    @Test
+    public void testHttpRequestHeaders() throws Exception {
+        HttpClient httpClient = Mockito.mock(HttpClient.class);
+        httpFetcher.setHttpClient(httpClient);
+        CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        ArgumentCaptor<HttpGet> httpGetArgumentCaptor = ArgumentCaptor.forClass(HttpGet.class);
+
+        when(httpClient.execute(httpGetArgumentCaptor.capture(), any(HttpContext.class)))
+                .thenReturn(response);
+        when(response.getStatusLine()).thenReturn(new StatusLine() {
+            @Override
+            public ProtocolVersion getProtocolVersion() {
+                return new HttpGet("http://localhost").getProtocolVersion();
+            }
+
+            @Override
+            public int getStatusCode() {
+                return 200;
+            }
+
+            @Override
+            public String getReasonPhrase() {
+                return null;
+            }
+        });
+
+        when(response.getEntity()).thenReturn(new StringEntity("Hi"));
+
+        Metadata metadata = new Metadata();
+        metadata.set(Property.externalText("httpRequestHeaders"), new String[] {"nick1=val1", "nick2=val2"});
+        httpFetcher.fetch("http://localhost", metadata);
+        HttpGet httpGet = httpGetArgumentCaptor.getValue();
+        Assertions.assertEquals("val1", httpGet.getHeaders("nick1")[0].getValue());
+        Assertions.assertEquals("val2", httpGet.getHeaders("nick2")[0].getValue());
     }
 
     @Test
