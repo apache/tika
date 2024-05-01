@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+import org.apache.commons.io.ByteOrderMark;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -106,6 +108,27 @@ public class MimeDetectionTest {
                 .detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_16BE)), new Metadata()));
         assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES
                 .detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_8)), new Metadata()));
+    }
+
+    @Test
+    public void testRFC822WithBOM() throws Exception {
+        String header = "From: blah <blah@blah.com>\r\n" + "Received: Friday, January 24, 2020 3:24 PM\r\n" +
+                "To: someone@somewhere.com\r\n" + "Cc: someone-else@other.com\r\n" +
+                "Subject: Received\r\n";
+        MediaType rfc822 = MediaType.parse("message/rfc822");
+        assertEquals(rfc822, MIME_TYPES.detect(UnsynchronizedByteArrayInputStream
+                .builder()
+                .setByteArray(header.getBytes(UTF_8))
+                .get(), new Metadata()));
+
+        int utfLength = ByteOrderMark.UTF_8.length();
+        byte[] bytes = new byte[header.getBytes(UTF_8).length + utfLength];
+        System.arraycopy(ByteOrderMark.UTF_8.getBytes(), 0, bytes, 0, utfLength);
+        System.arraycopy(header.getBytes(UTF_8), 0, bytes, 3, header.getBytes(UTF_8).length);
+        assertEquals(rfc822, MIME_TYPES.detect(UnsynchronizedByteArrayInputStream
+                .builder()
+                .setByteArray(bytes)
+                .get(), new Metadata()));
     }
 
     @Test
