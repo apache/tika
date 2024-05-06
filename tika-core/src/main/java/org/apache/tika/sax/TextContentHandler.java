@@ -22,15 +22,13 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Content handler decorator that only passes the
- * {@link #characters(char[], int, int)} and
- * (@link {@link #ignorableWhitespace(char[], int, int)}
- * (plus {@link #startDocument()} and {@link #endDocument()} events to
- * the decorated content handler.
+ * Content handler decorator that only passes the {@link #characters(char[], int, int)} and (@link
+ * {@link #ignorableWhitespace(char[], int, int)} (plus {@link #startDocument()} and {@link
+ * #endDocument()} events to the decorated content handler.
  */
 public class TextContentHandler extends DefaultHandler {
 
-    private static final char[] SPACE = new char[]{' '};
+    private static final char[] SPACE = new char[] {' '};
 
     private final ContentHandler delegate;
     private final boolean addSpaceBetweenElements;
@@ -81,5 +79,4 @@ public class TextContentHandler extends DefaultHandler {
     public String toString() {
         return delegate.toString();
     }
-
 }

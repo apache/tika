@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Media type information.
- */
+/** Media type information. */
 @aQute.bnd.annotation.Version("1.2.0")
 package org.apache.tika.mime;

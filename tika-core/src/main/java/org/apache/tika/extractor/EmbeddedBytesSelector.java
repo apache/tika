@@ -26,6 +26,7 @@ public interface EmbeddedBytesSelector {
             return true;
         }
     }
+
     EmbeddedBytesSelector ACCEPT_ALL = new AcceptAll();
 
     boolean select(Metadata metadata);

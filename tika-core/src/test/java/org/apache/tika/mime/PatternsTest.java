@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,9 +38,7 @@ public class PatternsTest {
         text = types.forName("text/plain");
     }
 
-    /**
-     * Test add()
-     */
+    /** Test add() */
     @Test
     public void testAdd() throws MimeTypeException {
         try {
@@ -64,9 +61,7 @@ public class PatternsTest {
         }
     }
 
-    /**
-     * Test matches()
-     */
+    /** Test matches() */
     @Test
     public void testMatches() {
         try {
@@ -96,5 +91,4 @@ public class PatternsTest {
         assertTrue(extensions.contains(".jpg"));
         assertTrue(extensions.contains(".jpeg"));
     }
-
 }

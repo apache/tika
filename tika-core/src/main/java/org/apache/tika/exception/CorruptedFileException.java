@@ -17,8 +17,8 @@
 package org.apache.tika.exception;
 
 /**
- * This exception should be thrown when the parse absolutely, positively has to stop.
- * This exception must not be caught and swallowed if an embedded parser throws it.
+ * This exception should be thrown when the parse absolutely, positively has to stop. This exception
+ * must not be caught and swallowed if an embedded parser throws it.
  */
 public class CorruptedFileException extends TikaException {
     public CorruptedFileException(String msg) {

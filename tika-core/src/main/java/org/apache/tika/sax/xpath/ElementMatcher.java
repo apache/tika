@@ -17,8 +17,8 @@
 package org.apache.tika.sax.xpath;
 
 /**
- * Final evaluation state of an XPath expression that targets an element.
- * Matches the current element.
+ * Final evaluation state of an XPath expression that targets an element. Matches the current
+ * element.
  */
 public class ElementMatcher extends Matcher {
 
@@ -27,5 +27,4 @@ public class ElementMatcher extends Matcher {
     public boolean matchesElement() {
         return true;
     }
-
 }

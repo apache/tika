@@ -17,8 +17,8 @@
 package org.apache.tika.sax.xpath;
 
 /**
- * Intermediate evaluation state of a <code>.../*...</code> XPath expression.
- * Matches nothing, but specifies the evaluation state for all child elements.
+ * Intermediate evaluation state of a <code>.../*...</code> XPath expression. Matches nothing, but
+ * specifies the evaluation state for all child elements.
  */
 public class ChildMatcher extends Matcher {
 
@@ -31,5 +31,4 @@ public class ChildMatcher extends Matcher {
     public Matcher descend(String namespace, String name) {
         return then;
     }
-
 }

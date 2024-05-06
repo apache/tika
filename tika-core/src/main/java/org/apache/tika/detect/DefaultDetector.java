@@ -20,33 +20,32 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import javax.imageio.spi.ServiceRegistry;
-
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
- * A composite detector based on all the {@link Detector} implementations
- * available through the {@link ServiceRegistry service provider mechanism}.
- * <p>
- * Detectors are loaded and returned in a specified order, of user supplied
- * followed by non-MimeType Tika, followed by the Tika MimeType class.
- * If you need to control the order of the Detectors, you should instead
- * construct your own {@link CompositeDetector} and pass in the list
+ * A composite detector based on all the {@link Detector} implementations available through the
+ * {@link ServiceRegistry service provider mechanism}.
+ *
+ * <p>Detectors are loaded and returned in a specified order, of user supplied followed by
+ * non-MimeType Tika, followed by the Tika MimeType class. If you need to control the order of the
+ * Detectors, you should instead construct your own {@link CompositeDetector} and pass in the list
  * of Detectors in the required order.
  *
  * @since Apache Tika 0.9
  */
 public class DefaultDetector extends CompositeDetector {
 
-    /**
-     * Serial version UID
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = -8170114575326908027L;
-    private transient final ServiceLoader loader;
 
-    public DefaultDetector(MimeTypes types, ServiceLoader loader,
-                           Collection<Class<? extends Detector>> excludeDetectors) {
+    private final transient ServiceLoader loader;
+
+    public DefaultDetector(
+            MimeTypes types,
+            ServiceLoader loader,
+            Collection<Class<? extends Detector>> excludeDetectors) {
         super(types.getMediaTypeRegistry(), getDefaultDetectors(types, loader, excludeDetectors));
         this.loader = loader;
     }
@@ -72,25 +71,24 @@ public class DefaultDetector extends CompositeDetector {
     }
 
     /**
-     * Finds all statically loadable detectors and sort the list by name,
-     * rather than discovery order. Detectors are used in the given order,
-     * so put the Tika parsers last so that non-Tika (user supplied)
-     * parsers can take precedence.
-     * <p>
-     * If an {@link OverrideDetector} is loaded, it takes precedence over
-     * all other detectors.
+     * Finds all statically loadable detectors and sort the list by name, rather than discovery
+     * order. Detectors are used in the given order, so put the Tika parsers last so that non-Tika
+     * (user supplied) parsers can take precedence.
+     *
+     * <p>If an {@link OverrideDetector} is loaded, it takes precedence over all other detectors.
      *
      * @param loader service loader
      * @return ordered list of statically loadable detectors
      */
-    private static List<Detector> getDefaultDetectors(MimeTypes types, ServiceLoader loader,
-                                                      Collection<Class<? extends Detector>>
-                                                              excludeDetectors) {
+    private static List<Detector> getDefaultDetectors(
+            MimeTypes types,
+            ServiceLoader loader,
+            Collection<Class<? extends Detector>> excludeDetectors) {
         List<Detector> detectors =
                 loader.loadStaticServiceProviders(Detector.class, excludeDetectors);
 
         ServiceLoaderUtils.sortLoadedClasses(detectors);
-        //look for the override index and put that first
+        // look for the override index and put that first
         int overrideIndex = -1;
         int i = 0;
         for (Detector detector : detectors) {
@@ -123,5 +121,4 @@ public class DefaultDetector extends CompositeDetector {
             return super.getDetectors();
         }
     }
-
 }

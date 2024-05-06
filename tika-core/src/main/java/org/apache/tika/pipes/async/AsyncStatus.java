@@ -19,7 +19,6 @@ package org.apache.tika.pipes.async;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.pipesiterator.TotalCountResult;
 import org.apache.tika.utils.StringUtils;
@@ -31,10 +30,12 @@ public class AsyncStatus {
         COMPLETED,
         CRASHED
     }
+
     private final Instant started;
 
     private Instant lastUpdate;
-    private TotalCountResult totalCountResult = new TotalCountResult(0, TotalCountResult.STATUS.NOT_COMPLETED);
+    private TotalCountResult totalCountResult =
+            new TotalCountResult(0, TotalCountResult.STATUS.NOT_COMPLETED);
     private Map<PipesResult.STATUS, Long> statusCounts = new HashMap<>();
     private ASYNC_STATUS asyncStatus = ASYNC_STATUS.STARTED;
 
@@ -45,8 +46,10 @@ public class AsyncStatus {
         lastUpdate = started;
     }
 
-    public synchronized void update(Map<PipesResult.STATUS, Long> statusCounts,
-                                    TotalCountResult totalCountResult, ASYNC_STATUS status) {
+    public synchronized void update(
+            Map<PipesResult.STATUS, Long> statusCounts,
+            TotalCountResult totalCountResult,
+            ASYNC_STATUS status) {
         this.lastUpdate = Instant.now();
         this.statusCounts = statusCounts;
         this.totalCountResult = totalCountResult;
@@ -83,8 +86,20 @@ public class AsyncStatus {
 
     @Override
     public String toString() {
-        return "AsyncStatus{" + "started=" + started + ", lastUpdate=" + lastUpdate +
-                ", totalCountResult=" + totalCountResult + ", statusCounts=" + statusCounts +
-                ", asyncStatus=" + asyncStatus + ", crashMessage='" + crashMessage + '\'' + '}';
+        return "AsyncStatus{"
+                + "started="
+                + started
+                + ", lastUpdate="
+                + lastUpdate
+                + ", totalCountResult="
+                + totalCountResult
+                + ", statusCounts="
+                + statusCounts
+                + ", asyncStatus="
+                + asyncStatus
+                + ", crashMessage='"
+                + crashMessage
+                + '\''
+                + '}';
     }
 }

@@ -17,22 +17,19 @@
 package org.apache.tika.detect;
 
 import java.util.List;
-
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.ProbabilisticMimeDetectionSelector;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
- * A version of {@link DefaultDetector} for probabilistic mime
- * detectors, which use statistical techniques to blend the
- * results of differing underlying detectors when attempting
- * to detect the type of a given file.
- * TODO Link to documentation on configuring these probabilities
+ * A version of {@link DefaultDetector} for probabilistic mime detectors, which use statistical
+ * techniques to blend the results of differing underlying detectors when attempting to detect the
+ * type of a given file. TODO Link to documentation on configuring these probabilities
  */
 public class DefaultProbDetector extends CompositeDetector {
     private static final long serialVersionUID = -8836240060532323352L;
-    private transient final ServiceLoader loader;
+    private final transient ServiceLoader loader;
 
     public DefaultProbDetector(ProbabilisticMimeDetectionSelector sel, ServiceLoader loader) {
         super(sel.getMediaTypeRegistry(), getDefaultDetectors(sel, loader));
@@ -55,8 +52,8 @@ public class DefaultProbDetector extends CompositeDetector {
         this(MimeTypes.getDefaultMimeTypes());
     }
 
-    private static List<Detector> getDefaultDetectors(ProbabilisticMimeDetectionSelector sel,
-                                                      ServiceLoader loader) {
+    private static List<Detector> getDefaultDetectors(
+            ProbabilisticMimeDetectionSelector sel, ServiceLoader loader) {
         List<Detector> detectors = loader.loadStaticServiceProviders(Detector.class);
         ServiceLoaderUtils.sortLoadedClasses(detectors);
         detectors.add(sel);

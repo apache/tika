@@ -19,9 +19,8 @@ package org.apache.tika.sax.xpath;
 import java.util.Objects;
 
 /**
- * Intermediate evaluation state of a <code>.../name...</code> XPath
- * expression. Matches nothing, but specifies the evaluation state
- * for the child elements with the given name.
+ * Intermediate evaluation state of a <code>.../name...</code> XPath expression. Matches nothing,
+ * but specifies the evaluation state for the child elements with the given name.
  */
 public class NamedElementMatcher extends ChildMatcher {
 

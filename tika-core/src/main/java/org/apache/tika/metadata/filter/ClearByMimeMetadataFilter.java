@@ -19,16 +19,14 @@ package org.apache.tika.metadata.filter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
 /**
- * This class clears the entire metadata object if the
- * mime matches the mime filter.  The idea is that you might not want
- * to store/transmit metadata for images or specific file types.
+ * This class clears the entire metadata object if the mime matches the mime filter. The idea is
+ * that you might not want to store/transmit metadata for images or specific file types.
  */
 public class ClearByMimeMetadataFilter extends MetadataFilter {
     private final Set<String> mimes;

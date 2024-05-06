@@ -21,16 +21,15 @@ import java.util.Objects;
 
 public class EmbeddedDocumentBytesConfig implements Serializable {
 
-    /**
-     * Serial version UID
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = -3861669115439125268L;
-
 
     public static EmbeddedDocumentBytesConfig SKIP = new EmbeddedDocumentBytesConfig(false);
 
     public enum SUFFIX_STRATEGY {
-            NONE, EXISTING, DETECTED;
+        NONE,
+        EXISTING,
+        DETECTED;
 
         public static SUFFIX_STRATEGY parse(String s) {
             if (s.equalsIgnoreCase("none")) {
@@ -43,6 +42,7 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
             throw new IllegalArgumentException("can't parse " + s);
         }
     }
+
     private final boolean extractEmbeddedDocumentBytes;
 
     private int zeroPadName = 0;
@@ -56,9 +56,8 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
     private boolean includeOriginal = false;
 
     /**
-     * Create an EmbeddedDocumentBytesConfig with
-     * {@link EmbeddedDocumentBytesConfig#extractEmbeddedDocumentBytes}
-     * set to <code>true</code>
+     * Create an EmbeddedDocumentBytesConfig with {@link
+     * EmbeddedDocumentBytesConfig#extractEmbeddedDocumentBytes} set to <code>true</code>
      */
     public EmbeddedDocumentBytesConfig() {
         this.extractEmbeddedDocumentBytes = true;
@@ -118,11 +117,22 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
 
     @Override
     public String toString() {
-        return "EmbeddedDocumentBytesConfig{" + "extractEmbeddedDocumentBytes=" +
-                extractEmbeddedDocumentBytes + ", zeroPadName=" + zeroPadName +
-                ", suffixStrategy=" + suffixStrategy + ", embeddedIdPrefix='" + embeddedIdPrefix +
-                '\'' + ", emitter='" + emitter + '\'' + ", includeOriginal=" + includeOriginal +
-                '}';
+        return "EmbeddedDocumentBytesConfig{"
+                + "extractEmbeddedDocumentBytes="
+                + extractEmbeddedDocumentBytes
+                + ", zeroPadName="
+                + zeroPadName
+                + ", suffixStrategy="
+                + suffixStrategy
+                + ", embeddedIdPrefix='"
+                + embeddedIdPrefix
+                + '\''
+                + ", emitter='"
+                + emitter
+                + '\''
+                + ", includeOriginal="
+                + includeOriginal
+                + '}';
     }
 
     @Override

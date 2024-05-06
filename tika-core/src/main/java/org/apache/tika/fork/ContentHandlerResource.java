@@ -19,7 +19,6 @@ package org.apache.tika.fork;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -60,8 +59,12 @@ class ContentHandlerResource implements ForkResource {
             if (n >= 0) {
                 atts = new AttributesImpl();
                 for (int i = 0; i < n; i++) {
-                    atts.addAttribute(readString(input), readString(input), readString(input),
-                            readString(input), readString(input));
+                    atts.addAttribute(
+                            readString(input),
+                            readString(input),
+                            readString(input),
+                            readString(input),
+                            readString(input));
                 }
             }
             handler.startElement(uri, localName, qName, atts);
@@ -103,5 +106,4 @@ class ContentHandlerResource implements ForkResource {
         }
         return sb.toString();
     }
-
 }

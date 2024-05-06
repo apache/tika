@@ -20,22 +20,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
-/**
- * Tika parser interface.
- */
+/** Tika parser interface. */
 public interface Parser extends Serializable {
 
     /**
-     * Returns the set of media types supported by this parser when used
-     * with the given parse context.
+     * Returns the set of media types supported by this parser when used with the given parse
+     * context.
      *
      * @param context parse context
      * @return immutable set of media types
@@ -44,26 +40,24 @@ public interface Parser extends Serializable {
     Set<MediaType> getSupportedTypes(ParseContext context);
 
     /**
-     * Parses a document stream into a sequence of XHTML SAX events.
-     * Fills in related document metadata in the given metadata object.
-     * <p>
-     * The given document stream is consumed but not closed by this method.
-     * The responsibility to close the stream remains on the caller.
-     * <p>
-     * Information about the parsing context can be passed in the context
-     * parameter. See the parser implementations for the kinds of context
-     * information they expect.
+     * Parses a document stream into a sequence of XHTML SAX events. Fills in related document
+     * metadata in the given metadata object.
      *
-     * @param stream   the document stream (input)
-     * @param handler  handler for the XHTML SAX events (output)
+     * <p>The given document stream is consumed but not closed by this method. The responsibility to
+     * close the stream remains on the caller.
+     *
+     * <p>Information about the parsing context can be passed in the context parameter. See the
+     * parser implementations for the kinds of context information they expect.
+     *
+     * @param stream the document stream (input)
+     * @param handler handler for the XHTML SAX events (output)
      * @param metadata document metadata (input and output)
-     * @param context  parse context
-     * @throws IOException   if the document stream could not be read
-     * @throws SAXException  if the SAX events could not be processed
+     * @param context parse context
+     * @throws IOException if the document stream could not be read
+     * @throws SAXException if the SAX events could not be processed
      * @throws TikaException if the document could not be parsed
      * @since Apache Tika 0.5
      */
     void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException;
-
 }

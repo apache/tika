@@ -18,7 +18,6 @@ package org.apache.custom.detect;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;

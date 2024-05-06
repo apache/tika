@@ -23,26 +23,30 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-
 import org.apache.custom.detect.MyCustomDetector;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EmptyDetector;
 import org.apache.tika.detect.FileCommandDetector;
 import org.apache.tika.detect.OverrideDetector;
 import org.apache.tika.detect.ZeroSizeFileDetector;
+import org.junit.jupiter.api.Test;
 
 public class ServiceLoaderUtilsTest {
 
     @Test
     public void testSort() throws Exception {
-        //OverrideDetector is moved to index 0
-        //by the private service loading in DefaultDetector.
-        //This tests that a custom detector always comes first
-        //and then reverse alphabetical order
-        Detector[] detectors = new Detector[]{new MyCustomDetector(), new EmptyDetector(),
-                new FileCommandDetector(), new OverrideDetector(), new ZeroSizeFileDetector()};
+        // OverrideDetector is moved to index 0
+        // by the private service loading in DefaultDetector.
+        // This tests that a custom detector always comes first
+        // and then reverse alphabetical order
+        Detector[] detectors =
+                new Detector[] {
+                    new MyCustomDetector(),
+                    new EmptyDetector(),
+                    new FileCommandDetector(),
+                    new OverrideDetector(),
+                    new ZeroSizeFileDetector()
+                };
         List<Detector> expected = Arrays.asList(detectors);
         List<Detector> shuffled = new ArrayList<>(expected);
         Random random = new Random(42);
@@ -52,6 +56,4 @@ public class ServiceLoaderUtilsTest {
             assertEquals(expected, shuffled, "failed on iteration " + i);
         }
     }
-
-
 }

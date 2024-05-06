@@ -35,11 +35,11 @@ public class TextStatistics {
     }
 
     /**
-     * Checks whether at least one byte was seen and that the bytes that
-     * were seen were mostly plain text (i.e. < 2% control, > 90% ASCII range).
+     * Checks whether at least one byte was seen and that the bytes that were seen were mostly plain
+     * text (i.e. < 2% control, > 90% ASCII range).
      *
-     * @return <code>true</code> if the seen bytes were mostly safe ASCII,
-     * <code>false</code> otherwise
+     * @return <code>true</code> if the seen bytes were mostly safe ASCII, <code>false</code>
+     *     otherwise
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-483">TIKA-483</a>
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-688">TIKA-688</a>
      */
@@ -53,8 +53,7 @@ public class TextStatistics {
     /**
      * Checks whether the observed byte stream looks like UTF-8 encoded text.
      *
-     * @return <code>true</code> if the seen bytes look like UTF-8,
-     * <code>false</code> otherwise
+     * @return <code>true</code> if the seen bytes look like UTF-8, <code>false</code> otherwise
      * @since Apache Tika 1.3
      */
     public boolean looksLikeUTF8() {
@@ -63,16 +62,18 @@ public class TextStatistics {
         int safe = countSafeControl();
 
         int expectedContinuation = 0;
-        int[] leading = new int[]{count(0xc0, 0xe0), count(0xe0, 0xf0), count(0xf0, 0xf8)};
+        int[] leading = new int[] {count(0xc0, 0xe0), count(0xe0, 0xf0), count(0xf0, 0xf8)};
         for (int i = 0; i < leading.length; i++) {
             utf8 += leading[i];
             expectedContinuation += (i + 1) * leading[i];
         }
 
         int continuation = count(0x80, 0xc0);
-        return utf8 > 0 && continuation <= expectedContinuation &&
-                continuation >= expectedContinuation - 3 && count(0xf8, 0x100) == 0 &&
-                (control - safe) * 100 < utf8 * 2;
+        return utf8 > 0
+                && continuation <= expectedContinuation
+                && continuation >= expectedContinuation - 3
+                && count(0xf8, 0x100) == 0
+                && (control - safe) * 100 < utf8 * 2;
     }
 
     /**
@@ -95,13 +96,13 @@ public class TextStatistics {
     }
 
     /**
-     * Counts control characters (i.e. < 0x20, excluding tab, CR, LF,
-     * page feed and escape).
-     * <p>
-     * This definition of control characters is based on section 4 of the
-     * "Content-Type Processing Model" Internet-draft
-     * (<a href="http://webblaze.cs.berkeley.edu/2009/mime-sniff/mime-sniff.txt"
+     * Counts control characters (i.e. < 0x20, excluding tab, CR, LF, page feed and escape).
+     *
+     * <p>This definition of control characters is based on section 4 of the "Content-Type
+     * Processing Model" Internet-draft (<a
+     * href="http://webblaze.cs.berkeley.edu/2009/mime-sniff/mime-sniff.txt"
      * >draft-abarth-mime-sniff-01</a>).
+     *
      * <pre>
      * +-------------------------+
      * | Binary data byte ranges |
@@ -149,8 +150,10 @@ public class TextStatistics {
     }
 
     private int countSafeControl() {
-        return count('\t') + count('\n') + count('\r') // tab, LF, CR
-                + count(0x0c) + count(0x1b);           // new page, escape
+        return count('\t')
+                + count('\n')
+                + count('\r') // tab, LF, CR
+                + count(0x0c)
+                + count(0x1b); // new page, escape
     }
-
 }

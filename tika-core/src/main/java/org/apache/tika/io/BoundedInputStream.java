@@ -21,16 +21,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * Very slight modification of Commons' BoundedInputStream
- * so that we can figure out if this hit the bound or not.
- * <p>
- * This relies on IOUtils' skip and read to try to fully
- * read/skip inputstream.
+ * Very slight modification of Commons' BoundedInputStream so that we can figure out if this hit the
+ * bound or not.
+ *
+ * <p>This relies on IOUtils' skip and read to try to fully read/skip inputstream.
  */
 public class BoundedInputStream extends InputStream {
 
-
-    private final static int EOF = -1;
+    private static final int EOF = -1;
     private final long max;
     private final InputStream in;
     private long pos;
@@ -54,8 +52,7 @@ public class BoundedInputStream extends InputStream {
      * Invokes the delegate's <code>read(byte[])</code> method.
      *
      * @param b the buffer to read the bytes into
-     * @return the number of bytes read or -1 if the end of stream or
-     * the limit has been reached.
+     * @return the number of bytes read or -1 if the end of stream or the limit has been reached.
      * @throws IOException if an I/O error occurs
      */
     @Override
@@ -65,14 +62,13 @@ public class BoundedInputStream extends InputStream {
 
     /**
      * Invokes the delegate's <code>read(byte[], int, int)</code> method.
-     * <p>
-     * This does not have the same guarantees as IOUtil's readFully()...be careful.
      *
-     * @param b   the buffer to read the bytes into
+     * <p>This does not have the same guarantees as IOUtil's readFully()...be careful.
+     *
+     * @param b the buffer to read the bytes into
      * @param off The start offset
      * @param len The number of bytes to read
-     * @return the number of bytes read or -1 if the end of stream or
-     * the limit has been reached.
+     * @return the number of bytes read or -1 if the end of stream or the limit has been reached.
      * @throws IOException if an I/O error occurs
      */
     @Override
@@ -92,9 +88,8 @@ public class BoundedInputStream extends InputStream {
     }
 
     /**
-     * Invokes the delegate's <code>skip(long)</code> method.
-     * As with InputStream generally, this does not guarantee reading n bytes.
-     * Use IOUtils' skipFully for that functionality.
+     * Invokes the delegate's <code>skip(long)</code> method. As with InputStream generally, this
+     * does not guarantee reading n bytes. Use IOUtils' skipFully for that functionality.
      *
      * @param n the number of bytes to skip
      * @return the actual number of bytes skipped

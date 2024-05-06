@@ -17,9 +17,8 @@
 package org.apache.tika.exception;
 
 /**
- * Tika Config Exception is an exception to occur when there is an error
- * in Tika config file and/or one or more of the parsers failed to initialize
- * from that erroneous config.
+ * Tika Config Exception is an exception to occur when there is an error in Tika config file and/or
+ * one or more of the parsers failed to initialize from that erroneous config.
  *
  * @since Apache Tika 1.14
  */

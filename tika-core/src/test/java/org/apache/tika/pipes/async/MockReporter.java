@@ -17,7 +17,6 @@
 package org.apache.tika.pipes.async;
 
 import java.util.concurrent.ArrayBlockingQueue;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.PipesReporter;
@@ -35,14 +34,10 @@ public class MockReporter extends PipesReporter {
     }
 
     @Override
-    public void error(Throwable t) {
-
-    }
+    public void error(Throwable t) {}
 
     @Override
-    public void error(String msg) {
-
-    }
+    public void error(String msg) {}
 
     @Field
     public void setEndpoint(String endpoint) {

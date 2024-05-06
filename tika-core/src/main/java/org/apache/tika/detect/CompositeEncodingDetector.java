@@ -24,29 +24,25 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 public class CompositeEncodingDetector implements EncodingDetector, Serializable {
 
-    /**
-     * Serial version UID
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = 5980683158436430252L;
 
     private final List<EncodingDetector> detectors;
 
-    public CompositeEncodingDetector(List<EncodingDetector> detectors,
-                                     Collection<Class<? extends EncodingDetector>>
-                                             excludeEncodingDetectors) {
+    public CompositeEncodingDetector(
+            List<EncodingDetector> detectors,
+            Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors) {
         this.detectors = new LinkedList<>();
         for (EncodingDetector encodingDetector : detectors) {
             if (!isExcluded(excludeEncodingDetectors, encodingDetector.getClass())) {
                 this.detectors.add(encodingDetector);
             }
         }
-
     }
 
     public CompositeEncodingDetector(List<EncodingDetector> detectors) {
@@ -55,7 +51,7 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
     }
 
     /**
-     * @param input    text document input stream, or <code>null</code>
+     * @param input text document input stream, or <code>null</code>
      * @param metadata input metadata for the document
      * @return the detected Charset or null if no charset could be detected
      * @throws IOException
@@ -66,9 +62,10 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
             Charset detected = detector.detect(input, metadata);
             if (detected != null) {
                 metadata.set(TikaCoreProperties.DETECTED_ENCODING, detected.name());
-                //if this has been set by a leaf detector, do not overwrite
-                if (! detector.getClass().getSimpleName().equals("CompositeEncodingDetector")) {
-                    metadata.set(TikaCoreProperties.ENCODING_DETECTOR,
+                // if this has been set by a leaf detector, do not overwrite
+                if (!detector.getClass().getSimpleName().equals("CompositeEncodingDetector")) {
+                    metadata.set(
+                            TikaCoreProperties.ENCODING_DETECTOR,
                             detector.getClass().getSimpleName());
                 }
                 return detected;
@@ -84,8 +81,8 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
     private boolean isExcluded(
             Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors,
             Class<? extends EncodingDetector> encodingDetector) {
-        return excludeEncodingDetectors.contains(encodingDetector) ||
-                assignableFrom(excludeEncodingDetectors, encodingDetector);
+        return excludeEncodingDetectors.contains(encodingDetector)
+                || assignableFrom(excludeEncodingDetectors, encodingDetector);
     }
 
     private boolean assignableFrom(

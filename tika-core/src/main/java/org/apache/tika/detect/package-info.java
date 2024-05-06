@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Media type detection.
- */
+/** Media type detection. */
 @aQute.bnd.annotation.Version("1.0.0")
 package org.apache.tika.detect;

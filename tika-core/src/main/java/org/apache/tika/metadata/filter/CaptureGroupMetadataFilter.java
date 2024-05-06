@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -30,28 +29,25 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.StringUtils;
 
-
 /**
- * This filter runs a regex against the first value in the "sourceField".
- * If the pattern matches, it extracts the first group of the first match and
- * set's the "targetField"'s value to that first group.
- * <p/>
- * If there is a match, this will overwrite whatever value is in the
- * "targetField".
- * <p/>
- * If there is not a match, this filter will be a no-op.
- * <p/>
- * If there are multiple matches, this filter will capture only the first.
- * Open a ticket if you need different behavior.
- * <p/>
- * If the source field has multiple values, this will run the regex
- * against only the first value.
- * <p/>
- * If the source field does not exist, this filter will be a no-op.
- * <p/>
- * If the target field is the same value as the source field, this filter
- * will overwrite the value in that field. Again, if there are multiple
- * values in that field, those will all be overwritten.
+ * This filter runs a regex against the first value in the "sourceField". If the pattern matches, it
+ * extracts the first group of the first match and set's the "targetField"'s value to that first
+ * group.
+ *
+ * <p>If there is a match, this will overwrite whatever value is in the "targetField".
+ *
+ * <p>If there is not a match, this filter will be a no-op.
+ *
+ * <p>If there are multiple matches, this filter will capture only the first. Open a ticket if you
+ * need different behavior.
+ *
+ * <p>If the source field has multiple values, this will run the regex against only the first value.
+ *
+ * <p>If the source field does not exist, this filter will be a no-op.
+ *
+ * <p>If the target field is the same value as the source field, this filter will overwrite the
+ * value in that field. Again, if there are multiple values in that field, those will all be
+ * overwritten.
  */
 public class CaptureGroupMetadataFilter extends MetadataFilter implements Initializable {
 
@@ -94,7 +90,6 @@ public class CaptureGroupMetadataFilter extends MetadataFilter implements Initia
         } catch (PatternSyntaxException e) {
             throw new TikaConfigException("Couldn't parse regex", e);
         }
-
     }
 
     @Override

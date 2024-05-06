@@ -26,14 +26,12 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * A test Parsers to test {@link Field}
@@ -54,36 +52,26 @@ public class DummyParameterizedParser implements Parser {
     @Field(name = "testparam")
     private String testParam = "init_string";
 
-    @Field
-    private short xshort = -2;
+    @Field private short xshort = -2;
 
-    @Field
-    private int xint = -3;
+    @Field private int xint = -3;
 
-    @Field
-    private long xlong = -4;
+    @Field private long xlong = -4;
 
     @Field(name = "xbigint")
     private BigInteger xbigInt;
 
-    @Field
-    private float xfloat = -5.0f;
+    @Field private float xfloat = -5.0f;
 
-    @Field
-    private double xdouble = -6.0d;
+    @Field private double xdouble = -6.0d;
 
-    @Field
-    private boolean xbool = true;
+    @Field private boolean xbool = true;
 
-    @Field
-    private URL xurl;
+    @Field private URL xurl;
 
-    @Field
-    private URI xuri;
+    @Field private URI xuri;
 
-    @Field
-    private String missing = "default";
-
+    @Field private String missing = "default";
 
     private final String inner = "inner";
     private File xfile;
@@ -113,8 +101,9 @@ public class DummyParameterizedParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         metadata.add("testparam", testParam);
         metadata.add("xshort", xshort + "");

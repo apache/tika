@@ -18,16 +18,15 @@ package org.apache.tika.io;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.apache.tika.exception.TikaException;
 
 /**
  * General Endian Related Utilties.
- * <p>
- * This class provides static utility methods for input/output operations
- * on numbers in Big and Little Endian formats.
- * <p>
- * Origin of code: Based on the version in POI
+ *
+ * <p>This class provides static utility methods for input/output operations on numbers in Big and
+ * Little Endian formats.
+ *
+ * <p>Origin of code: Based on the version in POI
  */
 public class EndianUtils {
     private static final int LONG_SIZE = 8;
@@ -37,7 +36,7 @@ public class EndianUtils {
      *
      * @param stream the InputStream from which the short is to be read
      * @return the short (16-bit) value
-     * @throws IOException             will be propagated back to the caller
+     * @throws IOException will be propagated back to the caller
      * @throws BufferUnderrunException if the stream cannot provide enough bytes
      */
     public static short readShortLE(InputStream stream)
@@ -50,7 +49,7 @@ public class EndianUtils {
      *
      * @param stream the InputStream from which the short is to be read
      * @return the short (16-bit) value
-     * @throws IOException             will be propagated back to the caller
+     * @throws IOException will be propagated back to the caller
      * @throws BufferUnderrunException if the stream cannot provide enough bytes
      */
     public static short readShortBE(InputStream stream)
@@ -81,7 +80,7 @@ public class EndianUtils {
      *
      * @param stream the InputStream from which the int is to be read
      * @return the int (32-bit) value
-     * @throws IOException             will be propagated back to the caller
+     * @throws IOException will be propagated back to the caller
      * @throws BufferUnderrunException if the stream cannot provide enough bytes
      */
     public static long readUIntLE(InputStream stream) throws IOException, BufferUnderrunException {
@@ -100,7 +99,7 @@ public class EndianUtils {
      *
      * @param stream the InputStream from which the int is to be read
      * @return the int (32-bit) value
-     * @throws IOException             will be propagated back to the caller
+     * @throws IOException will be propagated back to the caller
      * @throws BufferUnderrunException if the stream cannot provide enough bytes
      */
     public static long readUIntBE(InputStream stream) throws IOException, BufferUnderrunException {
@@ -119,7 +118,7 @@ public class EndianUtils {
      *
      * @param stream the InputStream from which the int is to be read
      * @return the int (32-bit) value
-     * @throws IOException             will be propagated back to the caller
+     * @throws IOException will be propagated back to the caller
      * @throws BufferUnderrunException if the stream cannot provide enough bytes
      */
     public static int readIntLE(InputStream stream) throws IOException, BufferUnderrunException {
@@ -138,7 +137,7 @@ public class EndianUtils {
      *
      * @param stream the InputStream from which the int is to be read
      * @return the int (32-bit) value
-     * @throws IOException             will be propagated back to the caller
+     * @throws IOException will be propagated back to the caller
      * @throws BufferUnderrunException if the stream cannot provide enough bytes
      */
     public static int readIntBE(InputStream stream) throws IOException, BufferUnderrunException {
@@ -157,7 +156,7 @@ public class EndianUtils {
      *
      * @param stream the InputStream from which the int is to be read
      * @return the int (32-bit) value
-     * @throws IOException             will be propagated back to the caller
+     * @throws IOException will be propagated back to the caller
      * @throws BufferUnderrunException if the stream cannot provide enough bytes
      */
     public static int readIntME(InputStream stream) throws IOException, BufferUnderrunException {
@@ -176,7 +175,7 @@ public class EndianUtils {
      *
      * @param stream the InputStream from which the long is to be read
      * @return the long (64-bit) value
-     * @throws IOException             will be propagated back to the caller
+     * @throws IOException will be propagated back to the caller
      * @throws BufferUnderrunException if the stream cannot provide enough bytes
      */
     public static long readLongLE(InputStream stream) throws IOException, BufferUnderrunException {
@@ -192,9 +191,15 @@ public class EndianUtils {
             throw new BufferUnderrunException();
         }
 
-        return ((long) ch8 << 56) + ((long) ch7 << 48) + ((long) ch6 << 40) + ((long) ch5 << 32) +
-                ((long) ch4 << 24) + // cast to long to preserve bit 31 (sign bit for ints)
-                (ch3 << 16) + (ch2 << 8) + (ch1);
+        return ((long) ch8 << 56)
+                + ((long) ch7 << 48)
+                + ((long) ch6 << 40)
+                + ((long) ch5 << 32)
+                + ((long) ch4 << 24)
+                + // cast to long to preserve bit 31 (sign bit for ints)
+                (ch3 << 16)
+                + (ch2 << 8)
+                + (ch1);
     }
 
     /**
@@ -202,7 +207,7 @@ public class EndianUtils {
      *
      * @param stream the InputStream from which the long is to be read
      * @return the long (64-bit) value
-     * @throws IOException             will be propagated back to the caller
+     * @throws IOException will be propagated back to the caller
      * @throws BufferUnderrunException if the stream cannot provide enough bytes
      */
     public static long readLongBE(InputStream stream) throws IOException, BufferUnderrunException {
@@ -218,14 +223,20 @@ public class EndianUtils {
             throw new BufferUnderrunException();
         }
 
-        return ((long) ch1 << 56) + ((long) ch2 << 48) + ((long) ch3 << 40) + ((long) ch4 << 32) +
-                ((long) ch5 << 24) + // cast to long to preserve bit 31 (sign bit for ints)
-                (ch6 << 16) + (ch7 << 8) + (ch8);
+        return ((long) ch1 << 56)
+                + ((long) ch2 << 48)
+                + ((long) ch3 << 40)
+                + ((long) ch4 << 32)
+                + ((long) ch5 << 24)
+                + // cast to long to preserve bit 31 (sign bit for ints)
+                (ch6 << 16)
+                + (ch7 << 8)
+                + (ch8);
     }
 
     /**
-     * Gets the integer value that is stored in UTF-8 like fashion, in Big Endian
-     * but with the high bit on each number indicating if it continues or not
+     * Gets the integer value that is stored in UTF-8 like fashion, in Big Endian but with the high
+     * bit on each number indicating if it continues or not
      */
     public static long readUE7(InputStream stream) throws IOException {
         int i;
@@ -262,7 +273,7 @@ public class EndianUtils {
     /**
      * Get a LE short value from a byte array
      *
-     * @param data   the byte array
+     * @param data the byte array
      * @param offset a starting offset into the byte array
      * @return the short (16-bit) value
      */
@@ -283,7 +294,7 @@ public class EndianUtils {
     /**
      * Get a LE unsigned short value from a byte array
      *
-     * @param data   the byte array
+     * @param data the byte array
      * @param offset a starting offset into the byte array
      * @return the unsigned short (16-bit) value in an integer
      */
@@ -306,7 +317,7 @@ public class EndianUtils {
     /**
      * Get a BE short value from a byte array
      *
-     * @param data   the byte array
+     * @param data the byte array
      * @param offset a starting offset into the byte array
      * @return the short (16-bit) value
      */
@@ -327,7 +338,7 @@ public class EndianUtils {
     /**
      * Get a BE unsigned short value from a byte array
      *
-     * @param data   the byte array
+     * @param data the byte array
      * @param offset a starting offset into the byte array
      * @return the unsigned short (16-bit) value in an integer
      */
@@ -350,7 +361,7 @@ public class EndianUtils {
     /**
      * Get a LE int value from a byte array
      *
-     * @param data   the byte array
+     * @param data the byte array
      * @param offset a starting offset into the byte array
      * @return the int (32-bit) value
      */
@@ -376,7 +387,7 @@ public class EndianUtils {
     /**
      * Get a BE int value from a byte array
      *
-     * @param data   the byte array
+     * @param data the byte array
      * @param offset a starting offset into the byte array
      * @return the int (32-bit) value
      */
@@ -402,7 +413,7 @@ public class EndianUtils {
     /**
      * Get a LE unsigned int value from a byte array
      *
-     * @param data   the byte array
+     * @param data the byte array
      * @param offset a starting offset into the byte array
      * @return the unsigned int (32-bit) value in a long
      */
@@ -424,7 +435,7 @@ public class EndianUtils {
     /**
      * Get a BE unsigned int value from a byte array
      *
-     * @param data   the byte array
+     * @param data the byte array
      * @param offset a starting offset into the byte array
      * @return the unsigned int (32-bit) value in a long
      */
@@ -436,7 +447,7 @@ public class EndianUtils {
     /**
      * Get a LE long value from a byte array
      *
-     * @param data   the byte array
+     * @param data the byte array
      * @param offset a starting offset into the byte array
      * @return the long (64-bit) value
      */
@@ -451,8 +462,7 @@ public class EndianUtils {
     }
 
     /**
-     * Convert an 'unsigned' byte to an integer. ie, don't carry across the
-     * sign.
+     * Convert an 'unsigned' byte to an integer. ie, don't carry across the sign.
      *
      * @param b Description of the Parameter
      * @return Description of the Return Value
@@ -464,14 +474,13 @@ public class EndianUtils {
     /**
      * get the unsigned value of a byte.
      *
-     * @param data   the byte array.
+     * @param data the byte array.
      * @param offset a starting offset into the byte array.
      * @return the unsigned value of the byte as a 16 bit short
      */
     public static short getUByte(byte[] data, int offset) {
         return (short) (data[offset] & 0xFF);
     }
-
 
     public static class BufferUnderrunException extends TikaException {
         private static final long serialVersionUID = 8358288231138076276L;

@@ -16,13 +16,10 @@
  */
 package org.apache.tika.metadata;
 
-/**
- * A collection of Tika metadata keys used in Mime Type resolution
- */
+/** A collection of Tika metadata keys used in Mime Type resolution */
 public interface TikaMimeKeys {
 
     String TIKA_MIME_FILE = "tika.mime.file";
 
     String MIME_TYPE_MAGIC = "mime.type.magic";
-
 }

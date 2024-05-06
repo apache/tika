@@ -17,7 +17,6 @@
 package org.apache.tika.extractor;
 
 import java.util.Set;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -25,17 +24,17 @@ import org.apache.tika.utils.StringUtils;
 
 public class BasicEmbeddedBytesSelector implements EmbeddedBytesSelector {
 
-
-
     private final Set<String> includeMimes;
     private final Set<String> excludeMimes;
     private final Set<String> includeEmbeddedResourceTypes;
 
     private final Set<String> excludeEmbeddedResourceTypes;
 
-    public BasicEmbeddedBytesSelector(Set<String> includeMimes, Set<String> excludeMimes,
-                                      Set<String> includeEmbeddedResourceTypes,
-                                      Set<String> excludeEmbeddedResourceTypes) {
+    public BasicEmbeddedBytesSelector(
+            Set<String> includeMimes,
+            Set<String> excludeMimes,
+            Set<String> includeEmbeddedResourceTypes,
+            Set<String> excludeEmbeddedResourceTypes) {
         this.includeMimes = includeMimes;
         this.excludeMimes = excludeMimes;
         this.includeEmbeddedResourceTypes = includeEmbeddedResourceTypes;
@@ -47,7 +46,7 @@ public class BasicEmbeddedBytesSelector implements EmbeddedBytesSelector {
         if (mime == null) {
             mime = "";
         } else {
-            //if mime matters at all, make sure to get the mime without parameters
+            // if mime matters at all, make sure to get the mime without parameters
             if (includeMimes.size() > 0 || excludeMimes.size() > 0) {
                 MediaType mt = MediaType.parse(mime);
                 if (mt != null) {
@@ -58,18 +57,19 @@ public class BasicEmbeddedBytesSelector implements EmbeddedBytesSelector {
         if (excludeMimes.contains(mime)) {
             return false;
         }
-        if (includeMimes.size() > 0 && ! includeMimes.contains(mime)) {
+        if (includeMimes.size() > 0 && !includeMimes.contains(mime)) {
             return false;
         }
         String embeddedResourceType = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
-        //if a parser doesn't specify the type, treat it as ATTACHMENT
-        embeddedResourceType = StringUtils.isBlank(embeddedResourceType) ? "ATTACHMENT" :
-                embeddedResourceType;
+        // if a parser doesn't specify the type, treat it as ATTACHMENT
+        embeddedResourceType =
+                StringUtils.isBlank(embeddedResourceType) ? "ATTACHMENT" : embeddedResourceType;
 
         if (excludeEmbeddedResourceTypes.contains(embeddedResourceType)) {
             return false;
         }
-        if (includeEmbeddedResourceTypes.size() > 0 && includeEmbeddedResourceTypes.contains(embeddedResourceType)) {
+        if (includeEmbeddedResourceTypes.size() > 0
+                && includeEmbeddedResourceTypes.contains(embeddedResourceType)) {
             return true;
         }
         return false;

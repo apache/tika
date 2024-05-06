@@ -38,24 +38,20 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.multiple.AbstractMultipleParser;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.multiple.AbstractMultipleParser;
-import org.apache.tika.utils.XMLReaderUtils;
-
-
 /**
  * This is a serializable model class for parameters from configuration file.
  *
- * @param <T> value type. Should be serializable to string and have a constructor
- *            with string param
+ * @param <T> value type. Should be serializable to string and have a constructor with string param
  * @since Apache Tika 1.14
  */
 public class Param<T> implements Serializable {
@@ -88,7 +84,7 @@ public class Param<T> implements Serializable {
         wellKnownMap.put("metadataPolicy", AbstractMultipleParser.MetadataPolicy.class);
     }
 
-    //one of these two is used for serialization
+    // one of these two is used for serialization
     private final List<String> valueStrings = new ArrayList<>();
     private final Map<String, String> valueMap = new LinkedHashMap<>();
 
@@ -96,8 +92,7 @@ public class Param<T> implements Serializable {
     private String name;
     private T actualValue;
 
-    public Param() {
-    }
+    public Param() {}
 
     public Param(String name, Class<T> type, T value) {
         this.name = name;
@@ -106,7 +101,7 @@ public class Param<T> implements Serializable {
         if (List.class.isAssignableFrom(value.getClass())) {
             this.valueStrings.addAll((List) value);
         } else if (Map.class.isAssignableFrom(value.getClass())) {
-            valueMap.putAll((Map)value);
+            valueMap.putAll((Map) value);
         } else {
             this.valueStrings.add(value.toString());
         }
@@ -156,8 +151,8 @@ public class Param<T> implements Serializable {
             String type = typeAttr.getTextContent();
             if ("class".equals(type)) {
                 if (classAttr == null) {
-                    throw new TikaConfigException("must specify a class attribute if " +
-                            "type=\"class\"");
+                    throw new TikaConfigException(
+                            "must specify a class attribute if " + "type=\"class\"");
                 }
                 ret.setType(clazz);
             } else {
@@ -180,7 +175,7 @@ public class Param<T> implements Serializable {
         } else if (Map.class.isAssignableFrom(ret.type)) {
             loadMap(ret, node);
         } else {
-            //allow the empty string
+            // allow the empty string
             String textContent = "";
             if (value != null) {
                 textContent = value.getTextContent();
@@ -190,12 +185,16 @@ public class Param<T> implements Serializable {
         }
         return ret;
     }
-    private static <T> void loadObject(Param<T> ret, Node root, Class clazz) throws TikaConfigException {
+
+    private static <T> void loadObject(Param<T> ret, Node root, Class clazz)
+            throws TikaConfigException {
 
         try {
-            ret.actualValue = (T)clazz.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
-                 InvocationTargetException e) {
+            ret.actualValue = (T) clazz.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException
+                | IllegalAccessException
+                | NoSuchMethodException
+                | InvocationTargetException e) {
             throw new TikaConfigException("can't build class: " + clazz, e);
         }
 
@@ -209,19 +208,23 @@ public class Param<T> implements Serializable {
                         Param param = load(params.item(j));
 
                         Method method = null;
-                        String methodName = "set" +
-                                param.getName().substring(0,1).toUpperCase(Locale.US) +
-                                param.getName().substring(1);
+                        String methodName =
+                                "set"
+                                        + param.getName().substring(0, 1).toUpperCase(Locale.US)
+                                        + param.getName().substring(1);
                         try {
-                            method = ret.actualValue.getClass().getMethod(methodName,
-                                    param.getType());
+                            method =
+                                    ret.actualValue
+                                            .getClass()
+                                            .getMethod(methodName, param.getType());
                         } catch (NoSuchMethodException e) {
                             throw new TikaConfigException("can't find method: " + methodName, e);
                         }
                         try {
                             method.invoke(ret.actualValue, param.getValue());
                         } catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new TikaConfigException("can't set param value: " + param.getName(), e);
+                            throw new TikaConfigException(
+                                    "can't set param value: " + param.getName(), e);
                         }
                     }
                 }
@@ -247,10 +250,10 @@ public class Param<T> implements Serializable {
                     key = child.getLocalName();
                     value = child.getTextContent();
                 }
-                if (((Map)ret.actualValue).containsKey(key)) {
+                if (((Map) ret.actualValue).containsKey(key)) {
                     throw new TikaConfigException("Duplicate keys are not allowed: " + key);
                 }
-                ((Map)ret.actualValue).put(key, value);
+                ((Map) ret.actualValue).put(key, value);
                 ret.valueMap.put(key, value);
             }
             child = child.getNextSibling();
@@ -293,8 +296,8 @@ public class Param<T> implements Serializable {
             constructor.setAccessible(true);
             return constructor.newInstance(value);
         } catch (NoSuchMethodException e) {
-            throw new RuntimeException(type + " doesnt have a constructor that takes String arg",
-                    e);
+            throw new RuntimeException(
+                    type + " doesnt have a constructor that takes String arg", e);
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
@@ -344,12 +347,19 @@ public class Param<T> implements Serializable {
 
     @Override
     public String toString() {
-        return "Param{" + "name='" + name + '\'' + ", valueStrings='" + valueStrings + '\'' +
-                ", actualValue=" + actualValue + '}';
+        return "Param{"
+                + "name='"
+                + name
+                + '\''
+                + ", valueStrings='"
+                + valueStrings
+                + '\''
+                + ", actualValue="
+                + actualValue
+                + '}';
     }
 
     public void save(OutputStream stream) throws TransformerException, TikaException {
-
 
         DocumentBuilder builder = XMLReaderUtils.getDocumentBuilder();
         Document doc = builder.newDocument();
@@ -381,9 +391,9 @@ public class Param<T> implements Serializable {
                 el.appendChild(item);
             }
         } else if (Map.class.isAssignableFrom(actualValue.getClass())) {
-            for (Object key : ((Map)actualValue).keySet()) {
+            for (Object key : ((Map) actualValue).keySet()) {
                 String keyString = (String) key;
-                String valueString = (String)((Map)actualValue).get(keyString);
+                String valueString = (String) ((Map) actualValue).get(keyString);
                 Node item = doc.createElement(keyString);
                 item.setTextContent(valueString);
                 el.appendChild(item);
@@ -392,5 +402,4 @@ public class Param<T> implements Serializable {
             el.setTextContent(valueStrings.get(0));
         }
     }
-
 }

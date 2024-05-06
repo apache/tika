@@ -19,20 +19,16 @@ package org.apache.tika.sax;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
-
 import org.apache.commons.io.input.NullInputStream;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
-
-/**
- * Tests for the {@link SecureContentHandler} class.
- */
+/** Tests for the {@link SecureContentHandler} class. */
 public class SecureContentHandlerTest {
 
     private static final int MANY_BYTES = 2000000;
@@ -50,7 +46,7 @@ public class SecureContentHandlerTest {
     @Test
     public void testZeroCharactersPerByte() throws IOException {
         try {
-            char[] ch = new char[]{'x'};
+            char[] ch = new char[] {'x'};
             for (int i = 0; i < MANY_BYTES; i++) {
                 stream.read();
             }
@@ -160,5 +156,4 @@ public class SecureContentHandlerTest {
             }
         }
     }
-
 }

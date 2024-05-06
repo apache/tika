@@ -25,11 +25,9 @@ import java.util.concurrent.TimeUnit;
 
 public class PipesParser implements Closeable {
 
-
     private final PipesConfig pipesConfig;
     private final List<PipesClient> clients = new ArrayList<>();
-    private final ArrayBlockingQueue<PipesClient> clientQueue ;
-
+    private final ArrayBlockingQueue<PipesClient> clientQueue;
 
     public PipesParser(PipesConfig pipesConfig) {
         this.pipesConfig = pipesConfig;
@@ -41,12 +39,13 @@ public class PipesParser implements Closeable {
         }
     }
 
-    public PipesResult parse(FetchEmitTuple t) throws InterruptedException,
-            PipesException, IOException {
+    public PipesResult parse(FetchEmitTuple t)
+            throws InterruptedException, PipesException, IOException {
         PipesClient client = null;
         try {
-            client = clientQueue.poll(pipesConfig.getMaxWaitForClientMillis(),
-                    TimeUnit.MILLISECONDS);
+            client =
+                    clientQueue.poll(
+                            pipesConfig.getMaxWaitForClientMillis(), TimeUnit.MILLISECONDS);
             if (client == null) {
                 return PipesResult.CLIENT_UNAVAILABLE_WITHIN_MS;
             }

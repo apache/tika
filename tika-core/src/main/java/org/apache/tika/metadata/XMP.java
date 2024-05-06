@@ -22,39 +22,30 @@ public interface XMP {
 
     String PREFIX = "xmp";
 
-    /**
-     * The xmp prefix followed by the colon delimiter
-     */
+    /** The xmp prefix followed by the colon delimiter */
     String PREFIX_ = PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    /**
-     * Unordered text strings of advisories.
-     */
+    /** Unordered text strings of advisories. */
     Property ABOUT = Property.externalTextBag(PREFIX_ + "About");
 
-    /**
-     * Unordered text strings of advisories.
-     */
+    /** Unordered text strings of advisories. */
     Property ADVISORY = Property.externalTextBag(PREFIX_ + "Advisory");
 
     /**
-     * The date and time the resource was created. For a digital file, this need not
-     * match a file-system creation time. For a freshly created resource, it should
-     * be close to that time, modulo the time taken to write the file. Later file
-     * transfer, copying, and so on, can make the file-system time arbitrarily different.
+     * The date and time the resource was created. For a digital file, this need not match a
+     * file-system creation time. For a freshly created resource, it should be close to that time,
+     * modulo the time taken to write the file. Later file transfer, copying, and so on, can make
+     * the file-system time arbitrarily different.
      */
     Property CREATE_DATE = Property.externalDate(PREFIX_ + "CreateDate");
 
-    /**
-     * The name of the first known tool used to create the resource.
-     */
+    /** The name of the first known tool used to create the resource. */
     Property CREATOR_TOOL = Property.externalText(PREFIX_ + "CreatorTool");
 
     /**
-     * An unordered array of text strings that unambiguously identify the resource
-     * within a given context. An array item may be qualified with xmpidq:Scheme
-     * (see 8.7, “xmpidq namespace”) to denote the formal identification system to
-     * which that identifier conforms.
+     * An unordered array of text strings that unambiguously identify the resource within a given
+     * context. An array item may be qualified with xmpidq:Scheme (see 8.7, “xmpidq namespace”) to
+     * denote the formal identification system to which that identifier conforms.
      */
     Property IDENTIFIER = Property.externalTextBag(PREFIX_ + "Identifier");
 
@@ -64,26 +55,21 @@ public interface XMP {
     Property LABEL = Property.externalText(PREFIX_ + "Label");
 
     /**
-     * The date and time that any metadata for this resource was last changed. It
-     * should be the same as or more recent than xmp:ModifyDate
+     * The date and time that any metadata for this resource was last changed. It should be the same
+     * as or more recent than xmp:ModifyDate
      */
     Property METADATA_DATE = Property.externalDate(PREFIX_ + "MetadataDate");
 
-    /**
-     * The date and time the resource was last modified.
-     */
+    /** The date and time the resource was last modified. */
     Property MODIFY_DATE = Property.externalDate(PREFIX_ + "ModifyDate");
 
-    /**
-     * A word or short phrase that represents the nick name fo the file
-     */
+    /** A word or short phrase that represents the nick name fo the file */
     Property NICKNAME = Property.externalText(PREFIX_ + "NickName");
 
     /**
-     * A user-assigned rating for this file. The value shall be -1 or in the range
-     * [0..5], where -1 indicates “rejected” and 0 indicates “unrated”. If xmp:Rating
-     * is not present, a value of 0 should be assumed.
+     * A user-assigned rating for this file. The value shall be -1 or in the range [0..5], where -1
+     * indicates “rejected” and 0 indicates “unrated”. If xmp:Rating is not present, a value of 0
+     * should be assumed.
      */
     Property RATING = Property.externalInteger(PREFIX_ + "Rating");
-
 }

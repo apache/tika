@@ -19,24 +19,22 @@ package org.apache.tika.extractor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
- * Loads EmbeddedStreamTranslators via service loading.  Tries to run each
- * in turn and returns the first non-null value.  If no translation has occurred,
- * this returns the original InputStream. If a translation has occurred, the
- * translator will consume the InputStream but not close it.
+ * Loads EmbeddedStreamTranslators via service loading. Tries to run each in turn and returns the
+ * first non-null value. If no translation has occurred, this returns the original InputStream. If a
+ * translation has occurred, the translator will consume the InputStream but not close it.
  */
 public class DefaultEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
 
     final List<EmbeddedStreamTranslator> translators;
 
     private static List<EmbeddedStreamTranslator> getDefaultFilters(ServiceLoader loader) {
-        List<EmbeddedStreamTranslator> embeddedStreamTranslators
-                = loader.loadServiceProviders(EmbeddedStreamTranslator.class);
+        List<EmbeddedStreamTranslator> embeddedStreamTranslators =
+                loader.loadServiceProviders(EmbeddedStreamTranslator.class);
         ServiceLoaderUtils.sortLoadedClasses(embeddedStreamTranslators);
         return embeddedStreamTranslators;
     }
@@ -50,8 +48,9 @@ public class DefaultEmbeddedStreamTranslator implements EmbeddedStreamTranslator
     }
 
     /**
-     * This should sniff the stream to determine if it needs to be translated.
-     * The translator is responsible for resetting the stream if any bytes have been read.
+     * This should sniff the stream to determine if it needs to be translated. The translator is
+     * responsible for resetting the stream if any bytes have been read.
+     *
      * @param inputStream
      * @param metadata
      * @return
@@ -69,6 +68,7 @@ public class DefaultEmbeddedStreamTranslator implements EmbeddedStreamTranslator
 
     /**
      * This will consume the InputStream and return a new stream of translated bytes.
+     *
      * @param inputStream
      * @param metadata
      * @return

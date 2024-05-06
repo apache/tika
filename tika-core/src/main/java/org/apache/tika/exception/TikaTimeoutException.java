@@ -16,9 +16,7 @@
  */
 package org.apache.tika.exception;
 
-/**
- * Runtime/unchecked version of {@link java.util.concurrent.TimeoutException}
- */
+/** Runtime/unchecked version of {@link java.util.concurrent.TimeoutException} */
 public class TikaTimeoutException extends RuntimeException {
     public TikaTimeoutException(String message) {
         super(message);

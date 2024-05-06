@@ -19,16 +19,13 @@ package org.apache.tika.metadata.filter;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
-/**
- * This filter performs no operations on the metadata
- * and leaves it untouched.
- */
+/** This filter performs no operations on the metadata and leaves it untouched. */
 public class NoOpFilter extends MetadataFilter {
 
     public static final NoOpFilter NOOP_FILTER = new NoOpFilter();
 
     @Override
     public void filter(Metadata metadata) throws TikaException {
-        //no op
+        // no op
     }
 }

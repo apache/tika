@@ -23,19 +23,19 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
 
 /**
- * If {@link Metadata} contains a {@link TikaCoreProperties#LATITUDE} and
- * a {@link TikaCoreProperties#LONGITUDE}, this filter concatenates those with a
- * comma in the order LATITUDE,LONGITUDE.
+ * If {@link Metadata} contains a {@link TikaCoreProperties#LATITUDE} and a {@link
+ * TikaCoreProperties#LONGITUDE}, this filter concatenates those with a comma in the order
+ * LATITUDE,LONGITUDE.
  *
- * If you need any other mappings, please open a ticket on our JIRA.
+ * <p>If you need any other mappings, please open a ticket on our JIRA.
  */
 public class GeoPointMetadataFilter extends MetadataFilter {
 
     String geoPointFieldName = "location";
 
     /**
-     * Set the field for the concatenated LATITUDE,LONGITUDE string.
-     * The default if &dquot;location&dquot;
+     * Set the field for the concatenated LATITUDE,LONGITUDE string. The default if
+     * &dquot;location&dquot;
      *
      * @param geoPointFieldName field name to use for the geopoint field
      */

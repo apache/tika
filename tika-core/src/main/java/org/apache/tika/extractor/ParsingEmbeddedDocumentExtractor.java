@@ -22,12 +22,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -41,10 +36,13 @@ import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
- * Helper class for parsers of package archives or other compound document
- * formats that support embedded or attached component documents.
+ * Helper class for parsers of package archives or other compound document formats that support
+ * embedded or attached component documents.
  *
  * @since Apache Tika 0.8
  */
@@ -106,13 +104,16 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
                     newStream.setOpenContainer(container);
                 }
             }
-            DELEGATING_PARSER.parse(newStream, new EmbeddedContentHandler(new BodyContentHandler(handler)),
-                    metadata, context);
+            DELEGATING_PARSER.parse(
+                    newStream,
+                    new EmbeddedContentHandler(new BodyContentHandler(handler)),
+                    metadata,
+                    context);
         } catch (EncryptedDocumentException ede) {
             recordException(ede, context);
         } catch (CorruptedFileException e) {
-            //necessary to stop the parse to avoid infinite loops
-            //on corrupt sqlite3 files
+            // necessary to stop the parse to avoid infinite loops
+            // on corrupt sqlite3 files
             throw new IOException(e);
         } catch (TikaException e) {
             recordException(e, context);

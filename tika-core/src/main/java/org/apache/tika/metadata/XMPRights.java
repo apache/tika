@@ -22,12 +22,12 @@ package org.apache.tika.metadata;
 
 /**
  * XMP Rights management schema.
- * <p>
- * A collection of property constants for the
- * rights management properties defined in the XMP
+ *
+ * <p>A collection of property constants for the rights management properties defined in the XMP
  * standard.
  *
- * @see <a href="http://partners.adobe.com/public/developer/en/xmp/sdk/XMPspecification.pdf">XMP Photoshop</a>
+ * @see <a href="http://partners.adobe.com/public/developer/en/xmp/sdk/XMPspecification.pdf">XMP
+ *     Photoshop</a>
  * @since Apache Tika 1.2
  */
 public interface XMPRights {
@@ -35,26 +35,19 @@ public interface XMPRights {
     String NAMESPACE_URI_XMP_RIGHTS = "http://ns.adobe.com/xap/1.0/rights/";
     String PREFIX_XMP_RIGHTS = "xmpRights";
 
-    /**
-     * The xmpRights prefix followed by the colon delimiter
-     */
+    /** The xmpRights prefix followed by the colon delimiter */
     String PREFIX_ = PREFIX_XMP_RIGHTS + ":";
 
-    /**
-     * A Web URL for a rights management certificate.
-     */
+    /** A Web URL for a rights management certificate. */
     Property CERTIFICATE = Property.internalText(PREFIX_ + "Certificate");
 
     /**
-     * When true, indicates that this is a rights-managed resource. When
-     * false, indicates that this is a public-domain resource. Omit if the
-     * state is unknown.
+     * When true, indicates that this is a rights-managed resource. When false, indicates that this
+     * is a public-domain resource. Omit if the state is unknown.
      */
     Property MARKED = Property.internalBoolean(PREFIX_ + "Marked");
 
-    /**
-     * A list of legal owners of the resource.
-     */
+    /** A list of legal owners of the resource. */
     Property OWNER = Property.internalTextBag(PREFIX_ + "Owner");
 
     /**
@@ -63,9 +56,6 @@ public interface XMPRights {
      */
     Property USAGE_TERMS = Property.internalText(PREFIX_ + "UsageTerms");
 
-    /**
-     * A Web URL for a statement of the ownership and usage rights for this resource.
-     */
+    /** A Web URL for a statement of the ownership and usage rights for this resource. */
     Property WEB_STATEMENT = Property.internalText(PREFIX_ + "WebStatement");
-
 }

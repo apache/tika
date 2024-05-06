@@ -17,7 +17,6 @@
 package org.apache.tika.metadata.filter;
 
 import java.util.List;
-
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
@@ -36,7 +35,8 @@ public class DefaultMetadataFilter extends CompositeMetadataFilter {
     }
 
     private static List<MetadataFilter> getDefaultFilters(ServiceLoader loader) {
-        List<MetadataFilter> metadataFilters = loader.loadStaticServiceProviders(MetadataFilter.class);
+        List<MetadataFilter> metadataFilters =
+                loader.loadStaticServiceProviders(MetadataFilter.class);
         ServiceLoaderUtils.sortLoadedClasses(metadataFilters);
 
         return metadataFilters;

@@ -29,14 +29,10 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Internet media type.
- */
+/** Internet media type. */
 public final class MediaType implements Comparable<MediaType>, Serializable {
 
-    /**
-     * Serial version UID.
-     */
+    /** Serial version UID. */
     private static final long serialVersionUID = -3831000556189036392L;
 
     private static final Pattern SPECIAL = Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=]");
@@ -44,23 +40,24 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     private static final Pattern SPECIAL_OR_WHITESPACE =
             Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]");
 
-    /**
-     * See http://www.ietf.org/rfc/rfc2045.txt for valid mime-type characters.
-     */
+    /** See http://www.ietf.org/rfc/rfc2045.txt for valid mime-type characters. */
     private static final String VALID_CHARS = "([^\\c\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]+)";
 
     private static final Pattern TYPE_PATTERN =
             Pattern.compile("(?s)\\s*" + VALID_CHARS + "\\s*/\\s*" + VALID_CHARS + "\\s*($|;.*)");
 
     // TIKA-350: handle charset as first element in content-type
-    private static final Pattern CHARSET_FIRST_PATTERN = Pattern.compile(
-            "(?is)\\s*(charset\\s*=\\s*[^\\c;\\s]+)\\s*;\\s*" + VALID_CHARS + "\\s*/\\s*" +
-                    VALID_CHARS + "\\s*");
+    private static final Pattern CHARSET_FIRST_PATTERN =
+            Pattern.compile(
+                    "(?is)\\s*(charset\\s*=\\s*[^\\c;\\s]+)\\s*;\\s*"
+                            + VALID_CHARS
+                            + "\\s*/\\s*"
+                            + VALID_CHARS
+                            + "\\s*");
 
     /**
-     * Set of basic types with normalized "type/subtype" names.
-     * Used to optimize type lookup and to avoid having too many
-     * {@link MediaType} instances in memory.
+     * Set of basic types with normalized "type/subtype" names. Used to optimize type lookup and to
+     * avoid having too many {@link MediaType} instances in memory.
      */
     private static final Map<String, MediaType> SIMPLE_TYPES = new HashMap<>();
 
@@ -75,24 +72,22 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     public static final MediaType APPLICATION_XML = parse("application/xml");
 
     public static final MediaType APPLICATION_ZIP = parse("application/zip");
-    /**
-     * Canonical string representation of this media type.
-     */
+
+    /** Canonical string representation of this media type. */
     private final String string;
+
     /**
-     * Location of the "/" character separating the type and the subtype
-     * tokens in {@link #string}.
+     * Location of the "/" character separating the type and the subtype tokens in {@link #string}.
      */
     private final int slash;
+
     /**
-     * Location of the first ";" character separating the type part of
-     * {@link #string} from possible parameters. Length of {@link #string}
-     * in case there are no parameters.
+     * Location of the first ";" character separating the type part of {@link #string} from possible
+     * parameters. Length of {@link #string} in case there are no parameters.
      */
     private final int semicolon;
-    /**
-     * Immutable sorted map of media type parameters.
-     */
+
+    /** Immutable sorted map of media type parameters. */
     private final Map<String, String> parameters;
 
     public MediaType(String type, String subtype, Map<String, String> parameters) {
@@ -157,8 +152,8 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     /**
      * Creates a media type by adding a parameter to a base type.
      *
-     * @param type  base type
-     * @param name  parameter name
+     * @param type base type
+     * @param name parameter name
      * @param value parameter value
      * @since Apache Tika 1.2
      */
@@ -169,7 +164,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     /**
      * Creates a media type by adding the "charset" parameter to a base type.
      *
-     * @param type    base type
+     * @param type base type
      * @param charset charset value
      * @since Apache Tika 1.2
      */
@@ -198,8 +193,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     }
 
     /**
-     * Convenience method that returns an unmodifiable set that contains
-     * all the given media types.
+     * Convenience method that returns an unmodifiable set that contains all the given media types.
      *
      * @param types media types
      * @return unmodifiable set of the given types
@@ -216,8 +210,8 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     }
 
     /**
-     * Convenience method that parses the given media type strings and
-     * returns an unmodifiable set that contains all the parsed types.
+     * Convenience method that parses the given media type strings and returns an unmodifiable set
+     * that contains all the parsed types.
      *
      * @param types media type strings
      * @return unmodifiable set of the parsed types
@@ -235,10 +229,9 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     }
 
     /**
-     * Parses the given string to a media type. The string is expected
-     * to be of the form "type/subtype(; parameter=...)*" as defined in
-     * RFC 2045, though we also handle "charset=xxx; type/subtype" for
-     * broken web servers.
+     * Parses the given string to a media type. The string is expected to be of the form
+     * "type/subtype(; parameter=...)*" as defined in RFC 2045, though we also handle "charset=xxx;
+     * type/subtype" for broken web servers.
      *
      * @param string media type string to be parsed
      * @return parsed media type, or <code>null</code> if parsing fails
@@ -255,9 +248,9 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
                 int slash = string.indexOf('/');
                 if (slash == -1) {
                     return null;
-                } else if (SIMPLE_TYPES.size() < 10000 &&
-                        isSimpleName(string.substring(0, slash)) &&
-                        isSimpleName(string.substring(slash + 1))) {
+                } else if (SIMPLE_TYPES.size() < 10000
+                        && isSimpleName(string.substring(0, slash))
+                        && isSimpleName(string.substring(slash + 1))) {
                     type = new MediaType(string, slash);
                     SIMPLE_TYPES.put(string, type);
                 }
@@ -270,13 +263,13 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         Matcher matcher;
         matcher = TYPE_PATTERN.matcher(string);
         if (matcher.matches()) {
-            return new MediaType(matcher.group(1), matcher.group(2),
-                    parseParameters(matcher.group(3)));
+            return new MediaType(
+                    matcher.group(1), matcher.group(2), parseParameters(matcher.group(3)));
         }
         matcher = CHARSET_FIRST_PATTERN.matcher(string);
         if (matcher.matches()) {
-            return new MediaType(matcher.group(2), matcher.group(3),
-                    parseParameters(matcher.group(1)));
+            return new MediaType(
+                    matcher.group(2), matcher.group(3), parseParameters(matcher.group(1)));
         }
 
         return null;
@@ -285,8 +278,12 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     private static boolean isSimpleName(String name) {
         for (int i = 0; i < name.length(); i++) {
             char c = name.charAt(i);
-            if (c != '-' && c != '+' && c != '.' && c != '_' && !('0' <= c && c <= '9') &&
-                    !('a' <= c && c <= 'z')) {
+            if (c != '-'
+                    && c != '+'
+                    && c != '.'
+                    && c != '_'
+                    && !('0' <= c && c <= '9')
+                    && !('a' <= c && c <= 'z')) {
                 return false;
             }
         }
@@ -329,8 +326,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     }
 
     /**
-     * Fuzzy unquoting mechanism that works also with somewhat malformed
-     * quotes.
+     * Fuzzy unquoting mechanism that works also with somewhat malformed quotes.
      *
      * @param s string to unquote
      * @return unquoted string
@@ -359,8 +355,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     }
 
     /**
-     * Returns the base form of the MediaType, excluding
-     * any parameters, such as "text/plain" for
+     * Returns the base form of the MediaType, excluding any parameters, such as "text/plain" for
      * "text/plain; charset=utf-8"
      */
     public MediaType getBaseType() {
@@ -371,18 +366,12 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         }
     }
 
-    /**
-     * Return the Type of the MediaType, such as
-     * "text" for "text/plain"
-     */
+    /** Return the Type of the MediaType, such as "text" for "text/plain" */
     public String getType() {
         return string.substring(0, slash);
     }
 
-    /**
-     * Return the Sub-Type of the MediaType,
-     * such as "plain" for "text/plain"
-     */
+    /** Return the Sub-Type of the MediaType, such as "plain" for "text/plain" */
     public String getSubtype() {
         return string.substring(slash + 1, semicolon);
     }
@@ -390,8 +379,8 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     /**
      * Checks whether this media type contains parameters.
      *
-     * @return <code>true</code> if this type has one or more parameters,
-     * <code>false</code> otherwise
+     * @return <code>true</code> if this type has one or more parameters, <code>false</code>
+     *     otherwise
      * @since Apache Tika 0.8
      */
     public boolean hasParameters() {
@@ -399,8 +388,8 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     }
 
     /**
-     * Returns an immutable sorted map of the parameters of this media type.
-     * The parameter names are guaranteed to be trimmed and in lower case.
+     * Returns an immutable sorted map of the parameters of this media type. The parameter names are
+     * guaranteed to be trimmed and in lower case.
      *
      * @return sorted map of parameters
      */
@@ -428,5 +417,4 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     public int compareTo(MediaType that) {
         return string.compareTo(that.string);
     }
-
 }

@@ -21,17 +21,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import org.junit.jupiter.api.AfterEach;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.parser.ParseContext;
+import org.junit.jupiter.api.AfterEach;
 
 /**
- * Parent of Junit test classes for {@link TikaConfig}, including
- * Tika Core based ones, and ones in Tika Parsers that do things
- * that {@link TikaConfigTest} can't, do due to a need for the
- * full set of "real" classes of parsers / detectors
+ * Parent of Junit test classes for {@link TikaConfig}, including Tika Core based ones, and ones in
+ * Tika Parsers that do things that {@link TikaConfigTest} can't, do due to a need for the full set
+ * of "real" classes of parsers / detectors
  */
 public abstract class AbstractTikaConfigTest extends TikaTest {
     protected static ParseContext context = new ParseContext();
@@ -41,7 +38,6 @@ public abstract class AbstractTikaConfigTest extends TikaTest {
         assertNotNull(url, "Test Tika Config not found: " + config);
         return Paths.get(url.toURI());
     }
-
 
     protected static String getConfigPath(String config) throws Exception {
         URL url = TikaConfig.class.getResource(config);

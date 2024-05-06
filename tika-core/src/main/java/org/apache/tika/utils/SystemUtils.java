@@ -16,9 +16,7 @@
  */
 package org.apache.tika.utils;
 
-/**
- * Copied from commons-lang to avoid requiring the dependency
- */
+/** Copied from commons-lang to avoid requiring the dependency */
 public class SystemUtils {
 
     public static final String OS_NAME = getSystemProperty("os.name");
@@ -40,8 +38,14 @@ public class SystemUtils {
     private static final String OS_VERSION_WSL = "WSL";
 
     static {
-        IS_OS_UNIX = IS_OS_AIX || IS_OS_HP_UX || IS_OS_IRIX || IS_OS_LINUX || IS_OS_MAC_OSX ||
-                IS_OS_SOLARIS || IS_OS_SUN_OS;
+        IS_OS_UNIX =
+                IS_OS_AIX
+                        || IS_OS_HP_UX
+                        || IS_OS_IRIX
+                        || IS_OS_LINUX
+                        || IS_OS_MAC_OSX
+                        || IS_OS_SOLARIS
+                        || IS_OS_SUN_OS;
         IS_OS_WINDOWS = getOSMatchesName(OS_NAME_WINDOWS_PREFIX);
         IS_OS_VERSION_WSL = getOSContainsVersion(OS_VERSION_WSL);
     }
@@ -69,5 +73,4 @@ public class SystemUtils {
     static boolean doesOSVersionContain(String osVersion, String osVersionSearch) {
         return osVersion != null && osVersion.contains(osVersionSearch);
     }
-
 }

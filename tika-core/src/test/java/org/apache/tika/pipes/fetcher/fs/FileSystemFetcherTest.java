@@ -23,11 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.InitializableProblemHandler;
-
+import org.junit.jupiter.api.Test;
 
 public class FileSystemFetcherTest {
 
@@ -48,10 +45,12 @@ public class FileSystemFetcherTest {
     @Test
     public void testNullByte() throws Exception {
         FileSystemFetcher f = new FileSystemFetcher();
-        assertThrows(InvalidPathException.class, () -> {
-            f.setBasePath("bad\u0000path");
-            f.setName("fs");
-            f.checkInitialization(InitializableProblemHandler.IGNORE);
-        });
+        assertThrows(
+                InvalidPathException.class,
+                () -> {
+                    f.setBasePath("bad\u0000path");
+                    f.setName("fs");
+                    f.checkInitialization(InitializableProblemHandler.IGNORE);
+                });
     }
 }

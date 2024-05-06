@@ -16,9 +16,7 @@
  */
 package org.apache.tika.parser.external;
 
-/**
- * Met Keys used by the {@link ExternalParsersConfigReader}.
- */
+/** Met Keys used by the {@link ExternalParsersConfigReader}. */
 public interface ExternalParsersConfigReaderMetKeys {
 
     String EXTERNAL_PARSERS_TAG = "external-parsers";

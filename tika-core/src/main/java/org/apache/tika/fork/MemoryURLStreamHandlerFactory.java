@@ -28,5 +28,4 @@ class MemoryURLStreamHandlerFactory implements URLStreamHandlerFactory {
             return null;
         }
     }
-
 }

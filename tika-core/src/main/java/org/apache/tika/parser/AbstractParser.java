@@ -18,16 +18,14 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
-
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-
 /**
- * Abstract base class for new parsers. This method implements the old
- * deprecated parse method so subclasses won't have to.
+ * Abstract base class for new parsers. This method implements the old deprecated parse method so
+ * subclasses won't have to.
  *
  * @deprecated for removal in 4.x
  * @since Apache Tika 0.10
@@ -35,27 +33,21 @@ import org.apache.tika.metadata.Metadata;
 @Deprecated
 public abstract class AbstractParser implements Parser {
 
-    /**
-     * Serial version UID.
-     */
+    /** Serial version UID. */
     private static final long serialVersionUID = 7186985395903074255L;
 
     /**
-     * Calls the
-     * {@link Parser#parse(InputStream, ContentHandler, Metadata, ParseContext)}
-     * method with an empty {@link ParseContext}. This method exists as a
-     * leftover from Tika 0.x when the three-argument parse() method still
-     * existed in the {@link Parser} interface. No new code should call this
-     * method anymore, it's only here for backwards compatibility.
+     * Calls the {@link Parser#parse(InputStream, ContentHandler, Metadata, ParseContext)} method
+     * with an empty {@link ParseContext}. This method exists as a leftover from Tika 0.x when the
+     * three-argument parse() method still existed in the {@link Parser} interface. No new code
+     * should call this method anymore, it's only here for backwards compatibility.
      *
-     * @deprecated use the {@link Parser#parse(InputStream, ContentHandler,
-     * Metadata, ParseContext)} method instead
+     * @deprecated use the {@link Parser#parse(InputStream, ContentHandler, Metadata, ParseContext)}
+     *     method instead
      */
     @Deprecated
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
     }
-
 }
-

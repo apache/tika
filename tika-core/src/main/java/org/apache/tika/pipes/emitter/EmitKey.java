@@ -21,18 +21,15 @@ import java.util.Objects;
 
 public class EmitKey implements Serializable {
 
-    /**
-     * Serial version UID
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = -3861669115439125268L;
 
     private String emitterName;
     private String emitKey;
 
-    //for serialization only...yuck.
-    public EmitKey() {
+    // for serialization only...yuck.
+    public EmitKey() {}
 
-    }
     public EmitKey(String emitterName, String emitKey) {
         this.emitterName = emitterName;
         this.emitKey = emitKey;
@@ -48,8 +45,14 @@ public class EmitKey implements Serializable {
 
     @Override
     public String toString() {
-        return "EmitterKey{" + "emitterName='" + emitterName + '\'' + ", emitterKey='" + emitKey +
-                '\'' + '}';
+        return "EmitterKey{"
+                + "emitterName='"
+                + emitterName
+                + '\''
+                + ", emitterKey='"
+                + emitKey
+                + '\''
+                + '}';
     }
 
     @Override

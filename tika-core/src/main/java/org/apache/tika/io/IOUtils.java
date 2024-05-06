@@ -36,7 +36,8 @@ public class IOUtils {
          */
         long remain = toSkip;
         while (remain > 0) {
-            // See https://issues.apache.org/jira/browse/IO-203 for why we use read() rather than delegating to skip()
+            // See https://issues.apache.org/jira/browse/IO-203 for why we use read() rather than
+            // delegating to skip()
             final long n = input.read(buffer, 0, (int) Math.min(remain, buffer.length));
             if (n < 0) { // EOF
                 break;

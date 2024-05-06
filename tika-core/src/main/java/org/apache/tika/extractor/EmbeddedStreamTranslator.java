@@ -18,13 +18,11 @@ package org.apache.tika.extractor;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.apache.tika.metadata.Metadata;
 
 /**
- * Interface for different filtering of embedded streams.
- * Specifically, unravel OLE streams in tika-server unpack,
- * and/or handle open containers in TikaInputStream
+ * Interface for different filtering of embedded streams. Specifically, unravel OLE streams in
+ * tika-server unpack, and/or handle open containers in TikaInputStream
  *
  * @since Apache Tika 2.0.0
  */
@@ -32,7 +30,5 @@ public interface EmbeddedStreamTranslator {
 
     boolean shouldTranslate(InputStream inputStream, Metadata metadata) throws IOException;
 
-    InputStream translate(InputStream inputStream,
-                          Metadata metadata) throws IOException;
-
+    InputStream translate(InputStream inputStream, Metadata metadata) throws IOException;
 }

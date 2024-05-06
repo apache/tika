@@ -17,9 +17,8 @@
 package org.apache.tika.exception;
 
 /**
- * Exception to be thrown when a document does not allow content extraction.
- * As of this writing, PDF documents are the only type of document that might
- * cause this type of exception.
+ * Exception to be thrown when a document does not allow content extraction. As of this writing, PDF
+ * documents are the only type of document that might cause this type of exception.
  */
 public class AccessPermissionException extends TikaException {
     public AccessPermissionException() {

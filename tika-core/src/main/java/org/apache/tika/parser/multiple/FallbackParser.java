@@ -20,43 +20,41 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.config.Param;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.xml.sax.ContentHandler;
 
 /**
  * Tries multiple parsers in turn, until one succeeds.
- * <p>
- * Can optionally keep Metadata from failed parsers when
- * trying the next one, depending on the {@link AbstractMultipleParser.MetadataPolicy}
- * chosen.
+ *
+ * <p>Can optionally keep Metadata from failed parsers when trying the next one, depending on the
+ * {@link AbstractMultipleParser.MetadataPolicy} chosen.
  *
  * @since Apache Tika 1.18
  */
 public class FallbackParser extends AbstractMultipleParser {
-    /**
-     * The different Metadata Policies we support (all)
-     */
+    /** The different Metadata Policies we support (all) */
     public static final List<MetadataPolicy> allowedPolicies =
             Arrays.asList(MetadataPolicy.values());
-    /**
-     * Serial version UID.
-     */
+
+    /** Serial version UID. */
     private static final long serialVersionUID = 5844409020977206167L;
 
     @SuppressWarnings("rawtypes")
-    public FallbackParser(MediaTypeRegistry registry, Collection<? extends Parser> parsers,
-                          Map<String, Param> params) {
+    public FallbackParser(
+            MediaTypeRegistry registry,
+            Collection<? extends Parser> parsers,
+            Map<String, Param> params) {
         super(registry, parsers, params);
     }
 
-    public FallbackParser(MediaTypeRegistry registry, MetadataPolicy policy,
-                          Collection<? extends Parser> parsers) {
+    public FallbackParser(
+            MediaTypeRegistry registry,
+            MetadataPolicy policy,
+            Collection<? extends Parser> parsers) {
         super(registry, policy, parsers);
     }
 
@@ -65,12 +63,15 @@ public class FallbackParser extends AbstractMultipleParser {
     }
 
     @Override
-    protected boolean parserCompleted(Parser parser, Metadata metadata, ContentHandler handler,
-                                      ParseContext context, Exception exception) {
+    protected boolean parserCompleted(
+            Parser parser,
+            Metadata metadata,
+            ContentHandler handler,
+            ParseContext context,
+            Exception exception) {
         // If there was no exception, abort further parsers
         return exception != null;
 
         // Have the next parser tried
     }
 }
-

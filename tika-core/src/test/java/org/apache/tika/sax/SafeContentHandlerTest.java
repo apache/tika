@@ -23,9 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-/**
- * Unit tests for the {@link SafeContentHandler} class.
- */
+/** Unit tests for the {@link SafeContentHandler} class. */
 public class SafeContentHandlerTest {
 
     private ContentHandler output;
@@ -78,5 +76,4 @@ public class SafeContentHandlerTest {
         safe.ignorableWhitespace("\udb00\ubfff".toCharArray(), 0, 2);
         assertEquals("\ufffd\ubfff", output.toString());
     }
-
 }

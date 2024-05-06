@@ -23,5 +23,4 @@ import java.io.Serializable;
 public interface ForkProxy extends Serializable {
 
     void init(DataInputStream input, DataOutputStream output);
-
 }

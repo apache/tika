@@ -19,24 +19,21 @@ package org.apache.tika.extractor;
 import org.apache.tika.metadata.Metadata;
 
 /**
- * Interface for different document selection strategies for purposes like
- * embedded document extraction by a {@link ContainerExtractor} instance.
- * An implementation of this interface defines some specific selection
- * criteria to be applied against the document metadata passed to the
- * {@link #select(Metadata)} method.
+ * Interface for different document selection strategies for purposes like embedded document
+ * extraction by a {@link ContainerExtractor} instance. An implementation of this interface defines
+ * some specific selection criteria to be applied against the document metadata passed to the {@link
+ * #select(Metadata)} method.
  *
  * @since Apache Tika 0.8
  */
 public interface DocumentSelector {
 
     /**
-     * Checks if a document with the given metadata matches the specified
-     * selection criteria.
+     * Checks if a document with the given metadata matches the specified selection criteria.
      *
      * @param metadata document metadata
-     * @return <code>true</code> if the document matches the selection criteria,
-     * <code>false</code> otherwise
+     * @return <code>true</code> if the document matches the selection criteria, <code>false</code>
+     *     otherwise
      */
     boolean select(Metadata metadata);
-
 }

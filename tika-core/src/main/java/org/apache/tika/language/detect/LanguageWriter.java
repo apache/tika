@@ -34,9 +34,8 @@ public class LanguageWriter extends Writer {
     }
 
     /**
-     * Returns the language detector used by this writer. Note that
-     * the returned language detector gets updated whenever new characters
-     * are written.
+     * Returns the language detector used by this writer. Note that the returned language detector
+     * gets updated whenever new characters are written.
      *
      * @return language detector
      */
@@ -58,19 +57,13 @@ public class LanguageWriter extends Writer {
         detector.addText(cbuf, off, len);
     }
 
-    /**
-     * Ignored.
-     */
+    /** Ignored. */
     @Override
-    public void close() throws IOException {
-    }
+    public void close() throws IOException {}
 
-    /**
-     * Ignored.
-     */
+    /** Ignored. */
     @Override
-    public void flush() {
-    }
+    public void flush() {}
 
     public void reset() {
         detector.reset();

@@ -17,21 +17,18 @@
 package org.apache.tika.extractor;
 
 import java.io.InputStream;
-
 import org.apache.tika.mime.MediaType;
 
 /**
- * Tika container extractor callback interface.
- * To work with a {@link ContainerExtractor}, your code needs
- *  to implement this interface.
+ * Tika container extractor callback interface. To work with a {@link ContainerExtractor}, your code
+ * needs to implement this interface.
  */
 public interface EmbeddedResourceHandler {
     /**
-     * Called to process an embedded resource within the container.
-     * This will be called once per embedded resource within the
-     *  container, along with whatever details are available on
-     *  the embedded resource.
-     *  
+     * Called to process an embedded resource within the container. This will be called once per
+     * embedded resource within the container, along with whatever details are available on the
+     * embedded resource.
+     *
      * @since Apache Tika 0.8
      * @param filename The filename of the embedded resource, if known
      * @param mediaType The media type of the embedded resource, if known

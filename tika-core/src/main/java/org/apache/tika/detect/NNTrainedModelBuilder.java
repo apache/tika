@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package org.apache.tika.detect;
 
 import org.apache.tika.mime.MediaType;

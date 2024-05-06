@@ -18,7 +18,6 @@ package org.apache.tika.metadata.filter;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -57,10 +56,9 @@ public class FieldNameMappingFilter extends MetadataFilter {
     }
 
     /**
-     * If this is <code>true</code> (default), this means that only the fields that
-     * have a "from" value in the mapper will be passed through.  Otherwise,
-     * this will pass through all keys/values and mutate the keys
-     * that exist in the mappings.
+     * If this is <code>true</code> (default), this means that only the fields that have a "from"
+     * value in the mapper will be passed through. Otherwise, this will pass through all keys/values
+     * and mutate the keys that exist in the mappings.
      *
      * @param excludeUnmapped
      */

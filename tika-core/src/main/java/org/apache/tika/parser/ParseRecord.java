@@ -20,18 +20,16 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.apache.tika.metadata.Metadata;
 
 /**
- * Use this class to store exceptions, warnings and other information
- * during the parse.  This information is added to the parent's metadata
- * after the parse by the {@link CompositeParser}.
+ * Use this class to store exceptions, warnings and other information during the parse. This
+ * information is added to the parent's metadata after the parse by the {@link CompositeParser}.
  */
 public class ParseRecord {
 
-    //hard limits so that specially crafted files
-    //don't cause an OOM
+    // hard limits so that specially crafted files
+    // don't cause an OOM
     private static int MAX_PARSERS = 100;
 
     private static final int MAX_EXCEPTIONS = 100;
@@ -102,7 +100,6 @@ public class ParseRecord {
     public List<String> getWarnings() {
         return warnings;
     }
-
 
     public boolean isWriteLimitReached() {
         return writeLimitReached;

@@ -17,35 +17,28 @@
 package org.apache.tika.sax;
 
 import java.io.Writer;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.sax.xpath.Matcher;
 import org.apache.tika.sax.xpath.MatchingContentHandler;
 import org.apache.tika.sax.xpath.XPathParser;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * Content handler decorator that only passes everything inside
- * the XHTML &lt;body/&gt; tag to the underlying handler. Note that
- * the &lt;body/&gt; tag itself is <em>not</em> passed on.
+ * Content handler decorator that only passes everything inside the XHTML &lt;body/&gt; tag to the
+ * underlying handler. Note that the &lt;body/&gt; tag itself is <em>not</em> passed on.
  */
 public class BodyContentHandler extends ContentHandlerDecorator {
 
-    /**
-     * XHTML XPath parser.
-     */
+    /** XHTML XPath parser. */
     private static final XPathParser PARSER = new XPathParser("xhtml", XHTMLContentHandler.XHTML);
 
-    /**
-     * The XPath matcher used to select the XHTML body contents.
-     */
+    /** The XPath matcher used to select the XHTML body contents. */
     private static final Matcher MATCHER =
             PARSER.parse("/xhtml:html/xhtml:body/descendant::node()");
 
     /**
-     * Creates a content handler that passes all XHTML body events to the
-     * given underlying content handler.
+     * Creates a content handler that passes all XHTML body events to the given underlying content
+     * handler.
      *
      * @param handler content handler
      */
@@ -54,8 +47,7 @@ public class BodyContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Creates a content handler that writes XHTML body character events to
-     * the given writer.
+     * Creates a content handler that writes XHTML body character events to the given writer.
      *
      * @param writer writer
      */
@@ -64,15 +56,14 @@ public class BodyContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Creates a content handler that writes XHTML body character events to
-     * an internal string buffer. The contents of the buffer can be retrieved
-     * using the {@link #toString()} method.
-     * <p>
-     * The internal string buffer is bounded at the given number of characters.
-     * If this write limit is reached, then a {@link SAXException} is thrown.
+     * Creates a content handler that writes XHTML body character events to an internal string
+     * buffer. The contents of the buffer can be retrieved using the {@link #toString()} method.
      *
-     * @param writeLimit maximum number of characters to include in the string,
-     *                   or -1 to disable the write limit
+     * <p>The internal string buffer is bounded at the given number of characters. If this write
+     * limit is reached, then a {@link SAXException} is thrown.
+     *
+     * @param writeLimit maximum number of characters to include in the string, or -1 to disable the
+     *     write limit
      * @since Apache Tika 0.7
      */
     public BodyContentHandler(int writeLimit) {
@@ -80,15 +71,13 @@ public class BodyContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Creates a content handler that writes XHTML body character events to
-     * an internal string buffer. The contents of the buffer can be retrieved
-     * using the {@link #toString()} method.
-     * <p>
-     * The internal string buffer is bounded at 100k characters. If this write
-     * limit is reached, then a {@link SAXException} is thrown.
+     * Creates a content handler that writes XHTML body character events to an internal string
+     * buffer. The contents of the buffer can be retrieved using the {@link #toString()} method.
+     *
+     * <p>The internal string buffer is bounded at 100k characters. If this write limit is reached,
+     * then a {@link SAXException} is thrown.
      */
     public BodyContentHandler() {
         this(new WriteOutContentHandler());
     }
-
 }

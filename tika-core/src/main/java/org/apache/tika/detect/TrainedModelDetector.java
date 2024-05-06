@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;

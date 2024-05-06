@@ -28,33 +28,28 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-/**
- * Date related utility methods and constants
- */
+/** Date related utility methods and constants */
 public class DateUtils {
 
     /**
-     * The UTC time zone. Not sure if {@link TimeZone#getTimeZone(String)}
-     * understands "UTC" in all environments, but it'll fall back to GMT
-     * in such cases, which is in practice equivalent to UTC.
+     * The UTC time zone. Not sure if {@link TimeZone#getTimeZone(String)} understands "UTC" in all
+     * environments, but it'll fall back to GMT in such cases, which is in practice equivalent to
+     * UTC.
      */
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
     /**
-     * Custom time zone used to interpret date values without a time
-     * component in a way that most likely falls within the same day
-     * regardless of in which time zone it is later interpreted. For
-     * example, the "2012-02-17" date would map to "2012-02-17T12:00:00Z"
-     * (instead of the default "2012-02-17T00:00:00Z"), which would still
-     * map to "2012-02-17" if interpreted in say Pacific time (while the
-     * default mapping would result in "2012-02-16" for UTC-8).
+     * Custom time zone used to interpret date values without a time component in a way that most
+     * likely falls within the same day regardless of in which time zone it is later interpreted.
+     * For example, the "2012-02-17" date would map to "2012-02-17T12:00:00Z" (instead of the
+     * default "2012-02-17T00:00:00Z"), which would still map to "2012-02-17" if interpreted in say
+     * Pacific time (while the default mapping would result in "2012-02-16" for UTC-8).
      */
     public static final TimeZone MIDDAY = TimeZone.getTimeZone("GMT-12:00");
+
     /**
-     * So we can return Date objects for these, this is the
-     * list (in preference order) of the various ISO-8601
-     * variants that we try when processing a date based
-     * property.
+     * So we can return Date objects for these, this is the list (in preference order) of the
+     * various ISO-8601 variants that we try when processing a date based property.
      */
     private final List<DateFormat> iso8601InputFormats = loadDateFormats();
 
@@ -67,8 +62,8 @@ public class DateUtils {
     }
 
     /**
-     * Returns a ISO 8601 representation of the given date in UTC,
-     * truncated to the seconds unit. This method is thread safe and non-blocking.
+     * Returns a ISO 8601 representation of the given date in UTC, truncated to the seconds unit.
+     * This method is thread safe and non-blocking.
      *
      * @param date given date
      * @return ISO 8601 date string in UTC, truncated to the seconds unit
@@ -81,8 +76,8 @@ public class DateUtils {
     }
 
     /**
-     * Returns a ISO 8601 representation of the given date in UTC,
-     * truncated to the seconds unit. This method is thread safe and non-blocking.
+     * Returns a ISO 8601 representation of the given date in UTC, truncated to the seconds unit.
+     * This method is thread safe and non-blocking.
      *
      * @param date given Calendar
      * @return ISO 8601 date string in UTC, truncated to the seconds unit
@@ -91,15 +86,15 @@ public class DateUtils {
     public static String formatDate(Calendar date) {
         return doFormatDate(date);
     }
+
     /**
-     * Returns a ISO 8601 representation of the given date in UTC,
-     * truncated to the seconds unit. This method is thread safe and non-blocking.
+     * Returns a ISO 8601 representation of the given date in UTC, truncated to the seconds unit.
+     * This method is thread safe and non-blocking.
      *
      * @param date given date
      * @return ISO 8601 date string in UTC, truncated to the seconds unit
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
      */
-
     public static String formatDateUnknownTimezone(Date date) {
         // Create the Calendar object in the system timezone
         Calendar calendar = GregorianCalendar.getInstance(TimeZone.getDefault(), Locale.US);
@@ -110,9 +105,9 @@ public class DateUtils {
         return formatted.substring(0, formatted.length() - 1);
     }
 
-
     /**
      * Returns ISO-8601 formatted time converted to UTC, truncated to the seconds place
+     *
      * @param calendar
      * @return
      */
@@ -123,26 +118,25 @@ public class DateUtils {
     private List<DateFormat> loadDateFormats() {
         List<DateFormat> dateFormats = new ArrayList<>();
         // yyyy-mm-ddThh...
-        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", UTC));   // UTC/Zulu
-        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", null));    // With timezone
-        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ss", null));     // Without timezone
+        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", UTC)); // UTC/Zulu
+        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", null)); // With timezone
+        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ss", null)); // Without timezone
         // yyyy-mm-dd hh...
-        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ss'Z'", UTC));   // UTC/Zulu
-        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ssZ", null));    // With timezone
-        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ss", null));     // Without timezone
+        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ss'Z'", UTC)); // UTC/Zulu
+        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ssZ", null)); // With timezone
+        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ss", null)); // Without timezone
         // Date without time, set to Midday UTC
-        dateFormats.add(createDateFormat("yyyy-MM-dd", MIDDAY));       // Normal date format
-        dateFormats.add(createDateFormat("yyyy:MM:dd",
-                MIDDAY));              // Image (IPTC/EXIF) format
+        dateFormats.add(createDateFormat("yyyy-MM-dd", MIDDAY)); // Normal date format
+        dateFormats.add(createDateFormat("yyyy:MM:dd", MIDDAY)); // Image (IPTC/EXIF) format
 
         return dateFormats;
     }
 
     /**
      * Tries to parse the date string; returns null if no parse was possible.
-     * <p>
-     * This is not thread safe!  Wrap in synchronized or create new {@link DateUtils}
-     * for each class.
+     *
+     * <p>This is not thread safe! Wrap in synchronized or create new {@link DateUtils} for each
+     * class.
      *
      * @param dateString
      * @return
@@ -151,8 +145,8 @@ public class DateUtils {
         // Java doesn't like timezones in the form ss+hh:mm
         // It only likes the hhmm form, without the colon
         int n = dateString.length();
-        if (dateString.charAt(n - 3) == ':' &&
-                (dateString.charAt(n - 6) == '+' || dateString.charAt(n - 6) == '-')) {
+        if (dateString.charAt(n - 3) == ':'
+                && (dateString.charAt(n - 6) == '+' || dateString.charAt(n - 6) == '-')) {
             dateString = dateString.substring(0, n - 3) + dateString.substring(n - 2);
         }
 
@@ -160,7 +154,7 @@ public class DateUtils {
             try {
                 return df.parse(dateString);
             } catch (java.text.ParseException e) {
-                //swallow
+                // swallow
             }
         }
         return null;

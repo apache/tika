@@ -16,7 +16,6 @@
  */
 package org.apache.tika.utils;
 
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,13 +25,15 @@ import java.util.concurrent.TimeUnit;
 
 public class ProcessUtils {
 
-
     private static final ConcurrentHashMap<String, Process> PROCESS_MAP = new ConcurrentHashMap<>();
 
     static {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            PROCESS_MAP.forEachValue(1, Process::destroyForcibly);
-        }));
+        Runtime.getRuntime()
+                .addShutdownHook(
+                        new Thread(
+                                () -> {
+                                    PROCESS_MAP.forEachValue(1, Process::destroyForcibly);
+                                }));
     }
 
     private static String register(Process p) {
@@ -46,9 +47,8 @@ public class ProcessUtils {
     }
 
     /**
-     * This should correctly put double-quotes around an argument if
-     * ProcessBuilder doesn't seem to work (as it doesn't
-     * on paths with spaces on Windows)
+     * This should correctly put double-quotes around an argument if ProcessBuilder doesn't seem to
+     * work (as it doesn't on paths with spaces on Windows)
      *
      * @param arg
      * @return
@@ -57,18 +57,20 @@ public class ProcessUtils {
         if (arg == null) {
             return arg;
         }
-        //need to test for " " on windows, can't just add double quotes
-        //across platforms.
-        if (arg.contains(" ") && SystemUtils.IS_OS_WINDOWS &&
-                (!arg.startsWith("\"") && !arg.endsWith("\""))) {
+        // need to test for " " on windows, can't just add double quotes
+        // across platforms.
+        if (arg.contains(" ")
+                && SystemUtils.IS_OS_WINDOWS
+                && (!arg.startsWith("\"") && !arg.endsWith("\""))) {
             arg = "\"" + arg + "\"";
         }
         return arg;
     }
 
     public static String unescapeCommandLine(String arg) {
-        if (arg.contains(" ") && SystemUtils.IS_OS_WINDOWS &&
-                (arg.startsWith("\"") && arg.endsWith("\""))) {
+        if (arg.contains(" ")
+                && SystemUtils.IS_OS_WINDOWS
+                && (arg.startsWith("\"") && arg.endsWith("\""))) {
             arg = arg.substring(1, arg.length() - 1);
         }
         return arg;
@@ -84,9 +86,8 @@ public class ProcessUtils {
      * @return
      * @throws IOException
      */
-    public static FileProcessResult execute(ProcessBuilder pb,
-                                            long timeoutMillis,
-                                            int maxStdoutBuffer, int maxStdErrBuffer)
+    public static FileProcessResult execute(
+            ProcessBuilder pb, long timeoutMillis, int maxStdoutBuffer, int maxStdErrBuffer)
             throws IOException {
         Process p = null;
         String id = null;
@@ -121,7 +122,7 @@ public class ProcessUtils {
                         try {
                             exitValue = p.exitValue();
                         } catch (IllegalThreadStateException e) {
-                            //not finished!
+                            // not finished!
                         }
                     }
                 }
@@ -135,7 +136,7 @@ public class ProcessUtils {
             result.processTimeMillis = elapsed;
             result.stderrLength = errGobbler.getStreamLength();
             result.stdoutLength = outGobbler.getStreamLength();
-            result.isTimeout = ! complete;
+            result.isTimeout = !complete;
             result.exitValue = exitValue;
             result.stdout = StringUtils.joinWith("\n", outGobbler.getLines());
             result.stderr = StringUtils.joinWith("\n", errGobbler.getLines());
@@ -162,9 +163,9 @@ public class ProcessUtils {
      * @return
      * @throws IOException
      */
-    public static FileProcessResult execute(ProcessBuilder pb,
-                                            long timeoutMillis,
-                                            Path stdoutRedirect, int maxStdErrBuffer) throws IOException {
+    public static FileProcessResult execute(
+            ProcessBuilder pb, long timeoutMillis, Path stdoutRedirect, int maxStdErrBuffer)
+            throws IOException {
 
         if (!Files.isDirectory(stdoutRedirect.getParent())) {
             Files.createDirectories(stdoutRedirect.getParent());
@@ -214,7 +215,5 @@ public class ProcessUtils {
             }
             release(id);
         }
-
     }
-
 }

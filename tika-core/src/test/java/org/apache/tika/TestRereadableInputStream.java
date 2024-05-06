@@ -25,11 +25,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
+import org.apache.tika.utils.RereadableInputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
-import org.apache.tika.utils.RereadableInputStream;
 
 public class TestRereadableInputStream {
 
@@ -48,54 +46,60 @@ public class TestRereadableInputStream {
     // This size of data exactly equals memory threshold
     private final int TEST_SIZE_MAX = MEMORY_THRESHOLD;
 
-    @TempDir
-    private Path tempDir;
+    @TempDir private Path tempDir;
 
     @Test
     public void testInMemory() throws IOException {
         readEntireStream((TEST_SIZE_MEMORY));
     }
 
-//    @Test
-//    public void testInFile() throws IOException {
-//        readData(TEST_SIZE_FILE);
-//    }
-//
-//    @Test
-//    public void testMemoryThreshold() throws IOException {
-//        readData(TEST_SIZE_MAX);
-//    }
-//
-//    @Test
-//    public void testInMemory2() throws IOException {
-//        readData2((TEST_SIZE_MEMORY));
-//    }
-//
-//    @Test
-//    public void testInFile2() throws IOException {
-//        readData2(TEST_SIZE_FILE);
-//    }
+    //    @Test
+    //    public void testInFile() throws IOException {
+    //        readData(TEST_SIZE_FILE);
+    //    }
+    //
+    //    @Test
+    //    public void testMemoryThreshold() throws IOException {
+    //        readData(TEST_SIZE_MAX);
+    //    }
+    //
+    //    @Test
+    //    public void testInMemory2() throws IOException {
+    //        readData2((TEST_SIZE_MEMORY));
+    //    }
+    //
+    //    @Test
+    //    public void testInFile2() throws IOException {
+    //        readData2(TEST_SIZE_FILE);
+    //    }
 
     @Test
     public void testMemoryThreshold2() throws IOException {
         readPartialStream(TEST_SIZE_MAX);
     }
 
-    /**
-     * Read entire stream of various sizes
-     */
+    /** Read entire stream of various sizes */
     private void readEntireStream(int testSize) throws IOException {
         InputStream is = createTestInputStream(testSize);
         try (RereadableInputStream ris = new RereadableInputStream(is, MEMORY_THRESHOLD, true)) {
             for (int pass = 0; pass < NUM_PASSES; pass++) {
                 for (int byteNum = 0; byteNum < testSize; byteNum++) {
                     int byteRead = ris.read();
-                    assertEquals(byteNum, byteRead,
-                            "Pass = " + pass + ", byte num should be " + byteNum + " but is " +
-                                    byteRead + ".");
+                    assertEquals(
+                            byteNum,
+                            byteRead,
+                            "Pass = "
+                                    + pass
+                                    + ", byte num should be "
+                                    + byteNum
+                                    + " but is "
+                                    + byteRead
+                                    + ".");
                 }
                 int eof = ris.read();
-                assertEquals(-1, eof,
+                assertEquals(
+                        -1,
+                        eof,
                         "Pass = " + pass + ", byte num should be " + -1 + " but is " + eof + ".");
                 ris.rewind();
             }
@@ -103,8 +107,8 @@ public class TestRereadableInputStream {
     }
 
     /**
-     * Read increasingly more of the stream, but not all, with each pass before rewinding to
-     * make sure we pick up at the correct point
+     * Read increasingly more of the stream, but not all, with each pass before rewinding to make
+     * sure we pick up at the correct point
      */
     private void readPartialStream(int testSize) throws IOException {
         InputStream is = createTestInputStream(20);
@@ -114,8 +118,16 @@ public class TestRereadableInputStream {
             for (int pass = 0; pass < NUM_PASSES; pass++) {
                 for (int byteNum = 0; byteNum < iterations; byteNum++) {
                     int byteRead = ris.read();
-                    assertEquals(byteNum, byteRead,
-                            "Pass = " + pass + ", byte num should be " + byteNum + " but is " + byteRead + ".");
+                    assertEquals(
+                            byteNum,
+                            byteRead,
+                            "Pass = "
+                                    + pass
+                                    + ", byte num should be "
+                                    + byteNum
+                                    + " but is "
+                                    + byteRead
+                                    + ".");
                 }
                 ris.rewind();
                 iterations++;
@@ -123,19 +135,20 @@ public class TestRereadableInputStream {
         }
     }
 
-
     @Test
     public void testRewind() throws IOException {
         InputStream is = createTestInputStream(DEFAULT_TEST_SIZE);
         try (RereadableInputStream ris = new RereadableInputStream(is, MEMORY_THRESHOLD, true)) {
-            ris.rewind();  // rewind before we've done anything
+            ris.rewind(); // rewind before we've done anything
             for (int byteNum = 0; byteNum < 1; byteNum++) {
                 int byteRead = ris.read();
-                assertEquals(byteNum, byteRead, "Byte num should be " + byteNum + " but is " + byteRead + ".");
+                assertEquals(
+                        byteNum,
+                        byteRead,
+                        "Byte num should be " + byteNum + " but is " + byteRead + ".");
             }
         }
     }
-
 
     private TestInputStream createTestInputStream(int testSize) throws IOException {
         return new TestInputStream(
@@ -175,15 +188,14 @@ public class TestRereadableInputStream {
         TestInputStream tis = createTestInputStream(DEFAULT_TEST_SIZE);
         RereadableInputStream ris = new RereadableInputStream(tis, DEFAULT_TEST_SIZE);
         ris.close();
-        assertThrows(IOException.class, () -> {
-            ris.read();
-        });
+        assertThrows(
+                IOException.class,
+                () -> {
+                    ris.read();
+                });
     }
 
-
-    /**
-     * Adds isClosed() to a BufferedInputStream.
-     */
+    /** Adds isClosed() to a BufferedInputStream. */
     static class TestInputStream extends BufferedInputStream {
 
         private boolean closed;

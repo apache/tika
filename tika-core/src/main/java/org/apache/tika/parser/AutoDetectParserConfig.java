@@ -18,33 +18,33 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.Serializable;
-
-import org.w3c.dom.Element;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
 import org.apache.tika.sax.ContentHandlerDecoratorFactory;
+import org.w3c.dom.Element;
+import org.xml.sax.ContentHandler;
 
 /**
- * This config object can be used to tune how conservative we want to be
- * when parsing data that is extremely compressible and resembles a ZIP
- * bomb. Null values will be ignored and will not affect the default values
- * in SecureContentHandler.
- * <p>
- *     See <a href="https://cwiki.apache.org/confluence/display/TIKA/ModifyingContentWithHandlersAndMetadataFilters"/>ModifyingContentWithHandlersAndMetadataFilters</a>
- *     for documentation and examples for configuring this with a tika-config.xml file.
+ * This config object can be used to tune how conservative we want to be when parsing data that is
+ * extremely compressible and resembles a ZIP bomb. Null values will be ignored and will not affect
+ * the default values in SecureContentHandler.
+ *
+ * <p>See <a
+ * href="https://cwiki.apache.org/confluence/display/TIKA/ModifyingContentWithHandlersAndMetadataFilters"/>ModifyingContentWithHandlersAndMetadataFilters</a>
+ * for documentation and examples for configuring this with a tika-config.xml file.
  */
 public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
     private static ContentHandlerDecoratorFactory NOOP_CONTENT_HANDLER_DECORATOR_FACTORY =
             new ContentHandlerDecoratorFactory() {
                 @Override
-                public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata,
-                                               ParseContext parseContext) {
+                public ContentHandler decorate(
+                        ContentHandler contentHandler,
+                        Metadata metadata,
+                        ParseContext parseContext) {
                     return contentHandler;
                 }
             };
@@ -53,35 +53,29 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
     public static AutoDetectParserConfig load(Element element)
             throws TikaConfigException, IOException {
-        return AutoDetectParserConfig.buildSingle("autoDetectParserConfig",
-                AutoDetectParserConfig.class, element, AutoDetectParserConfig.DEFAULT);
+        return AutoDetectParserConfig.buildSingle(
+                "autoDetectParserConfig",
+                AutoDetectParserConfig.class,
+                element,
+                AutoDetectParserConfig.DEFAULT);
     }
 
     /**
-     * If this is not null and greater than -1, the AutoDetectParser
-     * will spool the stream to disk if the length of the stream is known
-     * ahead of time.
+     * If this is not null and greater than -1, the AutoDetectParser will spool the stream to disk
+     * if the length of the stream is known ahead of time.
      */
     private Long spoolToDisk = null;
 
-    /**
-     * SecureContentHandler -- Desired output threshold in characters.
-     */
+    /** SecureContentHandler -- Desired output threshold in characters. */
     private Long outputThreshold = null;
 
-    /**
-     * SecureContentHandler -- Desired maximum compression ratio.
-     */
+    /** SecureContentHandler -- Desired maximum compression ratio. */
     private Long maximumCompressionRatio = null;
 
-    /**
-     * SecureContentHandler -- Desired maximum XML nesting level.
-     */
+    /** SecureContentHandler -- Desired maximum XML nesting level. */
     private Integer maximumDepth = null;
 
-    /**
-     * SecureContentHandler -- Desired maximum package entry nesting level.
-     */
+    /** SecureContentHandler -- Desired maximum package entry nesting level. */
     private Integer maximumPackageEntryDepth = null;
 
     private MetadataWriteFilterFactory metadataWriteFilterFactory = null;
@@ -99,14 +93,17 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
      * Creates a SecureContentHandlerConfig using the passed in parameters.
      *
      * @param spoolToDisk
-     * @param outputThreshold          SecureContentHandler - character output threshold.
-     * @param maximumCompressionRatio  SecureContentHandler - max compression ratio allowed.
-     * @param maximumDepth             SecureContentHandler - maximum XML element nesting level.
+     * @param outputThreshold SecureContentHandler - character output threshold.
+     * @param maximumCompressionRatio SecureContentHandler - max compression ratio allowed.
+     * @param maximumDepth SecureContentHandler - maximum XML element nesting level.
      * @param maximumPackageEntryDepth SecureContentHandler - maximum package entry nesting level.
      */
-    public AutoDetectParserConfig(Long spoolToDisk, Long outputThreshold,
-                                  Long maximumCompressionRatio, Integer maximumDepth,
-                                  Integer maximumPackageEntryDepth) {
+    public AutoDetectParserConfig(
+            Long spoolToDisk,
+            Long outputThreshold,
+            Long maximumCompressionRatio,
+            Integer maximumDepth,
+            Integer maximumPackageEntryDepth) {
         this.spoolToDisk = spoolToDisk;
         this.outputThreshold = outputThreshold;
         this.maximumCompressionRatio = maximumCompressionRatio;
@@ -114,9 +111,7 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
         this.maximumPackageEntryDepth = maximumPackageEntryDepth;
     }
 
-    public AutoDetectParserConfig() {
-
-    }
+    public AutoDetectParserConfig() {}
 
     public Long getSpoolToDisk() {
         return spoolToDisk;
@@ -203,14 +198,27 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
     @Override
     public String toString() {
-        return "AutoDetectParserConfig{" + "spoolToDisk=" + spoolToDisk + ", outputThreshold=" +
-                outputThreshold + ", maximumCompressionRatio=" + maximumCompressionRatio +
-                ", maximumDepth=" + maximumDepth + ", maximumPackageEntryDepth=" +
-                maximumPackageEntryDepth + ", metadataWriteFilterFactory=" +
-                metadataWriteFilterFactory + ", embeddedDocumentExtractorFactory=" +
-                embeddedDocumentExtractorFactory + ", contentHandlerDecoratorFactory=" +
-                contentHandlerDecoratorFactory + ", digesterFactory=" + digesterFactory +
-                ", throwOnZeroBytes=" + throwOnZeroBytes + '}';
+        return "AutoDetectParserConfig{"
+                + "spoolToDisk="
+                + spoolToDisk
+                + ", outputThreshold="
+                + outputThreshold
+                + ", maximumCompressionRatio="
+                + maximumCompressionRatio
+                + ", maximumDepth="
+                + maximumDepth
+                + ", maximumPackageEntryDepth="
+                + maximumPackageEntryDepth
+                + ", metadataWriteFilterFactory="
+                + metadataWriteFilterFactory
+                + ", embeddedDocumentExtractorFactory="
+                + embeddedDocumentExtractorFactory
+                + ", contentHandlerDecoratorFactory="
+                + contentHandlerDecoratorFactory
+                + ", digesterFactory="
+                + digesterFactory
+                + ", throwOnZeroBytes="
+                + throwOnZeroBytes
+                + '}';
     }
 }
-

@@ -22,10 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TemporaryResources;
@@ -38,26 +34,27 @@ import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This runs the linux 'file' command against a file.  If
- * this is called on a TikaInputStream, it will use the underlying Path
- * or spool the full file to disk and then run file against that.
- * <p>
- * If this is run against any other type of InputStream, it will spool
- * up to {@link #maxBytes} to disk and then run the detector.
- * <p>
- * As with all detectors, mark must be supported.
- * <p>
- * If you want to use file's mime type in the parse, e.g.
- * to select the parser in AutoDetectParser, set {@link FileCommandDetector#setUseMime(boolean)}
- * to true.  The default behavior is to store the value as {@link FileCommandDetector#FILE_MIME}
- * but rely on other detectors for the "active" mime used by Tika.
+ * This runs the linux 'file' command against a file. If this is called on a TikaInputStream, it
+ * will use the underlying Path or spool the full file to disk and then run file against that.
+ *
+ * <p>If this is run against any other type of InputStream, it will spool up to {@link #maxBytes} to
+ * disk and then run the detector.
+ *
+ * <p>As with all detectors, mark must be supported.
+ *
+ * <p>If you want to use file's mime type in the parse, e.g. to select the parser in
+ * AutoDetectParser, set {@link FileCommandDetector#setUseMime(boolean)} to true. The default
+ * behavior is to store the value as {@link FileCommandDetector#FILE_MIME} but rely on other
+ * detectors for the "active" mime used by Tika.
  */
 public class FileCommandDetector implements Detector {
 
-    //TODO: file has some diff mimes names for some very common mimes
-    //should we map file mimes to Tika mimes, e.g. text/xml -> application/xml??
+    // TODO: file has some diff mimes names for some very common mimes
+    // should we map file mimes to Tika mimes, e.g. text/xml -> application/xml??
 
     public static Property FILE_MIME = Property.externalText("file:mime");
     private static final Logger LOGGER = LoggerFactory.getLogger(FileCommandDetector.class);
@@ -75,14 +72,13 @@ public class FileCommandDetector implements Detector {
         return checkHasFile(DEFAULT_FILE_COMMAND_PATH);
     }
 
-
     public static boolean checkHasFile(String fileCommandPath) {
-        String[] commandline = new String[]{fileCommandPath, "-v"};
+        String[] commandline = new String[] {fileCommandPath, "-v"};
         return ExternalParser.check(commandline);
     }
 
     /**
-     * @param input    document input stream, or <code>null</code>
+     * @param input document input stream, or <code>null</code>
      * @param metadata input metadata for the document
      * @return mime as identified by the file command or application/octet-stream otherwise
      * @throws IOException
@@ -101,8 +97,8 @@ public class FileCommandDetector implements Detector {
         }
         TikaInputStream tis = TikaInputStream.cast(input);
         if (tis != null) {
-            //spool the full file to disk, if called with a TikaInputStream
-            //and there is no underlying file
+            // spool the full file to disk, if called with a TikaInputStream
+            // and there is no underlying file
             return detectOnPath(tis.getPath(), metadata);
         }
 
@@ -119,8 +115,12 @@ public class FileCommandDetector implements Detector {
     private MediaType detectOnPath(Path path, Metadata metadata) throws IOException {
 
         String[] args =
-                new String[]{ProcessUtils.escapeCommandLine(fileCommandPath), "-b", "--mime-type",
-                        ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())};
+                new String[] {
+                    ProcessUtils.escapeCommandLine(fileCommandPath),
+                    "-b",
+                    "--mime-type",
+                    ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())
+                };
         ProcessBuilder builder = new ProcessBuilder(args);
         FileProcessResult result = ProcessUtils.execute(builder, timeoutMs, 10000, 10000);
         if (result.isTimeout()) {
@@ -149,8 +149,8 @@ public class FileCommandDetector implements Detector {
 
     @Field
     public void setFilePath(String fileCommandPath) {
-        //this opens up a potential command vulnerability.
-        //Don't ever let an untrusted user set this.
+        // this opens up a potential command vulnerability.
+        // Don't ever let an untrusted user set this.
         this.fileCommandPath = fileCommandPath;
         checkHasFile(this.fileCommandPath);
     }
@@ -163,10 +163,10 @@ public class FileCommandDetector implements Detector {
     public boolean isUseMime() {
         return useMime;
     }
+
     /**
-     * If this is not called on a TikaInputStream, this detector
-     * will spool up to this many bytes to a file to be detected
-     * by the 'file' command.
+     * If this is not called on a TikaInputStream, this detector will spool up to this many bytes to
+     * a file to be detected by the 'file' command.
      *
      * @param maxBytes
      */
@@ -179,5 +179,4 @@ public class FileCommandDetector implements Detector {
     public void setTimeoutMs(long timeoutMs) {
         this.timeoutMs = timeoutMs;
     }
-
 }

@@ -22,15 +22,12 @@ public interface XMPIdq {
 
     String PREFIX = "xmpidq";
 
-    /**
-     * The xmpidq prefix followed by the colon delimiter
-     */
+    /** The xmpidq prefix followed by the colon delimiter */
     String PREFIX_ = PREFIX + ":";
 
     /**
-     * A qualifier providing the name of the formal identification
-     * scheme used for an item in the xmp:Identifier array.
+     * A qualifier providing the name of the formal identification scheme used for an item in the
+     * xmp:Identifier array.
      */
     Property SCHEME = Property.externalText(PREFIX_ + "Scheme");
-
 }

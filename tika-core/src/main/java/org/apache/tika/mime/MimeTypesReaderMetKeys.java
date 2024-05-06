@@ -16,9 +16,7 @@
  */
 package org.apache.tika.mime;
 
-/**
- * Met Keys used by the {@link MimeTypesReader}.
- */
+/** Met Keys used by the {@link MimeTypesReader}. */
 public interface MimeTypesReaderMetKeys {
 
     String MIME_INFO_TAG = "mime-info";

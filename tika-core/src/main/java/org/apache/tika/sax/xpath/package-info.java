@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * XPath utilities
- */
+/** XPath utilities */
 @aQute.bnd.annotation.Version("1.0.0")
 package org.apache.tika.sax.xpath;

@@ -16,10 +16,7 @@
  */
 package org.apache.tika.metadata;
 
-/**
- * Metadata for describing machines, such as their
- * architecture, type and endian-ness
- */
+/** Metadata for describing machines, such as their architecture, type and endian-ness */
 public interface MachineMetadata {
     String PREFIX = "machine:";
 
@@ -40,9 +37,19 @@ public interface MachineMetadata {
     String PLATFORM_WINDOWS = "Windows";
 
     Property PLATFORM =
-            Property.internalClosedChoise(PREFIX + "platform", PLATFORM_SYSV, PLATFORM_HPUX,
-                    PLATFORM_NETBSD, PLATFORM_LINUX, PLATFORM_SOLARIS, PLATFORM_AIX, PLATFORM_IRIX,
-                    PLATFORM_FREEBSD, PLATFORM_TRU64, PLATFORM_ARM, PLATFORM_EMBEDDED,
+            Property.internalClosedChoise(
+                    PREFIX + "platform",
+                    PLATFORM_SYSV,
+                    PLATFORM_HPUX,
+                    PLATFORM_NETBSD,
+                    PLATFORM_LINUX,
+                    PLATFORM_SOLARIS,
+                    PLATFORM_AIX,
+                    PLATFORM_IRIX,
+                    PLATFORM_FREEBSD,
+                    PLATFORM_TRU64,
+                    PLATFORM_ARM,
+                    PLATFORM_EMBEDDED,
                     PLATFORM_WINDOWS);
 
     String MACHINE_x86_32 = "x86-32";
@@ -66,10 +73,26 @@ public interface MachineMetadata {
     String MACHINE_UNKNOWN = "Unknown";
 
     Property MACHINE_TYPE =
-            Property.internalClosedChoise(PREFIX + "machineType", MACHINE_x86_32, MACHINE_x86_64,
-                    MACHINE_IA_64, MACHINE_SPARC, MACHINE_M68K, MACHINE_M88K, MACHINE_MIPS,
-                    MACHINE_PPC, MACHINE_S370, MACHINE_S390, MACHINE_ARM, MACHINE_VAX,
-                    MACHINE_ALPHA, MACHINE_EFI, MACHINE_M32R, MACHINE_SH3, MACHINE_SH4, MACHINE_SH5,
+            Property.internalClosedChoise(
+                    PREFIX + "machineType",
+                    MACHINE_x86_32,
+                    MACHINE_x86_64,
+                    MACHINE_IA_64,
+                    MACHINE_SPARC,
+                    MACHINE_M68K,
+                    MACHINE_M88K,
+                    MACHINE_MIPS,
+                    MACHINE_PPC,
+                    MACHINE_S370,
+                    MACHINE_S390,
+                    MACHINE_ARM,
+                    MACHINE_VAX,
+                    MACHINE_ALPHA,
+                    MACHINE_EFI,
+                    MACHINE_M32R,
+                    MACHINE_SH3,
+                    MACHINE_SH4,
+                    MACHINE_SH5,
                     MACHINE_UNKNOWN);
     Property ENDIAN =
             Property.internalClosedChoise(PREFIX + "endian", Endian.LITTLE.name, Endian.BIG.name);

@@ -21,20 +21,20 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayInputStream;
 import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ToTextContentHandler;
+import org.junit.jupiter.api.Test;
 
 public class XMLReaderUtilsTest {
-    //make sure that parseSAX actually defends against external entities
+    // make sure that parseSAX actually defends against external entities
     @Test
     public void testExternalDTD() throws Exception {
         String xml = "<!DOCTYPE foo SYSTEM \"http://127.234.172.38:7845/bar\"><foo/>";
         try {
-            XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
-                    new ToTextContentHandler(), new ParseContext());
+            XMLReaderUtils.parseSAX(
+                    new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
+                    new ToTextContentHandler(),
+                    new ParseContext());
         } catch (ConnectException e) {
             fail("Parser tried to access the external DTD:" + e);
         }
@@ -43,11 +43,14 @@ public class XMLReaderUtilsTest {
     @Test
     public void testExternalEntity() throws Exception {
         String xml =
-                "<!DOCTYPE foo [" + " <!ENTITY bar SYSTEM \"http://127.234.172.38:7845/bar\">" +
-                        " ]><foo>&bar;</foo>";
+                "<!DOCTYPE foo ["
+                        + " <!ENTITY bar SYSTEM \"http://127.234.172.38:7845/bar\">"
+                        + " ]><foo>&bar;</foo>";
         try {
-            XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
-                    new ToTextContentHandler(), new ParseContext());
+            XMLReaderUtils.parseSAX(
+                    new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
+                    new ToTextContentHandler(),
+                    new ParseContext());
         } catch (ConnectException e) {
             fail("Parser tried to access the external DTD:" + e);
         }

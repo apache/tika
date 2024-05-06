@@ -20,39 +20,35 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
-
 import org.apache.tika.metadata.Metadata;
 
 /**
- * Character encoding detector. Implementations of this interface use
- * various heuristics to detect the character encoding of a text document
- * based on given input metadata or the first few bytes of the document stream.
+ * Character encoding detector. Implementations of this interface use various heuristics to detect
+ * the character encoding of a text document based on given input metadata or the first few bytes of
+ * the document stream.
  *
  * @since Apache Tika 0.4
  */
 public interface EncodingDetector extends Serializable {
 
     /**
-     * Detects the character encoding of the given text document, or
-     * <code>null</code> if the encoding of the document can not be detected.
-     * <p>
-     * If the document input stream is not available, then the first
-     * argument may be <code>null</code>. Otherwise the detector may
-     * read bytes from the start of the stream to help in encoding detection.
-     * The given stream is guaranteed to support the
-     * {@link InputStream#markSupported() mark feature} and the detector
-     * is expected to {@link InputStream#mark(int) mark} the stream before
-     * reading any bytes from it, and to {@link InputStream#reset() reset}
-     * the stream before returning. The stream must not be closed by the
-     * detector.
-     * <p>
-     * The given input metadata is only read, not modified, by the detector.
+     * Detects the character encoding of the given text document, or <code>null</code> if the
+     * encoding of the document can not be detected.
      *
-     * @param input    text document input stream, or <code>null</code>
+     * <p>If the document input stream is not available, then the first argument may be <code>null
+     * </code>. Otherwise the detector may read bytes from the start of the stream to help in
+     * encoding detection. The given stream is guaranteed to support the {@link
+     * InputStream#markSupported() mark feature} and the detector is expected to {@link
+     * InputStream#mark(int) mark} the stream before reading any bytes from it, and to {@link
+     * InputStream#reset() reset} the stream before returning. The stream must not be closed by the
+     * detector.
+     *
+     * <p>The given input metadata is only read, not modified, by the detector.
+     *
+     * @param input text document input stream, or <code>null</code>
      * @param metadata input metadata for the document
      * @return detected character encoding, or <code>null</code>
      * @throws IOException if the document input stream could not be read
      */
     Charset detect(InputStream input, Metadata metadata) throws IOException;
-
 }

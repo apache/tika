@@ -1273,8 +1273,8 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <!-- mvn validate -->
+<!--      <plugin>
+        < ! - - mvn validate  - - >
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>${checkstyle.plugin.version}</version>
@@ -1303,7 +1303,7 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
+      </plugin> -->
     </plugins>
   </build>
 

@@ -21,18 +21,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import org.apache.tika.metadata.Metadata;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.metadata.Metadata;
-
-/**
- * Unit tests for the {@link XHTMLContentHandler} class.
- */
+/** Unit tests for the {@link XHTMLContentHandler} class. */
 public class XHTMLContentHandlerTest {
 
     private ContentHandler output;
@@ -40,8 +36,8 @@ public class XHTMLContentHandlerTest {
     private XHTMLContentHandler xhtml;
 
     /**
-     * Return array of non-zerolength words. Splitting on whitespace will get us
-     * empty words for emptylines.
+     * Return array of non-zerolength words. Splitting on whitespace will get us empty words for
+     * emptylines.
      *
      * @param string some mix of newlines and real words
      * @return array of real words.
@@ -65,8 +61,7 @@ public class XHTMLContentHandlerTest {
     }
 
     /**
-     * Test that content in block elements are properly separated in text
-     * output.
+     * Test that content in block elements are properly separated in text output.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-188">TIKA-188</a>
      */
@@ -104,8 +99,7 @@ public class XHTMLContentHandlerTest {
     }
 
     /**
-     * Test that content in option elements are properly separated in text
-     * output.
+     * Test that content in option elements are properly separated in text output.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-394">TIKA-394</a>
      */
@@ -149,8 +143,8 @@ public class XHTMLContentHandlerTest {
         AttributesImpl attributes = new AttributesImpl();
 
         attributes.addAttribute(XHTMLContentHandler.XHTML, "itemscope", "itemscope", "", "");
-        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "",
-                "http://schema.org/Event");
+        attributes.addAttribute(
+                XHTMLContentHandler.XHTML, "itemtype", "itemtype", "", "http://schema.org/Event");
 
         xhtmlContentHandler.startDocument();
         xhtmlContentHandler.startElement(XHTMLContentHandler.XHTML, "body", "body", attributes);
@@ -168,8 +162,8 @@ public class XHTMLContentHandlerTest {
         AttributesImpl attributes = new AttributesImpl();
 
         attributes.addAttribute(XHTMLContentHandler.XHTML, "itemscope", "itemscope", "", "");
-        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "",
-                "http://schema.org/Event");
+        attributes.addAttribute(
+                XHTMLContentHandler.XHTML, "itemtype", "itemtype", "", "http://schema.org/Event");
 
         xhtmlContentHandler.startDocument();
         xhtmlContentHandler.startElement(XHTMLContentHandler.XHTML, "html", "html", attributes);
@@ -217,5 +211,4 @@ public class XHTMLContentHandlerTest {
         assertEquals(1, words.length);
         assertEquals("a\ufffdz", words[0]);
     }
-
 }

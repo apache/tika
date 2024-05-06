@@ -20,16 +20,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 
-/**
- * Base class that includes filtering by {@link PipesResult.STATUS}
- */
+/** Base class that includes filtering by {@link PipesResult.STATUS} */
 public abstract class PipesReporterBase extends PipesReporter implements Initializable {
 
     private final Set<PipesResult.STATUS> includes = new HashSet<>();
@@ -42,11 +39,12 @@ public abstract class PipesReporterBase extends PipesReporter implements Initial
         statusFilter = buildStatusFilter(includes, excludes);
     }
 
-    private StatusFilter buildStatusFilter(Set<PipesResult.STATUS> includes,
-                                           Set<PipesResult.STATUS> excludes) throws TikaConfigException {
+    private StatusFilter buildStatusFilter(
+            Set<PipesResult.STATUS> includes, Set<PipesResult.STATUS> excludes)
+            throws TikaConfigException {
         if (includes.size() > 0 && excludes.size() > 0) {
-            throw new TikaConfigException("Only one of includes and excludes may have any " +
-                    "contents");
+            throw new TikaConfigException(
+                    "Only one of includes and excludes may have any " + "contents");
         }
         if (includes.size() > 0) {
             return new IncludesFilter(includes);
@@ -58,12 +56,11 @@ public abstract class PipesReporterBase extends PipesReporter implements Initial
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-
-    }
+            throws TikaConfigException {}
 
     /**
      * Implementations must call this for the includes/excludes filters to work!
+     *
      * @param status
      * @return
      */
@@ -150,6 +147,4 @@ public abstract class PipesReporterBase extends PipesReporter implements Initial
             return true;
         }
     }
-
-
 }

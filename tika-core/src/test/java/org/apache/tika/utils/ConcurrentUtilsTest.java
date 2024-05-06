@@ -20,25 +20,26 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.ParseContext;
+import org.junit.jupiter.api.Test;
 
 public class ConcurrentUtilsTest {
 
     @Test
     public void testExecuteThread() throws Exception {
         ParseContext context = new ParseContext();
-        Future result = ConcurrentUtils.execute(context, new Runnable() {
+        Future result =
+                ConcurrentUtils.execute(
+                        context,
+                        new Runnable() {
 
-            @Override
-            public void run() {
-                //Do nothing
+                            @Override
+                            public void run() {
+                                // Do nothing
 
-            }
-        });
+                            }
+                        });
 
         assertNull(result.get());
     }
@@ -48,16 +49,18 @@ public class ConcurrentUtilsTest {
         TikaConfig config = TikaConfig.getDefaultConfig();
         ParseContext context = new ParseContext();
         context.set(ExecutorService.class, config.getExecutorService());
-        Future result = ConcurrentUtils.execute(context, new Runnable() {
+        Future result =
+                ConcurrentUtils.execute(
+                        context,
+                        new Runnable() {
 
-            @Override
-            public void run() {
-                //Do nothing
+                            @Override
+                            public void run() {
+                                // Do nothing
 
-            }
-        });
+                            }
+                        });
 
         assertNull(result.get());
     }
-
 }

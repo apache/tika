@@ -18,9 +18,7 @@ package org.apache.tika.pipes.fetcher;
 
 import org.apache.tika.exception.TikaException;
 
-/**
- * If something goes wrong in parsing the fetcher string
- */
+/** If something goes wrong in parsing the fetcher string */
 public class FetcherStringException extends TikaException {
 
     public FetcherStringException(String msg) {

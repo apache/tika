@@ -18,20 +18,15 @@ package org.apache.tika.mime;
 
 import java.io.Serializable;
 
-/**
- * Defines a clause to be evaluated.
- */
+/** Defines a clause to be evaluated. */
 interface Clause extends Serializable {
 
-    /**
-     * Evaluates this clause with the specified chunk of data.
-     */
+    /** Evaluates this clause with the specified chunk of data. */
     boolean eval(byte[] data);
 
     /**
-     * Returns the size of this clause. The size of a clause is the number of
-     * chars it is composed of.
+     * Returns the size of this clause. The size of a clause is the number of chars it is composed
+     * of.
      */
     int size();
-
 }

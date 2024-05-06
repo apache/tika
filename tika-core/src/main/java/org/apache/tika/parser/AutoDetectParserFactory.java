@@ -22,21 +22,14 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
-
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
+import org.xml.sax.SAXException;
 
-/**
- * Factory for an AutoDetectParser
- */
+/** Factory for an AutoDetectParser */
 public class AutoDetectParserFactory extends ParserFactory {
 
-    /**
-     * Path to a tika-config file.  This must be a literal
-     * file or findable on the classpath.
-     */
+    /** Path to a tika-config file. This must be a literal file or findable on the classpath. */
     public static final String TIKA_CONFIG_PATH = "tika_config_path";
 
     public AutoDetectParserFactory(Map<String, String> args) {

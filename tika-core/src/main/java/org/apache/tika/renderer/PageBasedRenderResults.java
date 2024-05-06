@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.TikaPagedText;
 
@@ -31,6 +30,7 @@ public class PageBasedRenderResults extends RenderResults {
     public PageBasedRenderResults(TemporaryResources tmp) {
         super(tmp);
     }
+
     public void add(RenderResult result) {
         Integer page = result.getMetadata().getInt(TikaPagedText.PAGE_NUMBER);
         if (page != null) {

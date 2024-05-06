@@ -34,8 +34,9 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
-
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -43,9 +44,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * A reader for XML files compliant with the freedesktop MIME-info DTD.
@@ -103,21 +101,21 @@ import org.apache.tika.utils.XMLReaderUtils;
  *         type CDATA #REQUIRED&gt;
  *  ]&gt;
  * </pre>
- * <p>
- * In addition to the standard fields, this will also read two Tika specific fields:
- * - link
- * - uti
  *
- * @see <a href="https://freedesktop.org/wiki/Specifications/shared-mime-info-spec/">https://freedesktop.org/wiki/Specifications/shared-mime-info-spec/</a>
+ * <p>In addition to the standard fields, this will also read two Tika specific fields: - link - uti
+ *
+ * @see <a
+ *     href="https://freedesktop.org/wiki/Specifications/shared-mime-info-spec/">https://freedesktop.org/wiki/Specifications/shared-mime-info-spec/</a>
  */
 public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
     private static final ReentrantReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
-    /**
-     * Parser pool size
-     */
+
+    /** Parser pool size */
     private static int POOL_SIZE = 10;
+
     private static ArrayBlockingQueue<SAXParser> SAX_PARSERS = new ArrayBlockingQueue<>(POOL_SIZE);
     static Logger LOG = LoggerFactory.getLogger(MimeTypesReader.class);
+
     static {
         try {
             setPoolSize(POOL_SIZE);
@@ -128,9 +126,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
 
     protected final MimeTypes types;
 
-    /**
-     * Current type
-     */
+    /** Current type */
     protected MimeType type = null;
 
     protected int priority;
@@ -143,9 +139,8 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
     }
 
     /**
-     * Acquire a SAXParser from the pool; create one if it
-     * doesn't exist.  Make sure to {@link #releaseParser(SAXParser)} in
-     * a <code>finally</code> block every time you call this.
+     * Acquire a SAXParser from the pool; create one if it doesn't exist. Make sure to {@link
+     * #releaseParser(SAXParser)} in a <code>finally</code> block every time you call this.
      *
      * @return a SAXParser
      * @throws TikaException
@@ -160,7 +155,6 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
                 throw new TikaException("interrupted while waiting for SAXParser", e);
             } finally {
                 READ_WRITE_LOCK.readLock().unlock();
-
             }
             if (parser != null) {
                 return parser;
@@ -177,11 +171,11 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         try {
             parser.reset();
         } catch (UnsupportedOperationException e) {
-            //ignore
+            // ignore
         }
         try {
             READ_WRITE_LOCK.readLock().lock();
-            //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
+            // if there are extra parsers (e.g. after a reset of the pool to a smaller size),
             // this parser will not be added and will then be gc'd
             SAX_PARSERS.offer(parser);
         } finally {
@@ -196,9 +190,9 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
      */
     public static void setPoolSize(int poolSize) throws TikaException {
         try {
-            //stop the world with a write lock
-            //parsers that are currently in use will be offered, but not
-            //accepted and will be gc'd
+            // stop the world with a write lock
+            // parsers that are currently in use will be offered, but not
+            // accepted and will be gc'd
             READ_WRITE_LOCK.writeLock().lock();
             SAX_PARSERS = new ArrayBlockingQueue<>(poolSize);
             for (int i = 0; i < poolSize; i++) {
@@ -216,8 +210,10 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         } catch (ParserConfigurationException | SAXException e) {
-            LOG.warn("can't set secure processing feature on: " + factory.getClass() +
-                    ". User assumes responsibility for consequences.");
+            LOG.warn(
+                    "can't set secure processing feature on: "
+                            + factory.getClass()
+                            + ". User assumes responsibility for consequences.");
         }
         try {
             return factory.newSAXParser();
@@ -278,8 +274,10 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         } else if (SUB_CLASS_OF_TAG.equals(qName)) {
             String parent = attributes.getValue(SUB_CLASS_TYPE_ATTR);
             types.setSuperType(type, MediaType.parse(parent));
-        } else if (ACRONYM_TAG.equals(qName) || COMMENT_TAG.equals(qName) ||
-                TIKA_LINK_TAG.equals(qName) || TIKA_UTI_TAG.equals(qName)) {
+        } else if (ACRONYM_TAG.equals(qName)
+                || COMMENT_TAG.equals(qName)
+                || TIKA_LINK_TAG.equals(qName)
+                || TIKA_UTI_TAG.equals(qName)) {
             characters = new StringBuilder();
         } else if (GLOB_TAG.equals(qName)) {
             String pattern = attributes.getValue(PATTERN_ATTR);
@@ -297,8 +295,11 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
             type.addRootXML(namespace, name);
         } else if (MATCH_TAG.equals(qName)) {
             if (attributes.getValue(MATCH_MINSHOULDMATCH_ATTR) != null) {
-                current = new ClauseRecord(new MinShouldMatchVal(
-                        Integer.parseInt(attributes.getValue(MATCH_MINSHOULDMATCH_ATTR))));
+                current =
+                        new ClauseRecord(
+                                new MinShouldMatchVal(
+                                        Integer.parseInt(
+                                                attributes.getValue(MATCH_MINSHOULDMATCH_ATTR))));
             } else {
                 String kind = attributes.getValue(MATCH_TYPE_ATTR);
                 String offset = attributes.getValue(MATCH_OFFSET_ATTR);
@@ -360,20 +361,25 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         }
     }
 
-    protected void handleMimeError(String input, MimeTypeException ex, String qName,
-                                   Attributes attributes) throws SAXException {
+    protected void handleMimeError(
+            String input, MimeTypeException ex, String qName, Attributes attributes)
+            throws SAXException {
         throw new SAXException(ex);
     }
 
-    protected void handleGlobError(MimeType type, String pattern, MimeTypeException ex,
-                                   String qName, Attributes attributes) throws SAXException {
+    protected void handleGlobError(
+            MimeType type,
+            String pattern,
+            MimeTypeException ex,
+            String qName,
+            Attributes attributes)
+            throws SAXException {
         throw new SAXException(ex);
     }
 
     /**
-     * Shim class used during building of actual classes.
-     * This temporarily holds the value of the minShouldMatchClause
-     * so that the actual MinShouldMatchClause can have a cleaner/immutable
+     * Shim class used during building of actual classes. This temporarily holds the value of the
+     * minShouldMatchClause so that the actual MinShouldMatchClause can have a cleaner/immutable
      * initialization.
      */
     private static class MinShouldMatchVal implements Clause {
@@ -442,6 +448,5 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         public List<Clause> getClauses() {
             return subclauses;
         }
-
     }
 }

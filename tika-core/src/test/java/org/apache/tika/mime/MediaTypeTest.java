@@ -23,14 +23,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 
 public class MediaTypeTest {
 
     @Test
     public void testBasics() {
-        assertEquals("application/octet-stream",
+        assertEquals(
+                "application/octet-stream",
                 new MediaType("application", "octet-stream").toString());
 
         assertEquals("text/plain", new MediaType("text", "plain").toString());
@@ -39,11 +39,12 @@ public class MediaTypeTest {
         assertEquals("text/plain", new MediaType("text", "plain", parameters).toString());
 
         parameters.put("charset", "UTF-8");
-        assertEquals("text/plain; charset=UTF-8",
-                new MediaType("text", "plain", parameters).toString());
+        assertEquals(
+                "text/plain; charset=UTF-8", new MediaType("text", "plain", parameters).toString());
 
         parameters.put("x-eol-style", "crlf");
-        assertEquals("text/plain; charset=UTF-8; x-eol-style=crlf",
+        assertEquals(
+                "text/plain; charset=UTF-8; x-eol-style=crlf",
                 new MediaType("text", "plain", parameters).toString());
     }
 
@@ -56,11 +57,12 @@ public class MediaTypeTest {
         assertEquals("text/plain", new MediaType("text", "PLAIN", parameters).toString());
 
         parameters.put("CHARSET", "UTF-8");
-        assertEquals("text/plain; charset=UTF-8",
-                new MediaType("TEXT", "plain", parameters).toString());
+        assertEquals(
+                "text/plain; charset=UTF-8", new MediaType("TEXT", "plain", parameters).toString());
 
         parameters.put("X-Eol-Style", "crlf");
-        assertEquals("text/plain; charset=UTF-8; x-eol-style=crlf",
+        assertEquals(
+                "text/plain; charset=UTF-8; x-eol-style=crlf",
                 new MediaType("TeXt", "PlAiN", parameters).toString());
     }
 
@@ -73,11 +75,13 @@ public class MediaTypeTest {
         assertEquals("text/plain", new MediaType("text\r\n", " \tplain", parameters).toString());
 
         parameters.put(" charset", "UTF-8");
-        assertEquals("text/plain; charset=UTF-8",
+        assertEquals(
+                "text/plain; charset=UTF-8",
                 new MediaType("\n\ntext", "plain \r", parameters).toString());
 
         parameters.put("\r\n\tx-eol-style  \t", "crlf");
-        assertEquals("text/plain; charset=UTF-8; x-eol-style=crlf",
+        assertEquals(
+                "text/plain; charset=UTF-8; x-eol-style=crlf",
                 new MediaType("    text", "\tplain ", parameters).toString());
     }
 
@@ -87,8 +91,9 @@ public class MediaTypeTest {
         parameters.put("a", " value with spaces ");
         parameters.put("b", "text/plain");
         parameters.put("c", "()<>@,;:\\\"/[]?=");
-        assertEquals("text/plain; a=\" value with spaces \"; b=\"text\\/plain\"" +
-                        "; c=\"\\(\\)\\<\\>\\@\\,\\;\\:\\\\\\\"\\/\\[\\]\\?\\=\"",
+        assertEquals(
+                "text/plain; a=\" value with spaces \"; b=\"text\\/plain\""
+                        + "; c=\"\\(\\)\\<\\>\\@\\,\\;\\:\\\\\\\"\\/\\[\\]\\?\\=\"",
                 new MediaType("text", "plain", parameters).toString());
     }
 
@@ -121,9 +126,7 @@ public class MediaTypeTest {
         assertTrue(gotCharset && gotFoo && gotFoo2);
     }
 
-    /**
-     * Per http://tools.ietf.org/html/rfc2045#section-5.1, charset can be in quotes
-     */
+    /** Per http://tools.ietf.org/html/rfc2045#section-5.1, charset can be in quotes */
     @Test
     public void testParseWithParamsAndQuotedCharset() {
         // Typical case, with a quoted charset
@@ -171,19 +174,20 @@ public class MediaTypeTest {
         assertEquals(0, type.getParameters().keySet().size());
     }
 
-    /**
-     * TIKA-349
-     */
+    /** TIKA-349 */
     @Test
     public void testOddParameters() {
-        assertEquals("text/html; charset=UTF-8",
+        assertEquals(
+                "text/html; charset=UTF-8",
                 MediaType.parse("text/html;; charset=UTF-8").toString());
-        assertEquals("text/html; charset=UTF-8",
+        assertEquals(
+                "text/html; charset=UTF-8",
                 MediaType.parse("text/html;; charset=UTF-8").toString());
-        assertEquals("text/html; charset=UTF-8",
+        assertEquals(
+                "text/html; charset=UTF-8",
                 MediaType.parse("text/html;; charset=\"UTF-8\"").toString());
-        assertEquals("text/html; charset=UTF-8",
+        assertEquals(
+                "text/html; charset=UTF-8",
                 MediaType.parse("text/html;; charset=\"UTF-8").toString());
     }
-
 }

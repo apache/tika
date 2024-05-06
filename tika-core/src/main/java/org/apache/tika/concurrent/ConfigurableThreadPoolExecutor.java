@@ -24,9 +24,8 @@ import java.util.concurrent.ExecutorService;
  * @since Apache Tika 1.11
  */
 public interface ConfigurableThreadPoolExecutor extends ExecutorService {
-    
-    public void setMaximumPoolSize(int threads);
-    
-    public void setCorePoolSize(int threads);
 
+    public void setMaximumPoolSize(int threads);
+
+    public void setCorePoolSize(int threads);
 }

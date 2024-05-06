@@ -21,21 +21,32 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.xml.sax.SAXException;
 
 /**
- * SAX event handler that serializes the HTML document to a character stream.
- * The incoming SAX events are expected to be well-formed (properly nested,
- * etc.) and valid HTML.
+ * SAX event handler that serializes the HTML document to a character stream. The incoming SAX
+ * events are expected to be well-formed (properly nested, etc.) and valid HTML.
  *
  * @since Apache Tika 0.10
  */
 public class ToHTMLContentHandler extends ToXMLContentHandler {
 
-    private static final Set<String> EMPTY_ELEMENTS = new HashSet<>(
-            Arrays.asList("area", "base", "basefont", "br", "col", "frame", "hr", "img", "input",
-                    "isindex", "link", "meta", "param"));
+    private static final Set<String> EMPTY_ELEMENTS =
+            new HashSet<>(
+                    Arrays.asList(
+                            "area",
+                            "base",
+                            "basefont",
+                            "br",
+                            "col",
+                            "frame",
+                            "hr",
+                            "img",
+                            "input",
+                            "isindex",
+                            "link",
+                            "meta",
+                            "param"));
 
     public ToHTMLContentHandler(OutputStream stream, String encoding)
             throws UnsupportedEncodingException {
@@ -47,8 +58,7 @@ public class ToHTMLContentHandler extends ToXMLContentHandler {
     }
 
     @Override
-    public void startDocument() throws SAXException {
-    }
+    public void startDocument() throws SAXException {}
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
@@ -64,5 +74,4 @@ public class ToHTMLContentHandler extends ToXMLContentHandler {
 
         super.endElement(uri, localName, qName);
     }
-
 }

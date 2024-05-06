@@ -29,10 +29,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -43,50 +41,49 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
 
 /**
- * Embedder that uses an external program (like sed or exiftool) to embed text
- * content and metadata into a given document.
+ * Embedder that uses an external program (like sed or exiftool) to embed text content and metadata
+ * into a given document.
  *
  * @since Apache Tika 1.3
  */
 public class ExternalEmbedder implements Embedder {
 
-    /**
-     * Token to be replaced with a String array of metadata assignment command
-     * arguments
-     */
+    /** Token to be replaced with a String array of metadata assignment command arguments */
     public static final String METADATA_COMMAND_ARGUMENTS_TOKEN = "${METADATA}";
-    /**
-     * Token to be replaced with a String array of metadata assignment command
-     * arguments
-     */
+
+    /** Token to be replaced with a String array of metadata assignment command arguments */
     public static final String METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN =
             "${METADATA_SERIALIZED}";
+
     private static final long serialVersionUID = -2828829275642475697L;
     private final TemporaryResources tmp = new TemporaryResources();
-    /**
-     * Media types supported by the external program.
-     */
+
+    /** Media types supported by the external program. */
     private Set<MediaType> supportedEmbedTypes = Collections.emptySet();
-    /**
-     * Mapping of Tika metadata to command line parameters.
-     */
+
+    /** Mapping of Tika metadata to command line parameters. */
     private Map<Property, String[]> metadataCommandArguments = null;
+
     /**
      * The external command to invoke.
      *
      * @see Runtime#exec(String[])
      */
     private String[] command =
-            new String[]{"sed", "-e", "$a\\\n" + METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
-                    ExternalParser.INPUT_FILE_TOKEN};
+            new String[] {
+                "sed",
+                "-e",
+                "$a\\\n" + METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
+                ExternalParser.INPUT_FILE_TOKEN
+            };
+
     private String commandAssignmentOperator = "=";
     private String commandAssignmentDelimeter = ", ";
     private String commandAppendOperator = "=";
     private boolean quoteAssignmentValues = false;
 
     /**
-     * Serializes a collection of metadata command line arguments into a single
-     * string.
+     * Serializes a collection of metadata command line arguments into a single string.
      *
      * @param metadataCommandArguments
      * @return the serialized metadata arguments string
@@ -99,30 +96,28 @@ public class ExternalEmbedder implements Embedder {
     }
 
     /**
-     * Checks to see if the command can be run. Typically used with something
-     * like "myapp --version" to check to see if "myapp" is installed and on the
-     * path.
+     * Checks to see if the command can be run. Typically used with something like "myapp --version"
+     * to check to see if "myapp" is installed and on the path.
      *
-     * @param checkCmd   the check command to run
+     * @param checkCmd the check command to run
      * @param errorValue what is considered an error value?
      * @return whether or not the check completed without error
      */
     public static boolean check(String checkCmd, int... errorValue) {
-        return check(new String[]{checkCmd}, errorValue);
+        return check(new String[] {checkCmd}, errorValue);
     }
 
     /**
-     * Checks to see if the command can be run. Typically used with something
-     * like "myapp --version" to check to see if "myapp" is installed and on the
-     * path.
+     * Checks to see if the command can be run. Typically used with something like "myapp --version"
+     * to check to see if "myapp" is installed and on the path.
      *
-     * @param checkCmd   the check command to run
+     * @param checkCmd the check command to run
      * @param errorValue what is considered an error value?
      * @return whether or not the check completed without error
      */
     public static boolean check(String[] checkCmd, int... errorValue) {
         if (errorValue.length == 0) {
-            errorValue = new int[]{127};
+            errorValue = new int[] {127};
         }
 
         try {
@@ -155,14 +150,12 @@ public class ExternalEmbedder implements Embedder {
     }
 
     public void setSupportedEmbedTypes(Set<MediaType> supportedEmbedTypes) {
-        this.supportedEmbedTypes =
-                Collections.unmodifiableSet(new HashSet<>(supportedEmbedTypes));
+        this.supportedEmbedTypes = Collections.unmodifiableSet(new HashSet<>(supportedEmbedTypes));
     }
 
     /**
-     * Gets the command to be run. This can include either of
-     * {@link ExternalParser#INPUT_FILE_TOKEN} or
-     * {@link ExternalParser#OUTPUT_FILE_TOKEN} if the command
+     * Gets the command to be run. This can include either of {@link
+     * ExternalParser#INPUT_FILE_TOKEN} or {@link ExternalParser#OUTPUT_FILE_TOKEN} if the command
      * needs filenames.
      *
      * @return
@@ -172,9 +165,8 @@ public class ExternalEmbedder implements Embedder {
     }
 
     /**
-     * Sets the command to be run. This can include either of
-     * {@link ExternalParser#INPUT_FILE_TOKEN} or
-     * {@link ExternalParser#OUTPUT_FILE_TOKEN} if the command
+     * Sets the command to be run. This can include either of {@link
+     * ExternalParser#INPUT_FILE_TOKEN} or {@link ExternalParser#OUTPUT_FILE_TOKEN} if the command
      * needs filenames.
      *
      * @see Runtime#exec(String[])
@@ -202,8 +194,7 @@ public class ExternalEmbedder implements Embedder {
     }
 
     /**
-     * Gets the delimiter for multiple assignments for the command line tool,
-     * i.e. ", ".
+     * Gets the delimiter for multiple assignments for the command line tool, i.e. ", ".
      *
      * @return the assignment delimiter
      */
@@ -212,8 +203,7 @@ public class ExternalEmbedder implements Embedder {
     }
 
     /**
-     * Sets the delimiter for multiple assignments for the command line tool,
-     * i.e. ", ".
+     * Sets the delimiter for multiple assignments for the command line tool, i.e. ", ".
      *
      * @param commandAssignmentDelimeter
      */
@@ -222,8 +212,7 @@ public class ExternalEmbedder implements Embedder {
     }
 
     /**
-     * Gets the operator to append rather than replace a value for the command
-     * line tool, i.e. "+=".
+     * Gets the operator to append rather than replace a value for the command line tool, i.e. "+=".
      *
      * @return the append operator
      */
@@ -232,8 +221,7 @@ public class ExternalEmbedder implements Embedder {
     }
 
     /**
-     * Sets the operator to append rather than replace a value for the command
-     * line tool, i.e. "+=".
+     * Sets the operator to append rather than replace a value for the command line tool, i.e. "+=".
      *
      * @param commandAppendOperator
      */
@@ -242,8 +230,7 @@ public class ExternalEmbedder implements Embedder {
     }
 
     /**
-     * Gets whether or not to quote assignment values, i.e. tag='value'. The
-     * default is false.
+     * Gets whether or not to quote assignment values, i.e. tag='value'. The default is false.
      *
      * @return whether or not to quote assignment values
      */
@@ -270,8 +257,8 @@ public class ExternalEmbedder implements Embedder {
     }
 
     /**
-     * Sets the map of Metadata keys to command line parameters. Set this to
-     * null to disable Metadata embedding.
+     * Sets the map of Metadata keys to command line parameters. Set this to null to disable
+     * Metadata embedding.
      *
      * @param arguments
      */
@@ -280,8 +267,8 @@ public class ExternalEmbedder implements Embedder {
     }
 
     /**
-     * Constructs a collection of command line arguments responsible for setting
-     * individual metadata fields based on the given <code>metadata</code>.
+     * Constructs a collection of command line arguments responsible for setting individual metadata
+     * fields based on the given <code>metadata</code>.
      *
      * @param metadata the metadata to embed
      * @return the metadata-related command line arguments
@@ -303,18 +290,20 @@ public class ExternalEmbedder implements Embedder {
                                     if (quoteAssignmentValues) {
                                         assignmentValue = "'" + assignmentValue + "'";
                                     }
-                                    commandMetadataSegments
-                                            .add(metadataCommandArgument + commandAppendOperator +
-                                                    assignmentValue);
+                                    commandMetadataSegments.add(
+                                            metadataCommandArgument
+                                                    + commandAppendOperator
+                                                    + assignmentValue);
                                 }
                             } else {
                                 String assignmentValue = metadata.get(metadataName);
                                 if (quoteAssignmentValues) {
                                     assignmentValue = "'" + assignmentValue + "'";
                                 }
-                                commandMetadataSegments
-                                        .add(metadataCommandArgument + commandAssignmentOperator +
-                                                assignmentValue);
+                                commandMetadataSegments.add(
+                                        metadataCommandArgument
+                                                + commandAssignmentOperator
+                                                + assignmentValue);
                             }
                         }
                     }
@@ -325,13 +314,15 @@ public class ExternalEmbedder implements Embedder {
     }
 
     /**
-     * Executes the configured external command and passes the given document
-     * stream as a simple XHTML document to the given SAX content handler.
-     * Metadata is only extracted if {@link #setMetadataCommandArguments(Map)}
-     * has been called to set arguments.
+     * Executes the configured external command and passes the given document stream as a simple
+     * XHTML document to the given SAX content handler. Metadata is only extracted if {@link
+     * #setMetadataCommandArguments(Map)} has been called to set arguments.
      */
-    public void embed(final Metadata metadata, final InputStream inputStream,
-                      final OutputStream outputStream, final ParseContext context)
+    public void embed(
+            final Metadata metadata,
+            final InputStream inputStream,
+            final OutputStream outputStream,
+            final ParseContext context)
             throws IOException, TikaException {
 
         boolean inputToStdIn = true;
@@ -354,14 +345,17 @@ public class ExternalEmbedder implements Embedder {
         List<String> cmd = new ArrayList<>();
         for (String commandSegment : origCmd) {
             if (commandSegment.contains(ExternalParser.INPUT_FILE_TOKEN)) {
-                commandSegment = commandSegment.replace(ExternalParser.INPUT_FILE_TOKEN,
-                        tikaInputStream.getFile().toString());
+                commandSegment =
+                        commandSegment.replace(
+                                ExternalParser.INPUT_FILE_TOKEN,
+                                tikaInputStream.getFile().toString());
                 inputToStdIn = false;
             }
             if (commandSegment.contains(ExternalParser.OUTPUT_FILE_TOKEN)) {
                 tempOutputFile = tmp.createTemporaryFile();
-                commandSegment = commandSegment
-                        .replace(ExternalParser.OUTPUT_FILE_TOKEN, tempOutputFile.toString());
+                commandSegment =
+                        commandSegment.replace(
+                                ExternalParser.OUTPUT_FILE_TOKEN, tempOutputFile.toString());
                 outputFromStdOut = false;
             }
             if (commandSegment.contains(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN)) {
@@ -382,15 +376,16 @@ public class ExternalEmbedder implements Embedder {
                 int i = 0;
                 for (String commandSegment : cmd) {
                     if (commandSegment.contains(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN)) {
-                        commandSegment = commandSegment
-                                .replace(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
+                        commandSegment =
+                                commandSegment.replace(
+                                        METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
                                         serializeMetadata(commandMetadataSegments));
                         cmd.set(i, commandSegment);
                     }
                     i++;
                 }
-            } else if (!replacedMetadataCommandArgumentsToken &&
-                    !serializeMetadataCommandArgumentsToken) {
+            } else if (!replacedMetadataCommandArgumentsToken
+                    && !serializeMetadataCommandArgumentsToken) {
                 // Tack metadata onto the end of the cmd as arguments
                 cmd.addAll(commandMetadataSegments);
             }
@@ -399,12 +394,13 @@ public class ExternalEmbedder implements Embedder {
         // Execute
         Process process;
         if (cmd.toArray().length == 1) {
-            process = Runtime.getRuntime().exec(cmd.toArray(new String[]{})[0]);
+            process = Runtime.getRuntime().exec(cmd.toArray(new String[] {})[0]);
         } else {
-            process = Runtime.getRuntime().exec(cmd.toArray(new String[]{}));
+            process = Runtime.getRuntime().exec(cmd.toArray(new String[] {}));
         }
 
-        UnsynchronizedByteArrayOutputStream stdErrOutputStream = UnsynchronizedByteArrayOutputStream.builder().get();
+        UnsynchronizedByteArrayOutputStream stdErrOutputStream =
+                UnsynchronizedByteArrayOutputStream.builder().get();
 
         try {
             sendStdErrToOutputStream(process, stdErrOutputStream);
@@ -439,7 +435,7 @@ public class ExternalEmbedder implements Embedder {
                     // Clean up temp output files
                     tempOutputFile.delete();
                 } catch (Exception e) {
-                    //swallow
+                    // swallow
                 }
             }
             if (!inputToStdIn) {
@@ -450,9 +446,12 @@ public class ExternalEmbedder implements Embedder {
             IOUtils.closeQuietly(outputStream);
             IOUtils.closeQuietly(stdErrOutputStream);
             if (process.exitValue() != 0) {
-                throw new TikaException("There was an error executing the command line" +
-                        "\nExecutable Command:\n\n" + cmd + "\nExecutable Error:\n\n" +
-                        stdErrOutputStream.toString(UTF_8.name()));
+                throw new TikaException(
+                        "There was an error executing the command line"
+                                + "\nExecutable Command:\n\n"
+                                + cmd
+                                + "\nExecutable Error:\n\n"
+                                + stdErrOutputStream.toString(UTF_8.name()));
             }
         }
     }
@@ -460,28 +459,29 @@ public class ExternalEmbedder implements Embedder {
     /**
      * Creates a new thread for copying a given input stream to a given output stream.
      *
-     * @param inputStream  the source input stream
+     * @param inputStream the source input stream
      * @param outputStream the target output stream
      */
-    private void multiThreadedStreamCopy(final InputStream inputStream,
-                                         final OutputStream outputStream) {
-        new Thread(() -> {
-            try {
-                IOUtils.copy(inputStream, outputStream);
-            } catch (IOException e) {
-                System.out.println("ERROR: " + e.getMessage());
-            }
-        }).start();
+    private void multiThreadedStreamCopy(
+            final InputStream inputStream, final OutputStream outputStream) {
+        new Thread(
+                        () -> {
+                            try {
+                                IOUtils.copy(inputStream, outputStream);
+                            } catch (IOException e) {
+                                System.out.println("ERROR: " + e.getMessage());
+                            }
+                        })
+                .start();
     }
 
     /**
-     * Sends the contents of the given input stream to the
-     * standard input of the given process. Potential exceptions are
-     * ignored.
-     * <p>
-     * Note that the given input stream is <em>not</em> closed by this method.
+     * Sends the contents of the given input stream to the standard input of the given process.
+     * Potential exceptions are ignored.
      *
-     * @param process     the process
+     * <p>Note that the given input stream is <em>not</em> closed by this method.
+     *
+     * @param process the process
      * @param inputStream the input stream to send to standard input of the process
      */
     private void sendInputStreamToStdIn(final InputStream inputStream, final Process process) {
@@ -489,13 +489,12 @@ public class ExternalEmbedder implements Embedder {
     }
 
     /**
-     * Sends the standard output of the given
-     * process to the given output stream. Potential exceptions are
-     * ignored.
-     * <p>
-     * Note that the given output stream is <em>not</em> closed by this method.
+     * Sends the standard output of the given process to the given output stream. Potential
+     * exceptions are ignored.
      *
-     * @param process      the process
+     * <p>Note that the given output stream is <em>not</em> closed by this method.
+     *
+     * @param process the process
      * @param outputStream the putput stream to send to standard input of the process
      */
     private void sendStdOutToOutputStream(final Process process, final OutputStream outputStream) {
@@ -507,12 +506,11 @@ public class ExternalEmbedder implements Embedder {
     }
 
     /**
-     * Starts a thread that reads and discards the contents of the standard
-     * stream of the given process. Potential exceptions are ignored, and the
-     * stream is closed once fully processed.
+     * Starts a thread that reads and discards the contents of the standard stream of the given
+     * process. Potential exceptions are ignored, and the stream is closed once fully processed.
      *
-     * @param process the process
-     *                param outputStream the output stream to send to standard error of the process
+     * @param process the process param outputStream the output stream to send to standard error of
+     *     the process
      */
     private void sendStdErrToOutputStream(final Process process, final OutputStream outputStream) {
         multiThreadedStreamCopy(process.getErrorStream(), outputStream);

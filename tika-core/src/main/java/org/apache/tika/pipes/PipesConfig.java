@@ -21,11 +21,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
-
+import org.apache.tika.exception.TikaConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.tika.exception.TikaConfigException;
 
 public class PipesConfig extends PipesConfigBase {
 
@@ -39,16 +37,16 @@ public class PipesConfig extends PipesConfigBase {
             Set<String> settings = pipesConfig.configure("pipes", is);
         }
         if (pipesConfig.getTikaConfig() == null) {
-            LOG.debug("A separate tikaConfig was not specified in the <pipes/> element in the  " +
-                    "config file; will use {} for pipes", tikaConfig);
+            LOG.debug(
+                    "A separate tikaConfig was not specified in the <pipes/> element in the  "
+                            + "config file; will use {} for pipes",
+                    tikaConfig);
             pipesConfig.setTikaConfig(tikaConfig);
         }
         return pipesConfig;
     }
 
-    private PipesConfig() {
-
-    }
+    private PipesConfig() {}
 
     public long getMaxWaitForClientMillis() {
         return maxWaitForClientMillis;

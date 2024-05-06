@@ -22,32 +22,29 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Some dates in some file formats do not have a timezone.
- * Tika correctly stores these without a timezone, e.g. 'yyyy-MM-dd'T'HH:mm:ss'
- * This can be a problem if end points expect a 'Z' timezone.
- * This filter makes the assumption that dates without timezones are UTC
- * and always modifies the date to: "yyyy-MM-dd'T'HH:mm:ss'Z'"
+ * Some dates in some file formats do not have a timezone. Tika correctly stores these without a
+ * timezone, e.g. 'yyyy-MM-dd'T'HH:mm:ss' This can be a problem if end points expect a 'Z' timezone.
+ * This filter makes the assumption that dates without timezones are UTC and always modifies the
+ * date to: "yyyy-MM-dd'T'HH:mm:ss'Z'"
  *
- * Users can specify an alternate defaultTimeZone with
- * {@link DateNormalizingMetadataFilter#setDefaultTimeZone(String)} to apply
- * if the file format does not specify a timezone.
- *
+ * <p>Users can specify an alternate defaultTimeZone with {@link
+ * DateNormalizingMetadataFilter#setDefaultTimeZone(String)} to apply if the file format does not
+ * specify a timezone.
  */
 public class DateNormalizingMetadataFilter extends MetadataFilter {
 
     private static TimeZone UTC = TimeZone.getTimeZone("UTC");
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DateNormalizingMetadataFilter.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(DateNormalizingMetadataFilter.class);
 
     private TimeZone defaultTimeZone = UTC;
 
@@ -75,8 +72,8 @@ public class DateNormalizingMetadataFilter extends MetadataFilter {
                         d = dateFormatter.parse(dateString);
                         metadata.set(property, utcFormatter.format(d));
                     } catch (ParseException e) {
-                        LOGGER.warn("Couldn't convert date to default time zone: >"
-                                + dateString + "<");
+                        LOGGER.warn(
+                                "Couldn't convert date to default time zone: >" + dateString + "<");
                     }
                 }
             }

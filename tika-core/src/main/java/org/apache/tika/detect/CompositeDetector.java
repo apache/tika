@@ -23,29 +23,26 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.utils.StringUtils;
 
-/**
- * Content type detector that combines multiple different detection mechanisms.
- */
+/** Content type detector that combines multiple different detection mechanisms. */
 public class CompositeDetector implements Detector {
 
-    /**
-     * Serial version UID
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = 5980683158436430252L;
 
     private final MediaTypeRegistry registry;
 
     private final List<Detector> detectors;
 
-    public CompositeDetector(MediaTypeRegistry registry, List<Detector> detectors,
-                             Collection<Class<? extends Detector>> excludeDetectors) {
+    public CompositeDetector(
+            MediaTypeRegistry registry,
+            List<Detector> detectors,
+            Collection<Class<? extends Detector>> excludeDetectors) {
         if (excludeDetectors == null || excludeDetectors.isEmpty()) {
             this.detectors = detectors;
         } else {
@@ -78,8 +75,8 @@ public class CompositeDetector implements Detector {
         }
         MediaType type = MediaType.OCTET_STREAM;
 
-        //we have to iterate through all detectors because the override detector may
-        //be within a CompositeDetector
+        // we have to iterate through all detectors because the override detector may
+        // be within a CompositeDetector
         for (Detector detector : getDetectors()) {
             MediaType detected = detector.detect(input, metadata);
             if (registry.isSpecializationOf(detected, type)) {
@@ -90,7 +87,6 @@ public class CompositeDetector implements Detector {
     }
 
     /**
-     *
      * @param metadata
      * @return mediaType if a parseable mediatype was sent in via user or parser overrides
      */
@@ -111,20 +107,19 @@ public class CompositeDetector implements Detector {
         }
         return null;
     }
-    /**
-     * Returns the component detectors.
-     */
+
+    /** Returns the component detectors. */
     public List<Detector> getDetectors() {
         return Collections.unmodifiableList(detectors);
     }
 
-    private boolean isExcluded(Collection<Class<? extends Detector>> excludeDetectors,
-                               Class<? extends Detector> d) {
+    private boolean isExcluded(
+            Collection<Class<? extends Detector>> excludeDetectors, Class<? extends Detector> d) {
         return excludeDetectors.contains(d) || assignableFrom(excludeDetectors, d);
     }
 
-    private boolean assignableFrom(Collection<Class<? extends Detector>> excludeDetectors,
-                                   Class<? extends Detector> d) {
+    private boolean assignableFrom(
+            Collection<Class<? extends Detector>> excludeDetectors, Class<? extends Detector> d) {
         for (Class<? extends Detector> e : excludeDetectors) {
             if (e.isAssignableFrom(d)) {
                 return true;

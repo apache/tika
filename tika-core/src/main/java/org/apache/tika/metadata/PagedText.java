@@ -17,22 +17,19 @@
 package org.apache.tika.metadata;
 
 /**
- * XMP Paged-text schema. This is a collection of
- * {@link Property property definition} constants for the paged text
- * properties defined in the XMP standard.
+ * XMP Paged-text schema. This is a collection of {@link Property property definition} constants for
+ * the paged text properties defined in the XMP standard.
  *
- * @see <a href="http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/xmp/pdfs/cc-201306/XMPSpecificationPart2.pdf"
- * >XMP Specification, Part 2: Standard Schemas</a>
+ * @see <a
+ *     href="http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/xmp/pdfs/cc-201306/XMPSpecificationPart2.pdf"
+ *     >XMP Specification, Part 2: Standard Schemas</a>
  * @since Apache Tika 0.8
  */
 public interface PagedText {
 
-    /**
-     * "The number of pages in the document (including any in contained
-     * documents)."
-     */
+    /** "The number of pages in the document (including any in contained documents)." */
     Property N_PAGES = Property.internalInteger("xmpTPg:NPages");
 
-    //TODO MaxPageSize, Fonts, Colorants, PlateNames
+    // TODO MaxPageSize, Fonts, Colorants, PlateNames
 
 }

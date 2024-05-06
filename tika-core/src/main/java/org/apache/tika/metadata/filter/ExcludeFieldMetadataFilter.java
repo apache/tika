@@ -19,7 +19,6 @@ package org.apache.tika.metadata.filter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;

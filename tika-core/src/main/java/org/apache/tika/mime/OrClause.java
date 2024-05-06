@@ -46,5 +46,4 @@ class OrClause implements Clause {
     public String toString() {
         return "or" + clauses;
     }
-
 }

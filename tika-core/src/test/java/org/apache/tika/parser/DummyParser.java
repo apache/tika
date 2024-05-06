@@ -21,19 +21,17 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * A Dummy Parser for use with unit tests.
- * <p>
- * See also {@link org.apache.tika.parser.mock.MockParser}.
+ *
+ * <p>See also {@link org.apache.tika.parser.mock.MockParser}.
  */
 public class DummyParser implements Parser {
     private final Set<MediaType> types;
@@ -50,8 +48,9 @@ public class DummyParser implements Parser {
         return types;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         for (Entry<String, String> m : this.metadata.entrySet()) {
             metadata.add(m.getKey(), m.getValue());
         }
@@ -63,5 +62,4 @@ public class DummyParser implements Parser {
         }
         xhtml.endDocument();
     }
-
 }

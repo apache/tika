@@ -16,9 +16,7 @@
  */
 package org.apache.tika.metadata;
 
-/**
- * A collection of metadata elements for file system level metadata
- */
+/** A collection of metadata elements for file system level metadata */
 public interface FileSystem {
 
     final String PREFIX = "fs:";
@@ -26,5 +24,4 @@ public interface FileSystem {
     Property CREATED = Property.externalDate(PREFIX + "created");
     Property MODIFIED = Property.externalDate(PREFIX + "modified");
     Property ACCESSED = Property.externalDate(PREFIX + "accessed");
-
 }

@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -33,8 +32,7 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 
 /**
- * Creates instances of ExternalParser based on XML
- * configuration files.
+ * Creates instances of ExternalParser based on XML configuration files.
  *
  * @see ExternalParsersConfigReader
  */
@@ -52,8 +50,9 @@ public class ExternalParsersFactory {
     public static List<ExternalParser> create(String filename, ServiceLoader loader)
             throws IOException, TikaException {
         String filepath =
-                ExternalParsersFactory.class.getPackage().getName().replace('.', '/') + "/" +
-                        filename;
+                ExternalParsersFactory.class.getPackage().getName().replace('.', '/')
+                        + "/"
+                        + filename;
         Enumeration<URL> files = loader.findServiceResources(filepath);
         ArrayList<URL> list = Collections.list(files);
         URL[] urls = list.toArray(new URL[0]);

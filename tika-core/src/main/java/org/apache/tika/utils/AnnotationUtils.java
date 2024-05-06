@@ -25,15 +25,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Param;
 import org.apache.tika.config.ParamField;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class contains utilities for dealing with tika annotations
@@ -43,25 +41,23 @@ import org.apache.tika.exception.TikaConfigException;
 public class AnnotationUtils {
     private static final Logger LOG = LoggerFactory.getLogger(AnnotationUtils.class);
 
-    /**
-     * Cache for annotations for Bean classes which have {@link Field}
-     */
+    /** Cache for annotations for Bean classes which have {@link Field} */
     private static final Map<Class<?>, List<ParamField>> PARAM_INFO = new HashMap<>();
 
     /**
      * Collects all the fields and methods for an annotation
      *
-     * @param clazz      bean class with annotations
+     * @param clazz bean class with annotations
      * @param annotation annotation class
      * @return list of accessible objects such as fields and methods
      */
-    private static List<AccessibleObject> collectInfo(Class<?> clazz,
-                                                      Class<? extends Annotation> annotation) {
+    private static List<AccessibleObject> collectInfo(
+            Class<?> clazz, Class<? extends Annotation> annotation) {
 
         Class superClazz = clazz;
         List<AccessibleObject> members = new ArrayList<>();
         List<AccessibleObject> annotatedMembers = new ArrayList<>();
-        //walk through the inheritance chain
+        // walk through the inheritance chain
         while (superClazz != null && superClazz != Object.class) {
             members.addAll(Arrays.asList(superClazz.getDeclaredFields()));
             members.addAll(Arrays.asList(superClazz.getDeclaredMethods()));
@@ -109,26 +105,39 @@ public class AnnotationUtils {
                     try {
                         field.assignValue(bean, param.getValue());
                     } catch (InvocationTargetException e) {
-                        LOG.error("Error assigning value '{}' to '{}'", param.getValue(), param.getName());
+                        LOG.error(
+                                "Error assigning value '{}' to '{}'",
+                                param.getValue(),
+                                param.getName());
                         final Throwable cause = e.getCause() == null ? e : e.getCause();
                         throw new TikaConfigException(cause.getMessage(), cause);
                     } catch (IllegalAccessException e) {
-                        LOG.error("Error assigning value '{}' to '{}'", param.getValue(), param.getName());
+                        LOG.error(
+                                "Error assigning value '{}' to '{}'",
+                                param.getValue(),
+                                param.getName());
                         throw new TikaConfigException(e.getMessage(), e);
                     }
                 } else {
-                    String msg = String.format(Locale.ROOT,
-                            "Value '%s' of type '%s' can't be" +
-                                    " assigned to field '%s' of defined type '%s'",
-                            param.getValue(),
-                            param.getValue().getClass(), field.getName(), field.getType());
+                    String msg =
+                            String.format(
+                                    Locale.ROOT,
+                                    "Value '%s' of type '%s' can't be"
+                                            + " assigned to field '%s' of defined type '%s'",
+                                    param.getValue(),
+                                    param.getValue().getClass(),
+                                    field.getName(),
+                                    field.getType());
                     throw new TikaConfigException(msg);
                 }
             } else if (field.isRequired()) {
-                //param not supplied but field is declared as required?
-                String msg = String.format(Locale.ROOT,
-                        "Param %s is required for %s," + " but it is not given in config.",
-                        field.getName(), bean.getClass().getName());
+                // param not supplied but field is declared as required?
+                String msg =
+                        String.format(
+                                Locale.ROOT,
+                                "Param %s is required for %s," + " but it is not given in config.",
+                                field.getName(),
+                                bean.getClass().getName());
                 throw new TikaConfigException(msg);
             } else {
                 LOG.debug("Param not supplied, field is not mandatory");

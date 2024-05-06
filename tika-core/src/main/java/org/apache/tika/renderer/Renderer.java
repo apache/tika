@@ -20,24 +20,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Set;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * Interface for a renderer.  This should be flexible enough to run on the initial design: PDF pages
+ * Interface for a renderer. This should be flexible enough to run on the initial design: PDF pages
  * but also on portions of PDF pages as well as on other document types.
- *
  */
 public interface Renderer extends Serializable {
 
-
-
     /**
-     * Returns the set of media types supported by this renderer when used
-     * with the given parse context.
+     * Returns the set of media types supported by this renderer when used with the given parse
+     * context.
      *
      * @param context parse context
      * @return immutable set of media types
@@ -45,9 +41,9 @@ public interface Renderer extends Serializable {
      */
     Set<MediaType> getSupportedTypes(ParseContext context);
 
-    RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext,
-                         RenderRequest ... requests) throws IOException,
-            TikaException;
+    RenderResults render(
+            InputStream is, Metadata metadata, ParseContext parseContext, RenderRequest... requests)
+            throws IOException, TikaException;
 
     /*
     At some point, we might need/want to add something like this, where for a given

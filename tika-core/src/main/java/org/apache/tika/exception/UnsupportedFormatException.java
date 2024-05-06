@@ -18,18 +18,15 @@
 package org.apache.tika.exception;
 
 /**
- * Parsers should throw this exception when they encounter
- * a file format that they do not support.  This should only happen
- * when we're not able to differentiate versions by the mime.  For example,
- * At the time of this writing, "application/wordperfect" covers all versions
- * of the wordperfect format; however, the parser only handles 6.x.
- * <p/>
- * Whenever possible/convenient, it is better to distinguish file formats by mime
- * so that unsupported formats will be handled by the
- * {@link org.apache.tika.parser.EmptyParser}.
- * However, if we can't differentiate by mime or we need to rely on the parser
- * to distinguish the versions (in the case that magic can't distinguish),
- * this exception should be thrown.
+ * Parsers should throw this exception when they encounter a file format that they do not support.
+ * This should only happen when we're not able to differentiate versions by the mime. For example,
+ * At the time of this writing, "application/wordperfect" covers all versions of the wordperfect
+ * format; however, the parser only handles 6.x.
+ *
+ * <p>Whenever possible/convenient, it is better to distinguish file formats by mime so that
+ * unsupported formats will be handled by the {@link org.apache.tika.parser.EmptyParser}. However,
+ * if we can't differentiate by mime or we need to rely on the parser to distinguish the versions
+ * (in the case that magic can't distinguish), this exception should be thrown.
  */
 public class UnsupportedFormatException extends TikaException {
 

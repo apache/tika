@@ -16,67 +16,65 @@
  */
 package org.apache.tika.config;
 
-
 import org.slf4j.LoggerFactory;
 
-
 /**
- * Interface for error handling strategies in service class loading.
- * You can implement this interface for a custom error handling mechanism,
- * or use one of the predefined strategies.
+ * Interface for error handling strategies in service class loading. You can implement this
+ * interface for a custom error handling mechanism, or use one of the predefined strategies.
  *
  * @since Apache Tika 0.9
  */
 public interface LoadErrorHandler {
 
+    /** Strategy that simply ignores all problems. */
+    LoadErrorHandler IGNORE =
+            new LoadErrorHandler() {
+                public void handleLoadError(String classname, Throwable throwable) {}
+
+                @Override
+                public String toString() {
+                    return "IGNORE";
+                }
+            };
+
     /**
-     * Strategy that simply ignores all problems.
+     * Strategy that logs warnings of all problems using a {@link org.slf4j.Logger} created using
+     * the given class name.
      */
-    LoadErrorHandler IGNORE = new LoadErrorHandler() {
-        public void handleLoadError(String classname, Throwable throwable) {
-        }
+    LoadErrorHandler WARN =
+            new LoadErrorHandler() {
+                public void handleLoadError(String classname, Throwable throwable) {
+                    LoggerFactory.getLogger(classname)
+                            .warn("Unable to load {}", classname, throwable);
+                }
 
-        @Override
-        public String toString() {
-            return "IGNORE";
-        }
-    };
+                @Override
+                public String toString() {
+                    return "WARN";
+                }
+            };
+
     /**
-     * Strategy that logs warnings of all problems using a {@link org.slf4j.Logger}
-     * created using the given class name.
+     * Strategy that throws a {@link RuntimeException} with the given throwable as the root cause,
+     * thus interrupting the entire service loading operation.
      */
-    LoadErrorHandler WARN = new LoadErrorHandler() {
-        public void handleLoadError(String classname, Throwable throwable) {
-            LoggerFactory.getLogger(classname).warn("Unable to load {}", classname, throwable);
-        }
+    LoadErrorHandler THROW =
+            new LoadErrorHandler() {
+                public void handleLoadError(String classname, Throwable throwable) {
+                    throw new RuntimeException("Unable to load " + classname, throwable);
+                }
 
-        @Override
-        public String toString() {
-            return "WARN";
-        }
-    };
-    /**
-     * Strategy that throws a {@link RuntimeException} with the given
-     * throwable as the root cause, thus interrupting the entire service
-     * loading operation.
-     */
-    LoadErrorHandler THROW = new LoadErrorHandler() {
-        public void handleLoadError(String classname, Throwable throwable) {
-            throw new RuntimeException("Unable to load " + classname, throwable);
-        }
-
-        @Override
-        public String toString() {
-            return "THROW";
-        }
-    };
+                @Override
+                public String toString() {
+                    return "THROW";
+                }
+            };
 
     /**
-     * Handles a problem encountered when trying to load the specified
-     * service class. The implementation can log or otherwise process
-     * the given error information. If the method returns normally, then
-     * the service loader simply skips this class and continues with the
-     * next one.
+     * Handles a problem encountered when trying to load the specified service class. The
+     * implementation can log or otherwise process the given error information. If the method
+     * returns normally, then the service loader simply skips this class and continues with the next
+     * one.
      *
      * @param classname name of the service class
      * @param throwable the encountered problem

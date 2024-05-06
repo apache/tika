@@ -20,24 +20,23 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Stream wrapper that make it easy to read up to n bytes ahead from
- * a stream that supports the mark feature. This class insulates the
- * underlying stream from things like possible mark(), reset() and close()
- * calls by external components that might otherwise invalidate the marked
- * state of a stream.
- * <p>
- * The recommended usage pattern of this class is:
+ * Stream wrapper that make it easy to read up to n bytes ahead from a stream that supports the mark
+ * feature. This class insulates the underlying stream from things like possible mark(), reset() and
+ * close() calls by external components that might otherwise invalidate the marked state of a
+ * stream.
+ *
+ * <p>The recommended usage pattern of this class is:
+ *
  * <pre>
  *     try (InputStream lookahead = new LookaheadInputStream(stream, n)) {
  *         processStream(lookahead);
  *     }
  * </pre>
- * <p>
- * This usage pattern guarantees that only up to n bytes from the original
- * stream can ever be read, and that the stream will have been marked and
- * then reset to its original state once the above code block exits. No
- * code in the fictional processStream() method can affect the the state of
- * the original stream.
+ *
+ * <p>This usage pattern guarantees that only up to n bytes from the original stream can ever be
+ * read, and that the stream will have been marked and then reset to its original state once the
+ * above code block exits. No code in the fictional processStream() method can affect the the state
+ * of the original stream.
  *
  * @since Apache Tika 0.10
  */
@@ -52,14 +51,13 @@ public class LookaheadInputStream extends InputStream {
     private int mark = 0;
 
     /**
-     * Creates a lookahead wrapper for the given input stream.
-     * The given input stream should support the mark feature,
-     * as otherwise the state of that stream will be undefined
-     * after the lookahead wrapper has been closed. As a special
-     * case a <code>null</code> stream is treated as an empty stream.
+     * Creates a lookahead wrapper for the given input stream. The given input stream should support
+     * the mark feature, as otherwise the state of that stream will be undefined after the lookahead
+     * wrapper has been closed. As a special case a <code>null</code> stream is treated as an empty
+     * stream.
      *
      * @param stream input stream, can be <code>null</code>
-     * @param n      maximum number of bytes to look ahead
+     * @param n maximum number of bytes to look ahead
      */
     public LookaheadInputStream(InputStream stream, int n) {
         this.stream = stream;
@@ -138,5 +136,4 @@ public class LookaheadInputStream extends InputStream {
     public synchronized void reset() {
         position = mark;
     }
-
 }

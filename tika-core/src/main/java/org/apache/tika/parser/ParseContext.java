@@ -28,14 +28,12 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.Transformer;
-
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Parse context. Used to pass context information to Tika parsers.
@@ -45,21 +43,16 @@ import org.apache.tika.utils.XMLReaderUtils;
  */
 public class ParseContext implements Serializable {
 
-    /**
-     * Serial version UID.
-     */
+    /** Serial version UID. */
     private static final long serialVersionUID = -5921436862145826534L;
 
-    /**
-     * Map of objects in this context
-     */
+    /** Map of objects in this context */
     private final Map<String, Object> context = new HashMap<>();
 
     /**
-     * Adds the given value to the context as an implementation of the given
-     * interface.
+     * Adds the given value to the context as an implementation of the given interface.
      *
-     * @param key   the interface implemented by the given value
+     * @param key the interface implemented by the given value
      * @param value the value to be added, or <code>null</code> to remove
      */
     public <T> void set(Class<T> key, T value) {
@@ -74,8 +67,7 @@ public class ParseContext implements Serializable {
      * Returns the object in this context that implements the given interface.
      *
      * @param key the interface implemented by the requested object
-     * @return the object that implements the given interface,
-     * or <code>null</code> if not found
+     * @return the object that implements the given interface, or <code>null</code> if not found
      */
     @SuppressWarnings("unchecked")
     public <T> T get(Class<T> key) {
@@ -83,13 +75,13 @@ public class ParseContext implements Serializable {
     }
 
     /**
-     * Returns the object in this context that implements the given interface,
-     * or the given default value if such an object is not found.
+     * Returns the object in this context that implements the given interface, or the given default
+     * value if such an object is not found.
      *
-     * @param key          the interface implemented by the requested object
+     * @param key the interface implemented by the requested object
      * @param defaultValue value to return if the requested object is not found
-     * @return the object that implements the given interface,
-     * or the given default value if not found
+     * @return the object that implements the given interface, or the given default value if not
+     *     found
      */
     public <T> T get(Class<T> key, T defaultValue) {
         T value = get(key);
@@ -101,9 +93,8 @@ public class ParseContext implements Serializable {
     }
 
     /**
-     * Returns the XMLReader specified in this parsing context. If a reader
-     * is not explicitly specified, then one is created using the specified
-     * or the default SAX parser.
+     * Returns the XMLReader specified in this parsing context. If a reader is not explicitly
+     * specified, then one is created using the specified or the default SAX parser.
      *
      * @return XMLReader
      * @throws TikaException
@@ -119,11 +110,10 @@ public class ParseContext implements Serializable {
     }
 
     /**
-     * Returns the SAX parser specified in this parsing context. If a parser
-     * is not explicitly specified, then one is created using the specified
-     * or the default SAX parser factory. Consider using
-     * {@link XMLReaderUtils#parseSAX(InputStream, DefaultHandler, ParseContext)}
-     * for more efficient reuse of SAXParsers.
+     * Returns the SAX parser specified in this parsing context. If a parser is not explicitly
+     * specified, then one is created using the specified or the default SAX parser factory.
+     * Consider using {@link XMLReaderUtils#parseSAX(InputStream, DefaultHandler, ParseContext)} for
+     * more efficient reuse of SAXParsers.
      *
      * @return SAX parser
      * @throws TikaException if a SAX parser could not be created
@@ -140,11 +130,10 @@ public class ParseContext implements Serializable {
     }
 
     /**
-     * Returns the SAX parser factory specified in this parsing context.
-     * If a factory is not explicitly specified, then a default factory
-     * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware, not validating, and to use
-     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
+     * Returns the SAX parser factory specified in this parsing context. If a factory is not
+     * explicitly specified, then a default factory instance is created and returned. The default
+     * factory instance is configured to be namespace-aware, not validating, and to use {@link
+     * XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
      *
      * @return SAX parser factory
      * @since Apache Tika 0.8
@@ -158,7 +147,7 @@ public class ParseContext implements Serializable {
             try {
                 factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             } catch (ParserConfigurationException | SAXNotSupportedException e) {
-                //swallow
+                // swallow
             } catch (SAXNotRecognizedException e) {
                 // TIKA-271: Some XML parsers do not support the
                 // secure-processing feature, even though it's required by
@@ -171,17 +160,16 @@ public class ParseContext implements Serializable {
     }
 
     /**
-     * Returns the DOM builder factory specified in this parsing context.
-     * If a factory is not explicitly specified, then a default factory
-     * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware and to apply reasonable security
+     * Returns the DOM builder factory specified in this parsing context. If a factory is not
+     * explicitly specified, then a default factory instance is created and returned. The default
+     * factory instance is configured to be namespace-aware and to apply reasonable security
      * features.
      *
      * @return DOM parser factory
      * @since Apache Tika 1.13
      */
     private DocumentBuilderFactory getDocumentBuilderFactory() {
-        //borrowed from Apache POI
+        // borrowed from Apache POI
         DocumentBuilderFactory documentBuilderFactory = get(DocumentBuilderFactory.class);
         if (documentBuilderFactory != null) {
             return documentBuilderFactory;
@@ -191,13 +179,11 @@ public class ParseContext implements Serializable {
     }
 
     /**
-     * Returns the DOM builder specified in this parsing context.
-     * If a builder is not explicitly specified, then a builder
-     * instance is created and returned. The builder instance is
-     * configured to apply an {@link XMLReaderUtils#IGNORING_SAX_ENTITY_RESOLVER},
-     * and it sets the ErrorHandler to <code>null</code>.
-     * Consider using {@link XMLReaderUtils#buildDOM(InputStream, ParseContext)}
-     * instead for more efficient reuse of document builders.
+     * Returns the DOM builder specified in this parsing context. If a builder is not explicitly
+     * specified, then a builder instance is created and returned. The builder instance is
+     * configured to apply an {@link XMLReaderUtils#IGNORING_SAX_ENTITY_RESOLVER}, and it sets the
+     * ErrorHandler to <code>null</code>. Consider using {@link XMLReaderUtils#buildDOM(InputStream,
+     * ParseContext)} instead for more efficient reuse of document builders.
      *
      * @return DOM Builder
      * @since Apache Tika 1.13
@@ -212,11 +198,10 @@ public class ParseContext implements Serializable {
     }
 
     /**
-     * Returns the StAX input factory specified in this parsing context.
-     * If a factory is not explicitly specified, then a default factory
-     * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware and to apply reasonable security
-     * using the {@link XMLReaderUtils#IGNORING_STAX_ENTITY_RESOLVER}.
+     * Returns the StAX input factory specified in this parsing context. If a factory is not
+     * explicitly specified, then a default factory instance is created and returned. The default
+     * factory instance is configured to be namespace-aware and to apply reasonable security using
+     * the {@link XMLReaderUtils#IGNORING_STAX_ENTITY_RESOLVER}.
      *
      * @return StAX input factory
      * @since Apache Tika 1.13
@@ -229,14 +214,12 @@ public class ParseContext implements Serializable {
         return XMLReaderUtils.getXMLInputFactory();
     }
 
-
     /**
      * Returns the transformer specified in this parsing context.
-     * <p>
-     * If a transformer is not explicitly specified, then a default transformer
-     * instance is created and returned. The default transformer instance is
-     * configured to to use
-     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
+     *
+     * <p>If a transformer is not explicitly specified, then a default transformer instance is
+     * created and returned. The default transformer instance is configured to to use {@link
+     * XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
      *
      * @return Transformer
      * @throws TikaException when the transformer can not be created
@@ -251,5 +234,4 @@ public class ParseContext implements Serializable {
 
         return XMLReaderUtils.getTransformer();
     }
-
 }

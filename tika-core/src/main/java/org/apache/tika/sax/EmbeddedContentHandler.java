@@ -19,19 +19,16 @@ package org.apache.tika.sax;
 import org.xml.sax.ContentHandler;
 
 /**
- * Content handler decorator that prevents the {@link #startDocument()}
- * and {@link #endDocument()} events from reaching the decorated handler.
- * This is useful when you want to direct the results of parsing multiple
- * different XML documents into a single target document without worrying
- * about the {@link #startDocument()} and {@link #endDocument()} methods
- * being called more than once.
+ * Content handler decorator that prevents the {@link #startDocument()} and {@link #endDocument()}
+ * events from reaching the decorated handler. This is useful when you want to direct the results of
+ * parsing multiple different XML documents into a single target document without worrying about the
+ * {@link #startDocument()} and {@link #endDocument()} methods being called more than once.
  */
 public class EmbeddedContentHandler extends ContentHandlerDecorator {
 
     /**
-     * Created a decorator that prevents the given handler from
-     * receiving {@link #startDocument()} and {@link #endDocument()}
-     * events.
+     * Created a decorator that prevents the given handler from receiving {@link #startDocument()}
+     * and {@link #endDocument()} events.
      *
      * @param handler the content handler to be decorated
      */
@@ -39,18 +36,11 @@ public class EmbeddedContentHandler extends ContentHandlerDecorator {
         super(handler);
     }
 
-    /**
-     * Ignored.
-     */
+    /** Ignored. */
     @Override
-    public void startDocument() {
-    }
+    public void startDocument() {}
 
-    /**
-     * Ignored.
-     */
+    /** Ignored. */
     @Override
-    public void endDocument() {
-    }
-
+    public void endDocument() {}
 }

@@ -17,12 +17,10 @@
 package org.apache.tika.language.detect;
 
 import java.io.IOException;
-
 import org.apache.tika.sax.WriteOutContentHandler;
 
 /**
- * SAX content handler that updates a language detector based on all the
- * received character content.
+ * SAX content handler that updates a language detector based on all the received character content.
  *
  * @since Apache Tika 0.10
  */
@@ -45,9 +43,8 @@ public class LanguageHandler extends WriteOutContentHandler {
     }
 
     /**
-     * Returns the language detector used by this content handler.
-     * Note that the returned detector gets updated whenever new SAX events
-     * are received by this content handler.
+     * Returns the language detector used by this content handler. Note that the returned detector
+     * gets updated whenever new SAX events are received by this content handler.
      *
      * @return language detector
      */

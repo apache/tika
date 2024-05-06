@@ -18,9 +18,7 @@ package org.apache.tika.mime;
 
 import org.apache.tika.exception.TikaException;
 
-/**
- * A class to encapsulate MimeType related exceptions.
- */
+/** A class to encapsulate MimeType related exceptions. */
 public class MimeTypeException extends TikaException {
 
     /**
@@ -33,14 +31,12 @@ public class MimeTypeException extends TikaException {
     }
 
     /**
-     * Constructs a MimeTypeException with the specified detail message
-     * and root cause.
+     * Constructs a MimeTypeException with the specified detail message and root cause.
      *
      * @param message the detail message.
-     * @param cause   root cause
+     * @param cause root cause
      */
     public MimeTypeException(String message, Throwable cause) {
         super(message, cause);
     }
-
 }

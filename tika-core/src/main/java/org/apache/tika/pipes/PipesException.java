@@ -16,9 +16,7 @@
  */
 package org.apache.tika.pipes;
 
-/**
- * Fatal exception that means that something went seriously wrong.
- */
+/** Fatal exception that means that something went seriously wrong. */
 public class PipesException extends Exception {
 
     public PipesException(Throwable t) {

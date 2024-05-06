@@ -23,9 +23,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Field annotation is a contract for binding {@link Param} value from
- * Tika Configuration to an object.
- * services
+ * Field annotation is a contract for binding {@link Param} value from Tika Configuration to an
+ * object. services
  *
  * @since Apache Tika 1.14
  */

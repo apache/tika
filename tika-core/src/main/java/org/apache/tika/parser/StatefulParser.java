@@ -17,15 +17,12 @@
 package org.apache.tika.parser;
 
 /**
- * The RecursiveParserWrapper wraps the parser sent
- * into the parsecontext and then uses that parser
+ * The RecursiveParserWrapper wraps the parser sent into the parsecontext and then uses that parser
  * to store state (among many other things).
- * <p>
- * There are some use cases where regular parsers
- * want to parse content inline (e.g. OCR), and their
- * output should not be treated as coming from an embedded
- * object.
- **/
+ *
+ * <p>There are some use cases where regular parsers want to parse content inline (e.g. OCR), and
+ * their output should not be treated as coming from an embedded object.
+ */
 public class StatefulParser extends ParserDecorator {
 
     /**

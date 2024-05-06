@@ -22,20 +22,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedList;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Utility class for tracking and ultimately closing or otherwise disposing
- * a collection of temporary resources.
- * <p>
- * Note that this class is not thread-safe.
+ * Utility class for tracking and ultimately closing or otherwise disposing a collection of
+ * temporary resources.
+ *
+ * <p>Note that this class is not thread-safe.
  *
  * @since Apache Tika 0.10
  */
@@ -43,33 +41,27 @@ public class TemporaryResources implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(TemporaryResources.class);
 
-    /**
-     * Tracked resources in LIFO order.
-     */
+    /** Tracked resources in LIFO order. */
     private final LinkedList<Closeable> resources = new LinkedList<>();
 
-    /**
-     * Directory for temporary files, <code>null</code> for the system default.
-     */
+    /** Directory for temporary files, <code>null</code> for the system default. */
     private Path tempFileDir = null;
 
     /**
-     * Sets the directory to be used for the temporary files created by
-     * the {@link #createTempFile(String)} method.
+     * Sets the directory to be used for the temporary files created by the {@link
+     * #createTempFile(String)} method.
      *
-     * @param tempFileDir temporary file directory,
-     *                    or <code>null</code> for the system default
+     * @param tempFileDir temporary file directory, or <code>null</code> for the system default
      */
     public void setTemporaryFileDirectory(Path tempFileDir) {
         this.tempFileDir = tempFileDir;
     }
 
     /**
-     * Sets the directory to be used for the temporary files created by
-     * the {@link #createTempFile(String)} method.
+     * Sets the directory to be used for the temporary files created by the {@link
+     * #createTempFile(String)} method.
      *
-     * @param tempFileDir temporary file directory,
-     *                    or <code>null</code> for the system default
+     * @param tempFileDir temporary file directory, or <code>null</code> for the system default
      * @see #setTemporaryFileDirectory(Path)
      */
     public void setTemporaryFileDirectory(File tempFileDir) {
@@ -77,8 +69,9 @@ public class TemporaryResources implements Closeable {
     }
 
     /**
-     * Creates a temporary file that will automatically be deleted when
-     * the {@link #close()} method is called, returning its path.
+     * Creates a temporary file that will automatically be deleted when the {@link #close()} method
+     * is called, returning its path.
+     *
      * @param suffix -- the suffix of the file if known, starting with "." as in ".pdf"
      * @return Path to created temporary file that will be deleted after closing
      * @throws IOException
@@ -86,17 +79,20 @@ public class TemporaryResources implements Closeable {
     public Path createTempFile(String suffix) throws IOException {
         String actualSuffix = StringUtils.isBlank(suffix) ? ".tmp" : suffix;
 
-        final Path path = tempFileDir == null ? Files.createTempFile("apache-tika-", actualSuffix) :
-                Files.createTempFile(tempFileDir, "apache-tika-", actualSuffix);
-        addResource(() -> {
-            try {
-                Files.delete(path);
-            } catch (IOException e) {
-                // delete when exit if current delete fail
-                LOG.warn("delete tmp file fail, will delete it on exit");
-                path.toFile().deleteOnExit();
-            }
-        });
+        final Path path =
+                tempFileDir == null
+                        ? Files.createTempFile("apache-tika-", actualSuffix)
+                        : Files.createTempFile(tempFileDir, "apache-tika-", actualSuffix);
+        addResource(
+                () -> {
+                    try {
+                        Files.delete(path);
+                    } catch (IOException e) {
+                        // delete when exit if current delete fail
+                        LOG.warn("delete tmp file fail, will delete it on exit");
+                        path.toFile().deleteOnExit();
+                    }
+                });
         return path;
     }
 
@@ -105,8 +101,8 @@ public class TemporaryResources implements Closeable {
     }
 
     /**
-     * Creates a temporary file that will automatically be deleted when
-     * the {@link #close()} method is called, returning its path.
+     * Creates a temporary file that will automatically be deleted when the {@link #close()} method
+     * is called, returning its path.
      *
      * @return Path to created temporary file that will be deleted after closing
      * @throws IOException
@@ -118,9 +114,10 @@ public class TemporaryResources implements Closeable {
         }
         return createTempFile(FilenameUtils.getSuffixFromPath(resourceName));
     }
+
     /**
-     * Creates and returns a temporary file that will automatically be
-     * deleted when the {@link #close()} method is called.
+     * Creates and returns a temporary file that will automatically be deleted when the {@link
+     * #close()} method is called.
      *
      * @return Created temporary file that'll be deleted after closing
      * @throws IOException
@@ -131,8 +128,8 @@ public class TemporaryResources implements Closeable {
     }
 
     /**
-     * Adds a new resource to the set of tracked resources that will all be
-     * closed when the {@link #close()} method is called.
+     * Adds a new resource to the set of tracked resources that will all be closed when the {@link
+     * #close()} method is called.
      *
      * @param resource resource to be tracked
      */
@@ -141,8 +138,8 @@ public class TemporaryResources implements Closeable {
     }
 
     /**
-     * Returns the latest of the tracked resources that implements or
-     * extends the given interface or class.
+     * Returns the latest of the tracked resources that implements or extends the given interface or
+     * class.
      *
      * @param klass interface or class
      * @return matching resource, or <code>null</code> if not found
@@ -158,15 +155,13 @@ public class TemporaryResources implements Closeable {
     }
 
     /**
-     * Closes all tracked resources. The resources are closed in reverse order
-     * from how they were added.
-     * <p>
-     * Any suppressed exceptions from managed resources are collected and
-     * then added to the first thrown exception, which is re-thrown once
-     * all the resources have been closed.
+     * Closes all tracked resources. The resources are closed in reverse order from how they were
+     * added.
      *
-     * @throws IOException if one or more of the tracked resources
-     *                     could not be closed
+     * <p>Any suppressed exceptions from managed resources are collected and then added to the first
+     * thrown exception, which is re-thrown once all the resources have been closed.
+     *
+     * @throws IOException if one or more of the tracked resources could not be closed
      */
     public void close() throws IOException {
         // Release all resources and keep track of any exceptions
@@ -191,12 +186,10 @@ public class TemporaryResources implements Closeable {
     }
 
     /**
-     * Calls the {@link #close()} method and wraps the potential
-     * {@link IOException} into a {@link TikaException} for convenience
-     * when used within Tika.
+     * Calls the {@link #close()} method and wraps the potential {@link IOException} into a {@link
+     * TikaException} for convenience when used within Tika.
      *
-     * @throws TikaException if one or more of the tracked resources
-     *                       could not be closed
+     * @throws TikaException if one or more of the tracked resources could not be closed
      */
     public void dispose() throws TikaException {
         try {
@@ -205,5 +198,4 @@ public class TemporaryResources implements Closeable {
             throw new TikaException("Failed to close temporary resources", e);
         }
     }
-
 }

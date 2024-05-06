@@ -25,12 +25,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
 
 public class ParserDecoratorTest {
 
@@ -46,7 +44,6 @@ public class ParserDecoratorTest {
         Set<MediaType> types;
         ParseContext context = new ParseContext();
 
-
         // With a parser of no types, get the decorated type
         p = ParserDecorator.withTypes(EmptyParser.INSTANCE, onlyTxt);
         types = p.getSupportedTypes(context);
@@ -54,34 +51,28 @@ public class ParserDecoratorTest {
         assertTrue(types.contains(MediaType.TEXT_PLAIN), types.toString());
 
         // With a parser with other types, still just the decorated type
-        p = ParserDecorator
-                .withTypes(new DummyParser(onlyOct, new HashMap<>(), ""), onlyTxt);
+        p = ParserDecorator.withTypes(new DummyParser(onlyOct, new HashMap<>(), ""), onlyTxt);
         types = p.getSupportedTypes(context);
         assertEquals(1, types.size());
         assertTrue(types.contains(MediaType.TEXT_PLAIN), types.toString());
-
 
         // Exclude will remove if there
         p = ParserDecorator.withoutTypes(EmptyParser.INSTANCE, onlyTxt);
         types = p.getSupportedTypes(context);
         assertEquals(0, types.size());
 
-        p = ParserDecorator
-                .withoutTypes(new DummyParser(onlyOct, new HashMap<>(), ""), onlyTxt);
+        p = ParserDecorator.withoutTypes(new DummyParser(onlyOct, new HashMap<>(), ""), onlyTxt);
         types = p.getSupportedTypes(context);
         assertEquals(1, types.size());
         assertTrue(types.contains(MediaType.OCTET_STREAM), types.toString());
 
-        p = ParserDecorator
-                .withoutTypes(new DummyParser(both, new HashMap<>(), ""), onlyTxt);
+        p = ParserDecorator.withoutTypes(new DummyParser(both, new HashMap<>(), ""), onlyTxt);
         types = p.getSupportedTypes(context);
         assertEquals(1, types.size());
         assertTrue(types.contains(MediaType.OCTET_STREAM), types.toString());
     }
 
-    /**
-     * Testing one proposed implementation for TIKA-1509
-     */
+    /** Testing one proposed implementation for TIKA-1509 */
     @Test
     public void withFallback() throws Exception {
         Set<MediaType> onlyOct = Collections.singleton(MediaType.OCTET_STREAM);
@@ -97,8 +88,8 @@ public class ParserDecoratorTest {
         EmptyParser pNothing = new EmptyParser();
 
         // Create a combination which will fail first
-        @SuppressWarnings("deprecation") Parser p =
-                ParserDecorator.withFallbacks(Arrays.asList(pFail, pWork), octAndText);
+        @SuppressWarnings("deprecation")
+        Parser p = ParserDecorator.withFallbacks(Arrays.asList(pFail, pWork), octAndText);
 
         // Will claim to support the types given, not those on the child parsers
         Set<MediaType> types = p.getSupportedTypes(context);
@@ -109,15 +100,14 @@ public class ParserDecoratorTest {
         // Parsing will make it to the second one
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(new ByteArrayInputStream(new byte[] {0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back!", handler.toString());
-
 
         // With a parser that will work with no output, will get nothing
         p = ParserDecorator.withFallbacks(Arrays.asList(pNothing, pWork), octAndText);
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(new ByteArrayInputStream(new byte[] {0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("", handler.toString());
     }
 }

@@ -26,10 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A wrapper around a {@link ClassLoader} that logs all
- * the Resources loaded through it.
- * Used to check that a specific ClassLoader was used
- * when unit testing
+ * A wrapper around a {@link ClassLoader} that logs all the Resources loaded through it. Used to
+ * check that a specific ClassLoader was used when unit testing
  */
 public class ResourceLoggingClassLoader extends ClassLoader {
     private final Map<String, List<URL>> loadedResources = new HashMap<>();

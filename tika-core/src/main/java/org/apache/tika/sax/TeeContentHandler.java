@@ -23,8 +23,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Content handler proxy that forwards the received SAX events to zero or
- * more underlying content handlers.
+ * Content handler proxy that forwards the received SAX events to zero or more underlying content
+ * handlers.
  */
 public class TeeContentHandler extends DefaultHandler {
 
@@ -111,5 +111,4 @@ public class TeeContentHandler extends DefaultHandler {
             handler.skippedEntity(name);
         }
     }
-
 }

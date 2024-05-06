@@ -46,5 +46,4 @@ class AndClause implements Clause {
     public String toString() {
         return "and" + Arrays.toString(clauses);
     }
-
 }

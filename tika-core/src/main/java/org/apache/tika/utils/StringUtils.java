@@ -45,9 +45,9 @@ public class StringUtils {
     }
 
     /**
-     * <p>Left pad a String with a specified String.</p>
+     * Left pad a String with a specified String.
      *
-     * <p>Pad to a size of {@code size}.</p>
+     * <p>Pad to a size of {@code size}.
      *
      * <pre>
      * StringUtils.leftPad(null, *, *)      = null
@@ -61,11 +61,11 @@ public class StringUtils {
      * StringUtils.leftPad("bat", 5, "")    = "  bat"
      * </pre>
      *
-     * @param str    the String to pad out, may be null
-     * @param size   the size to pad to
+     * @param str the String to pad out, may be null
+     * @param size the size to pad to
      * @param padStr the String to pad with, null or empty treated as single space
-     * @return left padded String or original String if no padding is necessary,
-     * {@code null} if null String input
+     * @return left padded String or original String if no padding is necessary, {@code null} if
+     *     null String input
      */
     public static String leftPad(final String str, final int size, String padStr) {
         if (str == null) {
@@ -98,7 +98,6 @@ public class StringUtils {
         }
     }
 
-
     public static String leftPad(final String str, final int size, final char padChar) {
         if (str == null) {
             return null;
@@ -114,8 +113,7 @@ public class StringUtils {
     }
 
     /**
-     * <p>Returns padding using the specified delimiter repeated
-     * to a given length.</p>
+     * Returns padding using the specified delimiter repeated to a given length.
      *
      * <pre>
      * StringUtils.repeat('e', 0)  = ""
@@ -123,14 +121,13 @@ public class StringUtils {
      * StringUtils.repeat('e', -2) = ""
      * </pre>
      *
-     * <p>Note: this method does not support padding with
-     * <a href="http://www.unicode.org/glossary/#supplementary_character">Unicode Supplementary Characters</a>
-     * as they require a pair of {@code char}s to be represented.
-     * If you are needing to support full I18N of your applications
-     * consider using {@link #repeat(String, int)} instead.
-     * </p>
+     * <p>Note: this method does not support padding with <a
+     * href="http://www.unicode.org/glossary/#supplementary_character">Unicode Supplementary
+     * Characters</a> as they require a pair of {@code char}s to be represented. If you are needing
+     * to support full I18N of your applications consider using {@link #repeat(String, int)}
+     * instead.
      *
-     * @param ch     character to repeat
+     * @param ch character to repeat
      * @param repeat number of times to repeat char, negative treated as zero
      * @return String with repeated character
      * @see #repeat(String, int)
@@ -147,11 +144,10 @@ public class StringUtils {
     }
 
     // Padding
-    //-----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
 
     /**
-     * <p>Repeat a String {@code repeat} times to form a
-     * new String.</p>
+     * Repeat a String {@code repeat} times to form a new String.
      *
      * <pre>
      * StringUtils.repeat(null, 2) = null
@@ -162,10 +158,10 @@ public class StringUtils {
      * StringUtils.repeat("a", -2) = ""
      * </pre>
      *
-     * @param str    the String to repeat, may be null
+     * @param str the String to repeat, may be null
      * @param repeat number of times to repeat str, negative treated as zero
-     * @return a new String consisting of the original String repeated,
-     * {@code null} if null String input
+     * @return a new String consisting of the original String repeated, {@code null} if null String
+     *     input
      */
     public static String repeat(final String str, final int repeat) {
         // Performance tuned for 2.0 (JDK1.4)
@@ -205,7 +201,6 @@ public class StringUtils {
                 return buf.toString();
         }
     }
-
 
     public static String joinWith(String delimiter, List<String> lines) {
         if (lines.size() == 0) {

@@ -20,14 +20,13 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * <p>A factory which returns a fresh {@link InputStream} for the <em>same</em>
- * resource each time.</p>
- * <p>This is typically desired where it is easier / quicker / simpler to
- * fetch a fresh {@link InputStream} to re-read a given resource, rather
- * than do any kind of buffering.</p>
- * <p>It is typically used with {@link TikaInputStream#get(InputStreamFactory)}
- * when combined with a Parser which needs to read the resource's stream
- * multiple times when processing.</p>
+ * A factory which returns a fresh {@link InputStream} for the <em>same</em> resource each time.
+ *
+ * <p>This is typically desired where it is easier / quicker / simpler to fetch a fresh {@link
+ * InputStream} to re-read a given resource, rather than do any kind of buffering.
+ *
+ * <p>It is typically used with {@link TikaInputStream#get(InputStreamFactory)} when combined with a
+ * Parser which needs to read the resource's stream multiple times when processing.
  */
 public interface InputStreamFactory {
     InputStream getInputStream() throws IOException;

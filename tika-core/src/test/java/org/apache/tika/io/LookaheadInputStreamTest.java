@@ -21,12 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 
-/**
- * Test cases for the {@link LookaheadInputStream} class.
- */
+/** Test cases for the {@link LookaheadInputStream} class. */
 public class LookaheadInputStreamTest {
 
     @Test
@@ -46,7 +43,7 @@ public class LookaheadInputStreamTest {
 
     @Test
     public void testBasicLookahead() throws IOException {
-        InputStream stream = new ByteArrayInputStream(new byte[]{'a', 'b', 'c'});
+        InputStream stream = new ByteArrayInputStream(new byte[] {'a', 'b', 'c'});
         InputStream lookahead = new LookaheadInputStream(stream, 2);
         assertEquals('a', lookahead.read());
         assertEquals('b', lookahead.read());
@@ -60,7 +57,7 @@ public class LookaheadInputStreamTest {
 
     @Test
     public void testZeroLookahead() throws IOException {
-        InputStream stream = new ByteArrayInputStream(new byte[]{'a', 'b', 'c'});
+        InputStream stream = new ByteArrayInputStream(new byte[] {'a', 'b', 'c'});
         InputStream lookahead = new LookaheadInputStream(stream, 0);
         assertEquals(-1, lookahead.read());
         lookahead.close();
@@ -72,7 +69,7 @@ public class LookaheadInputStreamTest {
 
     @Test
     public void testMarkLookahead() throws IOException {
-        InputStream stream = new ByteArrayInputStream(new byte[]{'a', 'b', 'c'});
+        InputStream stream = new ByteArrayInputStream(new byte[] {'a', 'b', 'c'});
         InputStream lookahead = new LookaheadInputStream(stream, 2);
         lookahead.mark(1);
         assertEquals('a', lookahead.read());
@@ -93,7 +90,7 @@ public class LookaheadInputStreamTest {
 
     @Test
     public void testSkipLookahead() throws IOException {
-        InputStream stream = new ByteArrayInputStream(new byte[]{'a', 'b', 'c'});
+        InputStream stream = new ByteArrayInputStream(new byte[] {'a', 'b', 'c'});
         InputStream lookahead = new LookaheadInputStream(stream, 2);
         assertEquals(1, lookahead.skip(1));
         assertEquals('b', lookahead.read());
@@ -105,5 +102,4 @@ public class LookaheadInputStreamTest {
         assertEquals('c', stream.read());
         assertEquals(-1, stream.read());
     }
-
 }

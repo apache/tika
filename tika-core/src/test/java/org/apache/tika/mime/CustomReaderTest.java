@@ -24,11 +24,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-
 
 public class CustomReaderTest {
 
@@ -54,8 +52,8 @@ public class CustomReaderTest {
         MimeType another = mimeTypes.forName(key);
         assertEquals("kittens", reader.values.get(key));
         assertEquals(1, reader.ignorePatterns.size());
-        assertEquals(another.toString() + ">>*" + hello.getExtension(),
-                reader.ignorePatterns.get(0));
+        assertEquals(
+                another.toString() + ">>*" + hello.getExtension(), reader.ignorePatterns.get(0));
         assertTrue(another.isInterpreted(), "Server-side script type not detected");
     }
 
@@ -66,7 +64,6 @@ public class CustomReaderTest {
         CustomMimeTypesReader(MimeTypes types) {
             super(types);
         }
-
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes)
@@ -89,8 +86,13 @@ public class CustomReaderTest {
         }
 
         @Override
-        protected void handleGlobError(MimeType type, String pattern, MimeTypeException ex,
-                                       String qName, Attributes attributes) throws SAXException {
+        protected void handleGlobError(
+                MimeType type,
+                String pattern,
+                MimeTypeException ex,
+                String qName,
+                Attributes attributes)
+                throws SAXException {
             ignorePatterns.add(type.toString() + ">>" + pattern);
         }
     }

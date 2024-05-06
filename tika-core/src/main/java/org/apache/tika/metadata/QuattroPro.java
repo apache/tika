@@ -26,27 +26,31 @@ package org.apache.tika.metadata;
 public interface QuattroPro {
     String QUATTROPRO_METADATA_NAME_PREFIX = "wordperfect";
 
-    /**
-     * ID.
-     */
-    Property ID = Property.internalText(
-            QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Id");
-    /**
-     * Version.
-     */
-    Property VERSION = Property.internalInteger(
-            QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "Version");
-    /**
-     * Build.
-     */
-    Property BUILD = Property.internalInteger(
-            QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "Build");
-    /**
-     * Lowest version.
-     */
-    Property LOWEST_VERSION = Property.internalInteger(
-            QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "LowestVersion");
+    /** ID. */
+    Property ID =
+            Property.internalText(
+                    QUATTROPRO_METADATA_NAME_PREFIX
+                            + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER
+                            + "Id");
+
+    /** Version. */
+    Property VERSION =
+            Property.internalInteger(
+                    QUATTROPRO_METADATA_NAME_PREFIX
+                            + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER
+                            + "Version");
+
+    /** Build. */
+    Property BUILD =
+            Property.internalInteger(
+                    QUATTROPRO_METADATA_NAME_PREFIX
+                            + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER
+                            + "Build");
+
+    /** Lowest version. */
+    Property LOWEST_VERSION =
+            Property.internalInteger(
+                    QUATTROPRO_METADATA_NAME_PREFIX
+                            + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER
+                            + "LowestVersion");
 }

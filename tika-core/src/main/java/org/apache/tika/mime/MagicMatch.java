@@ -17,15 +17,11 @@
 package org.apache.tika.mime;
 
 import java.io.IOException;
-
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-
 import org.apache.tika.detect.MagicDetector;
 import org.apache.tika.metadata.Metadata;
 
-/**
- * Defines a magic match.
- */
+/** Defines a magic match. */
 class MagicMatch implements Clause {
 
     private final MediaType mediaType;
@@ -57,8 +53,9 @@ class MagicMatch implements Clause {
 
     public boolean eval(byte[] data) {
         try {
-            return getDetector().detect(new UnsynchronizedByteArrayInputStream(data), new Metadata()) !=
-                    MediaType.OCTET_STREAM;
+            return getDetector()
+                            .detect(new UnsynchronizedByteArrayInputStream(data), new Metadata())
+                    != MediaType.OCTET_STREAM;
         } catch (IOException e) {
             // Should never happen with a ByteArrayInputStream
             return false;
@@ -72,5 +69,4 @@ class MagicMatch implements Clause {
     public String toString() {
         return mediaType.toString() + " " + type + " " + offset + " " + value + " " + mask;
     }
-
 }

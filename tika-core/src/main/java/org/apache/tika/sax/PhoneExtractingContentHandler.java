@@ -19,34 +19,29 @@ package org.apache.tika.sax;
 
 import java.util.Arrays;
 import java.util.List;
-
+import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.metadata.Metadata;
-
 /**
  * Class used to extract phone numbers while parsing.
- * <p>
- * Every time a document is parsed in Tika, the content is split into SAX events.
- * Those SAX events are handled by a ContentHandler. You can think of these events
- * as marking a tag in an HTML file. Once you're finished parsing, you can call
- * handler.toString(), for example, to get the text contents of the file. On the other
- * hand, any of the metadata of the file will be added to the Metadata object passed
- * in during the parse() call.  So, the Parser class sends metadata to the Metadata
- * object and content to the ContentHandler.
- * <p>
- * This class is an example of how to combine a ContentHandler and a Metadata.
- * As content is passed to the handler, we first check to see if it matches a
- * textual pattern for a phone number. If the extracted content is a phone number,
- * we add it to the metadata under the key "phonenumbers". So, if you used this
- * ContentHandler when you parsed a document, then called
- * metadata.getValues("phonenumbers"), you would get an array of Strings of phone
- * numbers found in the document.
- * <p>
- * Please see the PhoneExtractingContentHandlerTest for an example of how to use
- * this class.
+ *
+ * <p>Every time a document is parsed in Tika, the content is split into SAX events. Those SAX
+ * events are handled by a ContentHandler. You can think of these events as marking a tag in an HTML
+ * file. Once you're finished parsing, you can call handler.toString(), for example, to get the text
+ * contents of the file. On the other hand, any of the metadata of the file will be added to the
+ * Metadata object passed in during the parse() call. So, the Parser class sends metadata to the
+ * Metadata object and content to the ContentHandler.
+ *
+ * <p>This class is an example of how to combine a ContentHandler and a Metadata. As content is
+ * passed to the handler, we first check to see if it matches a textual pattern for a phone number.
+ * If the extracted content is a phone number, we add it to the metadata under the key
+ * "phonenumbers". So, if you used this ContentHandler when you parsed a document, then called
+ * metadata.getValues("phonenumbers"), you would get an array of Strings of phone numbers found in
+ * the document.
+ *
+ * <p>Please see the PhoneExtractingContentHandlerTest for an example of how to use this class.
  */
 public class PhoneExtractingContentHandler extends ContentHandlerDecorator {
     private static final String PHONE_NUMBERS = "phonenumbers";
@@ -65,22 +60,20 @@ public class PhoneExtractingContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Creates a decorator that by default forwards incoming SAX events to
-     * a dummy content handler that simply ignores all the events. Subclasses
-     * should use the {@link #setContentHandler(ContentHandler)} method to
-     * switch to a more usable underlying content handler.
-     * Also creates a dummy Metadata object to store phone numbers in.
+     * Creates a decorator that by default forwards incoming SAX events to a dummy content handler
+     * that simply ignores all the events. Subclasses should use the {@link
+     * #setContentHandler(ContentHandler)} method to switch to a more usable underlying content
+     * handler. Also creates a dummy Metadata object to store phone numbers in.
      */
     protected PhoneExtractingContentHandler() {
         this(new DefaultHandler(), new Metadata());
     }
 
     /**
-     * The characters method is called whenever a Parser wants to pass raw...
-     * characters to the ContentHandler. But, sometimes, phone numbers are split
-     * accross different calls to characters, depending on the specific Parser
-     * used. So, we simply add all characters to a StringBuilder and analyze it
-     * once the document is finished.
+     * The characters method is called whenever a Parser wants to pass raw... characters to the
+     * ContentHandler. But, sometimes, phone numbers are split accross different calls to
+     * characters, depending on the specific Parser used. So, we simply add all characters to a
+     * StringBuilder and analyze it once the document is finished.
      */
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
@@ -93,10 +86,9 @@ public class PhoneExtractingContentHandler extends ContentHandlerDecorator {
         }
     }
 
-
     /**
-     * This method is called whenever the Parser is done parsing the file. So,
-     * we check the output for any phone numbers.
+     * This method is called whenever the Parser is done parsing the file. So, we check the output
+     * for any phone numbers.
      */
     @Override
     public void endDocument() throws SAXException {

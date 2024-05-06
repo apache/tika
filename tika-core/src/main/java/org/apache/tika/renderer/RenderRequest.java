@@ -17,11 +17,9 @@
 package org.apache.tika.renderer;
 
 /**
- * Empty interface for requests to a renderer. Different
- * file formats and different use cases will have different types of requests.
- * For page based, it could be a page range (render the full pages from 2 to 5);
- * or it could be a single page with an x-y bounding box.  For video files,
- * it could be a temporal offset or a temporal offset with an x-y bounding box.
+ * Empty interface for requests to a renderer. Different file formats and different use cases will
+ * have different types of requests. For page based, it could be a page range (render the full pages
+ * from 2 to 5); or it could be a single page with an x-y bounding box. For video files, it could be
+ * a temporal offset or a temporal offset with an x-y bounding box.
  */
-public interface RenderRequest {
-}
+public interface RenderRequest {}

@@ -22,11 +22,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Factory class for {@link StandardWriteFilter}. See that class
- * for how the estimated sizes are calculated on Strings.
+ * Factory class for {@link StandardWriteFilter}. See that class for how the estimated sizes are
+ * calculated on Strings.
  */
 public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
-
 
     public static int DEFAULT_MAX_KEY_SIZE = 1024;
     public static int DEFAULT_MAX_FIELD_SIZE = 100 * 1024;
@@ -54,8 +53,13 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
             throw new IllegalArgumentException("max estimated size must be > 0");
         }
 
-        return new StandardWriteFilter(maxKeySize, maxFieldSize,
-                maxTotalEstimatedBytes, maxValuesPerField, includeFields, includeEmpty);
+        return new StandardWriteFilter(
+                maxKeySize,
+                maxFieldSize,
+                maxTotalEstimatedBytes,
+                maxValuesPerField,
+                includeFields,
+                includeEmpty);
     }
 
     public void setIncludeFields(List<String> includeFields) {
@@ -110,9 +114,19 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
 
     @Override
     public String toString() {
-        return "StandardWriteFilterFactory{" + "includeFields=" + includeFields + ", maxKeySize=" +
-                maxKeySize + ", maxFieldSize=" + maxFieldSize + ", maxTotalEstimatedBytes=" +
-                maxTotalEstimatedBytes + ", maxValuesPerField=" + maxValuesPerField +
-                ", includeEmpty=" + includeEmpty + '}';
+        return "StandardWriteFilterFactory{"
+                + "includeFields="
+                + includeFields
+                + ", maxKeySize="
+                + maxKeySize
+                + ", maxFieldSize="
+                + maxFieldSize
+                + ", maxTotalEstimatedBytes="
+                + maxTotalEstimatedBytes
+                + ", maxValuesPerField="
+                + maxValuesPerField
+                + ", includeEmpty="
+                + includeEmpty
+                + '}';
     }
 }

@@ -25,8 +25,8 @@ public class NNTrainedModel extends TrainedModel {
     private final float[][] Theta1;
     private final float[][] Theta2;
 
-    public NNTrainedModel(final int nInput, final int nHidden, final int nOutput,
-                          final float[] nn_params) {
+    public NNTrainedModel(
+            final int nInput, final int nHidden, final int nOutput, final float[] nn_params) {
         this.numOfInputs = nInput;
         this.numOfHidden = nHidden;
         this.numOfOutputs = nOutput;
@@ -64,8 +64,7 @@ public class NNTrainedModel extends TrainedModel {
     }
 
     /**
-     * The given input vector of unseen is m=(256 + 1) * n= 1 this returns a
-     * prediction probability
+     * The given input vector of unseen is m=(256 + 1) * n= 1 this returns a prediction probability
      */
     @Override
     public float predict(float[] unseen) {
@@ -74,7 +73,7 @@ public class NNTrainedModel extends TrainedModel {
         int i, j;
         int m = this.Theta1.length;
         int n = this.Theta1[0].length;
-        float[] hh = new float[m + 1];// hidden unit summation
+        float[] hh = new float[m + 1]; // hidden unit summation
         hh[0] = 1;
         for (i = 0; i < m; i++) {
             double h = 0;

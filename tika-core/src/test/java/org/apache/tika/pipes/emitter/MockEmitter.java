@@ -19,7 +19,6 @@ package org.apache.tika.pipes.emitter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -29,13 +28,10 @@ import org.apache.tika.metadata.Metadata;
 
 public class MockEmitter extends AbstractEmitter implements Initializable {
 
-    @Field
-    private boolean throwOnCheck = false;
+    @Field private boolean throwOnCheck = false;
 
     @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-
-    }
+    public void initialize(Map<String, Param> params) throws TikaConfigException {}
 
     public void setThrowOnCheck(boolean throwOnCheck) {
         this.throwOnCheck = throwOnCheck;
@@ -48,12 +44,9 @@ public class MockEmitter extends AbstractEmitter implements Initializable {
         if (throwOnCheck) {
             throw new TikaConfigException("throw on check");
         }
-
     }
 
     @Override
     public void emit(String emitKey, List<Metadata> metadataList)
-            throws IOException, TikaEmitterException {
-
-    }
+            throws IOException, TikaEmitterException {}
 }

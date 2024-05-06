@@ -26,10 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TemporaryResources;
@@ -41,37 +37,32 @@ import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.ParserUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * Composite parser that delegates parsing tasks to a component parser
- * based on the declared content type of the incoming document. A fallback
- * parser is defined for cases where a parser for the given content type is
- * not available.
+ * Composite parser that delegates parsing tasks to a component parser based on the declared content
+ * type of the incoming document. A fallback parser is defined for cases where a parser for the
+ * given content type is not available.
  */
 public class CompositeParser implements Parser {
 
-    /**
-     * Serial version UID
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = 2192845797749627824L;
 
-    /**
-     * Media type registry.
-     */
+    /** Media type registry. */
     private MediaTypeRegistry registry;
 
-    /**
-     * List of component parsers.
-     */
+    /** List of component parsers. */
     private List<Parser> parsers;
 
-    /**
-     * The fallback parser, used when no better parser is available.
-     */
+    /** The fallback parser, used when no better parser is available. */
     private Parser fallback = new EmptyParser();
 
-    public CompositeParser(MediaTypeRegistry registry, List<Parser> parsers,
-                           Collection<Class<? extends Parser>> excludeParsers) {
+    public CompositeParser(
+            MediaTypeRegistry registry,
+            List<Parser> parsers,
+            Collection<Class<? extends Parser>> excludeParsers) {
         if (excludeParsers == null || excludeParsers.isEmpty()) {
             this.parsers = parsers;
         } else {
@@ -107,13 +98,13 @@ public class CompositeParser implements Parser {
         return map;
     }
 
-    private boolean isExcluded(Collection<Class<? extends Parser>> excludeParsers,
-                               Class<? extends Parser> p) {
+    private boolean isExcluded(
+            Collection<Class<? extends Parser>> excludeParsers, Class<? extends Parser> p) {
         return excludeParsers.contains(p) || assignableFrom(excludeParsers, p);
     }
 
-    private boolean assignableFrom(Collection<Class<? extends Parser>> excludeParsers,
-                                   Class<? extends Parser> p) {
+    private boolean assignableFrom(
+            Collection<Class<? extends Parser>> excludeParsers, Class<? extends Parser> p) {
         for (Class<? extends Parser> e : excludeParsers) {
             if (e.isAssignableFrom(p)) {
                 return true;
@@ -123,9 +114,9 @@ public class CompositeParser implements Parser {
     }
 
     /**
-     * Utility method that goes through all the component parsers and finds
-     * all media types for which more than one parser declares support. This
-     * is useful in tracking down conflicting parser definitions.
+     * Utility method that goes through all the component parsers and finds all media types for
+     * which more than one parser declares support. This is useful in tracking down conflicting
+     * parser definitions.
      *
      * @param context parsing context
      * @return media types that are supported by at least two component parsers
@@ -175,9 +166,8 @@ public class CompositeParser implements Parser {
     }
 
     /**
-     * Returns all parsers registered with the Composite Parser,
-     * including ones which may not currently be active.
-     * This won't include the Fallback Parser, if defined
+     * Returns all parsers registered with the Composite Parser, including ones which may not
+     * currently be active. This won't include the Fallback Parser, if defined
      */
     public List<Parser> getAllComponentParsers() {
         return Collections.unmodifiableList(parsers);
@@ -200,8 +190,9 @@ public class CompositeParser implements Parser {
     public void setParsers(Map<MediaType, Parser> parsers) {
         this.parsers = new ArrayList<>(parsers.size());
         for (Map.Entry<MediaType, Parser> entry : parsers.entrySet()) {
-            this.parsers.add(ParserDecorator
-                    .withTypes(entry.getValue(), Collections.singleton(entry.getKey())));
+            this.parsers.add(
+                    ParserDecorator.withTypes(
+                            entry.getValue(), Collections.singleton(entry.getKey())));
         }
     }
 
@@ -224,14 +215,12 @@ public class CompositeParser implements Parser {
     }
 
     /**
-     * Returns the parser that best matches the given metadata. By default
-     * looks for a parser that matches the content type metadata property,
-     * and uses the fallback parser if a better match is not found. The
-     * type hierarchy information included in the configured media type
-     * registry is used when looking for a matching parser instance.
-     * <p>
-     * Subclasses can override this method to provide more accurate
-     * parser resolution.
+     * Returns the parser that best matches the given metadata. By default looks for a parser that
+     * matches the content type metadata property, and uses the fallback parser if a better match is
+     * not found. The type hierarchy information included in the configured media type registry is
+     * used when looking for a matching parser instance.
+     *
+     * <p>Subclasses can override this method to provide more accurate parser resolution.
      *
      * @param metadata document metadata
      * @return matching parser
@@ -242,7 +231,7 @@ public class CompositeParser implements Parser {
 
     protected Parser getParser(Metadata metadata, ParseContext context) {
         Map<MediaType, Parser> map = getParsers(context);
-        //check for parser override first
+        // check for parser override first
         String contentTypeString = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
         if (contentTypeString == null) {
             contentTypeString = metadata.get(Metadata.CONTENT_TYPE);
@@ -271,14 +260,14 @@ public class CompositeParser implements Parser {
 
     /**
      * Delegates the call to the matching component parser.
-     * <p>
-     * Potential {@link RuntimeException}s, {@link IOException}s and
-     * {@link SAXException}s unrelated to the given input stream and content
-     * handler are automatically wrapped into {@link TikaException}s to better
-     * honor the {@link Parser} contract.
+     *
+     * <p>Potential {@link RuntimeException}s, {@link IOException}s and {@link SAXException}s
+     * unrelated to the given input stream and content handler are automatically wrapped into {@link
+     * TikaException}s to better honor the {@link Parser} contract.
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata, context);
         TemporaryResources tmp = new TemporaryResources();
         ParseRecord parserRecord = context.get(ParseRecord.class);
@@ -297,7 +286,7 @@ public class CompositeParser implements Parser {
             try {
                 parser.parse(taggedStream, taggedHandler, metadata, context);
             } catch (SecurityException e) {
-                //rethrow security exceptions
+                // rethrow security exceptions
                 throw e;
             } catch (IOException e) {
                 taggedStream.throwIfCauseOf(e);
@@ -324,7 +313,7 @@ public class CompositeParser implements Parser {
     private void recordEmbeddedMetadata(Metadata metadata, ParseContext context) {
         ParseRecord record = context.get(ParseRecord.class);
         if (record == null) {
-            //this should never happen
+            // this should never happen
             return;
         }
         for (Exception e : record.getExceptions()) {

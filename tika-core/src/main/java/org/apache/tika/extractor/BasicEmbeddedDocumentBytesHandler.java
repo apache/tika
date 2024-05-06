@@ -20,27 +20,28 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedBufferedInputStream;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 
 /**
- * For now, this is an in-memory EmbeddedDocumentBytesHandler that stores
- * all the bytes in memory. Users can retrieve the documents with {@link #getDocument(int)}.
+ * For now, this is an in-memory EmbeddedDocumentBytesHandler that stores all the bytes in memory.
+ * Users can retrieve the documents with {@link #getDocument(int)}.
  *
- * We'll need to make this cache to disk at some point if there are many bytes of
- * embedded documents.
+ * <p>We'll need to make this cache to disk at some point if there are many bytes of embedded
+ * documents.
  */
 public class BasicEmbeddedDocumentBytesHandler extends AbstractEmbeddedDocumentBytesHandler {
     private final EmbeddedDocumentBytesConfig config;
+
     public BasicEmbeddedDocumentBytesHandler(EmbeddedDocumentBytesConfig config) {
         this.config = config;
     }
-    //this won't scale, but let's start fully in memory for now;
+
+    // this won't scale, but let's start fully in memory for now;
     Map<Integer, byte[]> docBytes = new HashMap<>();
+
     @Override
     public void add(int id, Metadata metadata, InputStream is) throws IOException {
         super.add(id, metadata, is);
@@ -53,6 +54,6 @@ public class BasicEmbeddedDocumentBytesHandler extends AbstractEmbeddedDocumentB
 
     @Override
     public void close() throws IOException {
-        //delete tmp dir or whatever here
+        // delete tmp dir or whatever here
     }
 }

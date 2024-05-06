@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -32,23 +31,29 @@ public abstract class AbstractEmbeddedDocumentBytesHandler implements EmbeddedDo
 
     List<Integer> ids = new ArrayList<>();
 
-    public String getEmitKey(String containerEmitKey, int embeddedId,
-                             EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig,
-                             Metadata metadata) {
-        String embeddedIdString = embeddedDocumentBytesConfig.getZeroPadName() > 0 ?
-                StringUtils.leftPad(Integer.toString(embeddedId),
-                        embeddedDocumentBytesConfig.getZeroPadName(), "0") :
-                Integer.toString(embeddedId);
+    public String getEmitKey(
+            String containerEmitKey,
+            int embeddedId,
+            EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig,
+            Metadata metadata) {
+        String embeddedIdString =
+                embeddedDocumentBytesConfig.getZeroPadName() > 0
+                        ? StringUtils.leftPad(
+                                Integer.toString(embeddedId),
+                                embeddedDocumentBytesConfig.getZeroPadName(),
+                                "0")
+                        : Integer.toString(embeddedId);
 
+        StringBuilder emitKey =
+                new StringBuilder(containerEmitKey)
+                        .append("/")
+                        .append(FilenameUtils.getName(containerEmitKey))
+                        .append(embeddedDocumentBytesConfig.getEmbeddedIdPrefix())
+                        .append(embeddedIdString);
 
-        StringBuilder emitKey = new StringBuilder(containerEmitKey)
-                .append("/")
-                .append(FilenameUtils.getName(containerEmitKey))
-                .append(embeddedDocumentBytesConfig.getEmbeddedIdPrefix())
-                .append(embeddedIdString);
-
-        if (embeddedDocumentBytesConfig.getSuffixStrategy().equals(
-                EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.EXISTING)) {
+        if (embeddedDocumentBytesConfig
+                .getSuffixStrategy()
+                .equals(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.EXISTING)) {
             String fName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             String suffix = FilenameUtils.getSuffixFromPath(fName);
             suffix = suffix.toLowerCase(Locale.US);

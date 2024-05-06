@@ -16,13 +16,12 @@
  */
 package org.apache.tika.sax;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 
 /**
  * Content handler decorator that simplifies the task of producing XMP output.
@@ -31,14 +30,10 @@ import org.apache.tika.metadata.Property;
  */
 public class XMPContentHandler extends SafeContentHandler {
 
-    /**
-     * The RDF namespace URI
-     */
+    /** The RDF namespace URI */
     public static final String RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 
-    /**
-     * The XMP namespace URI
-     */
+    /** The XMP namespace URI */
     public static final String XMP = "http://ns.adobe.com/xap/1.0/";
 
     private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
@@ -49,11 +44,12 @@ public class XMPContentHandler extends SafeContentHandler {
         super(handler);
     }
 
-    //------------------------------------------< public convenience methods >
+    // ------------------------------------------< public convenience methods >
 
     /**
-     * Starts an XMP document by setting up the namespace mappings and
-     * writing out the following header:
+     * Starts an XMP document by setting up the namespace mappings and writing out the following
+     * header:
+     *
      * <pre>
      * &lt;rdf:RDF&gt;
      * </pre>
@@ -69,8 +65,8 @@ public class XMPContentHandler extends SafeContentHandler {
     }
 
     /**
-     * Ends the XMP document by writing the following footer and
-     * clearing the namespace mappings:
+     * Ends the XMP document by writing the following footer and clearing the namespace mappings:
+     *
      * <pre>
      * &lt;/rdf:RDF&gt;
      * </pre>
@@ -143,5 +139,4 @@ public class XMPContentHandler extends SafeContentHandler {
             endDescription();
         }
     }
-
 }

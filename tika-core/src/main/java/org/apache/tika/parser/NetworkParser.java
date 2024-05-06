@@ -26,14 +26,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Collections;
 import java.util.Set;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -42,7 +36,10 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
-
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class NetworkParser implements Parser {
 
@@ -63,8 +60,9 @@ public class NetworkParser implements Parser {
         return supportedTypes;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
@@ -74,16 +72,20 @@ public class NetworkParser implements Parser {
         }
     }
 
-    private void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
-                       ParseContext context) throws IOException, SAXException, TikaException {
+    private void parse(
+            TikaInputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         if ("telnet".equals(uri.getScheme())) {
             try (Socket socket = new Socket(uri.getHost(), uri.getPort())) {
-                new ParsingTask(stream, new FilterOutputStream(socket.getOutputStream()) {
-                    @Override
-                    public void close() throws IOException {
-                        socket.shutdownOutput();
-                    }
-                }).parse(socket.getInputStream(), handler, metadata, context);
+                new ParsingTask(
+                                stream,
+                                new FilterOutputStream(socket.getOutputStream()) {
+                                    @Override
+                                    public void close() throws IOException {
+                                        socket.shutdownOutput();
+                                    }
+                                })
+                        .parse(socket.getInputStream(), handler, metadata, context);
             }
         } else {
             URL url = uri.toURL();
@@ -95,7 +97,6 @@ public class NetworkParser implements Parser {
                         .parse(CloseShieldInputStream.wrap(input), handler, metadata, context);
             }
         }
-
     }
 
     private static class ParsingTask implements Runnable {
@@ -111,17 +112,16 @@ public class NetworkParser implements Parser {
             this.output = output;
         }
 
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException, SAXException, TikaException {
+        public void parse(
+                InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+                throws IOException, SAXException, TikaException {
             Thread thread = new Thread(this, "Tika network parser");
             thread.start();
 
-            TaggedContentHandler tagged =
-                    new TaggedContentHandler(handler);
+            TaggedContentHandler tagged = new TaggedContentHandler(handler);
             try {
-                XMLReaderUtils
-                        .parseSAX(stream, new TeeContentHandler(tagged, new MetaHandler(metadata)),
-                                context);
+                XMLReaderUtils.parseSAX(
+                        stream, new TeeContentHandler(tagged, new MetaHandler(metadata)), context);
             } catch (SAXException e) {
                 tagged.throwIfCauseOf(e);
                 throw new TikaException("Invalid network parser output", e);
@@ -141,7 +141,7 @@ public class NetworkParser implements Parser {
             }
         }
 
-        //----------------------------------------------------------<Runnable>
+        // ----------------------------------------------------------<Runnable>
 
         public void run() {
             try {
@@ -154,7 +154,6 @@ public class NetworkParser implements Parser {
                 exception = e;
             }
         }
-
     }
 
     private static class MetaHandler extends DefaultHandler {
@@ -176,7 +175,5 @@ public class NetworkParser implements Parser {
                 }
             }
         }
-
     }
-
 }

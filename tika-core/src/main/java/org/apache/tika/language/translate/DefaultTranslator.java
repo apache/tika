@@ -19,20 +19,18 @@ package org.apache.tika.language.translate;
 
 import java.io.IOException;
 import java.util.List;
-
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.utils.CompareUtils;
 
 /**
- * A translator which picks the first available {@link Translator}
- * implementations available through the
- * {@link javax.imageio.spi.ServiceRegistry service provider mechanism}.
+ * A translator which picks the first available {@link Translator} implementations available through
+ * the {@link javax.imageio.spi.ServiceRegistry service provider mechanism}.
  *
  * @since Apache Tika 1.6
  */
 public class DefaultTranslator implements Translator {
-    private transient final ServiceLoader loader;
+    private final transient ServiceLoader loader;
 
     public DefaultTranslator(ServiceLoader loader) {
         this.loader = loader;
@@ -43,8 +41,8 @@ public class DefaultTranslator implements Translator {
     }
 
     /**
-     * Finds all statically loadable translators and sort the list by name,
-     * rather than discovery order.
+     * Finds all statically loadable translators and sort the list by name, rather than discovery
+     * order.
      *
      * @param loader service loader
      * @return ordered list of statically loadable translators
@@ -55,9 +53,7 @@ public class DefaultTranslator implements Translator {
         return translators;
     }
 
-    /**
-     * Returns the first available translator, or null if none are
-     */
+    /** Returns the first available translator, or null if none are */
     private static Translator getFirstAvailable(ServiceLoader loader) {
         for (Translator t : getDefaultTranslators(loader)) {
             if (t.isAvailable()) {
@@ -67,9 +63,7 @@ public class DefaultTranslator implements Translator {
         return null;
     }
 
-    /**
-     * Translate, using the first available service-loaded translator
-     */
+    /** Translate, using the first available service-loaded translator */
     public String translate(String text, String sourceLanguage, String targetLanguage)
             throws TikaException, IOException {
         Translator t = getFirstAvailable(loader);
@@ -79,9 +73,7 @@ public class DefaultTranslator implements Translator {
         throw new TikaException("No translators currently available");
     }
 
-    /**
-     * Translate, using the first available service-loaded translator
-     */
+    /** Translate, using the first available service-loaded translator */
     public String translate(String text, String targetLanguage) throws TikaException, IOException {
         Translator t = getFirstAvailable(loader);
         if (t != null) {
@@ -90,16 +82,12 @@ public class DefaultTranslator implements Translator {
         throw new TikaException("No translators currently available");
     }
 
-    /**
-     * Returns all available translators
-     */
+    /** Returns all available translators */
     public List<Translator> getTranslators() {
         return getDefaultTranslators(loader);
     }
 
-    /**
-     * Returns the current translator
-     */
+    /** Returns the current translator */
     public Translator getTranslator() {
         return getFirstAvailable(loader);
     }

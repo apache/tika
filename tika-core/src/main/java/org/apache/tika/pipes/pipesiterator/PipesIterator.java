@@ -28,10 +28,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -42,22 +38,23 @@ import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Abstract class that handles the testing for timeouts/thread safety
- * issues.  Concrete classes implement the blocking {@link #enqueue()}.
- * If there's an exception in the enqueuing thread, this will throw
- * a RuntimeException.  It will throw an IllegalStateException if
- * next() is called after hasNext() has returned false.
+ * Abstract class that handles the testing for timeouts/thread safety issues. Concrete classes
+ * implement the blocking {@link #enqueue()}. If there's an exception in the enqueuing thread, this
+ * will throw a RuntimeException. It will throw an IllegalStateException if next() is called after
+ * hasNext() has returned false.
  */
 public abstract class PipesIterator extends ConfigBase
-        implements Callable<Integer>, Iterable<FetchEmitTuple>, Initializable  {
+        implements Callable<Integer>, Iterable<FetchEmitTuple>, Initializable {
 
     public static final long DEFAULT_MAX_WAIT_MS = 300_000;
     public static final int DEFAULT_QUEUE_SIZE = 1000;
 
     public static final FetchEmitTuple COMPLETED_SEMAPHORE =
-            new FetchEmitTuple(null,null, null, null, null, null);
+            new FetchEmitTuple(null, null, null, null, null, null);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PipesIterator.class);
 
@@ -80,12 +77,9 @@ public abstract class PipesIterator extends ConfigBase
     private int added = 0;
     private FutureTask<Integer> futureTask;
 
-    public static PipesIterator build(Path tikaConfigFile) throws IOException,
-            TikaConfigException {
+    public static PipesIterator build(Path tikaConfigFile) throws IOException, TikaConfigException {
         try (InputStream is = Files.newInputStream(tikaConfigFile)) {
-            return buildSingle(
-                    "pipesIterator",
-                    PipesIterator.class, is);
+            return buildSingle("pipesIterator", PipesIterator.class, is);
         }
     }
 
@@ -138,8 +132,9 @@ public abstract class PipesIterator extends ConfigBase
 
     @Field
     public void setHandlerType(String handlerType) {
-        this.handlerType = BasicContentHandlerFactory
-                .parseHandlerType(handlerType, BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
+        this.handlerType =
+                BasicContentHandlerFactory.parseHandlerType(
+                        handlerType, BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
     }
 
     @Field
@@ -173,9 +168,9 @@ public abstract class PipesIterator extends ConfigBase
     }
 
     protected HandlerConfig getHandlerConfig() {
-        //TODO: make throwOnWriteLimitReached configurable
-        return new HandlerConfig(handlerType, parseMode, writeLimit, maxEmbeddedResources,
-                throwOnWriteLimitReached);
+        // TODO: make throwOnWriteLimitReached configurable
+        return new HandlerConfig(
+                handlerType, parseMode, writeLimit, maxEmbeddedResources, throwOnWriteLimitReached);
     }
 
     protected abstract void enqueue() throws IOException, TimeoutException, InterruptedException;
@@ -190,13 +185,13 @@ public abstract class PipesIterator extends ConfigBase
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //no-op
+        // no-op
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
-        //no-op
+        // no-op
     }
 
     @Override
@@ -255,11 +250,10 @@ public abstract class PipesIterator extends ConfigBase
         }
 
         /**
-         * this checks to make sure that the thread hasn't terminated early.
-         * Will return true if the thread has successfully completed or if
-         * it has not completed.  Will return false if there has been a thread
-         * interrupt. Will throw a RuntimeException if there's been
-         * an execution exception in the thread.
+         * this checks to make sure that the thread hasn't terminated early. Will return true if the
+         * thread has successfully completed or if it has not completed. Will return false if there
+         * has been a thread interrupt. Will throw a RuntimeException if there's been an execution
+         * exception in the thread.
          */
         private void checkThreadOk() throws InterruptedException {
             if (futureTask.isDone()) {

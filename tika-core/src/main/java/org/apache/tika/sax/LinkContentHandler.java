@@ -21,37 +21,27 @@ import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
-/**
- * Content handler that collects links from an XHTML document.
- */
+/** Content handler that collects links from an XHTML document. */
 public class LinkContentHandler extends DefaultHandler {
 
     /**
-     * Stack of link builders, one for each level of nested links currently
-     * being processed. A usual case of a nested link would be a hyperlinked
-     * image (<code>&a href="..."&gt;&lt;img src="..."&gt;&lt;&gt;</code>),
-     * but it's possible (though unlikely) for also other kinds of nesting
-     * to occur.
+     * Stack of link builders, one for each level of nested links currently being processed. A usual
+     * case of a nested link would be a hyperlinked image (<code>
+     * &a href="..."&gt;&lt;img src="..."&gt;&lt;&gt;</code>), but it's possible (though unlikely)
+     * for also other kinds of nesting to occur.
      */
     private final LinkedList<LinkBuilder> builderStack = new LinkedList<>();
 
-    /**
-     * Collected links
-     */
+    /** Collected links */
     private final List<Link> links = new ArrayList<>();
 
-    /**
-     * Whether to collapse whitespace in anchor text
-     */
+    /** Whether to collapse whitespace in anchor text */
     private final boolean collapseWhitespaceInAnchor;
 
-    /**
-     * Default constructor
-     */
+    /** Default constructor */
     public LinkContentHandler() {
         this(false);
     }
@@ -76,7 +66,7 @@ public class LinkContentHandler extends DefaultHandler {
         return links;
     }
 
-    //-------------------------------------------------------< ContentHandler>
+    // -------------------------------------------------------< ContentHandler>
 
     @Override
     public void startElement(String uri, String local, String name, Attributes attributes) {
@@ -133,8 +123,11 @@ public class LinkContentHandler extends DefaultHandler {
     @Override
     public void endElement(String uri, String local, String name) {
         if (!builderStack.isEmpty() && XHTML.equals(uri)) {
-            if ("a".equals(local) || "img".equals(local) || "link".equals(local) ||
-                    "script".equals(local) || "iframe".equals(local)) {
+            if ("a".equals(local)
+                    || "img".equals(local)
+                    || "link".equals(local)
+                    || "script".equals(local)
+                    || "iframe".equals(local)) {
                 // ensure this is the correct builder. not all </script> tags correspond
                 // to a LinkBuilder, e.g. for embedded scripts
                 if (builderStack.getFirst().getType().equals(local)) {
@@ -144,5 +137,4 @@ public class LinkContentHandler extends DefaultHandler {
             }
         }
     }
-
 }

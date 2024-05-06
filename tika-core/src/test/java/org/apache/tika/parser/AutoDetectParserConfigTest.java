@@ -20,9 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.extractor.EmbeddedBytesSelector;
 import org.apache.tika.extractor.RUnpackExtractor;
@@ -30,14 +27,15 @@ import org.apache.tika.extractor.RUnpackExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
+import org.junit.jupiter.api.Test;
 
 public class AutoDetectParserConfigTest {
 
     @Test
     public void testEmbeddedBytesSelector() throws Exception {
         TikaConfig config;
-        try (InputStream is = TikaConfig.class.getResourceAsStream(
-                "TIKA-4207-embedded-bytes-config.xml")) {
+        try (InputStream is =
+                TikaConfig.class.getResourceAsStream("TIKA-4207-embedded-bytes-config.xml")) {
             config = new TikaConfig(is);
         }
         AutoDetectParserConfig c = config.getAutoDetectParserConfig();
@@ -56,7 +54,6 @@ public class AutoDetectParserConfigTest {
 
         assertFalse(selector.select(getMetadata("application/pdf", "MACRO")));
         assertFalse(selector.select(getMetadata("application/docx", "")));
-
     }
 
     private Metadata getMetadata(String mime, String embeddedResourceType) {

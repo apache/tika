@@ -17,7 +17,6 @@
 package org.apache.tika.language.translate;
 
 import java.io.IOException;
-
 import org.apache.tika.exception.TikaException;
 
 /**
@@ -29,11 +28,11 @@ public interface Translator {
     /**
      * Translate text between given languages.
      *
-     * @param text           The text to translate.
+     * @param text The text to translate.
      * @param sourceLanguage The input text language (for example, "en").
      * @param targetLanguage The desired language to translate to (for example, "fr").
      * @return The translation result. If translation is unavailable, returns the same text back.
-     * @throws TikaException       When there is an error translating.
+     * @throws TikaException When there is an error translating.
      * @throws java.io.IOException
      * @since Tika 1.6
      */
@@ -41,13 +40,13 @@ public interface Translator {
             throws TikaException, IOException;
 
     /**
-     * Translate text to the given language
-     * This method attempts to auto-detect the source language of the text.
+     * Translate text to the given language This method attempts to auto-detect the source language
+     * of the text.
      *
-     * @param text           The text to translate.
+     * @param text The text to translate.
      * @param targetLanguage The desired language to translate to (for example, "hi").
      * @return The translation result. If translation is unavailable, returns the same text back.
-     * @throws TikaException       When there is an error translating.
+     * @throws TikaException When there is an error translating.
      * @throws java.io.IOException
      * @since Tika 1.6
      */

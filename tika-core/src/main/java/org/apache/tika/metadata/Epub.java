@@ -26,11 +26,12 @@ public interface Epub {
     String EPUB_PREFIX = "epub" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     /**
-     * This is set to &quot;pre-paginated&quot; if any itemref on the spine or the
-     * metadata has a &quot;pre-paginated&quot; value, &quot;reflowable&quot; otherwise.
+     * This is set to &quot;pre-paginated&quot; if any itemref on the spine or the metadata has a
+     * &quot;pre-paginated&quot; value, &quot;reflowable&quot; otherwise.
      */
-    Property RENDITION_LAYOUT = Property.externalClosedChoise(EPUB_PREFIX + "rendition:layout",
-            "pre-paginated", "reflowable");
+    Property RENDITION_LAYOUT =
+            Property.externalClosedChoise(
+                    EPUB_PREFIX + "rendition:layout", "pre-paginated", "reflowable");
 
     Property VERSION = Property.externalText(EPUB_PREFIX + "version");
 }

@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.PipesConfigBase;
 import org.apache.tika.pipes.PipesReporter;
@@ -53,9 +52,8 @@ public class AsyncConfig extends PipesConfigBase {
     }
 
     /**
-     * If nothing has been emitted in this amount of time
-     * and the {@link #getEmitMaxEstimatedBytes()} has not been reached yet,
-     * emit what's in the emit queue.
+     * If nothing has been emitted in this amount of time and the {@link
+     * #getEmitMaxEstimatedBytes()} has not been reached yet, emit what's in the emit queue.
      *
      * @param emitWithinMillis
      */
@@ -64,8 +62,9 @@ public class AsyncConfig extends PipesConfigBase {
     }
 
     /**
-     * When the emit queue hits this estimated size (sum of
-     * estimated extract sizes), emit the batch.
+     * When the emit queue hits this estimated size (sum of estimated extract sizes), emit the
+     * batch.
+     *
      * @return
      */
     public long getEmitMaxEstimatedBytes() {
@@ -76,13 +75,13 @@ public class AsyncConfig extends PipesConfigBase {
         this.emitMaxEstimatedBytes = emitMaxEstimatedBytes;
     }
 
-
     public void setNumEmitters(int numEmitters) {
         this.numEmitters = numEmitters;
     }
 
     /**
      * FetchEmitTuple queue size
+     *
      * @return
      */
     public int getQueueSize() {

@@ -18,10 +18,6 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -38,31 +34,23 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.sax.SecureContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class AutoDetectParser extends CompositeParser {
 
-    /**
-     * Serial version UID
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = 6110455808615143122L;
-    //private final TikaConfig config;
 
-    /**
-     * The type detector used by this parser to auto-detect the type
-     * of a document.
-     */
+    // private final TikaConfig config;
+
+    /** The type detector used by this parser to auto-detect the type of a document. */
     private Detector detector; // always set in the constructor
 
-    /**
-     * Configuration used when initializing a SecureContentHandler
-     * and the TikaInputStream.
-     */
+    /** Configuration used when initializing a SecureContentHandler and the TikaInputStream. */
     private AutoDetectParserConfig autoDetectParserConfig;
 
-    /**
-     * Creates an auto-detecting parser instance using the default Tika
-     * configuration.
-     */
+    /** Creates an auto-detecting parser instance using the default Tika configuration. */
     public AutoDetectParser() {
         this(TikaConfig.getDefaultConfig());
     }
@@ -73,10 +61,10 @@ public class AutoDetectParser extends CompositeParser {
     }
 
     /**
-     * Creates an auto-detecting parser instance using the specified set of parser.
-     * This allows one to create a Tika configuration where only a subset of the
-     * available parsers have their 3rd party jars included, as otherwise the
-     * use of the default TikaConfig will throw various "ClassNotFound" exceptions.
+     * Creates an auto-detecting parser instance using the specified set of parser. This allows one
+     * to create a Tika configuration where only a subset of the available parsers have their 3rd
+     * party jars included, as otherwise the use of the default TikaConfig will throw various
+     * "ClassNotFound" exceptions.
      *
      * @param parsers
      */
@@ -95,14 +83,13 @@ public class AutoDetectParser extends CompositeParser {
         setFallback(buildFallbackParser(config));
         setDetector(config.getDetector());
         setAutoDetectParserConfig(config.getAutoDetectParserConfig());
-
     }
 
     private static Parser buildFallbackParser(TikaConfig config) {
         Parser fallback = null;
         Parser p = config.getParser();
         if (p instanceof DefaultParser) {
-            fallback = ((DefaultParser)p).getFallback();
+            fallback = ((DefaultParser) p).getFallback();
         } else {
             fallback = new EmptyParser();
         }
@@ -110,25 +97,27 @@ public class AutoDetectParser extends CompositeParser {
         if (config.getAutoDetectParserConfig().getDigesterFactory() == null) {
             return fallback;
         } else {
-            return new DigestingParser(fallback,
+            return new DigestingParser(
+                    fallback,
                     config.getAutoDetectParserConfig().getDigesterFactory().build(),
-                    config.getAutoDetectParserConfig().getDigesterFactory().isSkipContainerDocument());
+                    config.getAutoDetectParserConfig()
+                            .getDigesterFactory()
+                            .isSkipContainerDocument());
         }
-
     }
 
     private static Parser getParser(TikaConfig config) {
         if (config.getAutoDetectParserConfig().getDigesterFactory() == null) {
             return config.getParser();
         }
-        return new DigestingParser(config.getParser(),
+        return new DigestingParser(
+                config.getParser(),
                 config.getAutoDetectParserConfig().getDigesterFactory().build(),
                 config.getAutoDetectParserConfig().getDigesterFactory().isSkipContainerDocument());
     }
 
     /**
-     * Returns the type detector used by this parser to auto-detect the type
-     * of a document.
+     * Returns the type detector used by this parser to auto-detect the type of a document.
      *
      * @return type detector
      * @since Apache Tika 0.4
@@ -138,8 +127,7 @@ public class AutoDetectParser extends CompositeParser {
     }
 
     /**
-     * Sets the type detector used by this parser to auto-detect the type
-     * of a document.
+     * Sets the type detector used by this parser to auto-detect the type of a document.
      *
      * @param detector type detector
      * @since Apache Tika 0.4
@@ -149,8 +137,8 @@ public class AutoDetectParser extends CompositeParser {
     }
 
     /**
-     * Sets the configuration that will be used to create SecureContentHandlers
-     * that will be used for parsing.
+     * Sets the configuration that will be used to create SecureContentHandlers that will be used
+     * for parsing.
      *
      * @param autoDetectParserConfig type SecureContentHandlerConfig
      * @since Apache Tika 2.1.1
@@ -163,8 +151,9 @@ public class AutoDetectParser extends CompositeParser {
         return this.autoDetectParserConfig;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         if (autoDetectParserConfig.getMetadataWriteFilterFactory() != null) {
             metadata.setMetadataWriteFilter(
                     autoDetectParserConfig.getMetadataWriteFilterFactory().newInstance());
@@ -172,18 +161,18 @@ public class AutoDetectParser extends CompositeParser {
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
-            //figure out if we should spool to disk
+            // figure out if we should spool to disk
             maybeSpool(tis, autoDetectParserConfig, metadata);
 
             // Automatically detect the MIME type of the document
             MediaType type = detector.detect(tis, metadata);
-            //update CONTENT_TYPE as long as it wasn't set by parser override
-            if (metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE) == null ||
-                    !metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE)
+            // update CONTENT_TYPE as long as it wasn't set by parser override
+            if (metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE) == null
+                    || !metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE)
                             .equals(type.toString())) {
                 metadata.set(Metadata.CONTENT_TYPE, type.toString());
             }
-            //check for zero-byte inputstream
+            // check for zero-byte inputstream
             if (tis.getOpenContainer() == null) {
                 if (autoDetectParserConfig.getThrowOnZeroBytes()) {
                     tis.mark(1);
@@ -195,8 +184,10 @@ public class AutoDetectParser extends CompositeParser {
             }
             handler = decorateHandler(handler, metadata, context, autoDetectParserConfig);
             // TIKA-216: Zip bomb prevention
-            SecureContentHandler sch = handler != null ?
-                    createSecureContentHandler(handler, tis, autoDetectParserConfig) : null;
+            SecureContentHandler sch =
+                    handler != null
+                            ? createSecureContentHandler(handler, tis, autoDetectParserConfig)
+                            : null;
 
             initializeEmbeddedDocumentExtractor(metadata, context);
             try {
@@ -212,33 +203,38 @@ public class AutoDetectParser extends CompositeParser {
         }
     }
 
-    private ContentHandler decorateHandler(ContentHandler handler, Metadata metadata,
-                                           ParseContext context,
-                                           AutoDetectParserConfig autoDetectParserConfig) {
+    private ContentHandler decorateHandler(
+            ContentHandler handler,
+            Metadata metadata,
+            ParseContext context,
+            AutoDetectParserConfig autoDetectParserConfig) {
         if (context.get(RecursiveParserWrapper.RecursivelySecureContentHandler.class) != null) {
-            //using the recursiveparserwrapper. we should decorate this handler
-            return autoDetectParserConfig.getContentHandlerDecoratorFactory()
+            // using the recursiveparserwrapper. we should decorate this handler
+            return autoDetectParserConfig
+                    .getContentHandlerDecoratorFactory()
                     .decorate(handler, metadata, context);
         }
         ParseRecord parseRecord = context.get(ParseRecord.class);
         if (parseRecord == null || parseRecord.getDepth() == 0) {
-            return autoDetectParserConfig.getContentHandlerDecoratorFactory()
+            return autoDetectParserConfig
+                    .getContentHandlerDecoratorFactory()
                     .decorate(handler, metadata, context);
         }
-        //else do not decorate
+        // else do not decorate
         return handler;
     }
 
-    private void maybeSpool(TikaInputStream tis, AutoDetectParserConfig autoDetectParserConfig,
-                            Metadata metadata) throws IOException {
+    private void maybeSpool(
+            TikaInputStream tis, AutoDetectParserConfig autoDetectParserConfig, Metadata metadata)
+            throws IOException {
         if (tis.hasFile()) {
             return;
         }
         if (autoDetectParserConfig.getSpoolToDisk() == null) {
             return;
         }
-        //whether or not a content-length has been sent in,
-        //if spoolToDisk == 0, spool it
+        // whether or not a content-length has been sent in,
+        // if spoolToDisk == 0, spool it
         if (autoDetectParserConfig.getSpoolToDisk() == 0) {
             tis.getPath();
             metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(tis.getLength()));
@@ -253,7 +249,7 @@ public class AutoDetectParser extends CompositeParser {
                     metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(tis.getLength()));
                 }
             } catch (NumberFormatException e) {
-                //swallow...maybe log?
+                // swallow...maybe log?
             }
         }
     }
@@ -262,8 +258,8 @@ public class AutoDetectParser extends CompositeParser {
         if (context.get(EmbeddedDocumentExtractor.class) != null) {
             return;
         }
-        //pass self to handle embedded documents if
-        //the caller hasn't specified one.
+        // pass self to handle embedded documents if
+        // the caller hasn't specified one.
         Parser p = context.get(Parser.class);
         if (p == null) {
             context.set(Parser.class, this);
@@ -284,9 +280,8 @@ public class AutoDetectParser extends CompositeParser {
         parse(stream, handler, metadata, context);
     }
 
-    private SecureContentHandler createSecureContentHandler(ContentHandler handler,
-                                                            TikaInputStream tis,
-                                                            AutoDetectParserConfig config) {
+    private SecureContentHandler createSecureContentHandler(
+            ContentHandler handler, TikaInputStream tis, AutoDetectParserConfig config) {
         SecureContentHandler sch = new SecureContentHandler(handler, tis);
         if (config == null) {
             return sch;
@@ -309,5 +304,4 @@ public class AutoDetectParser extends CompositeParser {
         }
         return sch;
     }
-
 }

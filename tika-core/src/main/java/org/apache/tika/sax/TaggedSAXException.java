@@ -19,22 +19,20 @@ package org.apache.tika.sax;
 import org.xml.sax.SAXException;
 
 /**
- * A {@link SAXException} wrapper that tags the wrapped exception with
- * a given object reference. Both the tag and the wrapped original exception
- * can be used to determine further processing when this exception is caught.
+ * A {@link SAXException} wrapper that tags the wrapped exception with a given object reference.
+ * Both the tag and the wrapped original exception can be used to determine further processing when
+ * this exception is caught.
  */
 public class TaggedSAXException extends SAXException {
 
-    /**
-     * The object reference used to tag the exception.
-     */
+    /** The object reference used to tag the exception. */
     private final Object tag;
 
     /**
      * Creates a tagged wrapper for the given exception.
      *
      * @param original the exception to be tagged
-     * @param tag      tag object
+     * @param tag tag object
      */
     public TaggedSAXException(SAXException original, Object tag) {
         super(original.getMessage(), original);
@@ -51,8 +49,8 @@ public class TaggedSAXException extends SAXException {
     }
 
     /**
-     * Returns the wrapped exception. The only difference to the overridden
-     * {@link Throwable#getCause()} method is the narrower return type.
+     * Returns the wrapped exception. The only difference to the overridden {@link
+     * Throwable#getCause()} method is the narrower return type.
      *
      * @return wrapped exception
      */
@@ -60,5 +58,4 @@ public class TaggedSAXException extends SAXException {
     public SAXException getCause() {
         return (SAXException) super.getCause();
     }
-
 }

@@ -18,56 +18,36 @@
 package org.apache.tika.metadata;
 
 /**
- * Until we can find a common standard, we'll use these options.  They
- * were mostly derived from PDFBox's AccessPermission, but some can
- * apply to other document formats, especially CAN_MODIFY and FILL_IN_FORM.
+ * Until we can find a common standard, we'll use these options. They were mostly derived from
+ * PDFBox's AccessPermission, but some can apply to other document formats, especially CAN_MODIFY
+ * and FILL_IN_FORM.
  */
 public interface AccessPermissions {
 
-    String PREFIX =
-            "access_permission" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String PREFIX = "access_permission" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    /**
-     * Can any modifications be made to the document
-     */
+    /** Can any modifications be made to the document */
     Property CAN_MODIFY = Property.externalTextBag(PREFIX + "can_modify");
 
-    /**
-     * Should content be extracted, generally.
-     */
+    /** Should content be extracted, generally. */
     Property EXTRACT_CONTENT = Property.externalText(PREFIX + "extract_content");
 
-    /**
-     * Should content be extracted for the purposes
-     * of accessibility.
-     */
+    /** Should content be extracted for the purposes of accessibility. */
     Property EXTRACT_FOR_ACCESSIBILITY =
             Property.externalText(PREFIX + "extract_for_accessibility");
 
-    /**
-     * Can the user insert/rotate/delete pages.
-     */
+    /** Can the user insert/rotate/delete pages. */
     Property ASSEMBLE_DOCUMENT = Property.externalText(PREFIX + "assemble_document");
 
-
-    /**
-     * Can the user fill in a form
-     */
+    /** Can the user fill in a form */
     Property FILL_IN_FORM = Property.externalText(PREFIX + "fill_in_form");
 
-    /**
-     * Can the user modify annotations
-     */
+    /** Can the user modify annotations */
     Property CAN_MODIFY_ANNOTATIONS = Property.externalText(PREFIX + "modify_annotations");
 
-    /**
-     * Can the user print the document
-     */
+    /** Can the user print the document */
     Property CAN_PRINT = Property.externalText(PREFIX + "can_print");
 
-    /**
-     * Can the user print an image-degraded version of the document.
-     */
+    /** Can the user print an image-degraded version of the document. */
     Property CAN_PRINT_FAITHFUL = Property.externalText(PREFIX + "can_print_faithful");
-
 }

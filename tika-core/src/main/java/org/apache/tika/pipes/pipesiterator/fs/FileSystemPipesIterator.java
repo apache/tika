@@ -27,10 +27,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -45,20 +41,20 @@ import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.pipesiterator.TotalCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FileSystemPipesIterator extends PipesIterator
         implements TotalCounter, Initializable, Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncProcessor.class);
 
-
     private Path basePath;
     private boolean countTotal = false;
 
     private FileCountWorker fileCountWorker;
 
-    public FileSystemPipesIterator() {
-    }
+    public FileSystemPipesIterator() {}
 
     public FileSystemPipesIterator(Path basePath) {
         this.basePath = basePath;
@@ -87,11 +83,10 @@ public class FileSystemPipesIterator extends PipesIterator
         }
     }
 
-
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
-        //these should all be fatal
+        // these should all be fatal
         TikaConfig.mustNotBeEmpty("basePath", basePath);
         TikaConfig.mustNotBeEmpty("fetcherName", getFetcherName());
         TikaConfig.mustNotBeEmpty("emitterName", getFetcherName());
@@ -108,9 +103,10 @@ public class FileSystemPipesIterator extends PipesIterator
     public void setCountTotal(boolean countTotal) {
         this.countTotal = countTotal;
     }
+
     @Override
     public void startTotalCount() {
-        if (! countTotal) {
+        if (!countTotal) {
             return;
         }
         fileCountWorker.startTotalCount();
@@ -118,7 +114,7 @@ public class FileSystemPipesIterator extends PipesIterator
 
     @Override
     public TotalCountResult getTotalCount() {
-        if (! countTotal) {
+        if (!countTotal) {
             return TotalCountResult.UNSUPPORTED;
         }
         return fileCountWorker.getTotalCount();
@@ -152,9 +148,14 @@ public class FileSystemPipesIterator extends PipesIterator
             String relPath = basePath.relativize(file).toString();
 
             try {
-                tryToAdd(new FetchEmitTuple(relPath, new FetchKey(fetcherName, relPath),
-                        new EmitKey(emitterName, relPath), new Metadata(), getHandlerConfig(),
-                        getOnParseException()));
+                tryToAdd(
+                        new FetchEmitTuple(
+                                relPath,
+                                new FetchKey(fetcherName, relPath),
+                                new EmitKey(emitterName, relPath),
+                                new Metadata(),
+                                getHandlerConfig(),
+                                getOnParseException()));
             } catch (TimeoutException e) {
                 throw new IOException(e);
             } catch (InterruptedException e) {
@@ -174,7 +175,6 @@ public class FileSystemPipesIterator extends PipesIterator
         }
     }
 
-
     private static class FileCountWorker implements TotalCounter, Closeable {
 
         private Thread totalCounterThread;
@@ -191,17 +191,19 @@ public class FileSystemPipesIterator extends PipesIterator
 
         @Override
         public void startTotalCount() {
-            totalCounterThread = new Thread(() -> {
-                try {
-                    Files.walkFileTree(basePath, new FSFileCounter(totalCount));
-                    status = TotalCountResult.STATUS.COMPLETED;
-                    finalResult = new TotalCountResult(totalCount.get(), status);
-                } catch (IOException e) {
-                    LOG.warn("problem counting files", e);
-                    status = TotalCountResult.STATUS.EXCEPTION;
-                    finalResult = new TotalCountResult(totalCount.get(), status);
-                }
-            });
+            totalCounterThread =
+                    new Thread(
+                            () -> {
+                                try {
+                                    Files.walkFileTree(basePath, new FSFileCounter(totalCount));
+                                    status = TotalCountResult.STATUS.COMPLETED;
+                                    finalResult = new TotalCountResult(totalCount.get(), status);
+                                } catch (IOException e) {
+                                    LOG.warn("problem counting files", e);
+                                    status = TotalCountResult.STATUS.EXCEPTION;
+                                    finalResult = new TotalCountResult(totalCount.get(), status);
+                                }
+                            });
             totalCounterThread.setDaemon(true);
             totalCounterThread.start();
         }
@@ -222,6 +224,7 @@ public class FileSystemPipesIterator extends PipesIterator
         private class FSFileCounter implements FileVisitor<Path> {
 
             private final AtomicLong count;
+
             private FSFileCounter(AtomicLong count) {
                 this.count = count;
             }
@@ -233,7 +236,8 @@ public class FileSystemPipesIterator extends PipesIterator
             }
 
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
                 count.incrementAndGet();
                 return FileVisitResult.CONTINUE;
             }
@@ -244,7 +248,8 @@ public class FileSystemPipesIterator extends PipesIterator
             }
 
             @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                    throws IOException {
                 return FileVisitResult.CONTINUE;
             }
         }

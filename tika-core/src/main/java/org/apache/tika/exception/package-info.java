@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Tika exception.
- */
+/** Tika exception. */
 @aQute.bnd.annotation.Version("1.0.0")
 package org.apache.tika.exception;

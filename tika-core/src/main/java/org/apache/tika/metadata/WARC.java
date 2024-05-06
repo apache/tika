@@ -27,5 +27,5 @@ public interface WARC {
 
     Property WARC_RECORD_ID = Property.externalText(PREFIX + "WARC-Record-ID");
 
-    //TODO: lots
+    // TODO: lots
 }

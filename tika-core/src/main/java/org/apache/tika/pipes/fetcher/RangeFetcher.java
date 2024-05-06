@@ -18,17 +18,13 @@ package org.apache.tika.pipes.fetcher;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
-/**
- * This class extracts a range of bytes from a given fetch key.
- */
+/** This class extracts a range of bytes from a given fetch key. */
 public interface RangeFetcher extends Fetcher {
-    //At some point, Tika 3.x?, we may want to add optional ranges to the fetchKey?
+    // At some point, Tika 3.x?, we may want to add optional ranges to the fetchKey?
 
     InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata)
             throws TikaException, IOException;
-
 }

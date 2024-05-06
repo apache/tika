@@ -17,8 +17,8 @@
 package org.apache.tika.sax.xpath;
 
 /**
- * Evaluation state of a <code>...//...</code> XPath expression. Applies the
- * contained evaluation state to the current element and all its descendants.
+ * Evaluation state of a <code>...//...</code> XPath expression. Applies the contained evaluation
+ * state to the current element and all its descendants.
  */
 public class SubtreeMatcher extends Matcher {
 
@@ -52,5 +52,4 @@ public class SubtreeMatcher extends Matcher {
     public boolean matchesText() {
         return then.matchesText();
     }
-
 }

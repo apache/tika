@@ -24,14 +24,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.AbstractTikaConfigTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.junit.jupiter.api.Test;
 
 public class TestMetadataFilter extends AbstractTikaConfigTest {
 
@@ -111,7 +109,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
     @Test
     public void testConfigIncludeAndUCFilter() throws Exception {
         TikaConfig config = getConfig("TIKA-3137-include-uc.xml");
-        String[] expectedTitles = new String[]{"TITLE1", "TITLE2", "TITLE3"};
+        String[] expectedTitles = new String[] {"TITLE1", "TITLE2", "TITLE3"};
         Metadata metadata = new Metadata();
         metadata.add("title", "title1");
         metadata.add("title", "title2");
@@ -141,7 +139,6 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         filter.filter(metadata);
         assertEquals(2, metadata.size());
         assertEquals("author", metadata.get("author"));
-
     }
 
     @Test
@@ -182,8 +179,8 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
 
     @Test
     public void testDateNormalizingFilter() throws Exception {
-        //test that a Date lacking a timezone, if interpreted as Los Angeles, for example,
-        //yields a UTC string that is properly +7 hours.
+        // test that a Date lacking a timezone, if interpreted as Los Angeles, for example,
+        // yields a UTC string that is properly +7 hours.
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.CREATED, "2021-07-23T01:02:24");
         DateNormalizingMetadataFilter filter = new DateNormalizingMetadataFilter();
@@ -243,5 +240,4 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         assertEquals(1, metadata.getValues(Metadata.CONTENT_TYPE).length);
         assertEquals("text/html", metadata.get(Metadata.CONTENT_TYPE));
     }
-
 }

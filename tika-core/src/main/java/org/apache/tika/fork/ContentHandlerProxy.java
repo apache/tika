@@ -19,7 +19,6 @@ package org.apache.tika.fork;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
@@ -38,9 +37,7 @@ class ContentHandlerProxy implements ContentHandler, ForkProxy {
     public static final int PROCESSING_INSTRUCTION = 9;
     public static final int SKIPPED_ENTITY = 10;
 
-    /**
-     * Serial version UID
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = 737511106054617524L;
 
     private final int resource;
@@ -79,8 +76,8 @@ class ContentHandlerProxy implements ContentHandler, ForkProxy {
     }
 
     /**
-     * Breaks the string in 21,845 size chunks to not
-     * throw UTFDataFormatException at least in Oracle JDK 8.
+     * Breaks the string in 21,845 size chunks to not throw UTFDataFormatException at least in
+     * Oracle JDK 8.
      */
     private void writeString(String string) throws IOException {
         int max = 65535 / 3;
@@ -195,5 +192,4 @@ class ContentHandlerProxy implements ContentHandler, ForkProxy {
         sendString(name);
         doneSending();
     }
-
 }

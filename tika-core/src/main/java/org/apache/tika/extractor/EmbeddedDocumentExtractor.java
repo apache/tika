@@ -19,18 +19,17 @@ package org.apache.tika.extractor;
 
 import java.io.IOException;
 import java.io.InputStream;
-
+import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import org.apache.tika.metadata.Metadata;
 
 public interface EmbeddedDocumentExtractor {
     boolean shouldParseEmbedded(Metadata metadata);
 
     /**
-     * Processes the supplied embedded resource, calling the delegating
-     *  parser with the appropriate details.
+     * Processes the supplied embedded resource, calling the delegating parser with the appropriate
+     * details.
+     *
      * @param stream The embedded resource
      * @param handler The handler to use
      * @param metadata The metadata for the embedded resource

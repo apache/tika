@@ -17,27 +17,25 @@
 package org.apache.tika.detect;
 
 import java.io.InputStream;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
 /**
- * Content type detection based on a content type hint. This detector simply
- * trusts any valid content type hint given in the input metadata, and returns
- * that as the likely type of the input document.
+ * Content type detection based on a content type hint. This detector simply trusts any valid
+ * content type hint given in the input metadata, and returns that as the likely type of the input
+ * document.
  *
  * @since Apache Tika 0.3
  */
 public class TypeDetector implements Detector {
 
     /**
-     * Detects the content type of an input document based on a type hint
-     * given in the input metadata. The CONTENT_TYPE attribute of the given
-     * input metadata is expected to contain the type of the input document.
-     * If that attribute exists and contains a valid type name, then that
-     * type is returned.
+     * Detects the content type of an input document based on a type hint given in the input
+     * metadata. The CONTENT_TYPE attribute of the given input metadata is expected to contain the
+     * type of the input document. If that attribute exists and contains a valid type name, then
+     * that type is returned.
      *
-     * @param input    ignored
+     * @param input ignored
      * @param metadata input metadata, possibly with a CONTENT_TYPE value
      * @return detected media type, or <code>application/octet-stream</code>
      */
@@ -52,5 +50,4 @@ public class TypeDetector implements Detector {
         }
         return MediaType.OCTET_STREAM;
     }
-
 }

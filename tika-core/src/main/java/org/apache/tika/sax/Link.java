@@ -119,5 +119,4 @@ public class Link {
         }
         return builder.toString();
     }
-
 }

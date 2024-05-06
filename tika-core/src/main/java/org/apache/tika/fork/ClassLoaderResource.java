@@ -32,11 +32,10 @@ class ClassLoaderResource implements ForkResource {
     }
 
     /**
-     * Processes a request for one (code 1) or many (code 2) class loader
-     * resources. The requested resources are sent preceded with a boolean
-     * <code>true</code> value. If the resource was not found (code 1) or
-     * when the last resource has been sent (code 2), a boolean
-     * <code>false</code> value is sent instead.
+     * Processes a request for one (code 1) or many (code 2) class loader resources. The requested
+     * resources are sent preceded with a boolean <code>true</code> value. If the resource was not
+     * found (code 1) or when the last resource has been sent (code 2), a boolean <code>false</code>
+     * value is sent instead.
      *
      * @param name resource name
      * @throws IOException if the resource could not be sent
@@ -66,14 +65,12 @@ class ClassLoaderResource implements ForkResource {
     }
 
     /**
-     * Sends the contents of the given input stream to the given output.
-     * The stream is sent in chunks of less than 64kB, each preceded by
-     * a 16-bit integer value that indicates the length of the following
-     * chunk. A zero short value is sent at the end to signify the end of
-     * the stream.
-     * <p>
-     * The stream is guaranteed to be closed by this method, regardless of
-     * the way it returns.
+     * Sends the contents of the given input stream to the given output. The stream is sent in
+     * chunks of less than 64kB, each preceded by a 16-bit integer value that indicates the length
+     * of the following chunk. A zero short value is sent at the end to signify the end of the
+     * stream.
+     *
+     * <p>The stream is guaranteed to be closed by this method, regardless of the way it returns.
      *
      * @param stream the stream to be sent
      * @throws IOException if the stream could not be sent
@@ -92,5 +89,4 @@ class ClassLoaderResource implements ForkResource {
             stream.close();
         }
     }
-
 }

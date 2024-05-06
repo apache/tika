@@ -17,7 +17,6 @@
 package org.apache.tika.fork;
 
 import java.util.Locale;
-
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -34,5 +33,4 @@ public class UpperCasingContentHandler extends DefaultHandler {
     public String toString() {
         return sb.toString();
     }
-
 }

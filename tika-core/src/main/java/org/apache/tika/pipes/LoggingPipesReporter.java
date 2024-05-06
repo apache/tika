@@ -16,13 +16,10 @@
  */
 package org.apache.tika.pipes;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Simple PipesReporter that logs everything at the debug level.
- */
+/** Simple PipesReporter that logs everything at the debug level. */
 public class LoggingPipesReporter extends PipesReporter {
     Logger LOGGER = LoggerFactory.getLogger(LoggingPipesReporter.class);
 

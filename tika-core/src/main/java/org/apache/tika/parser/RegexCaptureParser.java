@@ -28,10 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -40,6 +36,8 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class RegexCaptureParser implements Parser, Initializable {
 
@@ -50,15 +48,11 @@ public class RegexCaptureParser implements Parser, Initializable {
     private Map<String, Pattern> matchMap = new HashMap<>();
 
     @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-
-    }
+    public void initialize(Map<String, Param> params) throws TikaConfigException {}
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-
-    }
+            throws TikaConfigException {}
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -68,10 +62,11 @@ public class RegexCaptureParser implements Parser, Initializable {
     private boolean writeContent = false;
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream,
-                StandardCharsets.UTF_8))) {
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+        try (BufferedReader reader =
+                new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
             String line = reader.readLine();
             Map<String, Matcher> localCaptureMap = new HashMap();
             for (Map.Entry<String, Pattern> e : captureMap.entrySet()) {

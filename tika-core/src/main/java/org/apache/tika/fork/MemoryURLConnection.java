@@ -31,12 +31,10 @@ class MemoryURLConnection extends URLConnection {
     }
 
     @Override
-    public void connect() {
-    }
+    public void connect() {}
 
     @Override
     public InputStream getInputStream() {
         return new ByteArrayInputStream(data);
     }
-
 }

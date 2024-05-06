@@ -29,8 +29,8 @@ public class TextAndAttributeContentHandler extends TextContentHandler {
         this(delegate, false);
     }
 
-    public TextAndAttributeContentHandler(ContentHandler delegate,
-                                          boolean addSpaceBetweenElements) {
+    public TextAndAttributeContentHandler(
+            ContentHandler delegate, boolean addSpaceBetweenElements) {
         super(delegate, addSpaceBetweenElements);
     }
 

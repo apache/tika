@@ -26,10 +26,9 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * XMP property definition. Each instance of this class defines a single
- * metadata property like "dc:format". In addition to the property name,
- * the {@link ValueType value type} and category (internal or external)
- * of the property are included in the property definition. The available
+ * XMP property definition. Each instance of this class defines a single metadata property like
+ * "dc:format". In addition to the property name, the {@link ValueType value type} and category
+ * (internal or external) of the property are included in the property definition. The available
  * choice values are also stored for open and closed choice value types.
  *
  * @since Apache Tika 0.7
@@ -43,21 +42,25 @@ public final class Property implements Comparable<Property> {
     private final ValueType valueType;
     private final Property primaryProperty;
     private final Property[] secondaryExtractProperties;
-    /**
-     * The available choices for the open and closed choice value types.
-     */
+
+    /** The available choices for the open and closed choice value types. */
     private final Set<String> choices;
 
-    private Property(String name, boolean internal, PropertyType propertyType, ValueType valueType,
-                     String[] choices, Property primaryProperty,
-                     Property[] secondaryExtractProperties) {
+    private Property(
+            String name,
+            boolean internal,
+            PropertyType propertyType,
+            ValueType valueType,
+            String[] choices,
+            Property primaryProperty,
+            Property[] secondaryExtractProperties) {
         this.name = name;
         this.internal = internal;
         this.propertyType = propertyType;
         this.valueType = valueType;
         if (choices != null) {
-            this.choices = Collections
-                    .unmodifiableSet(new HashSet<>(Arrays.asList(choices.clone())));
+            this.choices =
+                    Collections.unmodifiableSet(new HashSet<>(Arrays.asList(choices.clone())));
         } else {
             this.choices = null;
         }
@@ -76,8 +79,12 @@ public final class Property implements Comparable<Property> {
         }
     }
 
-    private Property(String name, boolean internal, PropertyType propertyType, ValueType valueType,
-                     String[] choices) {
+    private Property(
+            String name,
+            boolean internal,
+            PropertyType propertyType,
+            ValueType valueType,
+            String[] choices) {
         this(name, internal, propertyType, valueType, choices, null, null);
     }
 
@@ -89,8 +96,8 @@ public final class Property implements Comparable<Property> {
         this(name, internal, PropertyType.SIMPLE, valueType, null);
     }
 
-    private Property(String name, boolean internal, PropertyType propertyType,
-                     ValueType valueType) {
+    private Property(
+            String name, boolean internal, PropertyType propertyType, ValueType valueType) {
         this(name, internal, propertyType, valueType, null);
     }
 
@@ -222,16 +229,16 @@ public final class Property implements Comparable<Property> {
 
     /**
      * Constructs a new composite property from the given primary and array of secondary properties.
-     * <p>
-     * Note that name of the composite property is taken from its primary property,
-     * and primary and secondary properties must not be composite properties themselves.
+     *
+     * <p>Note that name of the composite property is taken from its primary property, and primary
+     * and secondary properties must not be composite properties themselves.
      *
      * @param primaryProperty
      * @param secondaryExtractProperties
      * @return the composite property
      */
-    public static Property composite(Property primaryProperty,
-                                     Property[] secondaryExtractProperties) {
+    public static Property composite(
+            Property primaryProperty, Property[] secondaryExtractProperties) {
         if (primaryProperty == null) {
             throw new NullPointerException("primaryProperty must not be null");
         }
@@ -249,8 +256,13 @@ public final class Property implements Comparable<Property> {
         if (primaryProperty.getChoices() != null) {
             choices = primaryProperty.getChoices().toArray(new String[0]);
         }
-        return new Property(primaryProperty.getName(), primaryProperty.isInternal(),
-                PropertyType.COMPOSITE, ValueType.PROPERTY, choices, primaryProperty,
+        return new Property(
+                primaryProperty.getName(),
+                primaryProperty.isInternal(),
+                PropertyType.COMPOSITE,
+                ValueType.PROPERTY,
+                choices,
+                primaryProperty,
                 secondaryExtractProperties);
     }
 
@@ -266,12 +278,11 @@ public final class Property implements Comparable<Property> {
         return !internal;
     }
 
-    /**
-     * Is the PropertyType one which accepts multiple values?
-     */
+    /** Is the PropertyType one which accepts multiple values? */
     public boolean isMultiValuePermitted() {
-        if (propertyType == PropertyType.BAG || propertyType == PropertyType.SEQ ||
-                propertyType == PropertyType.ALT) {
+        if (propertyType == PropertyType.BAG
+                || propertyType == PropertyType.SEQ
+                || propertyType == PropertyType.ALT) {
             return true;
         } else if (propertyType == PropertyType.COMPOSITE) {
             // Base it on the primary property's behaviour
@@ -289,9 +300,9 @@ public final class Property implements Comparable<Property> {
     }
 
     /**
-     * Returns the (immutable) set of choices for the values of this property.
-     * Only defined for {@link ValueType#OPEN_CHOICE open} and
-     * {@link ValueType#CLOSED_CHOICE closed choice} value types.
+     * Returns the (immutable) set of choices for the values of this property. Only defined for
+     * {@link ValueType#OPEN_CHOICE open} and {@link ValueType#CLOSED_CHOICE closed choice} value
+     * types.
      *
      * @return available choices, or <code>null</code>
      */
@@ -325,40 +336,43 @@ public final class Property implements Comparable<Property> {
         return o instanceof Property && name.equals(((Property) o).name);
     }
 
-    //----------------------------------------------------------< Comparable >
+    // ----------------------------------------------------------< Comparable >
 
     public int hashCode() {
         return name.hashCode();
     }
 
-    //--------------------------------------------------------------< Object >
+    // --------------------------------------------------------------< Object >
 
     public enum PropertyType {
-        /**
-         * A single value
-         */
-        SIMPLE, STRUCTURE,
-        /**
-         * An un-ordered array
-         */
+        /** A single value */
+        SIMPLE,
+        STRUCTURE,
+        /** An un-ordered array */
         BAG,
-        /**
-         * An ordered array
-         */
+        /** An ordered array */
         SEQ,
-        /**
-         * An ordered array with some sort of criteria
-         */
+        /** An ordered array with some sort of criteria */
         ALT,
-        /**
-         * Multiple child properties
-         */
+        /** Multiple child properties */
         COMPOSITE
     }
 
     public enum ValueType {
-        BOOLEAN, OPEN_CHOICE, CLOSED_CHOICE, DATE, INTEGER, LOCALE, MIME_TYPE, PROPER_NAME,
-        RATIONAL, REAL, TEXT, URI, URL, XPATH, PROPERTY
+        BOOLEAN,
+        OPEN_CHOICE,
+        CLOSED_CHOICE,
+        DATE,
+        INTEGER,
+        LOCALE,
+        MIME_TYPE,
+        PROPER_NAME,
+        RATIONAL,
+        REAL,
+        TEXT,
+        URI,
+        URL,
+        XPATH,
+        PROPERTY
     }
-
 }

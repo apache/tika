@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeoutException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -37,44 +36,45 @@ import org.apache.tika.pipes.pipesiterator.PipesIterator;
 import org.apache.tika.utils.StringUtils;
 
 /**
- * Reads a list of file names/relative paths from a UTF-8 file.
- * One file name/relative path per line.  This path is used for the fetch key,
- * the id and the emit key.  If you need more customized control of the keys/ids,
- * consider using the jdbc pipes iterator or the csv pipes iterator.
+ * Reads a list of file names/relative paths from a UTF-8 file. One file name/relative path per
+ * line. This path is used for the fetch key, the id and the emit key. If you need more customized
+ * control of the keys/ids, consider using the jdbc pipes iterator or the csv pipes iterator.
  *
- * Skips empty lines and lines starting with '#'
- *
- *
+ * <p>Skips empty lines and lines starting with '#'
  */
 public class FileListPipesIterator extends PipesIterator implements Initializable {
 
-    @Field
-    private String fileList;
+    @Field private String fileList;
 
-    @Field
-    private boolean hasHeader = false;
+    @Field private boolean hasHeader = false;
 
     private Path fileListPath;
 
     @Override
     protected void enqueue() throws IOException, TimeoutException, InterruptedException {
-        try (BufferedReader reader = Files.newBufferedReader(fileListPath, StandardCharsets.UTF_8)) {
+        try (BufferedReader reader =
+                Files.newBufferedReader(fileListPath, StandardCharsets.UTF_8)) {
             if (hasHeader) {
                 reader.readLine();
             }
             String line = reader.readLine();
             while (line != null) {
-                if (! line.startsWith("#") && !StringUtils.isBlank(line)) {
+                if (!line.startsWith("#") && !StringUtils.isBlank(line)) {
                     FetchKey fetchKey = new FetchKey(getFetcherName(), line);
                     EmitKey emitKey = new EmitKey(getEmitterName(), line);
-                    tryToAdd(new FetchEmitTuple(line, fetchKey, emitKey,
-                            new Metadata(), getHandlerConfig(), getOnParseException()));
+                    tryToAdd(
+                            new FetchEmitTuple(
+                                    line,
+                                    fetchKey,
+                                    emitKey,
+                                    new Metadata(),
+                                    getHandlerConfig(),
+                                    getOnParseException()));
                 }
                 line = reader.readLine();
             }
         }
     }
-
 
     @Field
     public void setFileList(String path) {
@@ -89,15 +89,18 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
-        //these should all be fatal
+        // these should all be fatal
         TikaConfig.mustNotBeEmpty("fileList", fileList);
         TikaConfig.mustNotBeEmpty("fetcherName", getFetcherName());
         TikaConfig.mustNotBeEmpty("emitterName", getFetcherName());
 
         fileListPath = Paths.get(fileList);
         if (!Files.isRegularFile(fileListPath)) {
-            throw new TikaConfigException("file list " + fileList + " does not exist. " +
-                    "Must specify an existing file");
+            throw new TikaConfigException(
+                    "file list "
+                            + fileList
+                            + " does not exist. "
+                            + "Must specify an existing file");
         }
     }
 }

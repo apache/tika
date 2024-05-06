@@ -21,66 +21,46 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * <p>
- * A specialized input stream implementation which records the last portion read
- * from an underlying stream.
- * </p>
- * <p>
- * This stream implementation is useful to deal with information which is known
- * to be located at the end of a stream (e.g. ID3 v1 tags). While reading bytes
- * from the underlying stream, a given number of bytes is kept in an internal
- * buffer. This buffer can then be queried after the whole stream was read. It
- * contains the last bytes read from the original input stream.
- * </p>
+ * A specialized input stream implementation which records the last portion read from an underlying
+ * stream.
  *
- * @param in       the underlying input stream
+ * <p>This stream implementation is useful to deal with information which is known to be located at
+ * the end of a stream (e.g. ID3 v1 tags). While reading bytes from the underlying stream, a given
+ * number of bytes is kept in an internal buffer. This buffer can then be queried after the whole
+ * stream was read. It contains the last bytes read from the original input stream.
+ *
+ * @param in the underlying input stream
  * @param tailSize the size of the tail buffer
  */
 public class TailStream extends FilterInputStream {
-    /**
-     * Constant for the default skip buffer size.
-     */
+    /** Constant for the default skip buffer size. */
     private static final int SKIP_SIZE = 4096;
 
-    /**
-     * The buffer in which the tail data is stored.
-     */
+    /** The buffer in which the tail data is stored. */
     private final byte[] tailBuffer;
 
-    /**
-     * The size of the internal tail buffer.
-     */
+    /** The size of the internal tail buffer. */
     private final int tailSize;
 
-    /**
-     * A copy of the internal tail buffer used for mark() operations.
-     */
+    /** A copy of the internal tail buffer used for mark() operations. */
     private byte[] markBuffer;
 
-    /**
-     * The number of bytes that have been read so far.
-     */
+    /** The number of bytes that have been read so far. */
     private long bytesRead;
 
-    /**
-     * The number of bytes read at the last mark() operation.
-     */
+    /** The number of bytes read at the last mark() operation. */
     private long markBytesRead;
 
-    /**
-     * The current index into the tail buffer.
-     */
+    /** The current index into the tail buffer. */
     private int currentIndex;
 
-    /**
-     * A copy of the current index used for mark() operations.
-     */
+    /** A copy of the current index used for mark() operations. */
     private int markIndex;
 
     /**
      * Creates a new instance of {@code TailStream}.
      *
-     * @param in   the underlying input stream
+     * @param in the underlying input stream
      * @param size the size of the tail buffer
      */
     public TailStream(InputStream in, int size) {
@@ -89,10 +69,7 @@ public class TailStream extends FilterInputStream {
         tailBuffer = new byte[size];
     }
 
-    /**
-     * {@inheritDoc} This implementation adds the read byte to the internal tail
-     * buffer.
-     */
+    /** {@inheritDoc} This implementation adds the read byte to the internal tail buffer. */
     @Override
     public int read() throws IOException {
         int c = super.read();
@@ -103,9 +80,8 @@ public class TailStream extends FilterInputStream {
     }
 
     /**
-     * {@inheritDoc} This implementation delegates to the underlying stream and
-     * then adds the correct portion of the read buffer to the internal tail
-     * buffer.
+     * {@inheritDoc} This implementation delegates to the underlying stream and then adds the
+     * correct portion of the read buffer to the internal tail buffer.
      */
     @Override
     public int read(byte[] buf) throws IOException {
@@ -117,9 +93,8 @@ public class TailStream extends FilterInputStream {
     }
 
     /**
-     * {@inheritDoc} This implementation delegates to the underlying stream and
-     * then adds the correct portion of the read buffer to the internal tail
-     * buffer.
+     * {@inheritDoc} This implementation delegates to the underlying stream and then adds the
+     * correct portion of the read buffer to the internal tail buffer.
      */
     @Override
     public int read(byte[] buf, int ofs, int length) throws IOException {
@@ -131,8 +106,8 @@ public class TailStream extends FilterInputStream {
     }
 
     /**
-     * {@inheritDoc} This implementation delegates to the {@code read()} method
-     * to ensure that the tail buffer is also filled if data is skipped.
+     * {@inheritDoc} This implementation delegates to the {@code read()} method to ensure that the
+     * tail buffer is also filled if data is skipped.
      */
     @Override
     public long skip(long n) throws IOException {
@@ -153,9 +128,8 @@ public class TailStream extends FilterInputStream {
     }
 
     /**
-     * {@inheritDoc} This implementation saves the internal state including the
-     * content of the tail buffer so that it can be restored when ''reset()'' is
-     * called later.
+     * {@inheritDoc} This implementation saves the internal state including the content of the tail
+     * buffer so that it can be restored when ''reset()'' is called later.
      */
     @Override
     public void mark(int limit) {
@@ -166,9 +140,9 @@ public class TailStream extends FilterInputStream {
     }
 
     /**
-     * {@inheritDoc} This implementation restores this stream's state to the
-     * state when ''mark()'' was called the last time. If ''mark()'' has not
-     * been called before, this method has no effect.
+     * {@inheritDoc} This implementation restores this stream's state to the state when ''mark()''
+     * was called the last time. If ''mark()'' has not been called before, this method has no
+     * effect.
      */
     @Override
     public void reset() {
@@ -180,10 +154,9 @@ public class TailStream extends FilterInputStream {
     }
 
     /**
-     * Returns an array with the last data read from the underlying stream. If
-     * the underlying stream contained more data than the ''tailSize''
-     * constructor argument, the returned array has a length of ''tailSize''.
-     * Otherwise, its length equals the number of bytes read.
+     * Returns an array with the last data read from the underlying stream. If the underlying stream
+     * contained more data than the ''tailSize'' constructor argument, the returned array has a
+     * length of ''tailSize''. Otherwise, its length equals the number of bytes read.
      *
      * @return an array with the last data read from the underlying stream
      */
@@ -211,8 +184,8 @@ public class TailStream extends FilterInputStream {
     /**
      * Adds the content of the given buffer to the internal tail buffer.
      *
-     * @param buf    the buffer
-     * @param ofs    the start offset in the buffer
+     * @param buf the buffer
+     * @param ofs the start offset in the buffer
      * @param length the number of bytes to be copied
      */
     private void appendBuf(byte[] buf, int ofs, int length) {
@@ -226,12 +199,12 @@ public class TailStream extends FilterInputStream {
     }
 
     /**
-     * Replaces the content of the internal tail buffer by the last portion of
-     * the given buffer. This method is called if a buffer was read from the
-     * underlying stream whose length is larger than the tail buffer.
+     * Replaces the content of the internal tail buffer by the last portion of the given buffer.
+     * This method is called if a buffer was read from the underlying stream whose length is larger
+     * than the tail buffer.
      *
-     * @param buf    the buffer
-     * @param ofs    the start offset in the buffer
+     * @param buf the buffer
+     * @param ofs the start offset in the buffer
      * @param length the number of bytes to be copied
      */
     private void replaceTailBuffer(byte[] buf, int ofs, int length) {
@@ -240,13 +213,12 @@ public class TailStream extends FilterInputStream {
     }
 
     /**
-     * Copies the given buffer into the internal tail buffer at the current
-     * position. This method is called if a buffer is read from the underlying
-     * stream whose length is smaller than the tail buffer. In this case the
-     * tail buffer is only partly overwritten.
+     * Copies the given buffer into the internal tail buffer at the current position. This method is
+     * called if a buffer is read from the underlying stream whose length is smaller than the tail
+     * buffer. In this case the tail buffer is only partly overwritten.
      *
-     * @param buf    the buffer
-     * @param ofs    the start offset in the buffer
+     * @param buf the buffer
+     * @param ofs the start offset in the buffer
      * @param length the number of bytes to be copied
      */
     private void copyToTailBuffer(byte[] buf, int ofs, int length) {

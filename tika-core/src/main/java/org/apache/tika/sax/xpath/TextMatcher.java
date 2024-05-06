@@ -17,8 +17,8 @@
 package org.apache.tika.sax.xpath;
 
 /**
- * Final evaluation state of a <code>.../text()</code> XPath expression.
- * Matches all text children of the current element.
+ * Final evaluation state of a <code>.../text()</code> XPath expression. Matches all text children
+ * of the current element.
  */
 public class TextMatcher extends Matcher {
 
@@ -27,5 +27,4 @@ public class TextMatcher extends Matcher {
     public boolean matchesText() {
         return true;
     }
-
 }

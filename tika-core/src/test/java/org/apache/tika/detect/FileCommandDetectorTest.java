@@ -20,14 +20,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class FileCommandDetectorTest {
 
@@ -44,28 +42,30 @@ public class FileCommandDetectorTest {
     public void testBasic() throws Exception {
         assumeTrue(FileCommandDetector.checkHasFile());
 
-        try (InputStream is = getClass()
-                .getResourceAsStream("/test-documents/basic_embedded.xml")) {
-            //run more than once to ensure that the input stream is reset
+        try (InputStream is =
+                getClass().getResourceAsStream("/test-documents/basic_embedded.xml")) {
+            // run more than once to ensure that the input stream is reset
             for (int i = 0; i < 2; i++) {
                 Metadata metadata = new Metadata();
                 MediaType answer = DETECTOR.detect(is, metadata);
                 String fileMime = metadata.get(FileCommandDetector.FILE_MIME);
-                assertTrue(MediaType.text("xml").equals(answer) ||
-                        MediaType.application("xml").equals(answer));
-                assertTrue("application/xml".equals(fileMime) ||
-                        "text/xml".equals(fileMime));
+                assertTrue(
+                        MediaType.text("xml").equals(answer)
+                                || MediaType.application("xml").equals(answer));
+                assertTrue("application/xml".equals(fileMime) || "text/xml".equals(fileMime));
             }
         }
 
-        //now try with TikaInputStream
-        try (InputStream is = TikaInputStream
-                .get(getClass().getResourceAsStream("/test-documents/basic_embedded.xml"))) {
-            //run more than once to ensure that the input stream is reset
+        // now try with TikaInputStream
+        try (InputStream is =
+                TikaInputStream.get(
+                        getClass().getResourceAsStream("/test-documents/basic_embedded.xml"))) {
+            // run more than once to ensure that the input stream is reset
             for (int i = 0; i < 2; i++) {
                 MediaType answer = DETECTOR.detect(is, new Metadata());
-                assertTrue(MediaType.text("xml").equals(answer) ||
-                        MediaType.application("xml").equals(answer));
+                assertTrue(
+                        MediaType.text("xml").equals(answer)
+                                || MediaType.application("xml").equals(answer));
             }
         }
     }

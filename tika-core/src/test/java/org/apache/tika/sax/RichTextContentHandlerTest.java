@@ -21,26 +21,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
-
+import org.apache.tika.metadata.Metadata;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.metadata.Metadata;
-
-/**
- * Test cases for the {@link RichTextContentHandler} class.
- */
+/** Test cases for the {@link RichTextContentHandler} class. */
 public class RichTextContentHandlerTest {
 
-    /**
-     * Test to check img tags are detected and rich text version used.
-     */
+    /** Test to check img tags are detected and rich text version used. */
     @Test
     public void aTagTest() throws Exception {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(new RichTextContentHandler(
-                new OutputStreamWriter(buffer, UTF_8)), new Metadata());
+        XHTMLContentHandler xhtml =
+                new XHTMLContentHandler(
+                        new RichTextContentHandler(new OutputStreamWriter(buffer, UTF_8)),
+                        new Metadata());
         xhtml.startDocument();
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "", "name", "", "value");
@@ -50,15 +46,15 @@ public class RichTextContentHandlerTest {
         assertEquals("\n\n\n\n[bookmark: value]", buffer.toString(UTF_8.name()));
     }
 
-    /**
-     * Test to check a tags are detected and rich text version used.
-     */
+    /** Test to check a tags are detected and rich text version used. */
     @Test
     public void imgTagTest() throws Exception {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(new RichTextContentHandler(
-                new OutputStreamWriter(buffer, UTF_8)), new Metadata());
+        XHTMLContentHandler xhtml =
+                new XHTMLContentHandler(
+                        new RichTextContentHandler(new OutputStreamWriter(buffer, UTF_8)),
+                        new Metadata());
         xhtml.startDocument();
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "", "alt", "", "value");
@@ -67,5 +63,4 @@ public class RichTextContentHandlerTest {
 
         assertEquals("\n\n\n\n[image: value]", buffer.toString(UTF_8.name()));
     }
-
 }

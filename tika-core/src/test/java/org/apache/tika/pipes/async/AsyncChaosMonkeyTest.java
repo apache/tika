@@ -26,10 +26,6 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.FetchEmitTuple;
@@ -39,39 +35,48 @@ import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
 import org.apache.tika.utils.ProcessUtils;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class AsyncChaosMonkeyTest {
 
-    private final String OOM = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
-            "<throw class=\"java.lang.OutOfMemoryError\">oom message</throw>\n</mock>";
-    private final String OK = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
-            "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>" +
-            "<write element=\"p\">main_content</write>" +
-            "</mock>";
+    private final String OOM =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+                    + "<mock>"
+                    + "<throw class=\"java.lang.OutOfMemoryError\">oom message</throw>\n</mock>";
+    private final String OK =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+                    + "<mock>"
+                    + "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>"
+                    + "<write element=\"p\">main_content</write>"
+                    + "</mock>";
 
-    private final String TIMEOUT = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
-            "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>" +
-            "<write element=\"p\">main_content</write>" +
-            "<fakeload millis=\"60000\" cpu=\"1\" mb=\"10\"/>" + "</mock>";
+    private final String TIMEOUT =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+                    + "<mock>"
+                    + "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>"
+                    + "<write element=\"p\">main_content</write>"
+                    + "<fakeload millis=\"60000\" cpu=\"1\" mb=\"10\"/>"
+                    + "</mock>";
 
-    private final String SYSTEM_EXIT = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
-            "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>" +
-            "<write element=\"p\">main_content</write>" +
-            "<system_exit/>" + "</mock>";
+    private final String SYSTEM_EXIT =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+                    + "<mock>"
+                    + "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>"
+                    + "<write element=\"p\">main_content</write>"
+                    + "<system_exit/>"
+                    + "</mock>";
 
     private final int totalFiles = 100;
 
-    @TempDir
-    private Path inputDir;
+    @TempDir private Path inputDir;
 
-    @TempDir
-    private Path configDir;
+    @TempDir private Path configDir;
 
     private int ok = 0;
     private int oom = 0;
     private int timeouts = 0;
     private int crash = 0;
-
 
     public Path setUp(boolean emitIntermediateResults) throws SQLException, IOException {
         ok = 0;
@@ -80,28 +85,36 @@ public class AsyncChaosMonkeyTest {
         crash = 0;
         Path tikaConfigPath = Files.createTempFile(configDir, "tika-config-", ".xml");
         String xml =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<properties>" + "  <emitters>" +
-                "  <emitter class=\"org.apache.tika.pipes.async.MockEmitter\">\n" +
-                "         <name>mock</name>\n" + "  </emitter>" +
-                "  </emitters>" + "  <fetchers>" +
-                "    <fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                "      <name>mock</name>\n" + "      <basePath>" +
-                ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString()) +
-                "</basePath>\n" + "    </fetcher>" + "  </fetchers>" +
-                " <autoDetectParserConfig>\n" +
-                        "    <digesterFactory\n" +
-                        "        class=\"org.apache.tika.pipes.async.MockDigesterFactory\"/>\n" +
-                "</autoDetectParserConfig>" +
-                "<async><pipesReporter class=\"org.apache.tika.pipes.async.MockReporter\"/>" +
-                        "<emitIntermediateResults>" + emitIntermediateResults +
-                        "</emitIntermediateResults>" +
-                        "<tikaConfig>" +
-                        ProcessUtils.escapeCommandLine(tikaConfigPath.toAbsolutePath().toString()) +
-                        "</tikaConfig><forkedJvmArgs><arg>-Xmx512m</arg" +
-                        "></forkedJvmArgs><maxForEmitBatchBytes>1000000</maxForEmitBatchBytes>" +
-                        "<timeoutMillis>5000</timeoutMillis>" +
-                        "<numClients>4</numClients></async>" +
-                        "</properties>";
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+                        + "<properties>"
+                        + "  <emitters>"
+                        + "  <emitter class=\"org.apache.tika.pipes.async.MockEmitter\">\n"
+                        + "         <name>mock</name>\n"
+                        + "  </emitter>"
+                        + "  </emitters>"
+                        + "  <fetchers>"
+                        + "    <fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">"
+                        + "      <name>mock</name>\n"
+                        + "      <basePath>"
+                        + ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString())
+                        + "</basePath>\n"
+                        + "    </fetcher>"
+                        + "  </fetchers>"
+                        + " <autoDetectParserConfig>\n"
+                        + "    <digesterFactory\n"
+                        + "        class=\"org.apache.tika.pipes.async.MockDigesterFactory\"/>\n"
+                        + "</autoDetectParserConfig>"
+                        + "<async><pipesReporter class=\"org.apache.tika.pipes.async.MockReporter\"/>"
+                        + "<emitIntermediateResults>"
+                        + emitIntermediateResults
+                        + "</emitIntermediateResults>"
+                        + "<tikaConfig>"
+                        + ProcessUtils.escapeCommandLine(tikaConfigPath.toAbsolutePath().toString())
+                        + "</tikaConfig><forkedJvmArgs><arg>-Xmx512m</arg"
+                        + "></forkedJvmArgs><maxForEmitBatchBytes>1000000</maxForEmitBatchBytes>"
+                        + "<timeoutMillis>5000</timeoutMillis>"
+                        + "<numClients>4</numClients></async>"
+                        + "</properties>";
         Files.write(tikaConfigPath, xml.getBytes(StandardCharsets.UTF_8));
         Random r = new Random();
         for (int i = 0; i < totalFiles; i++) {
@@ -110,7 +123,8 @@ public class AsyncChaosMonkeyTest {
                 Files.write(inputDir.resolve(i + ".xml"), OOM.getBytes(StandardCharsets.UTF_8));
                 oom++;
             } else if (f < 0.10) {
-                Files.write(inputDir.resolve(i + ".xml"), SYSTEM_EXIT.getBytes(StandardCharsets.UTF_8));
+                Files.write(
+                        inputDir.resolve(i + ".xml"), SYSTEM_EXIT.getBytes(StandardCharsets.UTF_8));
                 crash++;
             } else if (f < 0.13) {
                 Files.write(inputDir.resolve(i + ".xml"), TIMEOUT.getBytes(StandardCharsets.UTF_8));
@@ -125,32 +139,35 @@ public class AsyncChaosMonkeyTest {
         return tikaConfigPath;
     }
 
-/*
-    private void writeLarge(Path resolve) throws IOException {
-        try (BufferedWriter writer = Files.newBufferedWriter(resolve, StandardCharsets.UTF_8)) {
-            writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>");
-            writer.write("<mock>");
-            for (int i = 0; i < 10000000; i++) {
-                writer.write("<write element=\"p\">hello hello hello hello hello</write>");
+    /*
+        private void writeLarge(Path resolve) throws IOException {
+            try (BufferedWriter writer = Files.newBufferedWriter(resolve, StandardCharsets.UTF_8)) {
+                writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>");
+                writer.write("<mock>");
+                for (int i = 0; i < 10000000; i++) {
+                    writer.write("<write element=\"p\">hello hello hello hello hello</write>");
+                }
+                writer.write("</mock>");
             }
-            writer.write("</mock>");
         }
-    }
-*/
+    */
 
     @Test
     public void testBasic() throws Exception {
         AsyncProcessor processor = new AsyncProcessor(setUp(false));
         for (int i = 0; i < totalFiles; i++) {
-            FetchEmitTuple t = new FetchEmitTuple("myId-" + i,
-                    new FetchKey("mock", i + ".xml"),
-                    new EmitKey("mock", "emit-" + i), new Metadata());
+            FetchEmitTuple t =
+                    new FetchEmitTuple(
+                            "myId-" + i,
+                            new FetchKey("mock", i + ".xml"),
+                            new EmitKey("mock", "emit-" + i),
+                            new Metadata());
             processor.offer(t, 1000);
         }
         for (int i = 0; i < 10; i++) {
             processor.offer(PipesIterator.COMPLETED_SEMAPHORE, 1000);
         }
-        //TODO clean this up
+        // TODO clean this up
         while (processor.checkActive()) {
             Thread.sleep(100);
         }
@@ -162,7 +179,8 @@ public class AsyncChaosMonkeyTest {
         assertEquals(ok, emitKeys.size());
         assertEquals(100, MockReporter.RESULTS.size());
         for (PipesResult r : MockReporter.RESULTS) {
-            assertEquals("application/mock+xml",
+            assertEquals(
+                    "application/mock+xml",
                     r.getEmitData().getMetadataList().get(0).get(Metadata.CONTENT_TYPE));
         }
     }
@@ -171,14 +189,18 @@ public class AsyncChaosMonkeyTest {
     public void testEmitIntermediate() throws Exception {
         AsyncProcessor processor = new AsyncProcessor(setUp(true));
         for (int i = 0; i < totalFiles; i++) {
-            FetchEmitTuple t = new FetchEmitTuple("myId-" + i, new FetchKey("mock", i + ".xml"),
-                    new EmitKey("mock", "emit-" + i), new Metadata());
+            FetchEmitTuple t =
+                    new FetchEmitTuple(
+                            "myId-" + i,
+                            new FetchKey("mock", i + ".xml"),
+                            new EmitKey("mock", "emit-" + i),
+                            new Metadata());
             processor.offer(t, 1000);
         }
         for (int i = 0; i < 10; i++) {
             processor.offer(PipesIterator.COMPLETED_SEMAPHORE, 1000);
         }
-        //TODO clean this up
+        // TODO clean this up
         while (processor.checkActive()) {
             Thread.sleep(100);
         }
@@ -187,10 +209,10 @@ public class AsyncChaosMonkeyTest {
         int observedOOM = 0;
         for (EmitData d : MockEmitter.EMIT_DATA) {
             emitKeys.add(d.getEmitKey().getEmitKey());
-            assertEquals(64,
-                    d.getMetadataList().get(0).get("X-TIKA:digest:SHA-256").trim().length());
-            assertEquals("application/mock+xml",
-                    d.getMetadataList().get(0).get(Metadata.CONTENT_TYPE));
+            assertEquals(
+                    64, d.getMetadataList().get(0).get("X-TIKA:digest:SHA-256").trim().length());
+            assertEquals(
+                    "application/mock+xml", d.getMetadataList().get(0).get(Metadata.CONTENT_TYPE));
             String val = d.getMetadataList().get(0).get(TikaCoreProperties.PIPES_RESULT);
             if ("OOM".equals(val)) {
                 observedOOM++;

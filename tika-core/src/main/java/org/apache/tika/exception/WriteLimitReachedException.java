@@ -20,29 +20,31 @@ import org.xml.sax.SAXException;
 
 public class WriteLimitReachedException extends SAXException {
 
-    //in case of (hopefully impossible) cyclic exception
-    private final static int MAX_DEPTH = 100;
+    // in case of (hopefully impossible) cyclic exception
+    private static final int MAX_DEPTH = 100;
 
     private final int writeLimit;
+
     public WriteLimitReachedException(int writeLimit) {
         this.writeLimit = writeLimit;
     }
 
     @Override
     public String getMessage() {
-        return "Your document contained more than " + writeLimit
+        return "Your document contained more than "
+                + writeLimit
                 + " characters, and so your requested limit has been"
                 + " reached. To receive the full text of the document,"
                 + " increase your limit. (Text up to the limit is"
                 + " however available).";
     }
+
     /**
-     * Checks whether the given exception (or any of it's root causes) was
-     * thrown by this handler as a signal of reaching the write limit.
+     * Checks whether the given exception (or any of it's root causes) was thrown by this handler as
+     * a signal of reaching the write limit.
      *
      * @param t throwable
-     * @return <code>true</code> if the write limit was reached,
-     * <code>false</code> otherwise
+     * @return <code>true</code> if the write limit was reached, <code>false</code> otherwise
      * @since Apache Tika 2.0
      */
     public static boolean isWriteLimitReached(Throwable t) {

@@ -23,32 +23,23 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-/**
- * Defines a MimeType pattern.
- */
+/** Defines a MimeType pattern. */
 class Patterns implements Serializable {
 
-    /**
-     * Serial version UID.
-     */
+    /** Serial version UID. */
     private static final long serialVersionUID = -5778015347278111140L;
 
     private final MediaTypeRegistry registry;
 
-    /**
-     * Index of exact name patterns.
-     */
+    /** Index of exact name patterns. */
     private final Map<String, MimeType> names = new HashMap<>();
 
-    /**
-     * Index of extension patterns of the form "*extension".
-     */
+    /** Index of extension patterns of the form "*extension". */
     private final Map<String, MimeType> extensions = new HashMap<>();
-    /**
-     * Index of generic glob patterns, sorted by length.
-     */
-    private final SortedMap<String, MimeType> globs =
-            new TreeMap<>(new LengthComparator());
+
+    /** Index of generic glob patterns, sorted by length. */
+    private final SortedMap<String, MimeType> globs = new TreeMap<>(new LengthComparator());
+
     private int minExtensionLength = Integer.MAX_VALUE;
     private int maxExtensionLength = 0;
 
@@ -71,11 +62,14 @@ class Patterns implements Serializable {
             addGlob(pattern, type);
         } else {
 
-            if (pattern.indexOf('*') == -1 && pattern.indexOf('?') == -1 &&
-                    pattern.indexOf('[') == -1) {
+            if (pattern.indexOf('*') == -1
+                    && pattern.indexOf('?') == -1
+                    && pattern.indexOf('[') == -1) {
                 addName(pattern, type);
-            } else if (pattern.startsWith("*") && pattern.indexOf('*', 1) == -1 &&
-                    pattern.indexOf('?') == -1 && pattern.indexOf('[') == -1) {
+            } else if (pattern.startsWith("*")
+                    && pattern.indexOf('*', 1) == -1
+                    && pattern.indexOf('?') == -1
+                    && pattern.indexOf('[') == -1) {
                 String extension = pattern.substring(1);
                 addExtension(extension, type);
                 type.addExtension(extension);
@@ -89,8 +83,8 @@ class Patterns implements Serializable {
         MimeType previous = names.get(name);
         if (previous == null || registry.isSpecializationOf(previous.getType(), type.getType())) {
             names.put(name, type);
-        } else if (previous == type ||
-                registry.isSpecializationOf(type.getType(), previous.getType())) {
+        } else if (previous == type
+                || registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException("Conflicting name pattern: " + name);
@@ -104,8 +98,8 @@ class Patterns implements Serializable {
             int length = extension.length();
             minExtensionLength = Math.min(minExtensionLength, length);
             maxExtensionLength = Math.max(maxExtensionLength, length);
-        } else if (previous == type ||
-                registry.isSpecializationOf(type.getType(), previous.getType())) {
+        } else if (previous == type
+                || registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException("Conflicting extension pattern: " + extension);
@@ -116,8 +110,8 @@ class Patterns implements Serializable {
         MimeType previous = globs.get(glob);
         if (previous == null || registry.isSpecializationOf(previous.getType(), type.getType())) {
             globs.put(glob, type);
-        } else if (previous == type ||
-                registry.isSpecializationOf(type.getType(), previous.getType())) {
+        } else if (previous == type
+                || registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException("Conflicting glob pattern: " + glob);
@@ -126,17 +120,15 @@ class Patterns implements Serializable {
 
     /**
      * Find the MimeType corresponding to a resource name.
-     * <p>
-     * It applies the recommendations detailed in FreeDesktop Shared MIME-info
-     * Database for guessing MimeType from a resource name: It first tries a
-     * case-sensitive match, then try again with the resource name converted to
-     * lower-case if that fails. If several patterns match then the longest
-     * pattern is used. In particular, files with multiple extensions (such as
-     * Data.tar.gz) match the longest sequence of extensions (eg '*.tar.gz' in
-     * preference to '*.gz'). Literal patterns (eg, 'Makefile') are matched
-     * before all others. Patterns beginning with `*.' and containing no other
-     * special characters (`*?[') are matched before other wildcarded patterns
-     * (since this covers the majority of the patterns).
+     *
+     * <p>It applies the recommendations detailed in FreeDesktop Shared MIME-info Database for
+     * guessing MimeType from a resource name: It first tries a case-sensitive match, then try again
+     * with the resource name converted to lower-case if that fails. If several patterns match then
+     * the longest pattern is used. In particular, files with multiple extensions (such as
+     * Data.tar.gz) match the longest sequence of extensions (eg '*.tar.gz' in preference to
+     * '*.gz'). Literal patterns (eg, 'Makefile') are matched before all others. Patterns beginning
+     * with `*.' and containing no other special characters (`*?[') are matched before other
+     * wildcarded patterns (since this covers the majority of the patterns).
      */
     public MimeType matches(String name) {
         if (name == null) {
@@ -189,9 +181,7 @@ class Patterns implements Serializable {
 
     private static final class LengthComparator implements Comparator<String>, Serializable {
 
-        /**
-         * Serial version UID.
-         */
+        /** Serial version UID. */
         private static final long serialVersionUID = 8468289702915532359L;
 
         public int compare(String a, String b) {
@@ -201,7 +191,5 @@ class Patterns implements Serializable {
             }
             return diff;
         }
-
     }
-
 }

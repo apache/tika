@@ -19,7 +19,6 @@ package org.apache.tika.config;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.tika.concurrent.ConfigurableThreadPoolExecutor;
 
 public class DummyExecutor extends ThreadPoolExecutor implements ConfigurableThreadPoolExecutor {

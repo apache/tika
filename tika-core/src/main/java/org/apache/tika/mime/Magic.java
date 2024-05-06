@@ -16,10 +16,7 @@
  */
 package org.apache.tika.mime;
 
-/**
- * Defines a magic for a MimeType. A magic is made of one or several
- * MagicClause.
- */
+/** Defines a magic for a MimeType. A magic is made of one or several MagicClause. */
 class Magic implements Clause, Comparable<Magic> {
 
     private final MimeType type;
@@ -82,5 +79,4 @@ class Magic implements Clause, Comparable<Magic> {
     public int hashCode() {
         return type.hashCode() ^ string.hashCode();
     }
-
 }

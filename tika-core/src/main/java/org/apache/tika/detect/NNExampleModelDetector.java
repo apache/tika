@@ -27,11 +27,9 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Objects;
-
+import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.tika.mime.MediaType;
 
 public class NNExampleModelDetector extends TrainedModelDetector {
     private static final String EXAMPLE_NNMODEL_FILE = "tika-example.nnmodel";
@@ -68,16 +66,13 @@ public class NNExampleModelDetector extends TrainedModelDetector {
                     // add this model into map of trained models.
                     super.registerModels(nnBuilder.getType(), nnBuilder.build());
                 }
-
             }
         } catch (IOException e) {
             throw new RuntimeException("Unable to read the default media type registry", e);
         }
     }
 
-    /**
-     * this method gets overwritten to register load neural network models
-     */
+    /** this method gets overwritten to register load neural network models */
     @Override
     public void loadDefaultModels(ClassLoader classLoader) {
         if (classLoader == null) {
@@ -91,22 +86,20 @@ public class NNExampleModelDetector extends TrainedModelDetector {
 
         // Get the core URL, and all the extensions URLs
         URL modelURL = classLoader.getResource(classPrefix + EXAMPLE_NNMODEL_FILE);
-        Objects.requireNonNull(modelURL,
-                "required resource " + classPrefix + EXAMPLE_NNMODEL_FILE + " not found");
+        Objects.requireNonNull(
+                modelURL, "required resource " + classPrefix + EXAMPLE_NNMODEL_FILE + " not found");
         try (InputStream stream = modelURL.openStream()) {
             loadDefaultModels(stream);
         } catch (IOException e) {
             throw new RuntimeException("Unable to read the default media type registry", e);
         }
-
     }
 
     /**
-     * read the comments where the model configuration is written, e.g the
-     * number of inputs, hiddens and output please ensure the first char in the
-     * given string is # In this example grb model file, there are 4 elements 1)
-     * type 2) number of input units 3) number of hidden units. 4) number of
-     * output units.
+     * read the comments where the model configuration is written, e.g the number of inputs, hiddens
+     * and output please ensure the first char in the given string is # In this example grb model
+     * file, there are 4 elements 1) type 2) number of input units 3) number of hidden units. 4)
+     * number of output units.
      */
     private void readDescription(final NNTrainedModelBuilder builder, final String line) {
         int numInputs;
@@ -130,8 +123,8 @@ public class NNExampleModelDetector extends TrainedModelDetector {
     }
 
     /**
-     * Read the next line for the model parameters and populate the build which
-     * later will be used to instantiate the instance of TrainedModel
+     * Read the next line for the model parameters and populate the build which later will be used
+     * to instantiate the instance of TrainedModel
      *
      * @param builder
      * @param line

@@ -16,9 +16,7 @@
  */
 package org.apache.tika.exception;
 
-/**
- * Tika exception
- */
+/** Tika exception */
 public class TikaException extends Exception {
 
     public TikaException(String msg) {
@@ -28,5 +26,4 @@ public class TikaException extends Exception {
     public TikaException(String msg, Throwable cause) {
         super(msg, cause);
     }
-
 }

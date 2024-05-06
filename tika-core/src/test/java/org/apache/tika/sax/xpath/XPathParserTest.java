@@ -130,5 +130,4 @@ public class XPathParserTest {
         assertFalse(matcher.matchesAttribute(NS, "name"));
         assertFalse(matcher.matchesAttribute(NS, "eman"));
     }
-
 }

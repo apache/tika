@@ -17,9 +17,8 @@
 package org.apache.tika.language.translate;
 
 /**
- * Dummy translator that always declines to give any text. Useful as a
- * sentinel translator for when none others are available.
- * for unknown document types.
+ * Dummy translator that always declines to give any text. Useful as a sentinel translator for when
+ * none others are available. for unknown document types.
  */
 public class EmptyTranslator implements Translator {
     public String translate(String text, String sourceLanguage, String targetLanguage) {

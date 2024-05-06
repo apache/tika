@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -37,7 +36,6 @@ public class CompositePipesReporter extends PipesReporter implements Initializab
         for (PipesReporter reporter : pipesReporters) {
             reporter.report(t, result, elapsed);
         }
-
     }
 
     @Override
@@ -82,7 +80,7 @@ public class CompositePipesReporter extends PipesReporter implements Initializab
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //no-op
+        // no-op
     }
 
     @Override
@@ -97,8 +95,8 @@ public class CompositePipesReporter extends PipesReporter implements Initializab
     }
 
     /**
-     * Tries to close all resources.  Throws the last encountered IOException
-     * if any are thrown by the component reporters.
+     * Tries to close all resources. Throws the last encountered IOException if any are thrown by
+     * the component reporters.
      *
      * @throws IOException
      */

@@ -35,24 +35,18 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.utils.DateUtils;
+import org.junit.jupiter.api.Test;
 
-//Junit imports
+// Junit imports
 
-/**
- * JUnit based tests of class {@link org.apache.tika.metadata.Metadata}.
- */
+/** JUnit based tests of class {@link org.apache.tika.metadata.Metadata}. */
 public class TestMetadata extends TikaTest {
 
     private static final String CONTENTTYPE = "contenttype";
 
-    /**
-     * Test for the <code>add(String, String)</code> method.
-     */
+    /** Test for the <code>add(String, String)</code> method. */
     @Test
     public void testAdd() {
         String[] values = null;
@@ -87,13 +81,11 @@ public class TestMetadata extends TikaTest {
             meta.add(nonMultiValued, "value2");
             fail("add should fail on the second call of a non-multi valued item");
         } catch (PropertyTypeException e) {
-            //swallow
+            // swallow
         }
     }
 
-    /**
-     * Test for the <code>set(String, String)</code> method.
-     */
+    /** Test for the <code>set(String, String)</code> method. */
     @Test
     public void testSet() {
         String[] values = null;
@@ -120,9 +112,7 @@ public class TestMetadata extends TikaTest {
         assertEquals("new value 2", values[1]);
     }
 
-    /**
-     * Test for <code>setAll(Properties)</code> method.
-     */
+    /** Test for <code>setAll(Properties)</code> method. */
     @Test
     public void testSetProperties() {
         String[] values = null;
@@ -150,9 +140,7 @@ public class TestMetadata extends TikaTest {
         assertEquals("value2.1", values[0]);
     }
 
-    /**
-     * Test for <code>get(String)</code> method.
-     */
+    /** Test for <code>get(String)</code> method. */
     @Test
     public void testGet() {
         Metadata meta = new Metadata();
@@ -163,9 +151,7 @@ public class TestMetadata extends TikaTest {
         assertEquals("value-1", meta.get("a-name"));
     }
 
-    /**
-     * Test for <code>isMultiValued()</code> method.
-     */
+    /** Test for <code>isMultiValued()</code> method. */
     @Test
     public void testIsMultiValued() {
         Metadata meta = new Metadata();
@@ -176,9 +162,7 @@ public class TestMetadata extends TikaTest {
         assertTrue(meta.isMultiValued("key"));
     }
 
-    /**
-     * Test for <code>names</code> method.
-     */
+    /** Test for <code>names</code> method. */
     @Test
     public void testNames() {
         String[] names = null;
@@ -195,9 +179,7 @@ public class TestMetadata extends TikaTest {
         assertEquals(2, names.length);
     }
 
-    /**
-     * Test for <code>remove(String)</code> method.
-     */
+    /** Test for <code>remove(String)</code> method. */
     @Test
     public void testRemove() {
         Metadata meta = new Metadata();
@@ -219,9 +201,7 @@ public class TestMetadata extends TikaTest {
         assertNull(meta.get("name-two"));
     }
 
-    /**
-     * Test for <code>equals(Object)</code> method.
-     */
+    /** Test for <code>equals(Object)</code> method. */
     @Test
     public void testObject() {
         Metadata meta1 = new Metadata();
@@ -247,10 +227,7 @@ public class TestMetadata extends TikaTest {
         assertFalse(meta1.equals(meta2));
     }
 
-    /**
-     * Tests for getting and setting integer
-     * based properties
-     */
+    /** Tests for getting and setting integer based properties */
     @Test
     public void testGetSetInt() {
         Metadata meta = new Metadata();
@@ -264,13 +241,13 @@ public class TestMetadata extends TikaTest {
             meta.set(Metadata.BITS_PER_SAMPLE, 1);
             fail("Shouldn't be able to set a multi valued property as an int");
         } catch (PropertyTypeException e) {
-            //swallow
+            // swallow
         }
         try {
             meta.set(TikaCoreProperties.CREATED, 1);
             fail("Shouldn't be able to set a date property as an int");
         } catch (PropertyTypeException e) {
-            //swallow
+            // swallow
         }
 
         // Can set it and retrieve it
@@ -290,10 +267,7 @@ public class TestMetadata extends TikaTest {
         assertEquals(null, meta.getInt(TikaCoreProperties.CREATED));
     }
 
-    /**
-     * Tests for getting and setting date
-     * based properties
-     */
+    /** Tests for getting and setting date based properties */
     @Test
     public void testGetSetDate() {
         Metadata meta = new Metadata();
@@ -308,13 +282,13 @@ public class TestMetadata extends TikaTest {
             meta.set(Metadata.BITS_PER_SAMPLE, new Date(1000));
             fail("Shouldn't be able to set a multi valued property as a date");
         } catch (PropertyTypeException e) {
-            //swallow
+            // swallow
         }
         try {
             meta.set(Metadata.IMAGE_WIDTH, new Date(1000));
             fail("Shouldn't be able to set an int property as an date");
         } catch (PropertyTypeException e) {
-            //swallow
+            // swallow
         }
 
         // Can set it and retrieve it
@@ -334,7 +308,7 @@ public class TestMetadata extends TikaTest {
         assertEquals(null, meta.getInt(TikaCoreProperties.CREATED));
 
         // Our format doesn't include milliseconds
-        // This means things get rounded 
+        // This means things get rounded
         meta.set(TikaCoreProperties.CREATED, new Date(1050));
         assertEquals("1970-01-01T00:00:01Z", meta.get(TikaCoreProperties.CREATED));
         assertEquals(1000, meta.getDate(TikaCoreProperties.CREATED).getTime());
@@ -367,8 +341,8 @@ public class TestMetadata extends TikaTest {
     }
 
     /**
-     * Some documents, like jpegs, might have date in unspecified time zone
-     * which should be handled like strings but verified to have parseable ISO 8601 format
+     * Some documents, like jpegs, might have date in unspecified time zone which should be handled
+     * like strings but verified to have parseable ISO 8601 format
      */
     @Test
     public void testGetSetDateUnspecifiedTimezone() {
@@ -376,26 +350,34 @@ public class TestMetadata extends TikaTest {
 
         // Set explictly without a timezone
         meta.set(TikaCoreProperties.CREATED, "1970-01-01T00:00:01");
-        assertEquals("1970-01-01T00:00:01", meta.get(TikaCoreProperties.CREATED),
+        assertEquals(
+                "1970-01-01T00:00:01",
+                meta.get(TikaCoreProperties.CREATED),
                 "should return string without time zone specifier because zone is not known");
 
         // Now ask DateUtils to format for us without one
         meta.set(TikaCoreProperties.CREATED, DateUtils.formatDateUnknownTimezone(new Date(1000)));
-        assertEquals("1970-01-01T00:00:01", meta.get(TikaCoreProperties.CREATED),
+        assertEquals(
+                "1970-01-01T00:00:01",
+                meta.get(TikaCoreProperties.CREATED),
                 "should return string without time zone specifier because zone is not known");
     }
 
     /**
-     * Defines a composite property, then checks that when set as the
-     * composite the value can be retrieved with the property or the aliases
+     * Defines a composite property, then checks that when set as the composite the value can be
+     * retrieved with the property or the aliases
      */
     @SuppressWarnings("deprecation")
     @Test
     public void testCompositeProperty() {
         Metadata meta = new Metadata();
-        Property compositeProperty = Property.composite(DublinCore.DESCRIPTION,
-                new Property[]{TikaCoreProperties.DESCRIPTION,
-                        Property.internalText("testDescriptionAlt")});
+        Property compositeProperty =
+                Property.composite(
+                        DublinCore.DESCRIPTION,
+                        new Property[] {
+                            TikaCoreProperties.DESCRIPTION,
+                            Property.internalText("testDescriptionAlt")
+                        });
         String message = "composite description";
         meta.set(compositeProperty, message);
 
@@ -424,7 +406,6 @@ public class TestMetadata extends TikaTest {
                 finished++;
             }
         }
-
     }
 
     @Test
@@ -506,9 +487,8 @@ public class TestMetadata extends TikaTest {
                 df.setTimeZone(TimeZone.getTimeZone("UTC"));
                 m.set(TikaCoreProperties.CREATED, df.format(now));
                 assertTrue(
-                        Math.abs(now.getTime() - m.getDate(TikaCoreProperties.CREATED).getTime()) <
-                                2000);
-
+                        Math.abs(now.getTime() - m.getDate(TikaCoreProperties.CREATED).getTime())
+                                < 2000);
             }
             return 1;
         }

@@ -17,26 +17,20 @@
 
 package org.apache.tika.parser.mock;
 
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+import org.apache.tika.config.Field;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.sax.XHTMLContentHandler;
-
-/**
- * only parses vowels as specified in "vowel" field.
- */
+/** only parses vowels as specified in "vowel" field. */
 public class VowelParser extends MockParser {
 
     private static final long serialVersionUID = 1L;
 
-    @Field
-    private String vowel = "aeiou";
+    @Field private String vowel = "aeiou";
 
     protected void write(Node action, XHTMLContentHandler xhtml) throws SAXException {
         NamedNodeMap attrs = action.getAttributes();
@@ -55,5 +49,4 @@ public class VowelParser extends MockParser {
         xhtml.characters(sb.toString());
         xhtml.endElement(elementType);
     }
-
 }

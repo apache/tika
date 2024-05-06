@@ -19,8 +19,8 @@ package org.apache.tika.sax.xpath;
 import java.util.Objects;
 
 /**
- * Final evaluation state of a <code>.../@name</code> XPath expression.
- * Matches the named attributes of the current element.
+ * Final evaluation state of a <code>.../@name</code> XPath expression. Matches the named attributes
+ * of the current element.
  */
 public class NamedAttributeMatcher extends Matcher {
 

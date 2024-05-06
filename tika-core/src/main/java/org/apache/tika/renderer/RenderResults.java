@@ -20,7 +20,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.tika.io.TemporaryResources;
 
 public class RenderResults implements Closeable {
@@ -28,9 +27,11 @@ public class RenderResults implements Closeable {
     private List<RenderResult> results = new ArrayList<>();
 
     private final TemporaryResources tmp;
+
     public RenderResults(TemporaryResources tmp) {
         this.tmp = tmp;
     }
+
     public void add(RenderResult result) {
         tmp.addResource(result);
         results.add(result);

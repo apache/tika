@@ -20,18 +20,20 @@ import java.util.Locale;
 
 /**
  * Support for language tags (as defined by https://tools.ietf.org/html/bcp47)
- * <p>
- * See https://en.wikipedia.org/wiki/List_of_ISO_639-3_codes for a list of
- * three character language codes.
- * <p>
- * TODO change to LanguageTag, and use these vs. strings everywhere in the
- * language detector API?
+ *
+ * <p>See https://en.wikipedia.org/wiki/List_of_ISO_639-3_codes for a list of three character
+ * language codes.
+ *
+ * <p>TODO change to LanguageTag, and use these vs. strings everywhere in the language detector API?
  */
 public class LanguageNames {
 
     public static String makeName(String language, String script, String region) {
         Locale locale =
-                new Locale.Builder().setLanguage(language).setScript(script).setRegion(region)
+                new Locale.Builder()
+                        .setLanguage(language)
+                        .setScript(script)
+                        .setRegion(region)
                         .build();
         return locale.toLanguageTag();
     }

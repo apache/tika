@@ -16,25 +16,21 @@
  */
 package org.apache.tika.sax.xpath;
 
-/**
- * XPath element matcher. A matcher instance encapsulates a specific
- * state in XPath evaluation.
- */
+/** XPath element matcher. A matcher instance encapsulates a specific state in XPath evaluation. */
 public class Matcher {
 
     /**
-     * State of a failed XPath evaluation, where nothing is matched.
-     * This matcher instance is used as a sentinel object whenever an
-     * XPath evaluation branch fails.
+     * State of a failed XPath evaluation, where nothing is matched. This matcher instance is used
+     * as a sentinel object whenever an XPath evaluation branch fails.
      */
     public static final Matcher FAIL = new Matcher();
 
     /**
-     * Returns the XPath evaluation state that results from descending
-     * to a child element with the given name.
+     * Returns the XPath evaluation state that results from descending to a child element with the
+     * given name.
      *
      * @param namespace element namespace or <code>null</code>
-     * @param name      element name
+     * @param name element name
      * @return next XPath evaluation state
      */
     public Matcher descend(String namespace, String name) {
@@ -42,8 +38,8 @@ public class Matcher {
     }
 
     /**
-     * Returns <code>true</code> if the XPath expression matches
-     * the element associated with this evaluation state.
+     * Returns <code>true</code> if the XPath expression matches the element associated with this
+     * evaluation state.
      *
      * @return XPath evaluation state for this element
      */
@@ -52,11 +48,11 @@ public class Matcher {
     }
 
     /**
-     * Returns <code>true</code> if the XPath expression matches the named
-     * attribute of the element associated with this evaluation state.
+     * Returns <code>true</code> if the XPath expression matches the named attribute of the element
+     * associated with this evaluation state.
      *
      * @param namespace attribute namespace or <code>null</code>
-     * @param name      attribute name
+     * @param name attribute name
      * @return XPath evaluation state for named attribute of this element
      */
     public boolean matchesAttribute(String namespace, String name) {
@@ -64,14 +60,12 @@ public class Matcher {
     }
 
     /**
-     * Returns <code>true</code> if the XPath expression matches all text
-     * nodes whose parent is the element associated with this evaluation
-     * state.
+     * Returns <code>true</code> if the XPath expression matches all text nodes whose parent is the
+     * element associated with this evaluation state.
      *
      * @return XPath evaluation state for text children of this element
      */
     public boolean matchesText() {
         return false;
     }
-
 }

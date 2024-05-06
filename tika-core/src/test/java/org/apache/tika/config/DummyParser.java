@@ -17,7 +17,6 @@
 package org.apache.tika.config;
 
 import java.util.Collection;
-
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
@@ -27,8 +26,10 @@ public class DummyParser extends CompositeParser implements Parser {
 
     private final ServiceLoader loader;
 
-    public DummyParser(MediaTypeRegistry registry, ServiceLoader loader,
-                       Collection<Class<? extends Parser>> excludeParsers) {
+    public DummyParser(
+            MediaTypeRegistry registry,
+            ServiceLoader loader,
+            Collection<Class<? extends Parser>> excludeParsers) {
         this.loader = loader;
     }
 

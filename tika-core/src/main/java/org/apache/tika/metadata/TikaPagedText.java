@@ -17,19 +17,16 @@
 package org.apache.tika.metadata;
 
 /**
- * Metadata properties for paged text, metadata appropriate
- * for an individual page (useful for embedded document handlers
- * called on individual pages).
+ * Metadata properties for paged text, metadata appropriate for an individual page (useful for
+ * embedded document handlers called on individual pages).
  *
- * Use {@link PagedText} where possible
+ * <p>Use {@link PagedText} where possible
  */
 public interface TikaPagedText {
     String TIKA_PAGED_TEXT_PREFIX = "tika_pg:";
-    /**
-     * 1-based page number for a specific page
-     */
+
+    /** 1-based page number for a specific page */
     Property PAGE_NUMBER = Property.internalInteger(TIKA_PAGED_TEXT_PREFIX + "page_number");
 
     Property PAGE_ROTATION = Property.internalRational(TIKA_PAGED_TEXT_PREFIX + "page_rotation");
-
 }

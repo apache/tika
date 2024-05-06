@@ -23,22 +23,18 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * <p>This class calls #toString() on the ContentHandler, inserts it into the Metadata object
- * and serializes the Metadata object.
- * </p>
- * Ideally, this would serialize the ContentHandler and the Metadata object as separate objects,
- * but we can't guarantee that the ContentHandler is Serializable (e.g. the StringWriter in
- * the WriteOutContentHandler).
+ * This class calls #toString() on the ContentHandler, inserts it into the Metadata object and
+ * serializes the Metadata object. Ideally, this would serialize the ContentHandler and the Metadata
+ * object as separate objects, but we can't guarantee that the ContentHandler is Serializable (e.g.
+ * the StringWriter in the WriteOutContentHandler).
  */
 class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
         implements ForkProxy {
@@ -49,17 +45,15 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
     public static final byte METADATA_ONLY = 4;
     public static final byte COMPLETE = 5;
 
-    /**
-     * Serial version UID
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = 737511106054617524L;
 
     private final int resource;
 
     private transient DataOutputStream output;
 
-    public RecursiveMetadataContentHandlerProxy(int resource,
-                                                ContentHandlerFactory contentHandlerFactory) {
+    public RecursiveMetadataContentHandlerProxy(
+            int resource, ContentHandlerFactory contentHandlerFactory) {
         super(contentHandlerFactory);
         this.resource = resource;
     }
@@ -82,8 +76,9 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
         proxyBackToClient(MAIN_DOCUMENT, contentHandler, metadata);
     }
 
-    private void proxyBackToClient(int embeddedOrMainDocument, ContentHandler contentHandler,
-                                   Metadata metadata) throws SAXException {
+    private void proxyBackToClient(
+            int embeddedOrMainDocument, ContentHandler contentHandler, Metadata metadata)
+            throws SAXException {
         try {
             output.write(ForkServer.RESOURCE);
             output.writeByte(resource);
@@ -95,7 +90,7 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
                     bytes = serialize(contentHandler);
                     success = true;
                 } catch (NotSerializableException e) {
-                    //object lied
+                    // object lied
                 }
                 if (success) {
 
@@ -106,9 +101,9 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
                     return;
                 }
             }
-            //if contenthandler is not allegedly or actually Serializable
-            //fall back to adding contentHandler.toString() to the metadata object
-            //and send that.
+            // if contenthandler is not allegedly or actually Serializable
+            // fall back to adding contentHandler.toString() to the metadata object
+            // and send that.
             metadata.set(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
             output.writeByte(METADATA_ONLY);
             send(metadata);
@@ -132,16 +127,15 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
     }
 
     private byte[] serialize(Object object) throws IOException {
-        //can't figure out why I'm getting an IllegalAccessException
-        //when I try to use ForkedObjectInputStream, but
-        //not when I do this manually ?!
+        // can't figure out why I'm getting an IllegalAccessException
+        // when I try to use ForkedObjectInputStream, but
+        // not when I do this manually ?!
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
             oos.writeObject(object);
             oos.flush();
         }
         return bos.toByteArray();
-
     }
 
     private void doneSending() throws SAXException {

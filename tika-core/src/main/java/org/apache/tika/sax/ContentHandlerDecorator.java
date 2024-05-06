@@ -25,16 +25,13 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Decorator base class for the {@link ContentHandler} interface. This class
- * simply delegates all SAX events calls to an underlying decorated handler
- * instance. Subclasses can provide extra decoration by overriding one or more
- * of the SAX event methods.
+ * Decorator base class for the {@link ContentHandler} interface. This class simply delegates all
+ * SAX events calls to an underlying decorated handler instance. Subclasses can provide extra
+ * decoration by overriding one or more of the SAX event methods.
  */
 public class ContentHandlerDecorator extends DefaultHandler {
 
-    /**
-     * Decorated SAX event handler.
-     */
+    /** Decorated SAX event handler. */
     private ContentHandler handler;
 
     /**
@@ -48,18 +45,18 @@ public class ContentHandlerDecorator extends DefaultHandler {
     }
 
     /**
-     * Creates a decorator that by default forwards incoming SAX events to
-     * a dummy content handler that simply ignores all the events. Subclasses
-     * should use the {@link #setContentHandler(ContentHandler)} method to
-     * switch to a more usable underlying content handler.
+     * Creates a decorator that by default forwards incoming SAX events to a dummy content handler
+     * that simply ignores all the events. Subclasses should use the {@link
+     * #setContentHandler(ContentHandler)} method to switch to a more usable underlying content
+     * handler.
      */
     protected ContentHandlerDecorator() {
         this(new DefaultHandler());
     }
 
     /**
-     * Sets the underlying content handler. All future SAX events will be
-     * directed to this handler instead of the one that was previously used.
+     * Sets the underlying content handler. All future SAX events will be directed to this handler
+     * instead of the one that was previously used.
      *
      * @param handler content handler
      */
@@ -170,48 +167,46 @@ public class ContentHandlerDecorator extends DefaultHandler {
     }
 
     /**
-     * Handle any exceptions thrown by methods in this class. This method
-     * provides a single place to implement custom exception handling. The
-     * default behaviour is simply to re-throw the given exception, but
-     * subclasses can also provide alternative ways of handling the situation.
-     * 
-     * If the wrapped handler is itself a ContentHandlerDecorator, the call
-     * is delegated to the wrapped handler's {@link ContentHandlerDecorator#handleException(SAXException)}
+     * Handle any exceptions thrown by methods in this class. This method provides a single place to
+     * implement custom exception handling. The default behaviour is simply to re-throw the given
+     * exception, but subclasses can also provide alternative ways of handling the situation.
+     *
+     * <p>If the wrapped handler is itself a ContentHandlerDecorator, the call is delegated to the
+     * wrapped handler's {@link ContentHandlerDecorator#handleException(SAXException)}
      *
      * @param exception the exception that was thrown
      * @throws SAXException the exception (if any) thrown to the client
      */
     protected void handleException(SAXException exception) throws SAXException {
         if (handler instanceof ContentHandlerDecorator) {
-            ((ContentHandlerDecorator)handler).handleException(exception);
+            ((ContentHandlerDecorator) handler).handleException(exception);
         } else {
             throw exception;
         }
     }
 
     @Override
-    public void warning (SAXParseException exception) throws SAXException {
+    public void warning(SAXParseException exception) throws SAXException {
         if (handler instanceof ErrorHandler) {
-            ((ErrorHandler)handler).warning(exception);
+            ((ErrorHandler) handler).warning(exception);
         } else {
             super.warning(exception);
         }
     }
 
     @Override
-    public void error (SAXParseException exception) throws SAXException {
+    public void error(SAXParseException exception) throws SAXException {
         if (handler instanceof ErrorHandler) {
-            ((ErrorHandler)handler).error(exception);
+            ((ErrorHandler) handler).error(exception);
         } else {
             super.error(exception);
         }
     }
 
     @Override
-    public void fatalError (SAXParseException exception)
-            throws SAXException {
+    public void fatalError(SAXParseException exception) throws SAXException {
         if (handler instanceof ErrorHandler) {
-            ((ErrorHandler)handler).fatalError(exception);
+            ((ErrorHandler) handler).fatalError(exception);
         } else {
             super.fatalError(exception);
         }

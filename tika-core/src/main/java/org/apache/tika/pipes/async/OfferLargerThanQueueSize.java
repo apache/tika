@@ -27,8 +27,7 @@ public class OfferLargerThanQueueSize extends IllegalArgumentException {
 
     @Override
     public String getMessage() {
-        return "sizeOffered (" + sizeOffered + ") is greater than queue size (" +
-                queueSize + ")";
+        return "sizeOffered (" + sizeOffered + ") is greater than queue size (" + queueSize + ")";
     }
 
     public int getQueueSize() {

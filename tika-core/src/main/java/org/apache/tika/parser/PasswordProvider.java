@@ -19,23 +19,19 @@ package org.apache.tika.parser;
 import org.apache.tika.metadata.Metadata;
 
 /**
- * Interface for providing a password to a Parser for handling Encrypted
- * and Password Protected Documents.
- * An implementation of this should be set on the {@link ParseContext}
- * supplied to {@link Parser#parse(java.io.InputStream, org.xml.sax.ContentHandler,
- * Metadata, ParseContext)}
- * to provide a way to get the document password.
- * An implementation of this interface defines some specific selection
- * or lookup criteria, to be applied against the document metadata passed
- * to the {@link #getPassword(Metadata)} method.
+ * Interface for providing a password to a Parser for handling Encrypted and Password Protected
+ * Documents. An implementation of this should be set on the {@link ParseContext} supplied to {@link
+ * Parser#parse(java.io.InputStream, org.xml.sax.ContentHandler, Metadata, ParseContext)} to provide
+ * a way to get the document password. An implementation of this interface defines some specific
+ * selection or lookup criteria, to be applied against the document metadata passed to the {@link
+ * #getPassword(Metadata)} method.
  *
  * @since Apache Tika 1.1
  */
 public interface PasswordProvider {
     /**
-     * Looks up the password for a document with the given metadata,
-     * and returns it for the Parser. If no password is available
-     * for the document, will return null.
+     * Looks up the password for a document with the given metadata, and returns it for the Parser.
+     * If no password is available for the document, will return null.
      *
      * @param metadata document metadata
      * @return The document decryption password, or <code>null</code> if not known

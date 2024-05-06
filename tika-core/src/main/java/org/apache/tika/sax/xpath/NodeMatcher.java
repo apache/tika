@@ -17,8 +17,8 @@
 package org.apache.tika.sax.xpath;
 
 /**
- * Final evaluation state of a <code>.../node()</code> XPath expression.
- * Matches all elements, attributes, and text.
+ * Final evaluation state of a <code>.../node()</code> XPath expression. Matches all elements,
+ * attributes, and text.
  */
 public class NodeMatcher extends Matcher {
 
@@ -38,5 +38,4 @@ public class NodeMatcher extends Matcher {
     public boolean matchesText() {
         return true;
     }
-
 }

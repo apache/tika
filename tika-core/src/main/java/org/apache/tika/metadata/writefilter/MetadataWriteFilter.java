@@ -24,13 +24,13 @@ public interface MetadataWriteFilter extends Serializable {
     void filterExisting(Map<String, String[]> data);
 
     /**
-     * Based on the field and value, this filter modifies the field
-     * and/or the value to something that should be added to the Metadata object.
+     * Based on the field and value, this filter modifies the field and/or the value to something
+     * that should be added to the Metadata object.
      *
-     * If the value is <code>null</code>, no value is set or added.
+     * <p>If the value is <code>null</code>, no value is set or added.
      *
-     * Status updates (e.g. write limit reached) can be added directly to the
-     * underlying metadata.
+     * <p>Status updates (e.g. write limit reached) can be added directly to the underlying
+     * metadata.
      *
      * @param field
      * @param value
@@ -40,9 +40,8 @@ public interface MetadataWriteFilter extends Serializable {
     void add(String field, String value, Map<String, String[]> data);
 
     /**
-     * Based on the field and the value, this filter modifies
-     * the field and/or the value to something that should be set in the
-     * Metadata object.
+     * Based on the field and the value, this filter modifies the field and/or the value to
+     * something that should be set in the Metadata object.
      *
      * @param field
      * @param value

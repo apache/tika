@@ -18,12 +18,10 @@ package org.apache.tika.sax;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-
 
 public class NonValidatingContentHandler extends ContentHandlerDecorator {
     class ClosedInputStream extends InputStream {
@@ -37,7 +35,6 @@ public class NonValidatingContentHandler extends ContentHandlerDecorator {
         public int read() {
             return -1;
         }
-
     }
 
     public NonValidatingContentHandler(ContentHandler handler) {
@@ -46,17 +43,17 @@ public class NonValidatingContentHandler extends ContentHandlerDecorator {
 
     @Override
     public void warning(SAXParseException e) throws SAXException {
-        //NO-OP
+        // NO-OP
     }
 
     @Override
     public void error(SAXParseException e) throws SAXException {
-        //NO-OP
+        // NO-OP
     }
 
     @Override
     public void fatalError(SAXParseException e) throws SAXException {
-        //NO-OP
+        // NO-OP
     }
 
     @Override
@@ -64,5 +61,4 @@ public class NonValidatingContentHandler extends ContentHandlerDecorator {
             throws SAXException, IOException {
         return new InputSource(new ClosedInputStream());
     }
-
 }

@@ -20,33 +20,31 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Locale;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 
 /**
- * Simple fetcher for URLs. This simply calls {@link TikaInputStream#get(URL)}.
- * This intentionally does not support fetching for files.
- * Please use the FileSystemFetcher for that.  If you need more advanced control (passwords,
- * timeouts, proxies, etc), please use the tika-fetcher-http module.
+ * Simple fetcher for URLs. This simply calls {@link TikaInputStream#get(URL)}. This intentionally
+ * does not support fetching for files. Please use the FileSystemFetcher for that. If you need more
+ * advanced control (passwords, timeouts, proxies, etc), please use the tika-fetcher-http module.
  */
 public class UrlFetcher extends AbstractFetcher {
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata) throws IOException, TikaException {
         if (fetchKey.contains("\u0000")) {
-            throw new IllegalArgumentException("URL must not contain \u0000. " +
-                    "Please review the life decisions that led you to requesting " +
-                    "a URL with this character in it.");
+            throw new IllegalArgumentException(
+                    "URL must not contain \u0000. "
+                            + "Please review the life decisions that led you to requesting "
+                            + "a URL with this character in it.");
         }
         if (fetchKey.toLowerCase(Locale.US).trim().startsWith("file:")) {
             throw new IllegalArgumentException(
-                    "The UrlFetcher does not fetch from file shares; " +
-                    "please use the FileSystemFetcher");
+                    "The UrlFetcher does not fetch from file shares; "
+                            + "please use the FileSystemFetcher");
         }
         return TikaInputStream.get(new URL(fetchKey), metadata);
     }
-
 }

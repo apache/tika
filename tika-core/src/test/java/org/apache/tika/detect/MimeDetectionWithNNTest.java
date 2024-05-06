@@ -22,13 +22,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeDetectionTest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MimeDetectionWithNNTest {
 
@@ -43,10 +41,10 @@ public class MimeDetectionWithNNTest {
     }
 
     /**
-     * The test case only works on the detector that only has grb model as
-     * currently the grb model is used as an example; if more models are added
-     * in the TrainedModelDetector, the following tests will need to modified to reflect
-     * the corresponding type instead of test-equal with the "OCTET_STREAM";
+     * The test case only works on the detector that only has grb model as currently the grb model
+     * is used as an example; if more models are added in the TrainedModelDetector, the following
+     * tests will need to modified to reflect the corresponding type instead of test-equal with the
+     * "OCTET_STREAM";
      *
      * @throws Exception
      */
@@ -69,7 +67,9 @@ public class MimeDetectionWithNNTest {
         testFile(octetStream_str, "test-utf16be.xml");
         testFile(octetStream_str, "test-long-comment.xml");
         testFile(octetStream_str, "stylesheet.xsl");
-        testUrl(octetStream_str, "http://www.ai.sri.com/daml/services/owl-s/1.2/Process.owl",
+        testUrl(
+                octetStream_str,
+                "http://www.ai.sri.com/daml/services/owl-s/1.2/Process.owl",
                 "test-difficult-rdf1.xml");
         testUrl(octetStream_str, "http://www.w3.org/2002/07/owl#", "test-difficult-rdf2.xml");
         // add evil test from TIKA-327
@@ -108,27 +108,25 @@ public class MimeDetectionWithNNTest {
         try {
             Metadata metadata = new Metadata();
             String mime = this.detector.detect(in, metadata).toString();
-            assertEquals(expected, mime,
-                    urlOrFileName + " is not properly detected: detected.");
+            assertEquals(expected, mime, urlOrFileName + " is not properly detected: detected.");
 
             // Add resource name and test again
             // metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
             mime = this.detector.detect(in, metadata).toString();
-            assertEquals(expected, mime,
+            assertEquals(
+                    expected,
+                    mime,
                     urlOrFileName + " is not properly detected after adding resource name.");
         } finally {
             in.close();
         }
     }
 
-    /**
-     * Test for type detection of empty documents.
-     */
+    /** Test for type detection of empty documents. */
     @Test
     public void testEmptyDocument() throws IOException {
-        assertEquals(MediaType.OCTET_STREAM,
+        assertEquals(
+                MediaType.OCTET_STREAM,
                 detector.detect(new ByteArrayInputStream(new byte[0]), new Metadata()));
-
     }
-
 }

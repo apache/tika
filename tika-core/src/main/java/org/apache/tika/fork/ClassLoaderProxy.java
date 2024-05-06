@@ -30,15 +30,13 @@ import java.util.Set;
 
 class ClassLoaderProxy extends ClassLoader implements ForkProxy {
 
-    /**
-     * Serial version UID
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = -7303109260448540420L;
 
     /**
-     * Names of resources that could not be found. Used to avoid repeated
-     * lookup of commonly accessed, but often not present, resources like
-     * <code>META-INF/services/javax.xml.parsers.SAXParserFactory</code>.
+     * Names of resources that could not be found. Used to avoid repeated lookup of commonly
+     * accessed, but often not present, resources like <code>
+     * META-INF/services/javax.xml.parsers.SAXParserFactory</code>.
      */
     private final Set<String> notFound = new HashSet<>();
 
@@ -149,5 +147,4 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
             return stream.toByteArray();
         }
     }
-
 }

@@ -19,26 +19,26 @@ package org.apache.tika.sax;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
-
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
-import org.apache.tika.metadata.TikaCoreProperties;
-
 /**
- * This is a special handler to be used only with the
- * {@link org.apache.tika.parser.RecursiveParserWrapper}.
- * It allows for finer-grained processing of embedded documents than in the legacy handlers.
- * Subclasses can choose how to process individual embedded documents.
+ * This is a special handler to be used only with the {@link
+ * org.apache.tika.parser.RecursiveParserWrapper}. It allows for finer-grained processing of
+ * embedded documents than in the legacy handlers. Subclasses can choose how to process individual
+ * embedded documents.
  */
 public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandler
         implements Serializable {
 
-    public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED = Property.internalBoolean(
-            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
+    public static final Property EMBEDDED_RESOURCE_LIMIT_REACHED =
+            Property.internalBoolean(
+                    TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX
+                            + "embedded_resource_limit_reached");
     private static final int MAX_DEPTH = 100;
     private final ContentHandlerFactory contentHandlerFactory;
     private final int maxEmbeddedResources;
@@ -49,8 +49,8 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
         this(contentHandlerFactory, -1);
     }
 
-    public AbstractRecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory,
-                                                 int maxEmbeddedResources) {
+    public AbstractRecursiveParserWrapperHandler(
+            ContentHandlerFactory contentHandlerFactory, int maxEmbeddedResources) {
         this.contentHandlerFactory = contentHandlerFactory;
         this.maxEmbeddedResources = maxEmbeddedResources;
     }
@@ -64,12 +64,12 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
     }
 
     /**
-     * This is called before parsing each embedded document.  Override this
-     * for custom behavior.  Make sure to call this in your custom classes
-     * because this tracks the number of embedded documents.
+     * This is called before parsing each embedded document. Override this for custom behavior. Make
+     * sure to call this in your custom classes because this tracks the number of embedded
+     * documents.
      *
      * @param contentHandler local handler to be used on this embedded document
-     * @param metadata       embedded document's metadata
+     * @param metadata embedded document's metadata
      */
     public void startEmbeddedDocument(ContentHandler contentHandler, Metadata metadata)
             throws SAXException {
@@ -82,11 +82,11 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
     }
 
     /**
-     * This is called after parsing each embedded document.  Override this
-     * for custom behavior.  This is currently a no-op.
+     * This is called after parsing each embedded document. Override this for custom behavior. This
+     * is currently a no-op.
      *
      * @param contentHandler content handler that was used on this embedded document
-     * @param metadata       metadata for this embedded document
+     * @param metadata metadata for this embedded document
      * @throws SAXException
      */
     public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata)
@@ -95,13 +95,12 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
     }
 
     /**
-     * This is called after the full parse has completed.  Override this
-     * for custom behavior.  Make sure to call this as <code>super.endDocument(...)</code>
-     * in subclasses because this adds whether or not the embedded resource
-     * maximum has been hit to the metadata.
+     * This is called after the full parse has completed. Override this for custom behavior. Make
+     * sure to call this as <code>super.endDocument(...)</code> in subclasses because this adds
+     * whether or not the embedded resource maximum has been hit to the metadata.
      *
      * @param contentHandler content handler that was used on the main document
-     * @param metadata       metadata that was gathered for the main document
+     * @param metadata metadata that was gathered for the main document
      * @throws SAXException
      */
     public void endDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {

@@ -16,19 +16,14 @@
  */
 package org.apache.tika.sax;
 
-
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
-
 import org.xml.sax.ContentHandler;
 
-/**
- * Interface to allow easier injection of code for getting a new ContentHandler
- */
+/** Interface to allow easier injection of code for getting a new ContentHandler */
 public interface ContentHandlerFactory extends Serializable {
     ContentHandler getNewContentHandler();
 
     ContentHandler getNewContentHandler(OutputStream os, Charset charset);
-
 }

@@ -17,29 +17,20 @@
 package org.apache.tika.metadata;
 
 /**
- * Geographic schema. This is a collection of
- * {@link Property property definition} constants for geographic
- * information, as defined in the W3C Geo Vocabularies.
+ * Geographic schema. This is a collection of {@link Property property definition} constants for
+ * geographic information, as defined in the W3C Geo Vocabularies.
  *
- * @see <a href="http://www.w3.org/2003/01/geo/"
- * >W3C Basic Geo Vocabulary</a>
+ * @see <a href="http://www.w3.org/2003/01/geo/" >W3C Basic Geo Vocabulary</a>
  * @since Apache Tika 0.8
  */
 public interface Geographic {
 
-    /**
-     * The WGS84 Latitude of the Point
-     */
+    /** The WGS84 Latitude of the Point */
     Property LATITUDE = Property.internalReal("geo:lat");
 
-    /**
-     * The WGS84 Longitude of the Point
-     */
+    /** The WGS84 Longitude of the Point */
     Property LONGITUDE = Property.internalReal("geo:long");
 
-    /**
-     * The WGS84 Altitude of the Point
-     */
+    /** The WGS84 Altitude of the Point */
     Property ALTITUDE = Property.internalReal("geo:alt");
-
 }

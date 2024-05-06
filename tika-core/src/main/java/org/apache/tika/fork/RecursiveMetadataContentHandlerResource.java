@@ -19,14 +19,12 @@ package org.apache.tika.fork;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 class RecursiveMetadataContentHandlerResource implements ForkResource {
 
@@ -51,14 +49,14 @@ class RecursiveMetadataContentHandlerResource implements ForkResource {
         byte handlerAndMetadataOrMetadataOnly = input.readByte();
 
         ContentHandler localContentHandler = DEFAULT_HANDLER;
-        if (handlerAndMetadataOrMetadataOnly ==
-                RecursiveMetadataContentHandlerProxy.HANDLER_AND_METADATA) {
+        if (handlerAndMetadataOrMetadataOnly
+                == RecursiveMetadataContentHandlerProxy.HANDLER_AND_METADATA) {
             localContentHandler = (ContentHandler) readObject(input);
-        } else if (handlerAndMetadataOrMetadataOnly !=
-                RecursiveMetadataContentHandlerProxy.METADATA_ONLY) {
+        } else if (handlerAndMetadataOrMetadataOnly
+                != RecursiveMetadataContentHandlerProxy.METADATA_ONLY) {
             throw new IllegalArgumentException(
-                    "Expected HANDLER_AND_METADATA or METADATA_ONLY, but got:" +
-                            handlerAndMetadataOrMetadataOnly);
+                    "Expected HANDLER_AND_METADATA or METADATA_ONLY, but got:"
+                            + handlerAndMetadataOrMetadataOnly);
         }
 
         Metadata metadata = (Metadata) readObject(input);
@@ -82,6 +80,5 @@ class RecursiveMetadataContentHandlerResource implements ForkResource {
         } catch (ClassNotFoundException e) {
             throw new IOException(e);
         }
-
     }
 }

@@ -20,9 +20,8 @@ package org.apache.tika.sax;
 import org.xml.sax.SAXException;
 
 /**
- * Sentinel exception to stop parsing xml once target is found
- * while SAX parsing. This should be used when the parse
- * can be stopped and the exception ignored.
+ * Sentinel exception to stop parsing xml once target is found while SAX parsing. This should be
+ * used when the parse can be stopped and the exception ignored.
  */
 public class StoppingEarlyException extends SAXException {
 

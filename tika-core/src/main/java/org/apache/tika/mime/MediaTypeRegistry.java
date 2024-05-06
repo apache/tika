@@ -23,24 +23,22 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Registry of known Internet media types.
- */
+/** Registry of known Internet media types. */
 public class MediaTypeRegistry implements Serializable {
 
-    /**
-     * Serial version UID
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = 4710974869988895410L;
+
     /**
-     * Registry of known media types, including type aliases. A canonical
-     * media type is handled as an identity mapping, while an alias is stored
-     * as a mapping from the alias to the corresponding canonical type.
+     * Registry of known media types, including type aliases. A canonical media type is handled as
+     * an identity mapping, while an alias is stored as a mapping from the alias to the
+     * corresponding canonical type.
      */
     private final Map<MediaType, MediaType> registry = new ConcurrentHashMap<>();
+
     /**
-     * Known type inheritance relationships. The mapping is from a media type
-     * to the closest supertype.
+     * Known type inheritance relationships. The mapping is from a media type to the closest
+     * supertype.
      */
     private final Map<MediaType, MediaType> inheritance = new HashMap<>();
 
@@ -55,8 +53,8 @@ public class MediaTypeRegistry implements Serializable {
     }
 
     /**
-     * Returns the set of all known canonical media types. Type aliases are
-     * not included in the returned set.
+     * Returns the set of all known canonical media types. Type aliases are not included in the
+     * returned set.
      *
      * @return canonical media types
      * @since Apache Tika 0.8
@@ -126,13 +124,12 @@ public class MediaTypeRegistry implements Serializable {
     }
 
     /**
-     * Checks whether the given media type a is a specialization of a more
-     * generic type b. Both types should be already normalised.
+     * Checks whether the given media type a is a specialization of a more generic type b. Both
+     * types should be already normalised.
      *
      * @param a media type, normalised
      * @param b suspected supertype, normalised
-     * @return <code>true</code> if b is a supertype of a,
-     * <code>false</code> otherwise
+     * @return <code>true</code> if b is a supertype of a, <code>false</code> otherwise
      * @since Apache Tika 0.8
      */
     public boolean isSpecializationOf(MediaType a, MediaType b) {
@@ -140,13 +137,13 @@ public class MediaTypeRegistry implements Serializable {
     }
 
     /**
-     * Checks whether the given media type equals the given base type or
-     * is a specialization of it. Both types should be already normalised.
+     * Checks whether the given media type equals the given base type or is a specialization of it.
+     * Both types should be already normalised.
      *
      * @param a media type, normalised
      * @param b base type, normalised
-     * @return <code>true</code> if b equals a or is a specialization of it,
-     * <code>false</code> otherwise
+     * @return <code>true</code> if b equals a or is a specialization of it, <code>false</code>
+     *     otherwise
      * @since Apache Tika 1.2
      */
     public boolean isInstanceOf(MediaType a, MediaType b) {
@@ -154,14 +151,14 @@ public class MediaTypeRegistry implements Serializable {
     }
 
     /**
-     * Parses and normalises the given media type string and checks whether
-     * the result equals the given base type or is a specialization of it.
-     * The given base type should already be normalised.
+     * Parses and normalises the given media type string and checks whether the result equals the
+     * given base type or is a specialization of it. The given base type should already be
+     * normalised.
      *
      * @param a media type
      * @param b base type, normalised
-     * @return <code>true</code> if b equals a or is a specialization of it,
-     * <code>false</code> otherwise
+     * @return <code>true</code> if b equals a or is a specialization of it, <code>false</code>
+     *     otherwise
      * @since Apache Tika 1.2
      */
     public boolean isInstanceOf(String a, MediaType b) {
@@ -169,14 +166,12 @@ public class MediaTypeRegistry implements Serializable {
     }
 
     /**
-     * Returns the supertype of the given type. If the media type database
-     * has an explicit inheritance rule for the type, then that is used.
-     * Next, if the given type has any parameters, then the respective base
-     * type (parameter-less) is returned. Otherwise built-in heuristics like
-     * text/... -&gt; text/plain and .../...+xml -&gt; application/xml are used.
-     * Finally application/octet-stream is returned for all types for which no other
-     * supertype is known, and the return value for application/octet-stream
-     * is <code>null</code>.
+     * Returns the supertype of the given type. If the media type database has an explicit
+     * inheritance rule for the type, then that is used. Next, if the given type has any parameters,
+     * then the respective base type (parameter-less) is returned. Otherwise built-in heuristics
+     * like text/... -&gt; text/plain and .../...+xml -&gt; application/xml are used. Finally
+     * application/octet-stream is returned for all types for which no other supertype is known, and
+     * the return value for application/octet-stream is <code>null</code>.
      *
      * @param type media type
      * @return supertype, or <code>null</code> for application/octet-stream
@@ -203,5 +198,4 @@ public class MediaTypeRegistry implements Serializable {
             return null;
         }
     }
-
 }

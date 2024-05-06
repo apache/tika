@@ -20,13 +20,11 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 
-
 /**
- * Abstract base class for parsers that use the AutoDetectReader and need
- * to use the {@link EncodingDetector} configured by {@link TikaConfig}
+ * Abstract base class for parsers that use the AutoDetectReader and need to use the {@link
+ * EncodingDetector} configured by {@link TikaConfig}
  */
 public abstract class AbstractEncodingDetectorParser implements Parser {
-
 
     private EncodingDetector encodingDetector;
 
@@ -39,8 +37,8 @@ public abstract class AbstractEncodingDetectorParser implements Parser {
     }
 
     /**
-     * Look for an EncodingDetetor in the ParseContext.  If it hasn't been
-     * passed in, use the original EncodingDetector from initialization.
+     * Look for an EncodingDetetor in the ParseContext. If it hasn't been passed in, use the
+     * original EncodingDetector from initialization.
      *
      * @param parseContext
      * @return

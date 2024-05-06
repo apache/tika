@@ -17,27 +17,26 @@
 package org.apache.tika.pipes.pipesiterator;
 
 /**
- * Interface for pipesiterators that allow counting of total
- * documents.  This is useful for user-facing frontends where
- * the user does not have easy access to the total number of files
- * for processing.
+ * Interface for pipesiterators that allow counting of total documents. This is useful for
+ * user-facing frontends where the user does not have easy access to the total number of files for
+ * processing.
  *
- * This is run in a daemon thread and is not guaranteed to complete before
- * the actual file processing has completed.
+ * <p>This is run in a daemon thread and is not guaranteed to complete before the actual file
+ * processing has completed.
  *
- * This is an ancillary task, and should not throw runtime exceptions.
+ * <p>This is an ancillary task, and should not throw runtime exceptions.
  *
- * Implementers should be careful to check for thread interrupts.
- *
+ * <p>Implementers should be careful to check for thread interrupts.
  */
 public interface TotalCounter {
 
     void startTotalCount();
 
     /**
-     * Returns the total count so far.  Check the {@link TotalCountResult#getStatus()}
-     * to figure out if the count has completed yet, if it is unsupported or if
-     * there was an exception during the counting.
+     * Returns the total count so far. Check the {@link TotalCountResult#getStatus()} to figure out
+     * if the count has completed yet, if it is unsupported or if there was an exception during the
+     * counting.
+     *
      * @return
      */
     TotalCountResult getTotalCount();

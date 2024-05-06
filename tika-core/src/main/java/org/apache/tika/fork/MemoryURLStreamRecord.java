@@ -23,5 +23,4 @@ class MemoryURLStreamRecord {
 
     public WeakReference<URL> url;
     public byte[] data;
-
 }

@@ -42,7 +42,9 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
-
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.OfflineContentHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -57,26 +59,17 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.OfflineContentHandler;
-
-
-/**
- * Utility functions for reading XML.
- */
+/** Utility functions for reading XML. */
 public class XMLReaderUtils implements Serializable {
 
-    /**
-     * Default size for the pool of SAX Parsers
-     * and the pool of DOM builders
-     */
+    /** Default size for the pool of SAX Parsers and the pool of DOM builders */
     public static final int DEFAULT_POOL_SIZE = 10;
+
     public static final int DEFAULT_MAX_ENTITY_EXPANSIONS = 20;
-    /**
-     * Serial version UID
-     */
+
+    /** Serial version UID */
     private static final long serialVersionUID = 6110455808615143122L;
+
     private static final Logger LOG = LoggerFactory.getLogger(XMLReaderUtils.class);
     private static final String XERCES_SECURITY_MANAGER = "org.apache.xerces.util.SecurityManager";
     private static final String XERCES_SECURITY_MANAGER_PROPERTY =
@@ -84,37 +77,30 @@ public class XMLReaderUtils implements Serializable {
 
     private static final AtomicBoolean HAS_WARNED_STAX = new AtomicBoolean(false);
     private static final ContentHandler IGNORING_CONTENT_HANDLER = new DefaultHandler();
-    private static final DTDHandler IGNORING_DTD_HANDLER = new DTDHandler() {
-        @Override
-        public void notationDecl(String name, String publicId, String systemId)
-                throws SAXException {
+    private static final DTDHandler IGNORING_DTD_HANDLER =
+            new DTDHandler() {
+                @Override
+                public void notationDecl(String name, String publicId, String systemId)
+                        throws SAXException {}
 
-        }
+                @Override
+                public void unparsedEntityDecl(
+                        String name, String publicId, String systemId, String notationName)
+                        throws SAXException {}
+            };
+    private static final ErrorHandler IGNORING_ERROR_HANDLER =
+            new ErrorHandler() {
+                @Override
+                public void warning(SAXParseException exception) throws SAXException {}
 
-        @Override
-        public void unparsedEntityDecl(String name, String publicId, String systemId,
-                                       String notationName) throws SAXException {
+                @Override
+                public void error(SAXParseException exception) throws SAXException {}
 
-        }
-    };
-    private static final ErrorHandler IGNORING_ERROR_HANDLER = new ErrorHandler() {
-        @Override
-        public void warning(SAXParseException exception) throws SAXException {
-
-        }
-
-        @Override
-        public void error(SAXParseException exception) throws SAXException {
-
-        }
-
-        @Override
-        public void fatalError(SAXParseException exception) throws SAXException {
-
-        }
-    };
+                @Override
+                public void fatalError(SAXParseException exception) throws SAXException {}
+            };
     private static final String JAXP_ENTITY_EXPANSION_LIMIT_KEY = "jdk.xml.entityExpansionLimit";
-    //TODO: figure out if the rw lock is any better than a simple lock
+    // TODO: figure out if the rw lock is any better than a simple lock
     private static final ReentrantReadWriteLock SAX_READ_WRITE_LOCK = new ReentrantReadWriteLock();
     private static final ReentrantReadWriteLock DOM_READ_WRITE_LOCK = new ReentrantReadWriteLock();
     private static final AtomicInteger POOL_GENERATION = new AtomicInteger();
@@ -122,10 +108,10 @@ public class XMLReaderUtils implements Serializable {
             (publicId, systemId) -> new InputSource(new StringReader(""));
     private static final XMLResolver IGNORING_STAX_ENTITY_RESOLVER =
             (publicID, systemID, baseURI, namespace) -> "";
-    /**
-     * Parser pool size
-     */
+
+    /** Parser pool size */
     private static int POOL_SIZE = DEFAULT_POOL_SIZE;
+
     private static long LAST_LOG = -1;
     private static volatile int MAX_ENTITY_EXPANSIONS = determineMaxEntityExpansions();
     private static ArrayBlockingQueue<PoolSAXParser> SAX_PARSERS =
@@ -148,18 +134,18 @@ public class XMLReaderUtils implements Serializable {
                 return Integer.parseInt(expansionLimit);
             } catch (NumberFormatException e) {
                 LOG.warn(
-                        "Couldn't parse an integer for the entity expansion limit: {}; " +
-                                "backing off to default: {}",
-                        expansionLimit, DEFAULT_MAX_ENTITY_EXPANSIONS);
+                        "Couldn't parse an integer for the entity expansion limit: {}; "
+                                + "backing off to default: {}",
+                        expansionLimit,
+                        DEFAULT_MAX_ENTITY_EXPANSIONS);
             }
         }
         return DEFAULT_MAX_ENTITY_EXPANSIONS;
     }
 
     /**
-     * Returns the XMLReader specified in this parsing context. If a reader
-     * is not explicitly specified, then one is created using the specified
-     * or the default SAX parser.
+     * Returns the XMLReader specified in this parsing context. If a reader is not explicitly
+     * specified, then one is created using the specified or the default SAX parser.
      *
      * @return XMLReader
      * @throws TikaException
@@ -178,13 +164,11 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * Returns the SAX parser specified in this parsing context. If a parser
-     * is not explicitly specified, then one is created using the specified
-     * or the default SAX parser factory.
-     * <p>
-     * If you call reset() on the parser, make sure to replace the
-     * SecurityManager which will be cleared by xerces2 on reset().
-     * </p>
+     * Returns the SAX parser specified in this parsing context. If a parser is not explicitly
+     * specified, then one is created using the specified or the default SAX parser factory.
+     *
+     * <p>If you call reset() on the parser, make sure to replace the SecurityManager which will be
+     * cleared by xerces2 on reset().
      *
      * @return SAX parser
      * @throws TikaException if a SAX parser could not be created
@@ -204,11 +188,10 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * Returns the SAX parser factory specified in this parsing context.
-     * If a factory is not explicitly specified, then a default factory
-     * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware, not validating, and to use
-     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
+     * Returns the SAX parser factory specified in this parsing context. If a factory is not
+     * explicitly specified, then a default factory instance is created and returned. The default
+     * factory instance is configured to be namespace-aware, not validating, and to use {@link
+     * XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
      *
      * @return SAX parser factory
      * @since Apache Tika 0.8
@@ -223,26 +206,25 @@ public class XMLReaderUtils implements Serializable {
         trySetSAXFeature(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
         trySetSAXFeature(factory, "http://xml.org/sax/features/external-general-entities", false);
         trySetSAXFeature(factory, "http://xml.org/sax/features/external-parameter-entities", false);
-        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-external-dtd",
-                false);
-        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
-                false);
+        trySetSAXFeature(
+                factory, "http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        trySetSAXFeature(
+                factory, "http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
 
         return factory;
     }
 
     /**
-     * Returns the DOM builder factory specified in this parsing context.
-     * If a factory is not explicitly specified, then a default factory
-     * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware and to apply reasonable security
+     * Returns the DOM builder factory specified in this parsing context. If a factory is not
+     * explicitly specified, then a default factory instance is created and returned. The default
+     * factory instance is configured to be namespace-aware and to apply reasonable security
      * features.
      *
      * @return DOM parser factory
      * @since Apache Tika 1.13
      */
     public static DocumentBuilderFactory getDocumentBuilderFactory() {
-        //borrowed from Apache POI
+        // borrowed from Apache POI
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         if (LOG.isDebugEnabled()) {
             LOG.debug("DocumentBuilderFactory class {}", factory.getClass());
@@ -255,20 +237,20 @@ public class XMLReaderUtils implements Serializable {
         trySetSAXFeature(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
         trySetSAXFeature(factory, "http://xml.org/sax/features/external-general-entities", false);
         trySetSAXFeature(factory, "http://xml.org/sax/features/external-parameter-entities", false);
-        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-external-dtd",
-                false);
-        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
-                false);
+        trySetSAXFeature(
+                factory, "http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        trySetSAXFeature(
+                factory, "http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
         trySetXercesSecurityManager(factory);
         return factory;
     }
 
     /**
-     * Returns the DOM builder specified in this parsing context.
-     * If a builder is not explicitly specified, then a builder
-     * instance is created and returned. The builder instance is
-     * configured to apply an {@link #IGNORING_SAX_ENTITY_RESOLVER},
-     * and it sets the ErrorHandler to <code>null</code>.
+     * Returns the DOM builder specified in this parsing context. If a builder is not explicitly
+     * specified, then a builder instance is created and returned. The builder instance is
+     * configured to apply an {@link #IGNORING_SAX_ENTITY_RESOLVER}, and it sets the ErrorHandler to
+     * <code>null
+     * </code>.
      *
      * @return DOM Builder
      * @since Apache Tika 1.13
@@ -286,11 +268,10 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * Returns the StAX input factory specified in this parsing context.
-     * If a factory is not explicitly specified, then a default factory
-     * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware and to apply reasonable security
-     * using the {@link #IGNORING_STAX_ENTITY_RESOLVER}.
+     * Returns the StAX input factory specified in this parsing context. If a factory is not
+     * explicitly specified, then a default factory instance is created and returned. The default
+     * factory instance is configured to be namespace-aware and to apply reasonable security using
+     * the {@link #IGNORING_STAX_ENTITY_RESOLVER}.
      *
      * @return StAX input factory
      * @since Apache Tika 1.13
@@ -309,8 +290,8 @@ public class XMLReaderUtils implements Serializable {
         return factory;
     }
 
-    private static void trySetTransformerAttribute(TransformerFactory transformerFactory,
-                                                   String attribute, String value) {
+    private static void trySetTransformerAttribute(
+            TransformerFactory transformerFactory, String attribute, String value) {
         try {
             transformerFactory.setAttribute(attribute, value);
         } catch (SecurityException e) {
@@ -320,12 +301,13 @@ public class XMLReaderUtils implements Serializable {
         } catch (AbstractMethodError ame) {
             LOG.warn(
                     "Cannot set Transformer attribute because outdated XML parser in classpath: {}",
-                    attribute, ame);
+                    attribute,
+                    ame);
         }
     }
 
-    private static void trySetSAXFeature(SAXParserFactory saxParserFactory, String feature,
-                                         boolean enabled) {
+    private static void trySetSAXFeature(
+            SAXParserFactory saxParserFactory, String feature, boolean enabled) {
         try {
             saxParserFactory.setFeature(feature, enabled);
         } catch (SecurityException e) {
@@ -333,19 +315,23 @@ public class XMLReaderUtils implements Serializable {
         } catch (Exception e) {
             LOG.warn("SAX Feature unsupported: {}", feature, e);
         } catch (AbstractMethodError ame) {
-            LOG.warn("Cannot set SAX feature because outdated XML parser in classpath: {}", feature,
+            LOG.warn(
+                    "Cannot set SAX feature because outdated XML parser in classpath: {}",
+                    feature,
                     ame);
         }
     }
 
-    private static void trySetSAXFeature(DocumentBuilderFactory documentBuilderFactory,
-                                         String feature, boolean enabled) {
+    private static void trySetSAXFeature(
+            DocumentBuilderFactory documentBuilderFactory, String feature, boolean enabled) {
         try {
             documentBuilderFactory.setFeature(feature, enabled);
         } catch (Exception e) {
             LOG.warn("SAX Feature unsupported: {}", feature, e);
         } catch (AbstractMethodError ame) {
-            LOG.warn("Cannot set SAX feature because outdated XML parser in classpath: {}", feature,
+            LOG.warn(
+                    "Cannot set SAX feature because outdated XML parser in classpath: {}",
+                    feature,
                     ame);
         }
     }
@@ -360,9 +346,9 @@ public class XMLReaderUtils implements Serializable {
 
     /**
      * Returns a new transformer
-     * <p>
-     * The transformer instance is configured to to use
-     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
+     *
+     * <p>The transformer instance is configured to to use {@link
+     * XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
      *
      * @return Transformer
      * @throws TikaException when the transformer can not be created
@@ -373,8 +359,8 @@ public class XMLReaderUtils implements Serializable {
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_STYLESHEET,
-                    "");
+            trySetTransformerAttribute(
+                    transformerFactory, XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
             return transformerFactory.newTransformer();
         } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
             throw new TikaException("Transformer not available", e);
@@ -382,10 +368,10 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * This checks context for a user specified {@link DocumentBuilder}.
-     * If one is not found, this reuses a DocumentBuilder from the pool.
+     * This checks context for a user specified {@link DocumentBuilder}. If one is not found, this
+     * reuses a DocumentBuilder from the pool.
      *
-     * @param is      InputStream to parse
+     * @param is InputStream to parse
      * @param context context to use
      * @return a document
      * @throws TikaException
@@ -412,10 +398,10 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * This checks context for a user specified {@link DocumentBuilder}.
-     * If one is not found, this reuses a DocumentBuilder from the pool.
+     * This checks context for a user specified {@link DocumentBuilder}. If one is not found, this
+     * reuses a DocumentBuilder from the pool.
      *
-     * @param reader  reader (character stream) to parse
+     * @param reader reader (character stream) to parse
      * @param context context to use
      * @return a document
      * @throws TikaException
@@ -497,14 +483,13 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * This checks context for a user specified {@link SAXParser}.
-     * If one is not found, this reuses a SAXParser from the pool.
+     * This checks context for a user specified {@link SAXParser}. If one is not found, this reuses
+     * a SAXParser from the pool.
      *
-     * @param is             InputStream to parse
-     * @param contentHandler handler to use; this wraps a {@link OfflineContentHandler}
-     *                       to the content handler as an extra layer of defense against
-     *                       external entity vulnerabilities
-     * @param context        context to use
+     * @param is InputStream to parse
+     * @param contentHandler handler to use; this wraps a {@link OfflineContentHandler} to the
+     *     content handler as an extra layer of defense against external entity vulnerabilities
+     * @param context context to use
      * @return
      * @throws TikaException
      * @throws IOException
@@ -529,14 +514,13 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * This checks context for a user specified {@link SAXParser}.
-     * If one is not found, this reuses a SAXParser from the pool.
+     * This checks context for a user specified {@link SAXParser}. If one is not found, this reuses
+     * a SAXParser from the pool.
      *
-     * @param reader         reader (character stream) to parse
-     * @param contentHandler handler to use; this wraps a {@link OfflineContentHandler}
-     *                       to the content handler as an extra layer of defense against
-     *                       external entity vulnerabilities
-     * @param context        context to use
+     * @param reader reader (character stream) to parse
+     * @param contentHandler handler to use; this wraps a {@link OfflineContentHandler} to the
+     *     content handler as an extra layer of defense against external entity vulnerabilities
+     * @param context context to use
      * @return
      * @throws TikaException
      * @throws IOException
@@ -561,8 +545,7 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * Acquire a SAXParser from the pool.  Make sure to
-     * {@link #releaseDOMBuilder(PoolDOMBuilder)} in
+     * Acquire a SAXParser from the pool. Make sure to {@link #releaseDOMBuilder(PoolDOMBuilder)} in
      * a <code>finally</code> block every time you call this.
      *
      * @return a DocumentBuilder
@@ -585,22 +568,23 @@ public class XMLReaderUtils implements Serializable {
                 return builder;
             }
             if (lastWarn < 0 || System.currentTimeMillis() - lastWarn > 1000) {
-                //avoid spamming logs
-                LOG.warn("Contention waiting for a DOMParser. " +
-                        "Consider increasing the XMLReaderUtils.POOL_SIZE");
+                // avoid spamming logs
+                LOG.warn(
+                        "Contention waiting for a DOMParser. "
+                                + "Consider increasing the XMLReaderUtils.POOL_SIZE");
                 lastWarn = System.currentTimeMillis();
             }
             waiting++;
 
             if (waiting > 3000) {
-                //freshen the pool.  Something went very wrong...
+                // freshen the pool.  Something went very wrong...
                 setPoolSize(POOL_SIZE);
-                //better to get an exception than have permahang by a bug in one of our parsers
-                throw new TikaException("Waited more than 5 minutes for a DocumentBuilder; " +
-                        "This could indicate that a parser has not correctly released its " +
-                        "DocumentBuilder. " +
-                        "Please report this to the Tika team: dev@tika.apache.org");
-
+                // better to get an exception than have permahang by a bug in one of our parsers
+                throw new TikaException(
+                        "Waited more than 5 minutes for a DocumentBuilder; "
+                                + "This could indicate that a parser has not correctly released its "
+                                + "DocumentBuilder. "
+                                + "Please report this to the Tika team: dev@tika.apache.org");
             }
         }
     }
@@ -617,18 +601,18 @@ public class XMLReaderUtils implements Serializable {
         try {
             builder.reset();
         } catch (UnsupportedOperationException e) {
-            //ignore
+            // ignore
         }
         DOM_READ_WRITE_LOCK.readLock().lock();
         try {
-            //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
+            // if there are extra parsers (e.g. after a reset of the pool to a smaller size),
             // this parser will not be added and will then be gc'd
             boolean success = DOM_BUILDERS.offer(builder);
             if (!success) {
                 LOG.warn(
-                        "DocumentBuilder not taken back into pool.  If you haven't resized the " +
-                                "pool, this could be a sign that there are more calls to " +
-                                "'acquire' than to 'release'");
+                        "DocumentBuilder not taken back into pool.  If you haven't resized the "
+                                + "pool, this could be a sign that there are more calls to "
+                                + "'acquire' than to 'release'");
             }
         } finally {
             DOM_READ_WRITE_LOCK.readLock().unlock();
@@ -636,9 +620,8 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * Acquire a SAXParser from the pool.  Make sure to
-     * {@link #releaseParser(PoolSAXParser)} in
-     * a <code>finally</code> block every time you call this.
+     * Acquire a SAXParser from the pool. Make sure to {@link #releaseParser(PoolSAXParser)} in a
+     * <code>finally</code> block every time you call this.
      *
      * @return a SAXParser
      * @throws TikaException
@@ -660,20 +643,21 @@ public class XMLReaderUtils implements Serializable {
                 return parser;
             }
             if (lastWarn < 0 || System.currentTimeMillis() - lastWarn > 1000) {
-                //avoid spamming logs
-                LOG.warn("Contention waiting for a SAXParser. " +
-                        "Consider increasing the XMLReaderUtils.POOL_SIZE");
+                // avoid spamming logs
+                LOG.warn(
+                        "Contention waiting for a SAXParser. "
+                                + "Consider increasing the XMLReaderUtils.POOL_SIZE");
                 lastWarn = System.currentTimeMillis();
             }
             waiting++;
             if (waiting > 3000) {
-                //freshen the pool.  Something went very wrong...
+                // freshen the pool.  Something went very wrong...
                 setPoolSize(POOL_SIZE);
-                //better to get an exception than have permahang by a bug in one of our parsers
-                throw new TikaException("Waited more than 5 minutes for a SAXParser; " +
-                        "This could indicate that a parser has not correctly released its " +
-                        "SAXParser. Please report this to the Tika team: dev@tika.apache.org");
-
+                // better to get an exception than have permahang by a bug in one of our parsers
+                throw new TikaException(
+                        "Waited more than 5 minutes for a SAXParser; "
+                                + "This could indicate that a parser has not correctly released its "
+                                + "SAXParser. Please report this to the Tika team: dev@tika.apache.org");
             }
         }
     }
@@ -687,23 +671,23 @@ public class XMLReaderUtils implements Serializable {
         try {
             parser.reset();
         } catch (UnsupportedOperationException e) {
-            //TIKA-3009 -- we really shouldn't have to do this... :(
+            // TIKA-3009 -- we really shouldn't have to do this... :(
         }
-        //if this is a different generation, don't put it back
-        //in the pool
+        // if this is a different generation, don't put it back
+        // in the pool
         if (parser.getGeneration() != POOL_GENERATION.get()) {
             return;
         }
         SAX_READ_WRITE_LOCK.readLock().lock();
         try {
-            //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
+            // if there are extra parsers (e.g. after a reset of the pool to a smaller size),
             // this parser will not be added and will then be gc'd
             boolean success = SAX_PARSERS.offer(parser);
             if (!success) {
                 LOG.warn(
-                        "SAXParser not taken back into pool.  If you haven't resized the pool " +
-                                "this could be a sign that there are more calls to 'acquire' " +
-                                "than to 'release'");
+                        "SAXParser not taken back into pool.  If you haven't resized the pool "
+                                + "this could be a sign that there are more calls to 'acquire' "
+                                + "than to 'release'");
             }
         } finally {
             SAX_READ_WRITE_LOCK.readLock().unlock();
@@ -711,28 +695,31 @@ public class XMLReaderUtils implements Serializable {
     }
 
     private static void trySetXercesSecurityManager(DocumentBuilderFactory factory) {
-        //from POI
+        // from POI
         // Try built-in JVM one first, standalone if not
-        for (String securityManagerClassName : new String[]{
-                //"com.sun.org.apache.xerces.internal.util.SecurityManager",
-                XERCES_SECURITY_MANAGER}) {
+        for (String securityManagerClassName :
+                new String[] {
+                    // "com.sun.org.apache.xerces.internal.util.SecurityManager",
+                    XERCES_SECURITY_MANAGER
+                }) {
             try {
                 Object mgr =
-                        Class.forName(securityManagerClassName).getDeclaredConstructor().newInstance();
-                Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit",
-                        Integer.TYPE);
+                        Class.forName(securityManagerClassName)
+                                .getDeclaredConstructor()
+                                .newInstance();
+                Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
                 setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
                 factory.setAttribute(XERCES_SECURITY_MANAGER_PROPERTY, mgr);
                 // Stop once one can be setup without error
                 return;
             } catch (ClassNotFoundException e) {
                 // continue without log, this is expected in some setups
-            } catch (Throwable e) {     // NOSONAR - also catch things like NoClassDefError here
+            } catch (Throwable e) { // NOSONAR - also catch things like NoClassDefError here
                 // throttle the log somewhat as it can spam the log otherwise
                 if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
                     LOG.warn(
-                            "SAX Security Manager could not be setup [log suppressed for 5 " +
-                                    "minutes]",
+                            "SAX Security Manager could not be setup [log suppressed for 5 "
+                                    + "minutes]",
                             e);
                     LAST_LOG = System.currentTimeMillis();
                 }
@@ -741,13 +728,15 @@ public class XMLReaderUtils implements Serializable {
 
         // separate old version of Xerces not found => use the builtin way of setting the property
         try {
-            factory.setAttribute("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
+            factory.setAttribute(
+                    "http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
                     MAX_ENTITY_EXPANSIONS);
         } catch (IllegalArgumentException e) {
             // NOSONAR - also catch things like NoClassDefError here
             // throttle the log somewhat as it can spam the log otherwise
             if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                LOG.warn("SAX Security Manager could not be setup [log suppressed for 5 minutes]",
+                LOG.warn(
+                        "SAX Security Manager could not be setup [log suppressed for 5 minutes]",
                         e);
                 LAST_LOG = System.currentTimeMillis();
             }
@@ -755,14 +744,18 @@ public class XMLReaderUtils implements Serializable {
     }
 
     private static void trySetXercesSecurityManager(SAXParser parser) {
-        //from POI
+        // from POI
         // Try built-in JVM one first, standalone if not
-        for (String securityManagerClassName : new String[]{
-                //"com.sun.org.apache.xerces.internal.util.SecurityManager",
-                XERCES_SECURITY_MANAGER}) {
+        for (String securityManagerClassName :
+                new String[] {
+                    // "com.sun.org.apache.xerces.internal.util.SecurityManager",
+                    XERCES_SECURITY_MANAGER
+                }) {
             try {
                 Object mgr =
-                        Class.forName(securityManagerClassName).getDeclaredConstructor().newInstance();
+                        Class.forName(securityManagerClassName)
+                                .getDeclaredConstructor()
+                                .newInstance();
                 Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
                 setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
 
@@ -776,8 +769,8 @@ public class XMLReaderUtils implements Serializable {
                 // throttle the log somewhat as it can spam the log otherwise
                 if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
                     LOG.warn(
-                            "SAX Security Manager could not be setup [log suppressed for 5 " +
-                                    "minutes]",
+                            "SAX Security Manager could not be setup [log suppressed for 5 "
+                                    + "minutes]",
                             e);
                     LAST_LOG = System.currentTimeMillis();
                 }
@@ -786,12 +779,14 @@ public class XMLReaderUtils implements Serializable {
 
         // separate old version of Xerces not found => use the builtin way of setting the property
         try {
-            parser.setProperty("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
+            parser.setProperty(
+                    "http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
                     MAX_ENTITY_EXPANSIONS);
-        } catch (SAXException e) {     // NOSONAR - also catch things like NoClassDefError here
+        } catch (SAXException e) { // NOSONAR - also catch things like NoClassDefError here
             // throttle the log somewhat as it can spam the log otherwise
             if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                LOG.warn("SAX Security Manager could not be setup [log suppressed for 5 minutes]",
+                LOG.warn(
+                        "SAX Security Manager could not be setup [log suppressed for 5 minutes]",
                         e);
                 LAST_LOG = System.currentTimeMillis();
             }
@@ -799,19 +794,21 @@ public class XMLReaderUtils implements Serializable {
     }
 
     private static void trySetStaxSecurityManager(XMLInputFactory inputFactory) {
-        //try default java entity expansion, then fallback to woodstox, then warn...once.
+        // try default java entity expansion, then fallback to woodstox, then warn...once.
         try {
-            inputFactory.setProperty("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
+            inputFactory.setProperty(
+                    "http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
                     MAX_ENTITY_EXPANSIONS);
         } catch (IllegalArgumentException e) {
             try {
                 inputFactory.setProperty("com.ctc.wstx.maxEntityCount", MAX_ENTITY_EXPANSIONS);
             } catch (IllegalArgumentException e2) {
                 if (HAS_WARNED_STAX.getAndSet(true) == false) {
-                    LOG.warn("Could not set limit on maximum entity expansions for: " + inputFactory.getClass());
+                    LOG.warn(
+                            "Could not set limit on maximum entity expansions for: "
+                                    + inputFactory.getClass());
                 }
             }
-
         }
     }
 
@@ -820,23 +817,23 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * Set the pool size for cached XML parsers.  This has a side
-     * effect of locking the pool, and rebuilding the pool from
-     * scratch with the most recent settings, such as {@link #MAX_ENTITY_EXPANSIONS}
+     * Set the pool size for cached XML parsers. This has a side effect of locking the pool, and
+     * rebuilding the pool from scratch with the most recent settings, such as {@link
+     * #MAX_ENTITY_EXPANSIONS}
      *
      * @param poolSize
      * @since Apache Tika 1.19
      */
     public static void setPoolSize(int poolSize) throws TikaException {
-        //stop the world with a write lock.
-        //parsers that are currently in use will be offered later (once the lock is released),
-        //but not accepted and will be gc'd.  We have to do this locking and
-        //the read locking in case one thread resizes the pool when the
-        //parsers have already started.  We could have an NPE on SAX_PARSERS
-        //if we didn't lock.
+        // stop the world with a write lock.
+        // parsers that are currently in use will be offered later (once the lock is released),
+        // but not accepted and will be gc'd.  We have to do this locking and
+        // the read locking in case one thread resizes the pool when the
+        // parsers have already started.  We could have an NPE on SAX_PARSERS
+        // if we didn't lock.
         SAX_READ_WRITE_LOCK.writeLock().lock();
         try {
-            //free up any resources before emptying SAX_PARSERS
+            // free up any resources before emptying SAX_PARSERS
             for (PoolSAXParser parser : SAX_PARSERS) {
                 parser.reset();
             }
@@ -845,8 +842,8 @@ public class XMLReaderUtils implements Serializable {
             int generation = POOL_GENERATION.incrementAndGet();
             for (int i = 0; i < poolSize; i++) {
                 try {
-                    SAX_PARSERS.offer(buildPoolParser(generation,
-                            getSAXParserFactory().newSAXParser()));
+                    SAX_PARSERS.offer(
+                            buildPoolParser(generation, getSAXParserFactory().newSAXParser()));
                 } catch (SAXException | ParserConfigurationException e) {
                     throw new TikaException("problem creating sax parser", e);
                 }
@@ -873,15 +870,13 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * Set the maximum number of entity expansions allowable in SAX/DOM/StAX parsing.
-     * <b>NOTE:</b>A value less than or equal to zero indicates no limit.
-     * This will override the system property {@link #JAXP_ENTITY_EXPANSION_LIMIT_KEY}
-     * and the {@link #DEFAULT_MAX_ENTITY_EXPANSIONS} value for allowable entity expansions
-     * <p>
-     * <b>NOTE:</b> To trigger a rebuild of the pool of parsers with this setting,
-     * the client must call {@link #setPoolSize(int)} to rebuild the SAX and DOM parsers
-     * with this setting.
-     * </p>
+     * Set the maximum number of entity expansions allowable in SAX/DOM/StAX parsing. <b>NOTE:</b>A
+     * value less than or equal to zero indicates no limit. This will override the system property
+     * {@link #JAXP_ENTITY_EXPANSION_LIMIT_KEY} and the {@link #DEFAULT_MAX_ENTITY_EXPANSIONS} value
+     * for allowable entity expansions
+     *
+     * <p><b>NOTE:</b> To trigger a rebuild of the pool of parsers with this setting, the client
+     * must call {@link #setPoolSize(int)} to rebuild the SAX and DOM parsers with this setting.
      *
      * @param maxEntityExpansions -- maximum number of allowable entity expansions
      * @since Apache Tika 1.19
@@ -922,7 +917,7 @@ public class XMLReaderUtils implements Serializable {
             parser.setProperty(XERCES_SECURITY_MANAGER_PROPERTY, mgr);
             hasSecurityManager = true;
         } catch (SecurityException e) {
-            //don't swallow security exceptions
+            // don't swallow security exceptions
             throw e;
         } catch (ClassNotFoundException e) {
             // continue without log, this is expected in some setups
@@ -930,7 +925,8 @@ public class XMLReaderUtils implements Serializable {
             // NOSONAR - also catch things like NoClassDefError here
             // throttle the log somewhat as it can spam the log otherwise
             if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                LOG.warn("SAX Security Manager could not be setup [log suppressed for 5 minutes]",
+                LOG.warn(
+                        "SAX Security Manager could not be setup [log suppressed for 5 minutes]",
                         e);
                 LAST_LOG = System.currentTimeMillis();
             }
@@ -940,15 +936,16 @@ public class XMLReaderUtils implements Serializable {
         if (!hasSecurityManager) {
             // use the builtin way of setting the property
             try {
-                parser.setProperty("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
+                parser.setProperty(
+                        "http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
                         MAX_ENTITY_EXPANSIONS);
                 canSetJaxPEntity = true;
-            } catch (SAXException e) {     // NOSONAR - also catch things like NoClassDefError here
+            } catch (SAXException e) { // NOSONAR - also catch things like NoClassDefError here
                 // throttle the log somewhat as it can spam the log otherwise
                 if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
                     LOG.warn(
-                            "SAX Security Manager could not be setup [log suppressed for 5 " +
-                                    "minutes]",
+                            "SAX Security Manager could not be setup [log suppressed for 5 "
+                                    + "minutes]",
                             e);
                     LAST_LOG = System.currentTimeMillis();
                 }
@@ -964,7 +961,6 @@ public class XMLReaderUtils implements Serializable {
         } else {
             return new UnrecognizedPoolSAXParser(generation, parser);
         }
-
     }
 
     private static void clearReader(XMLReader reader) {
@@ -1028,12 +1024,12 @@ public class XMLReaderUtils implements Serializable {
 
         @Override
         public void reset() {
-            //don't do anything
+            // don't do anything
             try {
                 XMLReader reader = saxParser.getXMLReader();
                 clearReader(reader);
             } catch (SAXException e) {
-                //swallow
+                // swallow
             }
         }
     }
@@ -1079,8 +1075,8 @@ public class XMLReaderUtils implements Serializable {
     }
 
     private static class UnrecognizedPoolSAXParser extends PoolSAXParser {
-        //if unrecognized, try to set all protections
-        //and try to reset every time
+        // if unrecognized, try to set all protections
+        // and try to reset every time
         public UnrecognizedPoolSAXParser(int generation, SAXParser parser) {
             super(generation, parser);
         }

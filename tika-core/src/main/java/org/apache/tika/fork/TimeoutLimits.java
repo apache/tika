@@ -22,7 +22,6 @@ class TimeoutLimits {
     private final long parseTimeoutMS;
     private final long waitTimeoutMS;
 
-
     TimeoutLimits(long pulseMS, long parseTimeoutMS, long waitTimeoutMS) {
         this.pulseMS = pulseMS;
         this.parseTimeoutMS = parseTimeoutMS;

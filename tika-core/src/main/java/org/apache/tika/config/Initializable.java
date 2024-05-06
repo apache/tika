@@ -17,18 +17,16 @@
 package org.apache.tika.config;
 
 import java.util.Map;
-
 import org.apache.tika.exception.TikaConfigException;
 
 /**
- * Components that must do special processing across multiple fields
- * at initialization time should implement this interface.
- * <p>
- * TikaConfig will call initialize on Initializable classes after
- * setting the parameters for non-statically service loaded classes.
- * <p>
- * TikaConfig will call checkInitialization on all Initializables,
- * whether loaded statically
+ * Components that must do special processing across multiple fields at initialization time should
+ * implement this interface.
+ *
+ * <p>TikaConfig will call initialize on Initializable classes after setting the parameters for
+ * non-statically service loaded classes.
+ *
+ * <p>TikaConfig will call checkInitialization on all Initializables, whether loaded statically
  */
 public interface Initializable {
 
@@ -38,15 +36,10 @@ public interface Initializable {
      */
     void initialize(Map<String, Param> params) throws TikaConfigException;
 
-
     /**
-     * @param problemHandler if there is a problem and no
-     *                       custom initializableProblemHandler has been configured
-     *                       via Initializable parameters,
-     *                       this is called to respond.
+     * @param problemHandler if there is a problem and no custom initializableProblemHandler has
+     *     been configured via Initializable parameters, this is called to respond.
      * @throws TikaConfigException
      */
     void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException;
-
-
 }

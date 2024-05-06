@@ -102,16 +102,27 @@ public class FileProcessResult {
 
     @Override
     public String toString() {
-        return "FileProcessResult{" +
-                "stderr='" + stderr + '\'' +
-                ", stdout='" + stdout + '\'' +
-                ", exitValue=" + exitValue +
-                ", processTimeMillis=" + processTimeMillis +
-                ", isTimeout=" + isTimeout +
-                ", stdoutLength=" + stdoutLength +
-                ", stderrLength=" + stderrLength +
-                ", stderrTruncated=" + stderrTruncated +
-                ", stdoutTruncated=" + stdoutTruncated +
-                '}';
+        return "FileProcessResult{"
+                + "stderr='"
+                + stderr
+                + '\''
+                + ", stdout='"
+                + stdout
+                + '\''
+                + ", exitValue="
+                + exitValue
+                + ", processTimeMillis="
+                + processTimeMillis
+                + ", isTimeout="
+                + isTimeout
+                + ", stdoutLength="
+                + stdoutLength
+                + ", stderrLength="
+                + stderrLength
+                + ", stderrTruncated="
+                + stderrTruncated
+                + ", stdoutTruncated="
+                + stdoutTruncated
+                + '}';
     }
 }

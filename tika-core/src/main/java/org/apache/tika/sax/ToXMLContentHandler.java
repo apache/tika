@@ -21,15 +21,13 @@ import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 /**
- * SAX event handler that serializes the XML document to a character stream.
- * The incoming SAX events are expected to be well-formed (properly nested,
- * etc.) and to explicitly include namespace declaration attributes and
- * corresponding namespace prefixes in element and attribute names.
+ * SAX event handler that serializes the XML document to a character stream. The incoming SAX events
+ * are expected to be well-formed (properly nested, etc.) and to explicitly include namespace
+ * declaration attributes and corresponding namespace prefixes in element and attribute names.
  *
  * @since Apache Tika 0.10
  */
@@ -42,10 +40,10 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     private ElementInfo currentElement;
 
     /**
-     * Creates an XML serializer that writes to the given byte stream
-     * using the given character encoding.
+     * Creates an XML serializer that writes to the given byte stream using the given character
+     * encoding.
      *
-     * @param stream   output stream
+     * @param stream output stream
      * @param encoding output encoding
      * @throws UnsupportedEncodingException if the encoding is unsupported
      */
@@ -65,9 +63,7 @@ public class ToXMLContentHandler extends ToTextContentHandler {
         this.encoding = null;
     }
 
-    /**
-     * Writes the XML prefix.
-     */
+    /** Writes the XML prefix. */
     @Override
     public void startDocument() throws SAXException {
         if (encoding != null) {
@@ -168,7 +164,7 @@ public class ToXMLContentHandler extends ToTextContentHandler {
      * @throws SAXException if the character could not be written
      */
     protected void write(char ch) throws SAXException {
-        super.characters(new char[]{ch}, 0, 1);
+        super.characters(new char[] {ch}, 0, 1);
     }
 
     /**
@@ -184,12 +180,11 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     /**
      * Writes the given characters as-is followed by the given entity.
      *
-     * @param ch     character array
-     * @param from   start position in the array
-     * @param to     end position in the array
+     * @param ch character array
+     * @param from start position in the array
+     * @param to end position in the array
      * @param entity entity code
-     * @return next position in the array,
-     * after the characters plus one entity
+     * @return next position in the array, after the characters plus one entity
      * @throws SAXException if the characters could not be written
      */
     private int writeCharsAndEntity(char[] ch, int from, int to, String entity)
@@ -204,11 +199,11 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     /**
      * Writes the given characters with XML meta characters escaped.
      *
-     * @param ch        character array
-     * @param from      start position in the array
-     * @param to        end position in the array
-     * @param attribute whether the characters should be escaped as
-     *                  an attribute value or normal character content
+     * @param ch character array
+     * @param from start position in the array
+     * @param to end position in the array
+     * @param attribute whether the characters should be escaped as an attribute value or normal
+     *     character content
      * @throws SAXException if the characters could not be written
      */
     private void writeEscaped(char[] ch, int from, int to, boolean attribute) throws SAXException {
@@ -265,7 +260,5 @@ public class ToXMLContentHandler extends ToTextContentHandler {
                 return localName;
             }
         }
-
     }
-
 }

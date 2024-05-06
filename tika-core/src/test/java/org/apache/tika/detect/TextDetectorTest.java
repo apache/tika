@@ -24,15 +24,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.junit.jupiter.api.Test;
 
-/**
- * Test cases for the {@link TextDetector} class.
- */
+/** Test cases for the {@link TextDetector} class. */
 public class TextDetectorTest {
 
     private final Detector detector = new TextDetector();
@@ -56,9 +52,9 @@ public class TextDetectorTest {
     public void testDetectText() throws Exception {
         assertText("Hello, World!".getBytes(UTF_8));
         assertText(" \t\r\n".getBytes(UTF_8));
-        assertNotText(new byte[]{-1, -2, -3, 0x09, 0x0A, 0x0C, 0x0D, 0x1B});
-        assertNotText(new byte[]{0});
-        assertNotText(new byte[]{'H', 'e', 'l', 'l', 'o', 0});
+        assertNotText(new byte[] {-1, -2, -3, 0x09, 0x0A, 0x0C, 0x0D, 0x1B});
+        assertNotText(new byte[] {0});
+        assertNotText(new byte[] {'H', 'e', 'l', 'l', 'o', 0});
 
         byte[] data = new byte[512];
         Arrays.fill(data, (byte) '.');
@@ -99,11 +95,11 @@ public class TextDetectorTest {
 
     private void assertNotText(byte[] data) {
         try {
-            assertEquals(MediaType.OCTET_STREAM,
+            assertEquals(
+                    MediaType.OCTET_STREAM,
                     detector.detect(new ByteArrayInputStream(data), new Metadata()));
         } catch (IOException e) {
             fail("Unexpected exception from TextDetector");
         }
     }
-
 }

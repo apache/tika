@@ -18,13 +18,10 @@ package org.apache.tika.exception;
 
 import org.xml.sax.SAXException;
 
-/**
- * Use this to throw a SAXException in subclassed methods that don't throw SAXExceptions
- */
+/** Use this to throw a SAXException in subclassed methods that don't throw SAXExceptions */
 public class RuntimeSAXException extends RuntimeException {
 
     public RuntimeSAXException(SAXException t) {
         super(t);
     }
-
 }

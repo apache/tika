@@ -18,9 +18,7 @@ package org.apache.tika.renderer;
 
 import java.util.Objects;
 
-/**
- * The range of pages to render.  These are 1-based, and "to" is inclusive.
- */
+/** The range of pages to render. These are 1-based, and "to" is inclusive. */
 public class PageRangeRequest implements RenderRequest {
 
     public static PageRangeRequest RENDER_ALL = new PageRangeRequest(1, -1);

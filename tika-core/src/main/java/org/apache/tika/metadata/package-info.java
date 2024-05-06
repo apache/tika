@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Multi-valued metadata container, and set of constant metadata fields.
- */
+/** Multi-valued metadata container, and set of constant metadata fields. */
 @aQute.bnd.annotation.Version("1.0.0")
 package org.apache.tika.metadata;

@@ -67,16 +67,11 @@ public class LanguageResult {
     }
 
     /**
-     * Return true if the target language matches the detected language. We consider
-     * it a match if, for the precision requested or detected, it matches. This means:
-     * <p>
-     * target | detected | match?
-     * zh | en | false
-     * zh | zh | true
-     * zh | zh-CN | true
-     * zh-CN | zh | true
-     * zh-CN | zh-TW | false
-     * zh-CN | zh-cn | true (case-insensitive)
+     * Return true if the target language matches the detected language. We consider it a match if,
+     * for the precision requested or detected, it matches. This means:
+     *
+     * <p>target | detected | match? zh | en | false zh | zh | true zh | zh-CN | true zh-CN | zh |
+     * true zh-CN | zh-TW | false zh-CN | zh-cn | true (case-insensitive)
      *
      * @param language
      * @return

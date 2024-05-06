@@ -17,8 +17,8 @@
 package org.apache.tika.metadata;
 
 /**
- * Met keys from NCAR CCSM files in the <a
- * href="http://cf-pcmdi.llnl.gov/">Climate Forecast Convention</a>.
+ * Met keys from NCAR CCSM files in the <a href="http://cf-pcmdi.llnl.gov/">Climate Forecast
+ * Convention</a>.
  */
 public interface ClimateForcast {
 
@@ -51,5 +51,4 @@ public interface ClimateForcast {
     String COMMENT = "comment";
 
     String MODEL_NAME_ENGLISH = "model_name_english";
-
 }

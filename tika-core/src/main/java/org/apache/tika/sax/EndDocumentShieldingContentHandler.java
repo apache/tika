@@ -20,10 +20,9 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * A wrapper around a {@link ContentHandler} which will ignore normal
- * SAX calls to {@link #endDocument()}, and only fire them later.
- * This is typically used to ensure that we can output the metadata
- * before ending the document
+ * A wrapper around a {@link ContentHandler} which will ignore normal SAX calls to {@link
+ * #endDocument()}, and only fire them later. This is typically used to ensure that we can output
+ * the metadata before ending the document
  */
 public class EndDocumentShieldingContentHandler extends ContentHandlerDecorator {
     private boolean endDocumentCalled;

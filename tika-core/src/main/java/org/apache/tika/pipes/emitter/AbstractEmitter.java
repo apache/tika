@@ -33,9 +33,9 @@ public abstract class AbstractEmitter implements Emitter {
     }
 
     /**
-     * The default behavior is to call {@link #emit(String, List)} on each item.
-     * Some implementations, e.g. Solr/ES/vespa, can benefit from subclassing this and
-     * emitting a bunch of docs at once.
+     * The default behavior is to call {@link #emit(String, List)} on each item. Some
+     * implementations, e.g. Solr/ES/vespa, can benefit from subclassing this and emitting a bunch
+     * of docs at once.
      *
      * @param emitData
      * @throws IOException

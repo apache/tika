@@ -19,14 +19,12 @@ package org.apache.tika.parser.digest;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
-
 
 public class CompositeDigester implements DigestingParser.Digester {
 

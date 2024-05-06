@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
@@ -32,42 +31,56 @@ import org.apache.tika.renderer.Renderer;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
- * A composite parser based on all the {@link Parser} implementations
- * available through the
- * {@link javax.imageio.spi.ServiceRegistry service provider mechanism}.
+ * A composite parser based on all the {@link Parser} implementations available through the {@link
+ * javax.imageio.spi.ServiceRegistry service provider mechanism}.
  *
  * @since Apache Tika 0.8
  */
 public class DefaultParser extends CompositeParser {
 
-    /**
-     * Serial version UID
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = 3612324825403757520L;
-    private transient final ServiceLoader loader;
 
-    public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
-                         Collection<Class<? extends Parser>> excludeParsers,
-                         EncodingDetector encodingDetector, Renderer renderer) {
+    private final transient ServiceLoader loader;
+
+    public DefaultParser(
+            MediaTypeRegistry registry,
+            ServiceLoader loader,
+            Collection<Class<? extends Parser>> excludeParsers,
+            EncodingDetector encodingDetector,
+            Renderer renderer) {
         super(registry, getDefaultParsers(loader, encodingDetector, renderer, excludeParsers));
         this.loader = loader;
     }
 
-    public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
-                         Collection<Class<? extends Parser>> excludeParsers) {
-        super(registry,
-                getDefaultParsers(loader, new DefaultEncodingDetector(loader),
-                        new CompositeRenderer(loader), excludeParsers));
+    public DefaultParser(
+            MediaTypeRegistry registry,
+            ServiceLoader loader,
+            Collection<Class<? extends Parser>> excludeParsers) {
+        super(
+                registry,
+                getDefaultParsers(
+                        loader,
+                        new DefaultEncodingDetector(loader),
+                        new CompositeRenderer(loader),
+                        excludeParsers));
         this.loader = loader;
     }
 
-    public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
-                         EncodingDetector encodingDetector, Renderer renderer) {
+    public DefaultParser(
+            MediaTypeRegistry registry,
+            ServiceLoader loader,
+            EncodingDetector encodingDetector,
+            Renderer renderer) {
         this(registry, loader, Collections.EMPTY_SET, encodingDetector, renderer);
     }
 
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader) {
-        this(registry, loader, Collections.EMPTY_SET, new DefaultEncodingDetector(loader),
+        this(
+                registry,
+                loader,
+                Collections.EMPTY_SET,
+                new DefaultEncodingDetector(loader),
                 new CompositeRenderer(loader));
     }
 
@@ -88,21 +101,19 @@ public class DefaultParser extends CompositeParser {
     }
 
     /**
-     * Finds all statically loadable parsers and sort the list by name,
-     * rather than discovery order. CompositeParser takes the last
-     * parser for any given media type, so put the Tika parsers first
+     * Finds all statically loadable parsers and sort the list by name, rather than discovery order.
+     * CompositeParser takes the last parser for any given media type, so put the Tika parsers first
      * so that non-Tika (user supplied) parsers can take precedence.
      *
      * @param loader service loader
      * @return ordered list of statically loadable parsers
      */
-    private static List<Parser> getDefaultParsers(ServiceLoader loader,
-                                                  EncodingDetector encodingDetector,
-                                                  Renderer renderer,
-                                                  Collection<Class<? extends Parser>>
-                                                          excludeParsers) {
-        List<Parser> parsers =
-                loader.loadStaticServiceProviders(Parser.class, excludeParsers);
+    private static List<Parser> getDefaultParsers(
+            ServiceLoader loader,
+            EncodingDetector encodingDetector,
+            Renderer renderer,
+            Collection<Class<? extends Parser>> excludeParsers) {
+        List<Parser> parsers = loader.loadStaticServiceProviders(Parser.class, excludeParsers);
 
         if (encodingDetector != null) {
             for (Parser p : parsers) {
@@ -115,14 +126,14 @@ public class DefaultParser extends CompositeParser {
             }
         }
         ServiceLoaderUtils.sortLoadedClasses(parsers);
-        //reverse the order of parsers so that custom ones come last
-        //this will prevent them from being overwritten in getParsers(ParseContext ..)
+        // reverse the order of parsers so that custom ones come last
+        // this will prevent them from being overwritten in getParsers(ParseContext ..)
         Collections.reverse(parsers);
         return parsers;
     }
 
-    //recursively go through the parsers and set the encoding detector
-    //as configured in the config file
+    // recursively go through the parsers and set the encoding detector
+    // as configured in the config file
     private static void setEncodingDetector(Parser p, EncodingDetector encodingDetector) {
         if (p instanceof AbstractEncodingDetectorParser) {
             ((AbstractEncodingDetectorParser) p).setEncodingDetector(encodingDetector);

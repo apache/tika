@@ -17,9 +17,7 @@
 
 package org.apache.tika.sax;
 
-/**
- * Class that represents a standard reference.
- */
+/** Class that represents a standard reference. */
 public class StandardReference {
     private String mainOrganization;
     private String separator;
@@ -27,8 +25,12 @@ public class StandardReference {
     private String identifier;
     private double score;
 
-    private StandardReference(String mainOrganizationAcronym, String separator,
-                              String secondOrganizationAcronym, String identifier, double score) {
+    private StandardReference(
+            String mainOrganizationAcronym,
+            String separator,
+            String secondOrganizationAcronym,
+            String identifier,
+            double score) {
         super();
         this.mainOrganization = mainOrganizationAcronym;
         this.separator = separator;
@@ -105,8 +107,8 @@ public class StandardReference {
             this.score = 0;
         }
 
-        public StandardReferenceBuilder setSecondOrganization(String separator,
-                                                              String secondOrganization) {
+        public StandardReferenceBuilder setSecondOrganization(
+                String separator, String secondOrganization) {
             this.separator = separator;
             this.secondOrganization = secondOrganization;
             return this;
@@ -118,8 +120,8 @@ public class StandardReference {
         }
 
         public StandardReference build() {
-            return new StandardReference(mainOrganization, separator, secondOrganization,
-                    identifier, score);
+            return new StandardReference(
+                    mainOrganization, separator, secondOrganization, identifier, score);
         }
     }
 }

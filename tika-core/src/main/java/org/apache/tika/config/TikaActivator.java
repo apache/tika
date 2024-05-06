@@ -16,6 +16,8 @@
  */
 package org.apache.tika.config;
 
+import org.apache.tika.detect.Detector;
+import org.apache.tika.parser.Parser;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -23,17 +25,13 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-import org.apache.tika.detect.Detector;
-import org.apache.tika.parser.Parser;
-
 /**
- * Bundle activator that adjust the class loading mechanism of the
- * {@link ServiceLoader} class to work correctly in an OSGi environment.
- * <p>
- * Note that you should <strong>not</strong> access this class directly.
- * Instead the OSGi environment (if present) will automatically invoke the
- * methods of this class based on the Bundle-Activator setting in the bundle
- * manifest.
+ * Bundle activator that adjust the class loading mechanism of the {@link ServiceLoader} class to
+ * work correctly in an OSGi environment.
+ *
+ * <p>Note that you should <strong>not</strong> access this class directly. Instead the OSGi
+ * environment (if present) will automatically invoke the methods of this class based on the
+ * Bundle-Activator setting in the bundle manifest.
  *
  * @since Apache Tika 0.9
  */
@@ -44,7 +42,8 @@ public class TikaActivator implements BundleActivator, ServiceTrackerCustomizer 
     private ServiceTracker parserTracker;
 
     private BundleContext bundleContext;
-    //-----------------------------------------------------< BundleActivator >
+
+    // -----------------------------------------------------< BundleActivator >
 
     public void start(final BundleContext context) throws Exception {
         bundleContext = context;
@@ -73,12 +72,10 @@ public class TikaActivator implements BundleActivator, ServiceTrackerCustomizer 
         return service;
     }
 
-    public void modifiedService(ServiceReference reference, Object service) {
-    }
+    public void modifiedService(ServiceReference reference, Object service) {}
 
     public void removedService(ServiceReference reference, Object service) {
         ServiceLoader.removeService(reference);
         bundleContext.ungetService(reference);
     }
-
 }

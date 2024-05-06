@@ -48,5 +48,4 @@ class InputStreamResource implements ForkResource {
         output.flush();
         return null;
     }
-
 }

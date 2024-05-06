@@ -23,19 +23,15 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Locale;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * SAX event handler that writes all character content out to a character
- * stream. No escaping or other transformations are made on the character
- * content.
- * <p>
- * As of Tika 1.20, this handler ignores content within &lt;script&gt; and
- * &lt;style&gt; tags.
- * </p>
+ * SAX event handler that writes all character content out to a character stream. No escaping or
+ * other transformations are made on the character content.
+ *
+ * <p>As of Tika 1.20, this handler ignores content within &lt;script&gt; and &lt;style&gt; tags.
  *
  * @since Apache Tika 0.10
  */
@@ -43,16 +39,15 @@ public class ToTextContentHandler extends DefaultHandler {
 
     private static final String STYLE = "STYLE";
     private static final String SCRIPT = "SCRIPT";
-    /**
-     * The character stream.
-     */
+
+    /** The character stream. */
     private final Writer writer;
+
     private int styleDepth = 0;
     private int scriptDepth = 0;
 
     /**
-     * Creates a content handler that writes character events to
-     * the given writer.
+     * Creates a content handler that writes character events to the given writer.
      *
      * @param writer writer
      */
@@ -61,10 +56,10 @@ public class ToTextContentHandler extends DefaultHandler {
     }
 
     /**
-     * Creates a content handler that writes character events to
-     * the given output stream using the given encoding.
+     * Creates a content handler that writes character events to the given output stream using the
+     * given encoding.
      *
-     * @param stream   output stream
+     * @param stream output stream
      * @param encoding output encoding
      * @throws UnsupportedEncodingException if the encoding is unsupported
      */
@@ -74,17 +69,14 @@ public class ToTextContentHandler extends DefaultHandler {
     }
 
     /**
-     * Creates a content handler that writes character events
-     * to an internal string buffer. Use the {@link #toString()}
-     * method to access the collected character content.
+     * Creates a content handler that writes character events to an internal string buffer. Use the
+     * {@link #toString()} method to access the collected character content.
      */
     public ToTextContentHandler() {
         this(new StringWriter());
     }
 
-    /**
-     * Writes the given characters to the given character stream.
-     */
+    /** Writes the given characters to the given character stream. */
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
 
@@ -99,11 +91,9 @@ public class ToTextContentHandler extends DefaultHandler {
         }
     }
 
-
     /**
-     * Writes the given ignorable characters to the given character stream.
-     * The default implementation simply forwards the call to the
-     * {@link #characters(char[], int, int)} method.
+     * Writes the given ignorable characters to the given character stream. The default
+     * implementation simply forwards the call to the {@link #characters(char[], int, int)} method.
      */
     @Override
     public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
@@ -111,8 +101,7 @@ public class ToTextContentHandler extends DefaultHandler {
     }
 
     /**
-     * Flushes the character stream so that no characters are forgotten
-     * in internal buffers.
+     * Flushes the character stream so that no characters are forgotten in internal buffers.
      *
      * @throws SAXException if the stream can not be flushed
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-179">TIKA-179</a>
@@ -150,15 +139,12 @@ public class ToTextContentHandler extends DefaultHandler {
     }
 
     /**
-     * Returns the contents of the internal string buffer where
-     * all the received characters have been collected. Only works
-     * when this object was constructed using the empty default
-     * constructor or by passing a {@link StringWriter} to the
-     * other constructor.
+     * Returns the contents of the internal string buffer where all the received characters have
+     * been collected. Only works when this object was constructed using the empty default
+     * constructor or by passing a {@link StringWriter} to the other constructor.
      */
     @Override
     public String toString() {
         return writer.toString();
     }
-
 }

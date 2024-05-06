@@ -18,30 +18,24 @@ package org.apache.tika.sax;
 
 import java.io.StringWriter;
 import java.io.Writer;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ParseRecord;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * SAX event handler that writes content up to an optional write
- * limit out to a character stream or other decorated handler.
+ * SAX event handler that writes content up to an optional write limit out to a character stream or
+ * other decorated handler.
  */
 public class WriteOutContentHandler extends ContentHandlerDecorator {
 
-
     /**
-     * The maximum number of characters to write to the character stream.
-     * Set to -1 for no limit.
+     * The maximum number of characters to write to the character stream. Set to -1 for no limit.
      */
     private final int writeLimit;
 
-    /**
-     * Number of characters written so far.
-     */
+    /** Number of characters written so far. */
     private int writeCount = 0;
 
     private boolean throwOnWriteLimitReached = true;
@@ -51,10 +45,10 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
     private boolean writeLimitReached;
 
     /**
-     * Creates a content handler that writes content up to the given
-     * write limit to the given content handler.
+     * Creates a content handler that writes content up to the given write limit to the given
+     * content handler.
      *
-     * @param handler    content handler to be decorated
+     * @param handler content handler to be decorated
      * @param writeLimit write limit
      * @since Apache Tika 0.10
      */
@@ -64,10 +58,10 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Creates a content handler that writes content up to the given
-     * write limit to the given character stream.
+     * Creates a content handler that writes content up to the given write limit to the given
+     * character stream.
      *
-     * @param writer     character stream
+     * @param writer character stream
      * @param writeLimit write limit
      * @since Apache Tika 0.10
      */
@@ -76,8 +70,7 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Creates a content handler that writes character events to
-     * the given writer.
+     * Creates a content handler that writes character events to the given writer.
      *
      * @param writer writer
      */
@@ -86,17 +79,16 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Creates a content handler that writes character events
-     * to an internal string buffer. Use the {@link #toString()}
-     * method to access the collected character content.
-     * <p>
-     * The internal string buffer is bounded at the given number of characters.
-     * If this write limit is reached, then a {@link SAXException} is thrown.
-     * The {@link WriteLimitReachedException#isWriteLimitReached(Throwable)} method can be used to
-     * detect this case.
+     * Creates a content handler that writes character events to an internal string buffer. Use the
+     * {@link #toString()} method to access the collected character content.
      *
-     * @param writeLimit maximum number of characters to include in the string,
-     *                   or -1 to disable the write limit
+     * <p>The internal string buffer is bounded at the given number of characters. If this write
+     * limit is reached, then a {@link SAXException} is thrown. The {@link
+     * WriteLimitReachedException#isWriteLimitReached(Throwable)} method can be used to detect this
+     * case.
+     *
+     * @param writeLimit maximum number of characters to include in the string, or -1 to disable the
+     *     write limit
      * @since Apache Tika 0.7
      */
     public WriteOutContentHandler(int writeLimit) {
@@ -104,14 +96,13 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Creates a content handler that writes character events
-     * to an internal string buffer. Use the {@link #toString()}
-     * method to access the collected character content.
-     * <p>
-     * The internal string buffer is bounded at 100k characters. If this
-     * write limit is reached, then a {@link SAXException} is thrown. The
-     * {@link WriteLimitReachedException#isWriteLimitReached(Throwable)} method can be used to
-     * detect this case.
+     * Creates a content handler that writes character events to an internal string buffer. Use the
+     * {@link #toString()} method to access the collected character content.
+     *
+     * <p>The internal string buffer is bounded at 100k characters. If this write limit is reached,
+     * then a {@link SAXException} is thrown. The {@link
+     * WriteLimitReachedException#isWriteLimitReached(Throwable)} method can be used to detect this
+     * case.
      */
     public WriteOutContentHandler() {
         this(100 * 1000);
@@ -119,23 +110,24 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
 
     /**
      * The default is to throw a {@link WriteLimitReachedException}
+     *
      * @param handler
      * @param writeLimit
      * @param throwOnWriteLimitReached
      * @param parseContext
      */
-    public WriteOutContentHandler(ContentHandler handler,
-                                  int writeLimit, boolean throwOnWriteLimitReached,
-                                  ParseContext parseContext) {
+    public WriteOutContentHandler(
+            ContentHandler handler,
+            int writeLimit,
+            boolean throwOnWriteLimitReached,
+            ParseContext parseContext) {
         super(handler);
         this.writeLimit = writeLimit;
         this.throwOnWriteLimitReached = throwOnWriteLimitReached;
         this.parseContext = parseContext;
     }
 
-    /**
-     * Writes the given characters to the given character stream.
-     */
+    /** Writes the given characters to the given character stream. */
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
         if (writeLimitReached) {
@@ -176,5 +168,4 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
             }
         }
     }
-
 }

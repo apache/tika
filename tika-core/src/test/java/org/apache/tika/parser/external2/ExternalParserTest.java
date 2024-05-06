@@ -22,11 +22,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
@@ -36,14 +31,17 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RegexCaptureParser;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class ExternalParserTest extends TikaTest {
 
     @Test
     public void testConfigRegexCaptureParser() throws Exception {
-        assumeTrue(org.apache.tika.parser.external.ExternalParser.check(new String[]{
-                "file", "--version"
-        }));
+        assumeTrue(
+                org.apache.tika.parser.external.ExternalParser.check(
+                        new String[] {"file", "--version"}));
         try (InputStream is = TikaConfig.class.getResourceAsStream("TIKA-3557.xml")) {
 
             TikaConfig config = new TikaConfig(is);
@@ -56,12 +54,13 @@ public class ExternalParserTest extends TikaTest {
 
             Metadata m = new Metadata();
             ContentHandler contentHandler = new DefaultHandler();
-            String output = "Something\n" +
-                    "Title: the quick brown fox\n" +
-                    "Author: jumped over\n" +
-                    "Created: 10/20/2024";
+            String output =
+                    "Something\n"
+                            + "Title: the quick brown fox\n"
+                            + "Author: jumped over\n"
+                            + "Created: 10/20/2024";
             try (InputStream stream =
-                         TikaInputStream.get(output.getBytes(StandardCharsets.UTF_8))) {
+                    TikaInputStream.get(output.getBytes(StandardCharsets.UTF_8))) {
                 outputParser.parse(stream, contentHandler, m, new ParseContext());
             }
             assertEquals("the quick brown fox", m.get("title"));
@@ -70,8 +69,11 @@ public class ExternalParserTest extends TikaTest {
 
     @Test
     public void testConfigBasic() throws Exception {
-        assumeTrue(org.apache.tika.parser.external.ExternalParser.check(new String[]{"file", "--version"}));
-        try (InputStream is = TikaConfig.class.getResourceAsStream("TIKA-3557-no-output-parser.xml")) {
+        assumeTrue(
+                org.apache.tika.parser.external.ExternalParser.check(
+                        new String[] {"file", "--version"}));
+        try (InputStream is =
+                TikaConfig.class.getResourceAsStream("TIKA-3557-no-output-parser.xml")) {
             TikaConfig config = new TikaConfig(is);
             CompositeParser p = (CompositeParser) config.getParser();
             assertEquals(1, p.getAllComponentParsers().size());
@@ -84,13 +86,14 @@ public class ExternalParserTest extends TikaTest {
 
     @Test
     public void testExifTool() throws Exception {
-        assumeTrue(org.apache.tika.parser.external.ExternalParser.check(new String[]{"exiftool",
-                "-ver"}));
+        assumeTrue(
+                org.apache.tika.parser.external.ExternalParser.check(
+                        new String[] {"exiftool", "-ver"}));
         try (InputStream is =
-                     TikaConfig.class.getResourceAsStream("TIKA-3557-exiftool-example.xml")) {
+                TikaConfig.class.getResourceAsStream("TIKA-3557-exiftool-example.xml")) {
             TikaConfig config = new TikaConfig(is);
             Parser p = new AutoDetectParser(config);
-            //this was the smallest pdf we had
+            // this was the smallest pdf we had
             List<Metadata> metadataList = getRecursiveMetadata("testOverlappingText.pdf", p);
             assertEquals(1, metadataList.size());
             Metadata m = metadataList.get(0);

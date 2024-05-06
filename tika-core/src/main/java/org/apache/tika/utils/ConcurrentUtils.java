@@ -19,7 +19,6 @@ package org.apache.tika.utils;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
-
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -30,8 +29,8 @@ import org.apache.tika.parser.ParseContext;
 public class ConcurrentUtils {
 
     /**
-     * Execute a runnable using an ExecutorService from the ParseContext if possible.
-     * Otherwise fallback to individual threads.
+     * Execute a runnable using an ExecutorService from the ParseContext if possible. Otherwise
+     * fallback to individual threads.
      *
      * @param context
      * @param runnable

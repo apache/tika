@@ -17,8 +17,8 @@
 package org.apache.tika.sax.xpath;
 
 /**
- * Composite XPath evaluation state. Used when XPath evaluation results
- * in two or more branches of independent evaluation states.
+ * Composite XPath evaluation state. Used when XPath evaluation results in two or more branches of
+ * independent evaluation states.
  */
 public class CompositeMatcher extends Matcher {
 
@@ -56,5 +56,4 @@ public class CompositeMatcher extends Matcher {
     public boolean matchesText() {
         return a.matchesText() || b.matchesText();
     }
-
 }

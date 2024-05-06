@@ -23,14 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -42,6 +35,11 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Recursive Unpacker and text and metadata extractor.
@@ -64,7 +62,6 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         super(context);
         this.maxEmbeddedBytesForExtraction = maxEmbeddedBytesForExtraction;
     }
-
 
     @Override
     public void parseEmbedded(
@@ -94,7 +91,8 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
                     newStream.setOpenContainer(container);
                 }
             }
-            EmbeddedDocumentBytesHandler bytesHandler = context.get(EmbeddedDocumentBytesHandler.class);
+            EmbeddedDocumentBytesHandler bytesHandler =
+                    context.get(EmbeddedDocumentBytesHandler.class);
             if (bytesHandler != null) {
                 parseWithBytes(newStream, handler, metadata);
             } else {
@@ -103,8 +101,8 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         } catch (EncryptedDocumentException ede) {
             recordException(ede, context);
         } catch (CorruptedFileException e) {
-            //necessary to stop the parse to avoid infinite loops
-            //on corrupt sqlite3 files
+            // necessary to stop the parse to avoid infinite loops
+            // on corrupt sqlite3 files
             throw new IOException(e);
         } catch (TikaException e) {
             recordException(e, context);
@@ -117,8 +115,8 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
     private void parseWithBytes(TikaInputStream stream, ContentHandler handler, Metadata metadata)
             throws TikaException, IOException, SAXException {
-        //TODO -- improve the efficiency of this so that we're not
-        //literally writing out a file per request
+        // TODO -- improve the efficiency of this so that we're not
+        // literally writing out a file per request
         Path p = stream.getPath();
         try {
             parse(stream, handler, metadata);
@@ -129,15 +127,19 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
     private void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata)
             throws TikaException, IOException, SAXException {
-        getDelegatingParser().parse(stream,
-                new EmbeddedContentHandler(new BodyContentHandler(handler)),
-                metadata, context);
+        getDelegatingParser()
+                .parse(
+                        stream,
+                        new EmbeddedContentHandler(new BodyContentHandler(handler)),
+                        metadata,
+                        context);
     }
 
     private void storeEmbeddedBytes(Path p, Metadata metadata) {
-        if (! embeddedBytesSelector.select(metadata)) {
+        if (!embeddedBytesSelector.select(metadata)) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("skipping embedded bytes {} <-> {}",
+                LOGGER.debug(
+                        "skipping embedded bytes {} <-> {}",
                         metadata.get(Metadata.CONTENT_TYPE),
                         metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
             }
@@ -148,8 +150,12 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         int id = metadata.getInt(TikaCoreProperties.EMBEDDED_ID);
         try (InputStream is = Files.newInputStream(p)) {
             if (bytesExtracted >= maxEmbeddedBytesForExtraction) {
-                throw new IOException("Bytes extracted (" + bytesExtracted +
-                        ") >= max allowed (" + maxEmbeddedBytesForExtraction + ")");
+                throw new IOException(
+                        "Bytes extracted ("
+                                + bytesExtracted
+                                + ") >= max allowed ("
+                                + maxEmbeddedBytesForExtraction
+                                + ")");
             }
             long maxToRead = maxEmbeddedBytesForExtraction - bytesExtracted;
 
@@ -157,19 +163,23 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
                 embeddedDocumentBytesHandler.add(id, metadata, boundedIs);
                 bytesExtracted += boundedIs.getPos();
                 if (boundedIs.hasHitBound()) {
-                    throw new IOException("Bytes extracted (" + bytesExtracted +
-                            ") >= max allowed (" + maxEmbeddedBytesForExtraction + "). Truncated " +
-                            "bytes");
+                    throw new IOException(
+                            "Bytes extracted ("
+                                    + bytesExtracted
+                                    + ") >= max allowed ("
+                                    + maxEmbeddedBytesForExtraction
+                                    + "). Truncated "
+                                    + "bytes");
                 }
             }
         } catch (IOException e) {
             LOGGER.warn("problem writing out embedded bytes", e);
-            //info in metadata doesn't actually make it back to the metadata list
-            //because we're filtering and cloning the metadata at the end of the parse
-            //which happens before we try to copy out the files.
-            //TODO fix this
-            //metadata.set(TikaCoreProperties.EMBEDDED_BYTES_EXCEPTION,
-              //      ExceptionUtils.getStackTrace(e));
+            // info in metadata doesn't actually make it back to the metadata list
+            // because we're filtering and cloning the metadata at the end of the parse
+            // which happens before we try to copy out the files.
+            // TODO fix this
+            // metadata.set(TikaCoreProperties.EMBEDDED_BYTES_EXCEPTION,
+            //      ExceptionUtils.getStackTrace(e));
         }
     }
 

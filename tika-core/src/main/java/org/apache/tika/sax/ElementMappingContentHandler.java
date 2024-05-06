@@ -19,26 +19,23 @@ package org.apache.tika.sax;
 import java.util.Collections;
 import java.util.Map;
 import javax.xml.namespace.QName;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 /**
- * Content handler decorator that maps element <code>QName</code>s using
- * a <code>Map</code>. Not mappable elements are not forwarded.
- * Attributes may also be mapped (for each element different using
- * a <code>Map</code> for attributes), not mappable attributes are not
- * forwarded. The default is to not map any attributes and therefore do
- * not forward any of them.
+ * Content handler decorator that maps element <code>QName</code>s using a <code>Map</code>. Not
+ * mappable elements are not forwarded. Attributes may also be mapped (for each element different
+ * using a <code>Map</code> for attributes), not mappable attributes are not forwarded. The default
+ * is to not map any attributes and therefore do not forward any of them.
  */
 public class ElementMappingContentHandler extends ContentHandlerDecorator {
 
     private final Map<QName, TargetElement> mappings;
 
-    public ElementMappingContentHandler(ContentHandler handler,
-                                        Map<QName, TargetElement> mappings) {
+    public ElementMappingContentHandler(
+            ContentHandler handler, Map<QName, TargetElement> mappings) {
         super(handler);
         this.mappings = mappings;
     }
@@ -58,7 +55,10 @@ public class ElementMappingContentHandler extends ContentHandlerDecorator {
         TargetElement mapping = mappings.get(new QName(namespaceURI, localName));
         if (mapping != null) {
             QName tag = mapping.getMappedTagName();
-            super.startElement(tag.getNamespaceURI(), tag.getLocalPart(), getQNameAsString(tag),
+            super.startElement(
+                    tag.getNamespaceURI(),
+                    tag.getLocalPart(),
+                    getQNameAsString(tag),
                     mapping.mapAttributes(atts));
         }
     }
@@ -78,34 +78,29 @@ public class ElementMappingContentHandler extends ContentHandlerDecorator {
         private final QName mappedTagName;
         private final Map<QName, QName> attributesMapping;
 
-        /**
-         * Creates an TargetElement, attributes of this element will
-         * be mapped as specified
-         */
+        /** Creates an TargetElement, attributes of this element will be mapped as specified */
         public TargetElement(QName mappedTagName, Map<QName, QName> attributesMapping) {
             this.mappedTagName = mappedTagName;
             this.attributesMapping = attributesMapping;
         }
 
-        /**
-         * A shortcut that automatically creates the QName object
-         */
-        public TargetElement(String mappedTagURI, String mappedTagLocalName,
-                             Map<QName, QName> attributesMapping) {
+        /** A shortcut that automatically creates the QName object */
+        public TargetElement(
+                String mappedTagURI,
+                String mappedTagLocalName,
+                Map<QName, QName> attributesMapping) {
             this(new QName(mappedTagURI, mappedTagLocalName), attributesMapping);
         }
 
         /**
-         * Creates an TargetElement with no attributes, all attributes
-         * will be deleted from SAX stream
+         * Creates an TargetElement with no attributes, all attributes will be deleted from SAX
+         * stream
          */
         public TargetElement(QName mappedTagName) {
             this(mappedTagName, Collections.emptyMap());
         }
 
-        /**
-         * A shortcut that automatically creates the QName object
-         */
+        /** A shortcut that automatically creates the QName object */
         public TargetElement(String mappedTagURI, String mappedTagLocalName) {
             this(mappedTagURI, mappedTagLocalName, Collections.emptyMap());
         }
@@ -123,13 +118,15 @@ public class ElementMappingContentHandler extends ContentHandlerDecorator {
             for (int i = 0; i < atts.getLength(); i++) {
                 QName name = attributesMapping.get(new QName(atts.getURI(i), atts.getLocalName(i)));
                 if (name != null) {
-                    natts.addAttribute(name.getNamespaceURI(), name.getLocalPart(),
-                            getQNameAsString(name), atts.getType(i), atts.getValue(i));
+                    natts.addAttribute(
+                            name.getNamespaceURI(),
+                            name.getLocalPart(),
+                            getQNameAsString(name),
+                            atts.getType(i),
+                            atts.getValue(i));
                 }
             }
             return natts;
         }
-
     }
-
 }

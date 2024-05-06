@@ -16,9 +16,7 @@
  */
 package org.apache.tika.pipes;
 
-/**
- * This should be catastrophic
- */
+/** This should be catastrophic */
 public class FailedToStartClientException extends RuntimeException {
 
     public FailedToStartClientException(Throwable t) {

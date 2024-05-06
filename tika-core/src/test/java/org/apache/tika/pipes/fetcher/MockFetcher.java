@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -34,12 +33,9 @@ public class MockFetcher extends AbstractFetcher implements Initializable {
 
     private Map<String, Param> params;
 
-    @Field
-    private String byteString = null;
+    @Field private String byteString = null;
 
-    @Field
-    private boolean throwOnCheck = false;
-
+    @Field private boolean throwOnCheck = false;
 
     public void setThrowOnCheck(boolean throwOnCheck) {
         this.throwOnCheck = throwOnCheck;
@@ -62,10 +58,10 @@ public class MockFetcher extends AbstractFetcher implements Initializable {
         }
     }
 
-
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
-        return byteString == null ? new ByteArrayInputStream(new byte[0]) :
-                new ByteArrayInputStream(byteString.getBytes(StandardCharsets.UTF_8));
+        return byteString == null
+                ? new ByteArrayInputStream(new byte[0])
+                : new ByteArrayInputStream(byteString.getBytes(StandardCharsets.UTF_8));
     }
 }

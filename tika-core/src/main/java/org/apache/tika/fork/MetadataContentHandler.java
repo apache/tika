@@ -16,11 +16,10 @@
  */
 package org.apache.tika.fork;
 
+import org.apache.tika.metadata.Metadata;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.metadata.Metadata;
 
 class MetadataContentHandler extends DefaultHandler {
 
@@ -38,5 +37,4 @@ class MetadataContentHandler extends DefaultHandler {
             metadata.add(aname, content);
         }
     }
-
 }

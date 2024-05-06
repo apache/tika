@@ -19,10 +19,9 @@ package org.apache.tika.utils;
 public class CompareUtils {
 
     /**
-     * Compare two classes by class names.
-     * If both classes are Tika's or both are not Tika's class, compare by name String.
-     * Otherwise one of these two class is Tika's class.
-     * Then the non-Tika's class comes before Tika's class.
+     * Compare two classes by class names. If both classes are Tika's or both are not Tika's class,
+     * compare by name String. Otherwise one of these two class is Tika's class. Then the non-Tika's
+     * class comes before Tika's class.
      *
      * @param o1 the object 1 to be compared
      * @param o2 the object 2 to be compared

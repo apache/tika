@@ -17,8 +17,8 @@
 package org.apache.tika.sax.xpath;
 
 /**
- * Final evaluation state of a <code>.../@*</code> XPath expression.
- * Matches all attributes of the current element.
+ * Final evaluation state of a <code>.../@*</code> XPath expression. Matches all attributes of the
+ * current element.
  */
 public class AttributeMatcher extends Matcher {
 
@@ -27,5 +27,4 @@ public class AttributeMatcher extends Matcher {
     public boolean matchesAttribute(String namespace, String name) {
         return true;
     }
-
 }

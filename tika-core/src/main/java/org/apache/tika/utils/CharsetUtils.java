@@ -44,12 +44,39 @@ public class CharsetUtils {
     private static Method isSupportedICU = null;
 
     static {
-        initCommonCharsets("Big5", "EUC-JP", "EUC-KR", "x-EUC-TW", "GB18030", "IBM855", "IBM866",
-                "ISO-2022-CN", "ISO-2022-JP", "ISO-2022-KR", "ISO-8859-1", "ISO-8859-2",
-                "ISO-8859-3", "ISO-8859-4", "ISO-8859-5", "ISO-8859-6", "ISO-8859-7", "ISO-8859-8",
-                "ISO-8859-9", "ISO-8859-11", "ISO-8859-13", "ISO-8859-15", "KOI8-R",
-                "x-MacCyrillic", "SHIFT_JIS", "UTF-8", "UTF-16BE", "UTF-16LE", "windows-1251",
-                "windows-1252", "windows-1253", "windows-1255");
+        initCommonCharsets(
+                "Big5",
+                "EUC-JP",
+                "EUC-KR",
+                "x-EUC-TW",
+                "GB18030",
+                "IBM855",
+                "IBM866",
+                "ISO-2022-CN",
+                "ISO-2022-JP",
+                "ISO-2022-KR",
+                "ISO-8859-1",
+                "ISO-8859-2",
+                "ISO-8859-3",
+                "ISO-8859-4",
+                "ISO-8859-5",
+                "ISO-8859-6",
+                "ISO-8859-7",
+                "ISO-8859-8",
+                "ISO-8859-9",
+                "ISO-8859-11",
+                "ISO-8859-13",
+                "ISO-8859-15",
+                "KOI8-R",
+                "x-MacCyrillic",
+                "SHIFT_JIS",
+                "UTF-8",
+                "UTF-16BE",
+                "UTF-16LE",
+                "windows-1251",
+                "windows-1252",
+                "windows-1253",
+                "windows-1255");
 
         // Common aliases/typos not included in standard charset definitions
         COMMON_CHARSETS.put("iso-8851-1", COMMON_CHARSETS.get("iso-8859-1"));
@@ -62,7 +89,7 @@ public class CharsetUtils {
             icuCharset =
                     CharsetUtils.class.getClassLoader().loadClass("com.ibm.icu.charset.CharsetICU");
         } catch (ClassNotFoundException e) {
-            //swallow
+            // swallow
         }
         if (icuCharset != null) {
             try {
@@ -73,7 +100,7 @@ public class CharsetUtils {
             try {
                 isSupportedICU = icuCharset.getMethod("isSupported", String.class);
             } catch (Throwable t) {
-                //swallow
+                // swallow
             }
             // TODO: would be nice to somehow log that we
             // successfully found ICU
@@ -120,8 +147,8 @@ public class CharsetUtils {
     }
 
     /**
-     * Handle various common charset name errors, and return something
-     * that will be considered valid (and is normalized)
+     * Handle various common charset name errors, and return something that will be considered valid
+     * (and is normalized)
      *
      * @param charsetName name of charset to process
      * @return potentially remapped/cleaned up version of charset name
@@ -135,10 +162,9 @@ public class CharsetUtils {
     }
 
     /**
-     * Returns Charset impl, if one exists.  This method
-     * optionally uses ICU4J's CharsetICU.forNameICU,
-     * if it is found on the classpath, else only uses
-     * JDK's builtin Charset.forName.
+     * Returns Charset impl, if one exists. This method optionally uses ICU4J's
+     * CharsetICU.forNameICU, if it is found on the classpath, else only uses JDK's builtin
+     * Charset.forName.
      */
     public static Charset forName(String name) {
         if (name == null) {
@@ -186,9 +212,10 @@ public class CharsetUtils {
                 if (cs != null) {
                     return cs;
                 }
-            } catch (IllegalArgumentException | IllegalAccessException |
-                    InvocationTargetException e) {
-                //ignore
+            } catch (IllegalArgumentException
+                    | IllegalAccessException
+                    | InvocationTargetException e) {
+                // ignore
             }
         }
 

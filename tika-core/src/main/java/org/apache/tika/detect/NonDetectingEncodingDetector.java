@@ -21,24 +21,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.metadata.Metadata;
 
-/**
- * Always returns the charset passed in via the initializer
- */
+/** Always returns the charset passed in via the initializer */
 public class NonDetectingEncodingDetector implements EncodingDetector {
-    //would have preferred final, but need mutability for
-    //loading via TikaConfig
+    // would have preferred final, but need mutability for
+    // loading via TikaConfig
     private Charset charset = StandardCharsets.UTF_8;
 
-    /**
-     * Sets charset to UTF-8.
-     */
-    public NonDetectingEncodingDetector() {
-
-    }
+    /** Sets charset to UTF-8. */
+    public NonDetectingEncodingDetector() {}
 
     public NonDetectingEncodingDetector(Charset charset) {
         this.charset = charset;
