@@ -617,7 +617,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     private static class StringNormalizer {
 
         String normalize(String emitKey, String columnName, String s, int maxLength) {
-            if (maxLength < 0 || s.length() < maxLength) {
+            if (maxLength < 0 || s.length() <= maxLength) {
                 return s;
             }
             LOGGER.warn("truncating {}->'{}' from {} chars to {} chars",
