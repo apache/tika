@@ -137,13 +137,23 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                 .setRedirectsEnabled(httpFetcherConfig.getMaxRedirects() > 0)
                 .build();
         get.setConfig(requestConfig);
-        populateHeaders(get);
+        setHttpRequestHeaders(metadata, get);
         return execute(get, metadata, httpClient, true);
     }
 
-    private void populateHeaders(HttpGet get) throws TikaException {
+    private void setHttpRequestHeaders(Metadata metadata, HttpGet get) throws TikaException {
         if (!StringUtils.isBlank(httpFetcherConfig.getUserAgent())) {
             get.setHeader(USER_AGENT, httpFetcherConfig.getUserAgent());
+        }
+        // additional http request headers can be sent in here.
+        String[] httpRequestHeaders = metadata.getValues("httpRequestHeaders");
+        if (httpRequestHeaders != null) {
+            for (String httpRequestHeader : httpRequestHeaders) {
+                int idxOfEquals = httpRequestHeader.indexOf('=');
+                String headerKey = httpRequestHeader.substring(0, idxOfEquals);
+                String headerValue = httpRequestHeader.substring(idxOfEquals + 1);
+                get.setHeader(headerKey, headerValue);
+            }
         }
         if (jwtGenerator != null) {
             try {
@@ -153,6 +163,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             }
         }
     }
+
     @Override
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata) throws IOException {
         HttpGet get = new HttpGet(fetchKey);
@@ -536,5 +547,9 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
 
     public void setHttpClientFactory(HttpClientFactory httpClientFactory) {
         this.httpClientFactory = httpClientFactory;
+    }
+
+    void setHttpClient(HttpClient httpClient) {
+        this.httpClient = httpClient;
     }
 }

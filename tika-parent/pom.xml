@@ -283,6 +283,7 @@
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
+    <maven.compiler.release>11</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <project.build.outputTimestamp>1701447467</project.build.outputTimestamp>
@@ -299,16 +300,16 @@
     <maven.javadoc.version>3.6.3</maven.javadoc.version>
     <maven.jar.version>3.4.1</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
-    <maven.shade.version>3.5.2</maven.shade.version>
+    <maven.shade.version>3.5.3</maven.shade.version>
     <maven.project.info.reports.version>3.5.0</maven.project.info.reports.version>
-    <puppycrawl.version>10.15.0</puppycrawl.version>
+    <puppycrawl.version>10.16.0</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
     <scm.version>2.1.0</scm.version>
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.37.0</google.cloud.version>
-    <aws.version>1.12.705</aws.version>
+    <aws.version>1.12.710</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -316,7 +317,7 @@
     <asm.version>9.7</asm.version>
     <azure.core.version>1.48.0</azure.core.version>
     <azure.core.http.netty.version>1.14.2</azure.core.http.netty.version>
-    <azure.storage.blob.version>12.25.3</azure.storage.blob.version>
+    <azure.storage.blob.version>12.25.4</azure.storage.blob.version>
     <!-- 7.0.0 needs java 17 -->
     <biz.aqute.version>6.4.1</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
@@ -326,7 +327,7 @@
     <brotli.version>0.1.2</brotli.version>
     <c3p0.version>0.9.5.5</c3p0.version>
     <commons.cli.version>1.7.0</commons.cli.version>
-    <commons.codec.version>1.16.1</commons.codec.version>
+    <commons.codec.version>1.17.0</commons.codec.version>
     <commons.collections4.version>4.5.0-M1</commons.collections4.version>
     <commons.compress.version>1.26.1</commons.compress.version>
     <commons.csv.version>1.10.0</commons.csv.version>
@@ -436,7 +437,7 @@
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.4</zookeeper.version>
     <logback.version>1.5.6</logback.version>
-    <zstd.version>1.5.6-2</zstd.version>
+    <zstd.version>1.5.6-3</zstd.version>
   </properties>
 
   <dependencyManagement>
@@ -1357,6 +1358,7 @@
             <configuration>
               <doclint>none</doclint>
               <source>1.8</source>
+              <sourcepath>src/main/java</sourcepath>
             </configuration>
           </plugin>
         </plugins>
