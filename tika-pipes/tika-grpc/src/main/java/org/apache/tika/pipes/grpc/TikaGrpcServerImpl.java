@@ -261,7 +261,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static Map<String, Param> createTikaParamMap(Map<String, Object> fetcherConfigMap) {
         Map<String, Param> tikaParamsMap = new HashMap<>();
         for (Map.Entry<String, Object> entry : fetcherConfigMap.entrySet()) {
-            tikaParamsMap.put(entry.getKey(), new Param<>(entry.getKey(), entry.getValue()));
+            if (entry.getValue() != null) {
+                tikaParamsMap.put(entry.getKey(), new Param<>(entry.getKey(), entry.getValue()));
+            }
         }
         return tikaParamsMap;
     }
