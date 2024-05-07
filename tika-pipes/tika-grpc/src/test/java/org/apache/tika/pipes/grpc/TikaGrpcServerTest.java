@@ -45,6 +45,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -103,7 +104,7 @@ public class TikaGrpcServerTest {
         String targetFolder = new File("target").getAbsolutePath();
         // create fetchers
         for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
-            String fetcherId = "fetcherIdHere" + i;
+            String fetcherId = createFetcherId(i);
             SaveFetcherReply reply = blockingStub.saveFetcher(SaveFetcherRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
@@ -118,7 +119,7 @@ public class TikaGrpcServerTest {
         }
         // update fetchers
         for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
-            String fetcherId = "fetcherIdHere" + i;
+            String fetcherId = createFetcherId(i);
             SaveFetcherReply reply = blockingStub.saveFetcher(SaveFetcherRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
@@ -141,7 +142,7 @@ public class TikaGrpcServerTest {
 
         // get fetchers
         for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
-            String fetcherId = "fetcherIdHere" + i;
+            String fetcherId = createFetcherId(i);
             GetFetcherReply getFetcherReply = blockingStub.getFetcher(GetFetcherRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
@@ -152,7 +153,7 @@ public class TikaGrpcServerTest {
 
         // delete fetchers
         for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
-            String fetcherId = "fetcherIdHere" + i;
+            String fetcherId = createFetcherId(i);
             DeleteFetcherReply deleteFetcherReply = blockingStub.deleteFetcher(DeleteFetcherRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
@@ -169,6 +170,11 @@ public class TikaGrpcServerTest {
                     .getCode()
                     .value());
         }
+    }
+
+    @NotNull
+    private static String createFetcherId(int i) {
+        return "nick" + i + ":is:cool:super/" + FileSystemFetcher.class;
     }
 
     @Test
@@ -191,7 +197,7 @@ public class TikaGrpcServerTest {
         TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
         TikaGrpc.TikaStub tikaStub = TikaGrpc.newStub(channel);
 
-        String fetcherId = "fetcherIdHere";
+        String fetcherId = createFetcherId(1);
         String targetFolder = new File("target").getAbsolutePath();
         SaveFetcherReply reply = blockingStub.saveFetcher(SaveFetcherRequest
                 .newBuilder()
