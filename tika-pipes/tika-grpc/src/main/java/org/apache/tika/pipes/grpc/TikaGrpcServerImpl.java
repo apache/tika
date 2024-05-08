@@ -23,8 +23,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
@@ -61,6 +63,7 @@ import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.PipesClient;
 import org.apache.tika.pipes.PipesConfig;
@@ -183,20 +186,39 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                     "Could not find fetcher with name " + request.getFetcherId());
         }
         Metadata tikaMetadata = new Metadata();
-        for (Map.Entry<String, String> entry : request.getMetadataMap().entrySet()) {
-            tikaMetadata.add(entry.getKey(), entry.getValue());
-        }
         try {
+            Map<String, Object> metadataJsonObject = OBJECT_MAPPER.readValue(request.getMetadataJson(), new TypeReference<>() {});
+            for (Map.Entry<String, Object> entry : metadataJsonObject.entrySet()) {
+                if (entry.getValue() instanceof List) {
+                    List<Object> list = (List<Object>) entry.getValue();
+                    tikaMetadata.set(Property.externalText(entry.getKey()), list.stream()
+                                                                                .map(String::valueOf)
+                                                                                .collect(Collectors.toList())
+                                                                                .toArray(new String[] {}));
+                } else if (entry.getValue() instanceof String) {
+                    tikaMetadata.set(Property.externalText(entry.getKey()), (String) entry.getValue());
+                } else if (entry.getValue() instanceof Integer) {
+                    tikaMetadata.set(Property.externalText(entry.getKey()), (Integer) entry.getValue());
+                } else if (entry.getValue() instanceof Double) {
+                    tikaMetadata.set(Property.externalText(entry.getKey()), (Double) entry.getValue());
+                } else if (entry.getValue() instanceof Float) {
+                    tikaMetadata.set(Property.externalText(entry.getKey()), (Float) entry.getValue());
+                } else if (entry.getValue() instanceof Boolean) {
+                    tikaMetadata.set(Property.externalText(entry.getKey()), (Boolean) entry.getValue());
+                }
+            }
             PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(),
                     new FetchKey(fetcher.getName(), request.getFetchKey()), new EmitKey(),
                     FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             FetchAndParseReply.Builder fetchReplyBuilder =
                     FetchAndParseReply.newBuilder().setFetchKey(request.getFetchKey());
-            for (Metadata metadata : pipesResult.getEmitData().getMetadataList()) {
-                for (String name : metadata.names()) {
-                    String value = metadata.get(name);
-                    if (value != null) {
-                        fetchReplyBuilder.putFields(name, value);
+            if (pipesResult.getEmitData() != null && pipesResult.getEmitData().getMetadataList() != null) {
+                for (Metadata metadata : pipesResult.getEmitData().getMetadataList()) {
+                    for (String name : metadata.names()) {
+                        String value = metadata.get(name);
+                        if (value != null) {
+                            fetchReplyBuilder.putFields(name, value);
+                        }
                     }
                 }
             }

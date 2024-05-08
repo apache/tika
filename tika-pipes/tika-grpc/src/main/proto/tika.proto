@@ -47,7 +47,7 @@ message SaveFetcherReply {
 message FetchAndParseRequest {
   string fetcher_id = 1;
   string fetch_key = 2;
-  map<string, string> metadata = 3;
+  string metadata_json = 3;
 }
 
 message FetchAndParseReply {
