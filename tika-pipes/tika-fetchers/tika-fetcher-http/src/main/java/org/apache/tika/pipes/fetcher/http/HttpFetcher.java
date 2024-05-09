@@ -155,10 +155,12 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         String[] httpRequestHeaders = metadata.getValues("httpRequestHeaders");
         if (httpRequestHeaders != null) {
             for (String httpRequestHeader : httpRequestHeaders) {
-                int idxOfEquals = httpRequestHeader.indexOf(':');
-                String headerKey = httpRequestHeader.substring(0, idxOfEquals).trim();
-                String headerValue = httpRequestHeader.substring(idxOfEquals + 1).trim();
-                get.setHeader(headerKey, headerValue);
+                String[] parts = httpRequestHeader.trim().split(":", 2);
+                if (parts.length >= 2) {
+                    String key = parts[0].trim();
+                    String value = parts[1].trim();
+                    get.setHeader(key, value);
+                }
             }
         }
     }
