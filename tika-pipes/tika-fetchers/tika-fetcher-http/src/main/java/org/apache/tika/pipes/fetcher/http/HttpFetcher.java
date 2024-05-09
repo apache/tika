@@ -129,7 +129,6 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata) throws IOException, TikaException {
-        LOG.info("Fetching HTTP key: {}", fetchKey);
         HttpGet get = new HttpGet(fetchKey);
         RequestConfig requestConfig = RequestConfig
                 .custom()
@@ -149,9 +148,12 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         String[] httpRequestHeaders = metadata.getValues("httpRequestHeaders");
         if (httpRequestHeaders != null) {
             for (String httpRequestHeader : httpRequestHeaders) {
-                int idxOfEquals = httpRequestHeader.indexOf('=');
-                String headerKey = httpRequestHeader.substring(0, idxOfEquals);
-                String headerValue = httpRequestHeader.substring(idxOfEquals + 1);
+                int idxOfEquals = httpRequestHeader.indexOf(':');
+                if (idxOfEquals == -1) {
+                    continue;
+                }
+                String headerKey = httpRequestHeader.substring(0, idxOfEquals).trim();
+                String headerValue = httpRequestHeader.substring(idxOfEquals + 1).trim();
                 get.setHeader(headerKey, headerValue);
             }
         }
@@ -165,11 +167,12 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     }
 
     @Override
-    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata) throws IOException {
+    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata) throws IOException, TikaException {
         HttpGet get = new HttpGet(fetchKey);
         if (!StringUtils.isBlank(httpFetcherConfig.getUserAgent())) {
             get.setHeader(USER_AGENT, httpFetcherConfig.getUserAgent());
         }
+        setHttpRequestHeaders(metadata, get);
         get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
         return execute(get, metadata, httpClient, true);
     }
@@ -204,6 +207,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             int code = response
                     .getStatusLine()
                     .getStatusCode();
+            LOG.info("Fetch id {} status code {}", get.getURI(), code);
             if (code < 200 || code > 299) {
                 throw new IOException("bad status code: " + code + " :: " + responseToString(response));
             }
