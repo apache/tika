@@ -371,8 +371,13 @@ public class PipesServer implements Runnable {
         MetadataListAndEmbeddedBytes parseData = null;
 
         try {
-            //this can be null if there is a fetch exception
-            parseData = parseFromTuple(t, fetcher);
+            try {
+                parseData = parseFromTuple(t, fetcher);
+            } catch (IOException | TikaException e) {
+                LOG.warn("fetch exception " + t.getId(), e);
+                write(STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e));
+                return;
+            }
 
             if (LOG.isTraceEnabled()) {
                 LOG.trace("timer -- to parse: {} ms", System.currentTimeMillis() - start);
@@ -455,37 +460,30 @@ public class PipesServer implements Runnable {
         }
     }
 
-    protected MetadataListAndEmbeddedBytes parseFromTuple(FetchEmitTuple t, Fetcher fetcher) {
+    protected MetadataListAndEmbeddedBytes parseFromTuple(FetchEmitTuple t, Fetcher fetcher) throws TikaException, IOException {
         FetchKey fetchKey = t.getFetchKey();
         if (fetchKey.hasRange()) {
             if (!(fetcher instanceof RangeFetcher)) {
                 throw new IllegalArgumentException(
                         "fetch key has a range, but the fetcher is not a range fetcher");
             }
-            Metadata metadata = t.getMetadata() == null ? new Metadata() : t.getMetadata();
+            Metadata metadata = new Metadata();
             try (InputStream stream = ((RangeFetcher) fetcher).fetch(fetchKey.getFetchKey(),
                     fetchKey.getRangeStart(), fetchKey.getRangeEnd(), metadata)) {
                 return parseWithStream(t, stream, metadata);
             } catch (SecurityException e) {
                 LOG.error("security exception " + t.getId(), e);
                 throw e;
-            } catch (TikaException | IOException e) {
-                LOG.warn("fetch exception " + t.getId(), e);
-                write(STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e));
             }
         } else {
-            Metadata metadata = t.getMetadata() == null ? new Metadata() : t.getMetadata();
+            Metadata metadata = new Metadata();
             try (InputStream stream = fetcher.fetch(t.getFetchKey().getFetchKey(), metadata)) {
                 return parseWithStream(t, stream, metadata);
             } catch (SecurityException e) {
                 LOG.error("security exception " + t.getId(), e);
                 throw e;
-            } catch (TikaException | IOException e) {
-                LOG.warn("fetch exception " + t.getId(), e);
-                write(STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e));
             }
         }
-        return null;
     }
 
     private String getNoFetcherMsg(String fetcherName) {
