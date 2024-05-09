@@ -9,8 +9,8 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 TIKA_SRC_PATH=${SCRIPT_DIR}/../../..
 OUT_DIR=${TIKA_SRC_PATH}/tika-pipes/tika-grpc/target/tika-docker
 
-mvn clean install -DskipTests=true -f "${TIKA_SRC_PATH}"
-mvn dependency:copy-dependencies -f "${TIKA_SRC_PATH}/tika-pipes/tika-grpc"
+mvn clean install -DskipTests=true -f "${TIKA_SRC_PATH}" || exit
+mvn dependency:copy-dependencies -f "${TIKA_SRC_PATH}/tika-pipes/tika-grpc" || exit
 rm -rf "${OUT_DIR}"
 mkdir -p "${OUT_DIR}"
 

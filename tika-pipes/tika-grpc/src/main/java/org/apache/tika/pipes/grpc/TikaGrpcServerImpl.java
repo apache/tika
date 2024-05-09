@@ -195,6 +195,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 try {
                     metadataJsonObject = OBJECT_MAPPER.readValue(request.getMetadataJson(), new TypeReference<>() {});
                 } catch (JsonProcessingException e) {
+                    metadataJsonObject = new HashMap<>();
                 }
             }
             for (Map.Entry<String, Object> entry : metadataJsonObject.entrySet()) {
