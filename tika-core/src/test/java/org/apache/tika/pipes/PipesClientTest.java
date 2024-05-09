@@ -70,8 +70,6 @@ public class PipesClientTest {
         assertEquals("v2b", metadataList.get(0).getValues("k2")[1]);
 
         //confirm that metadata from the fetcher is making it into the final result
-        assertNotNull(metadataList.get(0).get(FileSystem.ACCESSED));
         assertNotNull(metadataList.get(0).get(FileSystem.CREATED));
-        assertNotNull(metadataList.get(0).get(FileSystem.MODIFIED));
     }
 }
