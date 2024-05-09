@@ -20,6 +20,7 @@
     <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
       <name>fs</name>
       <basePath>BASE_PATH</basePath>
+      <extractFileSystemMetadata>true</extractFileSystemMetadata>
     </fetcher>
   </fetchers>
   <emitters>

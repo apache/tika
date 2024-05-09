@@ -17,7 +17,9 @@
 package org.apache.tika.pipes;
 
 import static org.apache.tika.TikaTest.assertContains;
+import static org.apache.tika.TikaTest.debug;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -28,6 +30,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -36,7 +39,10 @@ import org.apache.tika.pipes.fetcher.FetchKey;
 public class PipesClientTest {
 
     @Test
-    public void testUserMetadataAndNoEmitter(@TempDir Path tmp) throws Exception {
+    public void testMetadataWithNoEmitter(@TempDir Path tmp) throws Exception {
+        //this tests that metadata gathered by the fetcher and user metadata
+        //comes through into the final set of metadata.
+
         Path tikaConfigTemplate = Paths.get(PipesClientTest.class.getResource("TIKA-4252.xml").toURI());
         Path tikaConfig = tmp.resolve("tika-config.xml");
         String xml = Files.readString(tikaConfigTemplate, StandardCharsets.UTF_8);
@@ -62,5 +68,10 @@ public class PipesClientTest {
         assertEquals("v1", metadataList.get(0).get("k1"));
         assertEquals("v2a", metadataList.get(0).getValues("k2")[0]);
         assertEquals("v2b", metadataList.get(0).getValues("k2")[1]);
+
+        //confirm that metadata from the fetcher is making it into the final result
+        assertNotNull(metadataList.get(0).get(FileSystem.ACCESSED));
+        assertNotNull(metadataList.get(0).get(FileSystem.CREATED));
+        assertNotNull(metadataList.get(0).get(FileSystem.MODIFIED));
     }
 }
