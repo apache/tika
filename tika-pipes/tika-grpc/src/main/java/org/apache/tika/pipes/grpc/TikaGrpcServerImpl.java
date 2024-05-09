@@ -209,7 +209,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 }
             }
             PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(),
-                    new FetchKey(fetcher.getName(), request.getFetchKey()), new EmitKey(), tikaMetadata, HandlerConfig.DEFAULT_HANDLER_CONFIG, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+                    new FetchKey(fetcher.getName(), request.getFetchKey()), new EmitKey(), tikaMetadata,
+                        HandlerConfig.DEFAULT_HANDLER_CONFIG, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             FetchAndParseReply.Builder fetchReplyBuilder =
                     FetchAndParseReply.newBuilder().setFetchKey(request.getFetchKey());
             if (pipesResult.getEmitData() != null && pipesResult.getEmitData().getMetadataList() != null) {
