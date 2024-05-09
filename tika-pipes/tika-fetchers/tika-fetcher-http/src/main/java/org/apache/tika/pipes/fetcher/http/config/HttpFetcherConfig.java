@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.fetcher.http.config;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
@@ -27,16 +28,16 @@ public class HttpFetcherConfig extends AbstractConfig {
     private String authScheme;
     private String proxyHost;
     private Integer proxyPort;
-    private Integer connectTimeout;
-    private Integer requestTimeout;
-    private Integer socketTimeout;
-    private Integer maxConnections;
-    private Integer maxConnectionsPerRoute;
-    private Long maxSpoolSize;
-    private Integer maxRedirects;
-    private List<String> httpHeaders;
-    private Long overallTimeout;
-    private Integer maxErrMsgSize;
+    private Integer maxConnectionsPerRoute = 1000;
+    private Integer maxConnections = 2000;
+    private Integer requestTimeout = 120000;
+    private Integer connectTimeout = 120000;
+    private Integer socketTimeout = 120000;
+    private Long maxSpoolSize = -1L;
+    private Integer maxRedirects = 0;
+    private List<String> httpHeaders = new ArrayList<>();
+    private Long overallTimeout = 120000L;
+    private Integer maxErrMsgSize = 10000000;
     private String userAgent;
     private String jwtIssuer;
     private String jwtSubject;
