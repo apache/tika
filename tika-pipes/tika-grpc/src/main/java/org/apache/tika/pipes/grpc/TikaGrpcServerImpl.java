@@ -36,7 +36,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.rpc.Status;
@@ -74,7 +73,6 @@ import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
-import org.apache.tika.utils.StringUtils;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaConfigSerializer.class);
@@ -141,17 +139,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         for (var configParam : fetcherConfigParams.entrySet()) {
             Element configElm = tikaConfigDoc.createElement(configParam.getKey());
             fetcher.appendChild(configElm);
-            if (configParam.getValue() instanceof List) {
-                List configParamVal = (List) configParam.getValue();
-                String singularName = configParam.getKey().substring(0, configParam.getKey().length() - 1);
-                for (Object configParamObj : configParamVal) {
-                    Element childElement = tikaConfigDoc.createElement(singularName);
-                    childElement.setTextContent(Objects.toString(configParamObj));
-                    configElm.appendChild(childElement);
-                }
-            } else {
-                configElm.setTextContent(Objects.toString(configParam.getValue()));
-            }
+            configElm.setTextContent(Objects.toString(configParam.getValue()));
         }
     }
 
@@ -200,14 +188,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
         Metadata tikaMetadata = new Metadata();
         try {
-            Map<String, Object> metadataJsonObject = new HashMap<>();
-            if (!StringUtils.isBlank(request.getMetadataJson())) {
-                try {
-                    metadataJsonObject = OBJECT_MAPPER.readValue(request.getMetadataJson(), new TypeReference<>() {});
-                } catch (JsonProcessingException e) {
-                    metadataJsonObject = new HashMap<>();
-                }
-            }
+            Map<String, Object> metadataJsonObject = OBJECT_MAPPER.readValue(request.getMetadataJson(), new TypeReference<>() {});
             for (Map.Entry<String, Object> entry : metadataJsonObject.entrySet()) {
                 if (entry.getValue() instanceof List) {
                     List<Object> list = (List<Object>) entry.getValue();
@@ -228,8 +209,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 }
             }
             PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(),
-                    new FetchKey(fetcher.getName(), request.getFetchKey()), new EmitKey(), tikaMetadata,
-                        HandlerConfig.DEFAULT_HANDLER_CONFIG, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+                    new FetchKey(fetcher.getName(), request.getFetchKey()), new EmitKey(), tikaMetadata, HandlerConfig.DEFAULT_HANDLER_CONFIG, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             FetchAndParseReply.Builder fetchReplyBuilder =
                     FetchAndParseReply.newBuilder().setFetchKey(request.getFetchKey());
             if (pipesResult.getEmitData() != null && pipesResult.getEmitData().getMetadataList() != null) {
