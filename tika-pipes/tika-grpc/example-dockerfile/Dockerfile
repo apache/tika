@@ -6,8 +6,6 @@ ARG JRE='openjdk-17-jre-headless'
 RUN set -eux \
     && apt-get update \
     && apt-get install --yes --no-install-recommends gnupg2 software-properties-common \
-    && add-apt-repository -y ppa:alex-p/tesseract-ocr5 \
-    && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends $JRE \
         gdal-bin \
         tesseract-ocr \

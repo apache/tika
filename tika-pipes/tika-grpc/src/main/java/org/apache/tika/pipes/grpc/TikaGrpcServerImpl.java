@@ -36,6 +36,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.rpc.Status;
@@ -73,6 +74,7 @@ import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.utils.StringUtils;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaConfigSerializer.class);
@@ -188,7 +190,13 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
         Metadata tikaMetadata = new Metadata();
         try {
-            Map<String, Object> metadataJsonObject = OBJECT_MAPPER.readValue(request.getMetadataJson(), new TypeReference<>() {});
+            Map<String, Object> metadataJsonObject = new HashMap<>();
+            if (!StringUtils.isBlank(request.getMetadataJson())) {
+                try {
+                    metadataJsonObject = OBJECT_MAPPER.readValue(request.getMetadataJson(), new TypeReference<>() {});
+                } catch (JsonProcessingException e) {
+                }
+            }
             for (Map.Entry<String, Object> entry : metadataJsonObject.entrySet()) {
                 if (entry.getValue() instanceof List) {
                     List<Object> list = (List<Object>) entry.getValue();
