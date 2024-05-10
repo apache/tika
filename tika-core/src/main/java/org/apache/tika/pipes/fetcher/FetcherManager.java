@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -35,7 +38,7 @@ import org.apache.tika.exception.TikaException;
  * This forbids multiple fetchers supporting the same name.
  */
 public class FetcherManager extends ConfigBase {
-
+    private static final Logger LOG = LoggerFactory.getLogger(FetcherManager.class);
     public static FetcherManager load(Path p) throws IOException, TikaConfigException {
         try (InputStream is =
                      Files.newInputStream(p)) {
@@ -48,12 +51,12 @@ public class FetcherManager extends ConfigBase {
     public FetcherManager(List<Fetcher> fetchers) throws TikaConfigException {
         for (Fetcher fetcher : fetchers) {
             String name = fetcher.getName();
-            if (name == null || name.trim().length() == 0) {
-                throw new TikaConfigException("fetcher name must not be blank");
+            if (name == null || name.trim().isEmpty()) {
+                throw new TikaConfigException("Fetcher name must not be blank");
             }
             if (fetcherMap.containsKey(fetcher.getName())) {
-                throw new TikaConfigException(
-                        "Multiple fetchers cannot support the same prefix: " + fetcher.getName());
+                LOG.warn("Duplicate fetcher saved in the tika-config xml: {}. Ignoring.", fetcher.getName());
+                continue;
             }
             fetcherMap.put(fetcher.getName(), fetcher);
         }
