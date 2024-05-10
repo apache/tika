@@ -455,33 +455,33 @@ public class PipesServer implements Runnable {
         }
     }
 
-    protected MetadataListAndEmbeddedBytes parseFromTuple(FetchEmitTuple t, Fetcher fetcher) {
-        FetchKey fetchKey = t.getFetchKey();
+    protected MetadataListAndEmbeddedBytes parseFromTuple(FetchEmitTuple fetchEmitTuple, Fetcher fetcher) {
+        FetchKey fetchKey = fetchEmitTuple.getFetchKey();
+        Metadata fetchResponseMetadata = new Metadata();
+        Metadata fetchRequestMetadata = fetchEmitTuple.getMetadata();
         if (fetchKey.hasRange()) {
             if (!(fetcher instanceof RangeFetcher)) {
                 throw new IllegalArgumentException(
                         "fetch key has a range, but the fetcher is not a range fetcher");
             }
-            Metadata metadata = t.getMetadata() == null ? new Metadata() : t.getMetadata();
             try (InputStream stream = ((RangeFetcher) fetcher).fetch(fetchKey.getFetchKey(),
-                    fetchKey.getRangeStart(), fetchKey.getRangeEnd(), metadata)) {
-                return parseWithStream(t, stream, metadata);
+                    fetchKey.getRangeStart(), fetchKey.getRangeEnd(), fetchRequestMetadata, fetchResponseMetadata)) {
+                return parseWithStream(fetchEmitTuple, stream, fetchResponseMetadata);
             } catch (SecurityException e) {
-                LOG.error("security exception " + t.getId(), e);
+                LOG.error("security exception " + fetchEmitTuple.getId(), e);
                 throw e;
             } catch (TikaException | IOException e) {
-                LOG.warn("fetch exception " + t.getId(), e);
+                LOG.warn("fetch exception " + fetchEmitTuple.getId(), e);
                 write(STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e));
             }
         } else {
-            Metadata metadata = t.getMetadata() == null ? new Metadata() : t.getMetadata();
-            try (InputStream stream = fetcher.fetch(t.getFetchKey().getFetchKey(), metadata)) {
-                return parseWithStream(t, stream, metadata);
+            try (InputStream stream = fetcher.fetch(fetchEmitTuple.getFetchKey().getFetchKey(), fetchRequestMetadata, fetchResponseMetadata)) {
+                return parseWithStream(fetchEmitTuple, stream, fetchResponseMetadata);
             } catch (SecurityException e) {
-                LOG.error("security exception " + t.getId(), e);
+                LOG.error("security exception " + fetchEmitTuple.getId(), e);
                 throw e;
             } catch (TikaException | IOException e) {
-                LOG.warn("fetch exception " + t.getId(), e);
+                LOG.warn("fetch exception " + fetchEmitTuple.getId(), e);
                 write(STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e));
             }
         }
