@@ -58,7 +58,7 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws IOException, TikaException {
+    public InputStream fetch(String fetchKey, Metadata fetchRequestMetadata, Metadata fetchResponseMetadata) throws IOException, TikaException {
 
         if (fetchKey.contains("\u0000")) {
             throw new IllegalArgumentException("Path must not contain \u0000. " +
@@ -76,8 +76,8 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
             p = Paths.get(fetchKey);
         }
 
-        metadata.set(TikaCoreProperties.SOURCE_PATH, fetchKey);
-        updateFileSystemMetadata(p, metadata);
+        fetchRequestMetadata.set(TikaCoreProperties.SOURCE_PATH, fetchKey);
+        updateFileSystemMetadata(p, fetchRequestMetadata);
 
         if (!Files.isRegularFile(p)) {
             if (basePath != null && !Files.isDirectory(basePath)) {
@@ -87,7 +87,7 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
             }
         }
 
-        return TikaInputStream.get(p, metadata);
+        return TikaInputStream.get(p, fetchRequestMetadata);
     }
 
     private void updateFileSystemMetadata(Path p, Metadata metadata) throws IOException {
