@@ -35,7 +35,7 @@ import org.apache.tika.pipes.fetcher.AbstractFetcher;
 public class UrlFetcher extends AbstractFetcher {
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata fetchRequestMetadata, Metadata fetchResponseMetadata) throws IOException, TikaException {
+    public InputStream fetch(String fetchKey, Metadata metadata) throws IOException, TikaException {
         if (fetchKey.contains("\u0000")) {
             throw new IllegalArgumentException("URL must not contain \u0000. " +
                     "Please review the life decisions that led you to requesting " +
@@ -46,7 +46,7 @@ public class UrlFetcher extends AbstractFetcher {
                     "The UrlFetcher does not fetch from file shares; " +
                     "please use the FileSystemFetcher");
         }
-        return TikaInputStream.get(new URL(fetchKey), fetchRequestMetadata);
+        return TikaInputStream.get(new URL(fetchKey), metadata);
     }
 
 }

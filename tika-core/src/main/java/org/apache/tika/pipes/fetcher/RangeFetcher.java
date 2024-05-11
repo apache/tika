@@ -28,11 +28,7 @@ import org.apache.tika.metadata.Metadata;
 public interface RangeFetcher extends Fetcher {
     //At some point, Tika 3.x?, we may want to add optional ranges to the fetchKey?
 
-    default InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata fetchResponseMetadata)
-            throws TikaException, IOException {
-        return fetch(fetchKey, startOffset, endOffset, new Metadata(), fetchResponseMetadata);
-    }
-
-    InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata fetchRequestMetadata, Metadata fetchResponseMetadata)
+    InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata)
             throws TikaException, IOException;
+
 }

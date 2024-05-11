@@ -64,7 +64,7 @@ public class MockFetcher extends AbstractFetcher implements Initializable {
 
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata fetchRequestMetadata, Metadata fetchResponseMetadata) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
         return byteString == null ? new ByteArrayInputStream(new byte[0]) :
                 new ByteArrayInputStream(byteString.getBytes(StandardCharsets.UTF_8));
     }

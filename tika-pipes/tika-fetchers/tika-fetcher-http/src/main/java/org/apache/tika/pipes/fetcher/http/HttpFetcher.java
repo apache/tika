@@ -136,7 +136,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
 
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata fetchRequestMetadata, Metadata fetchResponseMetadata) throws IOException, TikaException {
+    public InputStream fetch(String fetchKey, Metadata metadata) throws IOException, TikaException {
         HttpGet get = new HttpGet(fetchKey);
         RequestConfig requestConfig =
                 RequestConfig.custom()
@@ -146,21 +146,21 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         if (! StringUtils.isBlank(userAgent)) {
             get.setHeader(USER_AGENT, userAgent);
         }
-        return execute(get, fetchResponseMetadata, httpClient, true);
+        return execute(get, metadata, httpClient, true);
     }
 
     @Override
-    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata fetchRequestMetadata, Metadata fetchResponseMetadata)
+    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
             throws IOException {
         HttpGet get = new HttpGet(fetchKey);
         if (! StringUtils.isBlank(userAgent)) {
             get.setHeader(USER_AGENT, userAgent);
         }
         get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
-        return execute(get, fetchResponseMetadata, httpClient, true);
+        return execute(get, metadata, httpClient, true);
     }
 
-    private InputStream execute(HttpGet get, Metadata fetchRequestMetadata, HttpClient client,
+    private InputStream execute(HttpGet get, Metadata metadata, HttpClient client,
                                 boolean retryOnBadLength) throws IOException {
         HttpClientContext context = HttpClientContext.create();
         HttpResponse response = null;
@@ -183,7 +183,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             }
             response = client.execute(get, context);
 
-            updateMetadata(get.getURI().toString(), response, context, fetchRequestMetadata);
+            updateMetadata(get.getURI().toString(), response, context, metadata);
 
             int code = response.getStatusLine().getStatusCode();
             if (code < 200 || code > 299) {
@@ -191,7 +191,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                         responseToString(response));
             }
             try (InputStream is = response.getEntity().getContent()) {
-                return spool(is, fetchRequestMetadata);
+                return spool(is, metadata);
             }
         } catch (ConnectionClosedException e) {
 
@@ -202,7 +202,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                 //and then compresses the stream. See HTTPCLIENT-2176
                 LOG.warn("premature end of content-length delimited message; retrying with " +
                         "content compression disabled for {}", get.getURI());
-                return execute(get, fetchRequestMetadata, noCompressHttpClient, false);
+                return execute(get, metadata, noCompressHttpClient, false);
             }
             throw e;
         } catch  (IOException e) {
