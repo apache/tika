@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.38.0</google.cloud.version>
-    <aws.version>1.12.719</aws.version>
+    <aws.version>1.12.720</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -523,7 +523,7 @@
       <dependency>
         <groupId>com.mchange</groupId>
         <artifactId>c3p0</artifactId>
-        <version>0.9.5.5</version>
+        <version>0.10.1</version>
       </dependency>
       <dependency>
         <groupId>com.mchange</groupId>
@@ -600,7 +600,7 @@
       <dependency>
         <groupId>com.healthmarketscience.jackcess</groupId>
         <artifactId>jackcess</artifactId>
-        <version>4.0.5</version>
+        <version>4.0.6</version>
       </dependency>
       <dependency>
         <groupId>com.healthmarketscience.jackcess</groupId>
