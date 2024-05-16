@@ -294,6 +294,13 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
                         getEncodingDetector(context));
             }
         }
+        String charsetString = metadata.get(Metadata.CONTENT_ENCODING);
+        if (charsetString != null && params.getCharset() == null) {
+            try {
+                params.setCharset(Charset.forName(charsetString));
+            } catch (Exception ignored) {
+            }
+        }
         Reader reader = null;
         if (params.getCharset() == null) {
             reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata,
