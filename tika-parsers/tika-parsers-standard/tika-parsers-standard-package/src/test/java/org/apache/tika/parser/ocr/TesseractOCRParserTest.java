@@ -250,6 +250,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testInlining() throws Exception {
+        assumeTrue(canRun(), "can run OCR");
         TesseractOCRConfig config = new TesseractOCRConfig();
         config.setInlineContent(true);
         ParseContext context = new ParseContext();
