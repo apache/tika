@@ -338,6 +338,7 @@
     <!-- fakeload versions > 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
     <guava.version>33.2.0-jre</guava.version>
+    <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
     <!-- versions greater than 62.2 are not compatible with icu4j handler in lucene 8.11.1 -->
@@ -983,6 +984,16 @@
           <artifactId>stax2-api</artifactId>
           <version>4.2.2</version>
       </dependency>
+      <dependency>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>hdf5</artifactId>
+          <version>${hdf5.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>hdf5-platform</artifactId>
+          <version>${hdf5.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -1108,6 +1119,19 @@
               <groupId>org.threeten</groupId>
               <artifactId>threetenbp</artifactId>
               <version>1.6.9</version>
+            </coordinate>
+            <!-- while waiting for 1.14.4 to appear on maven central, see
+                 https://www.hdfgroup.org/2024/05/new-hdf5-cve-issues-fixed-in-1-14-4/
+            -->
+            <coordinate>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>hdf5</artifactId>
+                <version>1.14.3-1.5.10</version>
+            </coordinate>
+            <coordinate>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>hdf5-platform</artifactId>
+                <version>1.14.3-1.5.10</version>
             </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
