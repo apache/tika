@@ -984,13 +984,6 @@
           <artifactId>logback-classic</artifactId>
           <version>${logback.version}</version>
       </dependency>
-      <!-- convergence problems in Apache Tika Azure Blob fetcher,
-        might be removed after update of azure-storage-blob higher than 12.25.1  -->
-      <dependency>
-          <groupId>org.codehaus.woodstox</groupId>
-          <artifactId>stax2-api</artifactId>
-          <version>4.2.2</version>
-      </dependency>
       <dependency>
           <groupId>org.bytedeco</groupId>
           <artifactId>hdf5</artifactId>
@@ -1001,6 +994,8 @@
           <artifactId>hdf5-platform</artifactId>
           <version>${hdf5.version}</version>
       </dependency>
+      <!-- avoid convergence problems related to 
+           google-cloud-storage:2.38.0 (2.26.1) and gson:2.11.0 (2.27.0) -->
       <dependency>
           <groupId>com.google.errorprone</groupId>
           <artifactId>error_prone_annotations</artifactId>
