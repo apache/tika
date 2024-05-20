@@ -431,6 +431,7 @@
     <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
     <uimafit.version>3.4.0</uimafit.version>
     <uimaj.core.version>3.4.1</uimaj.core.version>
+    <uimaj.cpe.version>3.5.0</uimaj.cpe.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
     <woodstox.core.version>6.6.2</woodstox.core.version>
@@ -979,6 +980,12 @@
         <groupId>org.apache.uima</groupId>
         <artifactId>uimaj-core</artifactId>
         <version>${uimaj.core.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.uima</groupId>
+        <artifactId>uimaj-cpe</artifactId>
+        <version>${uimaj.cpe.version}</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
