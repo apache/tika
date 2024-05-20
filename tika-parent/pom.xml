@@ -1015,7 +1015,7 @@
           <artifactId>logback-classic</artifactId>
           <version>${logback.version}</version>
       </dependency>
-      <!-- because of convergence problems with jaxb 2.0.4, because cxf 4.0.3 uses an older version -->
+      <!-- because of convergence problems with jaxb 4.0.5, because cxf 4.0.4 uses an older version -->
       <dependency>
           <groupId>org.eclipse.angus</groupId>
           <artifactId>angus-activation</artifactId>
