@@ -410,7 +410,7 @@
     <poi.version>5.2.5</poi.version>
     <protobuf.version>3.25.3</protobuf.version>
     <quartz.version>2.3.2</quartz.version>
-    <reactor.core.version>3.6.5</reactor.core.version>
+    <reactor.core.version>3.6.6</reactor.core.version>
     <reactor.netty.version>1.1.19</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
