@@ -1038,6 +1038,11 @@
           <artifactId>hdf5-platform</artifactId>
           <version>${hdf5.version}</version>
       </dependency>
+      <dependency>
+          <groupId>com.google.errorprone</groupId>
+          <artifactId>error_prone_annotations</artifactId>
+          <version>2.27.0</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
