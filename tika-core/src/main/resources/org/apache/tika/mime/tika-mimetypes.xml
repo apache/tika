@@ -157,7 +157,8 @@
     <glob pattern="*.davmount"/>
   </mime-type>
   <mime-type type="application/x-dbf">
-    <magic priority="100">
+    <!-- this looks unique/precise. It isn't. False positives are common. Keep priority low. -->
+    <magic priority="40">
       <match value="(?s)^[\\x02\\x03\\x30\\x31\\x32\\x43\\x63\\x83\\x8B\\xCB\\xF5\\xE5\\xFB].[\\x01-\\x0C][\\x01-\\x1F].{4}(?:.[^\\x00]|[\\x41-\\xFF].)(?:[^\\x00\\x01].|.[^\\x00]).{31}(?&lt;=[\\x00][^\\x00]{0,10})[A-Z@+]" type="regex" offset="0"/>
     </magic>
     <glob pattern="*.dbf"/>
