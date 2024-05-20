@@ -350,6 +350,7 @@
     <gson.version>2.10.1</gson.version>
     <guava.version>33.2.0-jre</guava.version>
     <h2.version>2.2.224</h2.version>
+    <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
     <icu4j.version>75.1</icu4j.version>
@@ -1020,6 +1021,16 @@
           <artifactId>angus-activation</artifactId>
           <version>2.0.2</version>
       </dependency>
+      <dependency>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>hdf5</artifactId>
+          <version>${hdf5.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>hdf5-platform</artifactId>
+          <version>${hdf5.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -1126,6 +1137,19 @@
               <groupId>joda-time</groupId>
               <artifactId>joda-time</artifactId>
               <version>2.12.7</version>
+            </coordinate>
+            <!-- while waiting for 1.14.4 to appear on maven central, see
+                 https://www.hdfgroup.org/2024/05/new-hdf5-cve-issues-fixed-in-1-14-4/
+            -->
+            <coordinate>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>hdf5</artifactId>
+                <version>1.14.3-1.5.10</version>
+            </coordinate>
+            <coordinate>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>hdf5-platform</artifactId>
+                <version>1.14.3-1.5.10</version>
             </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
