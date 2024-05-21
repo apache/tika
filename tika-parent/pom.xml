@@ -309,7 +309,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.38.0</google.cloud.version>
-    <aws.version>1.12.725</aws.version>
+    <aws.version>1.12.726</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -362,6 +362,7 @@
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
     <jakarta.activation.version>2.1.3</jakarta.activation.version>
     <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
+    <!-- can't update to 4.0.0, needs jdk17 -->
     <jakarta.ws.rs.version>3.1.0</jakarta.ws.rs.version>
     <jakarta.xml.bind.version>4.0.2</jakarta.xml.bind.version>
     <jakarta.xml.soap.version>3.0.2</jakarta.xml.soap.version>
@@ -373,7 +374,7 @@
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
     <!-- 12.0.* needs java 17 -->
-    <jetty.version>11.0.20</jetty.version>
+    <jetty.version>11.0.21</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.14.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
@@ -398,6 +399,7 @@
     <netty.version>4.1.109.Final</netty.version>
     <oak.jackrabbit.version>1.62.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
+    <!-- 2.3.0 requires jdk17 -->
     <opennlp.version>2.2.0</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
@@ -864,7 +866,6 @@
       <dependency>
         <groupId>org.apache.opennlp</groupId>
         <artifactId>opennlp-tools</artifactId>
-        <!-- 2.3.0 requires java 17 -->
         <version>${opennlp.version}</version>
       </dependency>
       <dependency>
