@@ -106,12 +106,12 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private boolean pathStyleAccessEnabled = false;
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
-        return fetch(fetchKey, -1, -1, metadata);
+    public InputStream fetch(String fetchKey, Metadata userMetadata, Metadata fetchRequestMetadata) throws TikaException, IOException {
+        return fetch(fetchKey, -1, -1, userMetadata, fetchRequestMetadata);
     }
 
     @Override
-    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
+    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata userMetadata, Metadata fetchRequestMetadata)
             throws TikaException, IOException {
         String theFetchKey = StringUtils.isBlank(prefix) ? fetchKey : prefix + fetchKey;
 
@@ -129,7 +129,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
         do {
             try {
                 long start = System.currentTimeMillis();
-                InputStream is = _fetch(theFetchKey, metadata, startRange, endRange);
+                InputStream is = _fetch(theFetchKey, userMetadata, startRange, endRange);
                 long elapsed = System.currentTimeMillis() - start;
                 LOGGER.debug("total to fetch {}", elapsed);
                 return is;

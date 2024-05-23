@@ -30,7 +30,7 @@ public class EmptyFetcher implements Fetcher {
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata userMetadata, Metadata fetchRequestMetadata) throws TikaException, IOException {
         return null;
     }
 }

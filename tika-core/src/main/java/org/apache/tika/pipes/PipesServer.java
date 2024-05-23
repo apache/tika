@@ -462,10 +462,10 @@ public class PipesServer implements Runnable {
                 throw new IllegalArgumentException(
                         "fetch key has a range, but the fetcher is not a range fetcher");
             }
-            Metadata metadata = new Metadata();
+            Metadata responseMetadata = new Metadata();
             try (InputStream stream = ((RangeFetcher) fetcher).fetch(fetchKey.getFetchKey(),
-                    fetchKey.getRangeStart(), fetchKey.getRangeEnd(), metadata)) {
-                return parseWithStream(t, stream, metadata);
+                    fetchKey.getRangeStart(), fetchKey.getRangeEnd(), responseMetadata, t.getFetchRequestMetadata())) {
+                return parseWithStream(t, stream, responseMetadata);
             } catch (SecurityException e) {
                 LOG.error("security exception " + t.getId(), e);
                 throw e;

@@ -60,7 +60,6 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -134,30 +133,47 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     //By default httpclient adds e.g. "Apache-HttpClient/4.5.13 (Java/x.y.z)"
     private String userAgent = null;
 
-
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws IOException, TikaException {
+    public InputStream fetch(String fetchKey, Metadata userMetadata, Metadata fetchRequestMetadata) throws IOException {
         HttpGet get = new HttpGet(fetchKey);
         RequestConfig requestConfig =
                 RequestConfig.custom()
                         .setMaxRedirects(maxRedirects)
                         .setRedirectsEnabled(true).build();
         get.setConfig(requestConfig);
-        if (! StringUtils.isBlank(userAgent)) {
+        setHttpRequestHeaders(fetchRequestMetadata, get);
+
+        return execute(get, userMetadata, httpClient, true);
+    }
+
+    private void setHttpRequestHeaders(Metadata fetchRequestMetadata, HttpGet get) {
+        if (!StringUtils.isBlank(userAgent)) {
             get.setHeader(USER_AGENT, userAgent);
         }
-        return execute(get, metadata, httpClient, true);
+        // additional http request headers can be sent in here.
+        String[] httpRequestHeaders = fetchRequestMetadata.getValues("httpRequestHeaders");
+        if (httpRequestHeaders != null) {
+            for (String httpRequestHeader : httpRequestHeaders) {
+                int idxOfEquals = httpRequestHeader.indexOf(':');
+                if (idxOfEquals == -1) {
+                    continue;
+                }
+                String headerKey = httpRequestHeader.substring(0, idxOfEquals).trim();
+                String headerValue = httpRequestHeader.substring(idxOfEquals + 1).trim();
+                get.setHeader(headerKey, headerValue);
+            }
+        }
     }
 
     @Override
-    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
+    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata userMetadata, Metadata fetchRequestMetadata)
             throws IOException {
         HttpGet get = new HttpGet(fetchKey);
         if (! StringUtils.isBlank(userAgent)) {
             get.setHeader(USER_AGENT, userAgent);
         }
         get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
-        return execute(get, metadata, httpClient, true);
+        return execute(get, userMetadata, httpClient, true);
     }
 
     private InputStream execute(HttpGet get, Metadata metadata, HttpClient client,
@@ -455,4 +471,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         this.httpClientFactory = httpClientFactory;
     }
 
+    void setHttpClient(HttpClient httpClient) {
+        this.httpClient = httpClient;
+    }
 }

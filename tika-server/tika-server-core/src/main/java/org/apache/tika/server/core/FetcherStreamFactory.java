@@ -63,7 +63,7 @@ public class FetcherStreamFactory implements InputStreamFactory {
     }
 
     @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders,
+    public InputStream getInputStream(InputStream is, Metadata responseMetadata, HttpHeaders httpHeaders,
                                       UriInfo uriInfo) throws IOException {
         MultivaluedMap params = (uriInfo == null) ? null : uriInfo.getQueryParameters();
         String fetcherName = getParam("fetcherName", httpHeaders, params);
@@ -100,9 +100,9 @@ public class FetcherStreamFactory implements InputStreamFactory {
                                         "that doesn't support range fetching?!");
                     }
                     return ((RangeFetcher) fetcher).fetch(fetchKey, fetchRangeStart, fetchRangeEnd,
-                            metadata);
+                            responseMetadata, new Metadata());
                 } else {
-                    return fetcher.fetch(fetchKey, metadata);
+                    return fetcher.fetch(fetchKey, responseMetadata);
                 }
             } catch (TikaException e) {
                 throw new IOException(e);

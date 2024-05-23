@@ -55,7 +55,7 @@ public class GCSFetcher extends AbstractFetcher implements Initializable {
     private boolean spoolToTemp = true;
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata userMetadata, Metadata fetchRequestMetadata) throws TikaException, IOException {
 
         LOGGER.debug("about to fetch fetchkey={} from bucket ({})", fetchKey, bucket);
 
@@ -65,7 +65,7 @@ public class GCSFetcher extends AbstractFetcher implements Initializable {
             if (extractUserMetadata) {
                 if (blob.getMetadata() != null) {
                     for (Map.Entry<String, String> e : blob.getMetadata().entrySet()) {
-                        metadata.add(PREFIX + ":" + e.getKey(), e.getValue());
+                        userMetadata.add(PREFIX + ":" + e.getKey(), e.getValue());
                     }
                 }
             }
@@ -76,7 +76,7 @@ public class GCSFetcher extends AbstractFetcher implements Initializable {
                 TemporaryResources tmpResources = new TemporaryResources();
                 Path tmp = tmpResources.createTempFile();
                 blob.downloadTo(tmp);
-                TikaInputStream tis = TikaInputStream.get(tmp, metadata, tmpResources);
+                TikaInputStream tis = TikaInputStream.get(tmp, userMetadata, tmpResources);
                 long elapsed = System.currentTimeMillis() - start;
                 LOGGER.debug("took {} ms to copy to local tmp file", elapsed);
                 return tis;
