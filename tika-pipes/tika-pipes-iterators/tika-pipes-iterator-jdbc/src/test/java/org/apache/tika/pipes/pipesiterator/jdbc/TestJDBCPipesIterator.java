@@ -131,9 +131,9 @@ public class TestJDBCPipesIterator {
                 }
                 String aOrB = Integer.parseInt(num) % 2 == 0 ? "a" : "b";
                 assertEquals("id" + num, p.getId());
-                assertEquals("project" + aOrB, p.getMetadata().get("MY_PROJECT"));
-                assertNull(p.getMetadata().get("fetchKey"));
-                assertNull(p.getMetadata().get("MY_FETCHKEY"));
+                assertEquals("project" + aOrB, p.getUserMetadata().get("MY_PROJECT"));
+                assertNull(p.getUserMetadata().get("fetchKey"));
+                assertNull(p.getUserMetadata().get("MY_FETCHKEY"));
                 cnt++;
             }
         }

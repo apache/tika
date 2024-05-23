@@ -35,9 +35,10 @@ public class FetchEmitTuple implements Serializable {
     private final String id;
     private final FetchKey fetchKey;
     private EmitKey emitKey;
-    private final Metadata metadata;
+    private final Metadata userMetadata;
     private final ON_PARSE_EXCEPTION onParseException;
     private HandlerConfig handlerConfig;
+    private final Metadata fetchRequestMetadata;
 
     private EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig;
 
@@ -50,27 +51,35 @@ public class FetchEmitTuple implements Serializable {
                 onParseException);
     }
 
-    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata) {
-        this(id, fetchKey, emitKey, metadata, HandlerConfig.DEFAULT_HANDLER_CONFIG,
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata userMetadata) {
+        this(id, fetchKey, emitKey, userMetadata,HandlerConfig.DEFAULT_HANDLER_CONFIG,
                 DEFAULT_ON_PARSE_EXCEPTION);
     }
 
-    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata,
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata userMetadata,
                           HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException) {
-        this(id, fetchKey, emitKey, metadata, handlerConfig, onParseException,
+        this(id, fetchKey, emitKey, userMetadata,handlerConfig, onParseException,
                 EmbeddedDocumentBytesConfig.SKIP);
     }
 
-    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata,
+
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata userMetadata,
                           HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException,
                           EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig) {
+        this(id, fetchKey, emitKey, userMetadata, handlerConfig, onParseException, embeddedDocumentBytesConfig, new Metadata());
+    }
+
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata userMetadata,
+                          HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException,
+                          EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, Metadata fetchRequestMetadata) {
         this.id = id;
         this.fetchKey = fetchKey;
         this.emitKey = emitKey;
-        this.metadata = metadata;
+        this.userMetadata = userMetadata;
         this.handlerConfig = handlerConfig;
         this.onParseException = onParseException;
         this.embeddedDocumentBytesConfig = embeddedDocumentBytesConfig;
+        this.fetchRequestMetadata = fetchRequestMetadata;
     }
 
     public String getId() {
@@ -84,8 +93,8 @@ public class FetchEmitTuple implements Serializable {
         return emitKey;
     }
 
-    public Metadata getMetadata() {
-        return metadata;
+    public Metadata getUserMetadata() {
+        return userMetadata;
     }
 
     public ON_PARSE_EXCEPTION getOnParseException() {
@@ -128,7 +137,7 @@ public class FetchEmitTuple implements Serializable {
         if (!Objects.equals(emitKey, that.emitKey)) {
             return false;
         }
-        if (!Objects.equals(metadata, that.metadata)) {
+        if (!Objects.equals(userMetadata, that.userMetadata)) {
             return false;
         }
         if (onParseException != that.onParseException) {
@@ -145,7 +154,7 @@ public class FetchEmitTuple implements Serializable {
         int result = id != null ? id.hashCode() : 0;
         result = 31 * result + (fetchKey != null ? fetchKey.hashCode() : 0);
         result = 31 * result + (emitKey != null ? emitKey.hashCode() : 0);
-        result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
+        result = 31 * result + (userMetadata != null ? userMetadata.hashCode() : 0);
         result = 31 * result + (onParseException != null ? onParseException.hashCode() : 0);
         result = 31 * result + (handlerConfig != null ? handlerConfig.hashCode() : 0);
         result = 31 * result +
@@ -156,7 +165,7 @@ public class FetchEmitTuple implements Serializable {
     @Override
     public String toString() {
         return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey=" +
-                emitKey + ", metadata=" + metadata + ", onParseException=" + onParseException +
+                emitKey + ", metadata=" + userMetadata + ", onParseException=" + onParseException +
                 ", handlerConfig=" + handlerConfig + ", embeddedDocumentBytesConfig=" +
                 embeddedDocumentBytesConfig + '}';
     }

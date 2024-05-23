@@ -198,7 +198,7 @@ public class PipeIntegrationTests {
             if (Files.isRegularFile(targ)) {
                 return;
             }
-            try (InputStream is = fetcher.fetch(t.getFetchKey().getFetchKey(), t.getMetadata())) {
+            try (InputStream is = fetcher.fetch(t.getFetchKey().getFetchKey(), t.getUserMetadata())) {
                 System.out.println(counter.getAndIncrement() + " : " + t);
                 Files.createDirectories(targ.getParent());
                 Files.copy(is, targ);
@@ -239,7 +239,7 @@ public class PipeIntegrationTests {
             Metadata userMetadata = new Metadata();
             userMetadata.set("project", "my-project");
 
-            try (InputStream is = fetcher.fetch(t.getFetchKey().getFetchKey(), t.getMetadata())) {
+            try (InputStream is = fetcher.fetch(t.getFetchKey().getFetchKey(), t.getUserMetadata())) {
                 emitter.emit(t.getEmitKey().getEmitKey(), is, userMetadata);
             }
         }

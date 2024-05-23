@@ -265,9 +265,9 @@ public class JsonFetchEmitTuple {
         if (!StringUtils.isBlank(t.getEmitKey().getEmitKey())) {
             jsonGenerator.writeStringField(EMITKEY, t.getEmitKey().getEmitKey());
         }
-        if (t.getMetadata().size() > 0) {
+        if (t.getUserMetadata().size() > 0) {
             jsonGenerator.writeFieldName(METADATAKEY);
-            JsonMetadata.writeMetadataObject(t.getMetadata(), jsonGenerator, false);
+            JsonMetadata.writeMetadataObject(t.getUserMetadata(), jsonGenerator, false);
         }
         if (t.getHandlerConfig() != HandlerConfig.DEFAULT_HANDLER_CONFIG) {
             jsonGenerator.writeFieldName(HANDLER_CONFIG);

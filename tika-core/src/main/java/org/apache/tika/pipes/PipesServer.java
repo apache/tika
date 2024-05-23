@@ -403,7 +403,7 @@ public class PipesServer implements Runnable {
         filterMetadata(parseData.getMetadataList());
         if (StringUtils.isBlank(stack) ||
                 t.getOnParseException() == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT) {
-            injectUserMetadata(t.getMetadata(), parseData.getMetadataList());
+            injectUserMetadata(t.getUserMetadata(), parseData.getMetadataList());
             EmitKey emitKey = t.getEmitKey();
             if (StringUtils.isBlank(emitKey.getEmitKey())) {
                 emitKey = new EmitKey(emitKey.getEmitterName(), t.getFetchKey().getFetchKey());

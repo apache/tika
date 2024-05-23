@@ -76,10 +76,10 @@ public class TestCSVPipesIterator {
         assertEquals(5, completed);
         for (MockFetcher f : fetchers) {
             for (FetchEmitTuple t : f.pairs) {
-                String id = t.getMetadata().get("id");
+                String id = t.getUserMetadata().get("id");
                 assertEquals("path/to/my/file" + id, t.getFetchKey().getFetchKey());
                 assertEquals("project" + (Integer.parseInt(id) % 2 == 1 ? "a" : "b"),
-                        t.getMetadata().get("project"));
+                        t.getUserMetadata().get("project"));
             }
         }
     }
