@@ -43,35 +43,27 @@ public class FetchEmitTuple implements Serializable {
     private EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig;
 
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey) {
-        this(id, fetchKey, emitKey, new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG,
-                DEFAULT_ON_PARSE_EXCEPTION);
+        this(id, fetchKey, emitKey, new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG, DEFAULT_ON_PARSE_EXCEPTION);
     }
+
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, ON_PARSE_EXCEPTION onParseException) {
-        this(id, fetchKey, emitKey, new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG,
-                onParseException);
+        this(id, fetchKey, emitKey, new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG, onParseException);
     }
 
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata userMetadata) {
-        this(id, fetchKey, emitKey, userMetadata,HandlerConfig.DEFAULT_HANDLER_CONFIG,
-                DEFAULT_ON_PARSE_EXCEPTION);
+        this(id, fetchKey, emitKey, userMetadata, HandlerConfig.DEFAULT_HANDLER_CONFIG, DEFAULT_ON_PARSE_EXCEPTION);
     }
 
-    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata userMetadata,
-                          HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException) {
-        this(id, fetchKey, emitKey, userMetadata,handlerConfig, onParseException,
-                EmbeddedDocumentBytesConfig.SKIP);
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata userMetadata, HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException) {
+        this(id, fetchKey, emitKey, userMetadata, handlerConfig, onParseException, EmbeddedDocumentBytesConfig.SKIP);
     }
 
 
-    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata userMetadata,
-                          HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException,
-                          EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig) {
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata userMetadata, HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException, EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig) {
         this(id, fetchKey, emitKey, userMetadata, handlerConfig, onParseException, embeddedDocumentBytesConfig, new Metadata());
     }
 
-    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata userMetadata,
-                          HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException,
-                          EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, Metadata fetchRequestMetadata) {
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata userMetadata, HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException, EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, Metadata fetchRequestMetadata) {
         this.id = id;
         this.fetchKey = fetchKey;
         this.emitKey = emitKey;
@@ -85,6 +77,7 @@ public class FetchEmitTuple implements Serializable {
     public String getId() {
         return id;
     }
+
     public FetchKey getFetchKey() {
         return fetchKey;
     }
@@ -117,6 +110,10 @@ public class FetchEmitTuple implements Serializable {
         return embeddedDocumentBytesConfig;
     }
 
+    public Metadata getFetchRequestMetadata() {
+        return fetchRequestMetadata;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -125,48 +122,18 @@ public class FetchEmitTuple implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         FetchEmitTuple that = (FetchEmitTuple) o;
-
-        if (!Objects.equals(id, that.id)) {
-            return false;
-        }
-        if (!Objects.equals(fetchKey, that.fetchKey)) {
-            return false;
-        }
-        if (!Objects.equals(emitKey, that.emitKey)) {
-            return false;
-        }
-        if (!Objects.equals(userMetadata, that.userMetadata)) {
-            return false;
-        }
-        if (onParseException != that.onParseException) {
-            return false;
-        }
-        if (!Objects.equals(handlerConfig, that.handlerConfig)) {
-            return false;
-        }
-        return Objects.equals(embeddedDocumentBytesConfig, that.embeddedDocumentBytesConfig);
+        return Objects.equals(id, that.id) && Objects.equals(fetchKey, that.fetchKey) && Objects.equals(emitKey, that.emitKey) && Objects.equals(userMetadata, that.userMetadata) && onParseException == that.onParseException && Objects.equals(handlerConfig, that.handlerConfig) && Objects.equals(fetchRequestMetadata, that.fetchRequestMetadata) &&
+                Objects.equals(embeddedDocumentBytesConfig, that.embeddedDocumentBytesConfig);
     }
 
     @Override
     public int hashCode() {
-        int result = id != null ? id.hashCode() : 0;
-        result = 31 * result + (fetchKey != null ? fetchKey.hashCode() : 0);
-        result = 31 * result + (emitKey != null ? emitKey.hashCode() : 0);
-        result = 31 * result + (userMetadata != null ? userMetadata.hashCode() : 0);
-        result = 31 * result + (onParseException != null ? onParseException.hashCode() : 0);
-        result = 31 * result + (handlerConfig != null ? handlerConfig.hashCode() : 0);
-        result = 31 * result +
-                (embeddedDocumentBytesConfig != null ? embeddedDocumentBytesConfig.hashCode() : 0);
-        return result;
+        return Objects.hash(id, fetchKey, emitKey, userMetadata, onParseException, handlerConfig, fetchRequestMetadata, embeddedDocumentBytesConfig);
     }
 
     @Override
     public String toString() {
-        return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey=" +
-                emitKey + ", metadata=" + userMetadata + ", onParseException=" + onParseException +
-                ", handlerConfig=" + handlerConfig + ", embeddedDocumentBytesConfig=" +
-                embeddedDocumentBytesConfig + '}';
+        return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey=" + emitKey + ", userMetadata=" + userMetadata + ", onParseException=" + onParseException + ", handlerConfig=" + handlerConfig + ", fetchRequestMetadata=" + fetchRequestMetadata + ", embeddedDocumentBytesConfig=" + embeddedDocumentBytesConfig + '}';
     }
 }
