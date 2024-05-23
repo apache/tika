@@ -1101,4 +1101,63 @@ public class XMLReaderUtils implements Serializable {
             trySetXercesSecurityManager(saxParser);
         }
     }
+
+    /**
+     * Returns the DOM builder specified in this parsing context.
+     * If a builder is not explicitly specified, then a builder
+     * instance is created and returned. The builder instance is
+     * configured to apply an {@link XMLReaderUtils#IGNORING_SAX_ENTITY_RESOLVER},
+     * and it sets the ErrorHandler to <code>null</code>.
+     * Consider using {@link XMLReaderUtils#buildDOM(InputStream, ParseContext)}
+     * instead for more efficient reuse of document builders.
+     *
+     * @return DOM Builder
+     */
+    public static DocumentBuilder getDocumentBuilder(ParseContext context) throws TikaException {
+        DocumentBuilder documentBuilder = context.get(DocumentBuilder.class);
+        if (documentBuilder != null) {
+            return documentBuilder;
+        } else {
+            return XMLReaderUtils.getDocumentBuilder();
+        }
+    }
+
+    /**
+     * Returns the StAX input factory specified in this parsing context.
+     * If a factory is not explicitly specified, then a default factory
+     * instance is created and returned. The default factory instance is
+     * configured to be namespace-aware and to apply reasonable security
+     * using the {@link XMLReaderUtils#IGNORING_STAX_ENTITY_RESOLVER}.
+     *
+     * @return StAX input factory
+     */
+    public static XMLInputFactory getXMLInputFactory(ParseContext context) {
+        XMLInputFactory factory = context.get(XMLInputFactory.class);
+        if (factory != null) {
+            return factory;
+        }
+        return XMLReaderUtils.getXMLInputFactory();
+    }
+
+
+    /**
+     * Returns the transformer specified in this parsing context.
+     * <p>
+     * If a transformer is not explicitly specified, then a default transformer
+     * instance is created and returned. The default transformer instance is
+     * configured to to use
+     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
+     *
+     * @return Transformer
+     * @throws TikaException when the transformer can not be created
+     */
+    public static Transformer getTransformer(ParseContext context) throws TikaException {
+
+        Transformer transformer = context.get(Transformer.class);
+        if (transformer != null) {
+            return transformer;
+        }
+
+        return XMLReaderUtils.getTransformer();
+    }
 }
