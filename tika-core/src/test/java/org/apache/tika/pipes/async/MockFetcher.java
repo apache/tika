@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.Fetcher;
 
 public class MockFetcher implements Fetcher {
@@ -37,7 +38,7 @@ public class MockFetcher implements Fetcher {
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
         return new ByteArrayInputStream(BYTES);
     }
 }
