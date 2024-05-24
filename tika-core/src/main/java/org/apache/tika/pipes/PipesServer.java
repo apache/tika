@@ -71,10 +71,8 @@ import org.apache.tika.pipes.emitter.StreamEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.extractor.EmittingEmbeddedDocumentBytesHandler;
-import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
-import org.apache.tika.pipes.fetcher.RangeFetcher;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -282,7 +280,7 @@ public class PipesServer implements Runnable {
 
     private void emit(String taskId, EmitKey emitKey,
                       boolean isExtractEmbeddedBytes, MetadataListAndEmbeddedBytes parseData,
-                      String parseExceptionStack) {
+                      String parseExceptionStack, ParseContext parseContext) {
         Emitter emitter = null;
 
         try {
@@ -298,7 +296,7 @@ public class PipesServer implements Runnable {
                     parseData.toBePackagedForStreamEmitter()) {
                 emitContentsAndBytes(emitter, emitKey, parseData);
             } else {
-                emitter.emit(emitKey.getEmitKey(), parseData.getMetadataList());
+                emitter.emit(emitKey.getEmitKey(), parseData.getMetadataList(), parseContext);
             }
         } catch (IOException | TikaEmitterException e) {
             LOG.warn("emit exception", e);
@@ -417,11 +415,11 @@ public class PipesServer implements Runnable {
             if (embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
                     parseData.toBePackagedForStreamEmitter()) {
                 emit(t.getId(), emitKey, embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes(),
-                        parseData, stack);
+                        parseData, stack, parseContext);
             } else if (maxForEmitBatchBytes >= 0 &&
                     emitData.getEstimatedSizeBytes() >= maxForEmitBatchBytes) {
                 emit(t.getId(), emitKey, embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes(),
-                        parseData, stack);
+                        parseData, stack, parseContext);
             } else {
                 //send back to the client
                 write(emitData);
@@ -460,35 +458,18 @@ public class PipesServer implements Runnable {
     }
 
     protected MetadataListAndEmbeddedBytes parseFromTuple(FetchEmitTuple t, Fetcher fetcher) {
-        FetchKey fetchKey = t.getFetchKey();
-        if (fetchKey.hasRange()) {
-            if (!(fetcher instanceof RangeFetcher)) {
-                throw new IllegalArgumentException(
-                        "fetch key has a range, but the fetcher is not a range fetcher");
-            }
-            Metadata metadata = new Metadata();
-            try (InputStream stream = ((RangeFetcher) fetcher).fetch(fetchKey.getFetchKey(),
-                    fetchKey.getRangeStart(), fetchKey.getRangeEnd(), metadata, t.getParseContext())) {
-                return parseWithStream(t, stream, metadata);
-            } catch (SecurityException e) {
-                LOG.error("security exception " + t.getId(), e);
-                throw e;
-            } catch (TikaException | IOException e) {
-                LOG.warn("fetch exception " + t.getId(), e);
-                write(STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e));
-            }
-        } else {
-            Metadata metadata = new Metadata();
-            try (InputStream stream = fetcher.fetch(t.getFetchKey().getFetchKey(), metadata, t.getParseContext())) {
-                return parseWithStream(t, stream, metadata);
-            } catch (SecurityException e) {
-                LOG.error("security exception " + t.getId(), e);
-                throw e;
-            } catch (TikaException | IOException e) {
-                LOG.warn("fetch exception " + t.getId(), e);
-                write(STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e));
-            }
+
+        Metadata metadata = new Metadata();
+        try (InputStream stream = fetcher.fetch(t)) {
+            return parseWithStream(t, stream, metadata);
+        } catch (SecurityException e) {
+            LOG.error("security exception " + t.getId(), e);
+            throw e;
+        } catch (TikaException | IOException e) {
+            LOG.warn("fetch exception " + t.getId(), e);
+            write(STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e));
         }
+
         return null;
     }
 
@@ -578,8 +559,7 @@ public class PipesServer implements Runnable {
         //TODO: especially clean this up.
         if (!StringUtils.isBlank(embeddedDocumentBytesConfig.getEmitter())) {
             parseContext.set(EmbeddedDocumentBytesHandler.class,
-                    new EmittingEmbeddedDocumentBytesHandler(fetchEmitTuple.getEmitKey(),
-                            embeddedDocumentBytesConfig, emitterManager));
+                    new EmittingEmbeddedDocumentBytesHandler(fetchEmitTuple, emitterManager));
         } else {
             parseContext.set(EmbeddedDocumentBytesHandler.class,
                     new BasicEmbeddedDocumentBytesHandler(
@@ -707,8 +687,7 @@ public class PipesServer implements Runnable {
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
         if (embeddedDocumentBytesConfig != null &&
                 embeddedDocumentBytesConfig.isIncludeOriginal()) {
-            EmbeddedDocumentBytesHandler embeddedDocumentByteStore =
-                    parseContext.get(EmbeddedDocumentBytesHandler.class);
+            EmbeddedDocumentBytesHandler embeddedDocumentByteStore = parseContext.get(EmbeddedDocumentBytesHandler.class);
             try (InputStream is = Files.newInputStream(tis.getPath())) {
                 embeddedDocumentByteStore.add(0, metadata, is);
             } catch (IOException e) {

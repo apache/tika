@@ -20,8 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.FetchEmitTuple;
 
 public class EmptyFetcher implements Fetcher {
 
@@ -31,7 +30,7 @@ public class EmptyFetcher implements Fetcher {
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+    public InputStream fetch(FetchEmitTuple t) throws TikaException, IOException {
         return null;
     }
 }

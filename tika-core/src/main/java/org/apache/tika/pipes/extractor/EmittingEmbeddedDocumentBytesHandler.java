@@ -25,6 +25,8 @@ import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.AbstractEmbeddedDocumentBytesHandler;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.EmitterManager;
@@ -37,11 +39,16 @@ public class EmittingEmbeddedDocumentBytesHandler extends AbstractEmbeddedDocume
     private final StreamEmitter emitter;
 
     private static final Metadata METADATA = new Metadata();
-    public EmittingEmbeddedDocumentBytesHandler(EmitKey containerEmitKey,
-                                                EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig,
+    private static final ParseContext PARSE_CONTEXT = new ParseContext();
+
+    public EmittingEmbeddedDocumentBytesHandler(FetchEmitTuple fetchEmitTuple,
                                                 EmitterManager emitterManager) throws TikaConfigException {
-        this.containerEmitKey = containerEmitKey;
-        this.embeddedDocumentBytesConfig = embeddedDocumentBytesConfig;
+
+        this.containerEmitKey = fetchEmitTuple.getEmitKey();
+        this.embeddedDocumentBytesConfig = fetchEmitTuple.getParseContext().get(EmbeddedDocumentBytesConfig.class);
+        if (this.embeddedDocumentBytesConfig == null) {
+            throw new TikaConfigException("EmbeddedDocumentBytesConfig must not be null!");
+        }
         Emitter tmpEmitter =
                 emitterManager.getEmitter(embeddedDocumentBytesConfig.getEmitter());
         if (! (tmpEmitter instanceof StreamEmitter)) {
@@ -58,7 +65,7 @@ public class EmittingEmbeddedDocumentBytesHandler extends AbstractEmbeddedDocume
         String emitKey = getEmitKey(containerEmitKey.getEmitKey(),
                 id, embeddedDocumentBytesConfig, metadata);
         try {
-            emitter.emit(emitKey, inputStream, METADATA);
+            emitter.emit(emitKey, inputStream, METADATA, PARSE_CONTEXT);
         } catch (TikaEmitterException e) {
             throw new IOExceptionWithCause(e);
         }

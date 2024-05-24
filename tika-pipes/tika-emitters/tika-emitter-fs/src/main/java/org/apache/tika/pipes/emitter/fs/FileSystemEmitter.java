@@ -31,6 +31,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.StreamEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
@@ -73,7 +74,7 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
     private boolean prettyPrint = false;
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList)
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
             throws IOException, TikaEmitterException {
         Path output;
         if (metadataList == null || metadataList.size() == 0) {
@@ -144,7 +145,7 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
     }
 
     @Override
-    public void emit(String path, InputStream inputStream, Metadata userMetadata)
+    public void emit(String path, InputStream inputStream, Metadata userMetadata, ParseContext parseContext)
             throws IOException, TikaEmitterException {
         Path target = basePath.resolve(path);
 

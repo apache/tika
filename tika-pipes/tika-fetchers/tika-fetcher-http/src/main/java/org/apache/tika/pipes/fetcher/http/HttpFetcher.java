@@ -60,15 +60,14 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.fetcher.RangeFetcher;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -134,29 +133,24 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     //By default httpclient adds e.g. "Apache-HttpClient/4.5.13 (Java/x.y.z)"
     private String userAgent = null;
 
-
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws IOException, TikaException {
+    public InputStream fetch(FetchEmitTuple fetchEmitTuple)
+            throws IOException {
+        String fetchKey = fetchEmitTuple.getFetchKey().getFetchKey();
+        Metadata metadata = fetchEmitTuple.getMetadata();
         HttpGet get = new HttpGet(fetchKey);
         RequestConfig requestConfig =
                 RequestConfig.custom()
-                        .setMaxRedirects(maxRedirects)
-                        .setRedirectsEnabled(true).build();
+                             .setMaxRedirects(maxRedirects)
+                             .setRedirectsEnabled(true).build();
         get.setConfig(requestConfig);
         if (! StringUtils.isBlank(userAgent)) {
             get.setHeader(USER_AGENT, userAgent);
         }
-        return execute(get, metadata, httpClient, true);
-    }
-
-    @Override
-    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
-            throws IOException {
-        HttpGet get = new HttpGet(fetchKey);
-        if (! StringUtils.isBlank(userAgent)) {
-            get.setHeader(USER_AGENT, userAgent);
+        if (fetchEmitTuple.getFetchKey().hasRange()) {
+            get.setHeader("Range", "bytes=" + fetchEmitTuple.getFetchKey().getRangeStart() + "-"
+                    + fetchEmitTuple.getFetchKey().getRangeEnd());
         }
-        get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
         return execute(get, metadata, httpClient, true);
     }
 

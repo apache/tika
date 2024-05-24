@@ -20,8 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.FetchEmitTuple;
 
 /**
  * Interface for an object that will fetch an InputStream given
@@ -34,5 +33,5 @@ public interface Fetcher {
 
     String getName();
 
-    InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException;
+    InputStream fetch(FetchEmitTuple t) throws TikaException, IOException;
 }

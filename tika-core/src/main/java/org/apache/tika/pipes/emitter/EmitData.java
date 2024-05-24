@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.StringUtils;
 
 public class EmitData implements Serializable {
@@ -30,18 +31,23 @@ public class EmitData implements Serializable {
 
     private final EmitKey emitKey;
     private final List<Metadata> metadataList;
-
     private final String containerStackTrace;
+    private ParseContext parseContext = null;
 
     public EmitData(EmitKey emitKey, List<Metadata> metadataList) {
         this(emitKey, metadataList, StringUtils.EMPTY);
     }
 
     public EmitData(EmitKey emitKey, List<Metadata> metadataList, String containerStackTrace) {
+        this(emitKey, metadataList, containerStackTrace, new ParseContext());
+    }
+
+    public EmitData(EmitKey emitKey, List<Metadata> metadataList, String containerStackTrace, ParseContext parseContext) {
         this.emitKey = emitKey;
         this.metadataList = metadataList;
         this.containerStackTrace = (containerStackTrace == null) ? StringUtils.EMPTY :
                 containerStackTrace;
+        this.parseContext = parseContext;
     }
 
     public EmitKey getEmitKey() {
@@ -58,6 +64,14 @@ public class EmitData implements Serializable {
 
     public long getEstimatedSizeBytes() {
         return estimateSizeInBytes(getEmitKey().getEmitKey(), getMetadataList(), containerStackTrace);
+    }
+
+    public void setParseContext(ParseContext parseContext) {
+        this.parseContext = parseContext;
+    }
+
+    public ParseContext getParseContext() {
+        return parseContext;
     }
 
     private static long estimateSizeInBytes(String id, List<Metadata> metadataList,

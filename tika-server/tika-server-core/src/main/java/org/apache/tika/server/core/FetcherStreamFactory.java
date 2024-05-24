@@ -33,7 +33,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
-import org.apache.tika.pipes.fetcher.RangeFetcher;
 
 /**
  * This class looks for &quot;fetcherName&quot; in the http header.  If it is not null

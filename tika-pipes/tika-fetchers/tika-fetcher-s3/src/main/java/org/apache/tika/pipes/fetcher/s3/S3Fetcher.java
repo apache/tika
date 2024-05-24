@@ -55,8 +55,8 @@ import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.fetcher.RangeFetcher;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -106,13 +106,12 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private boolean pathStyleAccessEnabled = false;
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
-        return fetch(fetchKey, -1, -1, metadata);
-    }
-
-    @Override
-    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
+    public InputStream fetch(FetchEmitTuple fetchEmitTuple)
             throws TikaException, IOException {
+        String fetchKey = fetchEmitTuple.getFetchKey().getFetchKey();
+        long startRange = fetchEmitTuple.getFetchKey().getRangeStart();
+        long endRange = fetchEmitTuple.getFetchKey().getRangeEnd();
+        Metadata metadata = fetchEmitTuple.getMetadata();
         String theFetchKey = StringUtils.isBlank(prefix) ? fetchKey : prefix + fetchKey;
 
         if (LOGGER.isDebugEnabled()) {
