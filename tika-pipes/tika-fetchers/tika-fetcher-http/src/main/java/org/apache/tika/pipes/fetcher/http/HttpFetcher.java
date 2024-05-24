@@ -144,17 +144,19 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         if (!StringUtils.isBlank(httpFetcherConfig.getUserAgent())) {
             get.setHeader(USER_AGENT, httpFetcherConfig.getUserAgent());
         }
+
         // additional http request headers can be sent in here.
+        // Add the headers from the Fetcher configuration.
+        if (httpFetcherConfig.getHttpRequestHeaders() != null) {
+            for (String httpRequestHeader : httpFetcherConfig.getHttpRequestHeaders()) {
+                placeHeaderOnGetRequest(get, httpRequestHeader);
+            }
+        }
+        // Additionally, headers can be specified per-fetch via the metadata.
         String[] httpRequestHeaders = metadata.getValues("httpRequestHeaders");
         if (httpRequestHeaders != null) {
             for (String httpRequestHeader : httpRequestHeaders) {
-                int idxOfEquals = httpRequestHeader.indexOf(':');
-                if (idxOfEquals == -1) {
-                    continue;
-                }
-                String headerKey = httpRequestHeader.substring(0, idxOfEquals).trim();
-                String headerValue = httpRequestHeader.substring(idxOfEquals + 1).trim();
-                get.setHeader(headerKey, headerValue);
+                placeHeaderOnGetRequest(get, httpRequestHeader);
             }
         }
         if (jwtGenerator != null) {
@@ -164,6 +166,16 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                 throw new TikaException("Could not generate JWT", e);
             }
         }
+    }
+
+    private static void placeHeaderOnGetRequest(HttpGet get, String httpRequestHeader) {
+        int idxOfEquals = httpRequestHeader.indexOf(':');
+        if (idxOfEquals == -1) {
+            return;
+        }
+        String headerKey = httpRequestHeader.substring(0, idxOfEquals).trim();
+        String headerValue = httpRequestHeader.substring(idxOfEquals + 1).trim();
+        get.setHeader(headerKey, headerValue);
     }
 
     @Override
@@ -428,6 +440,19 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     @Field
     public void setMaxRedirects(int maxRedirects) {
         httpFetcherConfig.setMaxRedirects(maxRedirects);
+    }
+
+    /**
+     * Which http request headers should we send in the http fetch requests.
+     *
+     * @param headers The headers to add to the HTTP GET requests.
+     */
+    @Field
+    public void setHttpRequestHeaders(List<String> headers) {
+        httpFetcherConfig.setHttpRequestHeaders(new ArrayList<>());
+        if (headers != null) {
+            httpFetcherConfig.getHttpRequestHeaders().addAll(headers);
+        }
     }
 
     /**
