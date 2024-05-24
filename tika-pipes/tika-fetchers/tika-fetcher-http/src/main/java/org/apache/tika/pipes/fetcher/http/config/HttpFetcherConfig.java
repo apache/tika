@@ -36,6 +36,7 @@ public class HttpFetcherConfig extends AbstractConfig {
     private Long maxSpoolSize = -1L;
     private Integer maxRedirects = 0;
     private List<String> httpHeaders = new ArrayList<>();
+    private List<String> httpRequestHeaders = new ArrayList<>();
     private Long overallTimeout = 120000L;
     private Integer maxErrMsgSize = 10000000;
     private String userAgent;
@@ -170,6 +171,14 @@ public class HttpFetcherConfig extends AbstractConfig {
     public HttpFetcherConfig setHttpHeaders(List<String> httpHeaders) {
         this.httpHeaders = httpHeaders;
         return this;
+    }
+
+    public List<String> getHttpRequestHeaders() {
+        return httpRequestHeaders;
+    }
+
+    public void setHttpRequestHeaders(List<String> httpRequestHeaders) {
+        this.httpRequestHeaders = httpRequestHeaders;
     }
 
     public Long getOverallTimeout() {

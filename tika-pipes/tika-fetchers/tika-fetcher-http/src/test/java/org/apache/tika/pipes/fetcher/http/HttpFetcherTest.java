@@ -161,11 +161,13 @@ class HttpFetcherTest extends TikaTest {
         when(response.getEntity()).thenReturn(new StringEntity("Hi"));
 
         Metadata metadata = new Metadata();
-        metadata.set(Property.externalText("httpRequestHeaders"), new String[] {"nick1=val1", "nick2=val2"});
+        metadata.set(Property.externalText("httpRequestHeaders"), new String[] {"nick1: val1", "nick2: val2"});
         httpFetcher.fetch("http://localhost", metadata);
         HttpGet httpGet = httpGetArgumentCaptor.getValue();
         Assertions.assertEquals("val1", httpGet.getHeaders("nick1")[0].getValue());
         Assertions.assertEquals("val2", httpGet.getHeaders("nick2")[0].getValue());
+        // also make sure the headers from the fetcher config level are specified - see src/test/resources/tika-config-http.xml
+        Assertions.assertEquals("headerValueFromFetcherConfig", httpGet.getHeaders("headerNameFromFetcherConfig")[0].getValue());
     }
 
     @Test
