@@ -24,6 +24,9 @@
         <header>Expires</header>
         <header>Content-Length</header>
       </httpHeaders>
+      <httpRequestHeaders>
+        <header>headerNameFromFetcherConfig: headerValueFromFetcherConfig</header>
+      </httpRequestHeaders>
     </fetcher>
   </fetchers>
 </properties>

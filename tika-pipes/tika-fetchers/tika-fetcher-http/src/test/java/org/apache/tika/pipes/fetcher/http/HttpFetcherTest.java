@@ -140,6 +140,8 @@ class HttpFetcherTest extends TikaTest {
         HttpGet httpGet = httpGetArgumentCaptor.getValue();
         Assertions.assertEquals("val1", httpGet.getHeaders("nick1")[0].getValue());
         Assertions.assertEquals("val2", httpGet.getHeaders("nick2")[0].getValue());
+        // also make sure the headers from the fetcher config level are specified - see src/test/resources/tika-config-http.xml
+        Assertions.assertEquals("headerValueFromFetcherConfig", httpGet.getHeaders("headerNameFromFetcherConfig")[0].getValue());
     }
 
     @Test

@@ -130,6 +130,9 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     //httpHeaders to capture in the metadata
     private Set<String> httpHeaders = new HashSet<>();
 
+    //httpRequestHeaders to add to all outgoing http requests
+    private Set<String> httpRequestHeaders = new HashSet<>();
+
     //When making the request, what User-Agent is sent.
     //By default httpclient adds e.g. "Apache-HttpClient/4.5.13 (Java/x.y.z)"
     private String userAgent = null;
@@ -151,17 +154,28 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         if (!StringUtils.isBlank(userAgent)) {
             get.setHeader(USER_AGENT, userAgent);
         }
-        // additional http request headers can be sent in here.
+        // Add the headers from the Fetcher configuration.
+        if (httpRequestHeaders != null) {
+            for (String httpRequestHeader : httpRequestHeaders) {
+                parseHeaderAndPutOnRequest(get, httpRequestHeader);
+            }
+        }
+        // Additionally, headers can be specified per-fetch via the metadata.
         String[] httpRequestHeaders = metadata.getValues("httpRequestHeaders");
         if (httpRequestHeaders != null) {
             for (String httpRequestHeader : httpRequestHeaders) {
-                String[] parts = httpRequestHeader.trim().split(":", 2);
-                if (parts.length >= 2) {
-                    String key = parts[0].trim();
-                    String value = parts[1].trim();
-                    get.setHeader(key, value);
-                }
+                parseHeaderAndPutOnRequest(get, httpRequestHeader);
             }
+        }
+    }
+
+    private static void parseHeaderAndPutOnRequest(HttpGet get, String httpRequestHeader) {
+        String[] parts = httpRequestHeader
+                .trim().split(":", 2);
+        if (parts.length >= 2) {
+            String key = parts[0].trim();
+            String value = parts[1].trim();
+            get.setHeader(key, value);
         }
     }
 
@@ -424,6 +438,17 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     public void setHttpHeaders(List<String> headers) {
         this.httpHeaders.clear();
         this.httpHeaders.addAll(headers);
+    }
+
+    /**
+     * Which http request headers should we send on the http requests.
+     *
+     * @param httpRequestHeaders
+     */
+    @Field
+    public void setHttpRequestHeaders(List<String> httpRequestHeaders) {
+        this.httpRequestHeaders.clear();
+        this.httpRequestHeaders.addAll(httpRequestHeaders);
     }
 
     /**
