@@ -53,6 +53,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -216,14 +217,15 @@ public class TikaPipesTest extends CXFTestBase {
         for (String s : VALUE_ARRAY) {
             userMetadata.add("my-key-multi", s);
         }
-
+        ParseContext parseContext = new ParseContext();
+        HandlerConfig handlerConfig = new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
+                HandlerConfig.PARSE_MODE.RMETA, -1, -1, true);
+        parseContext.set(HandlerConfig.class, handlerConfig);
         FetchEmitTuple t =
                 new FetchEmitTuple("myId",
                         new FetchKey("fsf", "hello_world.xml"),
                         new EmitKey("fse", ""),
-                        userMetadata,
-                        new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
-                                HandlerConfig.PARSE_MODE.RMETA, -1, -1, true),
+                        userMetadata, parseContext,
                         FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
@@ -291,7 +293,7 @@ public class TikaPipesTest extends CXFTestBase {
         FetchEmitTuple t =
                 new FetchEmitTuple("myId",
                         new FetchKey("fsf", "null_pointer.xml"),
-                        new EmitKey("fse", ""),
+                        new EmitKey("fse", ""), new Metadata(), ParseContext.EMPTY,
                         FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);

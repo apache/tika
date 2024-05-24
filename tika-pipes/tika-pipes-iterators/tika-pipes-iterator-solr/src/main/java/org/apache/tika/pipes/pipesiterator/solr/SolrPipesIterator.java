@@ -43,6 +43,7 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -214,8 +215,10 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
                         metadata.add(nextField, (String) sd.getFieldValue(nextField));
                     }
                     LOGGER.info("iterator doc: {}, idField={}, fetchKey={}", sd, idField, fetchKey);
+                    ParseContext parseContext = new ParseContext();
+                    parseContext.set(HandlerConfig.class, handlerConfig);
                     tryToAdd(new FetchEmitTuple(fetchKey, new FetchKey(fetcherName, fetchKey),
-                            new EmitKey(emitterName, emitKey), new Metadata(), handlerConfig,
+                            new EmitKey(emitterName, emitKey), new Metadata(), parseContext,
                             getOnParseException()));
                 }
                 if (cursorMark.equals(nextCursorMark)) {

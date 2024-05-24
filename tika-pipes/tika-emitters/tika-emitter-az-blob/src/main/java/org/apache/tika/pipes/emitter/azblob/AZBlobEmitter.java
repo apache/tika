@@ -95,7 +95,7 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
             throw new TikaEmitterException("can't jsonify", e);
         }
         Metadata metadata = new Metadata();
-        emit(emitKey, TikaInputStream.get(bos.toByteArray(), metadata), metadata);
+        emit(emitKey, TikaInputStream.get(bos.toByteArray(), metadata), metadata, parseContext);
 
     }
 

@@ -137,7 +137,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
             }
             byte[] bytes = bos.toByteArray();
             try (InputStream is = TikaInputStream.get(bytes)) {
-                emit(emitKey, is, new Metadata());
+                emit(emitKey, is, new Metadata(), parseContext);
             }
         } else {
             try (TemporaryResources tmp = new TemporaryResources()) {

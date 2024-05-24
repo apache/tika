@@ -73,7 +73,7 @@ import org.apache.tika.utils.StringUtils;
 /**
  * Based on Apache httpclient
  */
-public class HttpFetcher extends AbstractFetcher implements Initializable, RangeFetcher {
+public class HttpFetcher extends AbstractFetcher implements Initializable {
 
     public static String HTTP_HEADER_PREFIX = "http-header:";
 

@@ -40,6 +40,7 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -142,8 +143,10 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
                 }
 
                 Metadata metadata = loadMetadata(fetchEmitKeyIndices, headers, record);
+                ParseContext parseContext = new ParseContext();
+                parseContext.set(HandlerConfig.class, handlerConfig);
                 tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey),
-                        new EmitKey(emitterName, emitKey), metadata, handlerConfig,
+                        new EmitKey(emitterName, emitKey), metadata, parseContext,
                         getOnParseException()));
             }
         }

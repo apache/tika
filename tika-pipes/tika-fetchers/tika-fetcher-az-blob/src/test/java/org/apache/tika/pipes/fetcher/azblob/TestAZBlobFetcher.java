@@ -30,6 +30,9 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 
@@ -45,7 +48,9 @@ public class TestAZBlobFetcher extends TikaTest {
         Fetcher fetcher = fetcherManager.getFetcher("az-blob");
         List<Metadata> metadataList = null;
         try (Reader reader = new BufferedReader(new InputStreamReader(
-                fetcher.fetch(FETCH_STRING, new Metadata()), StandardCharsets.UTF_8))) {
+                fetcher.fetch(new FetchEmitTuple("id",
+                        new FetchKey("az", FETCH_STRING), EmitKey.NO_EMIT,
+                        new Metadata())), StandardCharsets.UTF_8))) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         debug(metadataList);

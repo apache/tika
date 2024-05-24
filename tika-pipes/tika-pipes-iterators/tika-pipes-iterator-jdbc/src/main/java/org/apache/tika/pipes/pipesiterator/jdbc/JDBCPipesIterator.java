@@ -39,6 +39,7 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -259,9 +260,10 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
                 }
             }
         }
-
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(HandlerConfig.class, handlerConfig);
         tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey, fetchStartRange, fetchEndRange),
-                new EmitKey(emitterName, emitKey), metadata, handlerConfig, getOnParseException()));
+                new EmitKey(emitterName, emitKey), metadata, parseContext, getOnParseException()));
     }
 
     private String toString(ResultSet rs) throws SQLException {

@@ -28,6 +28,8 @@ import java.util.Map;
  */
 public class ParseContext implements Serializable {
 
+    public static ParseContext EMPTY = new NoOpParseContext();
+
     /**
      * Serial version UID.
      */
@@ -79,6 +81,26 @@ public class ParseContext implements Serializable {
         if (value != null) {
             return value;
         } else {
+            return defaultValue;
+        }
+    }
+
+    public boolean isEmpty() {
+        return context.size() == 0;
+    }
+
+    private static class NoOpParseContext extends ParseContext {
+        @Override
+        public <T> void set(Class<T> key, T value) {
+        }
+
+        @Override
+        public <T> T get(Class<T> key) {
+            return null;
+        }
+
+        @Override
+        public <T> T get(Class<T> key, T defaultValue) {
             return defaultValue;
         }
     }

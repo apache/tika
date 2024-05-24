@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.FieldNameMappingFilter;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * This is meant only for one off development tests with a locally
@@ -57,6 +58,6 @@ public class SolrEmitterDevTest {
         filter.setMappings(mappings);
         filter.filter(metadata);
 
-        solrEmitter.emit(emitKey, Collections.singletonList(metadata));
+        solrEmitter.emit(emitKey, Collections.singletonList(metadata), ParseContext.EMPTY);
     }
 }

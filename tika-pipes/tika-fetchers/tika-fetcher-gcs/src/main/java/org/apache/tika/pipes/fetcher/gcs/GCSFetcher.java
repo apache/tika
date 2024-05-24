@@ -39,6 +39,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 
 /**
@@ -55,8 +56,12 @@ public class GCSFetcher extends AbstractFetcher implements Initializable {
     private boolean spoolToTemp = true;
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
-
+    public InputStream fetch(FetchEmitTuple fetchEmitTuple) throws TikaException, IOException {
+        if (fetchEmitTuple.getFetchKey().hasRange()) {
+            throw new IllegalArgumentException("GCS fetcher does not support range queries");
+        }
+        String fetchKey = fetchEmitTuple.getFetchKey().getFetchKey();
+        Metadata metadata = fetchEmitTuple.getMetadata();
         LOGGER.debug("about to fetch fetchkey={} from bucket ({})", fetchKey, bucket);
 
         try {

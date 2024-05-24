@@ -64,7 +64,7 @@ import org.apache.tika.utils.StringUtils;
  * The bucket must be specified via the tika-config or before
  * initialization, and the fetch key is "path/to/my_file.pdf".
  */
-public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFetcher {
+public class S3Fetcher extends AbstractFetcher implements Initializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3Fetcher.class);
     private static final String PREFIX = "s3";

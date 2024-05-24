@@ -40,6 +40,7 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -125,9 +126,11 @@ public class AZBlobPipesIterator extends PipesIterator implements Initializable 
                 LOGGER.debug("adding ({}) {} in {} ms", count, blob.getName(), elapsed);
             }
             //TODO -- extract metadata about content length etc from properties
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(HandlerConfig.class, handlerConfig);
             tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherName,
                     blob.getName()),
-                    new EmitKey(emitterName, blob.getName()), new Metadata(), handlerConfig,
+                    new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
                     getOnParseException()));
             count++;
         }

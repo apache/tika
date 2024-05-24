@@ -30,12 +30,12 @@ import com.fasterxml.jackson.core.StreamReadConstraints;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.utils.StringUtils;
 
 public class JsonFetchEmitTuple {
@@ -48,20 +48,7 @@ public class JsonFetchEmitTuple {
     public static final String EMITTER = "emitter";
     public static final String EMITKEY = "emitKey";
     public static final String METADATAKEY = "metadata";
-    public static final String HANDLER_CONFIG = "handlerConfig";
     public static final String ON_PARSE_EXCEPTION = "onParseException";
-    private static final String HANDLER_CONFIG_TYPE = "type";
-    private static final String HANDLER_CONFIG_WRITE_LIMIT = "writeLimit";
-    private static final String HANDLER_CONFIG_MAX_EMBEDDED_RESOURCES = "maxEmbeddedResources";
-    private static final String HANDLER_CONFIG_PARSE_MODE = "parseMode";
-
-    private static final String EMBEDDED_DOCUMENT_BYTES_CONFIG = "embeddedDocumentBytesConfig";
-    private static final String ZERO_PAD_NAME = "zeroPadName";
-    private static final String EXTRACT_EMBEDDED_DOCUMENT_BYTES = "extractEmbeddedDocumentBytes";
-    private static final String SUFFIX_STRATEGY = "suffixStrategy";
-    private static final String EMBEDDED_ID_PREFIX = "embeddedIdPrefix";
-    private static final String INCLUDE_ORIGINAL = "includeOriginal";
-
 
     public static FetchEmitTuple fromJson(Reader reader) throws IOException {
         try (JsonParser jParser = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
@@ -76,6 +63,7 @@ public class JsonFetchEmitTuple {
 
 
     static FetchEmitTuple parseFetchEmitTuple(JsonParser jParser) throws IOException {
+        //TODO -- I added a stub for the ParseContext -- we need to parse the parse context!!!
         JsonToken token = jParser.nextToken();
         if (token == JsonToken.START_OBJECT) {
             token = jParser.nextToken();
@@ -99,6 +87,7 @@ public class JsonFetchEmitTuple {
                 throw new IOException("required field name, but see: " + token.name());
             }
             String name = jParser.getCurrentName();
+
             if (ID.equals(name)) {
                 id = getValue(jParser);
             } else if (FETCHER.equals(name)) {
@@ -124,14 +113,10 @@ public class JsonFetchEmitTuple {
                 } else {
                     throw new IOException(ON_PARSE_EXCEPTION + " must be either 'skip' or 'emit'");
                 }
-            } else if (HANDLER_CONFIG.equals(name)) {
-                handlerConfig = getHandlerConfig(jParser);
             } else if (FETCH_RANGE_START.equals(name)) {
                 fetchRangeStart = getLong(jParser);
             } else if (FETCH_RANGE_END.equals(name)) {
                 fetchRangeEnd = getLong(jParser);
-            } else if (EMBEDDED_DOCUMENT_BYTES_CONFIG.equals(name)) {
-                embeddedDocumentBytesConfig = getEmbeddedDocumentBytesConfig(jParser);
             }
             token = jParser.nextToken();
         }
@@ -139,88 +124,7 @@ public class JsonFetchEmitTuple {
             id = fetchKey;
         }
         return new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey, fetchRangeStart, fetchRangeEnd),
-                new EmitKey(emitterName, emitKey), metadata, handlerConfig, onParseException,
-                embeddedDocumentBytesConfig);
-    }
-
-    private static EmbeddedDocumentBytesConfig getEmbeddedDocumentBytesConfig(JsonParser jParser) throws IOException {
-        JsonToken token = jParser.nextToken();
-        if (token != JsonToken.START_OBJECT) {
-            throw new IOException("required start object, but see: " + token.name());
-        }
-        String fieldName = jParser.nextFieldName();
-        EmbeddedDocumentBytesConfig config = new EmbeddedDocumentBytesConfig(true);
-        while (fieldName != null) {
-            switch (fieldName) {
-                case EXTRACT_EMBEDDED_DOCUMENT_BYTES:
-                    boolean extract = jParser.nextBooleanValue();
-                    if (! extract) {
-                        return new EmbeddedDocumentBytesConfig(false);
-                    }
-                    break;
-                case INCLUDE_ORIGINAL:
-                    config.setIncludeOriginal(jParser.nextBooleanValue());
-                    break;
-                case EMITTER:
-                    config.setEmitter(jParser.nextTextValue());
-                    break;
-                case ZERO_PAD_NAME:
-                    config.setZeroPadNameLength(jParser.nextIntValue(0));
-                    break;
-                case SUFFIX_STRATEGY:
-                    config.setSuffixStrategy(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.parse(
-                            jParser.nextTextValue()));
-                    break;
-                case EMBEDDED_ID_PREFIX:
-                    config.setEmbeddedIdPrefix(jParser.nextTextValue());
-                    break;
-                default:
-                    throw new IllegalArgumentException("I regret I don't understand '" + fieldName +
-                            "' in the context of an embeddedDocumentBytesConfig");
-            }
-            fieldName = jParser.nextFieldName();
-        }
-        return config;
-    }
-
-    private static HandlerConfig getHandlerConfig(JsonParser jParser) throws IOException {
-
-        JsonToken token = jParser.nextToken();
-        if (token != JsonToken.START_OBJECT) {
-            throw new IOException("required start object, but see: " + token.name());
-        }
-        BasicContentHandlerFactory.HANDLER_TYPE handlerType =
-                BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
-        int writeLimit = -1;
-        int maxEmbeddedResources = -1;
-        HandlerConfig.PARSE_MODE parseMode = HandlerConfig.PARSE_MODE.RMETA;
-        String fieldName = jParser.nextFieldName();
-        while (fieldName != null) {
-            switch (fieldName) {
-                case HANDLER_CONFIG_TYPE:
-                    String value = jParser.nextTextValue();
-                    handlerType = BasicContentHandlerFactory
-                            .parseHandlerType(value, HandlerConfig.DEFAULT_HANDLER_CONFIG.getType());
-                    break;
-                case HANDLER_CONFIG_WRITE_LIMIT:
-                    writeLimit = jParser.nextIntValue(-1);
-                    break;
-                case HANDLER_CONFIG_MAX_EMBEDDED_RESOURCES:
-                    maxEmbeddedResources = jParser.nextIntValue(-1);
-                    break;
-                case HANDLER_CONFIG_PARSE_MODE:
-                    String modeString = jParser.nextTextValue();
-                    parseMode = HandlerConfig.PARSE_MODE.parseMode(modeString);
-                    break;
-                default:
-                    throw new IllegalArgumentException("I regret I don't understand '" + fieldName +
-                                                       "' in the context of a handler config");
-            }
-            fieldName = jParser.nextFieldName();
-        }
-        //TODO: implement configuration of throwOnWriteLimitReached
-        return new HandlerConfig(handlerType, parseMode, writeLimit, maxEmbeddedResources,
-                true);
+                new EmitKey(emitterName, emitKey), metadata, ParseContext.EMPTY, onParseException);
     }
 
     private static String getValue(JsonParser jParser) throws IOException {
@@ -269,37 +173,9 @@ public class JsonFetchEmitTuple {
             jsonGenerator.writeFieldName(METADATAKEY);
             JsonMetadata.writeMetadataObject(t.getMetadata(), jsonGenerator, false);
         }
-        if (t.getHandlerConfig() != HandlerConfig.DEFAULT_HANDLER_CONFIG) {
-            jsonGenerator.writeFieldName(HANDLER_CONFIG);
-            jsonGenerator.writeStartObject();
-            jsonGenerator.writeStringField(HANDLER_CONFIG_TYPE,
-                    t.getHandlerConfig().getType().name().toLowerCase(Locale.ROOT));
-            jsonGenerator.writeStringField(HANDLER_CONFIG_PARSE_MODE,
-                    t.getHandlerConfig().getParseMode().name().toLowerCase(Locale.ROOT));
-            jsonGenerator.writeNumberField(HANDLER_CONFIG_WRITE_LIMIT,
-                    t.getHandlerConfig().getWriteLimit());
-            jsonGenerator.writeNumberField(HANDLER_CONFIG_MAX_EMBEDDED_RESOURCES,
-                    t.getHandlerConfig().getMaxEmbeddedResources());
-            jsonGenerator.writeEndObject();
-        }
+
         jsonGenerator.writeStringField(ON_PARSE_EXCEPTION,
                 t.getOnParseException().name().toLowerCase(Locale.US));
-        if (t.getEmbeddedDocumentBytesConfig().isExtractEmbeddedDocumentBytes()) {
-            EmbeddedDocumentBytesConfig edbc = t.getEmbeddedDocumentBytesConfig();
-            jsonGenerator.writeFieldName(EMBEDDED_DOCUMENT_BYTES_CONFIG);
-            jsonGenerator.writeStartObject();
-            jsonGenerator.writeBooleanField(EXTRACT_EMBEDDED_DOCUMENT_BYTES,
-                    edbc.isExtractEmbeddedDocumentBytes());
-            jsonGenerator.writeNumberField(ZERO_PAD_NAME, edbc.getZeroPadName());
-            jsonGenerator.writeStringField(SUFFIX_STRATEGY,
-                    edbc.getSuffixStrategy().toString());
-            jsonGenerator.writeStringField(EMBEDDED_ID_PREFIX, edbc.getEmbeddedIdPrefix());
-            if (! StringUtils.isBlank(edbc.getEmitter())) {
-                jsonGenerator.writeStringField(EMITTER, edbc.getEmitter());
-            }
-            jsonGenerator.writeBooleanField(INCLUDE_ORIGINAL, edbc.isIncludeOriginal());
-            jsonGenerator.writeEndObject();
-        }
         jsonGenerator.writeEndObject();
 
     }

@@ -94,7 +94,7 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
      * @throws TikaEmitterException or IOexception if there is a Runtime s3 client exception
      */
     @Override
-    public void emit(String path, InputStream is, Metadata userMetadata)
+    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext)
             throws IOException, TikaEmitterException {
 
         if (is instanceof TikaInputStream && ((TikaInputStream) is).hasFile()) {

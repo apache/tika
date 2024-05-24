@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -187,8 +188,11 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
     }
 
     private FetchEmitTuple getFetchEmitTuple(String fileName) throws IOException {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
+
         return new FetchEmitTuple(fileName, new FetchKey(FETCHER_NAME, fileName),
-                new EmitKey(EMITTER_NAME, ""), new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG,
+                new EmitKey(EMITTER_NAME, ""), new Metadata(), parseContext,
                 ON_PARSE_EXCEPTION);
     }
 }

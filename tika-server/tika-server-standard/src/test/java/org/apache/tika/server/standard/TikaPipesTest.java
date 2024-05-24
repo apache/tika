@@ -51,13 +51,13 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.FetcherManager;
-import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.FetcherStreamFactory;
 import org.apache.tika.server.core.InputStreamFactory;
@@ -191,12 +191,12 @@ public class TikaPipesTest extends CXFTestBase {
 
     @Test
     public void testConcatenated() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
 
         FetchEmitTuple t =
                 new FetchEmitTuple("myId", new FetchKey("fsf", "test_recursive_embedded.docx"),
-                        new EmitKey("fse", ""), new Metadata(),
-                        new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
-                                HandlerConfig.PARSE_MODE.CONCATENATE, -1, -1000, true),
+                        new EmitKey("fse", ""), new Metadata(), parseContext,
                         FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
@@ -223,13 +223,13 @@ public class TikaPipesTest extends CXFTestBase {
         config.setEmbeddedIdPrefix("-");
         config.setZeroPadNameLength(10);
         config.setSuffixStrategy(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.EXISTING);
-
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
+        parseContext.set(EmbeddedDocumentBytesConfig.class, config);
         FetchEmitTuple t =
                 new FetchEmitTuple("myId", new FetchKey("fsf", "test_recursive_embedded.docx"),
                         new EmitKey("fse", "test_recursive_embedded.docx"), new Metadata(),
-                        new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
-                                HandlerConfig.PARSE_MODE.RMETA, -1, -1, false),
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, config);
+                        parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 

@@ -36,6 +36,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.async.AsyncProcessor;
@@ -103,12 +104,14 @@ public class AsyncProcessorTest extends TikaTest {
         embeddedDocumentBytesConfig.setEmitter("bytes");
         embeddedDocumentBytesConfig.setSuffixStrategy(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.NONE);
         embeddedDocumentBytesConfig.setEmbeddedIdPrefix("-");
-
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
+        parseContext.set(EmbeddedDocumentBytesConfig.class, embeddedDocumentBytesConfig);
         FetchEmitTuple t = new FetchEmitTuple("myId-1",
                 new FetchKey("fs",  "mock.xml"),
                 new EmitKey("json", "emit-1"),
-                new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG,
-                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, embeddedDocumentBytesConfig);
+                new Metadata(), parseContext,
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
 
         processor.offer(t, 1000);
 

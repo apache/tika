@@ -51,6 +51,9 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 
 public class HttpFetcherTest extends TikaTest {
@@ -73,7 +76,9 @@ public class HttpFetcherTest extends TikaTest {
         final Metadata meta = new Metadata();
         meta.set(TikaCoreProperties.RESOURCE_NAME_KEY, "fileName");
 
-        try (final InputStream ignored = httpFetcher.fetch(TEST_URL, meta)) {
+        try (final InputStream ignored = httpFetcher.fetch(
+                new FetchEmitTuple("id", new FetchKey("http", TEST_URL),
+                        EmitKey.NO_EMIT, meta))) {
             // HTTP headers added into meta
             assertEquals("200", meta.get("http-header:status-code"));
             assertEquals(TEST_URL, meta.get("http-connection:target-url"));
@@ -91,7 +96,8 @@ public class HttpFetcherTest extends TikaTest {
         mockClientResponse(buildMockResponse(HttpStatus.SC_FORBIDDEN, null));
 
         final Metadata meta = new Metadata();
-        assertThrows(IOException.class, () -> httpFetcher.fetch(TEST_URL, meta));
+        assertThrows(IOException.class, () -> httpFetcher.fetch(
+                new FetchEmitTuple("id", new FetchKey("http", TEST_URL), EmitKey.NO_EMIT, meta)));
 
         // Meta still populated
         assertEquals("403", meta.get("http-header:status-code"));
@@ -106,7 +112,9 @@ public class HttpFetcherTest extends TikaTest {
         Metadata metadata = new Metadata();
         HttpFetcher httpFetcher =
                 (HttpFetcher) getFetcherManager("tika-config-http.xml").getFetcher("http");
-        try (InputStream is = httpFetcher.fetch(url, metadata)) {
+        try (InputStream is = httpFetcher.fetch(
+                new FetchEmitTuple("id", new FetchKey("http", url),
+                EmitKey.NO_EMIT, metadata))) {
             IOUtils.copy(is, bos);
         }
         //debug(metadata);
@@ -124,7 +132,9 @@ public class HttpFetcherTest extends TikaTest {
                 (HttpFetcher) getFetcherManager("tika-config-http.xml").getFetcher("http");
         try (TemporaryResources tmp = new TemporaryResources()) {
             Path tmpPath = tmp.createTempFile(metadata);
-            try (InputStream is = httpFetcher.fetch(url, start, end, metadata)) {
+            try (InputStream is = httpFetcher.fetch(
+                    new FetchEmitTuple("id", new FetchKey("http", TEST_URL, start, end),
+                            EmitKey.NO_EMIT, metadata))) {
                 Files.copy(new GZIPInputStream(is), tmpPath, StandardCopyOption.REPLACE_EXISTING);
             }
             assertEquals(2461, Files.size(tmpPath));
