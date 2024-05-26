@@ -141,7 +141,17 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         for (var configParam : fetcherConfigParams.entrySet()) {
             Element configElm = tikaConfigDoc.createElement(configParam.getKey());
             fetcher.appendChild(configElm);
-            configElm.setTextContent(Objects.toString(configParam.getValue()));
+            if (configParam.getValue() instanceof List) {
+                List configParamVal = (List) configParam.getValue();
+                String singularName = configParam.getKey().substring(0, configParam.getKey().length() - 1);
+                for (Object configParamObj : configParamVal) {
+                    Element childElement = tikaConfigDoc.createElement(singularName);
+                    childElement.setTextContent(Objects.toString(configParamObj));
+                    configElm.appendChild(childElement);
+                }
+            } else {
+                configElm.setTextContent(Objects.toString(configParam.getValue()));
+            }
         }
     }
 
