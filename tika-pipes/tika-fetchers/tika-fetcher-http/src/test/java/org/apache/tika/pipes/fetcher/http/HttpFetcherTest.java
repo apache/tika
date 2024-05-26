@@ -174,7 +174,7 @@ public class HttpFetcherTest extends TikaTest {
         additionalHttpHeaders.getHeaders().put("nick1", "val1");
         additionalHttpHeaders.getHeaders().put("nick2", "val2");
         parseContext.set(AdditionalHttpHeaders.class, additionalHttpHeaders);
-        httpFetcher.fetch("http://localhost", metadata);
+        httpFetcher.fetch("http://localhost", metadata, parseContext);
         HttpGet httpGet = httpGetArgumentCaptor.getValue();
         Assertions.assertEquals("val1", httpGet.getHeaders("nick1")[0].getValue());
         Assertions.assertEquals("val2", httpGet.getHeaders("nick2")[0].getValue());

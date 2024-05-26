@@ -24,7 +24,6 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.net.http.HttpHeaders;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,6 +69,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
+import org.apache.tika.pipes.fetcher.http.config.AdditionalHttpHeaders;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -144,9 +144,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                         .setMaxRedirects(maxRedirects)
                         .setRedirectsEnabled(true).build();
         get.setConfig(requestConfig);
-        if (! StringUtils.isBlank(userAgent)) {
-            get.setHeader(USER_AGENT, userAgent);
-        }
+        putAdditionalHeadersOnRequest(parseContext, get);
         return execute(get, metadata, httpClient, true);
     }
 
@@ -154,16 +152,22 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata, ParseContext parseContext)
             throws IOException {
         HttpGet get = new HttpGet(fetchKey);
-        if (! StringUtils.isBlank(userAgent)) {
-            get.setHeader(USER_AGENT, userAgent);
-        }
-        HttpHeaders headers = parseContext.get(HttpHeaders.class);
-        if (headers != null) {
-
-        }
+        putAdditionalHeadersOnRequest(parseContext, get);
 
         get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
         return execute(get, metadata, httpClient, true);
+    }
+
+    private void putAdditionalHeadersOnRequest(ParseContext parseContext, HttpGet get) {
+        if (!StringUtils.isBlank(userAgent)) {
+            get.setHeader(USER_AGENT, userAgent);
+        }
+        AdditionalHttpHeaders additionalHttpHeaders = parseContext.get(AdditionalHttpHeaders.class);
+        if (additionalHttpHeaders != null) {
+            additionalHttpHeaders
+                    .getHeaders()
+                    .forEach(get::setHeader);
+        }
     }
 
     private InputStream execute(HttpGet get, Metadata metadata, HttpClient client,
