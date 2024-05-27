@@ -308,7 +308,7 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.38.0</google.cloud.version>
+    <google.cloud.version>2.39.0</google.cloud.version>
     <aws.version>1.12.730</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
