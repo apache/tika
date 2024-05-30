@@ -61,7 +61,6 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.detect.zip.TikaArchiveStreamFactory;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -182,6 +181,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         return Collections.unmodifiableSet(zipSpecializations);
     }
 
+    //not clear what we should use instead?
     @Deprecated
     static MediaType getMediaType(ArchiveInputStream stream) {
         if (stream instanceof JarArchiveInputStream) {
@@ -267,24 +267,15 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         String encoding = null;
         try {
             ArchiveStreamFactory factory =
-                    context.get(ArchiveStreamFactory.class);
-            //TODO -- fix this when we next upgrade commons-compress
+                    context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory());
             //TODO -- we've probably already detected the stream by here. We should
             //rely on that detection and not re-detect.
-            if (factory != null) {
-                encoding = factory.getEntryEncoding();
-                // At the end we want to close the archive stream to release
-                // any associated resources, but the underlying document stream
-                // should not be closed
-                ais = factory.createArchiveInputStream(new CloseShieldInputStream(stream));
-            } else {
-                TikaArchiveStreamFactory tikaFactory = new TikaArchiveStreamFactory();
-                encoding = tikaFactory.getEntryEncoding();
-                // At the end we want to close the archive stream to release
-                // any associated resources, but the underlying document stream
-                // should not be closed
-                ais = tikaFactory.createArchiveInputStream(new CloseShieldInputStream(stream));
-            }
+            // At the end we want to close the archive stream to release
+            // any associated resources, but the underlying document stream
+            // should not be closed
+            encoding = factory.getEntryEncoding();
+            ais = factory.createArchiveInputStream(CloseShieldInputStream.wrap(stream));
+
         } catch (StreamingNotSupportedException sne) {
             // Most archive formats work on streams, but a few need files
             if (sne.getFormat().equals(ArchiveStreamFactory.SEVEN_Z)) {
@@ -314,9 +305,11 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 // Pending a fix for COMPRESS-269 / TIKA-1525, this bit is a little nasty
                 ais = new SevenZWrapper(sevenz);
             } else {
+                tmp.close();
                 throw new TikaException("Unknown non-streaming format " + sne.getFormat(), sne);
             }
         } catch (ArchiveException e) {
+            tmp .close();
             throw new TikaException("Unable to unpack document stream", e);
         }
 
@@ -342,12 +335,13 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 ais.close();
                 // An exception would be thrown if MARK_LIMIT is not big enough
                 stream.reset();
-                ais = new ZipArchiveInputStream(new CloseShieldInputStream(stream), encoding, true,
+                ais = new ZipArchiveInputStream(CloseShieldInputStream.wrap(stream), encoding, true,
                         true);
                 parseEntries(ais, metadata, extractor, xhtml, true, entryCnt);
             }
         } finally {
             ais.close();
+            tmp.close();
             xhtml.endDocument();
         }
     }
