@@ -306,8 +306,8 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.38.0</google.cloud.version>
-    <aws.version>1.12.725</aws.version>
+    <google.cloud.version>2.39.0</google.cloud.version>
+    <aws.version>1.12.730</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -318,10 +318,10 @@
     <bouncycastle.version>1.78.1</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <commons.cli.version>1.7.0</commons.cli.version>
+    <commons.cli.version>1.8.0</commons.cli.version>
     <commons.codec.version>1.17.0</commons.codec.version>
     <commons.collections4.version>4.4</commons.collections4.version>
-    <commons.compress.version>1.26.1</commons.compress.version>
+    <commons.compress.version>1.26.2</commons.compress.version>
     <commons.csv.version>1.11.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
     <commons.io.version>2.16.1</commons.io.version>
@@ -396,8 +396,8 @@
     <slf4j.version>2.0.10</slf4j.version>
     <solrj.version>8.11.3</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17 -->
-    <spring.version>5.3.35</spring.version>
-    <sqlite.version>3.45.3.0</sqlite.version>
+    <spring.version>5.3.36</spring.version>
+    <sqlite.version>3.46.0.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.19.8</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
@@ -411,7 +411,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.6-3</zstd.version>
     <kafka.version>3.7.0</kafka.version>
-    <netty.version>4.1.109.Final</netty.version>
+    <netty.version>4.1.110.Final</netty.version>
     <snappy.java.version>1.1.10.5</snappy.java.version>
     <logback.version>1.5.6</logback.version>
   </properties>
@@ -555,7 +555,7 @@
       <dependency>
         <groupId>com.github.albfernandez</groupId>
         <artifactId>juniversalchardet</artifactId>
-        <version>2.4.0</version>
+        <version>2.5.0</version>
       </dependency>
       <!-- jai-imageio-core is allowed since LEGAL-304 -->
       <dependency>
@@ -775,7 +775,7 @@
       <dependency>
         <groupId>org.apache.jackrabbit</groupId>
         <artifactId>oak-jackrabbit-api</artifactId>
-        <version>1.62.0</version>
+        <version>1.64.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
