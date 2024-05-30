@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
@@ -120,8 +121,7 @@ public class DefaultZipContainerDetector implements Detector {
             return TIFF;
         }
         try {
-            String name =
-                    TikaArchiveStreamFactory.detect(new UnsynchronizedByteArrayInputStream(prefix,
+            String name = ArchiveStreamFactory.detect(new UnsynchronizedByteArrayInputStream(prefix,
                             0, length));
             return PackageConstants.getMediaType(name);
         } catch (ArchiveException e) {
