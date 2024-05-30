@@ -117,7 +117,8 @@ public class XMLReaderUtils implements Serializable {
     //TODO: figure out if the rw lock is any better than a simple lock
     private static final ReentrantReadWriteLock SAX_READ_WRITE_LOCK = new ReentrantReadWriteLock();
     private static final ReentrantReadWriteLock DOM_READ_WRITE_LOCK = new ReentrantReadWriteLock();
-    private static final AtomicInteger POOL_GENERATION = new AtomicInteger();
+    private static final AtomicInteger SAX_POOL_GENERATION = new AtomicInteger();
+    private static final AtomicInteger DOM_POOL_GENERATION = new AtomicInteger();
     private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER =
             (publicId, systemId) -> new InputSource(new StringReader(""));
     private static final XMLResolver IGNORING_STAX_ENTITY_RESOLVER =
@@ -575,15 +576,19 @@ public class XMLReaderUtils implements Serializable {
             PoolDOMBuilder builder = null;
             DOM_READ_WRITE_LOCK.readLock().lock();
             try {
-                builder = DOM_BUILDERS.poll(100, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                throw new TikaException("interrupted while waiting for DOMBuilder", e);
+                builder = DOM_BUILDERS.poll();
             } finally {
                 DOM_READ_WRITE_LOCK.readLock().unlock();
             }
             if (builder != null) {
                 return builder;
             }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new TikaException("interrupted while waiting for DOMBuilder", e);
+            }
+
             if (lastWarn < 0 || System.currentTimeMillis() - lastWarn > 1000) {
                 //avoid spamming logs
                 LOG.warn("Contention waiting for a DOMParser. " +
@@ -611,9 +616,6 @@ public class XMLReaderUtils implements Serializable {
      * @param builder builder to return
      */
     private static void releaseDOMBuilder(PoolDOMBuilder builder) {
-        if (builder.getPoolGeneration() != POOL_GENERATION.get()) {
-            return;
-        }
         try {
             builder.reset();
         } catch (UnsupportedOperationException e) {
@@ -621,6 +623,9 @@ public class XMLReaderUtils implements Serializable {
         }
         DOM_READ_WRITE_LOCK.readLock().lock();
         try {
+            if (builder.getPoolGeneration() != DOM_POOL_GENERATION.get()) {
+                return;
+            }
             //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
             // this parser will not be added and will then be gc'd
             boolean success = DOM_BUILDERS.offer(builder);
@@ -650,15 +655,19 @@ public class XMLReaderUtils implements Serializable {
             PoolSAXParser parser = null;
             SAX_READ_WRITE_LOCK.readLock().lock();
             try {
-                parser = SAX_PARSERS.poll(100, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                throw new TikaException("interrupted while waiting for SAXParser", e);
+                parser = SAX_PARSERS.poll();
             } finally {
                 SAX_READ_WRITE_LOCK.readLock().unlock();
             }
             if (parser != null) {
                 return parser;
             }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new TikaException("interrupted while waiting for SAXParser", e);
+            }
+
             if (lastWarn < 0 || System.currentTimeMillis() - lastWarn > 1000) {
                 //avoid spamming logs
                 LOG.warn("Contention waiting for a SAXParser. " +
@@ -689,13 +698,13 @@ public class XMLReaderUtils implements Serializable {
         } catch (UnsupportedOperationException e) {
             //TIKA-3009 -- we really shouldn't have to do this... :(
         }
-        //if this is a different generation, don't put it back
-        //in the pool
-        if (parser.getGeneration() != POOL_GENERATION.get()) {
-            return;
-        }
         SAX_READ_WRITE_LOCK.readLock().lock();
         try {
+            //if this is a different generation, don't put it back
+            //in the pool
+            if (parser.getGeneration() != SAX_POOL_GENERATION.get()) {
+                return;
+            }
             //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
             // this parser will not be added and will then be gc'd
             boolean success = SAX_PARSERS.offer(parser);
@@ -836,36 +845,56 @@ public class XMLReaderUtils implements Serializable {
         //if we didn't lock.
         SAX_READ_WRITE_LOCK.writeLock().lock();
         try {
-            //free up any resources before emptying SAX_PARSERS
-            for (PoolSAXParser parser : SAX_PARSERS) {
-                parser.reset();
-            }
-            SAX_PARSERS.clear();
-            SAX_PARSERS = new ArrayBlockingQueue<>(poolSize);
-            int generation = POOL_GENERATION.incrementAndGet();
-            for (int i = 0; i < poolSize; i++) {
-                try {
-                    SAX_PARSERS.offer(buildPoolParser(generation,
-                            getSAXParserFactory().newSAXParser()));
-                } catch (SAXException | ParserConfigurationException e) {
-                    throw new TikaException("problem creating sax parser", e);
-                }
-            }
+            updateSAXPool(poolSize);
         } finally {
             SAX_READ_WRITE_LOCK.writeLock().unlock();
         }
 
         DOM_READ_WRITE_LOCK.writeLock().lock();
         try {
-            DOM_BUILDERS.clear();
-            DOM_BUILDERS = new ArrayBlockingQueue<>(poolSize);
-            for (int i = 0; i < poolSize; i++) {
-                DOM_BUILDERS.offer(new PoolDOMBuilder(POOL_GENERATION.get(), getDocumentBuilder()));
-            }
+            updateDOMPool(poolSize);
         } finally {
             DOM_READ_WRITE_LOCK.writeLock().unlock();
         }
         POOL_SIZE = poolSize;
+    }
+
+    private static void updateDOMPool(int poolSize) throws TikaException {
+        if (DOM_BUILDERS.size() == poolSize) {
+            LOG.debug("DOM pool already this size ({}). I'm not resizing", poolSize);
+            return;
+        }
+        DOM_BUILDERS.clear();
+        DOM_BUILDERS = new ArrayBlockingQueue<>(poolSize);
+        for (int i = 0; i < poolSize; i++) {
+            DOM_BUILDERS.offer(new PoolDOMBuilder(DOM_POOL_GENERATION.get(), getDocumentBuilder()));
+        }
+
+    }
+
+    private static void updateSAXPool(int poolSize) throws TikaException {
+        //this is all within the lock
+        if (SAX_PARSERS.size() == poolSize) {
+            LOG.debug("SAX pool already this size ({}). I'm not resizing", poolSize);
+            return;
+        }
+        //free up any resources before emptying SAX_PARSERS
+        for (PoolSAXParser parser : SAX_PARSERS) {
+            parser.reset();
+        }
+        SAX_PARSERS.clear();
+        SAX_PARSERS = new ArrayBlockingQueue<>(poolSize);
+        int generation = SAX_POOL_GENERATION.incrementAndGet();
+        LOG.debug("Updating sax pool size to {} for generation={}", poolSize, generation);
+        for (int i = 0; i < poolSize; i++) {
+            try {
+                SAX_PARSERS.offer(buildPoolParser(generation,
+                        getSAXParserFactory().newSAXParser()));
+            } catch (SAXException | ParserConfigurationException e) {
+                throw new TikaException("problem creating sax parser", e);
+            }
+        }
+
     }
 
     public static int getMaxEntityExpansions() {
