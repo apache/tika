@@ -131,6 +131,11 @@ If a local test is not working in your environment, please notify
 4. mvn clean install -Dossindex.skip -Dtest=\!UnpackerResourceTest#testPDFImages
 ```
 
+To disable the build cache:
+```
+4. mvn clean install -Dmaven.build.cache.enabled=false
+```
+
 License (see also LICENSE.txt)
 ==============================
 
