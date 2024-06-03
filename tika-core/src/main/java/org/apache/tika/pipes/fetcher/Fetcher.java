@@ -34,9 +34,5 @@ public interface Fetcher {
 
     String getName();
 
-    default InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
-        return fetch(fetchKey, metadata, new ParseContext());
-    }
-
     InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException;
 }

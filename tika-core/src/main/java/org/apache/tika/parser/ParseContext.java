@@ -16,26 +16,9 @@
  */
 package org.apache.tika.parser;
 
-import java.io.InputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.transform.Transformer;
-
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Parse context. Used to pass context information to Tika parsers.

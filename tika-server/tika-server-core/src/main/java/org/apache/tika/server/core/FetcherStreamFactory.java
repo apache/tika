@@ -32,11 +32,10 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.fetcher.RangeFetcher;
+import org.apache.tika.server.core.resource.TikaResource;
 
 /**
  * This class looks for &quot;fetcherName&quot; in the http header.  If it is not null
@@ -75,7 +74,8 @@ public class FetcherStreamFactory implements InputStreamFactory {
         if (StringUtils.isBlank(fetchKey)) {
             fetchKey = getParam("fetchKeyLiteral", httpHeaders, params);
         }
-
+        ParseContext parseContext = new ParseContext();
+        TikaResource.fillParseContext(httpHeaders.getRequestHeaders(), metadata, parseContext);
         long fetchRangeStart = getLong(getParam("fetchRangeStart", httpHeaders, params));
         long fetchRangeEnd = getLong(getParam("fetchRangeEnd", httpHeaders, params));
         if (StringUtils.isBlank(fetcherName) != StringUtils.isBlank(fetchKey)) {
@@ -96,9 +96,12 @@ public class FetcherStreamFactory implements InputStreamFactory {
             try {
                 LOG.debug("going to fetch '{}' from fetcher: {}", fetchKey, fetcherName);
                 Fetcher fetcher = fetcherManager.getFetcher(fetcherName);
-                return fetcher.fetch(new FetchEmitTuple("id", new FetchKey(fetcherName, fetchKey),
-                        EmitKey.NO_EMIT,
-                        metadata, new ParseContext()));
+                if (fetchRangeStart > -1 && fetchRangeEnd > -1 && !(fetcher instanceof RangeFetcher)) {
+                    throw new IllegalArgumentException("Can't call a fetch with a range on a fetcher that" +
+                            " is not a RangeFetcher: name=" + fetcher.getName() +
+                            " class=" + fetcher.getClass());
+                }
+                return fetcher.fetch(fetchKey, metadata, parseContext);
             } catch (TikaException e) {
                 throw new IOException(e);
             }

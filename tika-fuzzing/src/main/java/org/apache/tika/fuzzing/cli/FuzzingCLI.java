@@ -212,7 +212,8 @@ public class FuzzingCLI {
                     "." + FilenameUtils.getExtension(fetchEmitTuple.getFetchKey().getFetchKey()));
             try (InputStream is = fetcherManager.getFetcher(
                             fetchEmitTuple.getFetchKey().getFetcherName())
-                    .fetch(fetchEmitTuple)) {
+                    .fetch(fetchEmitTuple.getFetchKey().getFetchKey(), fetchEmitTuple.getMetadata(),
+                            fetchEmitTuple.getParseContext())) {
                 try (OutputStream os = Files.newOutputStream(target)) {
                     transformer.transform(is, os);
                 }

@@ -27,9 +27,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 
@@ -48,8 +46,7 @@ public class TestS3Fetcher {
         fetcher.initialize(Collections.EMPTY_MAP);
 
         Metadata metadata = new Metadata();
-        try (InputStream is = fetcher.fetch(
-                new FetchEmitTuple("id", new FetchKey("s3", FETCH_STRING), EmitKey.NO_EMIT, metadata))) {
+        try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, ParseContext.EMPTY)) {
             Files.copy(is, outputFile, StandardCopyOption.REPLACE_EXISTING);
         }
     }
@@ -60,8 +57,7 @@ public class TestS3Fetcher {
                 Paths.get(this.getClass().getResource("/tika-config-s3.xml").toURI()));
         Fetcher fetcher = fetcherManager.getFetcher("s3");
         Metadata metadata = new Metadata();
-        try (InputStream is = fetcher.fetch(
-                new FetchEmitTuple("id", new FetchKey("s3", FETCH_STRING), EmitKey.NO_EMIT, metadata))) {
+        try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, ParseContext.EMPTY)) {
             Files.copy(is, outputFile, StandardCopyOption.REPLACE_EXISTING);
         }
     }
