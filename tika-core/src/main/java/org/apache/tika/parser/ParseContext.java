@@ -16,9 +16,26 @@
  */
 package org.apache.tika.parser;
 
+import java.io.InputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.transform.Transformer;
+
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Parse context. Used to pass context information to Tika parsers.
@@ -27,6 +44,8 @@ import java.util.Map;
  * @since Apache Tika 0.5
  */
 public class ParseContext implements Serializable {
+
+    public static ParseContext EMPTY = new NoOpParseContext();
 
     /**
      * Serial version UID.
@@ -79,6 +98,26 @@ public class ParseContext implements Serializable {
         if (value != null) {
             return value;
         } else {
+            return defaultValue;
+        }
+    }
+
+    public boolean isEmpty() {
+        return context.size() == 0;
+    }
+
+    private static class NoOpParseContext extends ParseContext {
+        @Override
+        public <T> void set(Class<T> key, T value) {
+        }
+
+        @Override
+        public <T> T get(Class<T> key) {
+            return null;
+        }
+
+        @Override
+        public <T> T get(Class<T> key, T defaultValue) {
             return defaultValue;
         }
     }

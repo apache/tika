@@ -43,11 +43,13 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.async.AsyncProcessor;
 import org.apache.tika.pipes.async.OfferLargerThanQueueSize;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitterManager;
+import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.fetcher.FetchKey;
 
 @Path("/async")
@@ -109,9 +111,13 @@ public class AsyncResource {
             if (!emitterManager.getSupported().contains(t.getEmitKey().getEmitterName())) {
                 return badEmitter(t.getEmitKey().getEmitterName());
             }
-            if (t.getEmbeddedDocumentBytesConfig().isExtractEmbeddedDocumentBytes() &&
-                    !StringUtils.isAllBlank(t.getEmbeddedDocumentBytesConfig().getEmitter())) {
-                String bytesEmitter = t.getEmbeddedDocumentBytesConfig().getEmitter();
+            ParseContext parseContext = t.getParseContext();
+            EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig =
+                    parseContext.get(EmbeddedDocumentBytesConfig.class);
+            if (embeddedDocumentBytesConfig != null &&
+                    embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
+                    !StringUtils.isAllBlank(embeddedDocumentBytesConfig.getEmitter())) {
+                String bytesEmitter = embeddedDocumentBytesConfig.getEmitter();
                 if (!emitterManager.getSupported().contains(bytesEmitter)) {
                     return badEmitter(bytesEmitter);
                 }

@@ -46,6 +46,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.StreamEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
@@ -69,7 +70,7 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
      * @throws TikaException
      */
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList)
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
             throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.size() == 0) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
@@ -93,7 +94,7 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
      * @throws TikaEmitterException or IOexception if there is a Runtime s3 client exception
      */
     @Override
-    public void emit(String path, InputStream is, Metadata userMetadata)
+    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext)
             throws IOException, TikaEmitterException {
 
         if (is instanceof TikaInputStream && ((TikaInputStream) is).hasFile()) {

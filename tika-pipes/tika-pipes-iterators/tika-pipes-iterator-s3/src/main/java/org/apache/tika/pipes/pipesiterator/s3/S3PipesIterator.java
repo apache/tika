@@ -46,6 +46,7 @@ import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -203,9 +204,11 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
             long elapsed = System.currentTimeMillis() - start;
             LOGGER.debug("adding ({}) {} in {} ms", count, summary.getKey(), elapsed);
             //TODO -- allow user specified metadata as the "id"?
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(HandlerConfig.class, handlerConfig);
             tryToAdd(new FetchEmitTuple(summary.getKey(), new FetchKey(fetcherName,
                     summary.getKey()),
-                    new EmitKey(emitterName, summary.getKey()), new Metadata(), handlerConfig,
+                    new EmitKey(emitterName, summary.getKey()), new Metadata(), parseContext,
                     getOnParseException()));
             count++;
         }

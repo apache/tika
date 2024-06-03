@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.EmitterManager;
 
@@ -42,7 +43,7 @@ public class TestGCSEmitter {
         m.add("k1", "v2");
         m.set("k2", "v3");
         metadataList.add(m);
-        emitter.emit("something-or-other/test-out", metadataList);
+        emitter.emit("something-or-other/test-out", metadataList, ParseContext.EMPTY);
     }
 
     private Path getConfig(String configFile) throws URISyntaxException {

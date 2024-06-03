@@ -37,6 +37,7 @@ import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -164,9 +165,11 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("adding ({}) {} in {} ms", count, r.key(), elapsed);
                 }
+                ParseContext parseContext = new ParseContext();
+                parseContext.set(HandlerConfig.class, handlerConfig);
                 tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherName,
                         r.key()),
-                        new EmitKey(emitterName, r.key()), new Metadata(), handlerConfig,
+                        new EmitKey(emitterName, r.key()), new Metadata(), parseContext,
                         getOnParseException()));
                 ++count;
             }

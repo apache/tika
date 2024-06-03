@@ -198,7 +198,7 @@ public class PipeIntegrationTests {
             if (Files.isRegularFile(targ)) {
                 return;
             }
-            try (InputStream is = fetcher.fetch(t.getFetchKey().getFetchKey(), t.getMetadata())) {
+            try (InputStream is = fetcher.fetch(t)) {
                 System.out.println(counter.getAndIncrement() + " : " + t);
                 Files.createDirectories(targ.getParent());
                 Files.copy(is, targ);
@@ -236,11 +236,11 @@ public class PipeIntegrationTests {
         }
 
         private void process(FetchEmitTuple t) throws IOException, TikaException {
-            Metadata userMetadata = new Metadata();
+            Metadata userMetadata = t.getMetadata();
             userMetadata.set("project", "my-project");
 
-            try (InputStream is = fetcher.fetch(t.getFetchKey().getFetchKey(), t.getMetadata())) {
-                emitter.emit(t.getEmitKey().getEmitKey(), is, userMetadata);
+            try (InputStream is = fetcher.fetch(t)) {
+                emitter.emit(t.getEmitKey().getEmitKey(), is, userMetadata, t.getParseContext());
             }
         }
     }

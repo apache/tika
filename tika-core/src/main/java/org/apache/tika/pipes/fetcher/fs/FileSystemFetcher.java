@@ -61,7 +61,7 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
         if (fetchKey.contains("\u0000")) {
-            throw new IllegalArgumentException("Path must not contain \u0000. " +
+            throw new IllegalArgumentException("Path must not contain 'u0000'. " +
                     "Please review the life decisions that led you to requesting " +
                     "a file name with this character in it.");
         }

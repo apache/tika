@@ -31,9 +31,12 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
-import org.apache.tika.pipes.fetcher.RangeFetcher;
 
 /**
  * This class looks for &quot;fetcherName&quot; in the http header.  If it is not null
@@ -93,17 +96,9 @@ public class FetcherStreamFactory implements InputStreamFactory {
             try {
                 LOG.debug("going to fetch '{}' from fetcher: {}", fetchKey, fetcherName);
                 Fetcher fetcher = fetcherManager.getFetcher(fetcherName);
-                if (fetchRangeStart > -1 && fetchRangeEnd > -1) {
-                    if (!(fetcher instanceof RangeFetcher)) {
-                        throw new IllegalArgumentException(
-                                "Requesting a range fetch from a fetcher " +
-                                        "that doesn't support range fetching?!");
-                    }
-                    return ((RangeFetcher) fetcher).fetch(fetchKey, fetchRangeStart, fetchRangeEnd,
-                            metadata);
-                } else {
-                    return fetcher.fetch(fetchKey, metadata);
-                }
+                return fetcher.fetch(new FetchEmitTuple("id", new FetchKey(fetcherName, fetchKey),
+                        EmitKey.NO_EMIT,
+                        metadata, new ParseContext()));
             } catch (TikaException e) {
                 throw new IOException(e);
             }
