@@ -382,7 +382,7 @@
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.11.0-M2</junit5.version>
-    <juniversalchardet.version>2.4.0</juniversalchardet.version>
+    <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.29.0</jwarc.version>
     <kafka.version>3.7.0</kafka.version>
