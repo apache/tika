@@ -35,7 +35,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.metadata.serialization.JsonStreamingSerializer;
+import org.apache.tika.serialization.JsonStreamingSerializer;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;

@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.FetcherStreamFactory;

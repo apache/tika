@@ -34,7 +34,7 @@ import jakarta.ws.rs.ext.MessageBodyWriter;
 import jakarta.ws.rs.ext.Provider;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadata;
+import org.apache.tika.serialization.JsonMetadata;
 
 @Provider
 @Produces(MediaType.APPLICATION_JSON)

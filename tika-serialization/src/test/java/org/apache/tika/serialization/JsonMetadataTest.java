@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.serialization;
+package org.apache.tika.serialization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -58,17 +58,19 @@ public class JsonMetadataTest {
         assertEquals(metadata, deserialized);
 
         //test that this really is 6 Chinese characters
-        assertEquals(6, deserialized.get("alma_mater").length());
+        assertEquals(6, deserialized
+                .get("alma_mater")
+                .length());
 
         //now test pretty print;
         writer = new StringWriter();
         JsonMetadata.setPrettyPrinting(true);
         JsonMetadata.toJson(metadata, writer);
-        assertTrue(writer.toString().replaceAll("\r\n", "\n").contains(
-                "\"json_escapes\" : \"the: \\\"quick\\\" brown, fox\",\n" +
-                        "  \"k1\" : [ \"v1\", \"v2\" ],\n" + "  \"k3\" : [ \"v3\", \"v3\" ],\n" +
-                        "  \"k4\" : \"500,000\",\n" +
-                        "  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\"\n" + "}"));
+        assertTrue(writer
+                .toString()
+                .replaceAll("\r\n", "\n")
+                .contains("\"json_escapes\" : \"the: \\\"quick\\\" brown, fox\",\n" + "  \"k1\" : [ \"v1\", \"v2\" ],\n" + "  \"k3\" : [ \"v3\", \"v3\" ],\n" +
+                        "  \"k4\" : \"500,000\",\n" + "  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\"\n" + "}"));
     }
 
     @Test
@@ -113,8 +115,7 @@ public class JsonMetadataTest {
     public void testLargeValues() throws Exception {
         //TIKA-4154
         TikaConfig tikaConfig = null;
-        try (InputStream is =
-                     JsonMetadata.class.getResourceAsStream("/config/tika-config-json.xml")) {
+        try (InputStream is = JsonMetadata.class.getResourceAsStream("/config/tika-config-json.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         StringBuilder sb = new StringBuilder();

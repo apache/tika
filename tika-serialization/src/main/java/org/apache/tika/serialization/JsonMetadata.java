@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.serialization;
+package org.apache.tika.serialization;
 
 
 import java.io.IOException;
@@ -51,9 +51,11 @@ public class JsonMetadata {
             return;
         }
         long max = TikaConfig.getMaxJsonStringFieldLength();
-        try (JsonGenerator jsonGenerator = new JsonFactory().setStreamReadConstraints(
-                        StreamReadConstraints.builder()
-                                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build())
+        try (JsonGenerator jsonGenerator = new JsonFactory()
+                .setStreamReadConstraints(StreamReadConstraints
+                        .builder()
+                        .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
+                        .build())
                 .createGenerator(new CloseShieldWriter(writer))) {
             if (PRETTY_PRINT) {
                 jsonGenerator.useDefaultPrettyPrinter();
@@ -96,8 +98,11 @@ public class JsonMetadata {
      */
     public static Metadata fromJson(Reader reader) throws IOException {
         Metadata m = null;
-        try (JsonParser jParser = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
-                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build())
+        try (JsonParser jParser = new JsonFactory()
+                .setStreamReadConstraints(StreamReadConstraints
+                        .builder()
+                        .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
+                        .build())
                 .createParser(new CloseShieldReader(reader))) {
             m = readMetadataObject(jParser);
         }

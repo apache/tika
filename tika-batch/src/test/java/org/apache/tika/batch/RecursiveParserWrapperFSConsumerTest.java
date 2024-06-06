@@ -37,7 +37,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.NoOpFilter;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;

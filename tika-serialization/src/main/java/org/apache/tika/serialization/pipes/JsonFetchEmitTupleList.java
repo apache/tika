@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.serialization;
+package org.apache.tika.serialization.pipes;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -26,8 +26,6 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,7 +38,7 @@ public class JsonFetchEmitTupleList {
     public static List<FetchEmitTuple> fromJson(Reader reader) throws IOException {
         JsonNode root = new ObjectMapper().readTree(reader);
 
-        if (! root.isArray()) {
+        if (!root.isArray()) {
             throw new IOException("FetchEmitTupleList must be an array");
         }
         List<FetchEmitTuple> list = new ArrayList<>();
@@ -61,8 +59,12 @@ public class JsonFetchEmitTupleList {
 
     public static void toJson(List<FetchEmitTuple> list, Writer writer) throws IOException {
 
-        try (JsonGenerator jsonGenerator = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
-                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build()).createGenerator(writer)) {
+        try (JsonGenerator jsonGenerator = new JsonFactory()
+                .setStreamReadConstraints(StreamReadConstraints
+                        .builder()
+                        .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
+                        .build())
+                .createGenerator(writer)) {
             jsonGenerator.writeStartArray();
             for (FetchEmitTuple t : list) {
                 JsonFetchEmitTuple.writeTuple(t, jsonGenerator);

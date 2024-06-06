@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.serialization;
+package org.apache.tika.serialization;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -45,15 +45,16 @@ public class JsonMetadataList {
      * @param prettyPrint  whether or not to pretty print the output
      * @throws org.apache.tika.exception.TikaException if there is an IOException during writing
      */
-    public static void toJson(List<Metadata> metadataList, Writer writer, boolean prettyPrint)
-            throws IOException {
+    public static void toJson(List<Metadata> metadataList, Writer writer, boolean prettyPrint) throws IOException {
         if (metadataList == null) {
             writer.write("null");
             return;
         }
-        try (JsonGenerator jsonGenerator = new JsonFactory().setStreamReadConstraints(
-                        StreamReadConstraints.builder().maxStringLength(
-                                TikaConfig.getMaxJsonStringFieldLength()).build())
+        try (JsonGenerator jsonGenerator = new JsonFactory()
+                .setStreamReadConstraints(StreamReadConstraints
+                        .builder()
+                        .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
+                        .build())
                 .createGenerator(new CloseShieldWriter(writer))) {
             if (prettyPrint) {
                 jsonGenerator.useDefaultPrettyPrinter();
@@ -90,14 +91,16 @@ public class JsonMetadataList {
             return ms;
         }
         ms = new ArrayList<>();
-        try (JsonParser jParser = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
-                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build())
+        try (JsonParser jParser = new JsonFactory()
+                .setStreamReadConstraints(StreamReadConstraints
+                        .builder()
+                        .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
+                        .build())
                 .createParser(new CloseShieldReader(reader))) {
 
             JsonToken token = jParser.nextToken();
             if (token != JsonToken.START_ARRAY) {
-                throw new IOException(
-                        "metadata list must start with an array, but I see: " + token.name());
+                throw new IOException("metadata list must start with an array, but I see: " + token.name());
             }
             token = jParser.nextToken();
             while (token != JsonToken.END_ARRAY) {
@@ -116,8 +119,9 @@ public class JsonMetadataList {
         if (ms.size() > 1) {
             Metadata last = ms.get(ms.size() - 1);
             String embResourcePath = last.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
-            if (embResourcePath == null &&
-                    ms.get(0).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH) != null) {
+            if (embResourcePath == null && ms
+                    .get(0)
+                    .get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH) != null) {
                 ms.add(0, ms.remove(ms.size() - 1));
             }
         }

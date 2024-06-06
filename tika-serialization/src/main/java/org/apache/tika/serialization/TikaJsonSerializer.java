@@ -1,9 +1,23 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.serialization;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -17,28 +31,24 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.utils.StringUtils;
 
 /**
  * This is a basic serializer that requires that an object:
  * a) have a no-arg constructor
  * b) have both setters and getters for the same parameters with the same names, e.g. setXYZ and getXYZ
  * c) setters and getters have to follow the pattern setX where x is a capital letter
- * d) have maps as parameters where the keys are strings
+ * d) have maps as parameters where the keys are strings (and the values are strings for now)
+ * e) at deserialization time, objects that have setters for enums also have to have a setter for a string value of that enum
  */
 public class TikaJsonSerializer {
 
     public static String INSTANTIATED_CLASS_KEY = "_class";
     public static String SUPER_CLASS_KEY = "_super_class";
-
-    private static Logger LOG = LoggerFactory.getLogger(TikaJsonSerializer.class);
-
     static Set<Class> PRIMITIVES = Set.of(int.class, double.class, float.class, long.class, short.class, boolean.class, String.class, byte.class, char.class);
     static Set<Class> BOXED = Set.of(Integer.class, Double.class, Float.class, Long.class, Short.class, Boolean.class, Byte.class, Character.class);
-
-    private static String GET = "get";
     static String SET = "set";
+    private static Logger LOG = LoggerFactory.getLogger(TikaJsonSerializer.class);
+    private static String GET = "get";
     private static String IS = "is";
 
     public static void serialize(Object obj, JsonGenerator jsonGenerator) throws TikaSerializationException, IOException {
@@ -60,8 +70,10 @@ public class TikaJsonSerializer {
             }
         } else if (isCollection(obj)) {
             serializeCollection(fieldName, obj, jsonGenerator);
-        } else if (obj.getClass().isEnum()) {
-            jsonGenerator.writeStringField(fieldName, ((Enum)obj).name());
+        } else if (obj
+                .getClass()
+                .isEnum()) {
+            jsonGenerator.writeStringField(fieldName, ((Enum) obj).name());
         } else {
             serializeObject(fieldName, obj, superClass, jsonGenerator);
         }
@@ -94,8 +106,7 @@ public class TikaJsonSerializer {
                     .getClass()
                     .getConstructor();
         } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("class (" +
-                    obj.getClass() + ") doesn't have a no-arg constructor. Respectfully not seralizing.");
+            throw new IllegalArgumentException("class (" + obj.getClass() + ") doesn't have a no-arg constructor. Respectfully not seralizing.");
         }
         try {
             if (fieldName != null) {
@@ -200,7 +211,9 @@ public class TikaJsonSerializer {
         } else if (Map.class.isAssignableFrom(clazz)) {
             jsonGenerator.writeStartObject();
             for (Map.Entry<String, Object> e : ((Map<String, Object>) obj).entrySet()) {
-                serialize(e.getKey(), e.getValue(), e.getValue().getClass(), jsonGenerator);
+                serialize(e.getKey(), e.getValue(), e
+                        .getValue()
+                        .getClass(), jsonGenerator);
             }
             jsonGenerator.writeEndObject();
         } else {

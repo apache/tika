@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonMetadata;
+import org.apache.tika.serialization.JsonMetadata;
 import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 

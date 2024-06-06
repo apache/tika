@@ -56,7 +56,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.config.TimeoutConfig;
 import org.apache.tika.utils.ProcessUtils;
 

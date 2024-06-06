@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.serialization.JsonFetchEmitTuple;
+import org.apache.tika.serialization.pipes.JsonFetchEmitTuple;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.PipesConfig;
 import org.apache.tika.pipes.PipesException;

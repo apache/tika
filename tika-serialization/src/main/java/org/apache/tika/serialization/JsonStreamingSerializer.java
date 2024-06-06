@@ -14,10 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.serialization;
+package org.apache.tika.serialization;
+
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Arrays;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -25,31 +27,38 @@ import com.fasterxml.jackson.core.StreamReadConstraints;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.emitter.EmitData;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.serialization.JsonFetchEmitTuple;
 
-public class JsonEmitData {
 
-    public static void toJson(EmitData emitData, Writer writer) throws IOException {
-        try (JsonGenerator jsonGenerator = new JsonFactory()
-                .setStreamReadConstraints(StreamReadConstraints.builder()
+public class JsonStreamingSerializer implements AutoCloseable {
+
+    private final Writer writer;
+    boolean hasStartedArray = false;
+    private JsonGenerator jsonGenerator;
+
+    public JsonStreamingSerializer(Writer writer) {
+        this.writer = writer;
+    }
+
+    public void add(Metadata metadata) throws IOException {
+        if (!hasStartedArray) {
+            jsonGenerator = new JsonFactory()
+                    .setStreamReadConstraints(StreamReadConstraints
+                            .builder()
                             .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
-                        .build()).createGenerator(writer)) {
-            jsonGenerator.writeStartObject();
-            EmitKey key = emitData.getEmitKey();
-            jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITTER, key.getEmitterName());
-            jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITKEY, key.getEmitKey());
-            if (! emitData.getParseContext().isEmpty()) {
-                jsonGenerator.writeObject(emitData.getParseContext());
-            }
-            jsonGenerator.writeFieldName("data");
+                            .build())
+                    .createGenerator(writer);
             jsonGenerator.writeStartArray();
-            for (Metadata m : emitData.getMetadataList()) {
-                JsonMetadata.writeMetadataObject(m, jsonGenerator, false);
-            }
-            jsonGenerator.writeEndArray();
-            jsonGenerator.writeEndObject();
+            hasStartedArray = true;
         }
+        String[] names = metadata.names();
+        Arrays.sort(names);
+        JsonMetadata.writeMetadataObject(metadata, jsonGenerator, false);
+    }
+
+    @Override
+    public void close() throws IOException {
+        jsonGenerator.writeEndArray();
+        jsonGenerator.flush();
+        jsonGenerator.close();
     }
 }

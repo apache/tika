@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.serialization;
+package org.apache.tika.serialization.pipes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -55,8 +55,6 @@ public class JsonFetchEmitTupleListTest {
         m.add("m2", "v3-" + i);
         m.add("m3", "v4-" + i);
 
-        return new FetchEmitTuple("id-" + i,
-                new FetchKey("fetcher-" + i, "fetchkey-" + i),
-                new EmitKey("emitter-" + i, "emitKey-" + i), m);
+        return new FetchEmitTuple("id-" + i, new FetchKey("fetcher-" + i, "fetchkey-" + i), new EmitKey("emitter-" + i, "emitKey-" + i), m);
     }
 }

@@ -30,8 +30,6 @@ import java.util.Set;
  */
 public class ParseContext implements Serializable {
 
-    public static ParseContext EMPTY = new NoOpParseContext();
-
     /**
      * Serial version UID.
      */
@@ -115,19 +113,4 @@ public class ParseContext implements Serializable {
         return context.hashCode();
     }
 
-    private static class NoOpParseContext extends ParseContext {
-        @Override
-        public <T> void set(Class<T> key, T value) {
-        }
-
-        @Override
-        public <T> T get(Class<T> key) {
-            return null;
-        }
-
-        @Override
-        public <T> T get(Class<T> key, T defaultValue) {
-            return defaultValue;
-        }
-    }
 }

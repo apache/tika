@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.serialization;
 
 import java.lang.reflect.Array;
@@ -12,6 +28,11 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+/**
+ * See the notes @link{TikaJsonSerializer}.
+ * <p>
+ * This currently requires a setString() option on objects that have enum parameters.
+ */
 public class TikaJsonDeserializer {
 
     public static Optional deserializeObject(JsonNode root) {
@@ -35,8 +56,7 @@ public class TikaJsonDeserializer {
         }
     }
 
-    public static <T> T deserialize(Class<? extends T> clazz, Class<? extends T> superClazz, JsonNode root)
-            throws ReflectiveOperationException {
+    public static <T> T deserialize(Class<? extends T> clazz, Class<? extends T> superClazz, JsonNode root) throws ReflectiveOperationException {
         T obj = clazz
                 .getDeclaredConstructor()
                 .newInstance();
@@ -147,7 +167,7 @@ public class TikaJsonDeserializer {
     }
 
     private static void setObject(String name, JsonNode node, Object obj, List<Method> mySetters) {
-        if (! node.has(TikaJsonSerializer.INSTANTIATED_CLASS_KEY)) {
+        if (!node.has(TikaJsonSerializer.INSTANTIATED_CLASS_KEY)) {
             setMap(name, node, obj, mySetters);
             return;
         }
@@ -159,7 +179,9 @@ public class TikaJsonDeserializer {
         }
         for (Method m : mySetters) {
             Class argClass = m.getParameters()[0].getType();
-            if (argClass.isAssignableFrom(object.get().getClass())) {
+            if (argClass.isAssignableFrom(object
+                    .get()
+                    .getClass())) {
                 try {
                     m.invoke(obj, object.get());
                     return;
@@ -178,7 +200,9 @@ public class TikaJsonDeserializer {
         Iterator<Map.Entry<String, JsonNode>> it = node.fields();
         while (it.hasNext()) {
             Map.Entry<String, JsonNode> e = it.next();
-            val.put(e.getKey(), e.getValue().textValue());
+            val.put(e.getKey(), e
+                    .getValue()
+                    .textValue());
         }
         for (Method m : setters) {
             try {
@@ -206,7 +230,7 @@ public class TikaJsonDeserializer {
     private static void setNull(String name, JsonNode node, Object obj, List<Method> setters) {
         for (Method m : setters) {
             Class argClass = m.getParameters()[0].getType();
-            if (! TikaJsonSerializer.PRIMITIVES.contains(argClass)) {
+            if (!TikaJsonSerializer.PRIMITIVES.contains(argClass)) {
                 try {
 
                     m.invoke(obj, argClass.cast(null));
@@ -258,7 +282,7 @@ public class TikaJsonDeserializer {
                 short val = Short.parseShort(txt);
                 shortMethod.invoke(obj, val);
                 return;
-            } catch(NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 //swallow
             }
         } else if (intMethod != null) {
@@ -266,7 +290,7 @@ public class TikaJsonDeserializer {
                 int val = Integer.parseInt(txt);
                 intMethod.invoke(obj, val);
                 return;
-            } catch(NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 //swallow
             }
         } else if (floatMethod != null) {
@@ -274,7 +298,7 @@ public class TikaJsonDeserializer {
                 float val = Float.parseFloat(txt);
                 floatMethod.invoke(obj, val);
                 return;
-            } catch(NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 //swallow
             }
         } else if (longMethod != null) {
@@ -282,7 +306,7 @@ public class TikaJsonDeserializer {
                 long val = Long.parseLong(txt);
                 longMethod.invoke(obj, val);
                 return;
-            } catch(NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 //swallow
             }
         } else if (doubleMethod != null) {
@@ -290,7 +314,7 @@ public class TikaJsonDeserializer {
                 double val = Double.parseDouble(txt);
                 doubleMethod.invoke(obj, val);
                 return;
-            } catch(NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 //swallow
             }
         } else if (boolMethod != null) {

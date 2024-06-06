@@ -50,7 +50,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonMetadata;
+import org.apache.tika.serialization.JsonMetadata;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;

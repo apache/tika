@@ -33,7 +33,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.MessageBodyWriter;
 import jakarta.ws.rs.ext.Provider;
 
-import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.MetadataList;
 
 @Provider

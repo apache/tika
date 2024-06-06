@@ -43,7 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.serialization.JsonFetchEmitTuple;
+import org.apache.tika.serialization.pipes.JsonFetchEmitTuple;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;

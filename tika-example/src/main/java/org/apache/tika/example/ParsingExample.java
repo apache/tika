@@ -33,7 +33,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
@@ -182,7 +182,7 @@ public class ParsingExample {
 
     /**
      * We include a simple JSON serializer for a list of metadata with
-     * {@link org.apache.tika.metadata.serialization.JsonMetadataList}.
+     * {@link JsonMetadataList}.
      * That class also includes a deserializer to convert from JSON
      * back to a List<Metadata>.
      * <p>

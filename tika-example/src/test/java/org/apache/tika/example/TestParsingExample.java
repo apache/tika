@@ -31,7 +31,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.serialization.JsonMetadataList;
 
 public class TestParsingExample extends TikaTest {
     ParsingExample parsingExample;

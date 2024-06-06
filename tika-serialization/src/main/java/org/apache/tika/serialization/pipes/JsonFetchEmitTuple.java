@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.serialization;
+package org.apache.tika.serialization.pipes;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -31,11 +31,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOExceptionWithCause;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.serialization.JsonMetadata;
+import org.apache.tika.serialization.ParseContextSerializer;
+import org.apache.tika.serialization.TikaJsonDeserializer;
+import org.apache.tika.serialization.TikaJsonSerializer;
 import org.apache.tika.utils.StringUtils;
 
 public class JsonFetchEmitTuple {
@@ -53,10 +56,10 @@ public class JsonFetchEmitTuple {
 
     public static FetchEmitTuple fromJson(Reader reader) throws IOException {
         //try (JsonParser jParser = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
-          //      .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build()).createParser(reader)) {
+        //      .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build()).createParser(reader)) {
 
-            JsonNode root = new ObjectMapper().readTree(reader);
-            return parseFetchEmitTuple(root);
+        JsonNode root = new ObjectMapper().readTree(reader);
+        return parseFetchEmitTuple(root);
     }
 
 
@@ -72,8 +75,8 @@ public class JsonFetchEmitTuple {
         ParseContext parseContext = readParseContext(root);
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = readOnParseException(root);
 
-        return new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey, fetchRangeStart, fetchRangeEnd),
-                new EmitKey(emitterName, emitKey), metadata, parseContext, onParseException);
+        return new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey, fetchRangeStart, fetchRangeEnd), new EmitKey(emitterName, emitKey), metadata, parseContext,
+                onParseException);
     }
 
     private static FetchEmitTuple.ON_PARSE_EXCEPTION readOnParseException(JsonNode root) throws IOException {
@@ -94,7 +97,7 @@ public class JsonFetchEmitTuple {
     private static ParseContext readParseContext(JsonNode root) throws IOException {
         JsonNode contextNode = root.get(PARSE_CONTEXT);
         if (contextNode == null) {
-            return ParseContext.EMPTY;
+            return new ParseContext();
         }
         ParseContext parseContext = new ParseContext();
         Iterator<Map.Entry<String, JsonNode>> it = contextNode.fields();
@@ -177,24 +180,46 @@ public class JsonFetchEmitTuple {
     static void writeTuple(FetchEmitTuple t, JsonGenerator jsonGenerator) throws IOException {
         jsonGenerator.writeStartObject();
         jsonGenerator.writeStringField(ID, t.getId());
-        jsonGenerator.writeStringField(FETCHER, t.getFetchKey().getFetcherName());
-        jsonGenerator.writeStringField(FETCHKEY, t.getFetchKey().getFetchKey());
-        if (t.getFetchKey().hasRange()) {
-            jsonGenerator.writeNumberField(FETCH_RANGE_START, t.getFetchKey().getRangeStart());
-            jsonGenerator.writeNumberField(FETCH_RANGE_END, t.getFetchKey().getRangeEnd());
+        jsonGenerator.writeStringField(FETCHER, t
+                .getFetchKey()
+                .getFetcherName());
+        jsonGenerator.writeStringField(FETCHKEY, t
+                .getFetchKey()
+                .getFetchKey());
+        if (t
+                .getFetchKey()
+                .hasRange()) {
+            jsonGenerator.writeNumberField(FETCH_RANGE_START, t
+                    .getFetchKey()
+                    .getRangeStart());
+            jsonGenerator.writeNumberField(FETCH_RANGE_END, t
+                    .getFetchKey()
+                    .getRangeEnd());
         }
-        jsonGenerator.writeStringField(EMITTER, t.getEmitKey().getEmitterName());
-        if (!StringUtils.isBlank(t.getEmitKey().getEmitKey())) {
-            jsonGenerator.writeStringField(EMITKEY, t.getEmitKey().getEmitKey());
+        jsonGenerator.writeStringField(EMITTER, t
+                .getEmitKey()
+                .getEmitterName());
+        if (!StringUtils.isBlank(t
+                .getEmitKey()
+                .getEmitKey())) {
+            jsonGenerator.writeStringField(EMITKEY, t
+                    .getEmitKey()
+                    .getEmitKey());
         }
-        if (t.getMetadata().size() > 0) {
+        if (t
+                .getMetadata()
+                .size() > 0) {
             jsonGenerator.writeFieldName(METADATAKEY);
             JsonMetadata.writeMetadataObject(t.getMetadata(), jsonGenerator, false);
         }
 
-        jsonGenerator.writeStringField(ON_PARSE_EXCEPTION,
-                t.getOnParseException().name().toLowerCase(Locale.US));
-        if (! t.getParseContext().isEmpty()) {
+        jsonGenerator.writeStringField(ON_PARSE_EXCEPTION, t
+                .getOnParseException()
+                .name()
+                .toLowerCase(Locale.US));
+        if (!t
+                .getParseContext()
+                .isEmpty()) {
             ParseContextSerializer s = new ParseContextSerializer();
             s.serialize(t.getParseContext(), jsonGenerator, null);
         }
