@@ -43,13 +43,17 @@ public class TestParsingExample extends TikaTest {
 
     @Test
     public void testParseToStringExample() throws IOException, SAXException, TikaException {
-        String result = parsingExample.parseToStringExample().trim();
+        String result = parsingExample
+                .parseToStringExample()
+                .trim();
         assertEquals("test", result, "enough detectors?");
     }
 
     @Test
     public void testParseExample() throws IOException, SAXException, TikaException {
-        String result = parsingExample.parseExample().trim();
+        String result = parsingExample
+                .parseExample()
+                .trim();
         assertEquals("test", result, "Expected 'test', but got '" + result + "'");
     }
 
@@ -72,22 +76,18 @@ public class TestParsingExample extends TikaTest {
     }
 
     @Test
-    public void testRecursiveParserWrapperExample()
-            throws IOException, SAXException, TikaException {
+    public void testRecursiveParserWrapperExample() throws IOException, SAXException, TikaException {
         List<Metadata> metadataList = parsingExample.recursiveParserWrapperExample();
-        assertEquals(12, metadataList.size(),
-                "Number of embedded documents + 1 for the container document");
+        assertEquals(12, metadataList.size(), "Number of embedded documents + 1 for the container document");
         Metadata m = metadataList.get(6);
         //this is the location the embed3.txt text file within the outer .docx
-        assertEquals("/embed1.zip/embed2.zip/embed3.zip/embed3.txt",
-                m.get("X-TIKA:embedded_resource_path"));
+        assertEquals("/embed1.zip/embed2.zip/embed3.zip/embed3.txt", m.get("X-TIKA:embedded_resource_path"));
         //it contains some html encoded content
         assertContains("When in the Course", m.get("X-TIKA:content"));
     }
 
     @Test
-    public void testSerializedRecursiveParserWrapperExample()
-            throws IOException, SAXException, TikaException {
+    public void testSerializedRecursiveParserWrapperExample() throws IOException, SAXException, TikaException {
         String json = parsingExample.serializedRecursiveParserWrapperExample();
         assertTrue(json.contains("When in the Course"));
         //now try deserializing the JSON

@@ -35,12 +35,9 @@ public class MimeBuffer extends AbstractDBBuffer {
     private final Connection connection;
 
 
-    public MimeBuffer(Connection connection, TableInfo mimeTable, TikaConfig config)
-            throws SQLException {
+    public MimeBuffer(Connection connection, TableInfo mimeTable, TikaConfig config) throws SQLException {
         st = connection.prepareStatement(
-                "insert into " + mimeTable.getName() + "( " + Cols.MIME_ID.name() + ", " +
-                        Cols.MIME_STRING.name() + ", " + Cols.FILE_EXTENSION.name() +
-                        ") values (?,?,?)");
+                "insert into " + mimeTable.getName() + "( " + Cols.MIME_ID.name() + ", " + Cols.MIME_STRING.name() + ", " + Cols.FILE_EXTENSION.name() + ") values (?,?,?)");
         this.config = config;
         this.connection = connection;
     }
@@ -99,8 +96,7 @@ public class MimeBuffer extends AbstractDBBuffer {
          * @return extension or empty string
          * @throws MimeTypeException thrown if MimeTypes can't parse the contentType
          */
-        public static String getExtension(String contentType, TikaConfig config)
-                throws MimeTypeException {
+        public static String getExtension(String contentType, TikaConfig config) throws MimeTypeException {
             MimeTypes types = config.getMimeRepository();
             MimeType mime = types.forName(contentType);
             return getExtension(mime);

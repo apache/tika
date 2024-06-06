@@ -10,7 +10,6 @@
     "X-TIKA:content": "a b c d e f g h i j k l m n",
     "X-TIKA:digest:MD5": "471d98383e9f40444e5ecf821f2c8354",
     "X-TIKA:embedded_depth": "1"
-
   },
   {
     "Content-Type": "text/plain",

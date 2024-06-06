@@ -81,8 +81,7 @@ public class XMLLogReader {
     static class LogXMLWrappingInputStream extends InputStream {
         //plagiarized from log4j's chainsaw
         private final static String HEADER =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<log4j:eventSet version=\"1.2\" " +
-                        "xmlns:log4j=\"http://jakarta.apache.org/log4j/\">";
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<log4j:eventSet version=\"1.2\" " + "xmlns:log4j=\"http://jakarta.apache.org/log4j/\">";
         private static final String FOOTER = "</log4j:eventSet>";
         int currentStreamIndex = 0;
         private InputStream[] streams;

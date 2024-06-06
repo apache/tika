@@ -262,8 +262,7 @@ public class TikaPipesTest extends CXFTestBase {
         m.put("test_recursive_embedded.docx-0000000001.emf", 4992l);
         m.put("test_recursive_embedded.docx-0000000008.zip", 4048l);
         m.put("test_recursive_embedded.docx-0000000004.txt", 8l);
-        //TODO -- this should keep the suffix -- figure out why it isn't
-        m.put("test_recursive_embedded.docx-0000000000", 27082l);
+        m.put("test_recursive_embedded.docx-0000000000.docx", 27082l);
         m.put("test_recursive_embedded.docx-0000000003.txt", 8l);
         m.put("test_recursive_embedded.docx-0000000011.txt", 7l);
         m.put("test_recursive_embedded.docx-0000000005.zip", 4492l);

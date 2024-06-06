@@ -65,15 +65,15 @@ public class XMLErrorLogUpdater {
         connection.commit();
     }
 
-    public void update(Connection connection, TableInfo tableInfo, Path xmlLogFile)
-            throws Exception {
+    public void update(Connection connection, TableInfo tableInfo, Path xmlLogFile) throws Exception {
         statement = connection.createStatement();
         XMLLogReader reader = new XMLLogReader();
         try (InputStream is = Files.newInputStream(xmlLogFile)) {
             reader.read(is, new ErrorMsgUpdater(tableInfo.getName()));
         } catch (IOException e) {
-            throw new RuntimeException(
-                    "Problem reading: " + xmlLogFile.toAbsolutePath().toString());
+            throw new RuntimeException("Problem reading: " + xmlLogFile
+                    .toAbsolutePath()
+                    .toString());
         } finally {
             try {
                 connection.commit();
@@ -98,7 +98,9 @@ public class XMLErrorLogUpdater {
             }
             XMLStreamReader reader = null;
             try {
-                reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
+                reader = XMLInputFactory
+                        .newInstance()
+                        .createXMLStreamReader(new StringReader(xml));
             } catch (XMLStreamException e) {
                 throw new IOException(e);
             }
@@ -111,13 +113,11 @@ public class XMLErrorLogUpdater {
                         case XMLStreamConstants.START_ELEMENT:
                             if ("timed_out".equals(reader.getLocalName())) {
                                 resourceId = reader.getAttributeValue("", "resourceId");
-                                update(errorTablename, resourceId,
-                                        AbstractProfiler.PARSE_ERROR_TYPE.TIMEOUT);
+                                update(errorTablename, resourceId, AbstractProfiler.PARSE_ERROR_TYPE.TIMEOUT);
 
                             } else if ("oom".equals(reader.getLocalName())) {
                                 resourceId = reader.getAttributeValue("", "resourceId");
-                                update(errorTablename, resourceId,
-                                        AbstractProfiler.PARSE_ERROR_TYPE.OOM);
+                                update(errorTablename, resourceId, AbstractProfiler.PARSE_ERROR_TYPE.OOM);
                             }
                             break;
                     }
@@ -128,11 +128,9 @@ public class XMLErrorLogUpdater {
             }
         }
 
-        private void update(String errorTableName, String filePath,
-                            AbstractProfiler.PARSE_ERROR_TYPE type) throws SQLException {
+        private void update(String errorTableName, String filePath, AbstractProfiler.PARSE_ERROR_TYPE type) throws SQLException {
             int containerId = getContainerId(filePath);
-            String sql = "SELECT count(1) from " + errorTableName + " where " + Cols.CONTAINER_ID +
-                    " = " + containerId + " or " + Cols.FILE_PATH + "='" + filePath + "'";
+            String sql = "SELECT count(1) from " + errorTableName + " where " + Cols.CONTAINER_ID + " = " + containerId + " or " + Cols.FILE_PATH + "='" + filePath + "'";
             int hitCount;
             try (ResultSet rs = statement.executeQuery(sql)) {
                 //now try to figure out if that file already exists
@@ -145,23 +143,18 @@ public class XMLErrorLogUpdater {
 
             //if it does, update all records matching that path or container id
             if (hitCount > 0) {
-                sql = "UPDATE " + errorTableName + " SET " + Cols.PARSE_ERROR_ID + " = " +
-                        type.ordinal() + "," + Cols.FILE_PATH + "='" + filePath + "'" + " where " +
-                        Cols.CONTAINER_ID + "=" + containerId + " or " + Cols.FILE_PATH + "='" +
-                        filePath + "'";
+                sql = "UPDATE " + errorTableName + " SET " + Cols.PARSE_ERROR_ID + " = " + type.ordinal() + "," + Cols.FILE_PATH + "='" + filePath + "'" + " where " +
+                        Cols.CONTAINER_ID + "=" + containerId + " or " + Cols.FILE_PATH + "='" + filePath + "'";
 
             } else {
                 //if not and container id > -1
                 //insert full record
                 if (containerId > -1) {
-                    sql = "INSERT INTO " + errorTableName + " (" + Cols.CONTAINER_ID + "," +
-                            Cols.FILE_PATH + "," + Cols.PARSE_ERROR_ID + ")" + " values (" +
-                            containerId + ", '" + filePath + "'," + type.ordinal() + ");";
+                    sql = "INSERT INTO " + errorTableName + " (" + Cols.CONTAINER_ID + "," + Cols.FILE_PATH + "," + Cols.PARSE_ERROR_ID + ")" + " values (" + containerId + ", '" +
+                            filePath + "'," + type.ordinal() + ");";
                 } else {
                     //if container id == -1, insert only file path and parse error type id
-                    sql = "INSERT INTO " + errorTableName + " (" + Cols.FILE_PATH.name() + "," +
-                            Cols.PARSE_ERROR_ID + ")" + "values ('" + filePath + "'," +
-                            type.ordinal() + ");";
+                    sql = "INSERT INTO " + errorTableName + " (" + Cols.FILE_PATH.name() + "," + Cols.PARSE_ERROR_ID + ")" + "values ('" + filePath + "'," + type.ordinal() + ");";
                 }
 
             }
@@ -176,9 +169,7 @@ public class XMLErrorLogUpdater {
 
         private int getContainerId(String resourceId) throws SQLException {
             int containerId = -1;
-            String sql = "SELECT " + Cols.CONTAINER_ID.name() + " from " +
-                    ExtractProfiler.CONTAINER_TABLE.getName() + " where " + Cols.FILE_PATH + " ='" +
-                    resourceId + "'";
+            String sql = "SELECT " + Cols.CONTAINER_ID.name() + " from " + ExtractProfiler.CONTAINER_TABLE.getName() + " where " + Cols.FILE_PATH + " ='" + resourceId + "'";
             int resultCount;
             try (ResultSet rs = statement.executeQuery(sql)) {
                 resultCount = 0;

@@ -14,23 +14,23 @@
  limitations under the License.
 
  -->
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-<!--<start id="spring"/>-->
+  <!--<start id="spring"/>-->
   <bean id="tika" class="org.apache.tika.parser.AutoDetectParser">
     <constructor-arg>
-        <list>
-           <ref bean="txt"/>
-           <ref bean="pdf"/>
-        </list>
+      <list>
+        <ref bean="txt"/>
+        <ref bean="pdf"/>
+      </list>
     </constructor-arg>
   </bean>
 
   <bean id="txt" class="TXTParser"/>
   <bean id="pdf" class="org.apache.tika.parser.pdf.PDFParser"/>
-<!--<end id="spring"/>-->
+  <!--<end id="spring"/>-->
 
 </beans>
