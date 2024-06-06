@@ -126,6 +126,7 @@ public abstract class TikaPipesXSearchBase {
             }
             statusCounts.put(status, cnt);
         }
+        System.out.println(statusCounts);
         assertEquals(numHtmlDocs, (int) statusCounts.get("PARSE_SUCCESS"));
         //the npe is caught and counted as a "parse success with exception"
         assertEquals(1, (int) statusCounts.get("PARSE_SUCCESS_WITH_EXCEPTION"));

@@ -25,8 +25,8 @@ import java.util.Random;
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.serialization.pipes.JsonFetchEmitTuple;
 import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.serialization.pipes.JsonFetchEmitTuple;
 
 public class TikaClient {
 
@@ -38,8 +38,7 @@ public class TikaClient {
         this.clients = clients;
     }
 
-    public static TikaClient get(HttpClientFactory httpClientFactory, List<String> tikaServers)
-            throws TikaConfigException {
+    public static TikaClient get(HttpClientFactory httpClientFactory, List<String> tikaServers) throws TikaConfigException {
         List clients = new ArrayList<>();
         for (String url : tikaServers) {
             //client factory is not thread safe, create a copy per client
