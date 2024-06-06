@@ -42,8 +42,7 @@ public class TikaMimeTypesTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaMimeTypes.class);
-        sf.setResourceProvider(TikaMimeTypes.class,
-                new SingletonResourceProvider(new TikaMimeTypes()));
+        sf.setResourceProvider(TikaMimeTypes.class, new SingletonResourceProvider(new TikaMimeTypes()));
     }
 
     @Override
@@ -53,13 +52,16 @@ public class TikaMimeTypesTest extends CXFTestBase {
     @Test
     @SuppressWarnings("unchecked")
     public void testGetJSON() throws Exception {
-        Response response = WebClient.create(endPoint + MIMETYPES_PATH)
+        Response response = WebClient
+                .create(endPoint + MIMETYPES_PATH)
                 .type(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-                .accept(jakarta.ws.rs.core.MediaType.APPLICATION_JSON).get();
+                .accept(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+                .get();
 
         String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
-        Map<String, Map<String, Object>> json =
-                new ObjectMapper().readerFor(Map.class).readValue(jsonStr);
+        Map<String, Map<String, Object>> json = new ObjectMapper()
+                .readerFor(Map.class)
+                .readValue(jsonStr);
 
         assertEquals(true, json.containsKey("text/plain"));
         assertEquals(true, json.containsKey("application/xml"));
@@ -74,9 +76,10 @@ public class TikaMimeTypesTest extends CXFTestBase {
         assertEquals("image/x-bmp", aliases.get(0));
         assertEquals("image/x-ms-bmp", aliases.get(1));
 
-        String whichParser = bmp.get("parser").toString();
-        assertTrue(whichParser.equals("org.apache.tika.parser.ocr.TesseractOCRParser") ||
-                whichParser.equals("org.apache.tika.parser.image.ImageParser"), "Which parser");
+        String whichParser = bmp
+                .get("parser")
+                .toString();
+        assertTrue(whichParser.equals("org.apache.tika.parser.ocr.TesseractOCRParser") || whichParser.equals("org.apache.tika.parser.image.ImageParser"), "Which parser");
 
         Map<String, Object> ogm = json.get("video/x-ogm");
         assertEquals("video/ogg", ogm.get("supertype"));
