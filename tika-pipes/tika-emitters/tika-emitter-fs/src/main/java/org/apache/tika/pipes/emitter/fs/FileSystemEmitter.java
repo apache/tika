@@ -30,11 +30,11 @@ import java.util.List;
 import org.apache.tika.config.Field;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.StreamEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
+import org.apache.tika.serialization.JsonMetadataList;
 
 /**
  * Emitter to write to a file system.
@@ -74,8 +74,7 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
     private boolean prettyPrint = false;
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
-            throws IOException, TikaEmitterException {
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException, TikaEmitterException {
         Path output;
         if (metadataList == null || metadataList.size() == 0) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
@@ -134,8 +133,7 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
                 this.onExists = ON_EXISTS.EXCEPTION;
                 break;
             default:
-                throw new IllegalArgumentException("Don't understand '" + onExists +
-                                                   "'; must be one of: 'skip', 'replace', 'exception'");
+                throw new IllegalArgumentException("Don't understand '" + onExists + "'; must be one of: 'skip', 'replace', 'exception'");
         }
     }
 
@@ -145,8 +143,7 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
     }
 
     @Override
-    public void emit(String path, InputStream inputStream, Metadata userMetadata, ParseContext parseContext)
-            throws IOException, TikaEmitterException {
+    public void emit(String path, InputStream inputStream, Metadata userMetadata, ParseContext parseContext) throws IOException, TikaEmitterException {
         Path target = basePath.resolve(path);
 
         if (!Files.isDirectory(target.getParent())) {

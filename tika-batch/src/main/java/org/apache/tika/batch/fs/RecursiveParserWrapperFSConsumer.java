@@ -30,11 +30,11 @@ import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.OutputStreamFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.serialization.JsonMetadataList;
 
 /**
  * This runs a RecursiveParserWrapper against an input file
@@ -55,9 +55,7 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
      * @param contentHandlerFactory
      * @param fsOSFactory
      */
-    public RecursiveParserWrapperFSConsumer(ArrayBlockingQueue<FileResource> queue, Parser parser,
-                                            ContentHandlerFactory contentHandlerFactory,
-                                            OutputStreamFactory fsOSFactory,
+    public RecursiveParserWrapperFSConsumer(ArrayBlockingQueue<FileResource> queue, Parser parser, ContentHandlerFactory contentHandlerFactory, OutputStreamFactory fsOSFactory,
                                             MetadataFilter metadataFilter) {
         super(queue);
         this.contentHandlerFactory = contentHandlerFactory;
@@ -75,7 +73,9 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
         OutputStream os = getOutputStream(fsOSFactory, fileResource);
 
         if (os == null) {
-            LOG.debug("Skipping: {}", fileResource.getMetadata().get(FSProperties.FS_REL_PATH));
+            LOG.debug("Skipping: {}", fileResource
+                    .getMetadata()
+                    .get(FSProperties.FS_REL_PATH));
             return false;
         }
 
@@ -92,8 +92,7 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
         Throwable thrown = null;
         List<Metadata> metadataList = null;
         Metadata containerMetadata = fileResource.getMetadata();
-        RecursiveParserWrapperHandler handler =
-                new RecursiveParserWrapperHandler(contentHandlerFactory, -1, metadataFilter);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(contentHandlerFactory, -1, metadataFilter);
         try {
             parse(fileResource.getResourceId(), parser, is, handler, containerMetadata, context);
         } catch (Throwable t) {

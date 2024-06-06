@@ -35,7 +35,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
@@ -44,6 +43,7 @@ import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.serialization.JsonMetadataList;
 
 /**
  * This should be in tika-core, but we want to avoid a dependency mess with tika-serialization
@@ -75,31 +75,33 @@ public class AsyncProcessorTest extends TikaTest {
         Files.createDirectories(configDir);
         Files.createDirectories(inputDir);
 
-        String xml = IOUtils.toString(
-                AsyncProcessorTest.class.getResourceAsStream("/configs/TIKA-4207-emitter.xml"),
-                    StandardCharsets.UTF_8);
+        String xml = IOUtils.toString(AsyncProcessorTest.class.getResourceAsStream("/configs/TIKA-4207-emitter.xml"), StandardCharsets.UTF_8);
         //do stuff to xml
-        xml = xml.replace("BASE_PATH", inputDir.toAbsolutePath().toString());
-        xml = xml.replace("JSON_PATH", jsonDir.toAbsolutePath().toString());
-        xml = xml.replace("BYTES_PATH", bytesDir.toAbsolutePath().toString());
+        xml = xml.replace("BASE_PATH", inputDir
+                .toAbsolutePath()
+                .toString());
+        xml = xml.replace("JSON_PATH", jsonDir
+                .toAbsolutePath()
+                .toString());
+        xml = xml.replace("BYTES_PATH", bytesDir
+                .toAbsolutePath()
+                .toString());
 
         Files.writeString(tikaConfig, xml, StandardCharsets.UTF_8);
 
         Path mock = inputDir.resolve("mock.xml");
         try (OutputStream os = Files.newOutputStream(mock)) {
-            IOUtils.copy(getClass().getResourceAsStream("/test-documents/basic_embedded.xml"),
-                    os);
+            IOUtils.copy(getClass().getResourceAsStream("/test-documents/basic_embedded.xml"), os);
         }
     }
 
     @Test
     public void testBasic() throws Exception {
 //        TikaAsyncCLI cli = new TikaAsyncCLI();
-  //      cli.main(new String[]{ configDir.resolve("tika-config.xml").toAbsolutePath().toString()});
+        //      cli.main(new String[]{ configDir.resolve("tika-config.xml").toAbsolutePath().toString()});
         AsyncProcessor processor = new AsyncProcessor(configDir.resolve("tika-config.xml"));
 
-        EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig =
-                new EmbeddedDocumentBytesConfig(true);
+        EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = new EmbeddedDocumentBytesConfig(true);
         embeddedDocumentBytesConfig.setIncludeOriginal(true);
         embeddedDocumentBytesConfig.setEmitter("bytes");
         embeddedDocumentBytesConfig.setSuffixStrategy(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.NONE);
@@ -107,11 +109,8 @@ public class AsyncProcessorTest extends TikaTest {
         ParseContext parseContext = new ParseContext();
         parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
         parseContext.set(EmbeddedDocumentBytesConfig.class, embeddedDocumentBytesConfig);
-        FetchEmitTuple t = new FetchEmitTuple("myId-1",
-                new FetchKey("fs",  "mock.xml"),
-                new EmitKey("json", "emit-1"),
-                new Metadata(), parseContext,
-                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+        FetchEmitTuple t =
+                new FetchEmitTuple("myId-1", new FetchKey("fs", "mock.xml"), new EmitKey("json", "emit-1"), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
 
         processor.offer(t, 1000);
 
@@ -136,8 +135,11 @@ public class AsyncProcessorTest extends TikaTest {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(2, metadataList.size());
-        assertContains("main_content", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("some_embedded_content",
-                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("main_content", metadataList
+                .get(0)
+                .get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("some_embedded_content", metadataList
+                .get(1)
+                .get(TikaCoreProperties.TIKA_CONTENT));
     }
 }

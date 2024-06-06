@@ -293,7 +293,7 @@ public class TikaPipesTest extends CXFTestBase {
         FetchEmitTuple t =
                 new FetchEmitTuple("myId",
                         new FetchKey("fsf", "null_pointer.xml"),
-                        new EmitKey("fse", ""), new Metadata(), ParseContext.EMPTY,
+                        new EmitKey("fse", ""), new Metadata(), new ParseContext(),
                         FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
