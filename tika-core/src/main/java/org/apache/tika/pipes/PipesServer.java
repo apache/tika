@@ -460,7 +460,7 @@ public class PipesServer implements Runnable {
     protected MetadataListAndEmbeddedBytes parseFromTuple(FetchEmitTuple t, Fetcher fetcher) {
 
         Metadata metadata = new Metadata();
-        try (InputStream stream = fetcher.fetch(t.getFetchKey().getFetchKey(), t.getMetadata(), t.getParseContext())) {
+        try (InputStream stream = fetcher.fetch(t.getFetchKey().getFetchKey(), metadata, t.getParseContext())) {
             return parseWithStream(t, stream, metadata);
         } catch (SecurityException e) {
             LOG.error("security exception " + t.getId(), e);
