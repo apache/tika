@@ -25,7 +25,7 @@ import java.util.Random;
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
+import org.apache.tika.serialization.JsonFetchEmitTuple;
 import org.apache.tika.pipes.FetchEmitTuple;
 
 public class TikaClient {

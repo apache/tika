@@ -62,8 +62,7 @@ public class JsonMetadata {
         }
     }
 
-    static void writeMetadataObject(Metadata metadata, JsonGenerator jsonGenerator,
-                                    boolean prettyPrint) throws IOException {
+    public static void writeMetadataObject(Metadata metadata, JsonGenerator jsonGenerator, boolean prettyPrint) throws IOException {
         jsonGenerator.writeStartObject();
         String[] names = metadata.names();
         if (prettyPrint) {

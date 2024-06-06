@@ -1,6 +1,7 @@
 package org.apache.tika.serialization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -28,17 +29,11 @@ public class TikaJsonSerializationTest {
         try(JsonGenerator jsonGenerator = new ObjectMapper().createGenerator(sw)) {
             TikaJsonSerializer.serialize(classA, jsonGenerator);
         }
-        System.out.println(sw);
         JsonNode root = new ObjectMapper().readTree(new StringReader(sw.toString()));
         Optional opt = TikaJsonDeserializer.deserializeObject(root);
-        System.out.println(opt.get().getClass());
+        assertTrue(opt.isPresent());
+        assertEquals(classA, opt.get());
 
     }
 
-    @Test
-    public void test() throws Exception {
-        ArrayList<String> list = new ArrayList<>();
-        boolean instance = List.class.isAssignableFrom(list.getClass());
-        System.out.println("in: " + instance);
-    }
 }

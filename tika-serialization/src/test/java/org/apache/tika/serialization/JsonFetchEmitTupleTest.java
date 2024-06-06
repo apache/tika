@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.serialization;
+package org.apache.tika.serialization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -27,8 +27,10 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 
 public class JsonFetchEmitTupleTest {
 
@@ -41,17 +43,19 @@ public class JsonFetchEmitTupleTest {
         m.add("m2", "v3");
         m.add("m3", "v4");
 
-        /*
-        TODO -- add this to the ParseContext
-                        new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
+        ParseContext parseContext = new ParseContext();
+
+        HandlerConfig h = new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
                         HandlerConfig.PARSE_MODE.CONCATENATE,
-                        10000,10, true)
-         */
+                        10000,10, true);
+        parseContext.set(HandlerConfig.class, h);
+
         FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1"),
-                new EmitKey("my_emitter", "emitKey1"), m, ParseContext.EMPTY,
+                new EmitKey("my_emitter", "emitKey1"), m, parseContext,
                 FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
+        System.out.println(writer);
         Reader reader = new StringReader(writer.toString());
         FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(reader);
         assertEquals(t, deserialized);

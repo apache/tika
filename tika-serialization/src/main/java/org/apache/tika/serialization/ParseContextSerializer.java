@@ -13,7 +13,8 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
 
     @Override
     public void serialize(ParseContext parseContext, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-        jsonGenerator.writeStartObject("parseContext");
+        jsonGenerator.writeFieldName("parseContext");
+        jsonGenerator.writeStartObject();
         for (String className : parseContext.keySet()) {
             try {
                 Class clazz = Class.forName(className);

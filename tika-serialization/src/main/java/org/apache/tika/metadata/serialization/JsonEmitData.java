@@ -27,6 +27,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.serialization.JsonFetchEmitTuple;
 
 public class JsonEmitData {
 

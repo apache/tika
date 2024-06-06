@@ -14,13 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.serialization;
+package org.apache.tika.serialization;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -28,6 +29,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.StreamReadConstraints;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.pipes.FetchEmitTuple;
@@ -35,18 +38,17 @@ import org.apache.tika.pipes.FetchEmitTuple;
 public class JsonFetchEmitTupleList {
 
     public static List<FetchEmitTuple> fromJson(Reader reader) throws IOException {
-        List<FetchEmitTuple> list;
-        try (JsonParser jParser = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
-                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build()).createParser(reader)) {
-            JsonToken token = jParser.nextToken();
-            if (token != JsonToken.START_ARRAY) {
-                throw new IOException("require start array, but see: " + token.name());
-            }
-            list = new ArrayList<>();
-            while (token != JsonToken.END_ARRAY) {
-                list.add(JsonFetchEmitTuple.parseFetchEmitTuple(jParser));
-                token = jParser.nextToken();
-            }
+        JsonNode root = new ObjectMapper().readTree(reader);
+
+        if (! root.isArray()) {
+            throw new IOException("FetchEmitTupleList must be an array");
+        }
+        List<FetchEmitTuple> list = new ArrayList<>();
+        Iterator<JsonNode> it = root.iterator();
+        while (it.hasNext()) {
+            JsonNode n = it.next();
+            FetchEmitTuple t = JsonFetchEmitTuple.parseFetchEmitTuple(n);
+            list.add(t);
         }
         return list;
     }

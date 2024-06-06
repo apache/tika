@@ -36,7 +36,7 @@ public class TikaJsonDeserializer {
     }
 
     public static <T> T deserialize(Class<? extends T> clazz, Class<? extends T> superClazz, JsonNode root)
-            throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+            throws ReflectiveOperationException {
         T obj = clazz
                 .getDeclaredConstructor()
                 .newInstance();
@@ -78,7 +78,7 @@ public class TikaJsonDeserializer {
         return setters;
     }
 
-    private static void setValue(String name, JsonNode node, Object obj, Map<String, List<Method>> setters) {
+    private static void setValue(String name, JsonNode node, Object obj, Map<String, List<Method>> setters) throws ReflectiveOperationException {
         List<Method> mySetters = setters.get(name);
         if (mySetters == null || mySetters.size() == 0) {
             throw new IllegalArgumentException("can't find any setter for " + name);
@@ -143,11 +143,13 @@ public class TikaJsonDeserializer {
             return (T) Double.valueOf(node.doubleValue());
         }
         //add short, boolean and full class objects?
+        throw new IllegalArgumentException("I regret I don't yet support: " + clazz);
     }
 
     private static void setObject(String name, JsonNode node, Object obj, List<Method> mySetters) {
         if (! node.has(TikaJsonSerializer.INSTANTIATED_CLASS_KEY)) {
             setMap(name, node, obj, mySetters);
+            return;
         }
 
         Optional object = deserializeObject(node);
@@ -156,10 +158,11 @@ public class TikaJsonDeserializer {
             return;
         }
         for (Method m : mySetters) {
-            Class argClass = m.getReturnType();
-            if (argClass.isAssignableFrom(object.getClass())) {
+            Class argClass = m.getParameters()[0].getType();
+            if (argClass.isAssignableFrom(object.get().getClass())) {
                 try {
                     m.invoke(obj, object.get());
+                    return;
                 } catch (IllegalAccessException | InvocationTargetException e) {
                     //swallow
                 }
@@ -170,17 +173,30 @@ public class TikaJsonDeserializer {
 
     private static void setMap(String name, JsonNode node, Object obj, List<Method> setters) {
         //TODO this should try to match the map setters with the data types
-        //TODO -- pick up here
-        for (Method m : setters) {
-            if (Map.class.isAssignableFrom(m))
+        //for now, we're just doing <String,String>
+        Map<String, String> val = new HashMap<>();
+        Iterator<Map.Entry<String, JsonNode>> it = node.fields();
+        while (it.hasNext()) {
+            Map.Entry<String, JsonNode> e = it.next();
+            val.put(e.getKey(), e.getValue().textValue());
         }
+        for (Method m : setters) {
+            try {
+                m.invoke(obj, val);
+                return;
+            } catch (ReflectiveOperationException e) {
+                //swallow
+            }
+        }
+        throw new IllegalArgumentException("can't find map setter for: " + name);
     }
 
-    private static void setBoolean(String name, JsonNode node, Object obj, List<Method> setters) {
+    private static void setBoolean(String name, JsonNode node, Object obj, List<Method> setters) throws ReflectiveOperationException {
         for (Method m : setters) {
             Class argClass = m.getParameters()[0].getType();
             if (argClass.equals(Boolean.class) || argClass.equals(boolean.class)) {
-                m.invoke(obj, node.asBoolean());
+                m.invoke(obj, node.booleanValue());
+                return;
             }
         }
         //TODO -- maybe check for string?
@@ -192,8 +208,11 @@ public class TikaJsonDeserializer {
             Class argClass = m.getParameters()[0].getType();
             if (! TikaJsonSerializer.PRIMITIVES.contains(argClass)) {
                 try {
-                    m.invoke(obj, null);
+
+                    m.invoke(obj, argClass.cast(null));
+                    return;
                 } catch (Exception e) {
+                    e.printStackTrace();
                     //swallow
                 }
             }
@@ -201,7 +220,7 @@ public class TikaJsonDeserializer {
         throw new IllegalArgumentException("can't set null on " + name);
     }
 
-    private static void setStringValue(String name, String txt, Object obj, List<Method> setters) {
+    private static void setStringValue(String name, String txt, Object obj, List<Method> setters) throws ReflectiveOperationException {
 
         //try for exact match first
         for (Method m : setters) {
@@ -285,7 +304,7 @@ public class TikaJsonDeserializer {
 
     }
 
-    private static void setNumericValue(String name, JsonNode node, Object obj, List<Method> setters) {
+    private static void setNumericValue(String name, JsonNode node, Object obj, List<Method> setters) throws ReflectiveOperationException {
 
         //try numeric and equals first
         for (Method m : setters) {
@@ -302,6 +321,9 @@ public class TikaJsonDeserializer {
             } else if ((argClass.equals(double.class) || argClass.equals(Double.class)) && node.isDouble()) {
                 m.invoke(obj, node.doubleValue());
                 return;
+            } else if ((argClass.equals(short.class) || argClass.equals(Short.class)) && node.isShort()) {
+                m.invoke(obj, node.shortValue());
+                return;
             }
         }
         //try for higher precision setters
@@ -313,6 +335,32 @@ public class TikaJsonDeserializer {
             } else if ((argClass.equals(double.class) || argClass.equals(Double.class)) && node.isFloat()) {
                 m.invoke(obj, node.floatValue());
                 return;
+            }
+        }
+        //try for lower precision setters
+        //we have to do this for node=double, type=float; should we do this for long->integer?!
+        for (Method m : setters) {
+            Class argClass = m.getParameters()[0].getType();
+            if ((argClass.equals(int.class) || argClass.equals(Integer.class)) && node.isLong()) {
+                long val = node.longValue();
+                if (val >= Integer.MAX_VALUE || val <= Integer.MIN_VALUE) {
+                    //don't do this
+                } else {
+                    m.invoke(obj, node.intValue());
+                }
+                return;
+            } else if ((argClass.equals(float.class) || argClass.equals(Float.class)) && node.isDouble()) {
+                //TODO -- check for over/underflow
+                m.invoke(obj, node.floatValue());
+                return;
+            } else if ((argClass.equals(short.class) || argClass.equals(Short.class)) && node.isInt()) {
+                int val = node.intValue();
+                if (val > Short.MAX_VALUE || val < Short.MIN_VALUE) {
+                    //don't do this
+                } else {
+                    m.invoke(obj, node.shortValue());
+                    return;
+                }
             }
         }
         //finally try for String

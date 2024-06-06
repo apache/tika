@@ -60,6 +60,8 @@ public class TikaJsonSerializer {
             }
         } else if (isCollection(obj)) {
             serializeCollection(fieldName, obj, jsonGenerator);
+        } else if (obj.getClass().isEnum()) {
+            jsonGenerator.writeStringField(fieldName, ((Enum)obj).name());
         } else {
             serializeObject(fieldName, obj, superClass, jsonGenerator);
         }

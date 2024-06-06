@@ -97,6 +97,24 @@ public class ParseContext implements Serializable {
                 .unmodifiableSet(context.keySet());
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ParseContext that = (ParseContext) o;
+        return context.equals(that.context);
+    }
+
+    @Override
+    public int hashCode() {
+        return context.hashCode();
+    }
+
     private static class NoOpParseContext extends ParseContext {
         @Override
         public <T> void set(Class<T> key, T value) {
