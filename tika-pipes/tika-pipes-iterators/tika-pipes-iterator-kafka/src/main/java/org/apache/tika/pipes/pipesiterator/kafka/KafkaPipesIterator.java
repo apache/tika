@@ -121,10 +121,8 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     public void initialize(Map<String, Param> params) {
         props = new Properties();
         safePut(props, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        safePut(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-                serializerClass(keySerializer, StringDeserializer.class));
-        safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-                serializerClass(valueSerializer, StringDeserializer.class));
+        safePut(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, serializerClass(keySerializer, StringDeserializer.class));
+        safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, serializerClass(valueSerializer, StringDeserializer.class));
         safePut(props, ConsumerConfig.GROUP_ID_CONFIG, groupId);
         safePut(props, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
         safePut(props, "group.inital.rebalance.delay.ms", groupInitialRebalanceDelayMs);
@@ -142,8 +140,7 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         super.checkInitialization(problemHandler);
         TikaConfig.mustNotBeEmpty("bootstrapServers", this.bootstrapServers);
         TikaConfig.mustNotBeEmpty("topic", this.topic);
@@ -167,10 +164,7 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
                 }
                 ParseContext parseContext = new ParseContext();
                 parseContext.set(HandlerConfig.class, handlerConfig);
-                tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherName,
-                        r.key()),
-                        new EmitKey(emitterName, r.key()), new Metadata(), parseContext,
-                        getOnParseException()));
+                tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherName, r.key()), new EmitKey(emitterName, r.key()), new Metadata(), parseContext, getOnParseException()));
                 ++count;
             }
         } while ((emitMax > 0 || count < emitMax) && !records.isEmpty());

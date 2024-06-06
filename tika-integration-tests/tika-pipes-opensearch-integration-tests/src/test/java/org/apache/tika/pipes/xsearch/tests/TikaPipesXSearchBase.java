@@ -335,15 +335,15 @@ public abstract class TikaPipesXSearchBase {
         Metadata metadata = new Metadata();
         metadata.set("mime", "mimeA");
         metadata.set("title", "titleA");
-        emitter.emit("1", Collections.singletonList(metadata), ParseContext.EMPTY);
+        emitter.emit("1", Collections.singletonList(metadata), new ParseContext());
         JsonResponse refresh = CLIENT.getJson(endpoint + "/_refresh");
         metadata.set("title", "titleB");
-        emitter.emit("1", Collections.singletonList(metadata), ParseContext.EMPTY);
+        emitter.emit("1", Collections.singletonList(metadata), new ParseContext());
         refresh = CLIENT.getJson(endpoint + "/_refresh");
 
         Metadata metadata2 = new Metadata();
         metadata2.set("content", "the quick brown fox");
-        emitter.emit("1", Collections.singletonList(metadata2), ParseContext.EMPTY);
+        emitter.emit("1", Collections.singletonList(metadata2), new ParseContext());
         refresh = CLIENT.getJson(endpoint + "/_refresh");
 
         String query = "{ " +

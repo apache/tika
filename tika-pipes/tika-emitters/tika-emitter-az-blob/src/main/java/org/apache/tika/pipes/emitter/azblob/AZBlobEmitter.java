@@ -47,17 +47,16 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.StreamEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.StringUtils;
 
 
 /**
  * Emit files to Azure blob storage. Must set endpoint, sasToken and container via config.
- *
  */
 
 public class AZBlobEmitter extends AbstractEmitter implements Initializable, StreamEmitter {
@@ -73,6 +72,7 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
     private BlobServiceClient blobServiceClient;
     private BlobContainerClient blobContainerClient;
     private boolean overwriteExisting = false;
+
     /**
      * Requires the src-bucket/path/to/my/file.txt in the {@link TikaCoreProperties#SOURCE_PATH}.
      *
@@ -81,14 +81,15 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
      * @throws TikaException
      */
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
-            throws IOException, TikaEmitterException {
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.size() == 0) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
         }
         //TODO: estimate size of metadata list.  Above a certain size,
         //create a temp file?
-        UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
+        UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
+                .builder()
+                .get();
         try (Writer writer = new OutputStreamWriter(bos, StandardCharsets.UTF_8)) {
             JsonMetadataList.toJson(metadataList, writer);
         } catch (IOException e) {
@@ -110,8 +111,7 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
      * @throws TikaEmitterException or IOexception if there is a Runtime client exception
      */
     @Override
-    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext)
-            throws IOException, TikaEmitterException {
+    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext) throws IOException, TikaEmitterException {
         String lengthString = userMetadata.get(Metadata.CONTENT_LENGTH);
         long length = -1;
         if (lengthString != null) {
@@ -127,7 +127,9 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
             LOGGER.debug("relying on the content-length set in the metadata object: {}", length);
             write(path, userMetadata, is, length);
         } else {
-            try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get()) {
+            try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
+                    .builder()
+                    .get()) {
                 IOUtils.copy(is, bos);
                 write(path, userMetadata, bos.toByteArray());
             }
@@ -148,7 +150,9 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
         BlobClient blobClient = blobContainerClient.getBlobClient(actualPath);
         updateMetadata(blobClient, userMetadata);
 
-        blobClient.uploadFromFile(file.toAbsolutePath().toString(), overwriteExisting);
+        blobClient.uploadFromFile(file
+                .toAbsolutePath()
+                .toString(), overwriteExisting);
     }
 
     private void write(String path, Metadata userMetadata, byte[] bytes) {
@@ -166,10 +170,12 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
             }
             String[] vals = userMetadata.getValues(n);
             if (vals.length > 1) {
-                LOGGER.warn("Can only write the first value for key {}. I see {} values.", n,
-                        vals.length);
+                LOGGER.warn("Can only write the first value for key {}. I see {} values.", n, vals.length);
             }
-            blobClient.getProperties().getMetadata().put(n, vals[0]);
+            blobClient
+                    .getProperties()
+                    .getMetadata()
+                    .put(n, vals[0]);
         }
 
     }
@@ -247,8 +253,7 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         mustNotBeEmpty("sasToken", this.sasToken);
         mustNotBeEmpty("endpoint", this.endpoint);
         mustNotBeEmpty("container", this.container);

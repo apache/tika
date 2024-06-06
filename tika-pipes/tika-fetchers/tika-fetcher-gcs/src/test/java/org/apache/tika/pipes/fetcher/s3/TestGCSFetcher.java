@@ -55,7 +55,7 @@ public class TestGCSFetcher {
                 Paths.get(this.getClass().getResource("/tika-config-gcs.xml").toURI()));
         Fetcher fetcher = fetcherManager.getFetcher("gcs");
         Metadata metadata = new Metadata();
-        try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, ParseContext.EMPTY)) {
+        try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, new ParseContext())) {
             Files.copy(is, outputFile, StandardCopyOption.REPLACE_EXISTING);
         }
         assertEquals(20743, Files.size(outputFile));

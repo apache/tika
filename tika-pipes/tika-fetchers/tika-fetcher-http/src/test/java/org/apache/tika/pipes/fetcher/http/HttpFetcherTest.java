@@ -82,7 +82,7 @@ public class HttpFetcherTest extends TikaTest {
         final Metadata meta = new Metadata();
         meta.set(TikaCoreProperties.RESOURCE_NAME_KEY, "fileName");
 
-        try (final InputStream ignored = httpFetcher.fetch(TEST_URL, meta, ParseContext.EMPTY)) {
+        try (final InputStream ignored = httpFetcher.fetch(TEST_URL, meta, new ParseContext())) {
             // HTTP headers added into meta
             assertEquals("200", meta.get("http-header:status-code"));
             assertEquals(TEST_URL, meta.get("http-connection:target-url"));
@@ -100,7 +100,7 @@ public class HttpFetcherTest extends TikaTest {
         mockClientResponse(buildMockResponse(HttpStatus.SC_FORBIDDEN, null));
 
         final Metadata meta = new Metadata();
-        assertThrows(IOException.class, () -> httpFetcher.fetch(TEST_URL, meta, ParseContext.EMPTY));
+        assertThrows(IOException.class, () -> httpFetcher.fetch(TEST_URL, meta, new ParseContext()));
 
         // Meta still populated
         assertEquals("403", meta.get("http-header:status-code"));
@@ -115,7 +115,7 @@ public class HttpFetcherTest extends TikaTest {
         Metadata metadata = new Metadata();
         HttpFetcher httpFetcher =
                 (HttpFetcher) getFetcherManager("tika-config-http.xml").getFetcher("http");
-        try (InputStream is = httpFetcher.fetch(url, metadata, ParseContext.EMPTY)) {
+        try (InputStream is = httpFetcher.fetch(url, metadata, new ParseContext())) {
             IOUtils.copy(is, bos);
         }
         //debug(metadata);

@@ -70,7 +70,7 @@ public class JDBCEmitterTest {
                 "100002", "k6", "2022-11-04T17:10:15"});
         int id = 0;
         for (String[] d : data) {
-            emitter.emit("id" + id++, Collections.singletonList(m(d)), ParseContext.EMPTY);
+            emitter.emit("id" + id++, Collections.singletonList(m(d)), new ParseContext());
         }
 
         try (Connection connection = DriverManager.getConnection(connectionString)) {
@@ -120,7 +120,7 @@ public class JDBCEmitterTest {
         data.add(new String[]{"k1", "true", "k2", "some string3", "k3", "6", "k4", "102"});
         int id = 0;
         for (String[] d : data) {
-            emitter.emit("id" + id++, Collections.singletonList(m(d)), ParseContext.EMPTY);
+            emitter.emit("id" + id++, Collections.singletonList(m(d)), new ParseContext());
         }
 
         try (Connection connection = DriverManager.getConnection(connectionString)) {
@@ -156,7 +156,7 @@ public class JDBCEmitterTest {
         data.add(m("k1", "true", "k2", "some string1", "k3", "4", "k4", "100"));
         data.add(m("k1", "false", "k2", "some string2", "k3", "5", "k4", "101"));
         data.add(m("k1", "true", "k2", "some string3", "k3", "6", "k4", "102"));
-        emitter.emit("id0", data, ParseContext.EMPTY);
+        emitter.emit("id0", data, new ParseContext());
 
 
         try (Connection connection = DriverManager.getConnection(connectionString)) {
@@ -199,7 +199,7 @@ public class JDBCEmitterTest {
         m.add("k1", "third");
         m.add("k1", "fourth");
         data.add(m);
-        emitter.emit("id0", data, ParseContext.EMPTY);
+        emitter.emit("id0", data, new ParseContext());
 
         String expected = "first, second, third, fourth";
         int rows = 0;
@@ -236,7 +236,7 @@ public class JDBCEmitterTest {
         data.add(new String[]{"k1", "abcdefghijk"});
         int id = 0;
         for (String[] d : data) {
-            emitter.emit("id" + id++, Collections.singletonList(m(d)), ParseContext.EMPTY);
+            emitter.emit("id" + id++, Collections.singletonList(m(d)), new ParseContext());
         }
 
         int rows = 0;

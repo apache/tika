@@ -43,10 +43,13 @@ public class TestGCSEmitter {
         m.add("k1", "v2");
         m.set("k2", "v3");
         metadataList.add(m);
-        emitter.emit("something-or-other/test-out", metadataList, ParseContext.EMPTY);
+        emitter.emit("something-or-other/test-out", metadataList, new ParseContext());
     }
 
     private Path getConfig(String configFile) throws URISyntaxException {
-        return Paths.get(this.getClass().getResource("/config/" + configFile).toURI());
+        return Paths.get(this
+                .getClass()
+                .getResource("/config/" + configFile)
+                .toURI());
     }
 }

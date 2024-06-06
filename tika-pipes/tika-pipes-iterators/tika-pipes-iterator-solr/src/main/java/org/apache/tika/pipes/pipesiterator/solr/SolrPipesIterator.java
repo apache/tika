@@ -201,11 +201,11 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
             while (!done) {
                 query.set(CursorMarkParams.CURSOR_MARK_PARAM, cursorMark);
                 QueryResponse qr = solrClient.query(solrCollection, query);
-                long totalToFetch = qr.getResults().getNumFound();
+                long totalToFetch = qr
+                        .getResults()
+                        .getNumFound();
                 String nextCursorMark = qr.getNextCursorMark();
-                LOGGER.info(
-                        "Query to fetch files to parse collection={}, q={}, onCount={}, totalCount={}",
-                        solrCollection, query, fileCount, totalToFetch);
+                LOGGER.info("Query to fetch files to parse collection={}, q={}, onCount={}, totalCount={}", solrCollection, query, fileCount, totalToFetch);
                 for (SolrDocument sd : qr.getResults()) {
                     ++fileCount;
                     String fetchKey = (String) sd.getFieldValue(idField);
@@ -217,8 +217,7 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
                     LOGGER.info("iterator doc: {}, idField={}, fetchKey={}", sd, idField, fetchKey);
                     ParseContext parseContext = new ParseContext();
                     parseContext.set(HandlerConfig.class, handlerConfig);
-                    tryToAdd(new FetchEmitTuple(fetchKey, new FetchKey(fetcherName, fetchKey),
-                            new EmitKey(emitterName, emitKey), new Metadata(), parseContext,
+                    tryToAdd(new FetchEmitTuple(fetchKey, new FetchKey(fetcherName, fetchKey), new EmitKey(emitterName, emitKey), new Metadata(), parseContext,
                             getOnParseException()));
                 }
                 if (cursorMark.equals(nextCursorMark)) {
@@ -235,32 +234,31 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
         if (solrUrls == null || solrUrls.isEmpty()) {
             return new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(solrZkChroot))
                     .withHttpClient(httpClientFactory.build())
-                    .withConnectionTimeout(connectionTimeout).withSocketTimeout(socketTimeout)
+                    .withConnectionTimeout(connectionTimeout)
+                    .withSocketTimeout(socketTimeout)
                     .build();
         }
-        return new LBHttpSolrClient.Builder().withConnectionTimeout(connectionTimeout)
-                .withSocketTimeout(socketTimeout).withHttpClient(httpClientFactory.build())
-                .withBaseSolrUrls(solrUrls.toArray(new String[]{})).build();
+        return new LBHttpSolrClient.Builder()
+                .withConnectionTimeout(connectionTimeout)
+                .withSocketTimeout(socketTimeout)
+                .withHttpClient(httpClientFactory.build())
+                .withBaseSolrUrls(solrUrls.toArray(new String[]{}))
+                .build();
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         super.checkInitialization(problemHandler);
         mustNotBeEmpty("solrCollection", this.solrCollection);
         mustNotBeEmpty("urlFieldName", this.idField);
         mustNotBeEmpty("parsingIdField", this.parsingIdField);
         mustNotBeEmpty("failCountField", this.failCountField);
         mustNotBeEmpty("sizeFieldName", this.sizeFieldName);
-        if ((this.solrUrls == null || this.solrUrls.isEmpty()) &&
-                (this.solrZkHosts == null || this.solrZkHosts.isEmpty())) {
-            throw new IllegalArgumentException(
-                    "expected either param solrUrls or param solrZkHosts, but neither was specified");
+        if ((this.solrUrls == null || this.solrUrls.isEmpty()) && (this.solrZkHosts == null || this.solrZkHosts.isEmpty())) {
+            throw new IllegalArgumentException("expected either param solrUrls or param solrZkHosts, but neither was specified");
         }
-        if (this.solrUrls != null && !this.solrUrls.isEmpty() && this.solrZkHosts != null &&
-                !this.solrZkHosts.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "expected either param solrUrls or param solrZkHosts, but both were specified");
+        if (this.solrUrls != null && !this.solrUrls.isEmpty() && this.solrZkHosts != null && !this.solrZkHosts.isEmpty()) {
+            throw new IllegalArgumentException("expected either param solrUrls or param solrZkHosts, but both were specified");
         }
     }
 }

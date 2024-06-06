@@ -44,10 +44,13 @@ public class TestAZBlobEmitter {
         m.set("k2", "v3");
         m.add("k2", "v4");
         metadataList.add(m);
-        emitter.emit("something-or-other/test-out", metadataList, ParseContext.EMPTY);
+        emitter.emit("something-or-other/test-out", metadataList, new ParseContext());
     }
 
     private Path getConfig(String configFile) throws URISyntaxException {
-        return Paths.get(this.getClass().getResource("/config/" + configFile).toURI());
+        return Paths.get(this
+                .getClass()
+                .getResource("/config/" + configFile)
+                .toURI());
     }
 }

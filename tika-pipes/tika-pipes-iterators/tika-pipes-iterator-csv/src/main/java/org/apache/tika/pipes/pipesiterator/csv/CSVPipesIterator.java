@@ -135,8 +135,7 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
                 String fetchKey = record.get(fetchEmitKeyIndices.fetchKeyIndex);
                 String emitKey = record.get(fetchEmitKeyIndices.emitKeyIndex);
                 if (StringUtils.isBlank(fetchKey) && !StringUtils.isBlank(fetcherName)) {
-                    LOGGER.debug("Fetcher specified ({}), but no fetchkey was found in ({})",
-                            fetcherName, record);
+                    LOGGER.debug("Fetcher specified ({}), but no fetchkey was found in ({})", fetcherName, record);
                 }
                 if (StringUtils.isBlank(emitKey)) {
                     throw new IOException("emitKey must not be blank in :" + record);
@@ -145,24 +144,19 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
                 Metadata metadata = loadMetadata(fetchEmitKeyIndices, headers, record);
                 ParseContext parseContext = new ParseContext();
                 parseContext.set(HandlerConfig.class, handlerConfig);
-                tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey),
-                        new EmitKey(emitterName, emitKey), metadata, parseContext,
-                        getOnParseException()));
+                tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey), new EmitKey(emitterName, emitKey), metadata, parseContext, getOnParseException()));
             }
         }
     }
 
-    private void checkFetchEmitValidity(String fetcherName, String emitterName,
-                                        FetchEmitKeyIndices fetchEmitKeyIndices,
-                                        List<String> headers) throws TikaConfigException {
+    private void checkFetchEmitValidity(String fetcherName, String emitterName, FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers) throws TikaConfigException {
 
         if (StringUtils.isBlank(emitterName)) {
             throw new TikaConfigException("must specify at least an emitterName");
         }
 
         if (StringUtils.isBlank(fetcherName) && !StringUtils.isBlank(fetchKeyColumn)) {
-            new TikaConfigException("If specifying a 'fetchKeyColumn', " +
-                    "you must also specify a 'fetcherName'");
+            new TikaConfigException("If specifying a 'fetchKeyColumn', " + "you must also specify a 'fetcherName'");
         }
 
         if (StringUtils.isBlank(fetcherName)) {
@@ -174,35 +168,26 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
         }
         //if a fetchkeycolumn is specified, make sure that it was found
         if (!StringUtils.isBlank(fetchKeyColumn) && fetchEmitKeyIndices.fetchKeyIndex < 0) {
-            throw new TikaConfigException(
-                    "Couldn't find fetchKeyColumn (" + fetchKeyColumn + " in header.\n" +
-                            "These are the headers I see: " + headers);
+            throw new TikaConfigException("Couldn't find fetchKeyColumn (" + fetchKeyColumn + " in header.\n" + "These are the headers I see: " + headers);
         }
 
         //if an emitkeycolumn is specified, make sure that it was found
         if (!StringUtils.isBlank(emitKeyColumn) && fetchEmitKeyIndices.emitKeyIndex < 0) {
-            throw new TikaConfigException(
-                    "Couldn't find emitKeyColumn (" + emitKeyColumn + " in header.\n" +
-                            "These are the headers I see: " + headers);
+            throw new TikaConfigException("Couldn't find emitKeyColumn (" + emitKeyColumn + " in header.\n" + "These are the headers I see: " + headers);
         }
 
         //if an idcolumn is specified, make sure that it was found
         if (!StringUtils.isBlank(idColumn) && fetchEmitKeyIndices.idIndex < 0) {
-            throw new TikaConfigException(
-                    "Couldn't find idColumn (" + idColumn + " in header.\n" +
-                            "These are the headers I see: " + headers);
+            throw new TikaConfigException("Couldn't find idColumn (" + idColumn + " in header.\n" + "These are the headers I see: " + headers);
         }
 
         if (StringUtils.isBlank(emitKeyColumn)) {
-            LOGGER.warn("No emitKeyColumn specified. " +
-                            "Will use fetchKeyColumn ({}) for both the fetch key and emit key",
-                    fetchKeyColumn);
+            LOGGER.warn("No emitKeyColumn specified. " + "Will use fetchKeyColumn ({}) for both the fetch key and emit key", fetchKeyColumn);
         }
 
     }
 
-    private Metadata loadMetadata(FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers,
-                                  CSVRecord record) {
+    private Metadata loadMetadata(FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers, CSVRecord record) {
         Metadata metadata = new Metadata();
         for (int i = 0; i < record.size(); i++) {
             if (fetchEmitKeyIndices.shouldSkip(i)) {
@@ -214,16 +199,14 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
     }
 
 
-    private FetchEmitKeyIndices loadHeaders(CSVRecord record, List<String> headers)
-            throws IOException {
+    private FetchEmitKeyIndices loadHeaders(CSVRecord record, List<String> headers) throws IOException {
         int fetchKeyColumnIndex = -1;
         int emitKeyColumnIndex = -1;
         int idIndex = -1;
         for (int col = 0; col < record.size(); col++) {
             String header = record.get(col);
             if (StringUtils.isBlank(header)) {
-                throw new IOException(
-                        new TikaException("Header in column (" + col + ") must not be empty"));
+                throw new IOException(new TikaException("Header in column (" + col + ") must not be empty"));
             }
             headers.add(header);
             if (header.equals(fetchKeyColumn)) {
@@ -248,15 +231,14 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         super.checkInitialization(problemHandler);
         mustNotBeEmpty("csvPath", this.csvPath);
     }
 
     private static class FetchEmitKeyIndices {
-        private int idIndex;
         private final int fetchKeyIndex;
+        private int idIndex;
         private int emitKeyIndex;
 
         public FetchEmitKeyIndices(int idIndex, int fetchKeyIndex, int emitKeyIndex) {

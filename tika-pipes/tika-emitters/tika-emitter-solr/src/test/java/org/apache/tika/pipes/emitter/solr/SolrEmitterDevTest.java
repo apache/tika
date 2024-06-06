@@ -58,6 +58,6 @@ public class SolrEmitterDevTest {
         filter.setMappings(mappings);
         filter.filter(metadata);
 
-        solrEmitter.emit(emitKey, Collections.singletonList(metadata), ParseContext.EMPTY);
+        solrEmitter.emit(emitKey, Collections.singletonList(metadata), new ParseContext());
     }
 }

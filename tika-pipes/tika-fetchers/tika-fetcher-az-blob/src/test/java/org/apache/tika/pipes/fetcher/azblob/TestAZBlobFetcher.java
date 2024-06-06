@@ -29,10 +29,10 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.serialization.JsonMetadataList;
 
 @Disabled("write actual unit tests")
 public class TestAZBlobFetcher extends TikaTest {
@@ -41,12 +41,13 @@ public class TestAZBlobFetcher extends TikaTest {
 
     @Test
     public void testConfig() throws Exception {
-        FetcherManager fetcherManager = FetcherManager.load(
-                Paths.get(this.getClass().getResource("/tika-config-az-blob.xml").toURI()));
+        FetcherManager fetcherManager = FetcherManager.load(Paths.get(this
+                .getClass()
+                .getResource("/tika-config-az-blob.xml")
+                .toURI()));
         Fetcher fetcher = fetcherManager.getFetcher("az-blob");
         List<Metadata> metadataList = null;
-        try (Reader reader = new BufferedReader(new InputStreamReader(
-                fetcher.fetch(FETCH_STRING, new Metadata(), new ParseContext()), StandardCharsets.UTF_8))) {
+        try (Reader reader = new BufferedReader(new InputStreamReader(fetcher.fetch(FETCH_STRING, new Metadata(), new ParseContext()), StandardCharsets.UTF_8))) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         debug(metadataList);

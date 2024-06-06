@@ -95,30 +95,26 @@ public class AZBlobPipesIterator extends PipesIterator implements Initializable 
 
         PagedIterable<BlobItem> blobs = null;
         if (StringUtils.isBlank(prefix)) {
-            ListBlobsOptions options = new ListBlobsOptions()
-                    .setDetails(
-                            new BlobListDetails()
-                                    .setRetrieveDeletedBlobs(false)
-                                    .setRetrieveMetadata(false)
-                                    .setRetrieveSnapshots(false));
-            blobs = blobContainerClient.listBlobs(options,
-                    Duration.of(timeoutMillis, ChronoUnit.MILLIS));
+            ListBlobsOptions options = new ListBlobsOptions().setDetails(new BlobListDetails()
+                    .setRetrieveDeletedBlobs(false)
+                    .setRetrieveMetadata(false)
+                    .setRetrieveSnapshots(false));
+            blobs = blobContainerClient.listBlobs(options, Duration.of(timeoutMillis, ChronoUnit.MILLIS));
         } else {
             ListBlobsOptions options = new ListBlobsOptions()
                     .setPrefix(prefix)
-                    .setDetails(
-                            new BlobListDetails()
-                                    .setRetrieveDeletedBlobs(false)
-                                    .setRetrieveMetadata(false)
-                                    .setRetrieveSnapshots(false));
-            blobs = blobContainerClient.listBlobs(options,
-                    Duration.of(timeoutMillis, ChronoUnit.MILLIS));
+                    .setDetails(new BlobListDetails()
+                            .setRetrieveDeletedBlobs(false)
+                            .setRetrieveMetadata(false)
+                            .setRetrieveSnapshots(false));
+            blobs = blobContainerClient.listBlobs(options, Duration.of(timeoutMillis, ChronoUnit.MILLIS));
         }
 
         for (BlobItem blob : blobs) {
             //tried blob.isPrefix() and got NPE ... user error?
-            if (blob == null || blob.getProperties() == null ||
-                    blob.getProperties().getContentLength() == 0) {
+            if (blob == null || blob.getProperties() == null || blob
+                    .getProperties()
+                    .getContentLength() == 0) {
                 continue;
             }
             long elapsed = System.currentTimeMillis() - start;
@@ -128,9 +124,7 @@ public class AZBlobPipesIterator extends PipesIterator implements Initializable 
             //TODO -- extract metadata about content length etc from properties
             ParseContext parseContext = new ParseContext();
             parseContext.set(HandlerConfig.class, handlerConfig);
-            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherName,
-                    blob.getName()),
-                    new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
+            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherName, blob.getName()), new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
                     getOnParseException()));
             count++;
         }
@@ -149,8 +143,7 @@ public class AZBlobPipesIterator extends PipesIterator implements Initializable 
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         mustNotBeEmpty("sasToken", this.sasToken);
         mustNotBeEmpty("endpoint", this.endpoint);
         mustNotBeEmpty("container", this.container);
