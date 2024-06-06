@@ -33,7 +33,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
@@ -43,6 +42,7 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.serialization.JsonMetadataList;
 
 public class ParsingExample {
 
@@ -109,8 +109,7 @@ public class ParsingExample {
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, new EmptyParser());
-        try (InputStream stream = ParsingExample.class
-                .getResourceAsStream("test_recursive_embedded.docx")) {
+        try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx")) {
             parser.parse(stream, handler, metadata, parseContext);
             return handler.toString();
         }
@@ -132,8 +131,7 @@ public class ParsingExample {
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
-        try (InputStream stream = ParsingExample.class
-                .getResourceAsStream("test_recursive_embedded.docx")) {
+        try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx")) {
             parser.parse(stream, handler, metadata, context);
             return handler.toString();
         }
@@ -161,19 +159,16 @@ public class ParsingExample {
      * @throws SAXException
      * @throws TikaException
      */
-    public List<Metadata> recursiveParserWrapperExample()
-            throws IOException, SAXException, TikaException {
+    public List<Metadata> recursiveParserWrapperExample() throws IOException, SAXException, TikaException {
         Parser p = new AutoDetectParser();
-        ContentHandlerFactory factory =
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.HTML, -1);
+        ContentHandlerFactory factory = new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.HTML, -1);
 
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test_recursive_embedded.docx");
         ParseContext context = new ParseContext();
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(factory, -1);
-        try (InputStream stream = ParsingExample.class
-                .getResourceAsStream("test_recursive_embedded.docx")) {
+        try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx")) {
             wrapper.parse(stream, handler, metadata, context);
         }
 
@@ -182,7 +177,7 @@ public class ParsingExample {
 
     /**
      * We include a simple JSON serializer for a list of metadata with
-     * {@link org.apache.tika.metadata.serialization.JsonMetadataList}.
+     * {@link JsonMetadataList}.
      * That class also includes a deserializer to convert from JSON
      * back to a List<Metadata>.
      * <p>
@@ -195,8 +190,7 @@ public class ParsingExample {
      * @throws SAXException
      * @throws TikaException
      */
-    public String serializedRecursiveParserWrapperExample()
-            throws IOException, SAXException, TikaException {
+    public String serializedRecursiveParserWrapperExample() throws IOException, SAXException, TikaException {
         List<Metadata> metadataList = recursiveParserWrapperExample();
         StringWriter writer = new StringWriter();
         JsonMetadataList.toJson(metadataList, writer);
@@ -211,12 +205,10 @@ public class ParsingExample {
      * @throws SAXException
      * @throws TikaException
      */
-    public List<Path> extractEmbeddedDocumentsExample(Path outputPath)
-            throws IOException, SAXException, TikaException {
+    public List<Path> extractEmbeddedDocumentsExample(Path outputPath) throws IOException, SAXException, TikaException {
         ExtractEmbeddedFiles ex = new ExtractEmbeddedFiles();
         List<Path> ret = new ArrayList<>();
-        try (TikaInputStream stream = TikaInputStream
-                .get(ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx"))) {
+        try (TikaInputStream stream = TikaInputStream.get(ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx"))) {
             ex.extract(stream, outputPath);
             try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(outputPath)) {
                 for (Path entry : dirStream) {

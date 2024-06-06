@@ -40,7 +40,9 @@ public class TikaEvalCLI {
         StringBuilder sb = new StringBuilder();
         sb.append("Must specify one of the following tools in the first parameter:\n");
         for (String s : tools) {
-            sb.append(s).append("\n");
+            sb
+                    .append(s)
+                    .append("\n");
         }
         return sb.toString();
 
@@ -98,12 +100,15 @@ public class TikaEvalCLI {
         try {
             tmpBCConfig = Files.createTempFile("tika-eval-profiler", ".xml");
             if (!containsBC) {
-                try (InputStream is = this.getClass()
+                try (InputStream is = this
+                        .getClass()
                         .getResourceAsStream("/tika-eval-file-profiler-config.xml")) {
                     Files.copy(is, tmpBCConfig, StandardCopyOption.REPLACE_EXISTING);
                 }
                 argList.add("-bc");
-                argList.add(tmpBCConfig.toAbsolutePath().toString());
+                argList.add(tmpBCConfig
+                        .toAbsolutePath()
+                        .toString());
             }
 
             String[] updatedArgs = argList.toArray(new String[0]);
@@ -111,8 +116,7 @@ public class TikaEvalCLI {
             try {
                 CommandLine commandLine = defaultCLIParser.parse(FileProfiler.OPTIONS, updatedArgs);
                 if (commandLine.hasOption("db") && commandLine.hasOption("jdbc")) {
-                    System.out.println(
-                            "Please specify either the default -db or the full -jdbc, not both");
+                    System.out.println("Please specify either the default -db or the full -jdbc, not both");
                     ExtractProfiler.USAGE();
                     return;
                 }
@@ -124,7 +128,9 @@ public class TikaEvalCLI {
 
             // lazy delete because main() calls System.exit()
             if (tmpBCConfig != null && Files.isRegularFile(tmpBCConfig)) {
-                tmpBCConfig.toFile().deleteOnExit();
+                tmpBCConfig
+                        .toFile()
+                        .deleteOnExit();
             }
             FSBatchProcessCLI.main(updatedArgs);
         } finally {
@@ -181,8 +187,7 @@ public class TikaEvalCLI {
                     break;
                 case "-alterExtract":
                     if (i + 1 >= argList.size()) {
-                        System.err.println("Must specify type 'as_is', 'first_only' or " +
-                                           "'concatenate_content' after -alterExtract");
+                        System.err.println("Must specify type 'as_is', 'first_only' or " + "'concatenate_content' after -alterExtract");
                         ExtractComparer.USAGE();
                         return;
                     }
@@ -192,10 +197,8 @@ public class TikaEvalCLI {
             }
         }
 
-        if (alterExtract != null && !alterExtract.equals("as_is") &&
-                !alterExtract.equals("concatenate_content") && !alterExtract.equals("first_only")) {
-            System.out.println("Sorry, I don't understand:" + alterExtract +
-                    ". The values must be one of: as_is, first_only, concatenate_content");
+        if (alterExtract != null && !alterExtract.equals("as_is") && !alterExtract.equals("concatenate_content") && !alterExtract.equals("first_only")) {
+            System.out.println("Sorry, I don't understand:" + alterExtract + ". The values must be one of: as_is, first_only, concatenate_content");
             ExtractProfiler.USAGE();
             return;
         }
@@ -216,22 +219,23 @@ public class TikaEvalCLI {
         try {
             tmpBCConfig = Files.createTempFile("tika-eval-profiler", ".xml");
             if (!containsBC) {
-                try (InputStream is = this.getClass()
+                try (InputStream is = this
+                        .getClass()
                         .getResourceAsStream("/tika-eval-profiler-config.xml")) {
                     Files.copy(is, tmpBCConfig, StandardCopyOption.REPLACE_EXISTING);
                 }
                 argList.add("-bc");
-                argList.add(tmpBCConfig.toAbsolutePath().toString());
+                argList.add(tmpBCConfig
+                        .toAbsolutePath()
+                        .toString());
             }
 
             String[] updatedArgs = argList.toArray(new String[0]);
             DefaultParser defaultCLIParser = new DefaultParser();
             try {
-                CommandLine commandLine =
-                        defaultCLIParser.parse(ExtractProfiler.OPTIONS, updatedArgs);
+                CommandLine commandLine = defaultCLIParser.parse(ExtractProfiler.OPTIONS, updatedArgs);
                 if (commandLine.hasOption("db") && commandLine.hasOption("jdbc")) {
-                    System.out.println(
-                            "Please specify either the default -db or the full -jdbc, not both");
+                    System.out.println("Please specify either the default -db or the full -jdbc, not both");
                     ExtractProfiler.USAGE();
                     return;
                 }
@@ -243,7 +247,9 @@ public class TikaEvalCLI {
 
             // lazy delete because main() calls System.exit()
             if (tmpBCConfig != null && Files.isRegularFile(tmpBCConfig)) {
-                tmpBCConfig.toFile().deleteOnExit();
+                tmpBCConfig
+                        .toFile()
+                        .deleteOnExit();
             }
             FSBatchProcessCLI.main(updatedArgs);
         } finally {
@@ -287,8 +293,7 @@ public class TikaEvalCLI {
                     break;
                 case "-alterExtract":
                     if (i + 1 >= argList.size()) {
-                        System.err.println("Must specify type 'as_is', 'first_only' or " +
-                                           "'concatenate_content' after -alterExtract");
+                        System.err.println("Must specify type 'as_is', 'first_only' or " + "'concatenate_content' after -alterExtract");
                         ExtractComparer.USAGE();
                         return;
                     }
@@ -297,10 +302,8 @@ public class TikaEvalCLI {
                     break;
             }
         }
-        if (alterExtract != null && !alterExtract.equals("as_is") &&
-                !alterExtract.equals("concatenate_content") && !alterExtract.equals("first_only")) {
-            System.out.println("Sorry, I don't understand:" + alterExtract +
-                    ". The values must be one of: as_is, first_only, concatenate_content");
+        if (alterExtract != null && !alterExtract.equals("as_is") && !alterExtract.equals("concatenate_content") && !alterExtract.equals("first_only")) {
+            System.out.println("Sorry, I don't understand:" + alterExtract + ". The values must be one of: as_is, first_only, concatenate_content");
             ExtractComparer.USAGE();
             return;
         }
@@ -318,22 +321,23 @@ public class TikaEvalCLI {
         try {
             tmpBCConfig = Files.createTempFile("tika-eval", ".xml");
             if (!containsBC) {
-                try (InputStream is = this.getClass()
+                try (InputStream is = this
+                        .getClass()
                         .getResourceAsStream("/tika-eval-comparison-config.xml")) {
                     Files.copy(is, tmpBCConfig, StandardCopyOption.REPLACE_EXISTING);
                 }
                 argList.add("-bc");
-                argList.add(tmpBCConfig.toAbsolutePath().toString());
+                argList.add(tmpBCConfig
+                        .toAbsolutePath()
+                        .toString());
 
             }
             String[] updatedArgs = argList.toArray(new String[0]);
             DefaultParser defaultCLIParser = new DefaultParser();
             try {
-                CommandLine commandLine =
-                        defaultCLIParser.parse(ExtractComparer.OPTIONS, updatedArgs);
+                CommandLine commandLine = defaultCLIParser.parse(ExtractComparer.OPTIONS, updatedArgs);
                 if (commandLine.hasOption("db") && commandLine.hasOption("jdbc")) {
-                    System.out.println(
-                            "Please specify either the default -db or the full -jdbc, not both");
+                    System.out.println("Please specify either the default -db or the full -jdbc, not both");
                     ExtractComparer.USAGE();
                     return;
                 }
@@ -345,7 +349,9 @@ public class TikaEvalCLI {
 
             // lazy delete because main() calls System.exit()
             if (tmpBCConfig != null && Files.isRegularFile(tmpBCConfig)) {
-                tmpBCConfig.toFile().deleteOnExit();
+                tmpBCConfig
+                        .toFile()
+                        .deleteOnExit();
             }
             FSBatchProcessCLI.main(updatedArgs);
         } finally {

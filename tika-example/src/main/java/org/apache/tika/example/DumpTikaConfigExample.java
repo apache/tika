@@ -60,8 +60,7 @@ public class DumpTikaConfigExample {
                     mode = TikaConfigSerializer.Mode.STATIC;
                 } else {
                     System.out.println("Use:");
-                    System.out.println(
-                            "  DumpTikaConfig [--dump-minimal] [--dump-current] [--dump-static] [filename] [encoding]");
+                    System.out.println("  DumpTikaConfig [--dump-minimal] [--dump-current] [--dump-static] [filename] [encoding]");
                     System.out.println("");
                     System.out.println("--dump-minimal    Produce the minimal config file");
                     System.out.println("--dump-current    The current (with defaults) config file");

@@ -45,8 +45,7 @@ public class LanguageResourceTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(LanguageResource.class);
-        sf.setResourceProvider(LanguageResource.class,
-                new SingletonResourceProvider(new LanguageResource()));
+        sf.setResourceProvider(LanguageResource.class, new SingletonResourceProvider(new LanguageResource()));
 
     }
 
@@ -63,8 +62,11 @@ public class LanguageResourceTest extends CXFTestBase {
     @Test
     public void testDetectEnglishString() throws Exception {
         String url = endPoint + LANG_STRING_PATH;
-        Response response =
-                WebClient.create(url).type("text/plain").accept("text/plain").put(ENGLISH_STRING);
+        Response response = WebClient
+                .create(url)
+                .type("text/plain")
+                .accept("text/plain")
+                .put(ENGLISH_STRING);
         assertNotNull(response);
         String readLang = getStringFromInputStream((InputStream) response.getEntity());
         assertEquals("en", readLang);
@@ -73,8 +75,11 @@ public class LanguageResourceTest extends CXFTestBase {
     @Test
     public void testDetectFrenchString() throws Exception {
         String url = endPoint + LANG_STRING_PATH;
-        Response response =
-                WebClient.create(url).type("text/plain").accept("text/plain").put(FRENCH_STRING);
+        Response response = WebClient
+                .create(url)
+                .type("text/plain")
+                .accept("text/plain")
+                .put(FRENCH_STRING);
         assertNotNull(response);
         String readLang = getStringFromInputStream((InputStream) response.getEntity());
         assertEquals("fr", readLang);
@@ -83,7 +88,10 @@ public class LanguageResourceTest extends CXFTestBase {
     @Test
     public void testDetectEnglishFile() throws Exception {
         String url = endPoint + LANG_STREAM_PATH;
-        Response response = WebClient.create(url).type("text/plain").accept("text/plain")
+        Response response = WebClient
+                .create(url)
+                .type("text/plain")
+                .accept("text/plain")
                 .put(getClass().getResourceAsStream("/test-documents/english.txt"));
         assertNotNull(response);
         String readLang = getStringFromInputStream((InputStream) response.getEntity());
@@ -93,7 +101,10 @@ public class LanguageResourceTest extends CXFTestBase {
     @Test
     public void testDetectFrenchFile() throws Exception {
         String url = endPoint + LANG_STREAM_PATH;
-        Response response = WebClient.create(url).type("text/plain").accept("text/plain")
+        Response response = WebClient
+                .create(url)
+                .type("text/plain")
+                .accept("text/plain")
                 .put(getClass().getResourceAsStream("/test-documents/french.txt"));
         assertNotNull(response);
         String readLang = getStringFromInputStream((InputStream) response.getEntity());

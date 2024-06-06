@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
-import org.apache.tika.pipes.pipesiterator.gcs.GCSPipesIterator;
 
 @Disabled("turn into an actual unit test")
 public class TestGCSPipesIterator {

@@ -38,13 +38,14 @@ import org.apache.tika.server.core.writer.JSONObjWriter;
 public class TikaServerStatusTest extends CXFTestBase {
 
     private final static String STATUS_PATH = "/status";
-    private final static String SERVER_ID = UUID.randomUUID().toString();
+    private final static String SERVER_ID = UUID
+            .randomUUID()
+            .toString();
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaServerStatus.class);
-        sf.setResourceProvider(TikaServerStatus.class, new SingletonResourceProvider(
-                new TikaServerStatus(new ServerStatus(SERVER_ID, 0))));
+        sf.setResourceProvider(TikaServerStatus.class, new SingletonResourceProvider(new TikaServerStatus(new ServerStatus(SERVER_ID, 0))));
     }
 
     @Override
@@ -56,17 +57,27 @@ public class TikaServerStatusTest extends CXFTestBase {
 
     @Test
     public void testBasic() throws Exception {
-        Response response = WebClient.create(endPoint + STATUS_PATH).get();
+        Response response = WebClient
+                .create(endPoint + STATUS_PATH)
+                .get();
         String jsonString = getStringFromInputStream((InputStream) response.getEntity());
         JsonNode root = new ObjectMapper().readTree(jsonString);
         assertTrue(root.has("server_id"));
         assertTrue(root.has("status"));
         assertTrue(root.has("millis_since_last_parse_started"));
         assertTrue(root.has("files_processed"));
-        assertEquals("OPERATING", root.get("status").asText());
-        assertEquals(0, root.get("files_processed").intValue());
-        long millis = root.get("millis_since_last_parse_started").longValue();
+        assertEquals("OPERATING", root
+                .get("status")
+                .asText());
+        assertEquals(0, root
+                .get("files_processed")
+                .intValue());
+        long millis = root
+                .get("millis_since_last_parse_started")
+                .longValue();
         assertTrue(millis >= 0 && millis < 360000);
-        assertEquals(SERVER_ID, root.get("server_id").asText());
+        assertEquals(SERVER_ID, root
+                .get("server_id")
+                .asText());
     }
 }

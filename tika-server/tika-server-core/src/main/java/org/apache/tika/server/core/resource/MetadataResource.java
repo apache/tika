@@ -53,21 +53,19 @@ public class MetadataResource {
     @Consumes("multipart/form-data")
     @Produces({"text/csv", "application/json"})
     @Path("form")
-    public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info)
-            throws Exception {
-        return Response.ok(
-                parseMetadata(att.getObject(InputStream.class), new Metadata(), att.getHeaders(),
-                        info)).build();
+    public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
+        return Response
+                .ok(parseMetadata(att.getObject(InputStream.class), new Metadata(), att.getHeaders(), info))
+                .build();
     }
 
     @PUT
     @Produces({"text/csv", "application/json"})
-    public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders,
-                                @Context UriInfo info) throws Exception {
+    public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
         Metadata metadata = new Metadata();
-        return Response.ok(
-                parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders, info),
-                        metadata, httpHeaders.getRequestHeaders(), info)).build();
+        return Response
+                .ok(parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info))
+                .build();
     }
 
     /**
@@ -96,9 +94,7 @@ public class MetadataResource {
     @PUT
     @Path("{field}")
     @Produces({"text/csv", "application/json", "text/plain"})
-    public Response getMetadataField(InputStream is, @Context HttpHeaders httpHeaders,
-                                     @Context UriInfo info, @PathParam("field") String field)
-            throws Exception {
+    public Response getMetadataField(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info, @PathParam("field") String field) throws Exception {
 
         // use BAD request to indicate that we may not have had enough data to
         // process the request
@@ -106,8 +102,7 @@ public class MetadataResource {
         Metadata metadata = new Metadata();
         boolean success = false;
         try {
-            parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders, info), metadata,
-                    httpHeaders.getRequestHeaders(), info);
+            parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info);
             // once we've parsed the document successfully, we should use NOT_FOUND
             // if we did not see the field
             defaultErrorResponse = Response.Status.NOT_FOUND;
@@ -117,8 +112,10 @@ public class MetadataResource {
         }
 
         if (success == false || metadata.get(field) == null) {
-            return Response.status(defaultErrorResponse)
-                    .entity("Failed to get metadata field " + field).build();
+            return Response
+                    .status(defaultErrorResponse)
+                    .entity("Failed to get metadata field " + field)
+                    .build();
         }
 
         // remove fields we don't care about for the response
@@ -127,12 +124,12 @@ public class MetadataResource {
                 metadata.remove(name);
             }
         }
-        return Response.ok(metadata).build();
+        return Response
+                .ok(metadata)
+                .build();
     }
 
-    protected Metadata parseMetadata(InputStream is, Metadata metadata,
-                                     MultivaluedMap<String, String> httpHeaders, UriInfo info)
-            throws IOException {
+    protected Metadata parseMetadata(InputStream is, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info) throws IOException {
         final ParseContext context = new ParseContext();
         Parser parser = TikaResource.createParser();
         fillMetadata(parser, metadata, httpHeaders);

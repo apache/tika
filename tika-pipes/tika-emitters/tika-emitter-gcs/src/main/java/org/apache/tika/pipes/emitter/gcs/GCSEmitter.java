@@ -45,10 +45,11 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.StreamEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.StringUtils;
 
 
@@ -69,12 +70,13 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
      * @throws TikaException
      */
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList)
-            throws IOException, TikaEmitterException {
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.size() == 0) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
         }
-        try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get()) {
+        try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
+                .builder()
+                .get()) {
             try (Writer writer = new OutputStreamWriter(bos, StandardCharsets.UTF_8)) {
                 JsonMetadataList.toJson(metadataList, writer);
             } catch (IOException e) {
@@ -93,13 +95,14 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
      * @throws TikaEmitterException or IOexception if there is a Runtime s3 client exception
      */
     @Override
-    public void emit(String path, InputStream is, Metadata userMetadata)
-            throws IOException, TikaEmitterException {
+    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext) throws IOException, TikaEmitterException {
 
         if (is instanceof TikaInputStream && ((TikaInputStream) is).hasFile()) {
             write(path, userMetadata, Files.readAllBytes(((TikaInputStream) is).getPath()));
         } else {
-            try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get()) {
+            try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
+                    .builder()
+                    .get()) {
                 IOUtils.copy(is, bos);
                 write(path, userMetadata, bos.toByteArray());
             }
@@ -117,15 +120,18 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
 
         LOGGER.debug("about to emit to target bucket: ({}) path:({})", bucket, path);
         BlobId blobId = BlobId.of(bucket, path);
-        BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
+        BlobInfo blobInfo = BlobInfo
+                .newBuilder(blobId)
+                .build();
 
         for (String n : userMetadata.names()) {
             String[] vals = userMetadata.getValues(n);
             if (vals.length > 1) {
-                LOGGER.warn("Can only write the first value for key {}. I see {} values.", n,
-                        vals.length);
+                LOGGER.warn("Can only write the first value for key {}. I see {} values.", n, vals.length);
             }
-            blobInfo.getMetadata().put(n, vals[0]);
+            blobInfo
+                    .getMetadata()
+                    .put(n, vals[0]);
         }
         storage.create(blobInfo, bytes);
     }
@@ -173,12 +179,15 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //params have already been set...ignore them
         //TODO -- add other params to the builder as needed
-        storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
+        storage = StorageOptions
+                .newBuilder()
+                .setProjectId(projectId)
+                .build()
+                .getService();
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         mustNotBeEmpty("bucket", this.bucket);
         mustNotBeEmpty("projectId", this.projectId);
     }

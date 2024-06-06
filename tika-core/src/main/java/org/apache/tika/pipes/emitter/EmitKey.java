@@ -21,6 +21,8 @@ import java.util.Objects;
 
 public class EmitKey implements Serializable {
 
+    public static EmitKey NO_EMIT = new EmitKey(null, null);
+
     /**
      * Serial version UID
      */

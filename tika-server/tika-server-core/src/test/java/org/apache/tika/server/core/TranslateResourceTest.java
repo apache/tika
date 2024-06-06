@@ -39,17 +39,14 @@ public class TranslateResourceTest extends CXFTestBase {
     private static final String TRANSLATE_PATH = "/translate";
     private static final String TRANSLATE_ALL_PATH = TRANSLATE_PATH + "/all";
     private static final String TRANSLATE_TXT = "This won't translate";
-    private static final String LINGO_PATH =
-            "/org.apache.tika.language.translate.impl.Lingo24Translator";
+    private static final String LINGO_PATH = "/org.apache.tika.language.translate.impl.Lingo24Translator";
     private static final String SRCDEST = "/es/en";
     private static final String DEST = "/en";
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TranslateResource.class);
-        sf.setResourceProvider(TranslateResource.class,
-                new SingletonResourceProvider(new TranslateResource(
-                        new ServerStatus("", 0), 60000)));
+        sf.setResourceProvider(TranslateResource.class, new SingletonResourceProvider(new TranslateResource(new ServerStatus("", 0), 60000)));
 
     }
 
@@ -66,8 +63,11 @@ public class TranslateResourceTest extends CXFTestBase {
     @Test
     public void testTranslateFull() throws Exception {
         String url = endPoint + TRANSLATE_ALL_PATH + LINGO_PATH + SRCDEST;
-        Response response =
-                WebClient.create(url).type("text/plain").accept("*/*").put(TRANSLATE_TXT);
+        Response response = WebClient
+                .create(url)
+                .type("text/plain")
+                .accept("*/*")
+                .put(TRANSLATE_TXT);
         assertNotNull(response);
         String translated = getStringFromInputStream((InputStream) response.getEntity());
         assertEquals(TRANSLATE_TXT, translated);
@@ -76,8 +76,11 @@ public class TranslateResourceTest extends CXFTestBase {
     @Test
     public void testTranslateAutoLang() throws Exception {
         String url = endPoint + TRANSLATE_ALL_PATH + LINGO_PATH + DEST;
-        Response response =
-                WebClient.create(url).type("text/plain").accept("*/*").put(TRANSLATE_TXT);
+        Response response = WebClient
+                .create(url)
+                .type("text/plain")
+                .accept("*/*")
+                .put(TRANSLATE_TXT);
         assertNotNull(response);
         String translated = getStringFromInputStream((InputStream) response.getEntity());
         assertEquals(TRANSLATE_TXT, translated);

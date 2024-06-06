@@ -21,6 +21,7 @@ import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * This class extracts a range of bytes from a given fetch key.
@@ -28,7 +29,12 @@ import org.apache.tika.metadata.Metadata;
 public interface RangeFetcher extends Fetcher {
     //At some point, Tika 3.x?, we may want to add optional ranges to the fetchKey?
 
-    InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata)
+    default InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata)
+            throws TikaException, IOException {
+        return fetch(fetchKey, startOffset, endOffset, metadata, new ParseContext());
+    }
+
+    InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata, ParseContext parseContext)
             throws TikaException, IOException;
 
 }

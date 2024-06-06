@@ -26,6 +26,5 @@ import org.apache.tika.batch.StatusReporter;
 
 public interface StatusReporterBuilder {
 
-    public StatusReporter build(FileResourceCrawler crawler, ConsumersManager consumers, Node n,
-                                Map<String, String> commandlineArguments);
+    public StatusReporter build(FileResourceCrawler crawler, ConsumersManager consumers, Node n, Map<String, String> commandlineArguments);
 }

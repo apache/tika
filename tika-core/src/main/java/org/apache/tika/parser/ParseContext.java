@@ -17,8 +17,10 @@
 package org.apache.tika.parser;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Parse context. Used to pass context information to Tika parsers.
@@ -82,4 +84,33 @@ public class ParseContext implements Serializable {
             return defaultValue;
         }
     }
+
+    public boolean isEmpty() {
+        return context.size() == 0;
+    }
+
+    //this should really only be used for serialization
+    public Set<String> keySet() {
+        return Collections
+                .unmodifiableSet(context.keySet());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ParseContext that = (ParseContext) o;
+        return context.equals(that.context);
+    }
+
+    @Override
+    public int hashCode() {
+        return context.hashCode();
+    }
+
 }

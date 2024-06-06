@@ -47,8 +47,7 @@ import org.apache.tika.eval.app.db.Cols;
 @Disabled("move these tests to TikaEvalCLITest")
 public class ComparerBatchTest extends FSBatchTestBase {
 
-    public final static String COMPARER_PROCESS_CLASS =
-            "org.apache.tika.batch.fs.FSBatchProcessCLI";
+    public final static String COMPARER_PROCESS_CLASS = "org.apache.tika.batch.fs.FSBatchProcessCLI";
     private final static String compJoinCont = "";
 
     @TempDir
@@ -62,10 +61,14 @@ public class ComparerBatchTest extends FSBatchTestBase {
     @BeforeAll
     public static void setUp() throws Exception {
 
-        File inputRoot = new File(ComparerBatchTest.class.getResource("/test-dirs").toURI());
+        File inputRoot = new File(ComparerBatchTest.class
+                .getResource("/test-dirs")
+                .toURI());
         dbDir = Files.createTempDirectory(inputRoot.toPath(), "tika-test-db-dir-");
         Map<String, String> args = new HashMap<>();
-        Path db = FileSystems.getDefault().getPath(dbDir.toString(), "comparisons_test");
+        Path db = FileSystems
+                .getDefault()
+                .getPath(dbDir.toString(), "comparisons_test");
         args.put("-db", db.toString());
 
         //for debugging, you can use this to select only one file pair to load
@@ -90,14 +93,12 @@ public class ComparerBatchTest extends FSBatchTestBase {
     public void testSimpleDBWriteAndRead() throws Exception {
         Set<String> set = new HashSet<>();
         //filenames
-        List<String> list =
-                getColStrings(Cols.FILE_NAME.name(), ExtractComparer.PROFILES_A.getName(), "");
+        List<String> list = getColStrings(Cols.FILE_NAME.name(), ExtractComparer.PROFILES_A.getName(), "");
         assertEquals(7, list.size());
         assertTrue(list.contains("file1.pdf"));
 
         //container ids in comparisons table
-        list = getColStrings(Cols.CONTAINER_ID.name(),
-                ExtractComparer.COMPARISON_CONTAINERS.getName(), "");
+        list = getColStrings(Cols.CONTAINER_ID.name(), ExtractComparer.COMPARISON_CONTAINERS.getName(), "");
         assertEquals(10, list.size());
         set.clear();
         set.addAll(list);
@@ -378,8 +379,7 @@ public class ComparerBatchTest extends FSBatchTestBase {
         return getColStrings(colName, ExtractComparer.CONTENT_COMPARISONS.getName(), null);
     }
 
-    private List<String> getColStrings(String colName, String table, String where)
-            throws Exception {
+    private List<String> getColStrings(String colName, String table, String where) throws Exception {
         String sql = getSql(colName, table, where);
         List<String> results = new ArrayList<>();
         try (Statement st = conn.createStatement()) {
@@ -394,9 +394,15 @@ public class ComparerBatchTest extends FSBatchTestBase {
 
     private String getSql(String colName, String table, String where) {
         StringBuilder sb = new StringBuilder();
-        sb.append("select ").append(colName).append(" from ").append(table);
+        sb
+                .append("select ")
+                .append(colName)
+                .append(" from ")
+                .append(table);
         if (where != null && !where.equals("")) {
-            sb.append(" where ").append(where);
+            sb
+                    .append(" where ")
+                    .append(where);
         }
         return sb.toString();
     }

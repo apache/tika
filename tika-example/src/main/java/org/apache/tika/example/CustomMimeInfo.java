@@ -35,8 +35,7 @@ public class CustomMimeInfo {
     public static String customCompositeDetector() throws Exception {
         String path = "file:///path/to/prescription-type.xml";
         MimeTypes typeDatabase = MimeTypesFactory.create(new URL(path));
-        Tika tika =
-                new Tika(new CompositeDetector(typeDatabase, new EncryptedPrescriptionDetector()));
+        Tika tika = new Tika(new CompositeDetector(typeDatabase, new EncryptedPrescriptionDetector()));
         return tika.detect("/path/to/tmp/prescription.xpd");
     }
 

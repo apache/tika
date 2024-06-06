@@ -37,8 +37,7 @@ public class ExtractReaderTest extends TikaTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        testJsonFile =
-                getResourceAsFile("/test-dirs/extractsA/file2_attachANotB.doc.json").toPath();
+        testJsonFile = getResourceAsFile("/test-dirs/extractsA/file2_attachANotB.doc.json").toPath();
         testTxtFile = getResourceAsFile("/test-dirs/extractsB/file13_attachANotB.doc.txt").toPath();
     }
 
@@ -49,25 +48,44 @@ public class ExtractReaderTest extends TikaTest {
         List<Metadata> metadataList = extractReader.loadExtract(testJsonFile);
 
         assertEquals(2, metadataList.size());
-        assertEquals(1, metadataList.get(0).getValues(TikaCoreProperties.TIKA_CONTENT).length);
-        assertEquals(1, metadataList.get(1).getValues(TikaCoreProperties.TIKA_CONTENT).length);
-        assertContains("fox", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("attachment", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals(1, metadataList
+                .get(0)
+                .getValues(TikaCoreProperties.TIKA_CONTENT).length);
+        assertEquals(1, metadataList
+                .get(1)
+                .getValues(TikaCoreProperties.TIKA_CONTENT).length);
+        assertContains("fox", metadataList
+                .get(0)
+                .get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("attachment", metadataList
+                .get(1)
+                .get(TikaCoreProperties.TIKA_CONTENT));
 
         extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.FIRST_ONLY);
         metadataList = extractReader.loadExtract(testJsonFile);
         assertEquals(1, metadataList.size());
-        assertEquals(1, metadataList.get(0).getValues(TikaCoreProperties.TIKA_CONTENT).length);
-        assertContains("fox", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-        assertNotContained("attachment", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals(1, metadataList
+                .get(0)
+                .getValues(TikaCoreProperties.TIKA_CONTENT).length);
+        assertContains("fox", metadataList
+                .get(0)
+                .get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotContained("attachment", metadataList
+                .get(0)
+                .get(TikaCoreProperties.TIKA_CONTENT));
 
-        extractReader =
-                new ExtractReader(ExtractReader.ALTER_METADATA_LIST.CONCATENATE_CONTENT_INTO_FIRST);
+        extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.CONCATENATE_CONTENT_INTO_FIRST);
         metadataList = extractReader.loadExtract(testJsonFile);
         assertEquals(1, metadataList.size());
-        assertEquals(1, metadataList.get(0).getValues(TikaCoreProperties.TIKA_CONTENT).length);
-        assertContains("fox", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("attachment", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals(1, metadataList
+                .get(0)
+                .getValues(TikaCoreProperties.TIKA_CONTENT).length);
+        assertContains("fox", metadataList
+                .get(0)
+                .get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("attachment", metadataList
+                .get(0)
+                .get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
@@ -77,8 +95,7 @@ public class ExtractReaderTest extends TikaTest {
         assertEquals(1, metadataList.size());
         Metadata m = metadataList.get(0);
         assertEquals(1, m.getValues(TikaCoreProperties.TIKA_CONTENT).length);
-        assertContains("the quick brown fox fox fox jumped over the lazy lazy dog",
-                m.get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("the quick brown fox fox fox jumped over the lazy lazy dog", m.get(TikaCoreProperties.TIKA_CONTENT));
 
         //test that the mime is inferred from the file extension
         assertEquals("application/msword", m.get(Metadata.CONTENT_TYPE));

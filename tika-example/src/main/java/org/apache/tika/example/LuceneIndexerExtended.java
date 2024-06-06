@@ -44,8 +44,7 @@ public class LuceneIndexerExtended {
 
     public static void main(String[] args) throws Exception {
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new StandardAnalyzer());
-        try (IndexWriter writer = new IndexWriter(FSDirectory.open(Paths.get(args[0])),
-                indexWriterConfig)) {
+        try (IndexWriter writer = new IndexWriter(FSDirectory.open(Paths.get(args[0])), indexWriterConfig)) {
             LuceneIndexer indexer = new LuceneIndexer(new Tika(), writer);
             for (int i = 1; i < args.length; i++) {
                 indexer.indexDocument(new File(args[i]));
