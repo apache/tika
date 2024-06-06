@@ -56,8 +56,7 @@ public class TikaResourceTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaResource.class);
-        sf.setResourceProvider(TikaResource.class,
-                new SingletonResourceProvider(new TikaResource()));
+        sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(new TikaResource()));
     }
 
     @Override
@@ -70,18 +69,22 @@ public class TikaResourceTest extends CXFTestBase {
 
     @Test
     public void testHelloWorld() throws Exception {
-        Response response =
-                WebClient.create(endPoint + TIKA_PATH).type("text/plain").accept("text/plain")
-                        .get();
-        assertEquals(TikaResource.GREETING,
-                getStringFromInputStream((InputStream) response.getEntity()));
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .type("text/plain")
+                .accept("text/plain")
+                .get();
+        assertEquals(TikaResource.GREETING, getStringFromInputStream((InputStream) response.getEntity()));
     }
 
     @Test
     public void testHeaders() throws Exception {
         MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
         map.addAll("meta_mymeta", "first", "second", "third");
-        Response response = WebClient.create(endPoint + TIKA_PATH).headers(map).accept("text/xml")
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .headers(map)
+                .accept("text/xml")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
         String xml = getStringFromInputStream((InputStream) response.getEntity());
         //can't figure out why these values are comma-delimited, rather
@@ -102,14 +105,18 @@ public class TikaResourceTest extends CXFTestBase {
 
         Response response = null;
         try {
-            response = WebClient.create(endPoint + TIKA_PATH).accept("text/plain")
+            response = WebClient
+                    .create(endPoint + TIKA_PATH)
+                    .accept("text/plain")
                     .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
         } catch (Exception e) {
             //oom may or may not cause an exception depending
             //on the timing
         }
 
-        response = WebClient.create(endPoint + TIKA_PATH).accept("text/plain")
+        response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .accept("text/plain")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
         String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
 
@@ -118,19 +125,21 @@ public class TikaResourceTest extends CXFTestBase {
 
     @Test
     public void testApplicationWadl() throws Exception {
-        Response response =
-                WebClient.create(endPoint + TIKA_PATH + "?_wadl").accept("text/plain").get();
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "?_wadl")
+                .accept("text/plain")
+                .get();
         String resp = getStringFromInputStream((InputStream) response.getEntity());
         assertTrue(resp.startsWith("<application"));
     }
 
     @Test
     public void testJson() throws Exception {
-        Response response = WebClient.create(endPoint + TIKA_PATH).accept("application/json")
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
-        Metadata metadata = JsonMetadata.fromJson(
-                new InputStreamReader(((InputStream) response.getEntity()),
-                        StandardCharsets.UTF_8));
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
 
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
@@ -139,33 +148,33 @@ public class TikaResourceTest extends CXFTestBase {
 
     @Test
     public void testJsonNPE() throws Exception {
-        Response response = WebClient.create(endPoint + TIKA_PATH).accept("application/json")
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_NULL_POINTER));
-        Metadata metadata = JsonMetadata.fromJson(
-                new InputStreamReader(((InputStream) response.getEntity()),
-                        StandardCharsets.UTF_8));
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
 
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
         assertContains("some content", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("null pointer message",
-                metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        assertContains("null pointer message", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
     }
 
     @Test
     public void testJsonWriteLimit() throws Exception {
-        Response response = WebClient.create(endPoint + TIKA_PATH).header("writeLimit", "100")
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .header("writeLimit", "100")
                 .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
-        Metadata metadata = JsonMetadata.fromJson(
-                new InputStreamReader(((InputStream) response.getEntity()),
-                        StandardCharsets.UTF_8));
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
 
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
         assertContains("Hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertNotFound("dissolve", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        assertTrue(metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION)
+        assertTrue(metadata
+                .get(TikaCoreProperties.CONTAINER_EXCEPTION)
                 .startsWith("org.apache.tika.exception.WriteLimitReachedException"));
         assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
     }
@@ -174,13 +183,17 @@ public class TikaResourceTest extends CXFTestBase {
     public void testNoWriteLimitOnStreamingWrite() throws Exception {
         //this test shows that write limit is not active for
         //text or xhtml or anything that does streaming writes
-        Response response = WebClient.create(endPoint + TIKA_PATH).header("writeLimit", "100")
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .header("writeLimit", "100")
                 .accept("text/plain")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
         String content = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("separation.", content);
 
-        response = WebClient.create(endPoint + TIKA_PATH).header("writeLimit", "100")
+        response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .header("writeLimit", "100")
                 .accept("text/html")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
         content = getStringFromInputStream((InputStream) response.getEntity());
@@ -189,11 +202,11 @@ public class TikaResourceTest extends CXFTestBase {
 
     @Test
     public void testJsonHandlerType() throws Exception {
-        Response response = WebClient.create(endPoint + TIKA_PATH).accept("application/json")
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
-        Metadata metadata = JsonMetadata.fromJson(
-                new InputStreamReader(((InputStream) response.getEntity()),
-                        StandardCharsets.UTF_8));
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
 
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
@@ -201,10 +214,11 @@ public class TikaResourceTest extends CXFTestBase {
         //default is xhtml
         assertContains("<p>", metadata.get(TikaCoreProperties.TIKA_CONTENT));
 
-        response = WebClient.create(endPoint + TIKA_PATH + "/text").accept("application/json")
+        response = WebClient
+                .create(endPoint + TIKA_PATH + "/text")
+                .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
-        metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()),
-                StandardCharsets.UTF_8));
+        metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
 
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));

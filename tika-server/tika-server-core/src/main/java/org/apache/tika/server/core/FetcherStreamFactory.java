@@ -64,9 +64,22 @@ public class FetcherStreamFactory implements InputStreamFactory {
         this.fetcherManager = fetcherManager;
     }
 
+    /**
+     * Tries to parse a long out of the value.  If the val is blank, it returns -1.
+     * Throws {@link NumberFormatException}
+     *
+     * @param val
+     * @return
+     */
+    private static long getLong(String val) {
+        if (StringUtils.isBlank(val)) {
+            return -1;
+        }
+        return Long.parseLong(val);
+    }
+
     @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders,
-                                      UriInfo uriInfo) throws IOException {
+    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders, UriInfo uriInfo) throws IOException {
         MultivaluedMap params = (uriInfo == null) ? null : uriInfo.getQueryParameters();
         String fetcherName = getParam("fetcherName", httpHeaders, params);
         String fetchKey = getParam("fetchKey", httpHeaders, params);
@@ -79,17 +92,14 @@ public class FetcherStreamFactory implements InputStreamFactory {
         long fetchRangeStart = getLong(getParam("fetchRangeStart", httpHeaders, params));
         long fetchRangeEnd = getLong(getParam("fetchRangeEnd", httpHeaders, params));
         if (StringUtils.isBlank(fetcherName) != StringUtils.isBlank(fetchKey)) {
-            throw new IOException("Must specify both a 'fetcherName' and a 'fetchKey'. I see: " +
-                    " fetcherName:" + fetcherName + " and fetchKey:" + fetchKey);
+            throw new IOException("Must specify both a 'fetcherName' and a 'fetchKey'. I see: " + " fetcherName:" + fetcherName + " and fetchKey:" + fetchKey);
         }
         if (fetchRangeStart < 0 && fetchRangeEnd > -1) {
-            throw new IllegalArgumentException("fetchRangeStart must be > -1 if a fetchRangeEnd " +
-                    "is specified");
+            throw new IllegalArgumentException("fetchRangeStart must be > -1 if a fetchRangeEnd " + "is specified");
         }
 
         if (fetchRangeStart > -1 && fetchRangeEnd < 0) {
-            throw new IllegalArgumentException("fetchRangeEnd must be > -1 if a fetchRangeStart " +
-                    "is specified");
+            throw new IllegalArgumentException("fetchRangeEnd must be > -1 if a fetchRangeStart " + "is specified");
         }
 
         if (!StringUtils.isBlank(fetcherName)) {
@@ -97,9 +107,8 @@ public class FetcherStreamFactory implements InputStreamFactory {
                 LOG.debug("going to fetch '{}' from fetcher: {}", fetchKey, fetcherName);
                 Fetcher fetcher = fetcherManager.getFetcher(fetcherName);
                 if (fetchRangeStart > -1 && fetchRangeEnd > -1 && !(fetcher instanceof RangeFetcher)) {
-                    throw new IllegalArgumentException("Can't call a fetch with a range on a fetcher that" +
-                            " is not a RangeFetcher: name=" + fetcher.getName() +
-                            " class=" + fetcher.getClass());
+                    throw new IllegalArgumentException(
+                            "Can't call a fetch with a range on a fetcher that" + " is not a RangeFetcher: name=" + fetcher.getName() + " class=" + fetcher.getClass());
                 }
                 return fetcher.fetch(fetchKey, metadata, parseContext);
             } catch (TikaException e) {
@@ -122,24 +131,10 @@ public class FetcherStreamFactory implements InputStreamFactory {
     }
 
     private String getParam(String paramName, HttpHeaders httpHeaders, MultivaluedMap uriParams) {
-        if (uriParams == null || ! uriParams.containsKey(paramName)) {
+        if (uriParams == null || !uriParams.containsKey(paramName)) {
             return httpHeaders.getHeaderString(paramName);
         }
 
-        return (String)uriParams.getFirst(paramName);
-    }
-
-    /**
-     * Tries to parse a long out of the value.  If the val is blank, it returns -1.
-     * Throws {@link NumberFormatException}
-     *
-     * @param val
-     * @return
-     */
-    private static long getLong(String val) {
-        if (StringUtils.isBlank(val)) {
-            return -1;
-        }
-        return Long.parseLong(val);
+        return (String) uriParams.getFirst(paramName);
     }
 }

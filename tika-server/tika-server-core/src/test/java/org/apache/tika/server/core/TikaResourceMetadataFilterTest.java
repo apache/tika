@@ -52,8 +52,7 @@ public class TikaResourceMetadataFilterTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaResource.class);
-        sf.setResourceProvider(TikaResource.class,
-                new SingletonResourceProvider(new TikaResource()));
+        sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(new TikaResource()));
     }
 
     @Override
@@ -67,12 +66,11 @@ public class TikaResourceMetadataFilterTest extends CXFTestBase {
 
     @Test
     public void testBasic() throws Exception {
-        Response response = WebClient.create(endPoint + TIKA_PATH).accept(
-                "application/json")
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
-        Metadata metadata =
-                JsonMetadata.fromJson(new InputStreamReader(
-                        ((InputStream)response.getEntity()), StandardCharsets.UTF_8));
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
         assertEquals(2, metadata.names().length);
         assertNull(metadata.get("author"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));

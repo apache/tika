@@ -103,19 +103,14 @@ public class TikaServerProcess {
         Options options = new Options();
         options.addOption("h", "host", true, "host name, use * for all)");
         options.addOption("p", "port", true, "listen port");
-        options.addOption("c", "config", true,
-                "Tika Configuration file to override default config with.");
+        options.addOption("c", "config", true, "Tika Configuration file to override default config with.");
         options.addOption("i", "id", true, "id to use for server in server status endpoint");
         options.addOption("?", "help", false, "this help message");
         options.addOption("noFork", "noFork", false, "if launched in no fork mode");
         options.addOption("forkedStatusFile", true,
-                "Not allowed in -noFork: temporary file used to communicate " +
-                        "with forking process -- do not use this! " +
-                        "Should only be invoked by forking process.");
-        options.addOption("tmpFilePrefix", true,
-                "Not allowed in -noFork: prefix for temp file - for debugging only");
-        options.addOption("numRestarts", true, "Not allowed in -noFork: number of times that " +
-                "the forked server has had to be restarted.");
+                "Not allowed in -noFork: temporary file used to communicate " + "with forking process -- do not use this! " + "Should only be invoked by forking process.");
+        options.addOption("tmpFilePrefix", true, "Not allowed in -noFork: prefix for temp file - for debugging only");
+        options.addOption("numRestarts", true, "Not allowed in -noFork: number of times that " + "the forked server has had to be restarted.");
         return options;
     }
 
@@ -147,8 +142,7 @@ public class TikaServerProcess {
         return isBindException(e.getCause());
     }
 
-    private static void startServer(ServerDetails serverDetails, TikaServerConfig tikaServerConfig)
-            throws Exception {
+    private static void startServer(ServerDetails serverDetails, TikaServerConfig tikaServerConfig) throws Exception {
 
         try {
             //start the server
@@ -167,8 +161,7 @@ public class TikaServerProcess {
             System.setIn(new ByteArrayInputStream(new byte[0]));
 
             String forkedStatusFile = tikaServerConfig.getForkedStatusFile();
-            Thread serverThread = new Thread(new ServerStatusWatcher(serverDetails.serverStatus, in,
-                    Paths.get(forkedStatusFile), tikaServerConfig));
+            Thread serverThread = new Thread(new ServerStatusWatcher(serverDetails.serverStatus, in, Paths.get(forkedStatusFile), tikaServerConfig));
 
             serverThread.start();
         }
@@ -181,8 +174,7 @@ public class TikaServerProcess {
         String host = tikaServerConfig.getHost();
         int[] ports = tikaServerConfig.getPorts();
         if (ports.length > 1) {
-            throw new IllegalArgumentException(
-                    "there must be only one port here! " + "I see: " + tikaServerConfig.getPort());
+            throw new IllegalArgumentException("there must be only one port here! " + "I see: " + tikaServerConfig.getPort());
         }
 
         int port = ports[0];
@@ -199,17 +191,13 @@ public class TikaServerProcess {
         DigestingParser.Digester digester = null;
         if (!StringUtils.isBlank(tikaServerConfig.getDigest())) {
             try {
-                digester = new CommonsDigester(tikaServerConfig.getDigestMarkLimit(),
-                        tikaServerConfig.getDigest());
+                digester = new CommonsDigester(tikaServerConfig.getDigestMarkLimit(), tikaServerConfig.getDigest());
             } catch (IllegalArgumentException commonsException) {
                 try {
-                    digester = new BouncyCastleDigester(tikaServerConfig.getDigestMarkLimit(),
-                            tikaServerConfig.getDigest());
+                    digester = new BouncyCastleDigester(tikaServerConfig.getDigestMarkLimit(), tikaServerConfig.getDigest());
                 } catch (IllegalArgumentException bcException) {
                     throw new IllegalArgumentException(
-                            "Tried both CommonsDigester (" + commonsException.getMessage() +
-                                    ") and BouncyCastleDigester (" + bcException.getMessage() + ")",
-                            bcException);
+                            "Tried both CommonsDigester (" + commonsException.getMessage() + ") and BouncyCastleDigester (" + bcException.getMessage() + ")", bcException);
                 }
             }
         }
@@ -252,14 +240,19 @@ public class TikaServerProcess {
         sf.setOutInterceptors(Collections.singletonList(new GZIPOutInterceptor()));
         sf.setInInterceptors(Collections.singletonList(new GZIPInInterceptor()));
 
-        String protocol = tikaServerConfig.getTlsConfig().isActive() ? "https" : "http";
+        String protocol = tikaServerConfig
+                .getTlsConfig()
+                .isActive() ? "https" : "http";
         String url = protocol + "://" + host + ":" + port + "/";
         sf.setAddress(url);
         sf.setResourceComparator(new ProduceTypeResourceComparator());
-        BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
-        if (tikaServerConfig.getTlsConfig().isActive()) {
-            LOG.warn("The TLS configuration is in BETA and might change " +
-                    "dramatically in future releases.");
+        BindingFactoryManager manager = sf
+                .getBus()
+                .getExtension(BindingFactoryManager.class);
+        if (tikaServerConfig
+                .getTlsConfig()
+                .isActive()) {
+            LOG.warn("The TLS configuration is in BETA and might change " + "dramatically in future releases.");
             TLSServerParameters tlsParams = getTlsParams(tikaServerConfig.getTlsConfig());
             JettyHTTPServerEngineFactory factory = new JettyHTTPServerEngineFactory();
             factory.setBus(sf.getBus());
@@ -278,8 +271,7 @@ public class TikaServerProcess {
         return details;
     }
 
-    private static TLSServerParameters getTlsParams(TlsConfig tlsConfig)
-            throws GeneralSecurityException, IOException {
+    private static TLSServerParameters getTlsParams(TlsConfig tlsConfig) throws GeneralSecurityException, IOException {
         KeyStoreType keyStore = new KeyStoreType();
         keyStore.setType(tlsConfig.getKeyStoreType());
         keyStore.setPassword(tlsConfig.getKeyStorePassword());
@@ -306,10 +298,7 @@ public class TikaServerProcess {
         return parameters;
     }
 
-    private static void loadAllProviders(TikaServerConfig tikaServerConfig,
-                                         ServerStatus serverStatus,
-                                         List<ResourceProvider> resourceProviders,
-                                         List<Object> writers)
+    private static void loadAllProviders(TikaServerConfig tikaServerConfig, ServerStatus serverStatus, List<ResourceProvider> resourceProviders, List<Object> writers)
             throws TikaException, SAXException, IOException {
         List<ResourceProvider> tmpCoreProviders = loadCoreProviders(tikaServerConfig, serverStatus);
 
@@ -354,20 +343,18 @@ public class TikaServerProcess {
 
     }
 
-    private static List<ResourceProvider> loadCoreProviders(TikaServerConfig tikaServerConfig,
-                                                            ServerStatus serverStatus)
-            throws TikaException, IOException, SAXException {
+    private static List<ResourceProvider> loadCoreProviders(TikaServerConfig tikaServerConfig, ServerStatus serverStatus) throws TikaException, IOException, SAXException {
         List<ResourceProvider> resourceProviders = new ArrayList<>();
         boolean addAsyncResource = false;
         boolean addPipesResource = false;
-        if (tikaServerConfig.getEndpoints().size() == 0) {
+        if (tikaServerConfig
+                .getEndpoints()
+                .size() == 0) {
             resourceProviders.add(new SingletonResourceProvider(new MetadataResource()));
             resourceProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
-            resourceProviders.add(
-                    new SingletonResourceProvider(new DetectorResource(serverStatus)));
+            resourceProviders.add(new SingletonResourceProvider(new DetectorResource(serverStatus)));
             resourceProviders.add(new SingletonResourceProvider(new LanguageResource()));
-            resourceProviders.add(new SingletonResourceProvider(
-                    new TranslateResource(serverStatus, tikaServerConfig.getTaskTimeoutMillis())));
+            resourceProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus, tikaServerConfig.getTaskTimeoutMillis())));
             resourceProviders.add(new SingletonResourceProvider(new TikaResource()));
             resourceProviders.add(new SingletonResourceProvider(new UnpackerResource()));
             resourceProviders.add(new SingletonResourceProvider(new TikaMimeTypes()));
@@ -378,30 +365,28 @@ public class TikaServerProcess {
                 //check to make sure there are both fetchers and emitters
                 //specified.  It is possible that users may only specify fetchers
                 //for legacy endpoints.
-                if (tikaServerConfig.getSupportedFetchers().size() > 0 &&
-                        tikaServerConfig.getSupportedEmitters().size() > 0) {
+                if (tikaServerConfig
+                        .getSupportedFetchers()
+                        .size() > 0 && tikaServerConfig
+                        .getSupportedEmitters()
+                        .size() > 0) {
                     addAsyncResource = true;
                     addPipesResource = true;
                 }
-                resourceProviders.add(
-                        new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
+                resourceProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
             }
         } else {
             for (String endPoint : tikaServerConfig.getEndpoints()) {
                 if ("meta".equals(endPoint)) {
                     resourceProviders.add(new SingletonResourceProvider(new MetadataResource()));
                 } else if ("rmeta".equals(endPoint)) {
-                    resourceProviders.add(
-                            new SingletonResourceProvider(new RecursiveMetadataResource()));
+                    resourceProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
                 } else if ("detect".equals(endPoint)) {
-                    resourceProviders.add(
-                            new SingletonResourceProvider(new DetectorResource(serverStatus)));
+                    resourceProviders.add(new SingletonResourceProvider(new DetectorResource(serverStatus)));
                 } else if ("language".equals(endPoint)) {
                     resourceProviders.add(new SingletonResourceProvider(new LanguageResource()));
                 } else if ("translate".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(
-                            new TranslateResource(serverStatus,
-                                    tikaServerConfig.getTaskTimeoutMillis())));
+                    resourceProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus, tikaServerConfig.getTaskTimeoutMillis())));
                 } else if ("tika".equals(endPoint)) {
                     resourceProviders.add(new SingletonResourceProvider(new TikaResource()));
                 } else if ("unpack".equals(endPoint)) {
@@ -419,44 +404,42 @@ public class TikaServerProcess {
                 } else if ("async".equals(endPoint)) {
                     addAsyncResource = true;
                 } else if ("status".equals(endPoint)) {
-                    resourceProviders.add(
-                            new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
+                    resourceProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
                 }
             }
         }
 
         if (addAsyncResource) {
-            final AsyncResource localAsyncResource =
-                    new AsyncResource(tikaServerConfig.getConfigPath(),
-                            tikaServerConfig.getSupportedFetchers());
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                try {
-                    localAsyncResource.shutdownNow();
-                } catch (Exception e) {
-                    LOG.warn("problem shutting down local async resource", e);
-                }
-            }));
+            final AsyncResource localAsyncResource = new AsyncResource(tikaServerConfig.getConfigPath(), tikaServerConfig.getSupportedFetchers());
+            Runtime
+                    .getRuntime()
+                    .addShutdownHook(new Thread(() -> {
+                        try {
+                            localAsyncResource.shutdownNow();
+                        } catch (Exception e) {
+                            LOG.warn("problem shutting down local async resource", e);
+                        }
+                    }));
             resourceProviders.add(new SingletonResourceProvider(localAsyncResource));
         }
         if (addPipesResource) {
-            final PipesResource localPipesResource =
-                    new PipesResource(tikaServerConfig.getConfigPath());
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                try {
-                    localPipesResource.close();
-                } catch (Exception e) {
-                    LOG.warn("exception closing local pipes resource", e);
-                }
-            }));
+            final PipesResource localPipesResource = new PipesResource(tikaServerConfig.getConfigPath());
+            Runtime
+                    .getRuntime()
+                    .addShutdownHook(new Thread(() -> {
+                        try {
+                            localPipesResource.close();
+                        } catch (Exception e) {
+                            LOG.warn("exception closing local pipes resource", e);
+                        }
+                    }));
             resourceProviders.add(new SingletonResourceProvider(localPipesResource));
         }
         resourceProviders.addAll(loadResourceServices(serverStatus));
         return resourceProviders;
     }
 
-    private static void logFetchersAndEmitters(boolean enableUnsecureFeatures,
-                                               FetcherManager fetcherManager,
-                                               EmitterManager emitterManager) {
+    private static void logFetchersAndEmitters(boolean enableUnsecureFeatures, FetcherManager fetcherManager, EmitterManager emitterManager) {
         if (enableUnsecureFeatures) {
             StringBuilder sb = new StringBuilder();
             Set<String> supportedFetchers = fetcherManager.getSupported();
@@ -464,54 +447,49 @@ public class TikaServerProcess {
             if (supportedFetchers.size() == 0) {
                 sb.append("There are no fetchers specified in the TikaConfig");
             } else {
-                sb.append("The following fetchers are available to whomever has " +
-                        "access to this server:\n");
+                sb.append("The following fetchers are available to whomever has " + "access to this server:\n");
                 for (String p : supportedFetchers) {
-                    sb.append(p).append("\n");
+                    sb
+                            .append(p)
+                            .append("\n");
                 }
             }
             Set<String> emitters = emitterManager.getSupported();
             if (supportedFetchers.size() == 0) {
                 sb.append("There are no emitters specified in the TikaConfig");
             } else {
-                sb.append("The following emitters are available to whomever has " +
-                        "access to this server:\n");
+                sb.append("The following emitters are available to whomever has " + "access to this server:\n");
                 for (String e : emitters) {
-                    sb.append(e).append("\n");
+                    sb
+                            .append(e)
+                            .append("\n");
                 }
             }
             LOG.info(sb.toString());
         } else {
-            if (emitterManager.getSupported().size() > 0) {
-                String warn = "enableUnsecureFeatures has not been set to 'true' in the server " +
-                        "config file.\n" + "The " + emitterManager.getSupported().size() +
-                        " emitter(s) that you've\n" +
-                        "specified in TikaConfig will not be available on the /emit " +
-                        "or /async endpoints.\n" +
-                        "To enable your emitters, start tika-server with " +
-                        "<enableUnsecureFeatures>true</enableUnsecureFeatures> " + "parameter in " +
-                        "the TikaConfig\n\n";
+            if (emitterManager
+                    .getSupported()
+                    .size() > 0) {
+                String warn = "enableUnsecureFeatures has not been set to 'true' in the server " + "config file.\n" + "The " + emitterManager
+                        .getSupported()
+                        .size() + " emitter(s) that you've\n" + "specified in TikaConfig will not be available on the /emit " + "or /async endpoints.\n" +
+                        "To enable your emitters, start tika-server with " + "<enableUnsecureFeatures>true</enableUnsecureFeatures> " + "parameter in " + "the TikaConfig\n\n";
                 LOG.warn(warn);
             }
-            if (emitterManager.getSupported().size() > 0) {
-                String warn = "enableUnsecureFeatures has not been set to 'true' in the server " +
-                        "config file.\n" + "The " + emitterManager.getSupported().size() +
-                        " fetcher(s) that you've\n" +
-                        "specified in TikaConfig will not be available on the /emit " +
-                        "or /async endpoints.\n" +
-                        "To enable your emitters, start tika-server with " +
-                        "<enableUnsecureFeatures>true</enableUnsecureFeatures> " + "parameter in " +
-                        "the TikaConfig\n\n";
+            if (emitterManager
+                    .getSupported()
+                    .size() > 0) {
+                String warn = "enableUnsecureFeatures has not been set to 'true' in the server " + "config file.\n" + "The " + emitterManager
+                        .getSupported()
+                        .size() + " fetcher(s) that you've\n" + "specified in TikaConfig will not be available on the /emit " + "or /async endpoints.\n" +
+                        "To enable your emitters, start tika-server with " + "<enableUnsecureFeatures>true</enableUnsecureFeatures> " + "parameter in " + "the TikaConfig\n\n";
                 LOG.warn(warn);
             }
         }
     }
 
-    private static Collection<? extends ResourceProvider> loadResourceServices(
-            ServerStatus serverStatus) {
-        List<TikaServerResource> resources =
-                new ServiceLoader(TikaServerProcess.class.getClassLoader()).loadServiceProviders(
-                        TikaServerResource.class);
+    private static Collection<? extends ResourceProvider> loadResourceServices(ServerStatus serverStatus) {
+        List<TikaServerResource> resources = new ServiceLoader(TikaServerProcess.class.getClassLoader()).loadServiceProviders(TikaServerResource.class);
         List<ResourceProvider> providers = new ArrayList<>();
         for (TikaServerResource r : resources) {
             LOG.info("loading resource from SPI: " + r.getClass());
@@ -524,8 +502,7 @@ public class TikaServerProcess {
     }
 
     private static Collection<?> loadWriterServices() {
-        return new ServiceLoader(TikaServerProcess.class.getClassLoader()).loadServiceProviders(
-                org.apache.tika.server.core.writer.TikaServerWriter.class);
+        return new ServiceLoader(TikaServerProcess.class.getClassLoader()).loadServiceProviders(org.apache.tika.server.core.writer.TikaServerWriter.class);
     }
 
     private static class ServerDetails {

@@ -67,8 +67,8 @@ public class JsonFetchEmitTuple {
         String id = readVal(ID, root, null, true);
         String fetcherName = readVal(FETCHER, root, null, true);
         String fetchKey = readVal(FETCHKEY, root, null, true);
-        String emitterName = readVal(EMITTER, root, null, true);
-        String emitKey = readVal(EMITKEY, root, null, true);
+        String emitterName = readVal(EMITTER, root, "", false);
+        String emitKey = readVal(EMITKEY, root, "", false);
         long fetchRangeStart = readLong(FETCH_RANGE_START, root, -1l, false);
         long fetchRangeEnd = readLong(FETCH_RANGE_END, root, -1l, false);
         Metadata metadata = readMetadata(root);

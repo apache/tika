@@ -48,8 +48,7 @@ public class ServerStatusTest {
         int numThreads = 10;
         int filesToProcess = 20;
         ExecutorService service = Executors.newFixedThreadPool(numThreads);
-        ExecutorCompletionService<Integer> completionService =
-                new ExecutorCompletionService<>(service);
+        ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(service);
         ServerStatus serverStatus = new ServerStatus("", 0);
         for (int i = 0; i < numThreads; i++) {
             completionService.submit(new MockTask(serverStatus, filesToProcess));
@@ -65,7 +64,9 @@ public class ServerStatusTest {
             }
         }
         assertEquals(numThreads * filesToProcess, totalProcessed);
-        assertEquals(0, serverStatus.getTasks().size());
+        assertEquals(0, serverStatus
+                .getTasks()
+                .size());
         assertEquals(totalProcessed, serverStatus.getFilesProcessed());
 
     }

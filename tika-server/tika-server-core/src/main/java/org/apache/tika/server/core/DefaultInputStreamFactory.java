@@ -31,8 +31,7 @@ import org.apache.tika.metadata.Metadata;
 public class DefaultInputStreamFactory implements InputStreamFactory {
 
     @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders,
-                                      UriInfo uriInfo) throws IOException {
+    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders, UriInfo uriInfo) throws IOException {
         return is;
     }
 }
