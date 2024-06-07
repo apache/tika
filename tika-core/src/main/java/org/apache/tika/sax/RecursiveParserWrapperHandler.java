@@ -16,8 +16,11 @@
  */
 package org.apache.tika.sax;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -28,6 +31,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.utils.ParserUtils;
 
 /**
@@ -123,9 +127,40 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
         } catch (TikaException e) {
             throw new SAXException(e);
         }
-
         if (metadata.size() > 0) {
             metadataList.add(0, ParserUtils.cloneMetadata(metadata));
+        }
+        writeFinalEmbeddedPaths();
+    }
+
+    private void writeFinalEmbeddedPaths() {
+        //for some file types, the file's "name" is not known before
+        //their attachments are parsed. This goes through the id paths
+        //and regenerates the path for the "final embedded resource path"
+        Map<String, String> idToName = new HashMap<>();
+        AtomicInteger unknownCount = new AtomicInteger(0);
+        for (Metadata metadata : metadataList) {
+            String id = metadata.get(TikaCoreProperties.EMBEDDED_ID);
+            if (id == null) {
+                continue;
+            }
+            String name = RecursiveParserWrapper.getResourceName(metadata, unknownCount);
+            idToName.put(id, name);
+        }
+        for (Metadata metadata : metadataList) {
+            String idPath = metadata.get(TikaCoreProperties.EMBEDDED_ID_PATH);
+            if (idPath == null) {
+                continue;
+            }
+            if (idPath.startsWith("/")) {
+                idPath = idPath.substring(1);
+            }
+            String[] ids = idPath.split("/");
+            StringBuilder sb = new StringBuilder();
+            for (String id : ids) {
+                sb.append("/").append(idToName.get(id));
+            }
+            metadata.set(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH, sb.toString());
         }
     }
 

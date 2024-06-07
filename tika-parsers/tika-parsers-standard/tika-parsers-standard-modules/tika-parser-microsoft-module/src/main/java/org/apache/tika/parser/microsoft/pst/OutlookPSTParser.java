@@ -116,7 +116,7 @@ public class OutlookPSTParser implements Parser {
                 metadata.set(PST.PST_FOLDER_PATH, folderPath);
                 try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
                     tis.setOpenContainer(pstMail);
-                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getInternetMessageId());
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getSubject() + ".msg");
                     embeddedExtractor.parseEmbedded(tis, handler, metadata, true);
                 }
                 pstMail = (PSTMessage) pstFolder.getNextChild();
