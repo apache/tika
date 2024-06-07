@@ -187,7 +187,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
         }
     }
 
-    private String getResourceName(Metadata metadata, ParserState state) {
+    public static String getResourceName(Metadata metadata, AtomicInteger counter) {
         String objectName = "";
         if (metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY) != null) {
             objectName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
@@ -196,7 +196,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
         } else if (metadata.get(TikaCoreProperties.VERSION_NUMBER) != null) {
             objectName = "version-number-" + metadata.get(TikaCoreProperties.VERSION_NUMBER);
         } else {
-            objectName = "embedded-" + (++state.unknownCount);
+            objectName = "embedded-" + counter.incrementAndGet();
         }
         //make sure that there isn't any path info in the objectName
         //some parsers can return paths, not just file names
@@ -234,7 +234,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 return;
             }
             // Work out what this thing is
-            String objectName = getResourceName(metadata, parserState);
+            String objectName = getResourceName(metadata, parserState.unknownCount);
             String objectLocation = this.location + objectName;
 
             metadata.add(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, objectLocation);
@@ -319,7 +319,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
      */
     private static class ParserState {
         private final AbstractRecursiveParserWrapperHandler recursiveParserWrapperHandler;
-        private int unknownCount = 0;
+        private AtomicInteger unknownCount = new AtomicInteger(0);
         private int embeddedCount = 0;//this is effectively 1-indexed
         private ParserState(AbstractRecursiveParserWrapperHandler handler) {
             this.recursiveParserWrapperHandler = handler;

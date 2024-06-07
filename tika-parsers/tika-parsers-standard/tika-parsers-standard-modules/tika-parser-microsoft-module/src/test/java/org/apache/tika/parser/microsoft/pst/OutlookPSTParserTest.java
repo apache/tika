@@ -65,6 +65,8 @@ public class OutlookPSTParserTest extends TikaTest {
     @Test
     public void testExtendedMetadata() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPST.pst");
+        assertEquals(10, metadataList.size());
+
         Metadata m1 = metadataList.get(1);
         assertEquals("Jörn Kottmann", m1.get(Message.MESSAGE_FROM_NAME));
         assertEquals("Jörn Kottmann", m1.get(TikaCoreProperties.CREATOR));
@@ -98,7 +100,7 @@ public class OutlookPSTParserTest extends TikaTest {
         assertEquals("couchbase@couchbase.com", m6.get(Message.MESSAGE_FROM_EMAIL));
 
         Metadata m7 = metadataList.get(7);
-        assertEquals("/<2915856a7d3449e68529f3e61b8d26bc@pf.gov.br>/<3148510c2360443396a78d35e0888de9@pf.gov.br>/attachment.docx",
+        assertEquals("/ First email.msg/First email.msg/attachment.docx",
                 m7.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
         assertEquals("/7/8/9", m7.get(TikaCoreProperties.EMBEDDED_ID_PATH));
     }

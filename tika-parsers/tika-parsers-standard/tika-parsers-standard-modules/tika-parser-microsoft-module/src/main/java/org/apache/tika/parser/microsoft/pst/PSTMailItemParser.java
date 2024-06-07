@@ -130,7 +130,7 @@ public class PSTMailItemParser implements Parser {
     }
 
     private void extractMetadata(PSTMessage pstMail, Metadata metadata) {
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getInternetMessageId());
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getSubject() + ".msg");
         metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, pstMail.getInternetMessageId());
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
         metadata.set(TikaCoreProperties.IDENTIFIER, pstMail.getInternetMessageId());
@@ -220,14 +220,13 @@ public class PSTMailItemParser implements Parser {
             TikaException, SAXException {
 
         PSTMessage attachedEmail = attachment.getEmbeddedPSTMessage();
-        attachment.getAttachMethod();
         //check for whether this is a binary attachment or an embedded pst msg
         if (attachedEmail != null) {
             try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
                 tis.setOpenContainer(attachedEmail);
                 Metadata attachMetadata = new Metadata();
                 attachMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
-                attachMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, attachedEmail.getInternetMessageId());
+                attachMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, attachedEmail.getSubject() + ".msg");
                 attachMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
                 embeddedExtractor.parseEmbedded(tis, xhtml, attachMetadata, true);
             }
