@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -35,7 +34,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class TikaJsonDeserializer {
 
-    public static Optional deserializeObject(JsonNode root) {
+    public static Object deserializeObject(JsonNode root) {
         if (!root.isObject()) {
             throw new IllegalArgumentException("root needs to be an object");
         }
@@ -45,18 +44,15 @@ public class TikaJsonDeserializer {
         String className = root
                 .get(TikaJsonSerializer.INSTANTIATED_CLASS_KEY)
                 .asText();
-        String superClass = root.has(TikaJsonSerializer.SUPER_CLASS_KEY) ? root
-                .get(TikaJsonSerializer.SUPER_CLASS_KEY)
-                .asText() : className;
 
         try {
-            return Optional.of(deserialize(Class.forName(className), Class.forName(superClass), root));
+            return deserialize(Class.forName(className), root);
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
     }
 
-    public static <T> T deserialize(Class<? extends T> clazz, Class<? extends T> superClazz, JsonNode root) throws ReflectiveOperationException {
+    public static <T> T deserialize(Class<? extends T> clazz, JsonNode root) throws ReflectiveOperationException {
         T obj = clazz
                 .getDeclaredConstructor()
                 .newInstance();
@@ -69,7 +65,7 @@ public class TikaJsonDeserializer {
             Map.Entry<String, JsonNode> e = fields.next();
             String name = e.getKey();
             JsonNode child = e.getValue();
-            if (TikaJsonSerializer.INSTANTIATED_CLASS_KEY.equals(name) || TikaJsonSerializer.SUPER_CLASS_KEY.equals(name)) {
+            if (TikaJsonSerializer.INSTANTIATED_CLASS_KEY.equals(name)) {
                 continue;
             }
             setValue(name, child, obj, setters);
@@ -172,18 +168,13 @@ public class TikaJsonDeserializer {
             return;
         }
 
-        Optional object = deserializeObject(node);
-        if (object.isEmpty()) {
-            //log, throw exception?!
-            return;
-        }
+        Object setterArgObj = deserializeObject(node);
         for (Method m : mySetters) {
             Class argClass = m.getParameters()[0].getType();
-            if (argClass.isAssignableFrom(object
-                    .get()
+            if (argClass.isAssignableFrom(setterArgObj
                     .getClass())) {
                 try {
-                    m.invoke(obj, object.get());
+                    m.invoke(obj, setterArgObj);
                     return;
                 } catch (IllegalAccessException | InvocationTargetException e) {
                     //swallow

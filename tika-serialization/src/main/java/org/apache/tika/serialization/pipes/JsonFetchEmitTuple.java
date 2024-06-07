@@ -106,11 +106,9 @@ public class JsonFetchEmitTuple {
             String clazzName = e.getKey();
             JsonNode obj = e.getValue();
             String className = readVal(TikaJsonSerializer.INSTANTIATED_CLASS_KEY, obj, null, true);
-            String superClassName = readVal(TikaJsonSerializer.SUPER_CLASS_KEY, obj, className, false);
             try {
                 Class clazz = Class.forName(className);
-                Class superClazz = clazz.equals(superClassName) ? clazz : Class.forName(superClassName);
-                parseContext.set(clazz, TikaJsonDeserializer.deserialize(clazz, superClazz, obj));
+                parseContext.set(clazz, TikaJsonDeserializer.deserialize(clazz, obj));
             } catch (ReflectiveOperationException ex) {
                 throw new IOExceptionWithCause(ex);
             }

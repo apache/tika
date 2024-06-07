@@ -17,11 +17,9 @@
 package org.apache.tika.serialization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.Optional;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,9 +38,8 @@ public class TikaJsonSerializationTest {
             TikaJsonSerializer.serialize(classA, jsonGenerator);
         }
         JsonNode root = new ObjectMapper().readTree(new StringReader(sw.toString()));
-        Optional opt = TikaJsonDeserializer.deserializeObject(root);
-        assertTrue(opt.isPresent());
-        assertEquals(classA, opt.get());
+        Object deserialized = TikaJsonDeserializer.deserializeObject(root);
+        assertEquals(classA, deserialized);
 
     }
 

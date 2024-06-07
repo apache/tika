@@ -19,6 +19,7 @@ package org.apache.tika.parser;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -90,9 +91,13 @@ public class ParseContext implements Serializable {
     }
 
     //this should really only be used for serialization
-    public Set<String> keySet() {
+    public Set<Class> keySet() throws ClassNotFoundException {
+        Set<Class> keys = new HashSet<>();
+        for (String clazzName : context.keySet()) {
+            keys.add(Class.forName(clazzName));
+        }
         return Collections
-                .unmodifiableSet(context.keySet());
+                .unmodifiableSet(keys);
     }
 
     @Override

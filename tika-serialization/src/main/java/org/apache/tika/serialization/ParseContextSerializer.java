@@ -31,15 +31,14 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
     public void serialize(ParseContext parseContext, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
         jsonGenerator.writeFieldName("parseContext");
         jsonGenerator.writeStartObject();
-        for (String className : parseContext.keySet()) {
-            try {
-                Class clazz = Class.forName(className);
-                TikaJsonSerializer.serialize(className, parseContext.get(clazz), clazz, jsonGenerator);
-            } catch (TikaSerializationException e) {
-                throw new IOException(e);
-            } catch (ClassNotFoundException e) {
-                throw new IllegalArgumentException(e);
+        try {
+            for (Class clazz : parseContext.keySet()) {
+                TikaJsonSerializer.serialize(clazz.getName(), parseContext.get(clazz), jsonGenerator);
             }
+        } catch (TikaSerializationException e) {
+            throw new IOException(e);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException(e);
         }
         jsonGenerator.writeEndObject();
     }

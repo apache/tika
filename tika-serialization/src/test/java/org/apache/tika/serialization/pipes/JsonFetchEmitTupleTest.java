@@ -44,7 +44,6 @@ public class JsonFetchEmitTupleTest {
         m.add("m3", "v4");
 
         ParseContext parseContext = new ParseContext();
-
         HandlerConfig h = new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML, HandlerConfig.PARSE_MODE.CONCATENATE, 10000, 10, true);
         parseContext.set(HandlerConfig.class, h);
 
@@ -52,7 +51,6 @@ public class JsonFetchEmitTupleTest {
                 FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
-        System.out.println(writer);
         Reader reader = new StringReader(writer.toString());
         FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(reader);
         assertEquals(t, deserialized);
@@ -67,13 +65,9 @@ public class JsonFetchEmitTupleTest {
         m.add("m2", "v3");
         m.add("m3", "v4");
 
-        /**
-         *                TODO -- add this to the ParseContext
-         *                new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
-         *                         HandlerConfig.PARSE_MODE.CONCATENATE,
-         *                         10000,10, true),
-         */
-        FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1", 10, 1000), new EmitKey("my_emitter", "emitKey1"), m, new ParseContext(),
+
+        FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1", 10, 1000),
+                new EmitKey("my_emitter", "emitKey1"), m, new ParseContext(),
                 FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
@@ -84,14 +78,6 @@ public class JsonFetchEmitTupleTest {
 
     @Test
     public void testBytes() throws Exception {
-        /**
-         * TODO -- add these to the ParseContext
-         EmbeddedDocumentBytesConfig bytesConfig = new EmbeddedDocumentBytesConfig(true);
-         bytesConfig.setEmitter("emitter");
-         * new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
-         *                         HandlerConfig.PARSE_MODE.CONCATENATE,
-         *                         10000,10, true)
-         */
         FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1", 10, 1000), new EmitKey("my_emitter", "emitKey1"), new Metadata(), new ParseContext(),
                 FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
