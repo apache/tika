@@ -114,7 +114,7 @@ public class PDFParserConfig implements Serializable {
     private OCR_RENDERING_STRATEGY ocrRenderingStrategy = OCR_RENDERING_STRATEGY.ALL;
 
     private int ocrDPI = 300;
-    private ImageType ocrImageType = ImageType.GRAY;
+    private OCR_IMAGE_TYPE ocrImageType = OCR_IMAGE_TYPE.GRAY;
     private String ocrImageFormatName = "png";
     private float ocrImageQuality = 1.0f;
 
@@ -623,9 +623,9 @@ public class PDFParserConfig implements Serializable {
      * Image type used to render the page image for OCR.
      *
      * @return image type
-     * @see #setOcrImageType(ImageType)
+     * @see #setOcrImageType(OCR_IMAGE_TYPE)
      */
-    public ImageType getOcrImageType() {
+    public OCR_IMAGE_TYPE getOcrImageType() {
         return ocrImageType;
     }
 
@@ -634,7 +634,7 @@ public class PDFParserConfig implements Serializable {
      *
      * @param ocrImageType
      */
-    public void setOcrImageType(ImageType ocrImageType) {
+    public void setOcrImageType(OCR_IMAGE_TYPE ocrImageType) {
         this.ocrImageType = ocrImageType;
         userConfigured.add("ocrImageType");
     }
@@ -642,10 +642,10 @@ public class PDFParserConfig implements Serializable {
     /**
      * Image type used to render the page image for OCR.
      *
-     * @see #setOcrImageType(ImageType)
+     * @see #setOcrImageType(OCR_IMAGE_TYPE)
      */
     public void setOcrImageType(String ocrImageTypeString) {
-        setOcrImageType(parseImageType(ocrImageTypeString));
+        setOcrImageType(OCR_IMAGE_TYPE.valueOf(ocrImageTypeString));
     }
 
     /**
@@ -747,26 +747,6 @@ public class PDFParserConfig implements Serializable {
     public void setSetKCMS(boolean setKCMS) {
         this.setKCMS = setKCMS;
         userConfigured.add("setKCMS");
-    }
-
-    private ImageType parseImageType(String ocrImageType) {
-        for (ImageType t : ImageType.values()) {
-            if (ocrImageType.equalsIgnoreCase(t.toString())) {
-                return t;
-            }
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append("I regret that I could not parse '");
-        sb.append(ocrImageType);
-        sb.append("'. I'm only familiar with: ");
-        int i = 0;
-        for (ImageType t : ImageType.values()) {
-            if (i++ == 0) {
-                sb.append(", ");
-            }
-            sb.append(t.toString());
-        }
-        throw new IllegalArgumentException(sb.toString());
     }
 
     public boolean isDetectAngles() {
@@ -1095,6 +1075,19 @@ public class PDFParserConfig implements Serializable {
                 sb.append(strategy.toString());
             }
             throw new IllegalArgumentException(sb.toString());
+        }
+    }
+
+    public enum OCR_IMAGE_TYPE {
+        GRAY(ImageType.GRAY),
+        RGB(ImageType.RGB);
+        //add more as needed
+        ImageType imageType;
+        OCR_IMAGE_TYPE(ImageType imageType) {
+            this.imageType = imageType;
+        }
+        public ImageType getImageType() {
+            return imageType;
         }
     }
 }

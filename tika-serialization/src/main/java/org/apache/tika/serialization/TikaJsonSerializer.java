@@ -104,8 +104,9 @@ public class TikaJsonSerializer {
                     .getClass()
                     .getConstructor();
         } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("class (" + obj.getClass() + ") doesn't have a no-arg constructor. Respectfully not seralizing.");
+            throw new IllegalArgumentException("class (" + obj.getClass() + ") doesn't have a no-arg constructor. Respectfully not serializing.");
         }
+
         try {
             if (fieldName != null) {
                 jsonGenerator.writeFieldName(fieldName);

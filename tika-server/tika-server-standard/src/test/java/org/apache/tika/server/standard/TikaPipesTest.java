@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -51,6 +52,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -76,10 +78,11 @@ public class TikaPipesTest extends CXFTestBase {
 
     private static final String PIPES_PATH = "/pipes";
     private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
+    private static final String TEST_TWO_BOXES_PDF = "testPDFTwoTextBoxes.pdf";
+
     @TempDir
     private static Path TMP_WORKING_DIR;
     private static Path TMP_OUTPUT_DIR;
-    private static Path TMP_OUTPUT_FILE;
     private static Path TMP_BYTES_DIR;
     private static Path TIKA_PIPES_LOG4j2_PATH;
     private static Path TIKA_CONFIG_PATH;
@@ -91,11 +94,13 @@ public class TikaPipesTest extends CXFTestBase {
         Path inputDir = TMP_WORKING_DIR.resolve("input");
         TMP_OUTPUT_DIR = TMP_WORKING_DIR.resolve("output");
         TMP_BYTES_DIR = TMP_WORKING_DIR.resolve("bytes");
-        TMP_OUTPUT_FILE = TMP_OUTPUT_DIR.resolve(TEST_RECURSIVE_DOC + ".json");
 
         Files.createDirectories(inputDir);
         Files.createDirectories(TMP_OUTPUT_DIR);
         Files.copy(TikaPipesTest.class.getResourceAsStream("/test-documents/" + TEST_RECURSIVE_DOC), inputDir.resolve("test_recursive_embedded.docx"),
+                StandardCopyOption.REPLACE_EXISTING);
+
+        Files.copy(TikaPipesTest.class.getResourceAsStream("/test-documents/" + TEST_TWO_BOXES_PDF), inputDir.resolve(TEST_TWO_BOXES_PDF),
                 StandardCopyOption.REPLACE_EXISTING);
 
         TIKA_CONFIG_PATH = Files.createTempFile(TMP_WORKING_DIR, "tika-pipes-", ".xml");
@@ -120,11 +125,8 @@ public class TikaPipesTest extends CXFTestBase {
 
     @BeforeEach
     public void setUpEachTest() throws Exception {
-        if (Files.exists(TMP_OUTPUT_FILE)) {
-            Files.delete(TMP_OUTPUT_FILE);
-        }
-
-        assertFalse(Files.isRegularFile(TMP_OUTPUT_FILE));
+        FileUtils.deleteDirectory(TMP_OUTPUT_DIR.toFile());
+        assertFalse(Files.isDirectory(TMP_OUTPUT_DIR));
     }
 
     @Override
@@ -173,13 +175,46 @@ public class TikaPipesTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
         List<Metadata> metadataList = null;
-        try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_FILE)) {
+        Path outputFile = TMP_OUTPUT_DIR.resolve(TEST_RECURSIVE_DOC + ".json");
+        try (Reader reader = Files.newBufferedReader(outputFile)) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(12, metadataList.size());
         assertContains("When in the Course", metadataList
                 .get(6)
                 .get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testPDFConfig() throws Exception {
+        Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        PDFParserConfig pdfParserConfig = new PDFParserConfig();
+        pdfParserConfig.setSortByPosition(true);
+        parseContext.set(PDFParserConfig.class, pdfParserConfig);
+
+        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey("fsf", TEST_TWO_BOXES_PDF),
+                new EmitKey("fse", ""), metadata, parseContext);
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTuple.toJson(t, writer);
+        String getUrl = endPoint + PIPES_PATH;
+        Response response = WebClient
+                .create(getUrl)
+                .accept("application/json")
+                .post(writer.toString());
+        assertEquals(200, response.getStatus());
+
+        List<Metadata> metadataList = null;
+        Path outputFile = TMP_OUTPUT_DIR.resolve(TEST_TWO_BOXES_PDF + ".json");
+        try (Reader reader = Files.newBufferedReader(outputFile)) {
+            metadataList = JsonMetadataList.fromJson(reader);
+        }
+        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
+        content = content.replaceAll("\\s+", " ");
+        // Column text is now interleaved:
+        assertContains(
+                "Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2",
+                content);
     }
 
     @Test
@@ -205,7 +240,8 @@ public class TikaPipesTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
         List<Metadata> metadataList = null;
-        try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_FILE)) {
+        Path outputFile = TMP_OUTPUT_DIR.resolve(TEST_RECURSIVE_DOC + ".json");
+        try (Reader reader = Files.newBufferedReader(outputFile)) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(1, metadataList.size());
@@ -241,7 +277,8 @@ public class TikaPipesTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
         List<Metadata> metadataList = null;
-        try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_FILE)) {
+        Path outputFile = TMP_OUTPUT_DIR.resolve(TEST_RECURSIVE_DOC + ".json");
+        try (Reader reader = Files.newBufferedReader(outputFile)) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(12, metadataList.size());

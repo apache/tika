@@ -268,7 +268,7 @@ public class UnpackerResourceTest extends CXFTestBase {
         Response response = WebClient
                 .create(CXFTestBase.endPoint + ALL_PATH)
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "imageStrategy", "RenderPagesAtPageEnd")
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageType", "rgb")
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageType", "RGB")
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/testColorRendering.pdf"));
         Map<String, byte[]> results = readZipArchiveBytes((InputStream) response.getEntity());

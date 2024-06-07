@@ -79,7 +79,7 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
         Response response = WebClient
                 .create(CXFTestBase.endPoint + ALL_PATH)
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "imageStrategy", "RenderPagesAtPageEnd")
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageType", "rgb")
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageType", "RGB")
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageFormatName", "tiff")
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/testColorRendering.pdf"));
@@ -131,7 +131,7 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
         Response response = WebClient
                 .create(CXFTestBase.endPoint + ALL_PATH)
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "imageStrategy", "RenderPagesAtPageEnd")
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageType", "gray")
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageType", "GRAY")
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageFormatName", "jpeg")
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/testColorRendering.pdf"));
