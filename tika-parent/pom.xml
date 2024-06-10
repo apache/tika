@@ -388,7 +388,7 @@
     <kafka.version>3.7.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.23.1</log4j2.version>
-    <lucene.version>9.10.0</lucene.version>
+    <lucene.version>9.11.0</lucene.version>
     <maven.plugin.annotations.version>3.13.1</maven.plugin.annotations.version>
     <mchange.version>0.3.1</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
