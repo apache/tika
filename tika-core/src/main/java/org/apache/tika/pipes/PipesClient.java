@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +43,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.io.file.Counters;
+import org.apache.commons.io.file.PathUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
@@ -78,10 +82,18 @@ public class PipesClient implements Closeable {
     private DataOutputStream output;
     private DataInputStream input;
     private int filesProcessed = 0;
+    //this is the client-specific subdirectory of the pipesConfig's getPipesTmpDir
+    final Path tmpDir;
 
     public PipesClient(PipesConfigBase pipesConfig) {
         this.pipesConfig = pipesConfig;
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
+        try {
+            tmpDir = Files.createTempDirectory(pipesConfig.getPipesTmpDir(),
+                            "client-" + this.pipesClientId + "-");
+        } catch (IOException e) {
+            throw new RuntimeException("Couldn't create temp dir?!", e);
+        }
     }
 
     public int getFilesProcessed() {
@@ -278,6 +290,19 @@ public class PipesClient implements Closeable {
         if (process.isAlive()) {
             LOG.error("Process still alive after {}ms", WAIT_ON_DESTROY_MS);
         }
+        try {
+            if (Files.isDirectory(tmpDir)) {
+                LOG.debug("about to delete the full async temp directory: {}",
+                        pipesConfig.getPipesTmpDir().toAbsolutePath());
+                Counters.PathCounters pathCounters =
+                        PathUtils.deleteDirectory(pipesConfig.getPipesTmpDir());
+                LOG.debug("Successfully deleted {} temporary files in {} directories",
+                        pathCounters.getFileCounter().get(),
+                        pathCounters.getDirectoryCounter().get());
+            }
+        } catch (IllegalArgumentException | IOException e) {
+            LOG.warn("Failed to delete temporary directory: " + tmpDir.toAbsolutePath(), e);
+        }
     }
 
     private PipesResult readResults(FetchEmitTuple t, long start) throws IOException {
@@ -421,6 +446,9 @@ public class PipesClient implements Closeable {
                 }
                 executorService = Executors.newFixedThreadPool(1);
             }
+            if (! Files.isDirectory(tmpDir)) {
+                Files.createDirectories(tmpDir);
+            }
             LOG.info("pipesClientId={}: restarting process", pipesClientId);
         } else {
             LOG.info("pipesClientId={}: starting process", pipesClientId);
@@ -525,6 +553,11 @@ public class PipesClient implements Closeable {
                 origGCString = arg;
                 newGCLogString = arg.replace("${pipesClientId}", "id-" + pipesClientId);
             }
+            if (arg.startsWith("-Djava.io.tmpdir=")) {
+                throw new IllegalArgumentException("Can't specify java.io.tmpdir in jvmargs. Set " +
+                        "the overall tmpdir for all async process and its forked processes in the" +
+                        "<pipesTmpDir/> attribute.");
+            }
         }
 
         if (origGCString != null && newGCLogString != null) {
@@ -553,6 +586,7 @@ public class PipesClient implements Closeable {
                     "-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml");
         }
         commandLine.add("-DpipesClientId=" + pipesClientId);
+        commandLine.add("-Djava.io.tmpdir=" + ProcessUtils.escapeCommandLine(tmpDir.toAbsolutePath().toString()));
         commandLine.addAll(configArgs);
         commandLine.add("org.apache.tika.pipes.PipesServer");
         commandLine.add(ProcessUtils.escapeCommandLine(

@@ -18,7 +18,9 @@ package org.apache.tika.pipes.async;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
@@ -30,6 +32,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.commons.io.file.Counters;
+import org.apache.commons.io.file.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +86,26 @@ public class AsyncProcessor implements Closeable {
                 asyncConfig.getNumClients() + asyncConfig.getNumEmitters() + 1);
         this.executorCompletionService =
                 new ExecutorCompletionService<>(executorService);
+
+        final Path tmpDir = asyncConfig.getPipesTmpDir();
+        final List<FetchEmitWorker> workers = new ArrayList<>();
+
+        for (int i = 0; i < asyncConfig.getNumClients(); i++) {
+            workers.add(new FetchEmitWorker(asyncConfig, fetchEmitTuples, emitData));
+        }
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() ->  {
+            executorService.shutdownNow();
+            for (FetchEmitWorker worker : workers) {
+                try {
+                    worker.close();
+                } catch (IOException e) {
+                    LOG.warn("Exception closing worker", e);
+                }
+            }
+            cleanTmpDir(tmpDir);
+        }));
+
         try {
             if (!tikaConfigPath.toAbsolutePath().equals(asyncConfig.getTikaConfig().toAbsolutePath())) {
                 LOG.warn("TikaConfig for AsyncProcessor ({}) is different " +
@@ -105,9 +129,8 @@ public class AsyncProcessor implements Closeable {
                 startCounter((TotalCounter) pipesIterator);
             }
 
-            for (int i = 0; i < asyncConfig.getNumClients(); i++) {
-                executorCompletionService.submit(
-                        new FetchEmitWorker(asyncConfig, fetchEmitTuples, emitData));
+            for (FetchEmitWorker worker : workers) {
+                executorCompletionService.submit(worker);
             }
 
             EmitterManager emitterManager = EmitterManager.load(asyncConfig.getTikaConfig());
@@ -252,17 +275,39 @@ public class AsyncProcessor implements Closeable {
     public void close() throws IOException {
         executorService.shutdownNow();
         asyncConfig.getPipesReporter().close();
+        cleanTmpDir(asyncConfig.getPipesTmpDir());
+    }
+
+    private static void cleanTmpDir(Path tmpDir) {
+        if (tmpDir == null) {
+            return;
+        }
+        if (Files.isDirectory(tmpDir)) {
+            try {
+                LOG.debug("about to delete the full async temp directory: {}",
+                        tmpDir);
+                Counters.PathCounters pathCounters = PathUtils.deleteDirectory(tmpDir);
+                LOG.debug("Successfully deleted {} temporary files in {} directories",
+                        pathCounters.getFileCounter().get(),
+                        pathCounters.getDirectoryCounter().get());
+            } catch (IllegalArgumentException e) {
+                LOG.debug("null tmpDir? " + tmpDir, e);
+            } catch (IOException e) {
+                LOG.warn("Couldn't delete tmpDir: " + tmpDir, e);
+            }
+        }
     }
 
     public long getTotalProcessed() {
         return totalProcessed.get();
     }
 
-    private class FetchEmitWorker implements Callable<Integer> {
+    private class FetchEmitWorker implements Callable<Integer>, Closeable {
 
         private final AsyncConfig asyncConfig;
         private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
         private final ArrayBlockingQueue<EmitData> emitDataQueue;
+        private final PipesClient pipesClient;
 
         private FetchEmitWorker(AsyncConfig asyncConfig,
                                 ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples,
@@ -270,12 +315,13 @@ public class AsyncProcessor implements Closeable {
             this.asyncConfig = asyncConfig;
             this.fetchEmitTuples = fetchEmitTuples;
             this.emitDataQueue = emitDataQueue;
+            this.pipesClient = new PipesClient(asyncConfig);
         }
 
         @Override
         public Integer call() throws Exception {
 
-            try (PipesClient pipesClient = new PipesClient(asyncConfig)) {
+            try {
                 while (true) {
                     FetchEmitTuple t = fetchEmitTuples.poll(1, TimeUnit.SECONDS);
                     if (t == null) {
@@ -322,7 +368,13 @@ public class AsyncProcessor implements Closeable {
                         totalProcessed.incrementAndGet();
                     }
                 }
+            } finally {
+                close();
             }
+        }
+
+        public void close() throws IOException {
+            pipesClient.close();
         }
 
         private boolean shouldEmit(PipesResult result) {
