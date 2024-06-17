@@ -300,7 +300,7 @@
     <maven.failsafe.version>3.3.0</maven.failsafe.version>
     <maven.surefire.version>3.3.0</maven.surefire.version>
     <maven.shade.version>3.6.0</maven.shade.version>
-    <maven.project.info.reports.version>3.5.0</maven.project.info.reports.version>
+    <maven.project.info.reports.version>3.6.0</maven.project.info.reports.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
@@ -334,6 +334,7 @@
     <!-- can't update to 3.6.0, needs jdk11 ? -->
     <cxf.version>3.5.8</cxf.version>
     <ddplist.version>1.28</ddplist.version>
+    <!-- can't update to 1.0.0-M2.1, needs jdk11 -->
     <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions > 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
@@ -1213,7 +1214,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>3.0.1</version>
+        <version>3.1.0</version>
         <configuration>
           <autoVersionSubmodules>true</autoVersionSubmodules>
         </configuration>
