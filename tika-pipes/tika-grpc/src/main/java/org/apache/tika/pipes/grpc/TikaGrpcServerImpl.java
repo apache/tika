@@ -201,9 +201,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         Metadata tikaMetadata = new Metadata();
         try {
             String metadataJson = request.getMetadataJson();
-            if (StringUtils.isNotBlank(metadataJson)) {
-                loadMetadata(metadataJson, tikaMetadata);
-            }
+            loadMetadata(metadataJson, tikaMetadata);
             PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(),
                     new FetchKey(fetcher.getName(), request.getFetchKey()), new EmitKey(), tikaMetadata,
                     HandlerConfig.DEFAULT_HANDLER_CONFIG, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
@@ -233,7 +231,14 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     }
 
     private static void loadMetadata(String metadataJson, Metadata tikaMetadata) throws JsonProcessingException {
-        Map<String, Object> metadataJsonObject = OBJECT_MAPPER.readValue(metadataJson, new TypeReference<>() {});
+        Map<String, Object> metadataJsonObject = new HashMap<>();
+        if (!StringUtils.isBlank(metadataJson)) {
+            try {
+                metadataJsonObject = OBJECT_MAPPER.readValue(metadataJson, new TypeReference<>() {});
+            } catch (JsonProcessingException e) {
+                metadataJsonObject = new HashMap<>();
+            }
+        }
         for (Map.Entry<String, Object> entry : metadataJsonObject.entrySet()) {
             if (entry.getValue() instanceof List) {
                 List<Object> list = (List<Object>) entry.getValue();
