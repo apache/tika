@@ -53,6 +53,8 @@ message FetchAndParseRequest {
 message FetchAndParseReply {
   string fetch_key = 1;
   map<string, string> fields = 2;
+  string status = 3;
+  string error_message = 4;
 }
 
 message DeleteFetcherRequest {

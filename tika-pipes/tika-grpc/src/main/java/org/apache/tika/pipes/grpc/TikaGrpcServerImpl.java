@@ -36,11 +36,13 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.rpc.Status;
 import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -198,30 +200,20 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
         Metadata tikaMetadata = new Metadata();
         try {
-            Map<String, Object> metadataJsonObject = OBJECT_MAPPER.readValue(request.getMetadataJson(), new TypeReference<>() {});
-            for (Map.Entry<String, Object> entry : metadataJsonObject.entrySet()) {
-                if (entry.getValue() instanceof List) {
-                    List<Object> list = (List<Object>) entry.getValue();
-                    tikaMetadata.set(Property.externalText(entry.getKey()), list.stream()
-                                                                                .map(String::valueOf)
-                                                                                .collect(Collectors.toList())
-                                                                                .toArray(new String[] {}));
-                } else if (entry.getValue() instanceof String) {
-                    tikaMetadata.set(Property.externalText(entry.getKey()), (String) entry.getValue());
-                } else if (entry.getValue() instanceof Integer) {
-                    tikaMetadata.set(Property.externalText(entry.getKey()), (Integer) entry.getValue());
-                } else if (entry.getValue() instanceof Double) {
-                    tikaMetadata.set(Property.externalText(entry.getKey()), (Double) entry.getValue());
-                } else if (entry.getValue() instanceof Float) {
-                    tikaMetadata.set(Property.externalText(entry.getKey()), (Float) entry.getValue());
-                } else if (entry.getValue() instanceof Boolean) {
-                    tikaMetadata.set(Property.externalText(entry.getKey()), (Boolean) entry.getValue());
-                }
+            String metadataJson = request.getMetadataJson();
+            if (StringUtils.isNotBlank(metadataJson)) {
+                loadMetadata(metadataJson, tikaMetadata);
             }
             PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(),
-                    new FetchKey(fetcher.getName(), request.getFetchKey()), new EmitKey(), tikaMetadata, HandlerConfig.DEFAULT_HANDLER_CONFIG, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+                    new FetchKey(fetcher.getName(), request.getFetchKey()), new EmitKey(), tikaMetadata,
+                    HandlerConfig.DEFAULT_HANDLER_CONFIG, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             FetchAndParseReply.Builder fetchReplyBuilder =
-                    FetchAndParseReply.newBuilder().setFetchKey(request.getFetchKey());
+                    FetchAndParseReply.newBuilder()
+                                      .setFetchKey(request.getFetchKey())
+                            .setStatus(pipesResult.getStatus().name());
+            if (pipesResult.getStatus().equals(PipesResult.STATUS.FETCH_EXCEPTION)) {
+                fetchReplyBuilder.setErrorMessage(pipesResult.getMessage());
+            }
             if (pipesResult.getEmitData() != null && pipesResult.getEmitData().getMetadataList() != null) {
                 for (Metadata metadata : pipesResult.getEmitData().getMetadataList()) {
                     for (String name : metadata.names()) {
@@ -237,6 +229,29 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private static void loadMetadata(String metadataJson, Metadata tikaMetadata) throws JsonProcessingException {
+        Map<String, Object> metadataJsonObject = OBJECT_MAPPER.readValue(metadataJson, new TypeReference<>() {});
+        for (Map.Entry<String, Object> entry : metadataJsonObject.entrySet()) {
+            if (entry.getValue() instanceof List) {
+                List<Object> list = (List<Object>) entry.getValue();
+                tikaMetadata.set(Property.externalText(entry.getKey()), list.stream()
+                                                                            .map(String::valueOf)
+                                                                            .collect(Collectors.toList())
+                                                                            .toArray(new String[] {}));
+            } else if (entry.getValue() instanceof String) {
+                tikaMetadata.set(Property.externalText(entry.getKey()), (String) entry.getValue());
+            } else if (entry.getValue() instanceof Integer) {
+                tikaMetadata.set(Property.externalText(entry.getKey()), (Integer) entry.getValue());
+            } else if (entry.getValue() instanceof Double) {
+                tikaMetadata.set(Property.externalText(entry.getKey()), (Double) entry.getValue());
+            } else if (entry.getValue() instanceof Float) {
+                tikaMetadata.set(Property.externalText(entry.getKey()), (Float) entry.getValue());
+            } else if (entry.getValue() instanceof Boolean) {
+                tikaMetadata.set(Property.externalText(entry.getKey()), (Boolean) entry.getValue());
+            }
         }
     }
 
