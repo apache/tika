@@ -200,38 +200,18 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
         Metadata tikaMetadata = new Metadata();
         try {
-            Map<String, Object> metadataJsonObject = new HashMap<>();
-            if (!StringUtils.isBlank(request.getMetadataJson())) {
-                try {
-                    metadataJsonObject = OBJECT_MAPPER.readValue(request.getMetadataJson(), new TypeReference<>() {});
-                } catch (JsonProcessingException e) {
-                    metadataJsonObject = new HashMap<>();
-                }
-            }
-            for (Map.Entry<String, Object> entry : metadataJsonObject.entrySet()) {
-                if (entry.getValue() instanceof List) {
-                    List<Object> list = (List<Object>) entry.getValue();
-                    tikaMetadata.set(Property.externalText(entry.getKey()), list.stream()
-                                                                                .map(String::valueOf)
-                                                                                .collect(Collectors.toList())
-                                                                                .toArray(new String[] {}));
-                } else if (entry.getValue() instanceof String) {
-                    tikaMetadata.set(Property.externalText(entry.getKey()), (String) entry.getValue());
-                } else if (entry.getValue() instanceof Integer) {
-                    tikaMetadata.set(Property.externalText(entry.getKey()), (Integer) entry.getValue());
-                } else if (entry.getValue() instanceof Double) {
-                    tikaMetadata.set(Property.externalText(entry.getKey()), (Double) entry.getValue());
-                } else if (entry.getValue() instanceof Float) {
-                    tikaMetadata.set(Property.externalText(entry.getKey()), (Float) entry.getValue());
-                } else if (entry.getValue() instanceof Boolean) {
-                    tikaMetadata.set(Property.externalText(entry.getKey()), (Boolean) entry.getValue());
-                }
-            }
+            String metadataJson = request.getMetadataJson();
+            loadMetadata(metadataJson, tikaMetadata);
             PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(),
                     new FetchKey(fetcher.getName(), request.getFetchKey()), new EmitKey(), tikaMetadata,
-                        HandlerConfig.DEFAULT_HANDLER_CONFIG, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+                    HandlerConfig.DEFAULT_HANDLER_CONFIG, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             FetchAndParseReply.Builder fetchReplyBuilder =
-                    FetchAndParseReply.newBuilder().setFetchKey(request.getFetchKey());
+                    FetchAndParseReply.newBuilder()
+                                      .setFetchKey(request.getFetchKey())
+                            .setStatus(pipesResult.getStatus().name());
+            if (pipesResult.getStatus().equals(PipesResult.STATUS.FETCH_EXCEPTION)) {
+                fetchReplyBuilder.setErrorMessage(pipesResult.getMessage());
+            }
             if (pipesResult.getEmitData() != null && pipesResult.getEmitData().getMetadataList() != null) {
                 for (Metadata metadata : pipesResult.getEmitData().getMetadataList()) {
                     for (String name : metadata.names()) {
@@ -247,6 +227,36 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private static void loadMetadata(String metadataJson, Metadata tikaMetadata) throws JsonProcessingException {
+        Map<String, Object> metadataJsonObject = new HashMap<>();
+        if (!StringUtils.isBlank(metadataJson)) {
+            try {
+                metadataJsonObject = OBJECT_MAPPER.readValue(metadataJson, new TypeReference<>() {});
+            } catch (JsonProcessingException e) {
+                metadataJsonObject = new HashMap<>();
+            }
+        }
+        for (Map.Entry<String, Object> entry : metadataJsonObject.entrySet()) {
+            if (entry.getValue() instanceof List) {
+                List<Object> list = (List<Object>) entry.getValue();
+                tikaMetadata.set(Property.externalText(entry.getKey()), list.stream()
+                                                                            .map(String::valueOf)
+                                                                            .collect(Collectors.toList())
+                                                                            .toArray(new String[] {}));
+            } else if (entry.getValue() instanceof String) {
+                tikaMetadata.set(Property.externalText(entry.getKey()), (String) entry.getValue());
+            } else if (entry.getValue() instanceof Integer) {
+                tikaMetadata.set(Property.externalText(entry.getKey()), (Integer) entry.getValue());
+            } else if (entry.getValue() instanceof Double) {
+                tikaMetadata.set(Property.externalText(entry.getKey()), (Double) entry.getValue());
+            } else if (entry.getValue() instanceof Float) {
+                tikaMetadata.set(Property.externalText(entry.getKey()), (Float) entry.getValue());
+            } else if (entry.getValue() instanceof Boolean) {
+                tikaMetadata.set(Property.externalText(entry.getKey()), (Boolean) entry.getValue());
+            }
         }
     }
 
