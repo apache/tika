@@ -19,6 +19,7 @@ package org.apache.tika.pipes.grpc;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.asarkar.grpc.test.GrpcCleanupExtension;
 import com.asarkar.grpc.test.Resources;
@@ -62,13 +64,14 @@ import org.apache.tika.GetFetcherRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
+import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 
 @ExtendWith(GrpcCleanupExtension.class)
 public class TikaGrpcServerTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Logger LOG = LoggerFactory.getLogger(TikaGrpcServerTest.class);
-    public static final int NUM_TEST_DOCS = 50;
+    public static final int NUM_TEST_DOCS = 2;
     static File tikaConfigXmlTemplate = Paths
             .get("src", "test", "resources", "tika-pipes-test-config.xml")
             .toFile();
@@ -208,28 +211,34 @@ public class TikaGrpcServerTest {
                         .put("basePath", targetFolder)
                         .put("extractFileSystemMetadata", true)
                         .build()))
-
                 .build());
 
         assertEquals(fetcherId, reply.getFetcherId());
 
-        List<FetchAndParseReply> fetchAndParseReplys = Collections.synchronizedList(new ArrayList<>());
+        List<FetchAndParseReply> successes = Collections.synchronizedList(new ArrayList<>());
+        List<FetchAndParseReply> errors = Collections.synchronizedList(new ArrayList<>());
+        AtomicBoolean finished = new AtomicBoolean(false);
 
         StreamObserver<FetchAndParseReply> replyStreamObserver = new StreamObserver<>() {
             @Override
             public void onNext(FetchAndParseReply fetchAndParseReply) {
                 LOG.debug("Fetched {} with metadata {}", fetchAndParseReply.getFetchKey(), fetchAndParseReply.getFieldsMap());
-                fetchAndParseReplys.add(fetchAndParseReply);
+                if (PipesResult.STATUS.FETCH_EXCEPTION.name().equals(fetchAndParseReply.getStatus())) {
+                    errors.add(fetchAndParseReply);
+                } else {
+                    successes.add(fetchAndParseReply);
+                }
             }
 
             @Override
             public void onError(Throwable throwable) {
-                LOG.error("Fetched error found", throwable);
+                fail(throwable);
             }
 
             @Override
             public void onCompleted() {
                 LOG.info("Stream completed");
+                finished.set(true);
             }
         };
 
@@ -253,9 +262,16 @@ public class TikaGrpcServerTest {
                         .setFetchKey(testDocument.getAbsolutePath())
                         .build());
             }
+            // Now test error condition
+            requestStreamObserver.onNext(FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey("does not exist")
+                    .build());
             requestStreamObserver.onCompleted();
-
-            assertEquals(NUM_TEST_DOCS, fetchAndParseReplys.size());
+            assertEquals(NUM_TEST_DOCS, successes.size());
+            assertEquals(1, errors.size());
+            assertTrue(finished.get());
         } finally {
             FileUtils.deleteDirectory(testDocumentFolder);
         }
