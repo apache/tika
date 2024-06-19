@@ -25,6 +25,7 @@
     <awaitility.version>4.2.1</awaitility.version>
     <j2objc-annotations.version>3.0.0</j2objc-annotations.version>
     <error_prone_annotations.version>2.28.0</error_prone_annotations.version>
+    <jackson-module-jsonSchema.version>2.15.0</jackson-module-jsonSchema.version>
   </properties>
 
   <dependencyManagement>
@@ -219,6 +220,11 @@
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-fetcher-http</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-jsonSchema</artifactId>
+      <version>${jackson-module-jsonSchema.version}</version>
     </dependency>
     <dependency>
       <groupId>com.asarkar.grpc</groupId>

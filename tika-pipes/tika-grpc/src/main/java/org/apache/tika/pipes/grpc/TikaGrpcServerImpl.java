@@ -39,6 +39,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
+import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
+import com.google.protobuf.Empty;
 import com.google.rpc.Status;
 import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
@@ -53,8 +56,11 @@ import org.apache.tika.DeleteFetcherReply;
 import org.apache.tika.DeleteFetcherRequest;
 import org.apache.tika.FetchAndParseReply;
 import org.apache.tika.FetchAndParseRequest;
+import org.apache.tika.GetFetcherConfigJsonSchemaReply;
+import org.apache.tika.GetFetcherConfigJsonSchemaRequest;
 import org.apache.tika.GetFetcherReply;
 import org.apache.tika.GetFetcherRequest;
+import org.apache.tika.ListFetcherClassesReply;
 import org.apache.tika.ListFetchersReply;
 import org.apache.tika.ListFetchersRequest;
 import org.apache.tika.SaveFetcherReply;
@@ -82,6 +88,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     static {
         OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
+    public static final JsonSchemaGenerator JSON_SCHEMA_GENERATOR = new JsonSchemaGenerator(OBJECT_MAPPER);
 
     /**
      * FetcherID is key, The pair is the Fetcher object and the Metadata
@@ -399,7 +406,25 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         responseObserver.onCompleted();
     }
 
+    @Override
+    public void getFetcherConfigJsonSchema(GetFetcherConfigJsonSchemaRequest request, StreamObserver<GetFetcherConfigJsonSchemaReply> responseObserver) {
+        GetFetcherConfigJsonSchemaReply.Builder builder = GetFetcherConfigJsonSchemaReply.newBuilder();
+        try {
+            JsonSchema jsonSchema = JSON_SCHEMA_GENERATOR.generateSchema(Class.forName(request.getFetcherClass()));
+            builder.setFetcherConfigJsonSchema(OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonSchema));
+        } catch (ClassNotFoundException | JsonProcessingException e) {
+            throw new RuntimeException("Could not create json schema for " + request.getFetcherClass(), e);
+        }
+        responseObserver.onNext(builder.build());
+        responseObserver.onCompleted();
+    }
+
     private boolean deleteFetcher(String fetcherName) {
         return expiringFetcherStore.deleteFetcher(fetcherName);
+    }
+
+    @Override
+    public void listFetcherClasses(Empty request, StreamObserver<ListFetcherClassesReply> responseObserver) {
+
     }
 }
