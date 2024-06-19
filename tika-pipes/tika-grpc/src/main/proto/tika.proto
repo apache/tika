@@ -22,7 +22,7 @@ option java_outer_classname = "TikaProto";
 option objc_class_prefix = "HLW";
 
 
-service Tika   {
+service Tika {
   rpc SaveFetcher(SaveFetcherRequest) returns (SaveFetcherReply) {}
   rpc GetFetcher(GetFetcherRequest) returns (GetFetcherReply) {}
   rpc ListFetchers(ListFetchersRequest) returns (ListFetchersReply) {}
@@ -35,48 +35,69 @@ service Tika   {
 }
 
 message SaveFetcherRequest {
+  // fetcher_id is the unique identifier for this fetcher as defined by the user.
   string fetcher_id = 1;
+  // fetcher_class is the implementation class name of the fetcher. More details at:
+  // https://cwiki.apache.org/confluence/display/TIKA/tika-pipes
   string fetcher_class = 2;
+  // fetcher_config_json are the parameters for the fetcher in stringified JSON format.
   string fetcher_config_json = 3;
 }
 
 message SaveFetcherReply {
+  // fetcher_id is the unique identifier for this fetcher as defined by the user.
   string fetcher_id = 1;
 }
 
 message FetchAndParseRequest {
+  // fetcher_id is the unique identifier of the fetcher to be used for fetching.
   string fetcher_id = 1;
+  // fetch_key is the key (eg download URL, path, etc) to be used by the fetcher. It typically represents the location of the content to be fetched.
   string fetch_key = 2;
+  // metadata_json is metadata in stringified JSON format that can be used by the fetcher and will be echoed back during reply.
   string metadata_json = 3;
 }
 
 message FetchAndParseReply {
+  // fetch_key is the key (eg download URL, path, etc) used by the fetcher.
   string fetch_key = 1;
+  // fields is a collection of echoed metadata (from the request), extracted metadata, and content.
   map<string, string> fields = 2;
+  // status is ... ?? (what possible values? Is it fetcher dependent?)
   string status = 3;
+  // error_message is an error message returned by the fetcher or parser in case of an error.
   string error_message = 4;
 }
 
 message DeleteFetcherRequest {
+ // fetcher_id is the unique identifier of the fetcher to be deleted.
   string fetcher_id = 1;
 }
 
 message DeleteFetcherReply {
+  // success is true if the fetcher was successfully deleted.
   bool success = 1;
 }
 
 message GetFetcherRequest {
+  // fetcher_id is  the unique identifier of the fetcher to be obtained.
   string fetcher_id = 1;
 }
 
 message GetFetcherReply {
+  // fetcher_id is the unique identifier of the obtained fetcher.
   string fetcher_id = 1;
+  // fetcher_class is the implementation class name of the fetcher. More details at:
+  // https://cwiki.apache.org/confluence/display/TIKA/tika-pipes
   string fetcher_class = 2;
+  // params are the stored parameters for the fetcher.
   map<string, string> params = 3;
 }
 
 message ListFetchersRequest {
+  // page_number specifies the page number to be listed.
   int32 page_number = 1;
+  // num_fetchers_per_page specifies the number of fetchers to be listed per page.
   int32 num_fetchers_per_page = 2;
 }
 
