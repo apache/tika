@@ -5068,12 +5068,13 @@
     <_comment>TeX Source</_comment>
     <alias type="text/x-tex"/>
     <magic priority="50">
+      <match value="\\documentclass" type="string" offset="0:8192"/>
+      <match value="\\usepackage" type="string" offset="0:8192"/>
+      <match value="\\documentstyle" type="string" offset="0:8192"/>
       <match value="\\input" type="string" offset="0"/>
       <match value="\\section" type="string" offset="0"/>
       <match value="\\setlength" type="string" offset="0"/>
-      <match value="\\documentstyle" type="string" offset="0"/>
       <match value="\\chapter" type="string" offset="0"/>
-      <match value="\\documentclass" type="string" offset="0"/>
       <match value="\\relax" type="string" offset="0"/>
       <match value="\\contentsline" type="string" offset="0"/>
     </magic>
