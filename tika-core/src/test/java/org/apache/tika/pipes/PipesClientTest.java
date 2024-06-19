@@ -28,6 +28,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 
@@ -51,7 +52,7 @@ class PipesClientTest {
     void process() throws IOException, InterruptedException {
         PipesResult pipesResult = pipesClient.process(
                 new FetchEmitTuple(testPdfFile, new FetchKey(fetcherName, testPdfFile),
-                        new EmitKey(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+                        new EmitKey(), new Metadata(), new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
         Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
         Assertions.assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
         Metadata metadata = pipesResult.getEmitData().getMetadataList().get(0);

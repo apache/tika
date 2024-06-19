@@ -23,6 +23,8 @@
     <asarkar-grpc-test.version>1.2.2</asarkar-grpc-test.version>
     <maven.compiler.release>11</maven.compiler.release>
     <awaitility.version>4.2.1</awaitility.version>
+    <j2objc-annotations.version>3.0.0</j2objc-annotations.version>
+    <error_prone_annotations.version>2.28.0</error_prone_annotations.version>
   </properties>
 
   <dependencyManagement>
@@ -51,6 +53,10 @@
           <groupId>com.google.errorprone</groupId>
           <artifactId>error_prone_annotations</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.google.code.gson</groupId>
+          <artifactId>gson</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -78,6 +84,10 @@
         <exclusion>
           <groupId>com.google.errorprone</groupId>
           <artifactId>error_prone_annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.j2objc</groupId>
+          <artifactId>j2objc-annotations</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -108,22 +118,26 @@
           <groupId>com.google.errorprone</groupId>
           <artifactId>error_prone_annotations</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.google.j2objc</groupId>
+          <artifactId>j2objc-annotations</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
-      <version>2.10.1</version> <!-- prevent downgrade via protobuf-java-util -->
+      <version>${gson.version}</version> <!-- prevent downgrade via protobuf-java-util -->
     </dependency>
     <dependency>
       <groupId>com.google.j2objc</groupId>
       <artifactId>j2objc-annotations</artifactId>
-      <version>2.8</version> <!-- prevent downgrade of version in guava -->
+      <version>${j2objc-annotations.version}</version> <!-- prevent downgrade of version in guava -->
     </dependency>
     <dependency>
       <groupId>com.google.errorprone</groupId>
       <artifactId>error_prone_annotations</artifactId>
-      <version>2.20.0</version>
+      <version>${error_prone_annotations.version}</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.guava</groupId>
@@ -149,11 +163,15 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>32.0.1-jre</version> <!-- prevent downgrade of version in protobuf-java-util -->
+      <version>${guava.version}</version> <!-- prevent downgrade of version in protobuf-java-util -->
       <exclusions>
         <exclusion>
           <groupId>com.google.errorprone</groupId>
           <artifactId>error_prone_annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.j2objc</groupId>
+          <artifactId>j2objc-annotations</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
