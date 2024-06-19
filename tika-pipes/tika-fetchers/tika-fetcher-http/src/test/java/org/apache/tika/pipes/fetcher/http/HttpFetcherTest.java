@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.zip.GZIPInputStream;
 
@@ -61,6 +62,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.pipes.fetcher.http.config.AdditionalHttpHeaders;
+import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 
 public class HttpFetcherTest extends TikaTest {
 
@@ -69,8 +71,23 @@ public class HttpFetcherTest extends TikaTest {
 
     private HttpFetcher httpFetcher;
 
+    private HttpFetcherConfig httpFetcherConfig;
+
     @BeforeEach
     public void before() throws Exception {
+        httpFetcherConfig = new HttpFetcherConfig();
+        httpFetcherConfig.setHttpHeaders(new ArrayList<>());
+        httpFetcherConfig.setUserAgent("Test app");
+        httpFetcherConfig.setConnectTimeout(240_000);
+        httpFetcherConfig.setRequestTimeout(240_000);
+        httpFetcherConfig.setSocketTimeout(240_000);
+        httpFetcherConfig.setMaxConnections(500);
+        httpFetcherConfig.setMaxConnectionsPerRoute(20);
+        httpFetcherConfig.setMaxRedirects(-1);
+        httpFetcherConfig.setMaxErrMsgSize(500_000_000);
+        httpFetcherConfig.setOverallTimeout(400_000L);
+        httpFetcherConfig.setMaxSpoolSize(-1L);
+
         final HttpResponse mockResponse = buildMockResponse(HttpStatus.SC_OK,
                 IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
 
@@ -197,6 +214,7 @@ public class HttpFetcherTest extends TikaTest {
         when(clientFactory.copy()).thenReturn(clientFactory);
 
         httpFetcher.setHttpClientFactory(clientFactory);
+        httpFetcher.setHttpFetcherConfig(httpFetcherConfig);
         httpFetcher.initialize(Collections.emptyMap());
     }
 
