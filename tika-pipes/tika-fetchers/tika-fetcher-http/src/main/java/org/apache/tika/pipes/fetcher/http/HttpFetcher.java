@@ -68,8 +68,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
-import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 import org.apache.tika.pipes.fetcher.http.config.AdditionalHttpHeaders;
+import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -152,7 +152,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         if (additionalHttpHeaders != null) {
             additionalHttpHeaders
                     .getHeaders()
-                    .forEach(header -> httpGet.setHeader(header));
+                    .forEach(httpGet::setHeader);
         }
     }
 

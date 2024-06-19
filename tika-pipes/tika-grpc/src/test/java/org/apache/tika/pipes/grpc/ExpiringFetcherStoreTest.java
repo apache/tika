@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 
@@ -32,7 +33,7 @@ class ExpiringFetcherStoreTest {
         try (ExpiringFetcherStore expiringFetcherStore = new ExpiringFetcherStore(1, 60)) {
             AbstractFetcher fetcher = new AbstractFetcher() {
                 @Override
-                public InputStream fetch(String fetchKey, Metadata metadata) {
+                public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) {
                     return null;
                 }
             };
