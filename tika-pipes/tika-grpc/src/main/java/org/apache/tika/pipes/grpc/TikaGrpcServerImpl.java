@@ -41,7 +41,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
-import com.google.protobuf.Empty;
 import com.google.rpc.Status;
 import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
@@ -60,7 +59,6 @@ import org.apache.tika.GetFetcherConfigJsonSchemaReply;
 import org.apache.tika.GetFetcherConfigJsonSchemaRequest;
 import org.apache.tika.GetFetcherReply;
 import org.apache.tika.GetFetcherRequest;
-import org.apache.tika.ListFetcherClassesReply;
 import org.apache.tika.ListFetchersReply;
 import org.apache.tika.ListFetchersRequest;
 import org.apache.tika.SaveFetcherReply;
@@ -421,10 +419,5 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     private boolean deleteFetcher(String fetcherName) {
         return expiringFetcherStore.deleteFetcher(fetcherName);
-    }
-
-    @Override
-    public void listFetcherClasses(Empty request, StreamObserver<ListFetcherClassesReply> responseObserver) {
-
     }
 }

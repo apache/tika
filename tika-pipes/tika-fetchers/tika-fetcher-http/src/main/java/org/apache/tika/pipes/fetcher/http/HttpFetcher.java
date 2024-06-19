@@ -500,4 +500,12 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     public HttpClient getHttpClient() {
         return httpClient;
     }
+
+    public HttpFetcherConfig getHttpFetcherConfig() {
+        return httpFetcherConfig;
+    }
+
+    public void setHttpFetcherConfig(HttpFetcherConfig httpFetcherConfig) {
+        this.httpFetcherConfig = httpFetcherConfig;
+    }
 }

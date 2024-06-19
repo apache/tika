@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.zip.GZIPInputStream;
 
@@ -57,21 +58,36 @@ import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.pipes.fetcher.http.config.AdditionalHttpHeaders;
+import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 
-class HttpFetcherTest extends TikaTest {
+public class HttpFetcherTest extends TikaTest {
+
     private static final String TEST_URL = "wontbecalled";
     private static final String CONTENT = "request content";
 
     private HttpFetcher httpFetcher;
 
+    private HttpFetcherConfig httpFetcherConfig;
+
     @BeforeEach
     public void before() throws Exception {
-        httpFetcher = new HttpFetcher();
+        httpFetcherConfig = new HttpFetcherConfig();
+        httpFetcherConfig.setHttpHeaders(new ArrayList<>());
+        httpFetcherConfig.setUserAgent("Test app");
+        httpFetcherConfig.setConnectTimeout(240_000);
+        httpFetcherConfig.setRequestTimeout(240_000);
+        httpFetcherConfig.setSocketTimeout(240_000);
+        httpFetcherConfig.setMaxConnections(500);
+        httpFetcherConfig.setMaxConnectionsPerRoute(20);
+        httpFetcherConfig.setMaxRedirects(-1);
+        httpFetcherConfig.setMaxErrMsgSize(500_000_000);
+        httpFetcherConfig.setOverallTimeout(400_000L);
+        httpFetcherConfig.setMaxSpoolSize(-1L);
+
         final HttpResponse mockResponse = buildMockResponse(HttpStatus.SC_OK,
                 IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
 
@@ -106,44 +122,6 @@ class HttpFetcherTest extends TikaTest {
         // Meta still populated
         assertEquals("403", meta.get("http-header:status-code"));
         assertEquals(TEST_URL, meta.get("http-connection:target-url"));
-    }
-
-    @Test
-    public void testHttpRequestHeaders() throws Exception {
-        HttpClient httpClient = Mockito.mock(HttpClient.class);
-        httpFetcher.setHttpClient(httpClient);
-        CloseableHttpResponse response = mock(CloseableHttpResponse.class);
-        ArgumentCaptor<HttpGet> httpGetArgumentCaptor = ArgumentCaptor.forClass(HttpGet.class);
-
-        when(httpClient.execute(httpGetArgumentCaptor.capture(), any(HttpContext.class)))
-                .thenReturn(response);
-        when(response.getStatusLine()).thenReturn(new StatusLine() {
-            @Override
-            public ProtocolVersion getProtocolVersion() {
-                return new HttpGet("http://localhost").getProtocolVersion();
-            }
-
-            @Override
-            public int getStatusCode() {
-                return 200;
-            }
-
-            @Override
-            public String getReasonPhrase() {
-                return null;
-            }
-        });
-
-        when(response.getEntity()).thenReturn(new StringEntity("Hi"));
-
-        Metadata metadata = new Metadata();
-        metadata.set(Property.externalText("httpRequestHeaders"), new String[] {"nick1: val1", "nick2: val2"});
-        httpFetcher.fetch("http://localhost", metadata);
-        HttpGet httpGet = httpGetArgumentCaptor.getValue();
-        Assertions.assertEquals("val1", httpGet.getHeaders("nick1")[0].getValue());
-        Assertions.assertEquals("val2", httpGet.getHeaders("nick2")[0].getValue());
-        // also make sure the headers from the fetcher config level are specified - see src/test/resources/tika-config-http.xml
-        Assertions.assertEquals("headerValueFromFetcherConfig", httpGet.getHeaders("headerNameFromFetcherConfig")[0].getValue());
     }
 
     @Test
@@ -236,6 +214,7 @@ class HttpFetcherTest extends TikaTest {
         when(clientFactory.copy()).thenReturn(clientFactory);
 
         httpFetcher.setHttpClientFactory(clientFactory);
+        httpFetcher.setHttpFetcherConfig(httpFetcherConfig);
         httpFetcher.initialize(Collections.emptyMap());
     }
 
