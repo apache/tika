@@ -30,9 +30,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.Initializable;
-import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.serialization.pipes.JsonFetchEmitTuple;
 
 /**
  * Iterates through a UTF-8 text file with one FetchEmitTuple

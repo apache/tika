@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.serialization;
+package org.apache.tika.serialization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -58,8 +58,7 @@ public class JsonMetadataListTest {
         metadataList.add(m2);
         StringWriter writer = new StringWriter();
         JsonMetadataList.toJson(metadataList, writer);
-        List<Metadata> deserialized =
-                JsonMetadataList.fromJson(new StringReader(writer.toString()));
+        List<Metadata> deserialized = JsonMetadataList.fromJson(new StringReader(writer.toString()));
         assertEquals(metadataList, deserialized);
 
         //now test streaming serializer
@@ -77,7 +76,9 @@ public class JsonMetadataListTest {
     public void testListNull() throws Exception {
         StringWriter writer = new StringWriter();
         JsonMetadataList.toJson(null, writer);
-        assertEquals("null", writer.toString().trim());
+        assertEquals("null", writer
+                .toString()
+                .trim());
 
         List<Metadata> m = JsonMetadataList.fromJson(null);
         assertNull(m);
@@ -85,8 +86,7 @@ public class JsonMetadataListTest {
 
     @Test
     public void testListCorrupted() throws Exception {
-        String json = "[{\"k1\":[\"v1\",\"v2\",\"v3\",\"v4\",\"v4\"],\"k2\":\"v1\"}," +
-                "\"k3\":[\"v1\",\"v2\",\"v3\",\"v4\",\"v4\"],\"k4\":\"v1\"}]";
+        String json = "[{\"k1\":[\"v1\",\"v2\",\"v3\",\"v4\",\"v4\"],\"k2\":\"v1\"}," + "\"k3\":[\"v1\",\"v2\",\"v3\",\"v4\",\"v4\"],\"k4\":\"v1\"}]";
         List<Metadata> m = JsonMetadataList.fromJson(null);
         assertNull(m);
     }
@@ -115,21 +115,26 @@ public class JsonMetadataListTest {
         metadataList.add(m2);
         StringWriter writer = new StringWriter();
         JsonMetadataList.toJson(metadataList, writer);
-        assertTrue(writer.toString().startsWith("["));
+        assertTrue(writer
+                .toString()
+                .startsWith("["));
         writer = new StringWriter();
         JsonMetadataList.setPrettyPrinting(true);
         JsonMetadataList.toJson(metadataList, writer);
-        assertTrue(writer.toString().replaceAll("\r\n", "\n").startsWith(
-                "[ {\n" + "  \"zk1\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],\n" +
-                        "  \"zk2\" : \"v1\",\n" +
-                        "  \"X-TIKA:content\" : \"this is the content\"\n" + "},"));
+        assertTrue(writer
+                .toString()
+                .replaceAll("\r\n", "\n")
+                .startsWith("[ {\n" + "  \"zk1\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],\n" + "  \"zk2\" : \"v1\",\n" + "  \"X-TIKA:content\" : \"this is the content\"\n" +
+                        "},"));
 
 
         //now set it back to false
         JsonMetadataList.setPrettyPrinting(false);
         writer = new StringWriter();
         JsonMetadataList.toJson(metadataList, writer);
-        assertTrue(writer.toString().startsWith("["));
+        assertTrue(writer
+                .toString()
+                .startsWith("["));
     }
 
     @Test

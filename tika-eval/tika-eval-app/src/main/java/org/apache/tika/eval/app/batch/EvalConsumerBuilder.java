@@ -54,8 +54,7 @@ public abstract class EvalConsumerBuilder {
     AtomicInteger initialized = new AtomicInteger(0);
     private MimeBuffer mimeBuffer;
 
-    public MimeBuffer init(ArrayBlockingQueue<FileResource> queue, Map<String, String> localAttrs,
-                           JDBCUtil dbUtil, boolean forceDrop) throws IOException, SQLException {
+    public MimeBuffer init(ArrayBlockingQueue<FileResource> queue, Map<String, String> localAttrs, JDBCUtil dbUtil, boolean forceDrop) throws IOException, SQLException {
         if (initialized.getAndIncrement() > 0) {
             throw new RuntimeException("Can only init a consumer builder once!");
         }
@@ -66,20 +65,16 @@ public abstract class EvalConsumerBuilder {
         //step 1. update the table names with prefixes
         updateTableInfosWithPrefixes(localAttrs);
 
-        JDBCUtil.CREATE_TABLE createRegularTable =
-                (forceDrop) ? JDBCUtil.CREATE_TABLE.DROP_IF_EXISTS :
-                        JDBCUtil.CREATE_TABLE.THROW_EX_IF_EXISTS;
+        JDBCUtil.CREATE_TABLE createRegularTable = (forceDrop) ? JDBCUtil.CREATE_TABLE.DROP_IF_EXISTS : JDBCUtil.CREATE_TABLE.THROW_EX_IF_EXISTS;
 
-        JDBCUtil.CREATE_TABLE createRefTable = (forceDrop) ? JDBCUtil.CREATE_TABLE.DROP_IF_EXISTS :
-                JDBCUtil.CREATE_TABLE.SKIP_IF_EXISTS;
+        JDBCUtil.CREATE_TABLE createRefTable = (forceDrop) ? JDBCUtil.CREATE_TABLE.DROP_IF_EXISTS : JDBCUtil.CREATE_TABLE.SKIP_IF_EXISTS;
 
         //step 2. create the tables
         dbUtil.createTables(getNonRefTableInfos(), createRegularTable);
         dbUtil.createTables(getRefTableInfos(), createRefTable);
 
         //step 3. create mime buffer
-        this.mimeBuffer = new MimeBuffer(dbUtil.getConnection(), getMimeTable(),
-                TikaConfig.getDefaultConfig());
+        this.mimeBuffer = new MimeBuffer(dbUtil.getConnection(), getMimeTable(), TikaConfig.getDefaultConfig());
 
         //step 4. populate the reference tables
         populateRefTables();
@@ -111,7 +106,8 @@ public abstract class EvalConsumerBuilder {
             Connection connection = dbUtil.getConnection();
             for (TableInfo tableInfo : getRefTableInfos()) {
                 int rows = 0;
-                try (ResultSet rs = connection.createStatement()
+                try (ResultSet rs = connection
+                        .createStatement()
                         .executeQuery("select * from " + tableInfo.getName())) {
                     while (rs.next()) {
                         rows++;
@@ -172,9 +168,7 @@ public abstract class EvalConsumerBuilder {
         } else if (alterExtractString.equalsIgnoreCase("concatenate_content")) {
             alterExtractList = ExtractReader.ALTER_METADATA_LIST.CONCATENATE_CONTENT_INTO_FIRST;
         } else {
-            throw new RuntimeException(
-                    "options for alterExtract: as_is, first_only, concatenate_content." +
-                            " I don't understand:" + alterExtractString);
+            throw new RuntimeException("options for alterExtract: as_is, first_only, concatenate_content." + " I don't understand:" + alterExtractString);
         }
         return alterExtractList;
     }
@@ -194,8 +188,7 @@ public abstract class EvalConsumerBuilder {
             abstractProfiler.setMaxContentLength(maxContentLength);
         }
 
-        int maxContentLengthForLangId =
-                PropsUtil.getInt(localAttrs.get("maxContentLengthForLangId"), -2);
+        int maxContentLengthForLangId = PropsUtil.getInt(localAttrs.get("maxContentLengthForLangId"), -2);
         if (maxContentLengthForLangId > -2) {
             abstractProfiler.setMaxContentLengthForLangId(maxContentLengthForLangId);
         }

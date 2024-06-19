@@ -53,13 +53,39 @@ public interface TikaCoreProperties {
 
     /**
      * This tracks the embedded file paths based on the name of embedded files
-     * where available.  There is a small risk that there may be path collisions
-     * and that these paths may not be unique within a file.
-     *
+     * where available.
+     * <p/>
+     * This field should be treated with great care and should NOT
+     * be used for creating a directory structure to write out attachments
+     * because: there may be path collisions or illegal characters or other mayhem.
+     * <p/>
      * For a more robust path, see {@link TikaCoreProperties#EMBEDDED_ID_PATH}.
      */
     Property EMBEDDED_RESOURCE_PATH =
             Property.internalText(TIKA_META_PREFIX + "embedded_resource_path");
+
+
+    /**
+     * This is calculated in {@link org.apache.tika.sax.RecursiveParserWrapperHandler}.
+     * It differs from {@link TikaCoreProperties#EMBEDDED_RESOURCE_PATH} in that
+     * it is calculated at the end of the full parse of a file. {@link TikaCoreProperties#EMBEDDED_RESOURCE_PATH}
+     * is calculated during the parse, and, for some parsers, an embedded file's name isn't known until
+     * after its child files have been parsed.
+     * <p/>
+     * Note that the unknown file count may differ between {@link TikaCoreProperties#EMBEDDED_RESOURCE_PATH}
+     * because there should be fewer unknown files when this is calculated. More simply,
+     * there is no connection between "embedded-1" in this field and "embedded-1" in
+     * {@link TikaCoreProperties#EMBEDDED_RESOURCE_PATH}.
+     * <p/>
+     * This field should be treated with great care and should NOT
+     * be used for creating a directory structure to write out attachments
+     * because: there may be path collisions or illegal characters or other mayhem.
+     * <p/>
+     *
+     * For a more robust path, see {@link TikaCoreProperties#EMBEDDED_ID_PATH}.
+     */
+    Property FINAL_EMBEDDED_RESOURCE_PATH =
+            Property.internalText(TIKA_META_PREFIX + "final_embedded_resource_path");
 
     /**
      * This tracks the embedded file paths based on the embedded file's

@@ -67,8 +67,7 @@ public abstract class CXFTestBase {
     }
 
     public static void assertNotFound(String needle, String haystack) {
-        assertFalse(haystack.contains(needle),
-                needle + " unexpectedly found in:\n" + haystack);
+        assertFalse(haystack.contains(needle), needle + " unexpectedly found in:\n" + haystack);
     }
 
     protected static InputStream copy(InputStream in, int remaining) throws IOException {
@@ -98,15 +97,32 @@ public abstract class CXFTestBase {
         return new ByteArrayInputStream(bos.toByteArray());
     }
 
+    protected static AverageColor getAverageColor(BufferedImage image, int minX, int maxX, int minY, int maxY) {
+        long totalRed = 0;
+        long totalGreen = 0;
+        long totalBlue = 0;
+        int pixels = 0;
+        for (int x = minX; x < maxX; x++) {
+            for (int y = minY; y < maxY; y++) {
+                int clr = image.getRGB(x, y);
+                int red = (clr & 0x00ff0000) >> 16;
+                int green = (clr & 0x0000ff00) >> 8;
+                int blue = clr & 0x000000ff;
+                totalRed += red;
+                totalGreen += green;
+                totalBlue += blue;
+                pixels++;
+            }
+        }
+        return new AverageColor((double) totalRed / (double) pixels, (double) totalGreen / (double) pixels, (double) totalBlue / (double) pixels);
+    }
+
     @BeforeEach
     public void setUp() throws Exception {
 
         this.tika = new TikaConfig(getTikaConfigInputStream());
         TikaServerConfig tikaServerConfig = getTikaServerConfig();
-        TikaResource.init(tika, tikaServerConfig,
-                new CommonsDigester(DIGESTER_READ_LIMIT, "md5," +
-                        "sha1:32"),
-                getInputStreamFactory(getTikaConfigInputStream()),
+        TikaResource.init(tika, tikaServerConfig, new CommonsDigester(DIGESTER_READ_LIMIT, "md5," + "sha1:32"), getInputStreamFactory(getTikaConfigInputStream()),
                 new ServerStatus("", 0, true));
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         //set compression interceptors
@@ -118,7 +134,9 @@ public abstract class CXFTestBase {
         sf.setAddress(endPoint + "/");
         sf.setResourceComparator(new ProduceTypeResourceComparator());
 
-        BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
+        BindingFactoryManager manager = sf
+                .getBus()
+                .getExtension(BindingFactoryManager.class);
 
         JAXRSBindingFactory factory = new JAXRSBindingFactory();
         factory.setBus(sf.getBus());
@@ -139,9 +157,7 @@ public abstract class CXFTestBase {
 
     protected InputStream getTikaConfigInputStream() throws IOException {
         return new ByteArrayInputStream(new String(
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<properties>\n" +
-                        "    <parsers>\n" +
-                        "        <parser class=\"org.apache.tika.parser.DefaultParser\"/>\n" +
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<properties>\n" + "    <parsers>\n" + "        <parser class=\"org.apache.tika.parser.DefaultParser\"/>\n" +
                         "    </parsers>\n" + "</properties>").getBytes(UTF_8));
     }
 
@@ -178,7 +194,7 @@ public abstract class CXFTestBase {
             }
             zip.close();
         } finally {
-            if (tempFile != null ) {
+            if (tempFile != null) {
                 Files.delete(tempFile);
             }
         }
@@ -200,7 +216,7 @@ public abstract class CXFTestBase {
             }
             zip.close();
         } finally {
-            if (tempFile != null ) {
+            if (tempFile != null) {
                 Files.delete(tempFile);
             }
         }
@@ -236,8 +252,7 @@ public abstract class CXFTestBase {
         return metadata + "\n\n" + txt;
     }
 
-    protected Map<String, String> readArchiveFromStream(ArchiveInputStream zip)
-            throws IOException {
+    protected Map<String, String> readArchiveFromStream(ArchiveInputStream zip) throws IOException {
         Map<String, String> data = new HashMap<>();
         while (true) {
             ArchiveEntry entry = zip.getNextEntry();
@@ -253,34 +268,10 @@ public abstract class CXFTestBase {
         return data;
     }
 
-    private Path writeTemporaryArchiveFile(InputStream inputStream, String archiveType)
-            throws IOException {
-        Path tmp = Files.createTempFile("apache-tika-server-test-tmp-",
-                "." + archiveType);
+    private Path writeTemporaryArchiveFile(InputStream inputStream, String archiveType) throws IOException {
+        Path tmp = Files.createTempFile("apache-tika-server-test-tmp-", "." + archiveType);
         Files.copy(inputStream, tmp, StandardCopyOption.REPLACE_EXISTING);
         return tmp;
-    }
-
-    protected static AverageColor getAverageColor(BufferedImage image, int minX, int maxX, int minY,
-                                                  int maxY) {
-        long totalRed = 0;
-        long totalGreen = 0;
-        long totalBlue = 0;
-        int pixels = 0;
-        for (int x = minX; x < maxX; x++) {
-            for (int y = minY; y < maxY; y++) {
-                int clr = image.getRGB(x, y);
-                int red = (clr & 0x00ff0000) >> 16;
-                int green = (clr & 0x0000ff00) >> 8;
-                int blue = clr & 0x000000ff;
-                totalRed += red;
-                totalGreen += green;
-                totalBlue += blue;
-                pixels++;
-            }
-        }
-        return new AverageColor((double) totalRed / (double) pixels,
-                (double) totalGreen / (double) pixels, (double) totalBlue / (double) pixels);
     }
 
     public static class AverageColor {

@@ -35,11 +35,11 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.metadata.serialization.JsonStreamingSerializer;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.serialization.JsonStreamingSerializer;
 
 /**
  * This uses the {@link JsonStreamingSerializer} to write out a
@@ -54,9 +54,8 @@ public class StreamOutRPWFSConsumer extends AbstractFSConsumer {
     private String outputEncoding = "UTF-8";
 
 
-    public StreamOutRPWFSConsumer(ArrayBlockingQueue<FileResource> queue, Parser parser,
-                                  ContentHandlerFactory contentHandlerFactory,
-                                  OutputStreamFactory fsOSFactory, MetadataFilter metadataFilter) {
+    public StreamOutRPWFSConsumer(ArrayBlockingQueue<FileResource> queue, Parser parser, ContentHandlerFactory contentHandlerFactory, OutputStreamFactory fsOSFactory,
+                                  MetadataFilter metadataFilter) {
         super(queue);
         this.contentHandlerFactory = contentHandlerFactory;
         this.fsOSFactory = fsOSFactory;
@@ -73,7 +72,9 @@ public class StreamOutRPWFSConsumer extends AbstractFSConsumer {
         OutputStream os = getOutputStream(fsOSFactory, fileResource);
 
         if (os == null) {
-            LOG.debug("Skipping: {}", fileResource.getMetadata().get(FSProperties.FS_REL_PATH));
+            LOG.debug("Skipping: {}", fileResource
+                    .getMetadata()
+                    .get(FSProperties.FS_REL_PATH));
             return false;
         }
 
@@ -88,11 +89,9 @@ public class StreamOutRPWFSConsumer extends AbstractFSConsumer {
         }
 
         Metadata containerMetadata = fileResource.getMetadata();
-        JsonStreamingSerializer writer =
-                new JsonStreamingSerializer(new OutputStreamWriter(os, StandardCharsets.UTF_8));
+        JsonStreamingSerializer writer = new JsonStreamingSerializer(new OutputStreamWriter(os, StandardCharsets.UTF_8));
 
-        WriteoutRPWHandler handler =
-                new WriteoutRPWHandler(contentHandlerFactory, writer, metadataFilter);
+        WriteoutRPWHandler handler = new WriteoutRPWHandler(contentHandlerFactory, writer, metadataFilter);
         Throwable thrown = null;
         try {
             parse(fileResource.getResourceId(), parser, is, handler, containerMetadata, context);
@@ -137,16 +136,14 @@ public class StreamOutRPWFSConsumer extends AbstractFSConsumer {
         private final JsonStreamingSerializer jsonWriter;
         private final MetadataFilter metadataFilter;
 
-        public WriteoutRPWHandler(ContentHandlerFactory contentHandlerFactory,
-                                  JsonStreamingSerializer writer, MetadataFilter metadataFilter) {
+        public WriteoutRPWHandler(ContentHandlerFactory contentHandlerFactory, JsonStreamingSerializer writer, MetadataFilter metadataFilter) {
             super(contentHandlerFactory);
             this.jsonWriter = writer;
             this.metadataFilter = metadataFilter;
         }
 
         @Override
-        public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata)
-                throws SAXException {
+        public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
             metadata.add(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
             try {
                 metadataFilter.filter(metadata);
@@ -161,8 +158,7 @@ public class StreamOutRPWFSConsumer extends AbstractFSConsumer {
         }
 
         @Override
-        public void endDocument(ContentHandler contentHandler, Metadata metadata)
-                throws SAXException {
+        public void endDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
             endEmbeddedDocument(contentHandler, metadata);
         }
     }

@@ -34,7 +34,9 @@ public class ServerStatus {
     private AtomicLong counter = new AtomicLong(0);
     private Map<Long, TaskStatus> tasks = new HashMap<>();
     private STATUS status = STATUS.OPERATING;
-    private volatile long lastStarted = Instant.now().toEpochMilli();
+    private volatile long lastStarted = Instant
+            .now()
+            .toEpochMilli();
 
     public ServerStatus(String serverId, int numRestarts) {
         this(serverId, numRestarts, false);
@@ -84,7 +86,9 @@ public class ServerStatus {
     }
 
     public long getMillisSinceLastParseStarted() {
-        return Instant.now().toEpochMilli() - lastStarted;
+        return Instant
+                .now()
+                .toEpochMilli() - lastStarted;
     }
 
     /**
@@ -120,8 +124,7 @@ public class ServerStatus {
     }
 
     public enum STATUS {
-        INITIALIZING(0), OPERATING(1), HIT_MAX_FILES(2), TIMEOUT(3), ERROR(4),
-        PARENT_REQUESTED_SHUTDOWN(5), PARENT_EXCEPTION(6), OFF(7);
+        INITIALIZING(0), OPERATING(1), HIT_MAX_FILES(2), TIMEOUT(3), ERROR(4), PARENT_REQUESTED_SHUTDOWN(5), PARENT_EXCEPTION(6), OFF(7);
 
         private final int shutdownCode;
 
@@ -132,8 +135,7 @@ public class ServerStatus {
         static STATUS lookup(int i) {
             STATUS[] values = STATUS.values();
             if (i < 0 || i >= values.length) {
-                throw new ArrayIndexOutOfBoundsException(
-                        i + " is not acceptable for an array of length " + values.length);
+                throw new ArrayIndexOutOfBoundsException(i + " is not acceptable for an array of length " + values.length);
             }
             return STATUS.values()[i];
         }

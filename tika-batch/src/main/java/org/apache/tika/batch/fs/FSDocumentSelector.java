@@ -42,8 +42,7 @@ public class FSDocumentSelector implements DocumentSelector {
     private final long maxFileSizeBytes;
     private final long minFileSizeBytes;
 
-    public FSDocumentSelector(Pattern includeFileName, Pattern excludeFileName,
-                              long minFileSizeBytes, long maxFileSizeBytes) {
+    public FSDocumentSelector(Pattern includeFileName, Pattern excludeFileName, long minFileSizeBytes, long maxFileSizeBytes) {
         this.includeFileName = includeFileName;
         this.excludeFileName = excludeFileName;
         this.minFileSizeBytes = minFileSizeBytes;

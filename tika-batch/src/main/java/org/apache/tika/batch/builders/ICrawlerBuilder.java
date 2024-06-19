@@ -26,7 +26,6 @@ import org.apache.tika.batch.FileResourceCrawler;
 
 public interface ICrawlerBuilder extends ObjectFromDOMAndQueueBuilder<FileResourceCrawler> {
 
-    public FileResourceCrawler build(Node node, Map<String, String> attributes,
-                                     ArrayBlockingQueue<FileResource> queue);
+    public FileResourceCrawler build(Node node, Map<String, String> attributes, ArrayBlockingQueue<FileResource> queue);
 
 }

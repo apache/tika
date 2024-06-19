@@ -59,9 +59,10 @@ public class TikaCLIBatchCommandLineTest {
         } catch (IOException e) {
             throw new RuntimeException("Couldn't open testFile");
         }
-        testInputPathForCommandLine = testInput.toAbsolutePath().toString();
-        escapedInputPathForCommandLine =
-                BatchCommandLineBuilder.commandLineSafe(testInputPathForCommandLine);
+        testInputPathForCommandLine = testInput
+                .toAbsolutePath()
+                .toString();
+        escapedInputPathForCommandLine = BatchCommandLineBuilder.commandLineSafe(testInputPathForCommandLine);
     }
 
     @AfterEach
@@ -84,15 +85,16 @@ public class TikaCLIBatchCommandLineTest {
 
     @Test
     public void testJVMOpts() throws Exception {
-        String[] params = {"-JXmx1g", "-JDlog4j.configuration=batch_process_log4j.xml", "-inputDir",
-                testInputPathForCommandLine, "-outputDir", "testout-output"};
+        String[] params = {"-JXmx1g", "-JDlog4j.configuration=batch_process_log4j.xml", "-inputDir", testInputPathForCommandLine, "-outputDir", "testout-output"};
 
 
         String[] commandLine = BatchCommandLineBuilder.build(params);
         StringBuilder sb = new StringBuilder();
 
         for (String s : commandLine) {
-            sb.append(s).append(" ");
+            sb
+                    .append(s)
+                    .append(" ");
         }
         String s = sb.toString();
         int classInd = s.indexOf("org.apache.tika.batch.fs.FSBatchProcessCLI");
@@ -110,8 +112,7 @@ public class TikaCLIBatchCommandLineTest {
 
     @Test
     public void testBasicMappingOfArgs() throws Exception {
-        String[] params = {"-JXmx1g", "-JDlog4j.configuration=batch_process_log4j.xml", "-bc",
-                "batch-config.xml", "-J", "-h", "-inputDir", testInputPathForCommandLine};
+        String[] params = {"-JXmx1g", "-JDlog4j.configuration=batch_process_log4j.xml", "-bc", "batch-config.xml", "-J", "-h", "-inputDir", testInputPathForCommandLine};
 
         String[] commandLine = BatchCommandLineBuilder.build(params);
         Map<String, String> attrs = mapify(commandLine);
@@ -163,8 +164,7 @@ public class TikaCLIBatchCommandLineTest {
         String outputRoot = "outputRoot";
         String configPath = "c:/somewhere/someConfig.xml";
 
-        String[] params = {"--inputDir", testInputPathForCommandLine, "--outputDir", outputRoot,
-                "--config=" + configPath};
+        String[] params = {"--inputDir", testInputPathForCommandLine, "--outputDir", outputRoot, "--config=" + configPath};
         String[] commandLine = BatchCommandLineBuilder.build(params);
         Map<String, String> attrs = mapify(commandLine);
         assertEquals(escapedInputPathForCommandLine, attrs.get("-inputDir"));
@@ -177,7 +177,9 @@ public class TikaCLIBatchCommandLineTest {
     public void testOneDirOneFileException() throws Exception {
         boolean ex = false;
         try {
-            String path = testFile.toAbsolutePath().toString();
+            String path = testFile
+                    .toAbsolutePath()
+                    .toString();
             path = ProcessUtils.escapeCommandLine(path);
             String[] params = {testInputPathForCommandLine, path};
 

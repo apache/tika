@@ -68,8 +68,7 @@ public class ImportContextImpl implements ImportContext {
      * @throws IOException
      * @see ImportContext#informCompleted(boolean)
      */
-    public ImportContextImpl(Item importRoot, String systemId, InputContext ctx, InputStream stream,
-                             IOListener ioListener, Detector detector) throws IOException {
+    public ImportContextImpl(Item importRoot, String systemId, InputContext ctx, InputStream stream, IOListener ioListener, Detector detector) throws IOException {
         this.importRoot = importRoot;
         this.systemId = systemId;
         this.inputCtx = ctx;
@@ -165,8 +164,7 @@ public class ImportContextImpl implements ImportContext {
             length = inputFile.length();
         }
         if (length < 0) {
-            LOG.debug("Unable to determine content length -> default value = {}",
-                    IOUtil.UNDEFINED_LENGTH);
+            LOG.debug("Unable to determine content length -> default value = {}", IOUtil.UNDEFINED_LENGTH);
         }
         return length;
     }

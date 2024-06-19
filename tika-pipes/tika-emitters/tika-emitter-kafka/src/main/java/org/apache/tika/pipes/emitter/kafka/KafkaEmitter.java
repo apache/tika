@@ -39,6 +39,7 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 
@@ -193,7 +194,7 @@ public class KafkaEmitter extends AbstractEmitter implements Initializable {
     }
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList)
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
             throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.isEmpty()) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");

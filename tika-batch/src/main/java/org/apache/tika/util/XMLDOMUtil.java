@@ -58,8 +58,7 @@ public class XMLDOMUtil {
      * @param docElement        correct element that should have specified attribute
      * @return specified int value
      */
-    public static int getInt(String attrName, Map<String, String> runtimeAttributes,
-                             Node docElement) {
+    public static int getInt(String attrName, Map<String, String> runtimeAttributes, Node docElement) {
         String stringValue = getStringValue(attrName, runtimeAttributes, docElement);
         if (stringValue != null) {
             try {
@@ -68,8 +67,7 @@ public class XMLDOMUtil {
                 //swallow
             }
         }
-        throw new RuntimeException("Need to specify a parseable int value in -- " + attrName +
-                " -- in commandline or in config file!");
+        throw new RuntimeException("Need to specify a parseable int value in -- " + attrName + " -- in commandline or in config file!");
     }
 
 
@@ -83,8 +81,7 @@ public class XMLDOMUtil {
      * @param docElement        correct element that should have specified attribute
      * @return specified long value
      */
-    public static long getLong(String attrName, Map<String, String> runtimeAttributes,
-                               Node docElement) {
+    public static long getLong(String attrName, Map<String, String> runtimeAttributes, Node docElement) {
         String stringValue = getStringValue(attrName, runtimeAttributes, docElement);
         if (stringValue != null) {
             try {
@@ -93,15 +90,15 @@ public class XMLDOMUtil {
                 //swallow
             }
         }
-        throw new RuntimeException("Need to specify a \"long\" value in -- " + attrName +
-                " -- in commandline or in config file!");
+        throw new RuntimeException("Need to specify a \"long\" value in -- " + attrName + " -- in commandline or in config file!");
     }
 
-    private static String getStringValue(String attrName, Map<String, String> runtimeAttributes,
-                                         Node docElement) {
+    private static String getStringValue(String attrName, Map<String, String> runtimeAttributes, Node docElement) {
         String stringValue = runtimeAttributes.get(attrName);
         if (stringValue == null) {
-            Node staleNode = docElement.getAttributes().getNamedItem(attrName);
+            Node staleNode = docElement
+                    .getAttributes()
+                    .getNamedItem(attrName);
             if (staleNode != null) {
                 stringValue = staleNode.getNodeValue();
             }

@@ -96,12 +96,15 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
         return includeOriginal;
     }
 
-    public void setZeroPadNameLength(int zeroPadName) {
+    public void setZeroPadName(int zeroPadName) {
         this.zeroPadName = zeroPadName;
     }
 
     public void setSuffixStrategy(SUFFIX_STRATEGY suffixStrategy) {
         this.suffixStrategy = suffixStrategy;
+    }
+    public void setSuffixStrategy(String suffixStrategy) {
+        setSuffixStrategy(SUFFIX_STRATEGY.valueOf(suffixStrategy));
     }
 
     public void setEmbeddedIdPrefix(String embeddedIdPrefix) {

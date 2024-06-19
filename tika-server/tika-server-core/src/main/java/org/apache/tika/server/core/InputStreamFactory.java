@@ -33,8 +33,6 @@ import org.apache.tika.metadata.Metadata;
  */
 public interface InputStreamFactory {
 
-    InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders,
-                               UriInfo uriInfo)
-            throws IOException;
+    InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders, UriInfo uriInfo) throws IOException;
 
 }

@@ -96,6 +96,7 @@ public class TesseractOCRConfig implements Serializable {
     // See addOtherTesseractConfig.
     private Map<String, String> otherTesseractConfig = new HashMap<>();
     private Set<String> userConfigured = new HashSet<>();
+    private boolean inlineContent = false;
 
     /**
      * This takes a language string, parses it and then bins individual langs into
@@ -475,6 +476,15 @@ public class TesseractOCRConfig implements Serializable {
      */
     public boolean isApplyRotation() {
         return this.applyRotation;
+    }
+
+    public void setInlineContent(boolean inlineContent) {
+        this.inlineContent = inlineContent;
+        userConfigured.add("inlineContent");
+    }
+
+    public boolean isInlineContent() {
+        return inlineContent;
     }
 
     /**

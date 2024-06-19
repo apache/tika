@@ -92,8 +92,7 @@ public class BatchProcessBuilder {
      * @return batch process
      * @throws java.io.IOException
      */
-    public BatchProcess build(InputStream is, Map<String, String> runtimeAttributes)
-            throws IOException {
+    public BatchProcess build(InputStream is, Map<String, String> runtimeAttributes) throws IOException {
         Document doc = null;
         try {
             DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder();
@@ -118,14 +117,10 @@ public class BatchProcessBuilder {
     public BatchProcess build(Node docElement, Map<String, String> incomingRuntimeAttributes) {
 
         //key components
-        long timeoutThresholdMillis =
-                XMLDOMUtil.getLong("timeoutThresholdMillis", incomingRuntimeAttributes, docElement);
-        long timeoutCheckPulseMillis = XMLDOMUtil
-                .getLong("timeoutCheckPulseMillis", incomingRuntimeAttributes, docElement);
-        long pauseOnEarlyTerminationMillis = XMLDOMUtil
-                .getLong("pauseOnEarlyTerminationMillis", incomingRuntimeAttributes, docElement);
-        int maxAliveTimeSeconds =
-                XMLDOMUtil.getInt("maxAliveTimeSeconds", incomingRuntimeAttributes, docElement);
+        long timeoutThresholdMillis = XMLDOMUtil.getLong("timeoutThresholdMillis", incomingRuntimeAttributes, docElement);
+        long timeoutCheckPulseMillis = XMLDOMUtil.getLong("timeoutCheckPulseMillis", incomingRuntimeAttributes, docElement);
+        long pauseOnEarlyTerminationMillis = XMLDOMUtil.getLong("pauseOnEarlyTerminationMillis", incomingRuntimeAttributes, docElement);
+        int maxAliveTimeSeconds = XMLDOMUtil.getInt("maxAliveTimeSeconds", incomingRuntimeAttributes, docElement);
 
         FileResourceCrawler crawler = null;
         ConsumersManager consumersManager = null;
@@ -138,8 +133,7 @@ public class BatchProcessBuilder {
          * supplies the numConsumers from the commandline (if it exists) or from the config file
          * At least this creates an unmodifiable defensive copy of incomingRuntimeAttributes...
          */
-        Map<String, String> runtimeAttributes =
-                setNumConsumersInRuntimeAttributes(docElement, incomingRuntimeAttributes);
+        Map<String, String> runtimeAttributes = setNumConsumersInRuntimeAttributes(docElement, incomingRuntimeAttributes);
 
         //build queue
         ArrayBlockingQueue<FileResource> queue = buildQueue(docElement, runtimeAttributes);
@@ -155,21 +149,17 @@ public class BatchProcessBuilder {
             keyNodes.put(nodeName, child);
         }
         //build consumers
-        consumersManager =
-                buildConsumersManager(keyNodes.get("consumers"), runtimeAttributes, queue);
+        consumersManager = buildConsumersManager(keyNodes.get("consumers"), runtimeAttributes, queue);
 
         //build crawler
         crawler = buildCrawler(queue, keyNodes.get("crawler"), runtimeAttributes);
 
         if (keyNodes.containsKey("reporter")) {
-            reporter = buildReporter(crawler, consumersManager, keyNodes.get("reporter"),
-                    runtimeAttributes);
+            reporter = buildReporter(crawler, consumersManager, keyNodes.get("reporter"), runtimeAttributes);
         }
 
         if (keyNodes.containsKey("interrupter")) {
-            interrupter =
-                    buildInterrupter(keyNodes.get("interrupter"), pauseOnEarlyTerminationMillis,
-                            runtimeAttributes);
+            interrupter = buildInterrupter(keyNodes.get("interrupter"), pauseOnEarlyTerminationMillis, runtimeAttributes);
         }
         BatchProcess proc = new BatchProcess(crawler, consumersManager, reporter, interrupter);
 
@@ -188,38 +178,32 @@ public class BatchProcessBuilder {
         return proc;
     }
 
-    private Interrupter buildInterrupter(Node node, long pauseOnEarlyTermination,
-                                         Map<String, String> runtimeAttributes) {
+    private Interrupter buildInterrupter(Node node, long pauseOnEarlyTermination, Map<String, String> runtimeAttributes) {
         Map<String, String> attrs = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
         String className = attrs.get("builderClass");
         if (className == null) {
             throw new RuntimeException("Need to specify class name in interrupter element");
         }
-        InterrupterBuilder builder =
-                ClassLoaderUtil.buildClass(InterrupterBuilder.class, className);
+        InterrupterBuilder builder = ClassLoaderUtil.buildClass(InterrupterBuilder.class, className);
 
         return builder.build(node, pauseOnEarlyTermination, runtimeAttributes);
 
     }
 
-    private StatusReporter buildReporter(FileResourceCrawler crawler,
-                                         ConsumersManager consumersManager, Node node,
-                                         Map<String, String> runtimeAttributes) {
+    private StatusReporter buildReporter(FileResourceCrawler crawler, ConsumersManager consumersManager, Node node, Map<String, String> runtimeAttributes) {
 
         Map<String, String> attrs = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
         String className = attrs.get("builderClass");
         if (className == null) {
             throw new RuntimeException("Need to specify class name in reporter element");
         }
-        StatusReporterBuilder builder =
-                ClassLoaderUtil.buildClass(StatusReporterBuilder.class, className);
+        StatusReporterBuilder builder = ClassLoaderUtil.buildClass(StatusReporterBuilder.class, className);
 
         return builder.build(crawler, consumersManager, node, runtimeAttributes);
 
     }
 
-    private Map<String, String> setNumConsumersInRuntimeAttributes(Node docElement,
-                                                                   Map<String, String> incomingRuntimeAttributes) {
+    private Map<String, String> setNumConsumersInRuntimeAttributes(Node docElement, Map<String, String> incomingRuntimeAttributes) {
         Map<String, String> runtimeAttributes = new HashMap<>();
 
         for (Map.Entry<String, String> e : incomingRuntimeAttributes.entrySet()) {
@@ -230,7 +214,9 @@ public class BatchProcessBuilder {
         if (runtimeAttributes.containsKey(NUM_CONSUMERS_KEY)) {
             return Collections.unmodifiableMap(runtimeAttributes);
         }
-        Node ncNode = docElement.getAttributes().getNamedItem("numConsumers");
+        Node ncNode = docElement
+                .getAttributes()
+                .getNamedItem("numConsumers");
         int numConsumers = -1;
         String numConsumersString = ncNode.getNodeValue();
         try {
@@ -247,13 +233,14 @@ public class BatchProcessBuilder {
     }
 
     //tries to get maxQueueSize from main element
-    private ArrayBlockingQueue<FileResource> buildQueue(Node docElement,
-                                                        Map<String, String> runtimeAttributes) {
+    private ArrayBlockingQueue<FileResource> buildQueue(Node docElement, Map<String, String> runtimeAttributes) {
         int maxQueueSize = DEFAULT_MAX_QUEUE_SIZE;
         String szString = runtimeAttributes.get(MAX_QUEUE_SIZE_KEY);
 
         if (szString == null) {
-            Node szNode = docElement.getAttributes().getNamedItem(MAX_QUEUE_SIZE_KEY);
+            Node szNode = docElement
+                    .getAttributes()
+                    .getNamedItem(MAX_QUEUE_SIZE_KEY);
             if (szNode != null) {
                 szString = szNode.getNodeValue();
             }
@@ -274,23 +261,20 @@ public class BatchProcessBuilder {
         return new ArrayBlockingQueue<>(maxQueueSize);
     }
 
-    private ConsumersManager buildConsumersManager(Node node, Map<String, String> runtimeAttributes,
-                                                   ArrayBlockingQueue<FileResource> queue) {
+    private ConsumersManager buildConsumersManager(Node node, Map<String, String> runtimeAttributes, ArrayBlockingQueue<FileResource> queue) {
 
         Map<String, String> attrs = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
         String className = attrs.get("builderClass");
         if (className == null) {
             throw new RuntimeException("Need to specify class name in consumers element");
         }
-        AbstractConsumersBuilder builder =
-                ClassLoaderUtil.buildClass(AbstractConsumersBuilder.class, className);
+        AbstractConsumersBuilder builder = ClassLoaderUtil.buildClass(AbstractConsumersBuilder.class, className);
 
         return builder.build(node, runtimeAttributes, queue);
     }
 
 
-    private FileResourceCrawler buildCrawler(ArrayBlockingQueue<FileResource> queue, Node node,
-                                             Map<String, String> runtimeAttributes) {
+    private FileResourceCrawler buildCrawler(ArrayBlockingQueue<FileResource> queue, Node node, Map<String, String> runtimeAttributes) {
         Map<String, String> attrs = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
         String className = attrs.get("builderClass");
         if (className == null) {

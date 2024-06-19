@@ -38,12 +38,21 @@ public class BatchTopCommonTokenCounter {
 
         for (Map.Entry<String, List<Path>> e : langFiles.entrySet()) {
 
-            String[] cmd = new String[e.getValue().size() + 1];
+            String[] cmd = new String[e
+                    .getValue()
+                    .size() + 1];
             Path commonTokensFile = commonTokensDir.resolve(e.getKey());
-            cmd[0] = ProcessUtils.escapeCommandLine(commonTokensFile.toAbsolutePath().toString());
-            for (int i = 0; i < e.getValue().size(); i++) {
-                cmd[i + 1] = ProcessUtils
-                        .escapeCommandLine(e.getValue().get(i).toAbsolutePath().toString());
+            cmd[0] = ProcessUtils.escapeCommandLine(commonTokensFile
+                    .toAbsolutePath()
+                    .toString());
+            for (int i = 0; i < e
+                    .getValue()
+                    .size(); i++) {
+                cmd[i + 1] = ProcessUtils.escapeCommandLine(e
+                        .getValue()
+                        .get(i)
+                        .toAbsolutePath()
+                        .toString());
             }
             TopCommonTokenCounter.main(cmd);
         }

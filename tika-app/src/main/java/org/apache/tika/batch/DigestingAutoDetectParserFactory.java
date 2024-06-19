@@ -34,8 +34,13 @@ public class DigestingAutoDetectParserFactory extends ParserFactory {
             return p;
         }
         boolean skipContainerDocument = false;
-        if (config.getAutoDetectParserConfig().getDigesterFactory() != null) {
-            skipContainerDocument = config.getAutoDetectParserConfig().getDigesterFactory().isSkipContainerDocument();
+        if (config
+                .getAutoDetectParserConfig()
+                .getDigesterFactory() != null) {
+            skipContainerDocument = config
+                    .getAutoDetectParserConfig()
+                    .getDigesterFactory()
+                    .isSkipContainerDocument();
         }
         return new DigestingParser(p, digester, skipContainerDocument);
     }

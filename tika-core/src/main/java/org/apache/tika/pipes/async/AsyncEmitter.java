@@ -42,7 +42,7 @@ import org.apache.tika.utils.ExceptionUtils;
  */
 public class AsyncEmitter implements Callable<Integer> {
 
-    static final EmitData EMIT_DATA_STOP_SEMAPHORE = new EmitData(null, null);
+    static final EmitData EMIT_DATA_STOP_SEMAPHORE = new EmitData(null, null, null);
     static final int EMITTER_FUTURE_CODE = 2;
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncEmitter.class);

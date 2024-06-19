@@ -64,6 +64,7 @@ import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * This class enables mocking of parser behavior for use in testing
@@ -120,7 +121,7 @@ public class MockParser implements Parser {
         }
         Document doc = null;
         try {
-            DocumentBuilder docBuilder = context.getDocumentBuilder();
+            DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder(context);
             doc = docBuilder.parse(new CloseShieldInputStream(stream));
         } catch (SAXException e) {
             //to distinguish between SAX on read vs SAX while writing
