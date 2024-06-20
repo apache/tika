@@ -76,6 +76,7 @@
               <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>
               <violationSeverity>error</violationSeverity>
               <failOnViolation>true</failOnViolation>
+              <excludeGeneratedSources>true</excludeGeneratedSources>
             </configuration>
             <goals>
               <goal>check</goal>
