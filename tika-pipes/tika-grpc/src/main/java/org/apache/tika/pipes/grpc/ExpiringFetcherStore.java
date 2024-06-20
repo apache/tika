@@ -37,11 +37,9 @@ public class ExpiringFetcherStore implements AutoCloseable {
     public static final long EXPIRE_JOB_INITIAL_DELAY = 1L;
     private final Map<String, AbstractFetcher> fetchers = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, AbstractConfig> fetcherConfigs = Collections.synchronizedMap(new HashMap<>());
-    private final Map<String, Instant> fetcherLastAccessed =
-            Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, Instant> fetcherLastAccessed = Collections.synchronizedMap(new HashMap<>());
 
-    private final ScheduledExecutorService executorService =
-            Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     public ExpiringFetcherStore(int expireAfterSeconds, int checkForExpiredFetchersDelaySeconds) {
         executorService.scheduleAtFixedRate(() -> {
@@ -49,13 +47,14 @@ public class ExpiringFetcherStore implements AutoCloseable {
             for (String fetcherName : fetchers.keySet()) {
                 Instant lastAccessed = fetcherLastAccessed.get(fetcherName);
                 if (lastAccessed == null) {
-                    LOG.error("Detected a fetcher with no last access time. FetcherName={}",
-                            fetcherName);
+                    LOG.error("Detected a fetcher with no last access time. FetcherName={}", fetcherName);
                     expired.add(fetcherName);
-                } else if (Instant.now().isAfter(lastAccessed.plusSeconds(expireAfterSeconds))) {
-                    LOG.info("Detected stale fetcher {} hasn't been access in {} seconds. " +
-                                    "Deleting.",
-                            fetcherName, Instant.now().getEpochSecond() - lastAccessed.getEpochSecond());
+                } else if (Instant
+                        .now()
+                        .isAfter(lastAccessed.plusSeconds(expireAfterSeconds))) {
+                    LOG.info("Detected stale fetcher {} hasn't been accessed in {} seconds. " + "Deleting.", fetcherName, Instant
+                            .now()
+                            .getEpochSecond() - lastAccessed.getEpochSecond());
                     expired.add(fetcherName);
                 }
             }
@@ -64,7 +63,7 @@ public class ExpiringFetcherStore implements AutoCloseable {
             }
         }, EXPIRE_JOB_INITIAL_DELAY, checkForExpiredFetchersDelaySeconds, TimeUnit.SECONDS);
     }
-    
+
     public boolean deleteFetcher(String fetcherName) {
         boolean success = fetchers.remove(fetcherName) != null;
         fetcherConfigs.remove(fetcherName);
@@ -75,7 +74,7 @@ public class ExpiringFetcherStore implements AutoCloseable {
     public Map<String, AbstractFetcher> getFetchers() {
         return fetchers;
     }
-    
+
     public Map<String, AbstractConfig> getFetcherConfigs() {
         return fetcherConfigs;
     }
@@ -88,7 +87,7 @@ public class ExpiringFetcherStore implements AutoCloseable {
         fetcherLastAccessed.put(fetcherName, Instant.now());
         return (T) fetchers.get(fetcherName);
     }
-    
+
     public <T extends AbstractFetcher, C extends AbstractConfig> void createFetcher(T fetcher, C config) {
         fetchers.put(fetcher.getName(), fetcher);
         fetcherConfigs.put(fetcher.getName(), config);
