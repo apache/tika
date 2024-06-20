@@ -71,6 +71,7 @@
               <configLocation>checkstyle.xml</configLocation>
               <inputEncoding>UTF-8</inputEncoding>
               <consoleOutput>false</consoleOutput>
+              <logViolationsToConsole>true</logViolationsToConsole>
               <includeTestSourceDirectory>true</includeTestSourceDirectory>
               <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>
               <violationSeverity>error</violationSeverity>
