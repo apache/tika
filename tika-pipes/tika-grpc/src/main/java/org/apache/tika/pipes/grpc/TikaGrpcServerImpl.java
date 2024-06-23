@@ -16,11 +16,11 @@
  */
 package org.apache.tika.pipes.grpc;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,6 +44,7 @@ import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
 import com.google.rpc.Status;
 import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,7 +101,17 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     TikaGrpcServerImpl(String tikaConfigPath)
             throws TikaConfigException, IOException, ParserConfigurationException,
             TransformerException, SAXException {
-        pipesConfig = PipesConfig.load(Paths.get(tikaConfigPath));
+        File tikaConfigFile = new File(tikaConfigPath);
+        if (!tikaConfigFile.canWrite()) {
+            File tmpTikaConfigFile = File.createTempFile("configCopy", tikaConfigFile.getName());
+            tmpTikaConfigFile.deleteOnExit();
+            LOG.info("Tika config file {} is read-only. Making a temporary copy to {}", tikaConfigFile, tmpTikaConfigFile);
+            String tikaConfigFileContents = FileUtils.readFileToString(tikaConfigFile, StandardCharsets.UTF_8);
+            FileUtils.writeStringToFile(tmpTikaConfigFile, tikaConfigFileContents, StandardCharsets.UTF_8);
+            tikaConfigFile = tmpTikaConfigFile;
+            tikaConfigPath = tikaConfigFile.getAbsolutePath();
+        }
+        pipesConfig = PipesConfig.load(tikaConfigFile.toPath());
         pipesClient = new PipesClient(pipesConfig);
 
         expiringFetcherStore = new ExpiringFetcherStore(pipesConfig.getStaleFetcherTimeoutSeconds(),
