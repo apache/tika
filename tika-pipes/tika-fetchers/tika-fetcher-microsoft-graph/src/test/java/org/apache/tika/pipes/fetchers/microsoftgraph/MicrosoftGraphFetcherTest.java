@@ -41,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.ClientCertificateCredentialsConfig;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.MsGraphFetcherConfig;
 
@@ -95,7 +96,7 @@ class MicrosoftGraphFetcherTest {
             Mockito.when(contentRequestBuilder.get())
                     .thenReturn(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
             InputStream resultingInputStream =
-                    microsoftGraphFetcher.fetch(siteDriveId + "," + driveItemid, new Metadata());
+                    microsoftGraphFetcher.fetch(siteDriveId + "," + driveItemid, new Metadata(), new ParseContext());
             Assertions.assertEquals(content,
                     IOUtils.toString(resultingInputStream, StandardCharsets.UTF_8));
         }

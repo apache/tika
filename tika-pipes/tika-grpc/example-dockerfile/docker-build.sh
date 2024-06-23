@@ -15,6 +15,12 @@ rm -rf "${OUT_DIR}"
 mkdir -p "${OUT_DIR}"
 
 cp -r "${TIKA_SRC_PATH}/tika-pipes/tika-grpc/target/dependency" "${OUT_DIR}/libs"
+cp -r "${TIKA_SRC_PATH}/tika-pipes/tika-fetchers/tika-fetcher-gcs/target/tika-fetcher-gcs-"*".jar" "${OUT_DIR}/libs"
+cp -r "${TIKA_SRC_PATH}/tika-pipes/tika-fetchers/tika-fetcher-az-blob/target/tika-fetcher-az-blob-"*".jar" "${OUT_DIR}/libs"
+cp -r "${TIKA_SRC_PATH}/tika-pipes/tika-fetchers/tika-fetcher-http/target/tika-fetcher-http-"*".jar" "${OUT_DIR}/libs"
+cp -r "${TIKA_SRC_PATH}/tika-pipes/tika-fetchers/tika-fetcher-microsoft-graph/target/tika-fetcher-microsoft-graph-"*".jar" "${OUT_DIR}/libs"
+cp -r "${TIKA_SRC_PATH}/tika-pipes/tika-fetchers/tika-fetcher-s3/target/tika-fetcher-s3-"*".jar" "${OUT_DIR}/libs"
+
 cp "${TIKA_SRC_PATH}/tika-pipes/tika-grpc/target/tika-grpc-"*".jar" "${OUT_DIR}/libs"
 cp "${TIKA_SRC_PATH}/tika-pipes/tika-grpc/src/test/resources/log4j2.xml" "${OUT_DIR}"
 cp "${TIKA_SRC_PATH}/tika-pipes/tika-grpc/src/test/resources/tika-pipes-test-config.xml" "${OUT_DIR}/tika-config.xml"
