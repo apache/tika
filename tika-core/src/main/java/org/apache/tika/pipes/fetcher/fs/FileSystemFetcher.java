@@ -41,6 +41,7 @@ import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.fs.config.FileSystemFetcherConfig;
 
@@ -66,10 +67,9 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws IOException, TikaException {
-
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
         if (fetchKey.contains("\u0000")) {
-            throw new IllegalArgumentException("Path must not contain \u0000. " +
+            throw new IllegalArgumentException("Path must not contain 'u0000'. " +
                     "Please review the life decisions that led you to requesting " +
                     "a file name with this character in it.");
         }

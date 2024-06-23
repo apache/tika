@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.serialization;
+package org.apache.tika.serialization;
 
 
 import java.io.IOException;
@@ -41,10 +41,12 @@ public class JsonStreamingSerializer implements AutoCloseable {
 
     public void add(Metadata metadata) throws IOException {
         if (!hasStartedArray) {
-            jsonGenerator =
-                    new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
-                            .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build())
-                            .createGenerator(writer);
+            jsonGenerator = new JsonFactory()
+                    .setStreamReadConstraints(StreamReadConstraints
+                            .builder()
+                            .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
+                            .build())
+                    .createGenerator(writer);
             jsonGenerator.writeStartArray();
             hasStartedArray = true;
         }

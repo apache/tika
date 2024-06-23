@@ -21,6 +21,7 @@ import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Interface for an object that will fetch an InputStream given
@@ -33,5 +34,5 @@ public interface Fetcher {
 
     String getName();
 
-    InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException;
+    InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException;
 }

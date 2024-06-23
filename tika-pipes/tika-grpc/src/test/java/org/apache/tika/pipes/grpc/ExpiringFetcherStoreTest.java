@@ -16,12 +16,17 @@
  */
 package org.apache.tika.pipes.grpc;
 
-import java.io.InputStream;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.io.InputStream;
+import java.time.Duration;
+
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 
@@ -29,29 +34,32 @@ class ExpiringFetcherStoreTest {
 
     @Test
     void createFetcher() {
-        try (ExpiringFetcherStore expiringFetcherStore = new ExpiringFetcherStore(1, 60)) {
+        try (ExpiringFetcherStore expiringFetcherStore = new ExpiringFetcherStore(1, 5)) {
             AbstractFetcher fetcher = new AbstractFetcher() {
                 @Override
-                public InputStream fetch(String fetchKey, Metadata metadata) {
+                public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) {
                     return null;
                 }
             };
             fetcher.setName("nick");
             AbstractConfig config = new AbstractConfig() {
-
             };
             expiringFetcherStore.createFetcher(fetcher, config);
 
-            Assertions.assertNotNull(expiringFetcherStore.getFetchers().get(fetcher.getName()));
+            Assertions.assertNotNull(expiringFetcherStore
+                    .getFetchers()
+                    .get(fetcher.getName()));
 
-            try {
-                Thread.sleep(2000L);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            Awaitility
+                    .await()
+                    .atMost(Duration.ofSeconds(60))
+                    .until(() -> expiringFetcherStore
+                            .getFetchers()
+                            .get(fetcher.getName()) == null);
 
-            Assertions.assertNull(expiringFetcherStore.getFetchers().get(fetcher.getName()));
-            Assertions.assertNull(expiringFetcherStore.getFetcherConfigs().get(fetcher.getName()));
+            assertNull(expiringFetcherStore
+                    .getFetcherConfigs()
+                    .get(fetcher.getName()));
         }
     }
 }

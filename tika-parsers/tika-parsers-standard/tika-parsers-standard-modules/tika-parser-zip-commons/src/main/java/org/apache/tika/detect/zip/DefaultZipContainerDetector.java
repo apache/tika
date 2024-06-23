@@ -121,7 +121,8 @@ public class DefaultZipContainerDetector implements Detector {
             return TIFF;
         }
         try {
-            String name = ArchiveStreamFactory.detect(new UnsynchronizedByteArrayInputStream(prefix, 0, length));
+            String name = ArchiveStreamFactory.detect(new UnsynchronizedByteArrayInputStream(prefix,
+                            0, length));
             return PackageConstants.getMediaType(name);
         } catch (ArchiveException e) {
             return MediaType.OCTET_STREAM;

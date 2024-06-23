@@ -66,8 +66,7 @@ public class AnalyzerManagerTest {
         Set<String> seen = new HashSet<>();
         while (ts.incrementToken()) {
             String t = termAtt.toString();
-            if (AlphaIdeographFilterFactory.isAlphabetic(t.toCharArray(), t.length()) &&
-                    t.contains("5")) {
+            if (AlphaIdeographFilterFactory.isAlphabetic(t.toCharArray(), t.length()) && t.contains("5")) {
                 fail("Shouldn't have found a numeric");
             }
             seen.add(termAtt.toString());
@@ -87,7 +86,9 @@ public class AnalyzerManagerTest {
         for (int i = 0; i < 1001000; i++) {
             sb.append("the ");
         }
-        TokenStream ts = analyzerManager.getGeneralAnalyzer().tokenStream("f", sb.toString());
+        TokenStream ts = analyzerManager
+                .getGeneralAnalyzer()
+                .tokenStream("f", sb.toString());
         ts.reset();
         CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
         int tokens = 0;

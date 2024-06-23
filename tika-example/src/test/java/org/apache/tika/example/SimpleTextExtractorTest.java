@@ -31,13 +31,12 @@ import org.apache.tika.TikaTest;
 
 // because System is caught
 // https://junit.org/junit5/docs/snapshot/user-guide/#writing-tests-parallel-execution-synchronization
-@Isolated 
+@Isolated
 public class SimpleTextExtractorTest extends TikaTest {
     @Test
     public void testSimpleTextExtractor() throws Exception {
-        String message = "This is Tika - Hello, World! This is simple UTF-8 text" +
-                " content written in English to test autodetection of" +
-                " the character encoding of the input stream.";
+        String message =
+                "This is Tika - Hello, World! This is simple UTF-8 text" + " content written in English to test autodetection of" + " the character encoding of the input stream.";
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
         PrintStream out = System.out;
@@ -50,6 +49,8 @@ public class SimpleTextExtractorTest extends TikaTest {
 
         System.setOut(out);
 
-        assertContains(message, buffer.toString(UTF_8.name()).trim());
+        assertContains(message, buffer
+                .toString(UTF_8.name())
+                .trim());
     }
 }

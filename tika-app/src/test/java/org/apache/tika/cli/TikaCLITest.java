@@ -44,11 +44,9 @@ import org.apache.tika.utils.ProcessUtils;
 public class TikaCLITest {
 
     static final File TEST_DATA_FILE = new File("src/test/resources/test-data");
-
-
+    private final URI testDataURI = TEST_DATA_FILE.toURI();
     @TempDir
     private Path extractDir;
-    private final URI testDataURI = TEST_DATA_FILE.toURI();
     /* Test members */
     private ByteArrayOutputStream outContent = null;
     private ByteArrayOutputStream errContent = null;
@@ -57,15 +55,13 @@ public class TikaCLITest {
     private String resourcePrefix;
 
 
-
     protected static void assertExtracted(Path p, String allFiles) throws IOException {
 
         assertTrue(Files.exists(p), "File " + p.getFileName() + " not found in " + allFiles);
 
         assertFalse(Files.isDirectory(p), "File " + p.getFileName() + " is a directory!");
 
-        assertTrue(Files.size(p) > 0,
-                "File " + p.getFileName() + " wasn't extracted with " + "contents");
+        assertTrue(Files.size(p) > 0, "File " + p.getFileName() + " wasn't extracted with " + "contents");
     }
 
     /**
@@ -144,8 +140,7 @@ public class TikaCLITest {
         assertTrue(content.contains("?xml version=\"1.0\" encoding=\"UTF-8\"?"));
 
         content = getParamOutContent("-x", "--digest=SHA256", resourcePrefix + "alice.cli.test");
-        assertTrue(content.contains(
-                "<meta name=\"X-TIKA:digest:SHA256\" content=\"e90779adbac09c4ee"));
+        assertTrue(content.contains("<meta name=\"X-TIKA:digest:SHA256\" content=\"e90779adbac09c4ee"));
 
     }
 
@@ -158,12 +153,10 @@ public class TikaCLITest {
     public void testHTMLOutput() throws Exception {
         String content = getParamOutContent("-h", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains("html xmlns=\"http://www.w3.org/1999/xhtml"));
-        assertTrue(content.contains("<title></title>"),
-                "Expanded <title></title> element should be present");
+        assertTrue(content.contains("<title></title>"), "Expanded <title></title> element should be present");
 
         content = getParamOutContent("-h", "--digest=SHA384", resourcePrefix + "alice.cli.test");
-        assertTrue(content.contains(
-                "<meta name=\"X-TIKA:digest:SHA384\" content=\"c69ea023f5da95a026"));
+        assertTrue(content.contains("<meta name=\"X-TIKA:digest:SHA384\" content=\"c69ea023f5da95a026"));
     }
 
     /**
@@ -224,8 +217,7 @@ public class TikaCLITest {
      */
     @Test
     public void testJsonMetadataOutput() throws Exception {
-        String json = getParamOutContent("--json", "--digest=MD2",
-                resourcePrefix + "testJsonMultipleInts.html");
+        String json = getParamOutContent("--json", "--digest=MD2", resourcePrefix + "testJsonMultipleInts.html");
         //TIKA-1310
         assertTrue(json.contains("\"fb:admins\":\"1,2,3,4\","));
         assertTrue(json.contains("\"X-TIKA:digest:MD2\":"));
@@ -238,12 +230,9 @@ public class TikaCLITest {
      */
     @Test
     public void testJsonMetadataPrettyPrintOutput() throws Exception {
-        String json =
-                getParamOutContent("--json", "-r", resourcePrefix + "testJsonMultipleInts.html");
+        String json = getParamOutContent("--json", "-r", resourcePrefix + "testJsonMultipleInts.html");
 
-        assertTrue(json.contains(
-                "\"X-TIKA:Parsed-By\" : [ \"org.apache.tika.parser.DefaultParser\", " +
-                        "\"org.apache.tika.parser.html.JSoupParser\" ],"));
+        assertTrue(json.contains("\"X-TIKA:Parsed-By\" : [ \"org.apache.tika.parser.DefaultParser\", " + "\"org.apache.tika.parser.html.JSoupParser\" ],"));
         //test pretty-print alphabetic sort of keys
         int enc = json.indexOf("\"Content-Encoding\"");
         int fb = json.indexOf("fb:admins");
@@ -292,16 +281,13 @@ public class TikaCLITest {
      */
     @Test
     public void testListSupportedTypes() throws Exception {
-        String content =
-                getParamOutContent("--list-supported-types", resourcePrefix + "alice.cli.test");
+        String content = getParamOutContent("--list-supported-types", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains("supertype: application/octet-stream"));
     }
 
     @Test
     public void testExtractSimple() throws Exception {
-        String[] expectedChildren =
-                new String[]{"MBD002B040A.cdx", "file4.png", "MBD002B0FA6.bin", "MBD00262FE3.txt",
-                        "file0.emf"};
+        String[] expectedChildren = new String[]{"MBD002B040A.cdx", "file4.png", "MBD002B0FA6.bin", "MBD00262FE3.txt", "file0.emf"};
         testExtract("/coffee.xls", expectedChildren, 8);
     }
 
@@ -330,21 +316,21 @@ public class TikaCLITest {
         testExtract("testZip_zeroByte.zip", expectedChildren);
     }
 
-    private void testExtract(String targetFile, String[] expectedChildrenFileNames)
-            throws Exception {
+    private void testExtract(String targetFile, String[] expectedChildrenFileNames) throws Exception {
         testExtract(targetFile, expectedChildrenFileNames, expectedChildrenFileNames.length);
     }
 
-    private void testExtract(String targetFile, String[] expectedChildrenFileNames,
-                             int expectedLength) throws Exception {
+    private void testExtract(String targetFile, String[] expectedChildrenFileNames, int expectedLength) throws Exception {
 
-        String[] params = {"--extract-dir=" +
-                ProcessUtils.escapeCommandLine(extractDir.toAbsolutePath().toString()), "-z",
-                resourcePrefix + "/" + targetFile};
+        String[] params = {"--extract-dir=" + ProcessUtils.escapeCommandLine(extractDir
+                .toAbsolutePath()
+                .toString()), "-z", resourcePrefix + "/" + targetFile};
 
         TikaCLI.main(params);
 
-        String[] tempFileNames = extractDir.toFile().list();
+        String[] tempFileNames = extractDir
+                .toFile()
+                .list();
         assertNotNull(tempFileNames);
         assertEquals(expectedLength, tempFileNames.length);
         String allFiles = String.join(" : ", tempFileNames);
@@ -358,12 +344,13 @@ public class TikaCLITest {
     public void testExtractTgz() throws Exception {
         //TIKA-2564
 
-        String[] params = {"--extract-dir=" + extractDir.toAbsolutePath(), "-z",
-                resourcePrefix + "/test-documents.tgz"};
+        String[] params = {"--extract-dir=" + extractDir.toAbsolutePath(), "-z", resourcePrefix + "/test-documents.tgz"};
 
         TikaCLI.main(params);
 
-        String[] tempFileNames = extractDir.toFile().list();
+        String[] tempFileNames = extractDir
+                .toFile()
+                .list();
         assertNotNull(tempFileNames);
         String allFiles = String.join(" : ", tempFileNames);
 
@@ -387,8 +374,7 @@ public class TikaCLITest {
     public void testZipWithSubdirs() throws Exception {
         new File("subdir/foo.txt").delete();
         new File("subdir").delete();
-        String content = getParamOutContent("-z", "--extract-dir=target",
-                resourcePrefix + "testWithSubdirs.zip");
+        String content = getParamOutContent("-z", "--extract-dir=target", resourcePrefix + "testWithSubdirs.zip");
         assertTrue(content.contains("Extracting 'subdir/foo.txt'"));
         // clean up. TODO: These should be in target.
         new File("target/subdir/foo.txt").delete();
@@ -397,12 +383,13 @@ public class TikaCLITest {
 
     @Test
     public void testExtractInlineImages() throws Exception {
-        String[] params = {"--extract-dir=" + extractDir.toAbsolutePath(), "-z",
-                resourcePrefix + "/testPDF_childAttachments.pdf"};
+        String[] params = {"--extract-dir=" + extractDir.toAbsolutePath(), "-z", resourcePrefix + "/testPDF_childAttachments.pdf"};
 
         TikaCLI.main(params);
 
-        String[] tempFileNames = extractDir.toFile().list();
+        String[] tempFileNames = extractDir
+                .toFile()
+                .list();
         assertNotNull(tempFileNames);
         String allFiles = String.join(" : ", tempFileNames);
 
@@ -434,18 +421,14 @@ public class TikaCLITest {
 
     @Test
     public void testConfig() throws Exception {
-        String content =
-                getParamOutContent("--config=" + TEST_DATA_FILE.toString() + "/tika-config1.xml",
-                        resourcePrefix + "bad_xml.xml");
+        String content = getParamOutContent("--config=" + TEST_DATA_FILE.toString() + "/tika-config1.xml", resourcePrefix + "bad_xml.xml");
         assertTrue(content.contains("apple"));
         assertTrue(content.contains("org.apache.tika.parser.html.JSoupParser"));
     }
 
     @Test
     public void testConfigIgnoreInit() throws Exception {
-        String content = getParamOutContent(
-                "--config=" + TEST_DATA_FILE.toString() + "/TIKA-2389-ignore-init-problems.xml",
-                resourcePrefix + "test_recursive_embedded.docx");
+        String content = getParamOutContent("--config=" + TEST_DATA_FILE.toString() + "/TIKA-2389-ignore-init-problems.xml", resourcePrefix + "test_recursive_embedded.docx");
         assertTrue(content.contains("embed_1a"));
         //TODO: add a real unit test that configures logging to a file to test that nothing is
         //written at the various logging levels
@@ -454,79 +437,62 @@ public class TikaCLITest {
 
     @Test
     public void testJsonRecursiveMetadataParserMetadataOnly() throws Exception {
-        String content = getParamOutContent("-m", "-J", "-r",
-                resourcePrefix + "test_recursive_embedded.docx");
+        String content = getParamOutContent("-m", "-J", "-r", resourcePrefix + "test_recursive_embedded.docx");
         assertTrue(content.contains("\"extended-properties:AppVersion\" : \"15.0000\","));
-        assertTrue(content.contains(
-                "\"extended-properties:Application\" : \"Microsoft Office Word\","));
+        assertTrue(content.contains("\"extended-properties:Application\" : \"Microsoft Office Word\","));
         assertTrue(content.contains("\"X-TIKA:embedded_resource_path\" : \"/embed1.zip\""));
         assertFalse(content.contains("X-TIKA:content"));
     }
 
     @Test
     public void testJsonRecursiveMetadataParserDefault() throws Exception {
-        String content =
-                getParamOutContent("-J", "-r", resourcePrefix + "test_recursive_embedded.docx");
-        assertTrue(content.contains(
-                "\"X-TIKA:content\" : \"<html xmlns=\\\"http://www.w3.org/1999/xhtml"));
+        String content = getParamOutContent("-J", "-r", resourcePrefix + "test_recursive_embedded.docx");
+        assertTrue(content.contains("\"X-TIKA:content\" : \"<html xmlns=\\\"http://www.w3.org/1999/xhtml"));
     }
 
     @Test
     public void testJsonRecursiveMetadataParserText() throws Exception {
-        String content = getParamOutContent("-J", "-r", "-t",
-                resourcePrefix + "test_recursive_embedded.docx");
+        String content = getParamOutContent("-J", "-r", "-t", resourcePrefix + "test_recursive_embedded.docx");
         assertTrue(content.contains("\\n\\nembed_4\\n"));
         assertTrue(content.contains("\\n\\nembed_0"));
     }
 
     @Test
     public void testDigestInJson() throws Exception {
-        String content = getParamOutContent("-J", "-r", "-t", "--digest=MD5",
-                resourcePrefix + "test_recursive_embedded.docx");
-        assertTrue(
-                content.contains("\"X-TIKA:digest:MD5\" : \"59f626e09a8c16ab6dbc2800c685f772\","));
-        assertTrue(
-                content.contains("\"X-TIKA:digest:MD5\" : \"f9627095ef86c482e61d99f0cc1cf87d\""));
+        String content = getParamOutContent("-J", "-r", "-t", "--digest=MD5", resourcePrefix + "test_recursive_embedded.docx");
+        assertTrue(content.contains("\"X-TIKA:digest:MD5\" : \"59f626e09a8c16ab6dbc2800c685f772\","));
+        assertTrue(content.contains("\"X-TIKA:digest:MD5\" : \"f9627095ef86c482e61d99f0cc1cf87d\""));
     }
 
     @Test
     public void testConfigSerializationStaticAndCurrent() throws Exception {
         String content = getParamOutContent("--dump-static-config");
         //make sure at least one detector is there
-        assertTrue(content.contains(
-                "<detector class=\"org.apache.tika.detect.microsoft.POIFSContainerDetector\"/>"));
+        assertTrue(content.contains("<detector class=\"org.apache.tika.detect.microsoft.POIFSContainerDetector\"/>"));
         //make sure Executable is there because follow on tests of custom config
         //test that it has been turned off.
-        assertTrue(content.contains(
-                "<parser class=\"org.apache.tika.parser.executable.ExecutableParser\"/>"));
+        assertTrue(content.contains("<parser class=\"org.apache.tika.parser.executable.ExecutableParser\"/>"));
 
         content = getParamOutContent("--dump-current-config");
         //make sure at least one detector is there
-        assertTrue(
-                content.contains("<detector class=\"org.apache.tika.detect.DefaultDetector\"/>"));
+        assertTrue(content.contains("<detector class=\"org.apache.tika.detect.DefaultDetector\"/>"));
         //and at least one parser
         assertTrue(content.contains("<parser class=\"org.apache.tika.parser.DefaultParser\"/>"));
     }
 
     @Test
     public void testConfigSerializationCustomMinimal() throws Exception {
-        String content =
-                getParamOutContent("--config=" + TEST_DATA_FILE.toString() + "/tika-config2.xml",
-                        "--dump-minimal-config").replaceAll("[\r\n\t ]+", " ");
+        String content = getParamOutContent("--config=" + TEST_DATA_FILE.toString() + "/tika-config2.xml", "--dump-minimal-config").replaceAll("[\r\n\t ]+", " ");
 
-        String expected = "<parser class=\"org.apache.tika.parser.DefaultParser\">" +
-                " <mime-exclude>application/pdf</mime-exclude>" +
-                " <mime-exclude>image/jpeg</mime-exclude> " + "</parser> " +
-                "<parser class=\"org.apache.tika.parser.EmptyParser\">" +
-                " <mime>application/pdf</mime> " + "</parser>";
+        String expected =
+                "<parser class=\"org.apache.tika.parser.DefaultParser\">" + " <mime-exclude>application/pdf</mime-exclude>" + " <mime-exclude>image/jpeg</mime-exclude> " +
+                        "</parser> " + "<parser class=\"org.apache.tika.parser.EmptyParser\">" + " <mime>application/pdf</mime> " + "</parser>";
         assertTrue(content.contains(expected));
     }
 
     @Test
     public void testConfigSerializationCustomStatic() throws Exception {
-        String content =
-                getParamOutContent("--config=" + TEST_DATA_FILE.toString() + "/tika-config2.xml",
-                        "--dump-static-config");
+        String content = getParamOutContent("--config=" + TEST_DATA_FILE.toString() + "/tika-config2.xml", "--dump-static-config");
         assertFalse(content.contains("org.apache.tika.parser.executable.Executable"));
     }
 

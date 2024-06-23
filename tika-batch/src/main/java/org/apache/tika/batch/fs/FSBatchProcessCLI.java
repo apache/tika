@@ -66,8 +66,7 @@ public class FSBatchProcessCLI {
             cli.execute(args);
         } catch (Throwable t) {
             t.printStackTrace();
-            LOG.error(MarkerFactory.getMarker("FATAL"),
-                    "Fatal exception from FSBatchProcessCLI: {}", t.getMessage(), t);
+            LOG.error(MarkerFactory.getMarker("FATAL"), "Fatal exception from FSBatchProcessCLI: {}", t.getMessage(), t);
             System.exit(BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE);
         }
     }
@@ -77,8 +76,7 @@ public class FSBatchProcessCLI {
         helpFormatter.printHelp("tika filesystem batch", options);
     }
 
-    private TikaInputStream getConfigInputStream(String[] args, boolean logDefault)
-            throws IOException {
+    private TikaInputStream getConfigInputStream(String[] args, boolean logDefault) throws IOException {
         TikaInputStream is = null;
         Path batchConfigFile = getConfigFile(args);
         if (batchConfigFile != null) {
@@ -87,17 +85,14 @@ public class FSBatchProcessCLI {
             is = TikaInputStream.get(batchConfigFile);
         } else {
             if (logDefault) {
-                LOG.info("No config file set via -bc, relying on tika-app-batch-config.xml " +
-                        "or default-tika-batch-config.xml");
+                LOG.info("No config file set via -bc, relying on tika-app-batch-config.xml " + "or default-tika-batch-config.xml");
             }
             //test to see if there's a tika-app-batch-config.xml on the path
             URL config = FSBatchProcessCLI.class.getResource("/tika-app-batch-config.xml");
             if (config != null) {
-                is = TikaInputStream.get(FSBatchProcessCLI.class
-                        .getResourceAsStream("/tika-app-batch-config.xml"));
+                is = TikaInputStream.get(FSBatchProcessCLI.class.getResourceAsStream("/tika-app-batch-config.xml"));
             } else {
-                is = TikaInputStream.get(FSBatchProcessCLI.class
-                        .getResourceAsStream("default-tika-batch-config.xml"));
+                is = TikaInputStream.get(FSBatchProcessCLI.class.getResourceAsStream("default-tika-batch-config.xml"));
             }
         }
         return is;

@@ -157,7 +157,8 @@
     <glob pattern="*.davmount"/>
   </mime-type>
   <mime-type type="application/x-dbf">
-    <magic priority="100">
+    <!-- this looks unique/precise. It isn't. False positives are common. Keep priority low. -->
+    <magic priority="40">
       <match value="(?s)^[\\x02\\x03\\x30\\x31\\x32\\x43\\x63\\x83\\x8B\\xCB\\xF5\\xE5\\xFB].[\\x01-\\x0C][\\x01-\\x1F].{4}(?:.[^\\x00]|[\\x41-\\xFF].)(?:[^\\x00\\x01].|.[^\\x00]).{31}(?&lt;=[\\x00][^\\x00]{0,10})[A-Z@+]" type="regex" offset="0"/>
     </magic>
     <glob pattern="*.dbf"/>
@@ -7035,6 +7036,7 @@
     <magic priority="45">
       <!-- be a bit more flexible, but require one from each of these -->
       <match minShouldMatch="2">
+
         <match minShouldMatch="1">
           <match value="Content-ID:" type="stringignorecase" offset="0"/>
           <match value="Content-Location:" type="stringignorecase" offset="0"/>
@@ -7055,6 +7057,27 @@
           <match value="User-Agent:" type="string" offset="0"/>
           <match value="X-Mailer:" type="string" offset="0"/>
           <match value="X-Originating-IP:" type="stringignorecase" offset="0"/>
+          <match value="0xefbbbf" type="string" offset="0">
+            <match value="Content-ID:" type="stringignorecase" offset="3"/>
+            <match value="Content-Location:" type="stringignorecase" offset="3"/>
+            <match value="Content-Transfer-Encoding:" type="stringignorecase" offset="3"/>
+            <match value="Content-Type:" type="stringignorecase" offset="3"/>
+            <match value="Date:" type="stringignorecase" offset="3"/>
+            <match value="Delivered-To:" type="string" offset="3"/>
+            <match value="From:" type="stringignorecase" offset="3"/>
+            <match value="Message-ID:" type="stringignorecase" offset="3"/>
+            <match value="MIME-Version:" type="stringignorecase" offset="3"/>
+            <match value="Received:" type="stringignorecase" offset="3"/>
+            <match value="Relay-Version:" type="stringignorecase" offset="3"/>
+            <match value="Return-Path:" type="stringignorecase" offset="3"/>
+            <match value="Sent:" type="string" offset="3"/>
+            <match value="Status:" type="string" offset="3"/>
+            <match value="Subject:" type="string" offset="3"/>
+            <match value="To:" type="string" offset="3"/>
+            <match value="User-Agent:" type="string" offset="3"/>
+            <match value="X-Mailer:" type="string" offset="3"/>
+            <match value="X-Originating-IP:" type="stringignorecase" offset="3"/>
+          </match>
         </match>
         <match minShouldMatch="1">
           <match value="\nContent-ID:" type="stringignorecase" offset="0:1024"/>

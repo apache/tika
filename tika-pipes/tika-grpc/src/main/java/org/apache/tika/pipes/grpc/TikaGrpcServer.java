@@ -78,8 +78,9 @@ public class TikaGrpcServer {
         } else {
             creds = InsecureServerCredentials.create();
         }
+        File tikaConfigFile = new File(tikaConfigXml.getAbsolutePath());
         server = Grpc.newServerBuilderForPort(port, creds)
-                     .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath()))
+                     .addService(new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath()))
                      .addService(ProtoReflectionService.newInstance()) // Enable reflection
                      .build()
                      .start();

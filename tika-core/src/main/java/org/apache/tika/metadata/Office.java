@@ -176,4 +176,12 @@ public interface Office {
     Property PROG_ID = Property.internalText("msoffice:progID");
 
     Property OCX_NAME = Property.internalText("msoffice:ocxName");
+    Property MAPI_RECIPIENTS_STRING = Property.internalText(PREFIX_DOC_META +
+            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "mapi-recipients-string");
+    Property MAPI_IMPORTANCE = Property.internalInteger(PREFIX_DOC_META +
+            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "mapi-importance");
+    Property MAPI_PRIORTY = Property.internalInteger(PREFIX_DOC_META +
+            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "mapi-importance");
+    Property MAPI_IS_FLAGGED = Property.internalBoolean(PREFIX_DOC_META +
+            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "mapi-is-flagged");
 }

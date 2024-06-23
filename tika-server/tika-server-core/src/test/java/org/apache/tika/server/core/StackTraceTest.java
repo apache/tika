@@ -46,8 +46,7 @@ public class StackTraceTest extends CXFTestBase {
 
     private static final String TEST_HELLO_WORLD = "test-documents/mock/hello_world.xml";
     private static final String TEST_NULL = "test-documents/mock/null_pointer.xml";
-    private static final String TEST_PASSWORD_PROTECTED =
-            "test-documents/mock/encrypted_document_exception.xml";
+    private static final String TEST_PASSWORD_PROTECTED = "test-documents/mock/encrypted_document_exception.xml";
 
     private static final String[] PATHS = new String[]{"/tika", "/rmeta", "/unpack", "/meta",};
     private static final int UNPROCESSEABLE = 422;
@@ -57,8 +56,7 @@ public class StackTraceTest extends CXFTestBase {
         List<ResourceProvider> rCoreProviders = new ArrayList<>();
         rCoreProviders.add(new SingletonResourceProvider(new MetadataResource()));
         rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
-        rCoreProviders
-                .add(new SingletonResourceProvider(new DetectorResource(new ServerStatus("", 0))));
+        rCoreProviders.add(new SingletonResourceProvider(new DetectorResource(new ServerStatus("", 0))));
         rCoreProviders.add(new SingletonResourceProvider(new TikaResource()));
         rCoreProviders.add(new SingletonResourceProvider(new UnpackerResource()));
         sf.setResourceProviders(rCoreProviders);
@@ -86,9 +84,10 @@ public class StackTraceTest extends CXFTestBase {
             if ("/tika".equals(path)) {
                 accept = "text/plain";
             }
-            Response response = WebClient.create(endPoint + path).accept(accept)
-                    .header("Content-Disposition",
-                            "attachment; filename=" + TEST_PASSWORD_PROTECTED)
+            Response response = WebClient
+                    .create(endPoint + path)
+                    .accept(accept)
+                    .header("Content-Disposition", "attachment; filename=" + TEST_PASSWORD_PROTECTED)
                     .put(ClassLoader.getSystemResourceAsStream(TEST_PASSWORD_PROTECTED));
             assertNotNull(response, "null response: " + path);
             assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: " + path);
@@ -107,7 +106,9 @@ public class StackTraceTest extends CXFTestBase {
             if ("/tika".equals(path)) {
                 accept = "text/plain";
             }
-            Response response = WebClient.create(endPoint + path).accept(accept)
+            Response response = WebClient
+                    .create(endPoint + path)
+                    .accept(accept)
                     .put(ClassLoader.getSystemResourceAsStream(TEST_NULL));
             assertNotNull(response);
             assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: " + path);
@@ -123,7 +124,9 @@ public class StackTraceTest extends CXFTestBase {
         //no stack traces for 415
         for (String path : PATHS) {
 
-            Response response = WebClient.create(endPoint + path).accept("*:*")
+            Response response = WebClient
+                    .create(endPoint + path)
+                    .accept("*:*")
                     .put(ClassLoader.getSystemResourceAsStream("test-documents/testDigilite.fdf"));
             if (path.equals("/unpack")) {
                 //"NO CONTENT"
@@ -144,9 +147,11 @@ public class StackTraceTest extends CXFTestBase {
     public void testMeta() throws Exception {
         InputStream stream = ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD);
 
-        Response response =
-                WebClient.create(endPoint + "/meta" + "/Author").type("application/mock+xml")
-                        .accept(MediaType.TEXT_PLAIN).put(copy(stream, 100));
+        Response response = WebClient
+                .create(endPoint + "/meta" + "/Author")
+                .type("application/mock+xml")
+                .accept(MediaType.TEXT_PLAIN)
+                .put(copy(stream, 100));
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         String msg = getStringFromInputStream((InputStream) response.getEntity());
         assertEquals("Failed to get metadata field Author", msg);

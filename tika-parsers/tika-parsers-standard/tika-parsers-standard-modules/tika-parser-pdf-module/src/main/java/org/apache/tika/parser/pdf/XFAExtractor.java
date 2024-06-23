@@ -32,6 +32,7 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * This class offers an initial capability to
@@ -88,7 +89,7 @@ class XFAExtractor {
         //
         //As a final step, dump the merged fields and the values.
 
-        XMLStreamReader reader = context.getXMLInputFactory().createXMLStreamReader(xfaIs);
+        XMLStreamReader reader = XMLReaderUtils.getXMLInputFactory(context).createXMLStreamReader(xfaIs);
         while (reader.hasNext()) {
             switch (reader.next()) {
                 case XMLStreamConstants.START_ELEMENT:

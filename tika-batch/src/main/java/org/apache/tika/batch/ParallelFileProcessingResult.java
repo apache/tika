@@ -26,9 +26,7 @@ public class ParallelFileProcessingResult {
     private final int exitStatus;
     private final String causeForTermination;
 
-    public ParallelFileProcessingResult(int considered, int added, int consumed,
-                                        int numberHandledExceptions, double secondsElapsed,
-                                        int exitStatus, String causeForTermination) {
+    public ParallelFileProcessingResult(int considered, int added, int consumed, int numberHandledExceptions, double secondsElapsed, int exitStatus, String causeForTermination) {
         this.considered = considered;
         this.added = added;
         this.consumed = consumed;
@@ -92,9 +90,7 @@ public class ParallelFileProcessingResult {
 
     @Override
     public String toString() {
-        return "ParallelFileProcessingResult{" + "considered=" + considered + ", added=" + added +
-                ", consumed=" + consumed + ", numberHandledExceptions=" + numberHandledExceptions +
-                ", secondsElapsed=" + secondsElapsed + ", exitStatus=" + exitStatus +
-                ", causeForTermination='" + causeForTermination + '\'' + '}';
+        return "ParallelFileProcessingResult{" + "considered=" + considered + ", added=" + added + ", consumed=" + consumed + ", numberHandledExceptions=" +
+                numberHandledExceptions + ", secondsElapsed=" + secondsElapsed + ", exitStatus=" + exitStatus + ", causeForTermination='" + causeForTermination + '\'' + '}';
     }
 }

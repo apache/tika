@@ -155,10 +155,8 @@ public class TIAParsingExample {
         ParseContext context = new ParseContext();
         Parser parser = new AutoDetectParser();
         LinkContentHandler linkCollector = new LinkContentHandler();
-        try (Writer writer =
-                     Files.newBufferedWriter(Paths.get(filename), StandardCharsets.UTF_8)) {
-            ContentHandler handler =
-                    new TeeContentHandler(new BodyContentHandler(writer), linkCollector);
+        try (Writer writer = Files.newBufferedWriter(Paths.get(filename), StandardCharsets.UTF_8)) {
+            ContentHandler handler = new TeeContentHandler(new BodyContentHandler(writer), linkCollector);
             parser.parse(stream, handler, metadata, context);
         }
     }
@@ -193,9 +191,7 @@ public class TIAParsingExample {
             private static final long serialVersionUID = 4424210691523343833L;
 
             @Override
-            public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                              ParseContext context)
-                    throws IOException, SAXException, TikaException {
+            public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
                 // custom processing of the component document
             }
         });

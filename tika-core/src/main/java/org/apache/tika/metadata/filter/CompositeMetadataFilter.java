@@ -35,4 +35,9 @@ public class CompositeMetadataFilter extends MetadataFilter {
             filter.filter(metadata);
         }
     }
+
+    @Override
+    public String toString() {
+        return "CompositeMetadataFilter{" + "filters=" + filters + '}';
+    }
 }

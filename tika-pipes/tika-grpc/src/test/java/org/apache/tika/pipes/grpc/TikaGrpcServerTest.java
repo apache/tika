@@ -87,6 +87,7 @@ public class TikaGrpcServerTest {
 
     @Test
     public void testFetcherCrud(Resources resources) throws Exception {
+        Assertions.assertTrue(tikaConfigXml.setWritable(false));
         String serverName = InProcessServerBuilder.generateName();
 
         Server server = InProcessServerBuilder

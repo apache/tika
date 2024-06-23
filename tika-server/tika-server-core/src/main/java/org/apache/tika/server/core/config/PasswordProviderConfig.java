@@ -37,8 +37,7 @@ public class PasswordProviderConfig implements ParseContextConfig {
     }
 
     @Override
-    public void configure(MultivaluedMap<String, String> httpHeaders, Metadata metadata,
-                          ParseContext context) {
+    public void configure(MultivaluedMap<String, String> httpHeaders, Metadata metadata, ParseContext context) {
         String tmpPassword = httpHeaders.getFirst(PASSWORD_BASE64_UTF8);
         if (tmpPassword != null) {
             tmpPassword = decodeBase64UTF8(tmpPassword);

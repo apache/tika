@@ -28,8 +28,7 @@ import org.apache.tika.batch.fs.builders.BasicTikaFSConsumersBuilder;
 public class MockConsumersBuilder extends BasicTikaFSConsumersBuilder {
 
     @Override
-    public ConsumersManager build(Node node, Map<String, String> runtimeAttributes,
-                                  ArrayBlockingQueue<FileResource> queue) {
+    public ConsumersManager build(Node node, Map<String, String> runtimeAttributes, ArrayBlockingQueue<FileResource> queue) {
         ConsumersManager manager = super.build(node, runtimeAttributes, queue);
 
         boolean hangOnInit = runtimeAttributes.containsKey("hangOnInit");

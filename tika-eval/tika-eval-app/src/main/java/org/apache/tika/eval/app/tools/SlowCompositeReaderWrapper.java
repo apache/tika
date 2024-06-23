@@ -88,12 +88,17 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
     SlowCompositeReaderWrapper(CompositeReader reader) throws IOException {
         in = reader;
         in.registerParentReader(this);
-        if (reader.leaves().isEmpty()) {
+        if (reader
+                .leaves()
+                .isEmpty()) {
             metaData = new LeafMetaData(Version.LATEST.major, Version.LATEST, null, false);
         } else {
             Version minVersion = Version.LATEST;
             for (LeafReaderContext leafReaderContext : reader.leaves()) {
-                Version leafVersion = leafReaderContext.reader().getMetaData().getMinVersion();
+                Version leafVersion = leafReaderContext
+                        .reader()
+                        .getMetaData()
+                        .getMinVersion();
                 if (leafVersion == null) {
                     minVersion = null;
                     break;
@@ -101,9 +106,12 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
                     minVersion = leafVersion;
                 }
             }
-            metaData = new LeafMetaData(
-                    reader.leaves().get(0).reader().getMetaData().getCreatedVersionMajor(),
-                    minVersion, null, false);
+            metaData = new LeafMetaData(reader
+                    .leaves()
+                    .get(0)
+                    .reader()
+                    .getMetaData()
+                    .getCreatedVersionMajor(), minVersion, null, false);
         }
         fieldInfos = FieldInfos.getMergedFieldInfos(in);
     }
@@ -152,7 +160,9 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
                 }
             });
         } catch (RuntimeException e) {
-            if (e.getMessage().equals("unwrapMe") && e.getCause() instanceof IOException) {
+            if (e
+                    .getMessage()
+                    .equals("unwrapMe") && e.getCause() instanceof IOException) {
                 throw (IOException) e.getCause();
             }
             throw e;
@@ -196,14 +206,20 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
                 return dv;
             }
         }
-        int size = in.leaves().size();
+        int size = in
+                .leaves()
+                .size();
         final SortedDocValues[] values = new SortedDocValues[size];
         final int[] starts = new int[size + 1];
         long totalCost = 0;
         for (int i = 0; i < size; i++) {
-            LeafReaderContext context = in.leaves().get(i);
+            LeafReaderContext context = in
+                    .leaves()
+                    .get(i);
             final LeafReader reader = context.reader();
-            final FieldInfo fieldInfo = reader.getFieldInfos().fieldInfo(field);
+            final FieldInfo fieldInfo = reader
+                    .getFieldInfos()
+                    .fieldInfo(field);
             if (fieldInfo != null && fieldInfo.getDocValuesType() != DocValuesType.SORTED) {
                 return null;
             }
@@ -240,14 +256,20 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
         }
 
         assert map != null;
-        int size = in.leaves().size();
+        int size = in
+                .leaves()
+                .size();
         final SortedSetDocValues[] values = new SortedSetDocValues[size];
         final int[] starts = new int[size + 1];
         long cost = 0;
         for (int i = 0; i < size; i++) {
-            LeafReaderContext context = in.leaves().get(i);
+            LeafReaderContext context = in
+                    .leaves()
+                    .get(i);
             final LeafReader reader = context.reader();
-            final FieldInfo fieldInfo = reader.getFieldInfos().fieldInfo(field);
+            final FieldInfo fieldInfo = reader
+                    .getFieldInfos()
+                    .fieldInfo(field);
             if (fieldInfo != null && fieldInfo.getDocValuesType() != DocValuesType.SORTED_SET) {
                 return null;
             }
@@ -282,21 +304,21 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
     }
 
     @Override
-    public void searchNearestVectors(String string, float[] floats, KnnCollector kc, Bits bits)
-            throws IOException {
+    public void searchNearestVectors(String string, float[] floats, KnnCollector kc, Bits bits) throws IOException {
         //TODO figure out how to implement this... if needed
     }
 
     @Override
-    public void searchNearestVectors(String string, byte[] bytes, KnnCollector kc, Bits bits)
-            throws IOException {
+    public void searchNearestVectors(String string, byte[] bytes, KnnCollector kc, Bits bits) throws IOException {
         //TODO figure out how to implement this... if needed
     }
 
     @Override
     public Fields getTermVectors(int docID) throws IOException {
         ensureOpen();
-        return in.termVectors().get(docID);
+        return in
+                .termVectors()
+                .get(docID);
     }
 
     @Override
@@ -319,7 +341,9 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
     @Override
     public void document(int docID, StoredFieldVisitor visitor) throws IOException {
         ensureOpen();
-        in.storedFields().document(docID, visitor);
+        in
+                .storedFields()
+                .document(docID, visitor);
     }
 
     @Override
@@ -354,7 +378,9 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
     public void checkIntegrity() throws IOException {
         ensureOpen();
         for (LeafReaderContext ctx : in.leaves()) {
-            ctx.reader().checkIntegrity();
+            ctx
+                    .reader()
+                    .checkIntegrity();
         }
     }
 

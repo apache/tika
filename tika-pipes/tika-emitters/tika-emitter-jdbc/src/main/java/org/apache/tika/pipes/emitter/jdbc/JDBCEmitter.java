@@ -50,6 +50,7 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -263,7 +264,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
      * @throws TikaEmitterException
      */
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList)
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
             throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.size() < 1) {
             return;
@@ -617,7 +618,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     private static class StringNormalizer {
 
         String normalize(String emitKey, String columnName, String s, int maxLength) {
-            if (maxLength < 0 || s.length() < maxLength) {
+            if (maxLength < 0 || s.length() <= maxLength) {
                 return s;
             }
             LOGGER.warn("truncating {}->'{}' from {} chars to {} chars",

@@ -57,9 +57,11 @@ public class TikaWelcomeTest extends CXFTestBase {
 
     @Test
     public void testGetHTMLWelcome() throws Exception {
-        String html =
-                WebClient.create(endPoint + WELCOME_PATH).type("text/html").accept("text/html")
-                        .get(String.class);
+        String html = WebClient
+                .create(endPoint + WELCOME_PATH)
+                .type("text/html")
+                .accept("text/html")
+                .get(String.class);
 
 
         assertContains(Tika.getString(), html);
@@ -76,9 +78,11 @@ public class TikaWelcomeTest extends CXFTestBase {
 
     @Test
     public void testGetTextWelcome() throws Exception {
-        Response response =
-                WebClient.create(endPoint + WELCOME_PATH).type("text/plain").accept("text/plain")
-                        .get();
+        Response response = WebClient
+                .create(endPoint + WELCOME_PATH)
+                .type("text/plain")
+                .accept("text/plain")
+                .get();
 
         String text = getStringFromInputStream((InputStream) response.getEntity());
         assertContains(Tika.getString(), text);
@@ -94,9 +98,11 @@ public class TikaWelcomeTest extends CXFTestBase {
 
     @Test
     public void testProperPathWelcome() throws Exception {
-        Response response =
-                WebClient.create(endPoint + WELCOME_PATH).type("text/html").accept("text/html")
-                        .get();
+        Response response = WebClient
+                .create(endPoint + WELCOME_PATH)
+                .type("text/html")
+                .accept("text/html")
+                .get();
 
         String html = getStringFromInputStream((InputStream) response.getEntity());
         assertContains(PATH_RESOURCE, html);

@@ -116,6 +116,13 @@
       <artifactId>log4j-slf4j2-impl</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- needed for libpst test files -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-mail-module</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

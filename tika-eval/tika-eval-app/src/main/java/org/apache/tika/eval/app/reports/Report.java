@@ -90,8 +90,7 @@ public class Report {
         }
     }
 
-    private void dumpReportToWorkbook(Statement st, SXSSFWorkbook wb)
-            throws SQLException {
+    private void dumpReportToWorkbook(Statement st, SXSSFWorkbook wb) throws SQLException {
         SXSSFSheet sheet;
         try (ResultSet rs = st.executeQuery(sql)) {
 
@@ -157,8 +156,7 @@ public class Report {
         }
     }
 
-    private void writeCell(ResultSetMetaData meta, int colIndex, ResultSet rs, Cell cell)
-            throws SQLException {
+    private void writeCell(ResultSetMetaData meta, int colIndex, ResultSet rs, Cell cell) throws SQLException {
 
         switch (meta.getColumnType(colIndex)) {
             //fall through on numerics
@@ -195,8 +193,7 @@ public class Report {
                 } else {
                     cell.setCellValue(rs.getString(colIndex));
                 }
-                LOG.warn("Couldn't find type for: {}. Defaulting to String",
-                        meta.getColumnType(colIndex));
+                LOG.warn("Couldn't find type for: {}. Defaulting to String", meta.getColumnType(colIndex));
         }
     }
 

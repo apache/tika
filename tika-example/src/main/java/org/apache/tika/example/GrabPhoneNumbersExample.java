@@ -66,8 +66,7 @@ public class GrabPhoneNumbersExample {
         try {
             Files.walkFileTree(folder, new SimpleFileVisitor<Path>() {
                 @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException {
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     try {
                         process(file);
                         successfulFiles++;
@@ -79,8 +78,7 @@ public class GrabPhoneNumbersExample {
                 }
 
                 @Override
-                public FileVisitResult visitFileFailed(Path file, IOException exc)
-                        throws IOException {
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
                     failedFiles++;
                     return FileVisitResult.CONTINUE;
                 }
@@ -95,8 +93,7 @@ public class GrabPhoneNumbersExample {
         Metadata metadata = new Metadata();
         // The PhoneExtractingContentHandler will examine any characters for phone numbers before passing them
         // to the underlying Handler.
-        PhoneExtractingContentHandler handler =
-                new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
+        PhoneExtractingContentHandler handler = new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
         try (InputStream stream = new BufferedInputStream(Files.newInputStream(path))) {
             parser.parse(stream, handler, metadata, new ParseContext());
         }

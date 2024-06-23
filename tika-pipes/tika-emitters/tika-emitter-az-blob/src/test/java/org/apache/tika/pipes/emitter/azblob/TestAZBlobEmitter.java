@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.EmitterManager;
 
@@ -43,10 +44,13 @@ public class TestAZBlobEmitter {
         m.set("k2", "v3");
         m.add("k2", "v4");
         metadataList.add(m);
-        emitter.emit("something-or-other/test-out", metadataList);
+        emitter.emit("something-or-other/test-out", metadataList, new ParseContext());
     }
 
     private Path getConfig(String configFile) throws URISyntaxException {
-        return Paths.get(this.getClass().getResource("/config/" + configFile).toURI());
+        return Paths.get(this
+                .getClass()
+                .getResource("/config/" + configFile)
+                .toURI());
     }
 }
