@@ -80,7 +80,6 @@ import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
-import org.apache.tika.utils.StringUtils;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaConfigSerializer.class);
