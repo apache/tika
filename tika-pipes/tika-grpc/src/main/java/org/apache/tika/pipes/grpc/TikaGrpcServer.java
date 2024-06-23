@@ -27,6 +27,7 @@ import io.grpc.Server;
 import io.grpc.ServerCredentials;
 import io.grpc.TlsServerCredentials;
 import io.grpc.protobuf.services.ProtoReflectionService;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,8 +79,16 @@ public class TikaGrpcServer {
         } else {
             creds = InsecureServerCredentials.create();
         }
+        File tikaConfigFile = new File(tikaConfigXml.getAbsolutePath());
+        if (!tikaConfigFile.canWrite()) {
+            File tmpTikaConfigFile = File.createTempFile("configCopy", tikaConfigFile.getName());
+            tmpTikaConfigFile.deleteOnExit();
+            LOGGER.info("Tika config file {} is read-only. Making a temporary copy to {}", tikaConfigFile, tmpTikaConfigFile);
+            FileUtils.copyFile(tikaConfigFile, tmpTikaConfigFile);
+            tikaConfigFile = tmpTikaConfigFile;
+        }
         server = Grpc.newServerBuilderForPort(port, creds)
-                     .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath()))
+                     .addService(new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath()))
                      .addService(ProtoReflectionService.newInstance()) // Enable reflection
                      .build()
                      .start();
