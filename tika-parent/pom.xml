@@ -328,7 +328,7 @@
     <c3p0.version>0.10.1</c3p0.version>
     <commons.cli.version>1.8.0</commons.cli.version>
     <commons.codec.version>1.17.0</commons.codec.version>
-    <commons.collections4.version>4.5.0-M1</commons.collections4.version>
+    <commons.collections4.version>4.5.0-M2</commons.collections4.version>
     <commons.compress.version>1.26.2</commons.compress.version>
     <commons.csv.version>1.11.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
