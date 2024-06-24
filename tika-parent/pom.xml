@@ -295,7 +295,7 @@
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
     <maven.javadoc.version>3.7.0</maven.javadoc.version>
-    <maven.jar.version>3.4.1</maven.jar.version>
+    <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.failsafe.version>3.3.0</maven.failsafe.version>
     <maven.surefire.version>3.3.0</maven.surefire.version>
@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.40.0</google.cloud.version>
-    <aws.version>1.12.744</aws.version>
+    <aws.version>1.12.748</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -521,7 +521,7 @@
       <dependency>
         <groupId>com.fasterxml.woodstox</groupId>
         <artifactId>woodstox-core</artifactId>
-        <version>6.6.2</version>
+        <version>7.0.0</version>
       </dependency>
       <dependency>
         <groupId>com.mchange</groupId>
