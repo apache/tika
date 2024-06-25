@@ -14,8 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetcher.config;
+package org.apache.tika.pipes.fetcher.http.jwt;
 
-public abstract class AbstractConfig {
-    //  Nothing to do here yet.
+public class JwtSecretCreds extends JwtCreds {
+    private final byte[] secret;
+    public JwtSecretCreds(byte[] secret, String issuer, String subject, int expiresInSeconds) {
+        super(issuer, subject, expiresInSeconds);
+        this.secret = secret;
+    }
+
+    public byte[] getSecret() {
+        return secret;
+    }
+
 }

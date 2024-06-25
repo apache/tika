@@ -298,7 +298,7 @@
     <maven.failsafe.version>3.3.0</maven.failsafe.version>
     <maven.surefire.version>3.3.0</maven.surefire.version>
     <maven.javadoc.version>3.7.0</maven.javadoc.version>
-    <maven.jar.version>3.4.1</maven.jar.version>
+    <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.0</maven.shade.version>
     <maven.project.info.reports.version>3.6.0</maven.project.info.reports.version>
@@ -309,7 +309,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.40.0</google.cloud.version>
-    <aws.version>1.12.744</aws.version>
+    <aws.version>1.12.748</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -436,12 +436,13 @@
     <uimaj.cpe.version>3.5.0</uimaj.cpe.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
-    <woodstox.core.version>6.6.2</woodstox.core.version>
+    <woodstox.core.version>7.0.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.4</zookeeper.version>
     <logback.version>1.5.6</logback.version>
     <zstd.version>1.5.6-3</zstd.version>
+    <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
   </properties>
 
   <dependencyManagement>
@@ -1038,6 +1039,11 @@
           <groupId>com.google.errorprone</groupId>
           <artifactId>error_prone_annotations</artifactId>
           <version>2.28.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.nimbusds</groupId>
+        <artifactId>nimbus-jose-jwt</artifactId>
+        <version>${nimbus-jose-jwt.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

@@ -17,7 +17,8 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
     <artifactId>tika-fetchers</artifactId>
     <groupId>org.apache.tika</groupId>
@@ -25,54 +26,85 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-fetcher-http</artifactId>
-  <name>Apache Tika http fetcher</name>
+  <artifactId>tika-fetcher-microsoft-graph</artifactId>
+  <name>Microsoft Graph Tika Pipes Fetcher</name>
+
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <azure-identity.version>1.13.0</azure-identity.version>
+    <microsoft-graph.version>6.4.0</microsoft-graph.version>
+    <microsoft-kiota-serialization-json.version>1.1.1</microsoft-kiota-serialization-json.version>
+    <wiremock.version>3.3.1</wiremock.version>
+    <mockito-junit-jupiter.version>5.3.1</mockito-junit-jupiter.version>
+    <nimbus-jose-jwt.version>9.37.3</nimbus-jose-jwt.version>
+  </properties>
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j2-impl</artifactId>
-      <scope>provided</scope>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-identity</artifactId>
+      <version>${azure-identity.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.nimbusds</groupId>
+          <artifactId>nimbus-jose-jwt</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.java.dev.jna</groupId>
+          <artifactId>jna-platform</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.microsoft.azure</groupId>
+          <artifactId>msal4j</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-httpclient-commons</artifactId>
-      <version>${project.version}</version>
+      <groupId>com.microsoft.graph</groupId>
+      <artifactId>microsoft-graph</artifactId>
+      <version>${microsoft-graph.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.nimbusds</groupId>
+          <artifactId>nimbus-jose-jwt</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-stdlib-jdk8</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-stdlib-jdk8</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.nimbusds</groupId>
-      <artifactId>nimbus-jose-jwt</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-annotations</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <version>${mockito-junit-jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.nimbusds</groupId>
+      <artifactId>nimbus-jose-jwt</artifactId>
+      <version>${nimbus-jose-jwt.version}</version>
     </dependency>
   </dependencies>
 
@@ -84,7 +116,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.pipes.fetcher.http</Automatic-Module-Name>
+              <Automatic-Module-Name>org.apache.tika.pipes.fetcher.s3</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>
@@ -121,15 +153,18 @@
                 </filter>
               </filters>
               <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                <transformer
+                    implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
                   <resource>META-INF/LICENSE</resource>
                   <file>target/classes/META-INF/LICENSE</file>
                 </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                <transformer
+                    implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
                   <resource>META-INF/NOTICE</resource>
                   <file>target/classes/META-INF/NOTICE</file>
                 </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                <transformer
+                    implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
                   <resource>META-INF/DEPENDENCIES</resource>
                   <file>target/classes/META-INF/DEPENDENCIES</file>
                 </transformer>
@@ -138,6 +173,7 @@
           </execution>
         </executions>
       </plugin>
+
     </plugins>
   </build>
 

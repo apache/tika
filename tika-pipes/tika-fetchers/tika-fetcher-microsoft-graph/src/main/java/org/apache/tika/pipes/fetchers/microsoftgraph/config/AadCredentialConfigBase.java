@@ -14,8 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetcher.config;
+package org.apache.tika.pipes.fetchers.microsoftgraph.config;
 
-public abstract class AbstractConfig {
-    //  Nothing to do here yet.
+public abstract class AadCredentialConfigBase {
+    private String tenantId;
+    private String clientId;
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public AadCredentialConfigBase setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+        return this;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public AadCredentialConfigBase setClientId(String clientId) {
+        this.clientId = clientId;
+        return this;
+    }
 }

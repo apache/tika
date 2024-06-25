@@ -29,12 +29,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.security.PrivateKey;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.nimbusds.jose.JOSEException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.http.ConnectionClosedException;
@@ -59,6 +63,7 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -69,6 +74,9 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
 import org.apache.tika.pipes.fetcher.http.config.AdditionalHttpHeaders;
+import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
+import org.apache.tika.pipes.fetcher.http.jwt.JwtPrivateKeyCreds;
+import org.apache.tika.pipes.fetcher.http.jwt.JwtSecretCreds;
 import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 import org.apache.tika.utils.StringUtils;
 
@@ -121,8 +129,24 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     //back-off client that disables compression
     private HttpClient noCompressHttpClient;
 
+    private int maxRedirects = 10;
+    //overall timeout in milliseconds
+    private long overallTimeout = -1;
+
+    private long maxSpoolSize = -1;
+
+    //max string length to read from a result if the
+    //status code was not in the 200 range
+    private int maxErrMsgSize = 10000;
+
+    JwtGenerator jwtGenerator;
+
+    //When making the request, what User-Agent is sent.
+    //By default httpclient adds e.g. "Apache-HttpClient/4.5.13 (Java/x.y.z)"
+    private String userAgent = null;
+
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
         HttpGet get = new HttpGet(fetchKey);
         RequestConfig requestConfig = RequestConfig
                 .custom()
@@ -135,8 +159,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     }
 
     @Override
-    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata, ParseContext parseContext)
-            throws IOException {
+    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
         HttpGet get = new HttpGet(fetchKey);
         putAdditionalHeadersOnRequest(parseContext, get);
 
@@ -144,7 +167,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         return execute(get, metadata, httpClient, true);
     }
 
-    private void putAdditionalHeadersOnRequest(ParseContext parseContext, HttpGet httpGet) {
+    private void putAdditionalHeadersOnRequest(ParseContext parseContext, HttpGet httpGet) throws TikaException {
         if (!StringUtils.isBlank(httpFetcherConfig.getUserAgent())) {
             httpGet.setHeader(USER_AGENT, httpFetcherConfig.getUserAgent());
         }
@@ -154,10 +177,16 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                     .getHeaders()
                     .forEach(httpGet::setHeader);
         }
+        if (jwtGenerator != null) {
+            try {
+                httpGet.setHeader("Authorization", "Bearer " + jwtGenerator.jwt());
+            } catch (JOSEException e) {
+                throw new TikaException("Could not generate JWT", e);
+            }
+        }
     }
 
-    private InputStream execute(HttpGet get, Metadata metadata, HttpClient client,
-                                boolean retryOnBadLength) throws IOException {
+    private InputStream execute(HttpGet get, Metadata metadata, HttpClient client, boolean retryOnBadLength) throws IOException {
         HttpClientContext context = HttpClientContext.create();
         HttpResponse response = null;
         final AtomicBoolean timeout = new AtomicBoolean(false);
@@ -450,6 +479,51 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         httpFetcherConfig.setUserAgent(userAgent);
     }
 
+    public String getJwtIssuer() {
+        return jwtIssuer;
+    }
+
+    @Field
+    public void setJwtIssuer(String jwtIssuer) {
+        this.jwtIssuer = jwtIssuer;
+    }
+
+    public String getJwtSubject() {
+        return jwtSubject;
+    }
+
+    @Field
+    public void setJwtSubject(String jwtSubject) {
+        this.jwtSubject = jwtSubject;
+    }
+
+    public int getJwtExpiresInSeconds() {
+        return jwtExpiresInSeconds;
+    }
+
+    @Field
+    public void setJwtExpiresInSeconds(int jwtExpiresInSeconds) {
+        this.jwtExpiresInSeconds = jwtExpiresInSeconds;
+    }
+
+    public String getJwtSecret() {
+        return jwtSecret;
+    }
+
+    @Field
+    public void setJwtSecret(String jwtSecret) {
+        this.jwtSecret = jwtSecret;
+    }
+
+    public String getJwtPrivateKeyBase64() {
+        return jwtPrivateKeyBase64;
+    }
+
+    @Field
+    public void setJwtPrivateKeyBase64(String jwtPrivateKeyBase64) {
+        this.jwtPrivateKeyBase64 = jwtPrivateKeyBase64;
+    }
+
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         if (httpFetcherConfig.getSocketTimeout() != null) {
@@ -483,10 +557,19 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         HttpClientFactory cp = httpClientFactory.copy();
         cp.setDisableContentCompression(true);
         noCompressHttpClient = cp.build();
+        if (!StringUtils.isBlank(jwtPrivateKeyBase64)) {
+            PrivateKey key = JwtPrivateKeyCreds.convertBase64ToPrivateKey(jwtPrivateKeyBase64);
+            jwtGenerator = new JwtGenerator(new JwtPrivateKeyCreds(key, jwtIssuer, jwtSubject, jwtExpiresInSeconds));
+        } else if (!StringUtils.isBlank(jwtSecret)) {
+            jwtGenerator = new JwtGenerator(new JwtSecretCreds(jwtSecret.getBytes(StandardCharsets.UTF_8), jwtIssuer, jwtSubject, jwtExpiresInSeconds));
+        }
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+        if (!StringUtils.isBlank(jwtSecret) && !StringUtils.isBlank(jwtPrivateKeyBase64)) {
+            throw new TikaConfigException("Both JWT secret and JWT private key base 64 were " + "specified. Only one or the other is supported");
+        }
     }
 
     public void setHttpClientFactory(HttpClientFactory httpClientFactory) {

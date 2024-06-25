@@ -14,8 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetcher.config;
+package org.apache.tika.pipes.fetchers.microsoftgraph.config;
 
-public abstract class AbstractConfig {
-    //  Nothing to do here yet.
+public class ClientCertificateCredentialsConfig extends AadCredentialConfigBase {
+    private byte[] certificateBytes;
+    private String certificatePassword;
+
+    public byte[] getCertificateBytes() {
+        return certificateBytes;
+    }
+
+    public ClientCertificateCredentialsConfig setCertificateBytes(byte[] certificateBytes) {
+        this.certificateBytes = certificateBytes;
+        return this;
+    }
+
+    public String getCertificatePassword() {
+        return certificatePassword;
+    }
+
+    public ClientCertificateCredentialsConfig setCertificatePassword(String certificatePassword) {
+        this.certificatePassword = certificatePassword;
+        return this;
+    }
 }

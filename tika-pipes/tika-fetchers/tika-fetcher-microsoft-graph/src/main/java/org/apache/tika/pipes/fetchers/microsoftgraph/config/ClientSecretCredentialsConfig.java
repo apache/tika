@@ -14,8 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetcher.config;
+package org.apache.tika.pipes.fetchers.microsoftgraph.config;
 
-public abstract class AbstractConfig {
-    //  Nothing to do here yet.
+public class ClientSecretCredentialsConfig extends AadCredentialConfigBase {
+    private String clientSecret;
+
+    public String getClientSecret() {
+        return clientSecret;
+    }
+
+    public ClientSecretCredentialsConfig setClientSecret(String clientSecret) {
+        this.clientSecret = clientSecret;
+        return this;
+    }
 }
