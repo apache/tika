@@ -34,6 +34,7 @@ import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.ClientCertificateCredentialsConfig;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.ClientSecretCredentialsConfig;
@@ -109,7 +110,7 @@ public class MicrosoftGraphFetcher extends AbstractFetcher implements Initializa
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
         int tries = 0;
         Exception ex;
         do {
