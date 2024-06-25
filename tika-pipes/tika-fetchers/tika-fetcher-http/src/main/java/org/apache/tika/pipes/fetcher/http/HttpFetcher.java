@@ -30,12 +30,15 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.PrivateKey;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
@@ -71,8 +74,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
-import org.apache.tika.pipes.fetcher.http.config.AdditionalHttpHeaders;
+import org.apache.tika.pipes.fetcher.config.FetcherConfigContainer;
 import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
+import org.apache.tika.pipes.fetcher.http.config.HttpHeaders;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtPrivateKeyCreds;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtSecretCreds;
@@ -86,6 +90,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
 
     }
 
+    private static final ObjectMapper OM = new ObjectMapper();
     private HttpFetcherConfig httpFetcherConfig = new HttpFetcherConfig();
     private HttpClientFactory httpClientFactory = new HttpClientFactory();
 
@@ -131,6 +136,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
+        HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
         RequestConfig requestConfig = RequestConfig
                 .custom()
@@ -138,29 +144,43 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                 .setRedirectsEnabled(httpFetcherConfig.getMaxRedirects() > 0)
                 .build();
         get.setConfig(requestConfig);
-        putAdditionalHeadersOnRequest(parseContext, get);
+        putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
         return execute(get, metadata, httpClient, true);
+    }
+
+    private HttpFetcherConfig getAdditionalHttpFetcherConfig(ParseContext parseContext) throws JsonProcessingException {
+        HttpFetcherConfig additionalHttpFetcherConfig = null;
+        FetcherConfigContainer fetcherConfigContainer = parseContext.get(FetcherConfigContainer.class);
+        if (fetcherConfigContainer != null) {
+            additionalHttpFetcherConfig = OM.readValue(fetcherConfigContainer.getJson(), HttpFetcherConfig.class);
+        }
+        return additionalHttpFetcherConfig;
     }
 
     @Override
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata,
                              ParseContext parseContext) throws IOException, TikaException {
+        HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
-        putAdditionalHeadersOnRequest(parseContext, get);
+        putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
 
         get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
         return execute(get, metadata, httpClient, true);
     }
 
-    private void putAdditionalHeadersOnRequest(ParseContext parseContext, HttpGet httpGet) throws TikaException {
+    private void putAdditionalHeadersOnRequest(HttpFetcherConfig additionalFetcherConfig, HttpGet httpGet) throws TikaException {
         if (!StringUtils.isBlank(httpFetcherConfig.getUserAgent())) {
             httpGet.setHeader(USER_AGENT, httpFetcherConfig.getUserAgent());
         }
-        AdditionalHttpHeaders additionalHttpHeaders = parseContext.get(AdditionalHttpHeaders.class);
-        if (additionalHttpHeaders != null) {
-            additionalHttpHeaders
+        if (additionalFetcherConfig != null && additionalFetcherConfig.getHttpRequestHeaders() != null) {
+            additionalFetcherConfig.getHttpRequestHeaders()
                     .getHeaders()
-                    .forEach(httpGet::setHeader);
+                    .forEach(httpGet::addHeader);
+        }
+        if (httpFetcherConfig.getHttpRequestHeaders() != null) {
+            httpFetcherConfig.getHttpRequestHeaders()
+                    .getHeaders()
+                    .forEach(httpGet::addHeader);
         }
         if (jwtGenerator != null) {
             try {
@@ -446,12 +466,30 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
      */
     @Field
     public void setHttpRequestHeaders(List<String> headers) {
-        httpFetcherConfig.setHttpRequestHeaders(new ArrayList<>());
+        httpFetcherConfig.setHttpRequestHeaders(new HttpHeaders());
         if (headers != null) {
-            httpFetcherConfig
-                    .getHttpRequestHeaders()
-                    .addAll(headers);
+            for (String header : headers) {
+                httpFetcherConfig
+                        .getHttpRequestHeaders()
+                        .getMap()
+                        .putAll(parseHeaders(header));
+            }
+
         }
+    }
+
+    public static Map<String, List<String>> parseHeaders(String headersString) {
+        Map<String, List<String>> headersMap = new HashMap<>();
+        String[] headers = headersString.split("\n");
+        for (String header : headers) {
+            String[] keyValue = header.split(":", 2);
+            if (keyValue.length == 2) {
+                String key = keyValue[0].trim();
+                String value = keyValue[1].trim();
+                headersMap.put(key, List.of(value));
+            }
+        }
+        return headersMap;
     }
 
     /**

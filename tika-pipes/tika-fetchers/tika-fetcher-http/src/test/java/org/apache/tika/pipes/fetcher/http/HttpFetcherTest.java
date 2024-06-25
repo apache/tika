@@ -32,10 +32,17 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -59,11 +66,12 @@ import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.fetcher.config.FetcherConfigContainer;
 import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
+import org.apache.tika.pipes.fetcher.http.config.HttpHeaders;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
 
 class HttpFetcherTest extends TikaTest {
@@ -178,13 +186,44 @@ class HttpFetcherTest extends TikaTest {
         when(response.getEntity()).thenReturn(new StringEntity("Hi"));
 
         Metadata metadata = new Metadata();
-        metadata.set(Property.externalText("httpRequestHeaders"), new String[]{"nick1: val1", "nick2: val2"});
-        httpFetcher.fetch("http://localhost", metadata, new ParseContext());
+        ParseContext parseContext = new ParseContext();
+        FetcherConfigContainer fetcherConfigContainer = new FetcherConfigContainer();
+        fetcherConfigContainer.setConfigClassName(HttpFetcherConfig.class.getName());
+        HttpFetcherConfig additionalHttpFetcherConfig = new HttpFetcherConfig();
+        additionalHttpFetcherConfig.setHttpRequestHeaders(new HttpHeaders());
+        HashMap<String, Collection<String>> headersMap = new HashMap<>();
+        headersMap.put("fromFetchRequestHeader1", List.of("fromFetchRequestValue1"));
+        headersMap.put("fromFetchRequestHeader2", List.of("fromFetchRequestValue2", "fromFetchRequestValue3"));
+        additionalHttpFetcherConfig.getHttpRequestHeaders().setMap(headersMap);
+        fetcherConfigContainer.setJson(new ObjectMapper().writeValueAsString(additionalHttpFetcherConfig));
+        parseContext.set(FetcherConfigContainer.class, fetcherConfigContainer);
+
+        httpFetcher.getHttpFetcherConfig().setHttpRequestHeaders(new HttpHeaders());
+        HashMap<String, Collection<String>> headersMapFromConfig = new HashMap<>();
+        headersMapFromConfig.put("fromFetchConfig1", List.of("fromFetchConfigValue1"));
+        headersMapFromConfig.put("fromFetchConfig2", List.of("fromFetchConfigValue2", "fromFetchConfigValue3"));
+        httpFetcher.getHttpFetcherConfig().getHttpRequestHeaders().setMap(headersMapFromConfig);
+
+        httpFetcher.fetch("http://localhost", metadata, parseContext);
         HttpGet httpGet = httpGetArgumentCaptor.getValue();
-        Assertions.assertEquals("val1", httpGet.getHeaders("nick1")[0].getValue());
-        Assertions.assertEquals("val2", httpGet.getHeaders("nick2")[0].getValue());
+        Assertions.assertEquals("fromFetchRequestValue1", httpGet.getHeaders("fromFetchRequestHeader1")[0].getValue());
+        List<String> fromFetchRequestHeader2s = Arrays.stream(httpGet.getHeaders("fromFetchRequestHeader2"))
+                .map(Header::getValue)
+                .sorted()
+                .collect(Collectors.toList());
+        Assertions.assertEquals(2, fromFetchRequestHeader2s.size());
+        Assertions.assertEquals("fromFetchRequestValue2", fromFetchRequestHeader2s.get(0));
+        Assertions.assertEquals("fromFetchRequestValue3", fromFetchRequestHeader2s.get(1));
         // also make sure the headers from the fetcher config level are specified - see src/test/resources/tika-config-http.xml
-        Assertions.assertEquals("headerValueFromFetcherConfig", httpGet.getHeaders("headerNameFromFetcherConfig")[0].getValue());
+        Assertions.assertEquals("fromFetchConfigValue1", httpGet.getHeaders("fromFetchConfig1")[0].getValue());
+        List<String> fromFetchConfig2s = Arrays.stream(httpGet.getHeaders("fromFetchConfig2"))
+                                    .map(Header::getValue)
+                                    .sorted()
+                                    .collect(Collectors.toList());
+        Assertions.assertEquals(2, fromFetchConfig2s.size());
+        Assertions.assertEquals("fromFetchConfigValue2", fromFetchConfig2s.get(0));
+        Assertions.assertEquals("fromFetchConfigValue3", fromFetchConfig2s.get(1));
+
     }
 
     @Test

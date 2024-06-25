@@ -78,6 +78,7 @@ import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.fetcher.config.FetcherConfigContainer;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaConfigSerializer.class);
@@ -217,8 +218,14 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             ParseContext parseContext = new ParseContext();
             String additionalFetchConfigJson = request.getAdditionalFetchConfigJson();
             if (StringUtils.isNotBlank(additionalFetchConfigJson)) {
-                AbstractConfig abstractConfig = expiringFetcherStore.getFetcherConfigs().get(fetcher.getName());
-                parseContext.set(AbstractConfig.class, abstractConfig);
+                // The fetch and parse has the option to specify additional configuration
+                AbstractConfig abstractConfig = expiringFetcherStore
+                        .getFetcherConfigs()
+                        .get(fetcher.getName());
+                parseContext.set(FetcherConfigContainer.class, new FetcherConfigContainer()
+                        .setConfigClassName(abstractConfig
+                                .getClass().getName())
+                        .setJson(additionalFetchConfigJson));
             }
             PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(),
                     new FetchKey(fetcher.getName(), request.getFetchKey()), new EmitKey(), tikaMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
