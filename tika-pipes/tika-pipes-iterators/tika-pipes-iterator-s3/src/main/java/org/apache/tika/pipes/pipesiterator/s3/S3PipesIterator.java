@@ -46,6 +46,7 @@ import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -112,10 +113,8 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
 
     @Field
     public void setCredentialsProvider(String credentialsProvider) {
-        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")
-                && !credentialsProvider.equals("key_secret")) {
-            throw new IllegalArgumentException(
-                    "credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
+        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance") && !credentialsProvider.equals("key_secret")) {
+            throw new IllegalArgumentException("credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
         }
         this.credentialsProvider = credentialsProvider;
     }
@@ -153,21 +152,18 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
         } else if (credentialsProvider.equals("key_secret")) {
             provider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey));
         } else {
-            throw new TikaConfigException("credentialsProvider must be set and " +
-                    "must be either 'instance', 'profile' or 'key_secret'");
+            throw new TikaConfigException("credentialsProvider must be set and " + "must be either 'instance', 'profile' or 'key_secret'");
         }
 
-        ClientConfiguration clientConfig = new ClientConfiguration()
-                .withMaxConnections(maxConnections);
+        ClientConfiguration clientConfig = new ClientConfiguration().withMaxConnections(maxConnections);
         try {
-            AmazonS3ClientBuilder amazonS3ClientBuilder = AmazonS3ClientBuilder.standard()
+            AmazonS3ClientBuilder amazonS3ClientBuilder = AmazonS3ClientBuilder
+                    .standard()
                     .withClientConfiguration(clientConfig)
                     .withCredentials(provider)
                     .withPathStyleAccessEnabled(pathStyleAccessEnabled);
             if (!StringUtils.isBlank(endpointConfigurationService)) {
-                amazonS3ClientBuilder.setEndpointConfiguration(
-                        new AwsClientBuilder
-                                .EndpointConfiguration(endpointConfigurationService, region));
+                amazonS3ClientBuilder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpointConfigurationService, region));
             } else {
                 amazonS3ClientBuilder.withRegion(region);
             }
@@ -178,8 +174,7 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         super.checkInitialization(problemHandler);
         mustNotBeEmpty("bucket", this.bucket);
         mustNotBeEmpty("region", this.region);
@@ -203,9 +198,9 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
             long elapsed = System.currentTimeMillis() - start;
             LOGGER.debug("adding ({}) {} in {} ms", count, summary.getKey(), elapsed);
             //TODO -- allow user specified metadata as the "id"?
-            tryToAdd(new FetchEmitTuple(summary.getKey(), new FetchKey(fetcherName,
-                    summary.getKey()),
-                    new EmitKey(emitterName, summary.getKey()), new Metadata(), handlerConfig,
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(HandlerConfig.class, handlerConfig);
+            tryToAdd(new FetchEmitTuple(summary.getKey(), new FetchKey(fetcherName, summary.getKey()), new EmitKey(emitterName, summary.getKey()), new Metadata(), parseContext,
                     getOnParseException()));
             count++;
         }
@@ -215,6 +210,8 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
 
     private boolean accept(Matcher fileNameMatcher, String key) {
         String fName = FilenameUtils.getName(key);
-        return fileNameMatcher.reset(fName).find();
+        return fileNameMatcher
+                .reset(fName)
+                .find();
     }
 }

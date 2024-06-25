@@ -38,13 +38,19 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.protocol.HttpContext;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import org.apache.tika.TikaTest;
@@ -53,7 +59,9 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.fetcher.http.config.AdditionalHttpHeaders;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
 
 public class HttpFetcherTest extends TikaTest {
@@ -76,7 +84,7 @@ public class HttpFetcherTest extends TikaTest {
         final Metadata meta = new Metadata();
         meta.set(TikaCoreProperties.RESOURCE_NAME_KEY, "fileName");
 
-        try (final InputStream ignored = httpFetcher.fetch(TEST_URL, meta)) {
+        try (final InputStream ignored = httpFetcher.fetch(TEST_URL, meta, new ParseContext())) {
             // HTTP headers added into meta
             assertEquals("200", meta.get("http-header:status-code"));
             assertEquals(TEST_URL, meta.get("http-connection:target-url"));
@@ -94,7 +102,7 @@ public class HttpFetcherTest extends TikaTest {
         mockClientResponse(buildMockResponse(HttpStatus.SC_FORBIDDEN, null));
 
         final Metadata meta = new Metadata();
-        assertThrows(IOException.class, () -> httpFetcher.fetch(TEST_URL, meta));
+        assertThrows(IOException.class, () -> httpFetcher.fetch(TEST_URL, meta, new ParseContext()));
 
         // Meta still populated
         assertEquals("403", meta.get("http-header:status-code"));
@@ -133,7 +141,7 @@ public class HttpFetcherTest extends TikaTest {
         Metadata metadata = new Metadata();
         HttpFetcher httpFetcher =
                 (HttpFetcher) getFetcherManager("tika-config-http.xml").getFetcher("http");
-        try (InputStream is = httpFetcher.fetch(url, metadata)) {
+        try (InputStream is = httpFetcher.fetch(url, metadata, new ParseContext())) {
             IOUtils.copy(is, bos);
         }
         //debug(metadata);
@@ -158,6 +166,45 @@ public class HttpFetcherTest extends TikaTest {
         }
     }
 
+    @Test
+    public void testHttpRequestHeaders() throws Exception {
+        HttpClient httpClient = Mockito.mock(HttpClient.class);
+        httpFetcher.setHttpClient(httpClient);
+        CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        ArgumentCaptor<HttpGet> httpGetArgumentCaptor = ArgumentCaptor.forClass(HttpGet.class);
+
+        when(httpClient.execute(httpGetArgumentCaptor.capture(), any(HttpContext.class)))
+                .thenReturn(response);
+        when(response.getStatusLine()).thenReturn(new StatusLine() {
+            @Override
+            public ProtocolVersion getProtocolVersion() {
+                return new HttpGet("http://localhost").getProtocolVersion();
+            }
+
+            @Override
+            public int getStatusCode() {
+                return 200;
+            }
+
+            @Override
+            public String getReasonPhrase() {
+                return null;
+            }
+        });
+
+        when(response.getEntity()).thenReturn(new StringEntity("Hi"));
+
+        Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        AdditionalHttpHeaders additionalHttpHeaders = new AdditionalHttpHeaders();
+        additionalHttpHeaders.getHeaders().put("nick1", "val1");
+        additionalHttpHeaders.getHeaders().put("nick2", "val2");
+        parseContext.set(AdditionalHttpHeaders.class, additionalHttpHeaders);
+        httpFetcher.fetch("http://localhost", metadata, parseContext);
+        HttpGet httpGet = httpGetArgumentCaptor.getValue();
+        Assertions.assertEquals("val1", httpGet.getHeaders("nick1")[0].getValue());
+        Assertions.assertEquals("val2", httpGet.getHeaders("nick2")[0].getValue());
+    }
 
     FetcherManager getFetcherManager(String path) throws Exception {
         return FetcherManager.load(

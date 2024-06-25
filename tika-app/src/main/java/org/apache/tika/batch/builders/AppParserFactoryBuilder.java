@@ -39,14 +39,15 @@ public class AppParserFactoryBuilder implements IParserFactoryBuilder {
         ParserFactory pf = ClassLoaderUtil.buildClass(ParserFactory.class, className);
 
         if (localAttrs.containsKey("parseRecursively")) {
-            String bString = localAttrs.get("parseRecursively").toLowerCase(Locale.ENGLISH);
+            String bString = localAttrs
+                    .get("parseRecursively")
+                    .toLowerCase(Locale.ENGLISH);
             if (bString.equals("true")) {
                 pf.setParseRecursively(true);
             } else if (bString.equals("false")) {
                 pf.setParseRecursively(false);
             } else {
-                throw new RuntimeException(
-                        "parseRecursively must have value of \"true\" or \"false\": " + bString);
+                throw new RuntimeException("parseRecursively must have value of \"true\" or \"false\": " + bString);
             }
         }
         if (pf instanceof DigestingAutoDetectParserFactory) {
@@ -60,16 +61,14 @@ public class AppParserFactoryBuilder implements IParserFactoryBuilder {
 
         String readLimitString = localAttrs.get("digestMarkLimit");
         if (readLimitString == null) {
-            throw new IllegalArgumentException("Must specify \"digestMarkLimit\" for " +
-                    "the DigestingAutoDetectParserFactory");
+            throw new IllegalArgumentException("Must specify \"digestMarkLimit\" for " + "the DigestingAutoDetectParserFactory");
         }
         int readLimit = -1;
 
         try {
             readLimit = Integer.parseInt(readLimitString);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(
-                    "Parameter \"digestMarkLimit\" must be a parseable int: " + readLimitString);
+            throw new IllegalArgumentException("Parameter \"digestMarkLimit\" must be a parseable int: " + readLimitString);
         }
         String digestString = localAttrs.get("digest");
         try {
@@ -78,9 +77,7 @@ public class AppParserFactoryBuilder implements IParserFactoryBuilder {
             try {
                 return new BouncyCastleDigester(readLimit, digestString);
             } catch (IllegalArgumentException bcException) {
-                throw new IllegalArgumentException(
-                        "Tried both CommonsDigester (" + commonsException.getMessage() +
-                                ") and BouncyCastleDigester (" + bcException.getMessage() + ")",
+                throw new IllegalArgumentException("Tried both CommonsDigester (" + commonsException.getMessage() + ") and BouncyCastleDigester (" + bcException.getMessage() + ")",
                         bcException);
             }
         }

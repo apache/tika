@@ -57,7 +57,7 @@ public class OpenDocumentDetector implements ZipContainerDetector {
         if ("mimetype".equals(name)) {
             //can't rely on zae.getSize to determine if there is any
             //content here. :(
-            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             BoundedInputStream bis = new BoundedInputStream(MAX_MIME_TYPE, zis);
             IOUtils.copy(bis, bos);
             //do anything with an inputstream > MAX_MIME_TYPE?

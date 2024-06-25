@@ -40,9 +40,10 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 @Provider
 @Produces("application/zip")
 public class ZipWriter implements MessageBodyWriter<Map<String, byte[]>> {
-    private static void zipStoreBuffer(ZipArchiveOutputStream zip, String name, byte[] dataBuffer)
-            throws IOException {
-        ZipEntry zipEntry = new ZipEntry(name != null ? name : UUID.randomUUID().toString());
+    private static void zipStoreBuffer(ZipArchiveOutputStream zip, String name, byte[] dataBuffer) throws IOException {
+        ZipEntry zipEntry = new ZipEntry(name != null ? name : UUID
+                .randomUUID()
+                .toString());
         zipEntry.setMethod(ZipOutputStream.STORED);
 
         zipEntry.setSize(dataBuffer.length);
@@ -64,20 +65,16 @@ public class ZipWriter implements MessageBodyWriter<Map<String, byte[]>> {
         zip.closeArchiveEntry();
     }
 
-    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations,
-                               MediaType mediaType) {
+    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return Map.class.isAssignableFrom(type);
     }
 
-    public long getSize(Map<String, byte[]> stringMap, Class<?> type, Type genericType,
-                        Annotation[] annotations, MediaType mediaType) {
+    public long getSize(Map<String, byte[]> stringMap, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return -1;
     }
 
-    public void writeTo(Map<String, byte[]> parts, Class<?> type, Type genericType,
-                        Annotation[] annotations, MediaType mediaType,
-                        MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
-            throws IOException, WebApplicationException {
+    public void writeTo(Map<String, byte[]> parts, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
+                        OutputStream entityStream) throws IOException, WebApplicationException {
         ZipArchiveOutputStream zip = new ZipArchiveOutputStream(entityStream);
 
         zip.setMethod(ZipArchiveOutputStream.STORED);

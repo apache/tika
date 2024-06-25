@@ -14,6 +14,7 @@ package org.apache.tika.server.standard;/*
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -34,7 +35,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonMetadata;
+import org.apache.tika.serialization.JsonMetadata;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.TikaResource;
@@ -47,8 +48,7 @@ public class JsonMaxFieldLengthTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaResource.class);
-        sf.setResourceProvider(TikaResource.class,
-                new SingletonResourceProvider(new TikaResource()));
+        sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(new TikaResource()));
     }
 
     @Override
@@ -72,14 +72,17 @@ public class JsonMaxFieldLengthTest extends CXFTestBase {
             sb.append("v");
         }
         Path tmp = Files.createTempFile(dir, "long-json-", ".txt");
-        Files.write(tmp, sb.toString().getBytes(UTF_8));
-        Response response =
-                WebClient.create(endPoint + TIKA_PATH + "/text").accept("application/json")
-                        .put(Files.newInputStream(tmp));
-        Metadata metadata = JsonMetadata.fromJson(
-                new InputStreamReader(((InputStream) response.getEntity()),
-                        StandardCharsets.UTF_8));
+        Files.write(tmp, sb
+                .toString()
+                .getBytes(UTF_8));
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/text")
+                .accept("application/json")
+                .put(Files.newInputStream(tmp));
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
         String t = metadata.get(TikaCoreProperties.TIKA_CONTENT);
-        assertEquals(30000000, t.trim().length());
+        assertEquals(30000000, t
+                .trim()
+                .length());
     }
 }

@@ -33,6 +33,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.fetcher.FetchKey;
@@ -61,7 +62,7 @@ public class PipesServerTest extends TikaTest {
 
         PipesServer pipesServer = new PipesServer(tikaConfig,
                 new UnsynchronizedByteArrayInputStream(new byte[0]),
-                new PrintStream(new UnsynchronizedByteArrayOutputStream(), true,
+                new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
                 -1, 30000, 30000);
 
@@ -96,7 +97,7 @@ public class PipesServerTest extends TikaTest {
 
         PipesServer pipesServer = new PipesServer(tikaConfig,
                 new UnsynchronizedByteArrayInputStream(new byte[0]),
-                new PrintStream(new UnsynchronizedByteArrayOutputStream(), true,
+                new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
                 -1, 30000, 30000);
 
@@ -104,12 +105,12 @@ public class PipesServerTest extends TikaTest {
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig =
                 new EmbeddedDocumentBytesConfig(true);
         embeddedDocumentBytesConfig.setIncludeOriginal(true);
-
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
+        parseContext.set(EmbeddedDocumentBytesConfig.class, embeddedDocumentBytesConfig);
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fs", "mock.xml"),
-                new EmitKey("", ""), new Metadata(),
-                HandlerConfig.DEFAULT_HANDLER_CONFIG, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT,
-                embeddedDocumentBytesConfig);
+                new EmitKey("", ""), new Metadata(), parseContext);
         Fetcher fetcher = FetcherManager.load(tikaConfig).getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
                 parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
@@ -152,7 +153,7 @@ public class PipesServerTest extends TikaTest {
 
         PipesServer pipesServer = new PipesServer(tikaConfig,
                 new UnsynchronizedByteArrayInputStream(new byte[0]),
-                new PrintStream(new UnsynchronizedByteArrayOutputStream(), true,
+                new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
                 -1, 30000, 30000);
 
@@ -160,12 +161,13 @@ public class PipesServerTest extends TikaTest {
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig =
                 new EmbeddedDocumentBytesConfig(true);
         embeddedDocumentBytesConfig.setIncludeOriginal(true);
-
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
+        parseContext.set(EmbeddedDocumentBytesConfig.class, embeddedDocumentBytesConfig);
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fs", "mock.xml"),
-                new EmitKey("", ""), new Metadata(),
-                HandlerConfig.DEFAULT_HANDLER_CONFIG, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT,
-                embeddedDocumentBytesConfig);
+                new EmitKey("", ""), new Metadata(), parseContext);
+
         Fetcher fetcher = FetcherManager.load(tikaConfig).getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
                 parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);

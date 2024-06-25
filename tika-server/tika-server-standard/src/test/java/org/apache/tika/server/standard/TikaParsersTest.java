@@ -64,8 +64,11 @@ public class TikaParsersTest extends CXFTestBase {
     @Test
     public void testGetPlainText() throws Exception {
         for (boolean details : new boolean[]{false, true}) {
-            Response response = WebClient.create(endPoint + getPath(details)).type("text/plain")
-                    .accept("text/plain").get();
+            Response response = WebClient
+                    .create(endPoint + getPath(details))
+                    .type("text/plain")
+                    .accept("text/plain")
+                    .get();
 
             String text = getStringFromInputStream((InputStream) response.getEntity());
             assertContains("org.apache.tika.parser.DefaultParser (Composite Parser)", text);
@@ -90,8 +93,11 @@ public class TikaParsersTest extends CXFTestBase {
     @Test
     public void testGetHTML() throws Exception {
         for (boolean details : new boolean[]{false, true}) {
-            Response response = WebClient.create(endPoint + getPath(details)).type("text/html")
-                    .accept("text/html").get();
+            Response response = WebClient
+                    .create(endPoint + getPath(details))
+                    .type("text/html")
+                    .accept("text/html")
+                    .get();
 
             String text = getStringFromInputStream((InputStream) response.getEntity());
             assertContains("<h3>DefaultParser</h3>", text);
@@ -123,13 +129,16 @@ public class TikaParsersTest extends CXFTestBase {
     @SuppressWarnings("unchecked")
     public void testGetJSON() throws Exception {
         for (boolean details : new boolean[]{false, true}) {
-            Response response = WebClient.create(endPoint + getPath(details))
+            Response response = WebClient
+                    .create(endPoint + getPath(details))
                     .type(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-                    .accept(jakarta.ws.rs.core.MediaType.APPLICATION_JSON).get();
+                    .accept(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+                    .get();
 
             String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
-            Map<String, Map<String, Object>> json =
-                    new ObjectMapper().readerFor(Map.class).readValue(jsonStr);
+            Map<String, Map<String, Object>> json = new ObjectMapper()
+                    .readerFor(Map.class)
+                    .readValue(jsonStr);
 
             // Should have a nested structure
             assertEquals(true, json.containsKey("name"));
@@ -169,13 +178,19 @@ public class TikaParsersTest extends CXFTestBase {
                     }
 
                     String name = (String) grandChildren.get("name");
-                    if (OpusParser.class.getName().equals(name)) {
+                    if (OpusParser.class
+                            .getName()
+                            .equals(name)) {
                         hasOpus = true;
                     }
-                    if (OOXMLParser.class.getName().equals(name)) {
+                    if (OOXMLParser.class
+                            .getName()
+                            .equals(name)) {
                         hasOOXML = true;
                     }
-                    if (PackageParser.class.getName().equals(name)) {
+                    if (PackageParser.class
+                            .getName()
+                            .equals(name)) {
                         hasZip = true;
                     }
                 }
@@ -184,8 +199,7 @@ public class TikaParsersTest extends CXFTestBase {
             assertEquals(true, hasOOXML);
             assertEquals(true, hasZip);
             assertTrue(nonComposite > 20);
-            assertTrue(composite == 0 ||
-                    composite == 1); // if CompositeExternalParser is available it will be 1
+            assertTrue(composite == 0 || composite == 1); // if CompositeExternalParser is available it will be 1
         }
     }
 }

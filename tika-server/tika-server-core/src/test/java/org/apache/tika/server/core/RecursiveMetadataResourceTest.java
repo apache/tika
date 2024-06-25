@@ -34,21 +34,19 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
 
 public class RecursiveMetadataResourceTest extends CXFTestBase {
 
-    private static final String META_PATH = "/rmeta";
-
     public static final String TEST_NULL_POINTER = "test-documents/mock/null_pointer.xml";
+    private static final String META_PATH = "/rmeta";
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(RecursiveMetadataResource.class);
-        sf.setResourceProvider(RecursiveMetadataResource.class,
-                new SingletonResourceProvider(new RecursiveMetadataResource()));
+        sf.setResourceProvider(RecursiveMetadataResource.class, new SingletonResourceProvider(new RecursiveMetadataResource()));
     }
 
     @Override
@@ -60,7 +58,9 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
 
     @Test
     public void testNPE() throws Exception {
-        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_NULL_POINTER));
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
@@ -69,8 +69,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
         assertContains("some content", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("null pointer message",
-                metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        assertContains("null pointer message", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
 
     }
     /*

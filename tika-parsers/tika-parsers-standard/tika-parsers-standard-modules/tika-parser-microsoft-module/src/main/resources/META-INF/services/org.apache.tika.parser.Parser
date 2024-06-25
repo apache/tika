@@ -28,3 +28,4 @@ org.apache.tika.parser.microsoft.xml.WordMLParser
 org.apache.tika.parser.microsoft.xml.SpreadsheetMLParser
 org.apache.tika.parser.microsoft.chm.ChmParser
 org.apache.tika.parser.microsoft.pst.OutlookPSTParser
+org.apache.tika.parser.microsoft.pst.PSTMailItemParser

@@ -38,7 +38,9 @@ import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.async.AsyncProcessor;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
@@ -152,8 +154,10 @@ public class FileSystemPipesIterator extends PipesIterator
             String relPath = basePath.relativize(file).toString();
 
             try {
+                ParseContext parseContext = new ParseContext();
+                parseContext.set(HandlerConfig.class, getHandlerConfig());
                 tryToAdd(new FetchEmitTuple(relPath, new FetchKey(fetcherName, relPath),
-                        new EmitKey(emitterName, relPath), new Metadata(), getHandlerConfig(),
+                        new EmitKey(emitterName, relPath), new Metadata(), parseContext,
                         getOnParseException()));
             } catch (TimeoutException e) {
                 throw new IOException(e);

@@ -139,7 +139,25 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         } finally {
             xhtml.endDocument();
         }
+    }
 
+    public void parseString(String html, ContentHandler handler, Metadata metadata, ParseContext context) throws SAXException {
+        // Get the HTML mapper from the parse context
+        HtmlMapper mapper = context.get(HtmlMapper.class, new DefaultHtmlMapper());
+
+        //do better with baseUri?
+        Document document = Jsoup.parse(html);
+        document.quirksMode(Document.QuirksMode.quirks);
+        ContentHandler xhtml = new XHTMLDowngradeHandler(
+                new HtmlHandler(mapper, handler, metadata, context, extractScripts));
+        xhtml.startDocument();
+        try {
+            NodeTraversor.filter(new TikaNodeFilter(xhtml), document);
+        } catch (RuntimeSAXException e) {
+            throw e.getWrapped();
+        } finally {
+            xhtml.endDocument();
+        }
     }
 
     private class TikaNodeFilter implements NodeFilter {

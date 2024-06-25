@@ -17,11 +17,14 @@
   under the License.
 -->
 
-<log4j:event logger="org.apache.tika.batch.FileResourceConsumer" timestamp="1436376775762" level="ERROR" thread="pool-2-thread-11">
-<log4j:message><![CDATA[<?xml version="1.0" ?><timed_out resourceId="file10_permahang.txt" elapsedMS="340302"></timed_out>]]></log4j:message>
+<log4j:event logger="org.apache.tika.batch.FileResourceConsumer" timestamp="1436376775762" level="ERROR"
+             thread="pool-2-thread-11">
+  <log4j:message>
+    <![CDATA[<?xml version="1.0" ?><timed_out resourceId="file10_permahang.txt" elapsedMS="340302"></timed_out>]]></log4j:message>
 </log4j:event>
 
-<log4j:event logger="org.apache.tika.batch.FileResourceConsumer" timestamp="1436376775758" level="ERROR" thread="pool-2-thread-10">
+<log4j:event logger="org.apache.tika.batch.FileResourceConsumer" timestamp="1436376775758" level="ERROR"
+             thread="pool-2-thread-10">
 <log4j:message><![CDATA[<?xml version="1.0" ?><oom resourceId="file11_oom.txt">java.lang.OutOfMemoryError: Java heap space
 	at java.io.ByteArrayOutputStream.&lt;init&gt;(ByteArrayOutputStream.java:77)
 	at org.apache.fontbox.ttf.MemoryTTFDataStream.&lt;init&gt;(MemoryTTFDataStream.java:45)

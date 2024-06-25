@@ -69,9 +69,7 @@ public class IntegrationTestBase extends TikaTest {
         LogUtils.setLoggerClass(NullWebClientLogger.class);
 
         LOG_FILE = Files.createTempFile(TEMP_WORKING_DIR, "tika-server-integration", ".xml");
-        Files.copy(
-                TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j2_forked.xml"),
-                LOG_FILE, StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j2_forked.xml"), LOG_FILE, StandardCopyOption.REPLACE_EXISTING);
         STREAMS_DIR = Files.createTempDirectory(TEMP_WORKING_DIR, "tika-server-integration");
     }
 
@@ -87,8 +85,7 @@ public class IntegrationTestBase extends TikaTest {
     }
 
     public void startProcess(String[] extraArgs) throws IOException {
-        String[] base = new String[]{"java", "-cp", System.getProperty("java.class.path"),
-                "org.apache.tika.server.core.TikaServerCli",};
+        String[] base = new String[]{"java", "-cp", System.getProperty("java.class.path"), "org.apache.tika.server.core.TikaServerCli",};
         List<String> args = new ArrayList<>(Arrays.asList(base));
         args.addAll(Arrays.asList(extraArgs));
         ProcessBuilder pb = new ProcessBuilder(args);
@@ -100,32 +97,38 @@ public class IntegrationTestBase extends TikaTest {
     }
 
     void awaitServerStartup() throws Exception {
-        WebClient client = WebClient.create(endPoint + "/").accept("text/html");
+        WebClient client = WebClient
+                .create(endPoint + "/")
+                .accept("text/html");
         awaitServerStartup(client);
 
     }
 
     void awaitServerStartup(WebClient client) throws Exception {
         Instant started = Instant.now();
-        long elapsed = Duration.between(started, Instant.now()).toMillis();
+        long elapsed = Duration
+                .between(started, Instant.now())
+                .toMillis();
         while (elapsed < MAX_WAIT_MS) {
             try {
                 Response response = client.get();
                 if (response.getStatus() == 200) {
-                    elapsed = Duration.between(started, Instant.now()).toMillis();
-                    LOG.info(
-                            "client observes server successfully started after " + elapsed + " ms");
+                    elapsed = Duration
+                            .between(started, Instant.now())
+                            .toMillis();
+                    LOG.info("client observes server successfully started after " + elapsed + " ms");
                     return;
                 }
-                LOG.debug("tika test client failed to connect to server with status: {}",
-                        response.getStatus());
+                LOG.debug("tika test client failed to connect to server with status: {}", response.getStatus());
 
             } catch (jakarta.ws.rs.ProcessingException e) {
                 LOG.debug("tika test client failed to connect to server", e);
             }
 
             Thread.sleep(1000);
-            elapsed = Duration.between(started, Instant.now()).toMillis();
+            elapsed = Duration
+                    .between(started, Instant.now())
+                    .toMillis();
         }
         throw new TimeoutException("couldn't connect to server after " + elapsed + " ms");
     }

@@ -46,8 +46,7 @@ public class DirListParser implements Parser {
 
     private static final long serialVersionUID = 2717930544410610735L;
 
-    private static Set<MediaType> SUPPORTED_TYPES =
-            new HashSet<>(Collections.singletonList(MediaType.TEXT_PLAIN));
+    private static Set<MediaType> SUPPORTED_TYPES = new HashSet<>(Collections.singletonList(MediaType.TEXT_PLAIN));
 
     public static void main(String[] args) throws IOException, SAXException, TikaException {
         DirListParser parser = new DirListParser();
@@ -74,8 +73,7 @@ public class DirListParser implements Parser {
      * @see org.apache.tika.parser.Parser#parse(java.io.InputStream,
      * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata)
      */
-    public void parse(InputStream is, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException {
         this.parse(is, handler, metadata, new ParseContext());
     }
 
@@ -86,10 +84,11 @@ public class DirListParser implements Parser {
      * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
      * org.apache.tika.parser.ParseContext)
      */
-    public void parse(InputStream is, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream is, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
 
-        List<String> lines = FileUtils.readLines(TikaInputStream.get(is).getFile(), UTF_8);
+        List<String> lines = FileUtils.readLines(TikaInputStream
+                .get(is)
+                .getFile(), UTF_8);
         for (String line : lines) {
             String[] fileToks = line.split("\\s+");
             if (fileToks.length < 8) {
@@ -112,14 +111,12 @@ public class DirListParser implements Parser {
                 fileName.append(" ");
             }
             fileName.deleteCharAt(fileName.length() - 1);
-            this.addMetadata(metadata, filePermissions, numHardLinks, fileOwner, fileOwnerGroup,
-                    fileSize, lastModDate.toString(), fileName.toString());
+            this.addMetadata(metadata, filePermissions, numHardLinks, fileOwner, fileOwnerGroup, fileSize, lastModDate.toString(), fileName.toString());
         }
     }
 
-    private void addMetadata(Metadata metadata, String filePerms, String numHardLinks,
-                             String fileOwner, String fileOwnerGroup, String fileSize,
-                             String lastModDate, String fileName) {
+    private void addMetadata(Metadata metadata, String filePerms, String numHardLinks, String fileOwner, String fileOwnerGroup, String fileSize, String lastModDate,
+                             String fileName) {
         metadata.add("FilePermissions", filePerms);
         metadata.add("NumHardLinks", numHardLinks);
         metadata.add("FileOwner", fileOwner);

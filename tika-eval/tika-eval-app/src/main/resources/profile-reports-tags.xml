@@ -21,309 +21,309 @@
 <reports>
 
 
-    <before>
-        <!-- <sql>create index on x</sql>-->
-    </before>
+  <before>
+    <!-- <sql>create index on x</sql>-->
+  </before>
 
 
-    <!-- MIMES -->
-    <report reportName="All Mimes"
-            reportFilename="mimes/all_mimes.xlsx"
-            format="xlsx"
-            includeSql="true">
+  <!-- MIMES -->
+  <report reportName="All Mimes"
+          reportFilename="mimes/all_mimes.xlsx"
+          format="xlsx"
+          includeSql="true">
 
-        <sql>
-            select mime_string, count(1) cnt from
-            profiles p
-            join mimes m on m.mime_id = p.mime_id
-            group by mime_string
-            order by cnt desc
-        </sql>
-    </report>
-    <report reportName="Container Mimes"
-            reportFilename="mimes/container_mimes.xlsx"
-            format="xlsx"
-            includeSql="true">
+    <sql>
+      select mime_string, count(1) cnt from
+      profiles p
+      join mimes m on m.mime_id = p.mime_id
+      group by mime_string
+      order by cnt desc
+    </sql>
+  </report>
+  <report reportName="Container Mimes"
+          reportFilename="mimes/container_mimes.xlsx"
+          format="xlsx"
+          includeSql="true">
 
-        <sql>
-            select mime_string, count(1) cnt from
-            profiles p
-            join mimes m on m.mime_id = p.mime_id
-            where is_embedded=false
-            group by mime_string
-            order by cnt desc
-        </sql>
-    </report>
+    <sql>
+      select mime_string, count(1) cnt from
+      profiles p
+      join mimes m on m.mime_id = p.mime_id
+      where is_embedded=false
+      group by mime_string
+      order by cnt desc
+    </sql>
+  </report>
 
-    <report reportName="Embedded Mimes"
-            reportFilename="mimes/embedded_mimes.xlsx"
-            format="xlsx"
-            includeSql="true">
+  <report reportName="Embedded Mimes"
+          reportFilename="mimes/embedded_mimes.xlsx"
+          format="xlsx"
+          includeSql="true">
 
-        <sql>
-            select mime_string, count(1) cnt from
-            profiles p
-            join mimes m on m.mime_id = p.mime_id
-            where is_embedded=true
-            group by mime_string
-            order by cnt desc
-        </sql>
-    </report>
+    <sql>
+      select mime_string, count(1) cnt from
+      profiles p
+      join mimes m on m.mime_id = p.mime_id
+      where is_embedded=true
+      group by mime_string
+      order by cnt desc
+    </sql>
+  </report>
 
-    <!-- content -->
-    <report reportName="Common Tokens by Lang"
-            reportFilename="content/common_tokens_by_lang.xlsx"
-            format="xlsx"
-            includeSql="true">
+  <!-- content -->
+  <report reportName="Common Tokens by Lang"
+          reportFilename="content/common_tokens_by_lang.xlsx"
+          format="xlsx"
+          includeSql="true">
 
-        <sql>
-            select common_tokens_lang, sum(num_common_tokens) as cnt
-            from contents
-            group by common_tokens_lang
-            order by cnt desc;
-        </sql>
-    </report>
+    <sql>
+      select common_tokens_lang, sum(num_common_tokens) as cnt
+      from contents
+      group by common_tokens_lang
+      order by cnt desc;
+    </sql>
+  </report>
 
-    <report reportName="Detected Languages"
-            reportFilename="content/detected_langs.xlsx"
-            format="xlsx"
-            includeSql="true">
+  <report reportName="Detected Languages"
+          reportFilename="content/detected_langs.xlsx"
+          format="xlsx"
+          includeSql="true">
 
-        <sql>
-            select LANG_ID_1 as DetectedLang, count(1) as cnt
-            from contents
-            group by LANG_ID_1
-            order by cnt desc
-        </sql>
-    </report>
-
-
-    <report reportName="Token Count by Detected Language"
-            reportFilename="content/num_tokens_by_detected_langs.xlsx"
-            format="xlsx"
-            includeSql="true">
-
-        <sql>
-            select LANG_ID_1 as DetectedLang, sum(num_tokens) as cnt
-            from contents
-            group by LANG_ID_1
-            order by cnt desc;
-        </sql>
-    </report>
-
-    <report reportName="Common Tokens Divided by Alphabetic Tokens"
-            reportFilename="content/common_tokens_div_alphabetic_exclude_media_and_zips.xlsx"
-            format="xlsx"
-            includeSql="true">
-        <!-- 0.50 is a complete heuristic -->
-        <sql>
-            select file_path, file_name, is_embedded,
-            mime_string, lang_id_1, common_tokens_lang,
-            num_tokens, num_alphabetic_tokens, num_common_tokens,
-            case
-                when num_alphabetic_tokens &gt; 0
-                then cast(num_common_tokens as double)/cast(num_alphabetic_tokens as double)
-                else 0
-            end as common_div_alphabetic
-            from contents c
-            join profiles p on p.id=c.id
-            join containers ct on ct.container_id=p.container_id
-            join mimes m on p.mime_id=m.mime_id
-            where
-                (num_alphabetic_tokens = 0
-                    or cast(num_common_tokens as double)/cast(num_alphabetic_tokens as double) &lt; 0.50
-                )
-            and mime_string not like 'image%'
-            and mime_string not like 'video%'
-            and mime_string not like 'audio%'
-            and mime_string not like 'application/zip'
-            order by common_div_alphabetic asc
-            limit 10000
-        </sql>
-    </report>
+    <sql>
+      select LANG_ID_1 as DetectedLang, count(1) as cnt
+      from contents
+      group by LANG_ID_1
+      order by cnt desc
+    </sql>
+  </report>
 
 
-    <!-- MSWord files do not usually store actual # of pages; rather, they store 1 or 0,
-         and the actual number is calculated dynamically by the
-         application when the file is loaded.  This will lead to some crazily high
-         tokens/page counts for MSWord files, but the focus of this query is on the low end.
+  <report reportName="Token Count by Detected Language"
+          reportFilename="content/num_tokens_by_detected_langs.xlsx"
+          format="xlsx"
+          includeSql="true">
+
+    <sql>
+      select LANG_ID_1 as DetectedLang, sum(num_tokens) as cnt
+      from contents
+      group by LANG_ID_1
+      order by cnt desc;
+    </sql>
+  </report>
+
+  <report reportName="Common Tokens Divided by Alphabetic Tokens"
+          reportFilename="content/common_tokens_div_alphabetic_exclude_media_and_zips.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <!-- 0.50 is a complete heuristic -->
+    <sql>
+      select file_path, file_name, is_embedded,
+      mime_string, lang_id_1, common_tokens_lang,
+      num_tokens, num_alphabetic_tokens, num_common_tokens,
+      case
+      when num_alphabetic_tokens &gt; 0
+      then cast(num_common_tokens as double)/cast(num_alphabetic_tokens as double)
+      else 0
+      end as common_div_alphabetic
+      from contents c
+      join profiles p on p.id=c.id
+      join containers ct on ct.container_id=p.container_id
+      join mimes m on p.mime_id=m.mime_id
+      where
+      (num_alphabetic_tokens = 0
+      or cast(num_common_tokens as double)/cast(num_alphabetic_tokens as double) &lt; 0.50
+      )
+      and mime_string not like 'image%'
+      and mime_string not like 'video%'
+      and mime_string not like 'audio%'
+      and mime_string not like 'application/zip'
+      order by common_div_alphabetic asc
+      limit 10000
+    </sql>
+  </report>
+
+
+  <!-- MSWord files do not usually store actual # of pages; rather, they store 1 or 0,
+       and the actual number is calculated dynamically by the
+       application when the file is loaded.  This will lead to some crazily high
+       tokens/page counts for MSWord files, but the focus of this query is on the low end.
+  -->
+  <report reportName="Tokens Per Page"
+          reportFilename="content/tokens_per_page_in_container_files.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select file_path, mime_string, num_tokens,
+      num_pages,
+      case
+      when num_tokens = 0
+      then 0
+      else
+      cast(num_tokens as double)/cast(num_pages as double)
+      end as num_tokens_div_num_pages
+      from profiles p
+      left join contents c on p.id=c.id
+      join mimes m on p.mime_id = m.mime_id
+      join containers ct on p.container_id=ct.container_id
+      where num_pages is not null and num_pages &gt; 0
+      and is_embedded=false
+      order by num_tokens_div_num_pages asc
+      limit 1000
+    </sql>
+  </report>
+
+  <report reportName="Exceptions by Type"
+          reportFilename="exceptions/exceptions_by_type.xlsx"
+          format="xlsx"
+          includeSql="true">
+
+    <sql>
+      select parse_exception_description, count(1) cnt
+      from parse_exceptions e
+      join profiles p on p.id = e.id
+      join ref_parse_exception_types et on et.parse_exception_id=e.parse_exception_id
+      group by parse_exception_description
+      order by cnt desc;
+    </sql>
+  </report>
+
+
+  <report reportName="Embedded Exceptions by Type"
+          reportFilename="exceptions/exceptions_by_type_embedded.xlsx"
+          format="xlsx"
+          includeSql="true">
+
+    <sql>
+      select parse_exception_description, count(1) cnt
+      from parse_exceptions e
+      join profiles p on p.id = e.id
+      join ref_parse_exception_types et on et.parse_exception_id=e.parse_exception_id
+      where is_embedded=true
+      group by parse_exception_description
+      order by cnt desc;
+    </sql>
+  </report>
+
+  <report reportName="AllExceptionsByMimeByType"
+          reportFilename="exceptions/exceptions_by_mime_by_type.xlsx"
+          format="xlsx"
+          includeSql="true">
+
+    <sql>
+      select mime_string as MIME_TYPE,
+      parse_exception_description as EXCEPTION_TYPE, count(1) as COUNT
+      from parse_exceptions e
+      join profiles p on p.id=e.id
+      join containers c on p.container_id=c.container_id
+      join mimes m on m.mime_id=p.mime_id
+      join ref_parse_exception_types r on
+      r.parse_exception_id=e.parse_exception_id
+      group by p.mime_id, parse_exception_description
+      order by MIME_TYPE, EXCEPTION_TYPE
+    </sql>
+  </report>
+
+  <report reportName="StackTracesByMime"
+          reportFilename="exceptions/stack_traces_by_mime.xlsx"
+          format="xlsx"
+          includeSql="true">
+
+    <sql>
+      select MIME_STRING as MIME_TYPE, e.sort_stack_trace, count(1) as
+      COUNT
+      from parse_exceptions e
+      join profiles p on p.id=e.id
+      join mimes m on m.mime_id=p.mime_id
+      and e.parse_exception_id=0
+      group by MIME_TYPE, e.sort_stack_trace
+      order by MIME_TYPE asc, COUNT desc
+    </sql>
+  </report>
+
+  <report reportName="AllStackTraces"
+          reportFilename="exceptions/stack_traces_details.xlsx"
+          format="xlsx"
+          includeSql="true">
+
+    <sql>
+      select file_path,
+      file_name, is_embedded,
+      c.length as CONTAINER_LENGTH,
+      mime_string as MIME_TYPE,
+      orig_stack_trace, sort_stack_trace
+      from parse_exceptions e
+      join profiles p on p.id=e.id
+      join containers c on p.container_id=c.container_id
+      join mimes m on m.mime_id=p.mime_id
+      and e.parse_exception_id=0
+      order by MIME_TYPE asc, sort_stack_trace, orig_stack_trace,
+      CONTAINER_LENGTH asc
+    </sql>
+  </report>
+  <report reportName="TagExceptionsByMime"
+          reportFilename="tags/tag_exceptions_by_mime.xlsx"
+          format="xlsx"
+          includeSql="true">
+
+    <sql>
+      select mime_string, count(1) as CNT
+      from tags t
+      join profiles p on p.id=t.id
+      join mimes m on p.mime_id=m.mime_id
+      where tags_parse_exception=TRUE
+      group by mime_string
+      order by CNT desc
+    </sql>
+  </report>
+  <report reportName="Tag Exceptions Details"
+          reportFilename="tags/tag_exceptions_details.xlsx"
+          format="xlsx"
+          includeSql="true">
+
+    <sql>
+      select c.file_path,p.file_name,mime_string,is_embedded from
+      tags t
+      join profiles p on t.id=p.id
+      join containers c on p.container_id=c.container_id
+      join mimes m on p.mime_id=m.mime_id
+      where t.tags_parse_exception=true
+      order by m.mime_string
+      limit 20000
+    </sql>
+  </report>
+  <report reportName="Tags by Mime"
+          reportFilename="tags/tags_by_mime.xlsx"
+          format="xlsx"
+          includeSql="true">
+
+    <sql>
+      select mime_string,
+      sum(tags_a) as tags_a,
+      sum(tags_b) as tags_b,
+      sum(tags_div) as tags_div,
+      sum(tags_i) as tags_i,
+      sum(tags_img) as tags_img,
+      sum(tags_li) as tags_li,
+      sum(tags_ol) as tags_ol,
+      sum(tags_p) as tags_p,
+      sum(tags_table) as tags_table,
+      sum(tags_td) as tags_td,
+      sum(tags_title) as tags_title,
+      sum(tags_tr) as tags_tr,
+      sum(tags_u) as tags_u,
+      sum(tags_ul) as tags_ul
+
+      from tags t
+      join profiles p on t.id=p.id
+      join mimes m on p.mime_id=m.mime_id
+      where tags_parse_exception=false
+      group by m.mime_id
+    </sql>
+
+  </report>
+  <after>
+
+    <!--<sql>drop index on x</sql>
     -->
-    <report reportName="Tokens Per Page"
-            reportFilename="content/tokens_per_page_in_container_files.xlsx"
-            format="xlsx"
-            includeSql="true">
-        <sql>
-            select file_path, mime_string, num_tokens,
-            num_pages,
-            case
-                when num_tokens = 0
-                    then 0
-                else
-                    cast(num_tokens as double)/cast(num_pages as double)
-            end as num_tokens_div_num_pages
-            from profiles p
-            left join contents c on p.id=c.id
-            join mimes m on p.mime_id = m.mime_id
-            join containers ct on p.container_id=ct.container_id
-            where num_pages is not null and num_pages &gt; 0
-            and is_embedded=false
-            order by num_tokens_div_num_pages asc
-            limit 1000
-        </sql>
-    </report>
-
-    <report reportName="Exceptions by Type"
-            reportFilename="exceptions/exceptions_by_type.xlsx"
-            format="xlsx"
-            includeSql="true">
-
-        <sql>
-            select parse_exception_description, count(1) cnt
-            from parse_exceptions e
-            join profiles p on p.id = e.id
-            join ref_parse_exception_types et on et.parse_exception_id=e.parse_exception_id
-            group by parse_exception_description
-            order by cnt desc;
-        </sql>
-    </report>
-
-
-    <report reportName="Embedded Exceptions by Type"
-            reportFilename="exceptions/exceptions_by_type_embedded.xlsx"
-            format="xlsx"
-            includeSql="true">
-
-        <sql>
-            select parse_exception_description, count(1) cnt
-            from parse_exceptions e
-            join profiles p on p.id = e.id
-            join ref_parse_exception_types et on et.parse_exception_id=e.parse_exception_id
-            where is_embedded=true
-            group by parse_exception_description
-            order by cnt desc;
-        </sql>
-    </report>
-
-    <report reportName="AllExceptionsByMimeByType"
-            reportFilename="exceptions/exceptions_by_mime_by_type.xlsx"
-            format="xlsx"
-            includeSql="true">
-
-        <sql>
-            select mime_string as MIME_TYPE,
-            parse_exception_description as EXCEPTION_TYPE, count(1) as COUNT
-            from parse_exceptions e
-            join profiles p on p.id=e.id
-            join containers c on p.container_id=c.container_id
-            join mimes m on m.mime_id=p.mime_id
-            join ref_parse_exception_types r on
-            r.parse_exception_id=e.parse_exception_id
-            group by p.mime_id, parse_exception_description
-            order by MIME_TYPE, EXCEPTION_TYPE
-        </sql>
-    </report>
-
-    <report reportName="StackTracesByMime"
-            reportFilename="exceptions/stack_traces_by_mime.xlsx"
-            format="xlsx"
-            includeSql="true">
-
-        <sql>
-            select MIME_STRING as MIME_TYPE, e.sort_stack_trace, count(1) as
-            COUNT
-            from parse_exceptions e
-            join profiles p on p.id=e.id
-            join mimes m on m.mime_id=p.mime_id
-            and e.parse_exception_id=0
-            group by MIME_TYPE, e.sort_stack_trace
-            order by MIME_TYPE asc, COUNT desc
-        </sql>
-    </report>
-
-    <report reportName="AllStackTraces"
-            reportFilename="exceptions/stack_traces_details.xlsx"
-            format="xlsx"
-            includeSql="true">
-
-        <sql>
-            select file_path,
-            file_name, is_embedded,
-            c.length as CONTAINER_LENGTH,
-            mime_string as MIME_TYPE,
-            orig_stack_trace, sort_stack_trace
-            from parse_exceptions e
-            join profiles p on p.id=e.id
-            join containers c on p.container_id=c.container_id
-            join mimes m on m.mime_id=p.mime_id
-            and e.parse_exception_id=0
-            order by MIME_TYPE asc, sort_stack_trace, orig_stack_trace,
-            CONTAINER_LENGTH asc
-        </sql>
-    </report>
-    <report reportName="TagExceptionsByMime"
-        reportFilename="tags/tag_exceptions_by_mime.xlsx"
-        format="xlsx"
-        includeSql="true">
-
-        <sql>
-            select mime_string, count(1) as CNT
-            from tags t
-            join profiles p on p.id=t.id
-            join mimes m on p.mime_id=m.mime_id
-            where tags_parse_exception=TRUE
-            group by mime_string
-            order by CNT desc
-        </sql>
-    </report>
-    <report reportName="Tag Exceptions Details"
-            reportFilename="tags/tag_exceptions_details.xlsx"
-            format="xlsx"
-            includeSql="true">
-
-        <sql>
-            select c.file_path,p.file_name,mime_string,is_embedded from
-            tags t
-            join profiles p on t.id=p.id
-            join containers c on p.container_id=c.container_id
-            join mimes m on p.mime_id=m.mime_id
-            where t.tags_parse_exception=true
-            order by m.mime_string
-            limit 20000
-        </sql>
-    </report>
-    <report reportName="Tags by Mime"
-            reportFilename="tags/tags_by_mime.xlsx"
-            format="xlsx"
-            includeSql="true">
-
-        <sql>
-            select mime_string,
-            sum(tags_a) as tags_a,
-            sum(tags_b) as tags_b,
-            sum(tags_div) as tags_div,
-            sum(tags_i) as tags_i,
-            sum(tags_img) as tags_img,
-            sum(tags_li) as tags_li,
-            sum(tags_ol) as tags_ol,
-            sum(tags_p) as tags_p,
-            sum(tags_table) as tags_table,
-            sum(tags_td) as tags_td,
-            sum(tags_title) as tags_title,
-            sum(tags_tr) as tags_tr,
-            sum(tags_u) as tags_u,
-            sum(tags_ul) as tags_ul
-
-            from tags t
-            join profiles p on t.id=p.id
-            join mimes m on p.mime_id=m.mime_id
-            where tags_parse_exception=false
-            group by m.mime_id
-        </sql>
-
-    </report>
-    <after>
-
-        <!--<sql>drop index on x</sql>
-        -->
-    </after>
+  </after>
 </reports>

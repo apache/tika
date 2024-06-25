@@ -85,14 +85,15 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
         super.parserPrepare(parser, metadata, context);
 
         // Specify which charset to try
-        String charset = context.get(CharsetTester.class).getNextCharset();
+        String charset = context
+                .get(CharsetTester.class)
+                .getNextCharset();
         Charset charsetCS = Charset.forName(charset);
         context.set(EncodingDetector.class, new NonDetectingEncodingDetector(charsetCS));
     }
 
     @Override
-    protected boolean parserCompleted(Parser parser, Metadata metadata, ContentHandler handler,
-                                      ParseContext context, Exception exception) {
+    protected boolean parserCompleted(Parser parser, Metadata metadata, ContentHandler handler, ParseContext context, Exception exception) {
         // Get the current charset
         CharsetTester charsetTester = context.get(CharsetTester.class);
         String charset = charsetTester.getCurrentCharset();
@@ -110,8 +111,7 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
                     String text = charsetTester.charsetText.get(pcharset);
                     int cEnglish = 0;
                     for (char c : text.toCharArray()) {
-                        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-                                (c >= '0' && c <= '9')) {
+                        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
                             cEnglish++;
                         }
                     }
@@ -129,8 +129,7 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata originalMetadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata originalMetadata, ParseContext context) throws IOException, SAXException, TikaException {
         // Use a BodyContentHandler for each of the charset test,
         //  then their real ContentHandler for the last one
         CharsetContentHandlerFactory handlerFactory = new CharsetContentHandlerFactory();
@@ -144,8 +143,7 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandlerFactory handlers, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandlerFactory handlers, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
         // We only work with one ContentHandler as far as the user is
         //  concerned, any others are purely internal!
         parse(stream, handlers.getNewContentHandler(), metadata, context);
@@ -165,6 +163,7 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
             }
             return handler;
         }
+
         @Override
         public ContentHandler getNewContentHandler(OutputStream os, Charset charset) {
             return getNewContentHandler();

@@ -55,8 +55,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertFalse(driver.isUserInterrupted());
         assertEquals(5, countChildren(outputDir));
 
-        assertContains("first test file",
-                readFileToString(outputDir.resolve("test2_ok.xml.xml"), UTF_8));
+        assertContains("first test file", readFileToString(outputDir.resolve("test2_ok.xml.xml"), UTF_8));
     }
 
     @Test
@@ -74,8 +73,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         //could be one or two depending on timing
         assertTrue(driver.getNumRestarts() > 0);
         assertFalse(driver.isUserInterrupted());
-        assertContains("first test file",
-                readFileToString(outputDir.resolve("test6_ok.xml.xml"), UTF_8));
+        assertContains("first test file", readFileToString(outputDir.resolve("test6_ok.xml.xml"), UTF_8));
     }
 
     @Test
@@ -116,8 +114,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         driver.execute();
         assertEquals(1, driver.getNumRestarts());
         assertFalse(driver.isUserInterrupted());
-        assertContains("first test file",
-                readFileToString(outputDir.resolve("test2_ok.xml.xml"), UTF_8));
+        assertContains("first test file", readFileToString(outputDir.resolve("test2_ok.xml.xml"), UTF_8));
     }
 
     @Test
@@ -135,8 +132,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         driver.execute();
         assertEquals(3, driver.getNumRestarts());
         assertFalse(driver.isUserInterrupted());
-        assertContains("first test file",
-                readFileToString(outputDir.resolve("test6_ok.xml.xml"), UTF_8));
+        assertContains("first test file", readFileToString(outputDir.resolve("test6_ok.xml.xml"), UTF_8));
     }
 
     @Test
@@ -229,13 +225,11 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertEquals(6, countChildren(outputDir));
         assertTrue(driver.getNumRestarts() > 1);
         for (int i = 0; i < 3; i++) {
-            assertEquals(0, Files.size(outputDir.resolve("test" + i + "_system_exit.xml.xml")),
-                    "problem with " + i);
+            assertEquals(0, Files.size(outputDir.resolve("test" + i + "_system_exit.xml.xml")), "problem with " + i);
         }
         //sys exit may prevent test3 from running successfully
         for (int i = 5; i < 6; i++) {
-            assertContains("first test file",
-                    readFileToString(outputDir.resolve("test" + i + "_ok.xml.xml"), UTF_8));
+            assertContains("first test file", readFileToString(outputDir.resolve("test" + i + "_ok.xml.xml"), UTF_8));
         }
     }
 
@@ -253,14 +247,11 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertEquals(6, countChildren(outputDir));
 
         for (int i = 0; i < 3; i++) {
-            assertEquals(0,
-                    Files.size(outputDir.resolve("test" + i + "_thread_interrupt.xml.xml")),
-                    "problem with " + i);
+            assertEquals(0, Files.size(outputDir.resolve("test" + i + "_thread_interrupt.xml.xml")), "problem with " + i);
         }
         //sys exit may prevent test3 from running successfully
         for (int i = 5; i < 6; i++) {
-            assertContains("first test file",
-                    readFileToString(outputDir.resolve("test" + i + "_ok.xml.xml"), UTF_8));
+            assertContains("first test file", readFileToString(outputDir.resolve("test" + i + "_ok.xml.xml"), UTF_8));
         }
     }
 

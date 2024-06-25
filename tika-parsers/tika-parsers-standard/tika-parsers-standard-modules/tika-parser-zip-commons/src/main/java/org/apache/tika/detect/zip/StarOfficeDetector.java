@@ -91,7 +91,7 @@ public class StarOfficeDetector implements ZipContainerDetector {
         //"as is" can cause the iteration of the entries to stop early
         //without exception or warning.  So, copy the full stream, then
         //process.  TIKA-3061
-        UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
         BoundedInputStream bis = new BoundedInputStream(MAX_MANIFEST, zis);
         IOUtils.copy(bis, bos);
 

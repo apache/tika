@@ -34,23 +34,17 @@ import org.apache.tika.exception.TikaConfigException;
 public class TikaServerClientConfig extends ConfigBase implements Initializable {
 
 
-    public static TikaServerClientConfig build(Path configFile)
-            throws IOException, TikaConfigException {
-        try (InputStream is = Files.newInputStream(configFile)) {
-            return buildSingle("serverClientConfig", TikaServerClientConfig.class, is);
-        }
-    }
-
-    enum MODE {
-        PIPES, ASYNC
-    }
-
     private HttpClientFactory httpClientFactory;
     private int numThreads = 1;
     private MODE mode = MODE.PIPES;
     private List<String> tikaEndpoints = new ArrayList<>();
-
     private long maxWaitMillis = 60000;
+
+    public static TikaServerClientConfig build(Path configFile) throws IOException, TikaConfigException {
+        try (InputStream is = Files.newInputStream(configFile)) {
+            return buildSingle("serverClientConfig", TikaServerClientConfig.class, is);
+        }
+    }
 
     public long getMaxWaitMillis() {
         return maxWaitMillis;
@@ -65,14 +59,6 @@ public class TikaServerClientConfig extends ConfigBase implements Initializable 
      */
     public void setMaxWaitMillis(long maxWaitMs) {
         this.maxWaitMillis = maxWaitMs;
-    }
-
-    public void setMode(String mode) {
-        if ("pipes".equals(mode)) {
-            this.mode = MODE.PIPES;
-            return;
-        }
-        throw new IllegalArgumentException("I regret that we have not yet implemented: '" + mode + "'");
     }
 
     public HttpClientFactory getHttpClientFactory() {
@@ -95,6 +81,14 @@ public class TikaServerClientConfig extends ConfigBase implements Initializable 
         return mode;
     }
 
+    public void setMode(String mode) {
+        if ("pipes".equals(mode)) {
+            this.mode = MODE.PIPES;
+            return;
+        }
+        throw new IllegalArgumentException("I regret that we have not yet implemented: '" + mode + "'");
+    }
+
     public List<String> getTikaEndpoints() {
         return tikaEndpoints;
     }
@@ -109,10 +103,13 @@ public class TikaServerClientConfig extends ConfigBase implements Initializable 
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         if (tikaEndpoints.size() == 0) {
             throw new TikaConfigException("tikaEndpoints must not be empty");
         }
+    }
+
+    enum MODE {
+        PIPES, ASYNC
     }
 }

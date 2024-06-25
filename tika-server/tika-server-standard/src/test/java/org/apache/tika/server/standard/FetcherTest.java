@@ -37,8 +37,8 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.FetcherStreamFactory;
 import org.apache.tika.server.core.InputStreamFactory;
@@ -57,8 +57,7 @@ public class FetcherTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(RecursiveMetadataResource.class);
-        sf.setResourceProvider(RecursiveMetadataResource.class,
-                new SingletonResourceProvider(new RecursiveMetadataResource()));
+        sf.setResourceProvider(RecursiveMetadataResource.class, new SingletonResourceProvider(new RecursiveMetadataResource()));
     }
 
     @Override
@@ -85,12 +84,15 @@ public class FetcherTest extends CXFTestBase {
 
     @Test
     public void testBasic() throws Exception {
-        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
-                .acceptEncoding("gzip").header("fetcherName", "url")
-                .header("fetchKey", "https://tika.apache.org").put("");
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .acceptEncoding("gzip")
+                .header("fetcherName", "url")
+                .header("fetchKey", "https://tika.apache.org")
+                .put("");
 
-        Reader reader = new InputStreamReader(
-                new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
+        Reader reader = new InputStreamReader(new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         Metadata parent = metadataList.get(0);
         String txt = parent.get(TikaCoreProperties.TIKA_CONTENT);

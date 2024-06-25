@@ -1,0 +1,13 @@
+BEGIN:VCALENDAR
+PRODID:-//Example Corp//iCalendar Export//EN
+VERSION:2.0
+BEGIN:VEVENT
+UID:1234567890@example.com
+DTSTAMP:20240101T080000Z
+DTSTART:20240101T100000Z
+DTEND:20240101T120000Z
+SUMMARY:Sample HTML Event
+DESCRIPTION:This is a sample event with an HTML description.
+X-ALT-DESC;FMTTYPE=text/html:<html><body><h1>Sample HTML Event</h1><p>This is a sample event with an <strong>HTML</strong> description.</p></body></html>
+END:VEVENT
+END:VCALENDAR

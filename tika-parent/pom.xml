@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>31</version>
+    <version>32</version>
     <relativePath />
   </parent>
 
@@ -283,85 +283,89 @@
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
+    <maven.compiler.release>11</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <project.build.outputTimestamp>1701447467</project.build.outputTimestamp>
     <!-- plugin versions -->
-    <checkstyle.plugin.version>3.3.1</checkstyle.plugin.version>
+    <checkstyle.plugin.version>3.4.0</checkstyle.plugin.version>
     <forbiddenapis.version>3.7</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.7.1</maven.assembly.version>
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
-    <maven.failsafe.version>3.2.5</maven.failsafe.version>
-    <maven.surefire.version>3.2.5</maven.surefire.version>
-    <maven.javadoc.version>3.6.3</maven.javadoc.version>
-    <maven.jar.version>3.3.0</maven.jar.version>
+    <maven.failsafe.version>3.3.0</maven.failsafe.version>
+    <maven.surefire.version>3.3.0</maven.surefire.version>
+    <maven.javadoc.version>3.7.0</maven.javadoc.version>
+    <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
-    <maven.shade.version>3.5.2</maven.shade.version>
-    <maven.project.info.reports.version>3.5.0</maven.project.info.reports.version>
-    <puppycrawl.version>10.14.2</puppycrawl.version>
+    <maven.shade.version>3.6.0</maven.shade.version>
+    <maven.project.info.reports.version>3.6.0</maven.project.info.reports.version>
+    <puppycrawl.version>10.16.0</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
-    <scm.version>2.0.1</scm.version>
+    <scm.version>2.1.0</scm.version>
 
     <!-- dependency versions -->
-    <asm.version>9.7</asm.version>
-    <aws.version>1.12.693</aws.version>
+    <!-- change threetenbp exclusion version -->
+    <google.cloud.version>2.40.0</google.cloud.version>
+    <aws.version>1.12.748</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
-    <azure.core.version>1.47.0</azure.core.version>
-    <azure.core.http.netty.version>1.14.1</azure.core.http.netty.version>
-    <azure.storage.blob.version>12.25.3</azure.storage.blob.version>
+    <asm.version>9.7</asm.version>
+    <azure.core.version>1.49.1</azure.core.version>
+    <azure.core.http.netty.version>1.15.1</azure.core.http.netty.version>
+    <azure.storage.blob.version>12.26.1</azure.storage.blob.version>
     <!-- 7.0.0 needs java 17 -->
     <biz.aqute.version>6.4.1</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
-    <bouncycastle.version>1.77</bouncycastle.version>
+    <bouncycastle.version>1.78.1</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <c3p0.version>0.9.5.5</c3p0.version>
-    <commons.cli.version>1.6.0</commons.cli.version>
-    <commons.codec.version>1.16.1</commons.codec.version>
-    <commons.collections4.version>4.4</commons.collections4.version>
-    <commons.compress.version>1.26.1</commons.compress.version>
-    <commons.csv.version>1.10.0</commons.csv.version>
+    <c3p0.version>0.10.1</c3p0.version>
+    <commons.cli.version>1.8.0</commons.cli.version>
+    <commons.codec.version>1.17.0</commons.codec.version>
+    <commons.collections4.version>4.5.0-M2</commons.collections4.version>
+    <commons.compress.version>1.26.2</commons.compress.version>
+    <commons.csv.version>1.11.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
-    <commons.io.version>2.16.0</commons.io.version>
+    <commons.io.version>2.16.1</commons.io.version>
     <commons.lang3.version>3.14.0</commons.lang3.version>
-    <commons.logging.version>1.3.1</commons.logging.version>
+    <commons.logging.version>1.3.2</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
-    <commons.net.version>3.10.0</commons.net.version>
-    <ctakes.version>4.0.0.1</ctakes.version>
+    <commons.net.version>3.11.1</commons.net.version>
+    <ctakes.version>5.1.0</ctakes.version>
     <cxf.version>4.0.4</cxf.version>
     <ddplist.version>1.28</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
     <fastutil.version>8.5.13</fastutil.version>
     <felix.scr.version>1.12.0</felix.scr.version>
-    <freemarker.version>2.3.32</freemarker.version>
+    <freemarker.version>2.3.33</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
-    <google.cloud.version>2.36.1</google.cloud.version>
-    <gson.version>2.10.1</gson.version>
-    <guava.version>33.1.0-jre</guava.version>
+    <gson.version>2.11.0</gson.version>
+    <guava.version>33.2.1-jre</guava.version>
     <h2.version>2.2.224</h2.version>
+    <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
-    <icu4j.version>74.2</icu4j.version>
+    <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
-    <jackrabbit.version>2.21.25</jackrabbit.version>
-    <jackson.version>2.17.0</jackson.version>
-    <jackcess.version>4.0.5</jackcess.version>
+    <jackrabbit.version>2.22.0</jackrabbit.version>
+    <jackson.version>2.17.1</jackson.version>
+    <jackcess.version>4.0.6</jackcess.version>
     <jackcess.encrypt.version>4.0.2</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
     <jakarta.activation.version>2.1.3</jakarta.activation.version>
-    <jakarta.annotation.version>3.0.0-M1</jakarta.annotation.version>
+    <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
+    <!-- can't update to 4.0.0, needs jdk17 -->
     <jakarta.ws.rs.version>3.1.0</jakarta.ws.rs.version>
     <jakarta.xml.bind.version>4.0.2</jakarta.xml.bind.version>
-    <jakarta.xml.soap.version>3.0.1</jakarta.xml.soap.version>
+    <jakarta.xml.soap.version>3.0.2</jakarta.xml.soap.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
     <jaxb.runtime.version>4.0.5</jaxb.runtime.version>
@@ -370,31 +374,32 @@
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
     <!-- 12.0.* needs java 17 -->
-    <jetty.version>11.0.20</jetty.version>
+    <jetty.version>11.0.21</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.14.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <jsoup.version>1.17.2</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.10.2</junit5.version>
-    <juniversalchardet.version>2.4.0</juniversalchardet.version>
+    <junit5.version>5.11.0-M2</junit5.version>
+    <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.29.0</jwarc.version>
     <kafka.version>3.7.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.23.1</log4j2.version>
-    <lucene.version>9.10.0</lucene.version>
-    <maven.plugin.annotations.version>3.11.0</maven.plugin.annotations.version>
-    <mchange.version>0.3.0</mchange.version>
+    <lucene.version>9.11.0</lucene.version>
+    <maven.plugin.annotations.version>3.13.1</maven.plugin.annotations.version>
+    <mchange.version>0.3.1</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.11</mime4j.version>
-    <mockito.version>5.11.0</mockito.version>
+    <mockito.version>5.12.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.1.108.Final</netty.version>
-    <oak.jackrabbit.version>1.60.0</oak.jackrabbit.version>
+    <netty.version>4.1.111.Final</netty.version>
+    <oak.jackrabbit.version>1.64.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
+    <!-- 2.3.0 requires jdk17 -->
     <opennlp.version>2.2.0</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
@@ -404,39 +409,39 @@
     <parso.version>2.0.14</parso.version>
     <pax.exam.version>4.13.5</pax.exam.version>
     <pdfbox.version>3.0.2</pdfbox.version>
-    <plexus.version>5.0.0</plexus.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>5.2.5</poi.version>
     <protobuf.version>3.25.3</protobuf.version>
     <quartz.version>2.3.2</quartz.version>
-    <reactor.core.version>3.6.4</reactor.core.version>
-    <reactor.netty.version>1.1.17</reactor.netty.version>
+    <reactor.core.version>3.6.7</reactor.core.version>
+    <reactor.netty.version>1.1.20</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
-    <scm.version>2.0.1</scm.version>
-    <slf4j.version>2.0.12</slf4j.version>
+    <scm.version>2.1.0</scm.version>
+    <slf4j.version>2.0.13</slf4j.version>
     <sis.version>1.4</sis.version>
     <snappy.version>1.1.10.5</snappy.version>
     <solrj.version>8.11.3</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17  -->
-    <spring.version>5.3.33</spring.version>
-    <sqlite.version>3.45.2.0</sqlite.version>
+    <spring.version>5.3.37</spring.version>
+    <sqlite.version>3.46.0.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <tagsoup.version>1.2.1</tagsoup.version>
-    <testcontainers.version>1.19.7</testcontainers.version>
+    <testcontainers.version>1.19.8</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.9</tukaani.version>
-    <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
+    <twelvemonkeys.version>3.11.0</twelvemonkeys.version>
     <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
     <uimafit.version>3.4.0</uimafit.version>
     <uimaj.core.version>3.4.1</uimaj.core.version>
+    <uimaj.cpe.version>3.5.0</uimaj.cpe.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
-    <woodstox.core.version>6.6.2</woodstox.core.version>
+    <woodstox.core.version>7.0.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.4</zookeeper.version>
-    <logback.version>1.5.3</logback.version>
-    <zstd.version>1.5.6-1</zstd.version>
+    <logback.version>1.5.6</logback.version>
+    <zstd.version>1.5.6-3</zstd.version>
   </properties>
 
   <dependencyManagement>
@@ -752,6 +757,11 @@
         <version>${jakarta.xml.soap.version}</version>
       </dependency>
       <dependency>
+        <groupId>joda-time</groupId>
+        <artifactId>joda-time</artifactId>
+        <version>2.12.7</version>
+      </dependency>
+      <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
         <version>${junit4.version}</version>
@@ -856,7 +866,6 @@
       <dependency>
         <groupId>org.apache.opennlp</groupId>
         <artifactId>opennlp-tools</artifactId>
-        <!-- 2.3.0 requires java 17 -->
         <version>${opennlp.version}</version>
       </dependency>
       <dependency>
@@ -893,11 +902,6 @@
         <groupId>org.ccil.cowan.tagsoup</groupId>
         <artifactId>tagsoup</artifactId>
         <version>${tagsoup.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-utils</artifactId>
-        <version>${plexus.version}</version>
       </dependency>
       <dependency>
         <groupId>org.freemarker</groupId>
@@ -980,6 +984,12 @@
         <scope>provided</scope>
       </dependency>
       <dependency>
+        <groupId>org.apache.uima</groupId>
+        <artifactId>uimaj-cpe</artifactId>
+        <version>${uimaj.cpe.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
         <groupId>org.xerial.snappy</groupId>
         <artifactId>snappy-java</artifactId>
         <version>${snappy.version}</version>
@@ -1006,18 +1016,28 @@
           <artifactId>logback-classic</artifactId>
           <version>${logback.version}</version>
       </dependency>
-      <!-- convergence problems in Apache Tika Azure Blob fetcher,
-        might be removed after update of azure-storage-blob higher than 12.25.1  -->
-      <dependency>
-          <groupId>org.codehaus.woodstox</groupId>
-          <artifactId>stax2-api</artifactId>
-          <version>4.2.2</version>
-      </dependency>
-      <!-- because of convergence problems with jaxb 2.0.4, because cxf 4.0.3 uses an older version -->
+      <!-- because of convergence problems with jaxb 4.0.5, because cxf 4.0.4 uses an older version -->
       <dependency>
           <groupId>org.eclipse.angus</groupId>
           <artifactId>angus-activation</artifactId>
           <version>2.0.2</version>
+      </dependency>
+      <dependency>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>hdf5</artifactId>
+          <version>${hdf5.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>hdf5-platform</artifactId>
+          <version>${hdf5.version}</version>
+      </dependency>
+      <!-- avoid convergence problems related to 
+           google-cloud-storage:2.38.0 (2.26.1) and gson:2.11.0 (2.27.0) -->
+      <dependency>
+          <groupId>com.google.errorprone</groupId>
+          <artifactId>error_prone_annotations</artifactId>
+          <version>2.28.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -1109,6 +1129,36 @@
               <artifactId>uimaj-core</artifactId>
               <version>3.4.1</version>
             </coordinate>
+            <!-- provided dependency brought in by org.deeplearning4j:deeplearning4j-utility-iterators -->
+            <coordinate>
+              <groupId>org.threeten</groupId>
+              <artifactId>threetenbp</artifactId>
+              <version>1.3.3</version>
+            </coordinate>
+            <!-- brought in by gcs (google-cloud-storage) fetcher -->
+            <coordinate>
+              <groupId>org.threeten</groupId>
+              <artifactId>threetenbp</artifactId>
+              <version>1.6.9</version>
+            </coordinate>
+            <coordinate>
+              <groupId>joda-time</groupId>
+              <artifactId>joda-time</artifactId>
+              <version>2.12.7</version>
+            </coordinate>
+            <!-- while waiting for 1.14.4 to appear on maven central, see
+                 https://www.hdfgroup.org/2024/05/new-hdf5-cve-issues-fixed-in-1-14-4/
+            -->
+            <coordinate>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>hdf5</artifactId>
+                <version>1.14.3-1.5.10</version>
+            </coordinate>
+            <coordinate>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>hdf5-platform</artifactId>
+                <version>1.14.3-1.5.10</version>
+            </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
         </configuration>
@@ -1182,7 +1232,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>3.0.1</version>
+        <version>3.1.0</version>
         <configuration>
           <autoVersionSubmodules>true</autoVersionSubmodules>
         </configuration>
@@ -1202,7 +1252,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.4.1</version>
+        <version>3.5.0</version>
         <executions>
           <execution>
             <id>enforce-maven</id>
@@ -1340,6 +1390,7 @@
             <configuration>
               <doclint>none</doclint>
               <source>1.8</source>
+              <sourcepath>src/main/java</sourcepath>
             </configuration>
           </plugin>
         </plugins>

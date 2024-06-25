@@ -81,7 +81,7 @@ class RTFEmbObjHandler {
                                int memoryLimitInKb) {
         this.handler = handler;
         this.embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
-        os = new UnsynchronizedByteArrayOutputStream();
+        os = UnsynchronizedByteArrayOutputStream.builder().get();
         this.memoryLimitInKb = memoryLimitInKb;
     }
 

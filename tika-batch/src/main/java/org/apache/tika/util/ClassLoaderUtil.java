@@ -28,12 +28,12 @@ public class ClassLoaderUtil {
         try {
             clazz = loader.loadClass(className);
             if (iface.isAssignableFrom(clazz)) {
-                return (T) clazz.getDeclaredConstructor().newInstance();
+                return (T) clazz
+                        .getDeclaredConstructor()
+                        .newInstance();
             }
-            throw new IllegalArgumentException(
-                    iface + " is not assignable from " + className);
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                 NoSuchMethodException | InvocationTargetException e) {
+            throw new IllegalArgumentException(iface + " is not assignable from " + className);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
 

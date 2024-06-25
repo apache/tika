@@ -69,11 +69,13 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtPrivateKeyCreds;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtSecretCreds;
+import org.apache.tika.pipes.fetcher.http.config.AdditionalHttpHeaders;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -148,20 +150,36 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     private String userAgent = null;
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws IOException, TikaException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException {
         HttpGet get = new HttpGet(fetchKey);
         RequestConfig requestConfig =
                 RequestConfig.custom()
                         .setMaxRedirects(maxRedirects)
                         .setRedirectsEnabled(true).build();
         get.setConfig(requestConfig);
-        populateHeaders(get);
+        putAdditionalHeadersOnRequest(parseContext, get);
         return execute(get, metadata, httpClient, true);
     }
 
-    private void populateHeaders(HttpGet get) throws TikaException {
+    @Override
+    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata, ParseContext parseContext)
+            throws IOException, TikaException {
+        HttpGet get = new HttpGet(fetchKey);
+        putAdditionalHeadersOnRequest(parseContext, get);
+
+        get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
+        return execute(get, metadata, httpClient, true);
+    }
+
+    private void putAdditionalHeadersOnRequest(ParseContext parseContext, HttpGet get) {
         if (!StringUtils.isBlank(userAgent)) {
             get.setHeader(USER_AGENT, userAgent);
+        }
+        AdditionalHttpHeaders additionalHttpHeaders = parseContext.get(AdditionalHttpHeaders.class);
+        if (additionalHttpHeaders != null) {
+            additionalHttpHeaders
+                    .getHeaders()
+                    .forEach(get::setHeader);
         }
         if (jwtGenerator != null) {
             try {
@@ -170,15 +188,6 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                 throw new TikaException("Could not generate JWT", e);
             }
         }
-    }
-
-    @Override
-    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
-            throws IOException, TikaException {
-        HttpGet get = new HttpGet(fetchKey);
-        populateHeaders(get);
-        get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
-        return execute(get, metadata, httpClient, true);
     }
 
     private InputStream execute(HttpGet get, Metadata metadata, HttpClient client,
@@ -332,7 +341,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             return "";
         }
         try (InputStream is = response.getEntity().getContent()) {
-            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             IOUtils.copyLarge(is, bos, 0, maxErrMsgSize);
             return bos.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
@@ -534,4 +543,11 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         this.httpClientFactory = httpClientFactory;
     }
 
+    public void setHttpClient(HttpClient httpClient) {
+        this.httpClient = httpClient;
+    }
+
+    public HttpClient getHttpClient() {
+        return httpClient;
+    }
 }

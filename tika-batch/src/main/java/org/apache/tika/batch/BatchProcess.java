@@ -73,13 +73,14 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
     private int maxAliveTimeSeconds = -1;
     private boolean alreadyExecuted = false;
 
-    public BatchProcess(FileResourceCrawler fileResourceCrawler, ConsumersManager consumersManager,
-                        StatusReporter reporter, Interrupter interrupter) {
+    public BatchProcess(FileResourceCrawler fileResourceCrawler, ConsumersManager consumersManager, StatusReporter reporter, Interrupter interrupter) {
         this.fileResourceCrawler = fileResourceCrawler;
         this.consumersManager = consumersManager;
         this.reporter = reporter;
         this.interrupter = interrupter;
-        timedOuts = new ArrayBlockingQueue<>(consumersManager.getConsumers().size());
+        timedOuts = new ArrayBlockingQueue<>(consumersManager
+                .getConsumers()
+                .size());
         this.consumersManagerMaxMillis = consumersManager.getConsumersManagerMaxMillis();
     }
 
@@ -108,7 +109,9 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
 
         ParallelFileProcessingResult result = null;
         try {
-            int numConsumers = consumersManager.getConsumers().size();
+            int numConsumers = consumersManager
+                    .getConsumers()
+                    .size();
             // fileResourceCrawler, statusReporter, the Interrupter, timeoutChecker
             int numNonConsumers = 2;
             if (interrupter != null) {
@@ -119,17 +122,14 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
             }
 
             ExecutorService ex = Executors.newFixedThreadPool(numConsumers + numNonConsumers);
-            CompletionService<IFileProcessorFutureResult> completionService =
-                    new ExecutorCompletionService<>(ex);
+            CompletionService<IFileProcessorFutureResult> completionService = new ExecutorCompletionService<>(ex);
             TimeoutChecker timeoutChecker = new TimeoutChecker();
 
             try {
                 startConsumersManager();
             } catch (BatchNoRestartError e) {
-                return new ParallelFileProcessingResult(0, 0, 0, 0, 0,
-                        BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE,
-                        CAUSE_FOR_TERMINATION.CONSUMERS_MANAGER_DIDNT_INIT_IN_TIME_NO_RESTART
-                                .toString());
+                return new ParallelFileProcessingResult(0, 0, 0, 0, 0, BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE,
+                        CAUSE_FOR_TERMINATION.CONSUMERS_MANAGER_DIDNT_INIT_IN_TIME_NO_RESTART.toString());
 
             }
 
@@ -142,8 +142,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         return result;
     }
 
-    private State mainLoop(CompletionService<IFileProcessorFutureResult> completionService,
-                           TimeoutChecker timeoutChecker) {
+    private State mainLoop(CompletionService<IFileProcessorFutureResult> completionService, TimeoutChecker timeoutChecker) {
         alreadyExecuted = true;
         State state = new State();
         LOG.info("BatchProcess starting up");
@@ -162,13 +161,14 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
             completionService.submit(consumer);
         }
 
-        state.numConsumers = consumersManager.getConsumers().size();
+        state.numConsumers = consumersManager
+                .getConsumers()
+                .size();
         CAUSE_FOR_TERMINATION causeForTermination = null;
         //main processing loop
         while (true) {
             try {
-                Future<IFileProcessorFutureResult> futureResult =
-                        completionService.poll(1, TimeUnit.SECONDS);
+                Future<IFileProcessorFutureResult> futureResult = completionService.poll(1, TimeUnit.SECONDS);
 
                 if (futureResult != null) {
                     state.removed++;
@@ -212,9 +212,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         return state;
     }
 
-    private ParallelFileProcessingResult shutdown(ExecutorService ex,
-                                                  CompletionService<IFileProcessorFutureResult> completionService,
-                                                  TimeoutChecker timeoutChecker, State state) {
+    private ParallelFileProcessingResult shutdown(ExecutorService ex, CompletionService<IFileProcessorFutureResult> completionService, TimeoutChecker timeoutChecker, State state) {
 
         if (reporter != null) {
             reporter.setIsShuttingDown(true);
@@ -248,8 +246,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         //has shut down by now.
         LOG.trace("About to shutdownNow()");
         List<Runnable> neverCalled = ex.shutdownNow();
-        LOG.trace("TERMINATED {} : {} : {}", ex.isTerminated(), state.consumersRemoved,
-                state.crawlersRemoved);
+        LOG.trace("TERMINATED {} : {} : {}", ex.isTerminated(), state.consumersRemoved, state.crawlersRemoved);
 
         int end = state.numConsumers + state.numNonConsumers - state.removed - neverCalled.size();
 
@@ -271,16 +268,11 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
                     FileConsumerFutureResult consumerResult = (FileConsumerFutureResult) result;
                     FileStarted fileStarted = consumerResult.getFileStarted();
                     LOG.trace("file started " + fileStarted);
-                    if (fileStarted != null &&
-                            fileStarted.getElapsedMillis() > timeoutThresholdMillis) {
-                        LOG.warn(
-                                "{} caused a file processor to hang or crash. You may need to remove " +
-                                        "this file from your input set and rerun.",
-                                fileStarted.getResourceId());
+                    if (fileStarted != null && fileStarted.getElapsedMillis() > timeoutThresholdMillis) {
+                        LOG.warn("{} caused a file processor to hang or crash. You may need to remove " + "this file from your input set and rerun.", fileStarted.getResourceId());
                     }
                 } else if (result instanceof FileResourceCrawlerFutureResult) {
-                    FileResourceCrawlerFutureResult crawlerResult =
-                            (FileResourceCrawlerFutureResult) result;
+                    FileResourceCrawlerFutureResult crawlerResult = (FileResourceCrawlerFutureResult) result;
                     considered += crawlerResult.getConsidered();
                     added += crawlerResult.getAdded();
                 } //else ...we don't care about anything else stopping at this point
@@ -292,8 +284,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         }
         //do we need to restart?
         String restartMsg = null;
-        if (state.causeForTermination == CAUSE_FOR_TERMINATION.PARENT_SHUTDOWN ||
-                state.causeForTermination == CAUSE_FOR_TERMINATION.MAIN_LOOP_EXCEPTION_NO_RESTART) {
+        if (state.causeForTermination == CAUSE_FOR_TERMINATION.PARENT_SHUTDOWN || state.causeForTermination == CAUSE_FOR_TERMINATION.MAIN_LOOP_EXCEPTION_NO_RESTART) {
             //do not restart!!!
         } else if (state.causeForTermination == CAUSE_FOR_TERMINATION.MAIN_LOOP_EXCEPTION) {
             restartMsg = "Uncaught consumer throwable";
@@ -301,8 +292,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
             if (areResourcesPotentiallyRemaining()) {
                 restartMsg = "Consumer timed out with resources remaining";
             }
-        } else if (state.causeForTermination ==
-                CAUSE_FOR_TERMINATION.BATCH_PROCESS_ALIVE_TOO_LONG) {
+        } else if (state.causeForTermination == CAUSE_FOR_TERMINATION.BATCH_PROCESS_ALIVE_TOO_LONG) {
             restartMsg = BATCH_CONSTANTS.BATCH_PROCESS_EXCEEDED_MAX_ALIVE_TIME.toString();
         } else if (state.causeForTermination == CAUSE_FOR_TERMINATION.CRAWLER_TIMED_OUT) {
             restartMsg = "Crawler timed out.";
@@ -320,8 +310,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         timeoutChecker.checkForTimedOutConsumers();
 
         for (FileStarted fs : timedOuts) {
-            LOG.warn("A parser was still working on >{}< for {} milliseconds after it started. " +
-                            "This exceeds the maxTimeoutMillis parameter", fs.getResourceId(),
+            LOG.warn("A parser was still working on >{}< for {} milliseconds after it started. " + "This exceeds the maxTimeoutMillis parameter", fs.getResourceId(),
                     fs.getElapsedMillis());
         }
         double elapsed = ((double) System.currentTimeMillis() - (double) state.start) / 1000.0;
@@ -332,8 +321,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
             numExceptions += c.getNumHandledExceptions();
         }
         LOG.trace("returning " + state.causeForTermination);
-        return new ParallelFileProcessingResult(considered, added, processed, numExceptions,
-                elapsed, exitStatus, state.causeForTermination.toString());
+        return new ParallelFileProcessingResult(considered, added, processed, numExceptions, elapsed, exitStatus, state.causeForTermination.toString());
     }
 
     private void startConsumersManager() {
@@ -356,8 +344,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         }
         if (timed.isAlive()) {
             LOG.error("ConsumersManager did not start within {}ms", consumersManagerMaxMillis);
-            throw new BatchNoRestartError(
-                    "ConsumersManager did not start within " + consumersManagerMaxMillis + "ms");
+            throw new BatchNoRestartError("ConsumersManager did not start within " + consumersManagerMaxMillis + "ms");
         }
     }
 
@@ -380,9 +367,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         }
         if (timed.isAlive()) {
             LOG.error("ConsumersManager was still alive during shutdown!");
-            throw new BatchNoRestartError(
-                    "ConsumersManager did not shutdown within: " + consumersManagerMaxMillis +
-                            "ms");
+            throw new BatchNoRestartError("ConsumersManager did not shutdown within: " + consumersManagerMaxMillis + "ms");
         }
     }
 
@@ -406,9 +391,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
             }
             long elapsed = System.currentTimeMillis() - start;
             if (pauseOnEarlyTerminationMillis > -1 && elapsed > pauseOnEarlyTerminationMillis) {
-                LOG.warn(
-                        "Waited after an early termination for {}ms, but there was at least one active consumer",
-                        elapsed);
+                LOG.warn("Waited after an early termination for {}ms, but there was at least one active consumer", elapsed);
                 return;
             }
         }
@@ -429,17 +412,14 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         }
 
         if (restartMsg != null) {
-            if (restartMsg
-                    .equals(BATCH_CONSTANTS.BATCH_PROCESS_EXCEEDED_MAX_ALIVE_TIME.toString())) {
+            if (restartMsg.equals(BATCH_CONSTANTS.BATCH_PROCESS_EXCEEDED_MAX_ALIVE_TIME.toString())) {
                 LOG.warn(restartMsg);
             } else {
                 LOG.error(restartMsg);
             }
 
             //send over stdout wrapped in outputStreamWriter
-            outputStreamWriter.println(
-                    BATCH_CONSTANTS.BATCH_PROCESS_FATAL_MUST_RESTART.toString() + " >> " +
-                            restartMsg);
+            outputStreamWriter.println(BATCH_CONSTANTS.BATCH_PROCESS_FATAL_MUST_RESTART.toString() + " >> " + restartMsg);
             outputStreamWriter.flush();
             return BatchProcessDriverCLI.PROCESS_RESTART_EXIT_CODE;
         }
@@ -522,9 +502,8 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
     }
 
     private enum CAUSE_FOR_TERMINATION {
-        COMPLETED_NORMALLY, MAIN_LOOP_EXCEPTION_NO_RESTART,
-        CONSUMERS_MANAGER_DIDNT_INIT_IN_TIME_NO_RESTART, MAIN_LOOP_EXCEPTION, CRAWLER_TIMED_OUT,
-        TIMED_OUT_CONSUMER, PARENT_SHUTDOWN, BATCH_PROCESS_ALIVE_TOO_LONG,
+        COMPLETED_NORMALLY, MAIN_LOOP_EXCEPTION_NO_RESTART, CONSUMERS_MANAGER_DIDNT_INIT_IN_TIME_NO_RESTART, MAIN_LOOP_EXCEPTION, CRAWLER_TIMED_OUT, TIMED_OUT_CONSUMER,
+        PARENT_SHUTDOWN, BATCH_PROCESS_ALIVE_TOO_LONG,
     }
 
     private static class State {
@@ -535,6 +514,20 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         int consumersRemoved = 0;
         int crawlersRemoved = 0;
         CAUSE_FOR_TERMINATION causeForTermination = null;
+    }
+
+    private static class TimeoutFutureResult implements IFileProcessorFutureResult {
+        //used to be used when more than one timeout was allowed
+        //TODO: get rid of this?
+        private final int timedOutCount;
+
+        private TimeoutFutureResult(final int timedOutCount) {
+            this.timedOutCount = timedOutCount;
+        }
+
+        protected int getTimedOutCount() {
+            return timedOutCount;
+        }
     }
 
     private class TimeoutChecker implements Callable<IFileProcessorFutureResult> {
@@ -565,20 +558,6 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
                     timedOuts.add(fs);
                 }
             }
-        }
-    }
-
-    private static class TimeoutFutureResult implements IFileProcessorFutureResult {
-        //used to be used when more than one timeout was allowed
-        //TODO: get rid of this?
-        private final int timedOutCount;
-
-        private TimeoutFutureResult(final int timedOutCount) {
-            this.timedOutCount = timedOutCount;
-        }
-
-        protected int getTimedOutCount() {
-            return timedOutCount;
         }
     }
 }

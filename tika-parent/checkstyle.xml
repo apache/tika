@@ -49,7 +49,7 @@
     <property name="eachLine" value="true"/>
   </module>
   <module name="LineLength">
-    <property name="max" value="120"/>
+    <property name="max" value="180"/>
     <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
   </module>
   <module name="NewlineAtEndOfFile">
