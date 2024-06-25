@@ -377,7 +377,7 @@ public class PipesServer implements Runnable {
                 LOG.trace("timer -- to parse: {} ms", System.currentTimeMillis() - start);
             }
 
-            if (metadataIsEmpty(parseData.getMetadataList())) {
+            if (parseData == null || metadataIsEmpty(parseData.getMetadataList())) {
                 write(STATUS.EMPTY_OUTPUT);
                 return;
             }

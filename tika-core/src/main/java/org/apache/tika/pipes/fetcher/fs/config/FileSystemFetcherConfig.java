@@ -14,8 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetcher.config;
+package org.apache.tika.pipes.fetcher.fs.config;
 
-public abstract class AbstractConfig {
-    //  Nothing to do here yet.
+import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+
+public class FileSystemFetcherConfig extends AbstractConfig {
+    private String basePath;
+    private boolean extractFileSystemMetadata;
+
+    public String getBasePath() {
+        return basePath;
+    }
+
+    public FileSystemFetcherConfig setBasePath(String basePath) {
+        this.basePath = basePath;
+        return this;
+    }
+
+    public boolean isExtractFileSystemMetadata() {
+        return extractFileSystemMetadata;
+    }
+
+    public FileSystemFetcherConfig setExtractFileSystemMetadata(boolean extractFileSystemMetadata) {
+        this.extractFileSystemMetadata = extractFileSystemMetadata;
+        return this;
+    }
 }

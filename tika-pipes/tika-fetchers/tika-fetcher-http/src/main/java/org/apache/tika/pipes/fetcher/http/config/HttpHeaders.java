@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
-public class AdditionalHttpHeaders {
+public class HttpHeaders {
     @JsonIgnore
     private Multimap<String, String> headers = ArrayListMultimap.create();
 
@@ -54,7 +54,7 @@ public class AdditionalHttpHeaders {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        AdditionalHttpHeaders that = (AdditionalHttpHeaders) o;
+        HttpHeaders that = (HttpHeaders) o;
         return Objects.equals(headers, that.headers);
     }
 

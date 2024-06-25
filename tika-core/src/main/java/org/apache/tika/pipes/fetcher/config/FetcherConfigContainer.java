@@ -16,6 +16,25 @@
  */
 package org.apache.tika.pipes.fetcher.config;
 
-public abstract class AbstractConfig {
-    //  Nothing to do here yet.
+public class FetcherConfigContainer {
+    private String configClassName;
+    private String json;
+
+    public String getConfigClassName() {
+        return configClassName;
+    }
+
+    public FetcherConfigContainer setConfigClassName(String configClassName) {
+        this.configClassName = configClassName;
+        return this;
+    }
+
+    public String getJson() {
+        return json;
+    }
+
+    public FetcherConfigContainer setJson(String json) {
+        this.json = json;
+        return this;
+    }
 }

@@ -22,19 +22,21 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
-class AdditionalHttpHeadersTest {
+class HttpHeadersTest {
 
     ObjectMapper om = new ObjectMapper();
 
     @Test
     void testToAndFromJson() throws JsonProcessingException {
-        AdditionalHttpHeaders additionalHttpHeaders = new AdditionalHttpHeaders();
-        additionalHttpHeaders.getHeaders().put("nick1", "val1");
-        additionalHttpHeaders.getHeaders().put("nick2", "val2");
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders
+                .getHeaders().put("nick1", "val1");
+        httpHeaders
+                .getHeaders().put("nick2", "val2");
 
-        String json = om.writeValueAsString(additionalHttpHeaders);
+        String json = om.writeValueAsString(httpHeaders);
 
-        AdditionalHttpHeaders additionalHttpHeaders2 = om.readValue(json, AdditionalHttpHeaders.class);
-        assertEquals(additionalHttpHeaders, additionalHttpHeaders2);
+        HttpHeaders additionalHttpHeaders2 = om.readValue(json, HttpHeaders.class);
+        assertEquals(httpHeaders, additionalHttpHeaders2);
     }
 }
