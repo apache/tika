@@ -442,6 +442,7 @@
     <zookeeper.version>3.8.4</zookeeper.version>
     <logback.version>1.5.6</logback.version>
     <zstd.version>1.5.6-3</zstd.version>
+    <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
   </properties>
 
   <dependencyManagement>
@@ -1038,6 +1039,11 @@
           <groupId>com.google.errorprone</groupId>
           <artifactId>error_prone_annotations</artifactId>
           <version>2.28.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.nimbusds</groupId>
+        <artifactId>nimbus-jose-jwt</artifactId>
+        <version>${nimbus-jose-jwt.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
