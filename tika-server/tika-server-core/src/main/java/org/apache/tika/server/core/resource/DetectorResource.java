@@ -50,8 +50,7 @@ public class DetectorResource {
     @Path("stream")
     @Consumes("*/*")
     @Produces("text/plain")
-    public String detect(final InputStream is, @Context HttpHeaders httpHeaders,
-                         @Context final UriInfo info) {
+    public String detect(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
         Metadata met = new Metadata();
 
         String filename = TikaResource.detectFilename(httpHeaders.getRequestHeaders());
@@ -62,12 +61,14 @@ public class DetectorResource {
         long timeoutMillis = TikaResource.getTaskTimeout(parseContext);
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename, timeoutMillis);
 
-        try (TikaInputStream tis = TikaInputStream.get(
-                TikaResource.getInputStream(is, met, httpHeaders, info))) {
-            return TikaResource.getConfig().getDetector().detect(tis, met).toString();
+        try (TikaInputStream tis = TikaInputStream.get(TikaResource.getInputStream(is, met, httpHeaders, info))) {
+            return TikaResource
+                    .getConfig()
+                    .getDetector()
+                    .detect(tis, met)
+                    .toString();
         } catch (IOException e) {
-            LOG.warn("Unable to detect MIME type for file. Reason: {} ({})", e.getMessage(),
-                    filename, e);
+            LOG.warn("Unable to detect MIME type for file. Reason: {} ({})", e.getMessage(), filename, e);
             return MediaType.OCTET_STREAM.toString();
         } catch (OutOfMemoryError e) {
             LOG.error("OOM while detecting: ({})", filename, e);

@@ -225,6 +225,13 @@ public class OutlookParserTest extends TikaTest {
     }
 
     @Test
+    public void testEmbeddedPath() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testMSG_att_msg.msg");
+        assertEquals("/Test Attachment.msg", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/smbprn.00009008.KdcPjl.pdf", metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+    }
+
+    @Test
     public void testOutlookHTMLfromRTF() throws Exception {
         Metadata metadata = new Metadata();
 

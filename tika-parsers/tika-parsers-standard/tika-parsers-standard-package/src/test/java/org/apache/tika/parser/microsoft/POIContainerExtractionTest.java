@@ -240,7 +240,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(2, handler.filenames.size());
         assertEquals(2, handler.mediaTypes.size());
 
-        assertEquals("__substg1.0_3701000D.msg", handler.filenames.get(0));
+        assertEquals("Test Attachment.msg", handler.filenames.get(0));
         assertEquals(TYPE_MSG, handler.mediaTypes.get(0));
 
         assertEquals("smbprn.00009008.KdcPjl.pdf", handler.filenames.get(1));

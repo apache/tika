@@ -35,14 +35,15 @@ public class ParserFactoryBuilder implements IParserFactoryBuilder {
         ParserFactory pf = ClassLoaderUtil.buildClass(ParserFactory.class, className);
 
         if (localAttrs.containsKey("parseRecursively")) {
-            String bString = localAttrs.get("parseRecursively").toLowerCase(Locale.ENGLISH);
+            String bString = localAttrs
+                    .get("parseRecursively")
+                    .toLowerCase(Locale.ENGLISH);
             if (bString.equals("true")) {
                 pf.setParseRecursively(true);
             } else if (bString.equals("false")) {
                 pf.setParseRecursively(false);
             } else {
-                throw new RuntimeException(
-                        "parseRecursively must have value of \"true\" or \"false\": " + bString);
+                throw new RuntimeException("parseRecursively must have value of \"true\" or \"false\": " + bString);
             }
         }
         return pf;

@@ -71,7 +71,7 @@ class OneNoteLegacyDumpStrings {
     private void dumpAscii() throws SAXException, TikaException {
         try {
             oneNoteDirectFileResource.position(0);
-            UnsynchronizedByteArrayOutputStream os = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream os = UnsynchronizedByteArrayOutputStream.builder().get();
             long sz = oneNoteDirectFileResource.size();
             long pos;
             while ((pos = oneNoteDirectFileResource.position()) != sz) {
@@ -108,7 +108,7 @@ class OneNoteLegacyDumpStrings {
     private void dumpUtf16LE() throws SAXException, TikaException {
         try {
             oneNoteDirectFileResource.position(0);
-            UnsynchronizedByteArrayOutputStream os = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream os = UnsynchronizedByteArrayOutputStream.builder().get();
             long sz = oneNoteDirectFileResource.size();
             long bufSize = BUFFER_SIZE;
             // Make sure the buffer size is a multiple of 2.

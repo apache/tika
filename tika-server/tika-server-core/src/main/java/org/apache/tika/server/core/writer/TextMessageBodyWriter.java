@@ -46,22 +46,18 @@ import org.apache.tika.metadata.Metadata;
 @Produces(MediaType.TEXT_PLAIN)
 public class TextMessageBodyWriter implements MessageBodyWriter<Metadata> {
 
-    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations,
-                               MediaType mediaType) {
+    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return mediaType.equals(MediaType.TEXT_PLAIN_TYPE) && Metadata.class.isAssignableFrom(type);
     }
 
-    public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations,
-                        MediaType mediaType) {
+    public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return -1;
     }
 
     @Override
     @SuppressWarnings("resource")
-    public void writeTo(Metadata metadata, Class<?> type, Type genericType,
-                        Annotation[] annotations, MediaType mediaType,
-                        MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
-            throws IOException, WebApplicationException {
+    public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
+                        OutputStream entityStream) throws IOException, WebApplicationException {
 
         if (metadata.names().length != 1) {
             throw new WebApplicationException("Metadata object must only have one entry!");

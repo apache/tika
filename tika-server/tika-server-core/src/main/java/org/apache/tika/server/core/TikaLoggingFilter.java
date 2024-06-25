@@ -39,7 +39,10 @@ public class TikaLoggingFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
-        String requestUri = requestContext.getUriInfo().getRequestUri().toString();
+        String requestUri = requestContext
+                .getUriInfo()
+                .getRequestUri()
+                .toString();
         if (infoLevel) {
             LOG.info("Request URI: {}", requestUri);
         } else {

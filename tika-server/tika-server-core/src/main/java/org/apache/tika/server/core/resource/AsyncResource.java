@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +34,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -42,13 +42,15 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.async.AsyncProcessor;
+import org.apache.tika.pipes.async.OfferLargerThanQueueSize;
 import org.apache.tika.pipes.emitter.EmitData;
-import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.EmitterManager;
+import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.serialization.pipes.JsonFetchEmitTupleList;
 
 @Path("/async")
 public class AsyncResource {
@@ -60,8 +62,7 @@ public class AsyncResource {
     long maxQueuePauseMs = 60000;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
-    public AsyncResource(java.nio.file.Path tikaConfigPath, Set<String> supportedFetchers)
-            throws TikaException, IOException, SAXException {
+    public AsyncResource(java.nio.file.Path tikaConfigPath, Set<String> supportedFetchers) throws TikaException, IOException, SAXException {
         this.asyncProcessor = new AsyncProcessor(tikaConfigPath);
         this.supportedFetchers = supportedFetchers;
         this.emitterManager = EmitterManager.load(tikaConfigPath);
@@ -94,8 +95,7 @@ public class AsyncResource {
      */
     @POST
     @Produces("application/json")
-    public Map<String, Object> post(InputStream is, @Context HttpHeaders httpHeaders,
-                                    @Context UriInfo info) throws Exception {
+    public Map<String, Object> post(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
 
         AsyncRequest request = deserializeASyncRequest(is);
 
@@ -103,19 +103,57 @@ public class AsyncResource {
         //the requested fetchers and emitters
         //throw early
         for (FetchEmitTuple t : request.getTuples()) {
-            if (!supportedFetchers.contains(t.getFetchKey().getFetcherName())) {
+            if (!supportedFetchers.contains(t
+                    .getFetchKey()
+                    .getFetcherName())) {
                 return badFetcher(t.getFetchKey());
             }
-            if (!emitterManager.getSupported().contains(t.getEmitKey().getEmitterName())) {
-                return badEmitter(t.getEmitKey());
+            if (!emitterManager
+                    .getSupported()
+                    .contains(t
+                            .getEmitKey()
+                            .getEmitterName())) {
+                return badEmitter(t
+                        .getEmitKey()
+                        .getEmitterName());
+            }
+            ParseContext parseContext = t.getParseContext();
+            EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
+            if (embeddedDocumentBytesConfig != null && embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
+                    !StringUtils.isAllBlank(embeddedDocumentBytesConfig.getEmitter())) {
+                String bytesEmitter = embeddedDocumentBytesConfig.getEmitter();
+                if (!emitterManager
+                        .getSupported()
+                        .contains(bytesEmitter)) {
+                    return badEmitter(bytesEmitter);
+                }
             }
         }
-        Instant start = Instant.now();
-        boolean offered = asyncProcessor.offer(request.getTuples(), maxQueuePauseMs);
-        if (offered) {
-            return ok(request.getTuples().size());
-        } else {
-            return throttle(request.getTuples().size());
+        //Instant start = Instant.now();
+        try {
+            boolean offered = asyncProcessor.offer(request.getTuples(), maxQueuePauseMs);
+            if (offered) {
+                LOG.info("accepted {} tuples, capacity={}", request
+                        .getTuples()
+                        .size(), asyncProcessor.getCapacity());
+                return ok(request
+                        .getTuples()
+                        .size());
+            } else {
+                LOG.info("throttling {} tuples, capacity={}", request
+                        .getTuples()
+                        .size(), asyncProcessor.getCapacity());
+                return throttle(request
+                        .getTuples()
+                        .size());
+            }
+        } catch (OfferLargerThanQueueSize e) {
+            LOG.info("throttling {} tuples, capacity={}", request
+                    .getTuples()
+                    .size(), asyncProcessor.getCapacity());
+            return throttle(request
+                    .getTuples()
+                    .size());
         }
     }
 
@@ -130,11 +168,12 @@ public class AsyncResource {
         Map<String, Object> map = new HashMap<>();
         map.put("status", "throttled");
         map.put("msg", "not able to receive request of size " + requestSize + " at this time");
+        map.put("capacity", asyncProcessor.getCapacity());
         return map;
     }
 
-    private Map<String, Object> badEmitter(EmitKey emitKey) {
-        throw new BadRequestException("can't find emitter for " + emitKey.getEmitterName());
+    private Map<String, Object> badEmitter(String emitterName) {
+        throw new BadRequestException("can't find emitter for " + emitterName);
     }
 
     private Map<String, Object> badFetcher(FetchKey fetchKey) {

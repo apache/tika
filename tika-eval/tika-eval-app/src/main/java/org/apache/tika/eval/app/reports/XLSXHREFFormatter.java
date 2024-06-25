@@ -59,16 +59,20 @@ public class XLSXHREFFormatter implements XSLXCellFormatter {
     }
 
     @Override
-    public void applyStyleAndValue(int dbColNum, ResultSet resultSet, Cell cell)
-            throws SQLException {
+    public void applyStyleAndValue(int dbColNum, ResultSet resultSet, Cell cell) throws SQLException {
         if (links < MAX_HYPERLINKS) {
-            Hyperlink hyperlink = workbook.getCreationHelper().createHyperlink(linkType);
+            Hyperlink hyperlink = workbook
+                    .getCreationHelper()
+                    .createHyperlink(linkType);
             String path = resultSet.getString(dbColNum);
             String address = urlBase + path;
             hyperlink.setAddress(address);
             cell.setHyperlink(hyperlink);
             cell.setCellStyle(style);
-            String fName = Paths.get(path).getFileName().toString();
+            String fName = Paths
+                    .get(path)
+                    .getFileName()
+                    .toString();
             cell.setCellValue(fName);
             links++;
         } else {

@@ -147,4 +147,8 @@ public class BoundedInputStream extends InputStream {
     public long transferTo(OutputStream out) throws IOException {
         return in.transferTo(out);
     }
+
+    public long getPos() {
+        return pos;
+    }
 }

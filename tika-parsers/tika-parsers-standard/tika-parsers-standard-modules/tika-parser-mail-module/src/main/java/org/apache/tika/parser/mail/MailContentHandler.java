@@ -127,7 +127,7 @@ class MailContentHandler implements ContentHandler {
         //if we're in a multipart/alternative or any one of its children
         //add the bodypart to the latest that was added
         if (!extractAllAlternatives && alternativePartBuffer.size() > 0) {
-            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             IOUtils.copy(is, bos);
             alternativePartBuffer.peek().children.add(new BodyContents(submd, bos.toByteArray()));
         } else if (!extractAllAlternatives && parts.size() < 2) {
@@ -135,7 +135,7 @@ class MailContentHandler implements ContentHandler {
             //and you're not in an alternative part block
             //and you're text/html, put that in the body of the email
             //otherwise treat as a regular attachment
-            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             IOUtils.copy(is, bos);
             final byte[] bytes = bos.toByteArray();
             if (detectInlineTextOrHtml(submd, bytes)) {
@@ -353,10 +353,10 @@ class MailContentHandler implements ContentHandler {
                     metadata.add(TikaCoreProperties.CREATOR, from);
                 }
             } else if (fieldname.equalsIgnoreCase("Subject")) {
-                metadata.set(TikaCoreProperties.TITLE,
-                        ((UnstructuredField) parsedField).getValue());
-                metadata.set(TikaCoreProperties.SUBJECT,
-                        ((UnstructuredField) parsedField).getValue());
+                String txt = ((UnstructuredField) parsedField).getValue();
+                metadata.set(TikaCoreProperties.TITLE, txt);
+                metadata.set(TikaCoreProperties.SUBJECT, txt);
+                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, txt + ".eml");
             } else if (fieldname.equalsIgnoreCase("To")) {
                 processAddressList(parsedField, "To:", Metadata.MESSAGE_TO);
             } else if (fieldname.equalsIgnoreCase("CC")) {

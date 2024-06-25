@@ -244,4 +244,23 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         assertEquals("text/html", metadata.get(Metadata.CONTENT_TYPE));
     }
 
+    @Test
+    public void testAttachmentTypeMetadataFilter() throws Exception {
+        TikaConfig config = getConfig("TIKA-4261-clear-by-embedded-type.xml");
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.INLINE.name());
+        metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
+
+        MetadataFilter filter = config.getMetadataFilter();
+        filter.filter(metadata);
+        assertEquals(0, metadata.names().length);
+
+        metadata = new Metadata();
+        metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ALTERNATE_FORMAT_CHUNK
+                .name());
+        metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
+        filter.filter(metadata);
+        assertEquals(2, metadata.names().length);
+    }
+
 }

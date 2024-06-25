@@ -17,20 +17,15 @@
 package org.apache.tika.parser.microsoft.pst;
 
 import static java.lang.String.valueOf;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singleton;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
-import com.pff.PSTAttachment;
-import com.pff.PSTException;
 import com.pff.PSTFile;
 import com.pff.PSTFolder;
 import com.pff.PSTMessage;
-import com.pff.PSTRecipient;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -39,14 +34,12 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.PST;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.microsoft.OutlookExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -88,13 +81,13 @@ public class OutlookPSTParser implements Parser {
             pstFile = new PSTFile(in.getFile().getPath());
             metadata.set(Metadata.CONTENT_LENGTH, valueOf(pstFile.getFileHandle().length()));
             boolean isValid = pstFile.getFileHandle().getFD().valid();
-            metadata.set("isValid", valueOf(isValid));
+            metadata.set(PST.IS_VALID, isValid);
             if (pstFile.getPSTFileType() == PSTFile.PST_TYPE_2013_UNICODE) {
                 throw new TikaException(
                         "OST 2013 support not added yet. It will be when https://github.com/rjohnsondev/java-libpst/issues/60 is fixed.");
             }
             if (isValid) {
-                parseFolder(xhtml, pstFile.getRootFolder(), embeddedExtractor);
+                parseFolder(xhtml, pstFile.getRootFolder(), "/", embeddedExtractor);
             }
         } catch (TikaException e) {
             throw e;
@@ -113,12 +106,19 @@ public class OutlookPSTParser implements Parser {
         xhtml.endDocument();
     }
 
-    private void parseFolder(XHTMLContentHandler handler, PSTFolder pstFolder,
+    private void parseFolder(XHTMLContentHandler handler, PSTFolder pstFolder, String folderPath,
                              EmbeddedDocumentExtractor embeddedExtractor) throws Exception {
         if (pstFolder.getContentCount() > 0) {
             PSTMessage pstMail = (PSTMessage) pstFolder.getNextChild();
             while (pstMail != null) {
-                parseMailAndAttachments(handler, pstMail, embeddedExtractor);
+                Metadata metadata = new Metadata();
+                metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
+                metadata.set(PST.PST_FOLDER_PATH, folderPath);
+                try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+                    tis.setOpenContainer(pstMail);
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getSubject() + ".msg");
+                    embeddedExtractor.parseEmbedded(tis, handler, metadata, true);
+                }
                 pstMail = (PSTMessage) pstFolder.getNextChild();
             }
         }
@@ -127,163 +127,11 @@ public class OutlookPSTParser implements Parser {
             for (PSTFolder pstSubFolder : pstFolder.getSubFolders()) {
                 handler.startElement("div", createAttribute("class", "email-folder"));
                 handler.element("h1", pstSubFolder.getDisplayName());
-                parseFolder(handler, pstSubFolder, embeddedExtractor);
+                String subFolderPath = folderPath.endsWith("/") ? folderPath + pstSubFolder.getDisplayName() :
+                        folderPath + "/" + pstFolder.getDisplayName();
+                parseFolder(handler, pstSubFolder, subFolderPath, embeddedExtractor);
                 handler.endElement("div");
             }
         }
     }
-
-    private void parseMailAndAttachments(XHTMLContentHandler handler, PSTMessage pstMail,
-                                         EmbeddedDocumentExtractor embeddedExtractor)
-            throws SAXException, IOException, TikaException {
-        AttributesImpl attributes = new AttributesImpl();
-        attributes.addAttribute("", "class", "class", "CDATA", "embedded");
-        attributes.addAttribute("", "id", "id", "CDATA", pstMail.getInternetMessageId());
-        handler.startElement("div", attributes);
-        handler.element("h1", pstMail.getSubject());
-
-        final Metadata mailMetadata = new Metadata();
-        // parse attachments first so that stream exceptions
-        // in attachments can make it into mailMetadata.
-        // RecursiveParserWrapper copies the metadata and thereby prevents
-        // modifications to mailMetadata from making it into the
-        // metadata objects cached by the RecursiveParserWrapper
-        parseMailAttachments(handler, pstMail, mailMetadata, embeddedExtractor);
-        parserMailItem(handler, pstMail, mailMetadata, embeddedExtractor);
-
-        handler.endElement("div");
-    }
-
-    private void parserMailItem(XHTMLContentHandler handler, PSTMessage pstMail,
-                                Metadata mailMetadata, EmbeddedDocumentExtractor embeddedExtractor)
-            throws SAXException, IOException {
-        mailMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getInternetMessageId());
-        mailMetadata
-                .set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, pstMail.getInternetMessageId());
-        mailMetadata.set(TikaCoreProperties.IDENTIFIER, pstMail.getInternetMessageId());
-        mailMetadata.set(TikaCoreProperties.TITLE, pstMail.getSubject());
-        mailMetadata.set(Metadata.MESSAGE_FROM, pstMail.getSenderName());
-        mailMetadata.set(TikaCoreProperties.CREATOR, pstMail.getSenderName());
-        mailMetadata.set(TikaCoreProperties.CREATED, pstMail.getCreationTime());
-        mailMetadata.set(Office.MAPI_MESSAGE_CLIENT_SUBMIT_TIME, pstMail.getClientSubmitTime());
-        mailMetadata.set(TikaCoreProperties.MODIFIED, pstMail.getLastModificationTime());
-        mailMetadata.set(TikaCoreProperties.COMMENTS, pstMail.getComment());
-        mailMetadata.set("descriptorNodeId", valueOf(pstMail.getDescriptorNodeId()));
-        mailMetadata.set("senderEmailAddress", pstMail.getSenderEmailAddress());
-        mailMetadata.set("recipients", pstMail.getRecipientsString());
-        mailMetadata.set("displayTo", pstMail.getDisplayTo());
-        mailMetadata.set("displayCC", pstMail.getDisplayCC());
-        mailMetadata.set("displayBCC", pstMail.getDisplayBCC());
-        mailMetadata.set("importance", valueOf(pstMail.getImportance()));
-        mailMetadata.set("priority", valueOf(pstMail.getPriority()));
-        mailMetadata.set("flagged", valueOf(pstMail.isFlagged()));
-        mailMetadata.set(Office.MAPI_MESSAGE_CLASS,
-                OutlookExtractor.getMessageClass(pstMail.getMessageClass()));
-
-        mailMetadata.set(Message.MESSAGE_FROM_EMAIL, pstMail.getSenderEmailAddress());
-
-        mailMetadata.set(Office.MAPI_FROM_REPRESENTING_EMAIL,
-                pstMail.getSentRepresentingEmailAddress());
-
-        mailMetadata.set(Message.MESSAGE_FROM_NAME, pstMail.getSenderName());
-        mailMetadata.set(Office.MAPI_FROM_REPRESENTING_NAME, pstMail.getSentRepresentingName());
-
-        //add recipient details
-        try {
-            for (int i = 0; i < pstMail.getNumberOfRecipients(); i++) {
-                PSTRecipient recipient = pstMail.getRecipient(i);
-                switch (OutlookExtractor.RECIPIENT_TYPE
-                        .getTypeFromVal(recipient.getRecipientType())) {
-                    case TO:
-                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_TO_DISPLAY_NAME,
-                                recipient.getDisplayName(), mailMetadata);
-                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_TO_EMAIL,
-                                recipient.getEmailAddress(), mailMetadata);
-                        break;
-                    case CC:
-                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_CC_DISPLAY_NAME,
-                                recipient.getDisplayName(), mailMetadata);
-                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_CC_EMAIL,
-                                recipient.getEmailAddress(), mailMetadata);
-                        break;
-                    case BCC:
-                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_BCC_DISPLAY_NAME,
-                                recipient.getDisplayName(), mailMetadata);
-                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_BCC_EMAIL,
-                                recipient.getEmailAddress(), mailMetadata);
-                        break;
-                    default:
-                        //do we want to handle unspecified or unknown?
-                        break;
-                }
-            }
-        } catch (PSTException e) {
-            //swallow
-        }
-        //we may want to experiment with working with the bodyHTML.
-        //However, because we can't get the raw bytes, we _could_ wind up sending
-        //a UTF-8 byte representation of the html that has a conflicting metaheader
-        //that causes the HTMLParser to get the encoding wrong.  Better if we could get
-        //the underlying bytes from the pstMail object...
-
-        byte[] mailContent = pstMail.getBody().getBytes(UTF_8);
-        mailMetadata.set(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE,
-                MediaType.TEXT_PLAIN.toString());
-        embeddedExtractor
-                .parseEmbedded(new ByteArrayInputStream(mailContent), handler, mailMetadata, true);
-    }
-
-    private void parseMailAttachments(XHTMLContentHandler xhtml, PSTMessage email,
-                                      final Metadata mailMetadata,
-                                      EmbeddedDocumentExtractor embeddedExtractor)
-            throws TikaException {
-        int numberOfAttachments = email.getNumberOfAttachments();
-        for (int i = 0; i < numberOfAttachments; i++) {
-            try {
-                PSTAttachment attach = email.getAttachment(i);
-
-                PSTMessage attachedEmail = attach.getEmbeddedPSTMessage();
-                if (attachedEmail != null) {
-                    parseMailAndAttachments(xhtml, attachedEmail, embeddedExtractor);
-                    continue;
-                }
-
-                // Get the filename; both long and short filenames can be used for attachments
-                String filename = attach.getLongFilename();
-                if (filename.isEmpty()) {
-                    filename = attach.getFilename();
-                }
-
-                xhtml.element("p", filename);
-
-                Metadata attachMeta = new Metadata();
-                attachMeta.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
-                attachMeta.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, filename);
-                AttributesImpl attributes = new AttributesImpl();
-                attributes.addAttribute("", "class", "class", "CDATA", "embedded");
-                attributes.addAttribute("", "id", "id", "CDATA", filename);
-                xhtml.startElement("div", attributes);
-                if (embeddedExtractor.shouldParseEmbedded(attachMeta)) {
-                    TikaInputStream tis = null;
-                    try {
-                        tis = TikaInputStream.get(attach.getFileInputStream());
-                    } catch (NullPointerException e) { //TIKA-2488
-                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, mailMetadata);
-                        continue;
-                    }
-
-                    try {
-                        embeddedExtractor.parseEmbedded(tis, xhtml, attachMeta, false);
-                    } finally {
-                        tis.close();
-                    }
-                }
-                xhtml.endElement("div");
-
-            } catch (Exception e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, mailMetadata);
-            }
-        }
-    }
-
 }

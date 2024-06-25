@@ -18,14 +18,14 @@
   under the License.
 -->
 <properties>
-    <parsers>
-        <parser class="org.apache.tika.parser.DefaultParser"/>
-    </parsers>
-    <fetchers>
-        <fetcher class="org.apache.tika.pipes.fetcher.url.UrlFetcher">
-            <params>
-                <name>url</name>
-            </params>
-        </fetcher>
-    </fetchers>
+  <parsers>
+    <parser class="org.apache.tika.parser.DefaultParser"/>
+  </parsers>
+  <fetchers>
+    <fetcher class="org.apache.tika.pipes.fetcher.url.UrlFetcher">
+      <params>
+        <name>url</name>
+      </params>
+    </fetcher>
+  </fetchers>
 </properties>

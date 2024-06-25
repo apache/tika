@@ -410,7 +410,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         }
 
         if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
-            UnsynchronizedByteArrayOutputStream buffer = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream buffer = UnsynchronizedByteArrayOutputStream.builder().get();
             if (pdImage instanceof PDImageXObject) {
                 //extract the metadata contained outside of the image
                 PDMetadataExtractor

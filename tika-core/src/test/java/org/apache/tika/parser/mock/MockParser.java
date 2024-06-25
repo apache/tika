@@ -45,6 +45,7 @@ import com.martensigwart.fakeload.FakeLoadBuilder;
 import com.martensigwart.fakeload.FakeLoadExecutor;
 import com.martensigwart.fakeload.FakeLoadExecutors;
 import com.martensigwart.fakeload.MemoryUnit;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -54,7 +55,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -63,6 +64,7 @@ import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * This class enables mocking of parser behavior for use in testing
@@ -119,8 +121,8 @@ public class MockParser implements Parser {
         }
         Document doc = null;
         try {
-            DocumentBuilder docBuilder = context.getDocumentBuilder();
-            doc = docBuilder.parse(stream);
+            DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder(context);
+            doc = docBuilder.parse(new CloseShieldInputStream(stream));
         } catch (SAXException e) {
             //to distinguish between SAX on read vs SAX while writing
             throw new IOException(e);
@@ -258,29 +260,16 @@ public class MockParser implements Parser {
         }
 
         String embeddedText = action.getTextContent();
-        EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
         if (!"".equals(contentType)) {
             m.set(Metadata.CONTENT_TYPE, contentType);
         }
-        InputStream is = new ByteArrayInputStream(embeddedText.getBytes(UTF_8));
-
-        extractor.parseEmbedded(is, new EmbeddedContentHandler(handler), m, true);
-
-
-    }
-
-    protected EmbeddedDocumentExtractor getEmbeddedDocumentExtractor(ParseContext context) {
-        EmbeddedDocumentExtractor extractor = context.get(EmbeddedDocumentExtractor.class);
-        if (extractor == null) {
-            Parser p = context.get(Parser.class);
-            if (p == null) {
-                context.set(Parser.class, new MockParser());
-            }
-            extractor = new ParsingEmbeddedDocumentExtractor(context);
+        try (InputStream is = new ByteArrayInputStream(embeddedText.getBytes(UTF_8))) {
+            extractor.parseEmbedded(is, new EmbeddedContentHandler(handler), m, true);
         }
-        return extractor;
     }
 
     private void print(Node action, String name) throws IOException {

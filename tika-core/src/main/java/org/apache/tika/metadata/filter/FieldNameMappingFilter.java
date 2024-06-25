@@ -75,4 +75,9 @@ public class FieldNameMappingFilter extends MetadataFilter {
             this.mappings.put(e.getKey(), e.getValue());
         }
     }
+
+    @Override
+    public String toString() {
+        return "FieldNameMappingFilter{" + "mappings=" + mappings + ", excludeUnmapped=" + excludeUnmapped + '}';
+    }
 }

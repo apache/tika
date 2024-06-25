@@ -55,6 +55,7 @@ import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
 import org.apache.tika.utils.StringUtils;
@@ -106,12 +107,12 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private boolean pathStyleAccessEnabled = false;
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
         return fetch(fetchKey, -1, -1, metadata);
     }
 
     @Override
-    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
+    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata, ParseContext parseContext)
             throws TikaException, IOException {
         String theFetchKey = StringUtils.isBlank(prefix) ? fetchKey : prefix + fetchKey;
 

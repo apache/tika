@@ -19,7 +19,9 @@ updates:
     - package-ecosystem: "maven"
       # Look for `pom.xml` in the `root` directory
       directory: "/"
-      # Check for updates once daily
+      # Check for updates weekly
       schedule:
-          interval: "daily"
+          interval: "weekly"
+      # Allow up to 20 open pull requests
+      open-pull-requests-limit: 20
 

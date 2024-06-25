@@ -213,6 +213,12 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testSTL() throws Exception {
+        assertTypeByNameAndData("model/x.stl-binary", "testSTL-binary.stl");
+        assertTypeByNameAndData("model/x.stl-ascii", "testSTL-ascii.stl");
+    }
+
+    @Test
     public void testTTML() throws Exception {
         assertTypeByData("application/ttml+xml", "test_ttml.ttml");
         assertTypeByNameAndData("application/ttml+xml", "test_ttml.ttml");
@@ -1229,6 +1235,10 @@ public class TestMimeTypes {
         assertType("text/x-vcalendar", "testVCalendar.vcs");
         assertTypeByData("text/calendar", "testICalendar.ics");
         assertTypeByData("text/x-vcalendar", "testVCalendar.vcs");
+        //TIKA-4244
+        //this tests detection with content intervening between the BEGIN:VCALENDAR and the VERSION:2.0 entry
+        assertType("text/calendar", "testICalendar_w_prodId.ics");
+        assertTypeByData("text/calendar", "testICalendar_w_prodId.ics");
     }
 
     @Test

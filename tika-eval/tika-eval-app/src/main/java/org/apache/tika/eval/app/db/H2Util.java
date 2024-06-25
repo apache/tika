@@ -49,7 +49,9 @@ public class H2Util extends JDBCUtil {
     }
 
     private static String getConnectionString(Path db, boolean createDBIfItDoesntExist) {
-        String s = "jdbc:h2:" + FilenameUtils.separatorsToUnix(db.toAbsolutePath().toString());
+        String s = "jdbc:h2:" + FilenameUtils.separatorsToUnix(db
+                .toAbsolutePath()
+                .toString());
         if (!createDBIfItDoesntExist) {
             s += ";IFEXISTS=TRUE";
         }

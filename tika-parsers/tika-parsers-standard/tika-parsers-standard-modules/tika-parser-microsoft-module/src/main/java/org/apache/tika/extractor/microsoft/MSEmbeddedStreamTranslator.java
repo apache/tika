@@ -61,7 +61,7 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
     public InputStream translate(InputStream inputStream, Metadata metadata) throws IOException {
         String contentType = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
         if ("application/vnd.openxmlformats-officedocument.oleObject".equals(contentType)) {
-            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             IOUtils.copy(inputStream, bos);
             POIFSFileSystem poifs = new POIFSFileSystem(bos.toInputStream());
             OfficeParser.POIFSDocumentType type = OfficeParser.POIFSDocumentType.detectType(poifs);
@@ -90,7 +90,7 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
                     tin.getOpenContainer() instanceof DirectoryEntry) {
                 POIFSFileSystem fs = new POIFSFileSystem();
                 copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
-                try (UnsynchronizedByteArrayOutputStream bos2 = new UnsynchronizedByteArrayOutputStream()) {
+                try (UnsynchronizedByteArrayOutputStream bos2 = UnsynchronizedByteArrayOutputStream.builder().get()) {
                     fs.writeFilesystem(bos2);
                     return bos2.toInputStream();
                 }

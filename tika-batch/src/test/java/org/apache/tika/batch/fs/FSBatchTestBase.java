@@ -97,7 +97,9 @@ public abstract class FSBatchTestBase extends TikaTest {
         try (BufferedReader r = Files.newBufferedReader(p, cs)) {
             String line = r.readLine();
             while (line != null) {
-                sb.append(line).append("\n");
+                sb
+                        .append(line)
+                        .append("\n");
                 line = r.readLine();
             }
         }
@@ -149,17 +151,20 @@ public abstract class FSBatchTestBase extends TikaTest {
         return args;
     }
 
-    public String[] getDefaultCommandLineArgsArr(String inputSubDir, Path outputDir,
-                                                 Map<String, String> commandLine) throws Exception {
+    public String[] getDefaultCommandLineArgsArr(String inputSubDir, Path outputDir, Map<String, String> commandLine) throws Exception {
         List<String> args = new ArrayList<>();
         //need to include "-" because these are going to the commandline!
         if (inputSubDir != null) {
             args.add("-inputDir");
-            args.add(getInputRoot(inputSubDir).toAbsolutePath().toString());
+            args.add(getInputRoot(inputSubDir)
+                    .toAbsolutePath()
+                    .toString());
         }
         if (outputDir != null) {
             args.add("-outputDir");
-            args.add(outputDir.toAbsolutePath().toString());
+            args.add(outputDir
+                    .toAbsolutePath()
+                    .toString());
         }
         if (commandLine != null) {
             for (Map.Entry<String, String> e : commandLine.entrySet()) {
@@ -171,8 +176,7 @@ public abstract class FSBatchTestBase extends TikaTest {
     }
 
     public Path getInputRoot(String subdir) throws Exception {
-        String path =
-                (subdir == null || subdir.length() == 0) ? "/test-input" : "/test-input/" + subdir;
+        String path = (subdir == null || subdir.length() == 0) ? "/test-input" : "/test-input/" + subdir;
         return Paths.get(getResourceAsUri(path));
     }
 
@@ -185,8 +189,7 @@ public abstract class FSBatchTestBase extends TikaTest {
         return runner;
     }
 
-    public ProcessBuilder getNewBatchRunnerProcess(String testConfig, String loggerProps,
-                                                   Map<String, String> args) {
+    public ProcessBuilder getNewBatchRunnerProcess(String testConfig, String loggerProps, Map<String, String> args) {
         List<String> argList = new ArrayList<>();
 
         for (Map.Entry<String, String> e : args.entrySet()) {
@@ -194,8 +197,7 @@ public abstract class FSBatchTestBase extends TikaTest {
             argList.add(e.getValue());
         }
 
-        String[] fullCommandLine =
-                commandLine(testConfig, loggerProps, argList.toArray(new String[0]));
+        String[] fullCommandLine = commandLine(testConfig, loggerProps, argList.toArray(new String[0]));
         return new ProcessBuilder(fullCommandLine);
     }
 
@@ -214,7 +216,10 @@ public abstract class FSBatchTestBase extends TikaTest {
 
         String configFile = null;
         try {
-            configFile = Paths.get(getResourceAsUri(testConfig)).toAbsolutePath().toString();
+            configFile = Paths
+                    .get(getResourceAsUri(testConfig))
+                    .toAbsolutePath()
+                    .toString();
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -240,15 +245,17 @@ public abstract class FSBatchTestBase extends TikaTest {
         commandLine.add(cp);
         commandLine.add("org.apache.tika.batch.fs.FSBatchProcessCLI");
 
-        String configFile = Paths.get(getResourceAsUri(testConfig)).toAbsolutePath().toString();
+        String configFile = Paths
+                .get(getResourceAsUri(testConfig))
+                .toAbsolutePath()
+                .toString();
         commandLine.add("-bc");
 
         commandLine.add(configFile);
 
         commandLine.addAll(Arrays.asList(args));
 
-        BatchProcessDriverCLI driver =
-                new BatchProcessDriverCLI(commandLine.toArray(new String[0]));
+        BatchProcessDriverCLI driver = new BatchProcessDriverCLI(commandLine.toArray(new String[0]));
         driver.setRedirectForkedProcessToStdOut(false);
         return driver;
     }

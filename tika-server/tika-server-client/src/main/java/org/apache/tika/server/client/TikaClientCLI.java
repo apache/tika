@@ -50,15 +50,12 @@ public class TikaClientCLI {
         cli.execute(tikaConfigPath);
     }
 
-    private void execute(Path tikaConfigPath)
-            throws TikaException, IOException, SAXException {
+    private void execute(Path tikaConfigPath) throws TikaException, IOException, SAXException {
         TikaServerClientConfig clientConfig = TikaServerClientConfig.build(tikaConfigPath);
 
-        ExecutorService executorService =
-                Executors.newFixedThreadPool(clientConfig.getNumThreads() + 1);
+        ExecutorService executorService = Executors.newFixedThreadPool(clientConfig.getNumThreads() + 1);
 
-        ExecutorCompletionService<Long> completionService =
-                new ExecutorCompletionService<>(executorService);
+        ExecutorCompletionService<Long> completionService = new ExecutorCompletionService<>(executorService);
 
         final PipesIterator pipesIterator = PipesIterator.build(tikaConfigPath);
 
@@ -66,21 +63,22 @@ public class TikaClientCLI {
 
         completionService.submit(new CallablePipesIterator(pipesIterator, queue));
 
-        if (clientConfig.getTikaEndpoints().size() == clientConfig.getNumThreads()) {
-            logDiffSizes(clientConfig.getTikaEndpoints().size(), clientConfig.getNumThreads());
+        if (clientConfig
+                .getTikaEndpoints()
+                .size() == clientConfig.getNumThreads()) {
+            logDiffSizes(clientConfig
+                    .getTikaEndpoints()
+                    .size(), clientConfig.getNumThreads());
             for (int i = 0; i < clientConfig.getNumThreads(); i++) {
-                TikaClient client =
-                        TikaClient.get(clientConfig.getHttpClientFactory(),
-                                Collections.singletonList(clientConfig.getTikaEndpoints().get(i)));
-                completionService.submit(new FetchWorker(queue, client,
-                        clientConfig.getMaxWaitMillis()));
+                TikaClient client = TikaClient.get(clientConfig.getHttpClientFactory(), Collections.singletonList(clientConfig
+                        .getTikaEndpoints()
+                        .get(i)));
+                completionService.submit(new FetchWorker(queue, client, clientConfig.getMaxWaitMillis()));
             }
         } else {
             for (int i = 0; i < clientConfig.getNumThreads(); i++) {
-                TikaClient client = TikaClient.get(clientConfig.getHttpClientFactory(),
-                        clientConfig.getTikaEndpoints());
-                completionService.submit(new FetchWorker(queue, client,
-                        clientConfig.getMaxWaitMillis()));
+                TikaClient client = TikaClient.get(clientConfig.getHttpClientFactory(), clientConfig.getTikaEndpoints());
+                completionService.submit(new FetchWorker(queue, client, clientConfig.getMaxWaitMillis()));
             }
         }
 
@@ -108,8 +106,7 @@ public class TikaClientCLI {
     }
 
     private void logDiffSizes(int servers, int numThreads) {
-        LOGGER.info("tika server count ({}) != numThreads ({}). " +
-                "Each client will randomly select a server from this list", servers, numThreads);
+        LOGGER.info("tika server count ({}) != numThreads ({}). " + "Each client will randomly select a server from this list", servers, numThreads);
     }
 
     private class FetchWorker implements Callable<Long> {
@@ -118,8 +115,7 @@ public class TikaClientCLI {
 
         private final long maxWaitMs;
 
-        public FetchWorker(ArrayBlockingQueue<FetchEmitTuple> queue,
-                           TikaClient client, long maxWaitMs) {
+        public FetchWorker(ArrayBlockingQueue<FetchEmitTuple> queue, TikaClient client, long maxWaitMs) {
             this.queue = queue;
             this.client = client;
             this.maxWaitMs = maxWaitMs;
@@ -142,7 +138,9 @@ public class TikaClientCLI {
                     LOGGER.debug("about to parse: {}", t.getFetchKey());
                     client.parse(t);
                 } catch (IOException | TikaException e) {
-                    LOGGER.warn(t.getFetchKey().toString(), e);
+                    LOGGER.warn(t
+                            .getFetchKey()
+                            .toString(), e);
                 }
             }
         }
