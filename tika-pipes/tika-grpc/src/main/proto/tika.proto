@@ -82,8 +82,9 @@ message FetchAndParseRequest {
   string fetcher_id = 1;
   // The "Fetch Key" of the item that will be fetched.
   string fetch_key = 2;
-  // Additional metadata describing how to fetch and parse the item.
-  string metadata_json = 3;
+  // You can supply additional fetch configuration using this. Follows same fetch configuration json schema
+  // as the fetcher configuration.
+  string additional_fetch_config_json = 3;
 }
 
 message FetchAndParseReply {
