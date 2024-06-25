@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.fetcher.http.config;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
@@ -27,17 +28,24 @@ public class HttpFetcherConfig extends AbstractConfig {
     private String authScheme;
     private String proxyHost;
     private Integer proxyPort;
-    private Integer connectTimeout;
-    private Integer requestTimeout;
-    private Integer socketTimeout;
-    private Integer maxConnections;
-    private Integer maxConnectionsPerRoute;
-    private Long maxSpoolSize;
-    private Integer maxRedirects;
-    private List<String> httpHeaders;
-    private Long overallTimeout;
-    private Integer maxErrMsgSize;
+    private Integer maxConnectionsPerRoute = 1000;
+    private Integer maxConnections = 2000;
+    private Integer requestTimeout = 120000;
+    private Integer connectTimeout = 120000;
+    private Integer socketTimeout = 120000;
+    private Long maxSpoolSize = -1L;
+    private Integer maxRedirects = 0;
+    private List<String> httpHeaders = new ArrayList<>();
+    private List<String> httpRequestHeaders = new ArrayList<>();
+    private Long overallTimeout = 120000L;
+    private Integer maxErrMsgSize = 10000000;
     private String userAgent;
+    private String jwtIssuer;
+    private String jwtSubject;
+    private int jwtExpiresInSeconds;
+    private String jwtSecret;
+    private String jwtPrivateKeyBase64;
+
 
     public String getUserName() {
         return userName;
@@ -165,6 +173,14 @@ public class HttpFetcherConfig extends AbstractConfig {
         return this;
     }
 
+    public List<String> getHttpRequestHeaders() {
+        return httpRequestHeaders;
+    }
+
+    public void setHttpRequestHeaders(List<String> httpRequestHeaders) {
+        this.httpRequestHeaders = httpRequestHeaders;
+    }
+
     public Long getOverallTimeout() {
         return overallTimeout;
     }
@@ -189,6 +205,51 @@ public class HttpFetcherConfig extends AbstractConfig {
 
     public HttpFetcherConfig setUserAgent(String userAgent) {
         this.userAgent = userAgent;
+        return this;
+    }
+
+    public String getJwtIssuer() {
+        return jwtIssuer;
+    }
+
+    public HttpFetcherConfig setJwtIssuer(String jwtIssuer) {
+        this.jwtIssuer = jwtIssuer;
+        return this;
+    }
+
+    public String getJwtSubject() {
+        return jwtSubject;
+    }
+
+    public HttpFetcherConfig setJwtSubject(String jwtSubject) {
+        this.jwtSubject = jwtSubject;
+        return this;
+    }
+
+    public int getJwtExpiresInSeconds() {
+        return jwtExpiresInSeconds;
+    }
+
+    public HttpFetcherConfig setJwtExpiresInSeconds(int jwtExpiresInSeconds) {
+        this.jwtExpiresInSeconds = jwtExpiresInSeconds;
+        return this;
+    }
+
+    public String getJwtSecret() {
+        return jwtSecret;
+    }
+
+    public HttpFetcherConfig setJwtSecret(String jwtSecret) {
+        this.jwtSecret = jwtSecret;
+        return this;
+    }
+
+    public String getJwtPrivateKeyBase64() {
+        return jwtPrivateKeyBase64;
+    }
+
+    public HttpFetcherConfig setJwtPrivateKeyBase64(String jwtPrivateKeyBase64) {
+        this.jwtPrivateKeyBase64 = jwtPrivateKeyBase64;
         return this;
     }
 }

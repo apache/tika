@@ -28,12 +28,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.security.PrivateKey;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -74,10 +72,10 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
 import org.apache.tika.pipes.fetcher.http.config.AdditionalHttpHeaders;
+import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtPrivateKeyCreds;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtSecretCreds;
-import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -129,21 +127,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     //back-off client that disables compression
     private HttpClient noCompressHttpClient;
 
-    private int maxRedirects = 10;
-    //overall timeout in milliseconds
-    private long overallTimeout = -1;
-
-    private long maxSpoolSize = -1;
-
-    //max string length to read from a result if the
-    //status code was not in the 200 range
-    private int maxErrMsgSize = 10000;
-
     JwtGenerator jwtGenerator;
-
-    //When making the request, what User-Agent is sent.
-    //By default httpclient adds e.g. "Apache-HttpClient/4.5.13 (Java/x.y.z)"
-    private String userAgent = null;
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
@@ -159,7 +143,8 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     }
 
     @Override
-    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
+    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata,
+                             ParseContext parseContext) throws IOException, TikaException {
         HttpGet get = new HttpGet(fetchKey);
         putAdditionalHeadersOnRequest(parseContext, get);
 
@@ -184,6 +169,20 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                 throw new TikaException("Could not generate JWT", e);
             }
         }
+    }
+
+    private static void placeHeaderOnGetRequest(HttpGet get, String httpRequestHeader) {
+        int idxOfEquals = httpRequestHeader.indexOf(':');
+        if (idxOfEquals == -1) {
+            return;
+        }
+        String headerKey = httpRequestHeader
+                .substring(0, idxOfEquals)
+                .trim();
+        String headerValue = httpRequestHeader
+                .substring(idxOfEquals + 1)
+                .trim();
+        get.setHeader(headerKey, headerValue);
     }
 
     private InputStream execute(HttpGet get, Metadata metadata, HttpClient client, boolean retryOnBadLength) throws IOException {
@@ -216,6 +215,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             int code = response
                     .getStatusLine()
                     .getStatusCode();
+            LOG.info("Fetch id {} status code {}", get.getURI(), code);
             if (code < 200 || code > 299) {
                 throw new IOException("bad status code: " + code + " :: " + responseToString(response));
             }
@@ -231,7 +231,8 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                     .contains("Premature " + "end of " + "Content-Length delimited message")) {
                 //one trigger for this is if the server sends the uncompressed length
                 //and then compresses the stream. See HTTPCLIENT-2176
-                LOG.warn("premature end of content-length delimited message; retrying with " + "content compression disabled for {}", get.getURI());
+                LOG.warn("premature end of content-length delimited message; retrying with " + "content compression" +
+                        " disabled for {}", get.getURI());
                 return execute(get, metadata, noCompressHttpClient, false);
             }
             throw e;
@@ -439,6 +440,21 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     }
 
     /**
+     * Which http request headers should we send in the http fetch requests.
+     *
+     * @param headers The headers to add to the HTTP GET requests.
+     */
+    @Field
+    public void setHttpRequestHeaders(List<String> headers) {
+        httpFetcherConfig.setHttpRequestHeaders(new ArrayList<>());
+        if (headers != null) {
+            httpFetcherConfig
+                    .getHttpRequestHeaders()
+                    .addAll(headers);
+        }
+    }
+
+    /**
      * Which http headers should we capture in the metadata.
      * Keys will be prepended with {@link HttpFetcher#HTTP_HEADER_PREFIX}
      *
@@ -448,7 +464,9 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     public void setHttpHeaders(List<String> headers) {
         httpFetcherConfig.setHttpHeaders(new ArrayList<>());
         if (headers != null) {
-            httpFetcherConfig.getHttpHeaders().addAll(headers);
+            httpFetcherConfig
+                    .getHttpHeaders()
+                    .addAll(headers);
         }
     }
 
@@ -479,49 +497,29 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         httpFetcherConfig.setUserAgent(userAgent);
     }
 
-    public String getJwtIssuer() {
-        return jwtIssuer;
-    }
-
     @Field
     public void setJwtIssuer(String jwtIssuer) {
-        this.jwtIssuer = jwtIssuer;
-    }
-
-    public String getJwtSubject() {
-        return jwtSubject;
+        httpFetcherConfig.setJwtIssuer(jwtIssuer);
     }
 
     @Field
     public void setJwtSubject(String jwtSubject) {
-        this.jwtSubject = jwtSubject;
-    }
-
-    public int getJwtExpiresInSeconds() {
-        return jwtExpiresInSeconds;
+        httpFetcherConfig.setJwtSubject(jwtSubject);
     }
 
     @Field
     public void setJwtExpiresInSeconds(int jwtExpiresInSeconds) {
-        this.jwtExpiresInSeconds = jwtExpiresInSeconds;
-    }
-
-    public String getJwtSecret() {
-        return jwtSecret;
+        httpFetcherConfig.setJwtExpiresInSeconds(jwtExpiresInSeconds);
     }
 
     @Field
     public void setJwtSecret(String jwtSecret) {
-        this.jwtSecret = jwtSecret;
-    }
-
-    public String getJwtPrivateKeyBase64() {
-        return jwtPrivateKeyBase64;
+        httpFetcherConfig.setJwtSecret(jwtSecret);
     }
 
     @Field
     public void setJwtPrivateKeyBase64(String jwtPrivateKeyBase64) {
-        this.jwtPrivateKeyBase64 = jwtPrivateKeyBase64;
+        httpFetcherConfig.setJwtPrivateKeyBase64(jwtPrivateKeyBase64);
     }
 
     @Override
@@ -557,17 +555,21 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         HttpClientFactory cp = httpClientFactory.copy();
         cp.setDisableContentCompression(true);
         noCompressHttpClient = cp.build();
-        if (!StringUtils.isBlank(jwtPrivateKeyBase64)) {
-            PrivateKey key = JwtPrivateKeyCreds.convertBase64ToPrivateKey(jwtPrivateKeyBase64);
-            jwtGenerator = new JwtGenerator(new JwtPrivateKeyCreds(key, jwtIssuer, jwtSubject, jwtExpiresInSeconds));
-        } else if (!StringUtils.isBlank(jwtSecret)) {
-            jwtGenerator = new JwtGenerator(new JwtSecretCreds(jwtSecret.getBytes(StandardCharsets.UTF_8), jwtIssuer, jwtSubject, jwtExpiresInSeconds));
+
+        if (!StringUtils.isBlank(httpFetcherConfig.getJwtPrivateKeyBase64())) {
+            PrivateKey key = JwtPrivateKeyCreds.convertBase64ToPrivateKey(httpFetcherConfig.getJwtPrivateKeyBase64());
+            jwtGenerator = new JwtGenerator(new JwtPrivateKeyCreds(key, httpFetcherConfig.getJwtIssuer(),
+                    httpFetcherConfig.getJwtSubject(), httpFetcherConfig.getJwtExpiresInSeconds()));
+        } else if (!StringUtils.isBlank(httpFetcherConfig.getJwtSecret())) {
+            jwtGenerator = new JwtGenerator(new JwtSecretCreds(httpFetcherConfig
+                    .getJwtSecret()
+                    .getBytes(StandardCharsets.UTF_8), httpFetcherConfig.getJwtIssuer(), httpFetcherConfig.getJwtSubject(), httpFetcherConfig.getJwtExpiresInSeconds()));
         }
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
-        if (!StringUtils.isBlank(jwtSecret) && !StringUtils.isBlank(jwtPrivateKeyBase64)) {
+        if (!StringUtils.isBlank(httpFetcherConfig.getJwtSecret()) && !StringUtils.isBlank(httpFetcherConfig.getJwtPrivateKeyBase64())) {
             throw new TikaConfigException("Both JWT secret and JWT private key base 64 were " + "specified. Only one or the other is supported");
         }
     }
