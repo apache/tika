@@ -38,7 +38,7 @@
     <microsoft-kiota-serialization-json.version>1.1.1</microsoft-kiota-serialization-json.version>
     <wiremock.version>3.3.1</wiremock.version>
     <mockito-junit-jupiter.version>5.3.1</mockito-junit-jupiter.version>
-    <nimbus-jose-jwt.version>9.37.3</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
   </properties>
 
   <dependencies>
