@@ -300,14 +300,14 @@
     <maven.failsafe.version>3.3.0</maven.failsafe.version>
     <maven.surefire.version>3.3.0</maven.surefire.version>
     <maven.shade.version>3.6.0</maven.shade.version>
-    <maven.project.info.reports.version>3.6.0</maven.project.info.reports.version>
+    <maven.project.info.reports.version>3.6.1</maven.project.info.reports.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
     <google.cloud.version>2.40.1</google.cloud.version>
-    <aws.version>1.12.752</aws.version>
+    <aws.version>1.12.753</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -411,7 +411,7 @@
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.6-3</zstd.version>
-    <kafka.version>3.7.0</kafka.version>
+    <kafka.version>3.7.1</kafka.version>
     <netty.version>4.1.111.Final</netty.version>
     <snappy.java.version>1.1.10.5</snappy.java.version>
     <logback.version>1.5.6</logback.version>
@@ -880,7 +880,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.29.0</version>
+        <version>0.30.0</version>
       </dependency>
       <dependency>
         <groupId>org.opengis</groupId>
@@ -1036,7 +1036,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.16.2</version>
+        <version>2.17.0</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
