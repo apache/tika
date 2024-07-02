@@ -18,8 +18,8 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <grpc.version>1.60.0</grpc.version>
-    <protobuf.version>3.24.0</protobuf.version>
-    <protoc.version>3.24.0</protoc.version>
+    <protobuf.version>3.25.3</protobuf.version>
+    <protoc.version>3.25.3</protoc.version>
     <asarkar-grpc-test.version>1.2.2</asarkar-grpc-test.version>
     <maven.compiler.release>11</maven.compiler.release>
     <awaitility.version>4.2.1</awaitility.version>
@@ -78,6 +78,10 @@
       <groupId>io.grpc</groupId>
       <artifactId>grpc-services</artifactId>
       <exclusions>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java-util</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>com.google.guava</groupId>
           <artifactId>guava</artifactId>
