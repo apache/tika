@@ -17,7 +17,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <grpc.version>1.60.0</grpc.version>
+    <grpc.version>1.65.0</grpc.version>
     <protobuf.version>3.25.3</protobuf.version>
     <protoc.version>3.25.3</protoc.version>
     <asarkar-grpc-test.version>1.2.2</asarkar-grpc-test.version>
