@@ -443,6 +443,7 @@
     <logback.version>1.5.6</logback.version>
     <zstd.version>1.5.6-3</zstd.version>
     <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
+    <javacpp.version>1.5.10</javacpp.version>
   </properties>
 
   <dependencyManagement>
