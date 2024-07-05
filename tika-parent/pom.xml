@@ -374,7 +374,7 @@
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
     <!-- 12.0.* needs java 17 -->
-    <jetty.version>11.0.21</jetty.version>
+    <jetty.version>11.0.22</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.14.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
