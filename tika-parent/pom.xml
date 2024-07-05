@@ -309,7 +309,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.40.1</google.cloud.version>
-    <aws.version>1.12.753</aws.version>
+    <aws.version>1.12.756</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -335,7 +335,7 @@
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <commons.io.version>2.16.1</commons.io.version>
     <commons.lang3.version>3.14.0</commons.lang3.version>
-    <commons.logging.version>1.3.2</commons.logging.version>
+    <commons.logging.version>1.3.3</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.11.1</commons.net.version>
     <ctakes.version>5.1.0</ctakes.version>
@@ -410,7 +410,7 @@
     <pax.exam.version>4.13.5</pax.exam.version>
     <pdfbox.version>3.0.2</pdfbox.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <poi.version>5.2.5</poi.version>
+    <poi.version>5.3.0</poi.version>
     <protobuf.version>3.25.3</protobuf.version>
     <quartz.version>2.3.2</quartz.version>
     <reactor.core.version>3.6.7</reactor.core.version>
