@@ -43,7 +43,30 @@
       <artifactId>datavec-data-image</artifactId>
       <version>${dl4j.version}</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>ffmpeg</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>javacpp</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>javacpp-platform</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
+    <!-- TODO restore after ffmpeg has been updated -->
+    <!--
+    <dependency>
+      <groupId>org.bytedeco</groupId>
+      <artifactId>ffmpeg</artifactId>
+      <version>6.1.1-1.5.10</version>
+      <scope>provided</scope>
+    </dependency>
+    -->
     <dependency>
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-zoo</artifactId>
@@ -55,12 +78,24 @@
       <artifactId>deeplearning4j-modelimport</artifactId>
       <version>${dl4j.version}</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>javacpp</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-nn</artifactId>
       <version>${dl4j.version}</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>javacpp</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.nd4j</groupId>
@@ -72,6 +107,10 @@
           <groupId>commons-net</groupId>
           <artifactId>commons-net</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>javacpp</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -79,6 +118,16 @@
       <artifactId>nd4j-native-platform</artifactId>
       <version>${dl4j.version}</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>javacpp</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bytedeco</groupId>
+          <artifactId>javacpp-platform</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
@@ -90,6 +139,16 @@
       <artifactId>commons-net</artifactId>
       <version>${commons.net.version}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.bytedeco</groupId>
+      <artifactId>javacpp</artifactId>
+      <version>${javacpp.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.bytedeco</groupId>
+      <artifactId>javacpp-platform</artifactId>
+      <version>${javacpp.version}</version>
     </dependency>
   </dependencies>
 
