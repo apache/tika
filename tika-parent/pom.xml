@@ -309,7 +309,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.40.1</google.cloud.version>
-    <aws.version>1.12.756</aws.version>
+    <aws.version>1.12.757</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -356,7 +356,7 @@
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.22.0</jackrabbit.version>
-    <jackson.version>2.17.1</jackson.version>
+    <jackson.version>2.17.2</jackson.version>
     <jackcess.version>4.0.7</jackcess.version>
     <jackcess.encrypt.version>4.0.2</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
@@ -396,6 +396,7 @@
     <mime4j.version>0.8.11</mime4j.version>
     <mockito.version>5.12.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
+    <!-- 4.2.0.Alpha2 tested successfully -->
     <netty.version>4.1.111.Final</netty.version>
     <oak.jackrabbit.version>1.64.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
