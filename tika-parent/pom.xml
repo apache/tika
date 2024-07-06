@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.40.1</google.cloud.version>
-    <aws.version>1.12.756</aws.version>
+    <aws.version>1.12.757</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -347,7 +347,7 @@
     <imageio.version>1.4.0</imageio.version>
     <!-- jackrabbit 2.21.23 requires java 11 -->
     <jackrabbit.version>2.21.22</jackrabbit.version>
-    <jackson.version>2.17.1</jackson.version>
+    <jackson.version>2.17.2</jackson.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
     <javax.rest.version>2.1.1</javax.rest.version>
