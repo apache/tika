@@ -26,6 +26,12 @@ public class ExtractReaderException extends IOException {
     private final TYPE type;
 
     public ExtractReaderException(TYPE exceptionType) {
+        super(exceptionType.toString());
+        this.type = exceptionType;
+    }
+
+    public ExtractReaderException(TYPE exceptionType, Throwable t) {
+        super(exceptionType.toString(), t);
         this.type = exceptionType;
     }
 
