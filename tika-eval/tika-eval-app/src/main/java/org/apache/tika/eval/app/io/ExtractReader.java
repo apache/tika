@@ -119,13 +119,13 @@ public class ExtractReader {
         }
 
         if (minExtractLength > IGNORE_LENGTH && length < minExtractLength) {
-            LOG.info("minExtractLength {} > IGNORE_LENGTH {} and length {} < minExtractLength {}", 
-                    minExtractLength, IGNORE_LENGTH, length, minExtractLength);
+            LOG.info("minExtractLength {} > IGNORE_LENGTH {} and length {} < minExtractLength {} for file '{}'", 
+                    minExtractLength, IGNORE_LENGTH, length, minExtractLength, extractFile);
             throw new ExtractReaderException(ExtractReaderException.TYPE.EXTRACT_FILE_TOO_SHORT);
         }
         if (maxExtractLength > IGNORE_LENGTH && length > maxExtractLength) {
-            LOG.info("maxExtractLength {} > IGNORE_LENGTH {} and length {} > maxExtractLength {}", 
-                    maxExtractLength, IGNORE_LENGTH, length, maxExtractLength);
+            LOG.info("maxExtractLength {} > IGNORE_LENGTH {} and length {} > maxExtractLength {} for file '{}'", 
+                    maxExtractLength, IGNORE_LENGTH, length, maxExtractLength, extractFile);
             throw new ExtractReaderException(ExtractReaderException.TYPE.EXTRACT_FILE_TOO_LONG);
         }
 
