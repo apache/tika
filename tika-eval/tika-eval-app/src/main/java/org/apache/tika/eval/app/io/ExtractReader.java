@@ -111,7 +111,7 @@ public class ExtractReader {
         try {
             length = Files.size(extractFile);
         } catch (IOException e) {
-            throw new ExtractReaderException(ExtractReaderException.TYPE.IO_EXCEPTION);
+            throw new ExtractReaderException(ExtractReaderException.TYPE.IO_EXCEPTION, e);
         }
 
         if (length == 0L) {
@@ -119,9 +119,13 @@ public class ExtractReader {
         }
 
         if (minExtractLength > IGNORE_LENGTH && length < minExtractLength) {
+            LOG.info("minExtractLength {} > IGNORE_LENGTH {} and length {} < minExtractLength {}", 
+                    minExtractLength, IGNORE_LENGTH, length, minExtractLength);
             throw new ExtractReaderException(ExtractReaderException.TYPE.EXTRACT_FILE_TOO_SHORT);
         }
         if (maxExtractLength > IGNORE_LENGTH && length > maxExtractLength) {
+            LOG.info("maxExtractLength {} > IGNORE_LENGTH {} and length {} > maxExtractLength {}", 
+                    maxExtractLength, IGNORE_LENGTH, length, maxExtractLength);
             throw new ExtractReaderException(ExtractReaderException.TYPE.EXTRACT_FILE_TOO_LONG);
         }
 
@@ -148,7 +152,7 @@ public class ExtractReader {
             }
             reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
         } catch (IOException e) {
-            throw new ExtractReaderException(ExtractReaderException.TYPE.IO_EXCEPTION);
+            throw new ExtractReaderException(ExtractReaderException.TYPE.IO_EXCEPTION, e);
         }
 
         try {
@@ -180,7 +184,7 @@ public class ExtractReader {
                 metadataList = generateListFromTextFile(reader, fileSuffixes);
             }
         } catch (IOException e) {
-            throw new ExtractReaderException(ExtractReaderException.TYPE.IO_EXCEPTION);
+            throw new ExtractReaderException(ExtractReaderException.TYPE.IO_EXCEPTION, e);
         } finally {
             IOUtils.closeQuietly(reader);
             IOUtils.closeQuietly(is);
