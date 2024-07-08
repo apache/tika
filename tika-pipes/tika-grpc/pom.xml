@@ -16,16 +16,12 @@
   </parent>
 
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <grpc.version>1.65.0</grpc.version>
-    <protobuf.version>3.25.3</protobuf.version>
     <protoc.version>3.25.3</protoc.version>
     <asarkar-grpc-test.version>1.2.2</asarkar-grpc-test.version>
-    <maven.compiler.release>11</maven.compiler.release>
     <awaitility.version>4.2.1</awaitility.version>
     <j2objc-annotations.version>3.0.0</j2objc-annotations.version>
     <error_prone_annotations.version>2.28.0</error_prone_annotations.version>
-    <jackson-module-jsonSchema.version>2.17.2</jackson-module-jsonSchema.version>
   </properties>
 
   <dependencyManagement>
@@ -142,7 +138,6 @@
     <dependency>
       <groupId>com.google.errorprone</groupId>
       <artifactId>error_prone_annotations</artifactId>
-      <version>${error_prone_annotations.version}</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.guava</groupId>
@@ -228,7 +223,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-jsonSchema</artifactId>
-      <version>${jackson-module-jsonSchema.version}</version>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.asarkar.grpc</groupId>
