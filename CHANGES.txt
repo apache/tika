@@ -1,4 +1,4 @@
-Release 3.0.0-BETA2 - ???
+Release 3.0.0-BETA2 - 07/09/2024
 
    BREAKING CHANGES
 
@@ -9,6 +9,10 @@ Release 3.0.0-BETA2 - ???
      XMLReaderUtils (TIKA-4259).
 
    Other Changes
+
+   * Add GRPC server (TIKA-4181).
+
+   * Improved configurability in tika-pipes (TIKA-4243).
 
    * Add optional PST parser based on libpst/readpst (TIKA-4250).
 
