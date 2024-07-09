@@ -26,12 +26,11 @@
        for safely updating the version in our release process. -->
   <name>Apache Tika pipes gRPC server</name>
   <url>https://tika.apache.org/</url>
-
   <parent>
     <groupId>org.apache.tika</groupId>
-    <artifactId>tika-pipes</artifactId>
+    <artifactId>tika-parent</artifactId>
     <version>3.0.0-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
+    <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
   <properties>
