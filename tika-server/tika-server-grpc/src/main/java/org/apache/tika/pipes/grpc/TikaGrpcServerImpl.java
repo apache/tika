@@ -66,7 +66,6 @@ import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.Param;
-import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -81,7 +80,7 @@ import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 import org.apache.tika.pipes.fetcher.config.FetcherConfigContainer;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
-    private static final Logger LOG = LoggerFactory.getLogger(TikaConfigSerializer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TikaGrpcServerImpl.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     static {
         OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -125,6 +124,10 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(tikaConfigPath);
 
         Element fetchersElement = (Element) tikaConfigDoc.getElementsByTagName("fetchers").item(0);
+        if (fetchersElement == null) {
+            fetchersElement = tikaConfigDoc.createElement("fetchers");
+            tikaConfigDoc.getDocumentElement().appendChild(fetchersElement);
+        }
         for (int i = 0; i < fetchersElement.getChildNodes().getLength(); ++i) {
             fetchersElement.removeChild(fetchersElement.getChildNodes().item(i));
         }
