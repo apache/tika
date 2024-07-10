@@ -21,7 +21,7 @@
   <parent>
     <artifactId>tika-langdetect</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>3.0.0-SNAPSHOT</version>
+    <version>3.0.0-BETA2</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -69,6 +69,6 @@
     </plugins>
   </build>
   <scm>
-    <tag>3.0.0-BETA-rc1</tag>
+    <tag>tika-3.0.0-BETA2-rc1</tag>
   </scm>
 </project>
