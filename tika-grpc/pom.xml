@@ -40,6 +40,8 @@
     <awaitility.version>4.2.1</awaitility.version>
     <j2objc-annotations.version>3.0.0</j2objc-annotations.version>
     <error_prone_annotations.version>2.28.0</error_prone_annotations.version>
+    <!-- javadocs doesn't build for generated code -->
+    <maven.javadoc.skip>true</maven.javadoc.skip>
   </properties>
 
   <dependencyManagement>
