@@ -19,6 +19,8 @@ package org.apache.tika.pipes.grpc;
 import static io.grpc.health.v1.HealthCheckResponse.ServingStatus;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 import com.beust.jcommander.JCommander;
@@ -33,16 +35,20 @@ import io.grpc.protobuf.services.ProtoReflectionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.TikaConfigSerializer;
+
 /**
  * Server that manages startup/shutdown of the GRPC Tika server.
  */
 public class TikaGrpcServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(TikaGrpcServer.class);
+    public static final int TIKA_SERVER_GRPC_DEFAULT_PORT = 50052;
     private Server server;
-    @Parameter(names = {"-p", "--port"}, description = "The grpc server port", help = true, required = true)
-    private Integer port;
+    @Parameter(names = {"-p", "--port"}, description = "The grpc server port", help = true)
+    private Integer port = TIKA_SERVER_GRPC_DEFAULT_PORT;
 
-    @Parameter(names = {"-t", "--tika-config"}, description = "The grpc server port", help = true, required = true)
+    @Parameter(names = {"-c", "--config"}, description = "The grpc server port", help = true)
     private File tikaConfigXml;
 
     @Parameter(names = {"-s", "--secure"}, description = "Enable credentials required to access this grpc server")
@@ -82,13 +88,20 @@ public class TikaGrpcServer {
         } else {
             creds = InsecureServerCredentials.create();
         }
+        if (tikaConfigXml == null) {
+            // Create a default tika config
+            tikaConfigXml = File.createTempFile("tika-config", ".xml");
+            try (FileWriter fw = new FileWriter(tikaConfigXml, StandardCharsets.UTF_8)) {
+                TikaConfigSerializer.serialize(new TikaConfig(), TikaConfigSerializer.Mode.STATIC_FULL, fw, StandardCharsets.UTF_8);
+            }
+        }
         File tikaConfigFile = new File(tikaConfigXml.getAbsolutePath());
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);
         server = Grpc
                 .newServerBuilderForPort(port, creds)
                 .addService(new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath()))
                 .addService(healthStatusManager.getHealthService())
-                .addService(ProtoReflectionService.newInstance()) // Enable reflection
+                .addService(ProtoReflectionService.newInstance())
                 .build()
                 .start();
         LOGGER.info("Server started, listening on " + port);
