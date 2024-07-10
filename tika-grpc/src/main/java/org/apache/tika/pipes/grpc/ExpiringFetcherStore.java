@@ -33,8 +33,8 @@ import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 
 public class ExpiringFetcherStore implements AutoCloseable {
-    private static final Logger LOG = LoggerFactory.getLogger(ExpiringFetcherStore.class);
     public static final long EXPIRE_JOB_INITIAL_DELAY = 1L;
+    private static final Logger LOG = LoggerFactory.getLogger(ExpiringFetcherStore.class);
     private final Map<String, AbstractFetcher> fetchers = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, AbstractConfig> fetcherConfigs = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, Instant> fetcherLastAccessed = Collections.synchronizedMap(new HashMap<>());

@@ -48,16 +48,19 @@ public class TikaGrpcServer {
     @Parameter(names = {"-s", "--secure"}, description = "Enable credentials required to access this grpc server")
     private boolean secure;
 
-    @Parameter(names = {"--cert-chain"}, description = "Certificate chain file. Example: server1.pem See: https://github.com/grpc/grpc-java/tree/b3ffb5078df361d7460786e134db7b5c00939246/examples/example-tls")
+    @Parameter(names = {"--cert-chain"},
+            description = "Certificate chain file. Example: server1.pem See: https://github.com/grpc/grpc-java/tree/b3ffb5078df361d7460786e134db7b5c00939246/examples/example-tls")
     private File certChain;
 
-    @Parameter(names = {"--private-key"}, description = "Private key store. Example: server1.key See: https://github.com/grpc/grpc-java/tree/b3ffb5078df361d7460786e134db7b5c00939246/examples/example-tls")
+    @Parameter(names = {"--private-key"},
+            description = "Private key store. Example: server1.key See: https://github.com/grpc/grpc-java/tree/b3ffb5078df361d7460786e134db7b5c00939246/examples/example-tls")
     private File privateKey;
 
     @Parameter(names = {"--private-key-password"}, description = "Private key password, if needed")
     private String privateKeyPassword;
 
-    @Parameter(names = {"--trust-cert-collection"}, description = "The trust certificate collection (root certs). Example: ca.pem See: https://github.com/grpc/grpc-java/tree/b3ffb5078df361d7460786e134db7b5c00939246/examples/example-tls")
+    @Parameter(names = {"--trust-cert-collection"},
+            description = "The trust certificate collection (root certs). Example: ca.pem See: https://github.com/grpc/grpc-java/tree/b3ffb5078df361d7460786e134db7b5c00939246/examples/example-tls")
     private File trustCertCollection;
 
     @Parameter(names = {"--client-auth-required"}, description = "Is Mutual TLS required?")
@@ -65,6 +68,27 @@ public class TikaGrpcServer {
 
     @Parameter(names = {"-h", "-H", "--help"}, description = "Display help menu")
     private boolean help;
+
+    /**
+     * Main launches the server from the command line.
+     */
+    public static void main(String[] args) throws Exception {
+        TikaGrpcServer server = new TikaGrpcServer();
+        JCommander commander = JCommander
+                .newBuilder()
+                .addObject(server)
+                .build();
+
+        commander.parse(args);
+
+        if (server.help) {
+            commander.usage();
+            return;
+        }
+
+        server.start();
+        server.blockUntilShutdown();
+    }
 
     public void start() throws Exception {
         HealthStatusManager healthStatusManager = new HealthStatusManager();
@@ -122,27 +146,6 @@ public class TikaGrpcServer {
         if (server != null) {
             server.awaitTermination();
         }
-    }
-
-    /**
-     * Main launches the server from the command line.
-     */
-    public static void main(String[] args) throws Exception {
-        TikaGrpcServer server = new TikaGrpcServer();
-        JCommander commander = JCommander
-                .newBuilder()
-                .addObject(server)
-                .build();
-
-        commander.parse(args);
-
-        if (server.help) {
-            commander.usage();
-            return;
-        }
-
-        server.start();
-        server.blockUntilShutdown();
     }
 
     public TikaGrpcServer setTikaConfigXml(File tikaConfigXml) {
