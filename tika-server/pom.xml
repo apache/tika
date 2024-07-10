@@ -21,7 +21,6 @@
     <module>tika-server-standard</module>
     <module>tika-server-client</module>
     <module>tika-server-eval</module>
-    <module>tika-server-grpc</module>
   </modules>
 
   <parent>
