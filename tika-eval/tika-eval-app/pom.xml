@@ -114,6 +114,7 @@
                 <filter>
                   <artifact>*:*</artifact>
                   <excludes>
+                    <exclude>META-INF/maven/plugin.xml</exclude>
                     <exclude>module-info.class</exclude>
                     <exclude>LICENSE.txt</exclude>
                     <exclude>NOTICE.txt</exclude>

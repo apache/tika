@@ -195,6 +195,7 @@
                   <excludes>
                     <exclude>module-info.class</exclude>
                     <exclude>META-INF/versions/9/module-info.class</exclude>
+                    <exclude>META-INF/maven/plugin.xml</exclude>
                     <exclude>META-INF/*.SF</exclude>
                     <exclude>META-INF/*.DSA</exclude>
                     <exclude>META-INF/*.RSA</exclude>
