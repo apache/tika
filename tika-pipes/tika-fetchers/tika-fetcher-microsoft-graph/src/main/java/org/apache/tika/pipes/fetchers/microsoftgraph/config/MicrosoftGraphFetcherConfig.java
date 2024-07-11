@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 
-public class MsGraphFetcherConfig extends AbstractConfig {
+public class MicrosoftGraphFetcherConfig extends AbstractConfig {
     private long[] throttleSeconds;
     private boolean spoolToTemp;
     private AadCredentialConfigBase credentials;
@@ -32,7 +32,7 @@ public class MsGraphFetcherConfig extends AbstractConfig {
         return spoolToTemp;
     }
 
-    public MsGraphFetcherConfig setSpoolToTemp(boolean spoolToTemp) {
+    public MicrosoftGraphFetcherConfig setSpoolToTemp(boolean spoolToTemp) {
         this.spoolToTemp = spoolToTemp;
         return this;
     }
@@ -41,7 +41,7 @@ public class MsGraphFetcherConfig extends AbstractConfig {
         return throttleSeconds;
     }
 
-    public MsGraphFetcherConfig setThrottleSeconds(long[] throttleSeconds) {
+    public MicrosoftGraphFetcherConfig setThrottleSeconds(long[] throttleSeconds) {
         this.throttleSeconds = throttleSeconds;
         return this;
     }
@@ -50,7 +50,7 @@ public class MsGraphFetcherConfig extends AbstractConfig {
         return credentials;
     }
 
-    public MsGraphFetcherConfig setCredentials(AadCredentialConfigBase credentials) {
+    public MicrosoftGraphFetcherConfig setCredentials(AadCredentialConfigBase credentials) {
         this.credentials = credentials;
         return this;
     }
@@ -59,7 +59,7 @@ public class MsGraphFetcherConfig extends AbstractConfig {
         return scopes;
     }
 
-    public MsGraphFetcherConfig setScopes(List<String> scopes) {
+    public MicrosoftGraphFetcherConfig setScopes(List<String> scopes) {
         this.scopes = scopes;
         return this;
     }

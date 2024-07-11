@@ -38,7 +38,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.ClientCertificateCredentialsConfig;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.ClientSecretCredentialsConfig;
-import org.apache.tika.pipes.fetchers.microsoftgraph.config.MsGraphFetcherConfig;
+import org.apache.tika.pipes.fetchers.microsoftgraph.config.MicrosoftGraphFetcherConfig;
 
 /**
  * Fetches files from Microsoft Graph API.
@@ -47,15 +47,15 @@ import org.apache.tika.pipes.fetchers.microsoftgraph.config.MsGraphFetcherConfig
 public class MicrosoftGraphFetcher extends AbstractFetcher implements Initializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(MicrosoftGraphFetcher.class);
     private GraphServiceClient graphClient;
-    private MsGraphFetcherConfig msGraphFetcherConfig;
+    private MicrosoftGraphFetcherConfig microsoftGraphFetcherConfig;
     private long[] throttleSeconds;
 
     public MicrosoftGraphFetcher() {
 
     }
 
-    public MicrosoftGraphFetcher(MsGraphFetcherConfig msGraphFetcherConfig) {
-        this.msGraphFetcherConfig = msGraphFetcherConfig;
+    public MicrosoftGraphFetcher(MicrosoftGraphFetcherConfig microsoftGraphFetcherConfig) {
+        this.microsoftGraphFetcherConfig = microsoftGraphFetcherConfig;
     }
 
     /**
@@ -84,19 +84,20 @@ public class MicrosoftGraphFetcher extends AbstractFetcher implements Initializa
 
     @Override
     public void initialize(Map<String, Param> map) {
-        String[] scopes = msGraphFetcherConfig.getScopes().toArray(new String[0]);
-        if (msGraphFetcherConfig.getCredentials() instanceof ClientCertificateCredentialsConfig) {
+        String[] scopes = microsoftGraphFetcherConfig
+                .getScopes().toArray(new String[0]);
+        if (microsoftGraphFetcherConfig.getCredentials() instanceof ClientCertificateCredentialsConfig) {
             ClientCertificateCredentialsConfig credentials =
-                    (ClientCertificateCredentialsConfig) msGraphFetcherConfig.getCredentials();
+                    (ClientCertificateCredentialsConfig) microsoftGraphFetcherConfig.getCredentials();
             graphClient = new GraphServiceClient(
                     new ClientCertificateCredentialBuilder().clientId(credentials.getClientId())
                             .tenantId(credentials.getTenantId()).pfxCertificate(
                                     new ByteArrayInputStream(credentials.getCertificateBytes()))
                             .clientCertificatePassword(credentials.getCertificatePassword())
                             .build(), scopes);
-        } else if (msGraphFetcherConfig.getCredentials() instanceof ClientSecretCredentialsConfig) {
+        } else if (microsoftGraphFetcherConfig.getCredentials() instanceof ClientSecretCredentialsConfig) {
             ClientSecretCredentialsConfig credentials =
-                    (ClientSecretCredentialsConfig) msGraphFetcherConfig.getCredentials();
+                    (ClientSecretCredentialsConfig) microsoftGraphFetcherConfig.getCredentials();
             graphClient = new GraphServiceClient(
                     new ClientSecretCredentialBuilder().tenantId(credentials.getTenantId())
                             .clientId(credentials.getClientId())
