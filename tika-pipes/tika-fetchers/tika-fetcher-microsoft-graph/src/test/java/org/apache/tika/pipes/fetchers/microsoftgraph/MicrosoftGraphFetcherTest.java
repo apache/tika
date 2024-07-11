@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.ClientCertificateCredentialsConfig;
-import org.apache.tika.pipes.fetchers.microsoftgraph.config.MsGraphFetcherConfig;
+import org.apache.tika.pipes.fetchers.microsoftgraph.config.MicrosoftGraphFetcherConfig;
 
 @ExtendWith(MockitoExtension.class)
 class MicrosoftGraphFetcherTest {
@@ -59,7 +59,7 @@ class MicrosoftGraphFetcherTest {
     GraphServiceClient graphClient;
     @Spy
     @SuppressWarnings("unused")
-    MsGraphFetcherConfig msGraphFetcherConfig = new MsGraphFetcherConfig().setCredentials(
+    MicrosoftGraphFetcherConfig msGraphFetcherConfig = new MicrosoftGraphFetcherConfig().setCredentials(
             new ClientCertificateCredentialsConfig().setCertificateBytes(certificateBytes)
                     .setCertificatePassword(certificatePassword).setClientId(clientId)
                     .setTenantId(tenantId)).setScopes(Collections.singletonList(".default"));
