@@ -34,7 +34,7 @@
   </parent>
 
   <properties>
-    <grpc.version>1.65.0</grpc.version>
+    <grpc.version>1.65.1</grpc.version>
     <protoc.version>3.25.3</protoc.version>
     <asarkar-grpc-test.version>1.2.2</asarkar-grpc-test.version>
     <awaitility.version>4.2.1</awaitility.version>
