@@ -1064,14 +1064,6 @@
               <artifactId>guava</artifactId>
               <version>32.0.0-jre</version>
             </exclude>
-            <!-- sonatype https://ossindex.sonatype.org/vulnerability/sonatype-2021-0818 
-            false positive? related bug https://github.com/grpc/grpc-java/issues/8311
-            has been fixed -->
-            <dependency>
-              <groupId>io.grpc</groupId>
-              <artifactId>grpc-core</artifactId>
-              <version>1.53.0</version>
-            </dependency>
             <exclude>
               <!-- CVE-2018-18928 does affect the java library not just the c/c++ library,
               upon further research -->
