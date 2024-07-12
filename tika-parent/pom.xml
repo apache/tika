@@ -295,8 +295,8 @@
     <maven.assembly.version>3.7.1</maven.assembly.version>
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
-    <maven.failsafe.version>3.3.0</maven.failsafe.version>
-    <maven.surefire.version>3.3.0</maven.surefire.version>
+    <maven.failsafe.version>3.3.1</maven.failsafe.version>
+    <maven.surefire.version>3.3.1</maven.surefire.version>
     <maven.javadoc.version>3.7.0</maven.javadoc.version>
     <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
@@ -309,7 +309,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.40.1</google.cloud.version>
-    <aws.version>1.12.757</aws.version>
+    <aws.version>1.12.760</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -378,7 +378,7 @@
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.14.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
-    <jsoup.version>1.17.2</jsoup.version>
+    <jsoup.version>1.18.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.11.0-M2</junit5.version>
@@ -398,7 +398,7 @@
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha2 tested successfully -->
     <netty.version>4.1.111.Final</netty.version>
-    <oak.jackrabbit.version>1.64.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>1.66.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.3.0 requires jdk17 -->
     <opennlp.version>2.2.0</opennlp.version>
@@ -414,8 +414,8 @@
     <poi.version>5.3.0</poi.version>
     <protobuf.version>3.25.3</protobuf.version>
     <quartz.version>2.3.2</quartz.version>
-    <reactor.core.version>3.6.7</reactor.core.version>
-    <reactor.netty.version>1.1.20</reactor.netty.version>
+    <reactor.core.version>3.6.8</reactor.core.version>
+    <reactor.netty.version>1.1.21</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
     <slf4j.version>2.0.13</slf4j.version>
@@ -1069,6 +1069,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>
+        <!-- don't update to 3.1.2 due to deploy problems -->
         <version>3.1.1</version>
       </plugin>
       </plugins>
