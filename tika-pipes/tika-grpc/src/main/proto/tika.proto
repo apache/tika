@@ -14,6 +14,8 @@
 syntax = "proto3";
 package tika;
 
+option go_package = "apache.org/tika";
+
 option java_multiple_files = true;
 option java_package = "org.apache.tika";
 option java_outer_classname = "TikaProto";
