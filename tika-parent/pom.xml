@@ -1106,14 +1106,6 @@
         <version>3.2.0</version>
         <configuration>
           <excludeCoordinates>
-            <!-- sonatype https://ossindex.sonatype.org/vulnerability/sonatype-2021-0818
-            false positive? related bug https://github.com/grpc/grpc-java/issues/8311
-            has been fixed -->
-            <coordinate>
-              <groupId>io.grpc</groupId>
-              <artifactId>grpc-core</artifactId>
-              <version>1.53.0</version>
-            </coordinate>
             <coordinate>
               <groupId>io.netty</groupId>
               <artifactId>netty-handler</artifactId>
