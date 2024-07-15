@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.input.ProxyReader;
 
@@ -42,15 +43,15 @@ class CSVSniffer {
     private static final int PUSH_BACK = 2;
     private static final int SPACE = ' ';
 
-    private final char[] delimiters;
+    private final Set<Character> delimiters;
     private final int markLimit;
     private final double minConfidence;
 
-    CSVSniffer(char[] delimiters) {
+    CSVSniffer(Set<Character> delimiters) {
         this(DEFAULT_MARK_LIMIT, delimiters, DEFAULT_MIN_CONFIDENCE);
     }
 
-    CSVSniffer(int markLimit, char[] delimiters, double minConfidence) {
+    CSVSniffer(int markLimit, Set<Character> delimiters, double minConfidence) {
         this.markLimit = markLimit;
         this.delimiters = delimiters;
         this.minConfidence = minConfidence;
@@ -310,7 +311,6 @@ class CSVSniffer {
                 throw new EOFException();
             }
             unread(reader, c);
-            return;
         }
 
 
