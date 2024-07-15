@@ -27,7 +27,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
+import com.google.common.collect.ImmutableSet;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -35,30 +37,38 @@ import org.apache.tika.mime.MediaType;
 
 public class CSVSnifferTest extends TikaTest {
 
-    private static char[] DELIMITERS = new char[]{',', '\t'};
+    private static final Set<Character> DELIMITERS = ImmutableSet.of(',', ';', '\t', '|');
 
-    private static byte[] CSV_BASIC =
+    private static final byte[] CSV_BASIC =
             ("the,quick,brown\tfox\n" + "jumped \tover,the\tlazy,\tdog\n" +
                     "and then,ran,down\tthe\tstreet").getBytes(StandardCharsets.UTF_8);
 
-    private static byte[] TSV_BASIC =
+    private static final byte[] CSV_BASIC2 =
+            ("the;quick;brown\tfox\n" + "jumped \tover;the\tlazy;\tdog\n" +
+                    "and then;ran;down\tthe\tstreet").getBytes(StandardCharsets.UTF_8);
+
+    private static final byte[] CSV_BASIC3 =
+            ("the|quick|brown\tfox\n" + "jumped \tover|the\tlazy|\tdog\n" +
+                    "and then|ran|down\tthe\tstreet").getBytes(StandardCharsets.UTF_8);
+
+    private static final byte[] TSV_BASIC =
             ("the\tquick\tbrown,fox\n" + "jumped ,over\tthe,lazy\t,dog\n" +
                     "and then\tran\tdown,the,street").getBytes(StandardCharsets.UTF_8);
 
-    private static byte[] CSV_MID_CELL_QUOTE_EXCEPTION =
+    private static final byte[] CSV_MID_CELL_QUOTE_EXCEPTION =
             ("the,quick,brown\"fox\n" + "jumped over,the lazy,dog\n" +
                     "and then,ran,down the street").getBytes(StandardCharsets.UTF_8);
 
 
-    private static byte[] ALLOW_SPACES_BEFORE_QUOTE =
+    private static final byte[] ALLOW_SPACES_BEFORE_QUOTE =
             ("the,quick,         \"brown\"\"fox\"\n" + "jumped over,the lazy,dog\n" +
                     "and then,ran,down the street").getBytes(StandardCharsets.UTF_8);
 
-    private static byte[] ALLOW_SPACES_AFTER_QUOTE =
+    private static final byte[] ALLOW_SPACES_AFTER_QUOTE =
             ("the,\"quick\"     ,brown  fox\n" + "jumped over,the lazy,dog\n" +
                     "and then,ran,down the street").getBytes(StandardCharsets.UTF_8);
 
-    private static List<CSVResult> sniff(char[] delimiters, byte[] bytes, Charset charset)
+    private static List<CSVResult> sniff(Set<Character> delimiters, byte[] bytes, Charset charset)
             throws IOException {
         CSVSniffer sniffer = new CSVSniffer(delimiters);
         try (BufferedReader reader = new BufferedReader(
@@ -70,12 +80,20 @@ public class CSVSnifferTest extends TikaTest {
     @Test
     public void testCSVBasic() throws Exception {
         List<CSVResult> results = sniff(DELIMITERS, CSV_BASIC, StandardCharsets.UTF_8);
-        assertEquals(2, results.size());
-        assertEquals(new Character(','), results.get(0).getDelimiter());
+        assertEquals(4, results.size());
+        assertEquals(Character.valueOf(','), results.get(0).getDelimiter());
+
+        results = sniff(DELIMITERS, CSV_BASIC2, StandardCharsets.UTF_8);
+        assertEquals(4, results.size());
+        assertEquals(Character.valueOf(';'), results.get(0).getDelimiter());
+
+        results = sniff(DELIMITERS, CSV_BASIC3, StandardCharsets.UTF_8);
+        assertEquals(4, results.size());
+        assertEquals(Character.valueOf('|'), results.get(0).getDelimiter());
 
         results = sniff(DELIMITERS, TSV_BASIC, StandardCharsets.UTF_8);
-        assertEquals(2, results.size());
-        assertEquals(new Character('\t'), results.get(0).getDelimiter());
+        assertEquals(4, results.size());
+        assertEquals(Character.valueOf('\t'), results.get(0).getDelimiter());
     }
 
     @Test
@@ -83,19 +101,19 @@ public class CSVSnifferTest extends TikaTest {
         List<CSVResult> results =
                 sniff(DELIMITERS, CSV_MID_CELL_QUOTE_EXCEPTION, StandardCharsets.UTF_8);
 
-        assertEquals(2, results.size());
+        assertEquals(4, results.size());
     }
 
     @Test
     public void testAllowWhiteSpacesAroundAQuote() throws Exception {
         List<CSVResult> results =
                 sniff(DELIMITERS, ALLOW_SPACES_BEFORE_QUOTE, StandardCharsets.UTF_8);
-        assertEquals(2, results.size());
-        assertEquals(new Character(','), results.get(0).getDelimiter());
+        assertEquals(4, results.size());
+        assertEquals(Character.valueOf(','), results.get(0).getDelimiter());
 
         results = sniff(DELIMITERS, ALLOW_SPACES_AFTER_QUOTE, StandardCharsets.UTF_8);
-        assertEquals(2, results.size());
-        assertEquals(new Character(','), results.get(0).getDelimiter());
+        assertEquals(4, results.size());
+        assertEquals(Character.valueOf(','), results.get(0).getDelimiter());
     }
 
     @Test

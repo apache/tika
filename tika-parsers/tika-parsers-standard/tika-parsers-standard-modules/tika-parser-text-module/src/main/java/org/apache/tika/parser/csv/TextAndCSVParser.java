@@ -95,8 +95,6 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
     private static final String TABLE = "table";
     private static final int DEFAULT_MARK_LIMIT = 20000;
 
-    private static final char[] DEFAULT_DELIMITERS = new char[]{',', '\t'};
-
     private static final Map<Character, String> CHAR_TO_STRING_DELIMITER_MAP = new HashMap<>();
     private static final Map<String, Character> STRING_TO_CHAR_DELIMITER_MAP = new HashMap<>();
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
@@ -116,8 +114,6 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         }
     }
 
-    private char[] delimiters = DEFAULT_DELIMITERS;
-
     /**
      * This is the mark limit in characters (not bytes) to
      * read from the stream when classifying the stream as
@@ -135,7 +131,6 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
     private double minConfidence = 0.50;
 
     public TextAndCSVParser() {
-        super();
     }
 
     public TextAndCSVParser(EncodingDetector encodingDetector) {
@@ -159,10 +154,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         if (mediaType == null) {
             return false;
         }
-        if (mediaType.getBaseType().equals(TSV) || mediaType.getBaseType().equals(CSV)) {
-            return true;
-        }
-        return false;
+        return mediaType.getBaseType().equals(TSV) || mediaType.getBaseType().equals(CSV);
     }
 
     @Override
@@ -175,8 +167,8 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         CSVParams params = getOverride(metadata);
-        Reader reader = null;
-        Charset charset = null;
+        Reader reader;
+        Charset charset;
         if (!params.isComplete()) {
             reader = detect(params, stream, metadata, context);
             if (params.getCharset() != null) {
@@ -294,7 +286,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
                         getEncodingDetector(context));
             }
         }
-        Reader reader = null;
+        Reader reader;
         if (params.getCharset() == null) {
             reader = new AutoDetectReader(new CloseShieldInputStream(stream), metadata,
                     getEncodingDetector(context));
@@ -310,7 +302,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         if (params.getDelimiter() == null &&
                 (params.getMediaType() == null || isCSVOrTSV(params.getMediaType()))) {
 
-            CSVSniffer sniffer = new CSVSniffer(markLimit, delimiters, minConfidence);
+            CSVSniffer sniffer = new CSVSniffer(markLimit, CHAR_TO_STRING_DELIMITER_MAP.keySet(), minConfidence);
             CSVResult result = sniffer.getBest(reader, metadata);
             params.setMediaType(result.getMediaType());
             params.setDelimiter(result.getDelimiter());
@@ -376,7 +368,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             // deprecated, see TIKA-431
             metadata.set(Metadata.CONTENT_ENCODING, params.getCharset().name());
         }
-        if (!mediaType.equals(MediaType.TEXT_PLAIN) && params.getDelimiter() != null) {
+        if (!MediaType.TEXT_PLAIN.equals(mediaType) && params.getDelimiter() != null) {
             if (CHAR_TO_STRING_DELIMITER_MAP.containsKey(params.getDelimiter())) {
                 attrs.put(DELIMITER, CHAR_TO_STRING_DELIMITER_MAP.get(params.getDelimiter()));
             } else {
