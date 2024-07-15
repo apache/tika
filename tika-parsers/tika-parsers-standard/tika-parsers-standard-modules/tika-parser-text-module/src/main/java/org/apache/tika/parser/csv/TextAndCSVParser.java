@@ -192,9 +192,9 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             return;
         }
 
-        CSVFormat csvFormat = CSVFormat.EXCEL.withDelimiter(params.getDelimiter());
+        CSVFormat csvFormat = CSVFormat.EXCEL.builder().setDelimiter(params.getDelimiter()).build();
         metadata.set(DELIMITER_PROPERTY,
-                CHAR_TO_STRING_DELIMITER_MAP.get(csvFormat.getDelimiter()));
+                CHAR_TO_STRING_DELIMITER_MAP.get(csvFormat.getDelimiterString().charAt(0)));
 
         XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(handler, metadata);
         int totalRows = 0;

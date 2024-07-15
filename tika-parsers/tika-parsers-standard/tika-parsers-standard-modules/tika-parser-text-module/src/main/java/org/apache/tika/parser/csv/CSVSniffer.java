@@ -86,7 +86,7 @@ class CSVSniffer {
         //TODO: take into consideration the filename.  Perhaps require
         //a higher confidence if detection contradicts filename?
         List<CSVResult> results = sniff(reader);
-        if (results == null || results.size() == 0) {
+        if (results == null || results.isEmpty()) {
             return CSVResult.TEXT;
         }
         CSVResult bestResult = results.get(0);
