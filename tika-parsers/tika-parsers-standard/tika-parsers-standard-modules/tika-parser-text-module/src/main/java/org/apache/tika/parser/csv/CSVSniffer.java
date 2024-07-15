@@ -134,6 +134,8 @@ class CSVSniffer {
         Map<Integer, MutableInt> rowLengthCounts = new HashMap<>();
         int charsRead = 0;
         int colCount = 0;
+        boolean rowZero = true;
+        boolean rowZeroEmpty = false;
         int encapsulated = 0; //number of cells that are encapsulated in dquotes (for now)
         boolean parseException = false;
 
@@ -326,7 +328,12 @@ class CSVSniffer {
             } else {
                 cnt.increment();
             }
+            if (rowZero && colCount <= 1) {
+                // row zero single column => no delimiter in first line
+                rowZeroEmpty = true;
+            }
             colCount = 0;
+            rowZero = false;
         }
 
         void unquoted(String string) {
@@ -374,6 +381,11 @@ class CSVSniffer {
             }
             //if there's not enough info
             if (max < 0 || totalRows < 3) {
+                return 0.0;
+            }
+
+            if (rowZeroEmpty) {
+                // TIKA-4278: not credible that there would be no delimiter in row zero
                 return 0.0;
             }
 
