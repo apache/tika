@@ -192,9 +192,9 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             return;
         }
 
-        CSVFormat csvFormat = CSVFormat.EXCEL.withDelimiter(params.getDelimiter());
+        CSVFormat csvFormat = CSVFormat.EXCEL.builder().setDelimiter(params.getDelimiter()).build();
         metadata.set(DELIMITER_PROPERTY,
-                CHAR_TO_STRING_DELIMITER_MAP.get(csvFormat.getDelimiter()));
+                CHAR_TO_STRING_DELIMITER_MAP.get(csvFormat.getDelimiterString().charAt(0)));
 
         XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(handler, metadata);
         int totalRows = 0;
@@ -282,13 +282,13 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             MediaType mediaType = MediaType.parse(mediaString);
             if (!SUPPORTED_TYPES.contains(mediaType.getBaseType())) {
                 params.setMediaType(mediaType);
-                return new AutoDetectReader(new CloseShieldInputStream(stream), metadata,
+                return new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata,
                         getEncodingDetector(context));
             }
         }
         Reader reader;
         if (params.getCharset() == null) {
-            reader = new AutoDetectReader(new CloseShieldInputStream(stream), metadata,
+            reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata,
                     getEncodingDetector(context));
             params.setCharset(((AutoDetectReader) reader).getCharset());
             if (params.isComplete()) {
@@ -296,7 +296,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             }
         } else {
             reader = new BufferedReader(
-                    new InputStreamReader(new CloseShieldInputStream(stream), params.getCharset()));
+                    new InputStreamReader(CloseShieldInputStream.wrap(stream), params.getCharset()));
         }
 
         if (params.getDelimiter() == null &&

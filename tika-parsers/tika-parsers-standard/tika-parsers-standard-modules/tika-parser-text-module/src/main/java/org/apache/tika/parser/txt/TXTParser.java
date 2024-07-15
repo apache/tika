@@ -41,7 +41,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * beginning of the stream and the given document metadata, most
  * notably the <code>charset</code> parameter of a
  * {@link org.apache.tika.metadata.HttpHeaders#CONTENT_TYPE} value.
- * <p/>
+ * <p>
  * This parser sets the following output metadata entries:
  * <dl>
  * <dt>{@link org.apache.tika.metadata.HttpHeaders#CONTENT_TYPE}</dt>
@@ -59,22 +59,23 @@ public class TXTParser extends AbstractEncodingDetectorParser {
             Collections.singleton(MediaType.TEXT_PLAIN);
 
     public TXTParser() {
-        super();
     }
 
     public TXTParser(EncodingDetector encodingDetector) {
         super(encodingDetector);
     }
 
+    @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
+    @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         // Automatically detect the character encoding
-        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
+        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
                 metadata, getEncodingDetector(context))) {
             //try to get detected content type; could be a subclass of text/plain
             //such as vcal, etc.
