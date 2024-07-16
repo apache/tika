@@ -93,6 +93,11 @@ class CSVSniffer {
         if (bestResult.getConfidence() < minConfidence) {
             return CSVResult.TEXT;
         }
+        // TIKA-4278: colon isn't reliable, e.g. govdocs1/242/242970.txt
+        if (results.size() > 1 && bestResult.getDelimiter().equals(':') &&
+                results.get(1).getConfidence() == bestResult.getConfidence()) {
+            return results.get(1);
+        }
         return bestResult;
     }
 
