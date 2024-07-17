@@ -349,7 +349,7 @@
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.11.0</gson.version>
     <guava.version>33.2.1-jre</guava.version>
-    <h2.version>2.2.224</h2.version>
+    <h2.version>2.3.230</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
