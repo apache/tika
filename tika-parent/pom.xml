@@ -319,7 +319,7 @@
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <commons.cli.version>1.8.0</commons.cli.version>
-    <commons.codec.version>1.17.0</commons.codec.version>
+    <commons.codec.version>1.17.1</commons.codec.version>
     <commons.collections4.version>4.4</commons.collections4.version>
     <commons.compress.version>1.26.2</commons.compress.version>
     <commons.csv.version>1.11.0</commons.csv.version>
@@ -418,6 +418,8 @@
     <snappy.java.version>1.1.10.5</snappy.java.version>
     <logback.version>1.5.6</logback.version>
     <javacpp.version>1.5.10</javacpp.version>
+    <!-- h2 2.3 requires jdk11 -->
+    <h2.version>2.2.224</h2.version>
   </properties>
 
   <dependencyManagement>
@@ -498,12 +500,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.49.1</version>
+        <version>1.50.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.15.1</version>
+        <version>1.15.2</version>
         <exclusions>
           <exclusion>
             <groupId>io.netty</groupId>
@@ -601,7 +603,7 @@
       <dependency>
         <groupId>com.h2database</groupId>
         <artifactId>h2</artifactId>
-        <version>2.2.224</version>
+        <version>${h2.version}</version>
       </dependency>
       <dependency>
         <groupId>com.healthmarketscience.jackcess</groupId>
@@ -1101,7 +1103,7 @@
             <exclude>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
-                <version>2.2.224</version>
+                <version>${h2.version}</version>
             </exclude>
             <!-- CVE-2023-39913: Uima is used because ctakes is used in the
             natural language process module. Serialization is only on data that is configured in
