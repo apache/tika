@@ -1398,8 +1398,6 @@
             <version>${maven.javadoc.version}</version>
             <configuration>
               <doclint>none</doclint>
-              <source>1.8</source>
-              <sourcepath>src/main/java</sourcepath>
             </configuration>
           </plugin>
         </plugins>
