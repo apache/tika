@@ -315,8 +315,8 @@
         See TIKA-2992.
     -->
     <asm.version>9.7</asm.version>
-    <azure.core.version>1.49.1</azure.core.version>
-    <azure.core.http.netty.version>1.15.1</azure.core.http.netty.version>
+    <azure.core.version>1.50.0</azure.core.version>
+    <azure.core.http.netty.version>1.15.2</azure.core.http.netty.version>
     <azure.storage.blob.version>12.26.1</azure.storage.blob.version>
     <!-- 7.0.0 needs java 17 -->
     <biz.aqute.version>6.4.1</biz.aqute.version>
@@ -327,7 +327,7 @@
     <brotli.version>0.1.2</brotli.version>
     <c3p0.version>0.10.1</c3p0.version>
     <commons.cli.version>1.8.0</commons.cli.version>
-    <commons.codec.version>1.17.0</commons.codec.version>
+    <commons.codec.version>1.17.1</commons.codec.version>
     <commons.collections4.version>4.5.0-M2</commons.collections4.version>
     <commons.compress.version>1.26.2</commons.compress.version>
     <commons.csv.version>1.11.0</commons.csv.version>
