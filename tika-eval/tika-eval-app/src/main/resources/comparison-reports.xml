@@ -911,7 +911,7 @@
       when dice_coefficient &lt; 1.01 then '80%-100%'
       else 'other'
       end as range,
-      COUNT(*) AS COUNT,
+      COUNT(*) AS COUNT
       FROM content_comparisons cc
       join contents_a ca on cc.id = ca.id
       join contents_b cb on cc.id = cb.id
@@ -934,7 +934,7 @@
       when overlap &lt; 1.01 then '80%-100%'
       else 'other'
       end as range,
-      COUNT(*) AS COUNT,
+      COUNT(*) AS COUNT
       FROM content_comparisons cc
       join contents_a ca on cc.id = ca.id
       join contents_b cb on cc.id = cb.id
