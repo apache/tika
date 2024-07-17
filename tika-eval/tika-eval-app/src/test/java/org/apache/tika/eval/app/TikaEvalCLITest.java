@@ -207,6 +207,9 @@ public class TikaEvalCLITest extends TikaTest {
             }
         }
         assertTrue(cnt > 33);
+        // If there is a failure, check for SQL errors in the previous log.
+        // If it's is a syntax error, for the position look for "[*]" in the exception message.
+        // The "[42001-230]" is [<error number>-<build number].
 
     }
 
