@@ -1019,12 +1019,6 @@
           <artifactId>logback-classic</artifactId>
           <version>${logback.version}</version>
       </dependency>
-      <!-- because of convergence problems with jaxb 4.0.5, because cxf 4.0.4 uses an older version -->
-      <dependency>
-          <groupId>org.eclipse.angus</groupId>
-          <artifactId>angus-activation</artifactId>
-          <version>2.0.2</version>
-      </dependency>
       <dependency>
           <groupId>org.bytedeco</groupId>
           <artifactId>hdf5</artifactId>
