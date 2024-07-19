@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.40.1</google.cloud.version>
-    <aws.version>1.12.761</aws.version>
+    <aws.version>1.12.762</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -495,7 +495,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.26.1</version>
+        <version>12.27.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
@@ -1005,7 +1005,7 @@
       <dependency>
           <groupId>com.google.errorprone</groupId>
           <artifactId>error_prone_annotations</artifactId>
-          <version>2.29.1</version>
+          <version>2.29.2</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
