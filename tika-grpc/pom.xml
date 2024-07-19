@@ -39,7 +39,6 @@
     <asarkar-grpc-test.version>1.2.2</asarkar-grpc-test.version>
     <awaitility.version>4.2.1</awaitility.version>
     <j2objc-annotations.version>3.0.0</j2objc-annotations.version>
-    <error_prone_annotations.version>2.28.0</error_prone_annotations.version>
     <!-- javadocs doesn't build for generated code -->
     <maven.javadoc.skip>true</maven.javadoc.skip>
   </properties>
@@ -146,24 +145,9 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <version>${gson.version}</version> <!-- prevent downgrade via protobuf-java-util -->
-    </dependency>
-    <dependency>
       <groupId>com.google.j2objc</groupId>
       <artifactId>j2objc-annotations</artifactId>
       <version>${j2objc-annotations.version}</version> <!-- prevent downgrade of version in guava -->
-    </dependency>
-    <dependency>
-      <groupId>com.google.errorprone</groupId>
-      <artifactId>error_prone_annotations</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
@@ -183,7 +167,6 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>${guava.version}</version> <!-- prevent downgrade of version in protobuf-java-util -->
       <exclusions>
         <exclusion>
           <groupId>com.google.errorprone</groupId>
@@ -221,7 +204,6 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -243,7 +225,6 @@
     <dependency>
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-jsonSchema</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.asarkar.grpc</groupId>
