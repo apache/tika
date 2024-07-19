@@ -26,10 +26,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-fetcher-microsoft-graph</artifactId>
-  <name>Microsoft Graph Tika Pipes Fetcher</name>
+  <name>Apache Tika Microsoft Graph Pipes Fetcher</name>
 
   <properties>
-    <azure-identity.version>1.13.0</azure-identity.version>
+    <azure-identity.version>1.13.1</azure-identity.version>
     <microsoft-graph.version>6.13.0</microsoft-graph.version>
     <microsoft-kiota-serialization-json.version>1.1.1</microsoft-kiota-serialization-json.version>
     <wiremock.version>3.3.1</wiremock.version>
