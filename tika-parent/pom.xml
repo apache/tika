@@ -309,7 +309,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.40.1</google.cloud.version>
-    <aws.version>1.12.761</aws.version>
+    <aws.version>1.12.762</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -317,7 +317,7 @@
     <asm.version>9.7</asm.version>
     <azure.core.version>1.50.0</azure.core.version>
     <azure.core.http.netty.version>1.15.2</azure.core.http.netty.version>
-    <azure.storage.blob.version>12.26.1</azure.storage.blob.version>
+    <azure.storage.blob.version>12.27.0</azure.storage.blob.version>
     <!-- 7.0.0 needs java 17 -->
     <biz.aqute.version>6.4.1</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
@@ -334,12 +334,12 @@
     <commons.exec.version>1.4.0</commons.exec.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <commons.io.version>2.16.1</commons.io.version>
-    <commons.lang3.version>3.14.0</commons.lang3.version>
+    <commons.lang3.version>3.15.0</commons.lang3.version>
     <commons.logging.version>1.3.3</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.11.1</commons.net.version>
     <ctakes.version>5.1.0</ctakes.version>
-    <cxf.version>4.0.4</cxf.version>
+    <cxf.version>4.0.5</cxf.version>
     <ddplist.version>1.28</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
@@ -427,7 +427,7 @@
     <sqlite.version>3.46.0.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <tagsoup.version>1.2.1</tagsoup.version>
-    <testcontainers.version>1.19.8</testcontainers.version>
+    <testcontainers.version>1.20.0</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.9</tukaani.version>
     <twelvemonkeys.version>3.11.0</twelvemonkeys.version>
