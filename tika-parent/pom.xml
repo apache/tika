@@ -1203,8 +1203,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven.surefire.version}
-        </version> <!-- versions greater than this don't like System.exit calls in tika-batch -->
+        <version>${maven.surefire.version}</version>
         <configuration>
           <argLine>-Xmx4g -Djava.awt.headless=true</argLine>
         </configuration>
