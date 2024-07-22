@@ -59,10 +59,11 @@ class MicrosoftGraphFetcherTest {
     GraphServiceClient graphClient;
     @Spy
     @SuppressWarnings("unused")
-    MicrosoftGraphFetcherConfig microsoftGraphFetcherConfig = new MicrosoftGraphFetcherConfig().setCredentials(
-            new ClientCertificateCredentialsConfig().setCertificateBytes(certificateBytes)
+    MicrosoftGraphFetcherConfig microsoftGraphFetcherConfig = new MicrosoftGraphFetcherConfig()
+            .setClientCertificateCredentialsConfig(new ClientCertificateCredentialsConfig().setCertificateBytes(certificateBytes)
                     .setCertificatePassword(certificatePassword).setClientId(clientId)
-                    .setTenantId(tenantId)).setScopes(Collections.singletonList(".default"));
+                    .setTenantId(tenantId))
+            .setScopes(Collections.singletonList(".default"));
 
     @Mock
     DrivesRequestBuilder drivesRequestBuilder;

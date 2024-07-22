@@ -16,7 +16,9 @@
  */
 package org.apache.tika.pipes.fetchers.microsoftgraph.config;
 
-public class ClientSecretCredentialsConfig extends AadCredentialConfigBase {
+public class ClientSecretCredentialsConfig implements AadCredentialConfigBase<ClientSecretCredentialsConfig> {
+    private String clientId;
+    private String tenantId;
     private String clientSecret;
 
     public String getClientSecret() {
@@ -25,6 +27,28 @@ public class ClientSecretCredentialsConfig extends AadCredentialConfigBase {
 
     public ClientSecretCredentialsConfig setClientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
+        return this;
+    }
+
+    @Override
+    public String getClientId() {
+        return clientId;
+    }
+
+    @Override
+    public ClientSecretCredentialsConfig setClientId(String clientId) {
+        this.clientId = clientId;
+        return this;
+    }
+
+    @Override
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    @Override
+    public ClientSecretCredentialsConfig setTenantId(String tenantId) {
+        this.tenantId = tenantId;
         return this;
     }
 }

@@ -241,6 +241,16 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-fetcher-http</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-fetcher-microsoft-graph</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-jsonSchema</artifactId>
       <version>${jackson.version}</version>

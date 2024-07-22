@@ -86,18 +86,16 @@ public class MicrosoftGraphFetcher extends AbstractFetcher implements Initializa
     public void initialize(Map<String, Param> map) {
         String[] scopes = microsoftGraphFetcherConfig
                 .getScopes().toArray(new String[0]);
-        if (microsoftGraphFetcherConfig.getCredentials() instanceof ClientCertificateCredentialsConfig) {
-            ClientCertificateCredentialsConfig credentials =
-                    (ClientCertificateCredentialsConfig) microsoftGraphFetcherConfig.getCredentials();
+        if (microsoftGraphFetcherConfig.getClientCertificateCredentialsConfig() != null) {
+            ClientCertificateCredentialsConfig credentials = microsoftGraphFetcherConfig.getClientCertificateCredentialsConfig();
             graphClient = new GraphServiceClient(
                     new ClientCertificateCredentialBuilder().clientId(credentials.getClientId())
                             .tenantId(credentials.getTenantId()).pfxCertificate(
                                     new ByteArrayInputStream(credentials.getCertificateBytes()))
                             .clientCertificatePassword(credentials.getCertificatePassword())
                             .build(), scopes);
-        } else if (microsoftGraphFetcherConfig.getCredentials() instanceof ClientSecretCredentialsConfig) {
-            ClientSecretCredentialsConfig credentials =
-                    (ClientSecretCredentialsConfig) microsoftGraphFetcherConfig.getCredentials();
+        } else if (microsoftGraphFetcherConfig.getClientSecretCredentialsConfig() != null) {
+            ClientSecretCredentialsConfig credentials = microsoftGraphFetcherConfig.getClientSecretCredentialsConfig();
             graphClient = new GraphServiceClient(
                     new ClientSecretCredentialBuilder().tenantId(credentials.getTenantId())
                             .clientId(credentials.getClientId())

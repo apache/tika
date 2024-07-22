@@ -400,7 +400,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     public void getFetcherConfigJsonSchema(GetFetcherConfigJsonSchemaRequest request, StreamObserver<GetFetcherConfigJsonSchemaReply> responseObserver) {
         GetFetcherConfigJsonSchemaReply.Builder builder = GetFetcherConfigJsonSchemaReply.newBuilder();
         try {
-            JsonSchema jsonSchema = JSON_SCHEMA_GENERATOR.generateSchema(Class.forName(request.getFetcherClass()));
+            Class<?> fetcherClass = Class.forName(request.getFetcherClass());
+            Class<?> fetcherConfigClass = Class.forName(fetcherClass.getPackageName() + ".config." + fetcherClass.getSimpleName() + "Config");
+            JsonSchema jsonSchema = JSON_SCHEMA_GENERATOR.generateSchema(fetcherConfigClass);
             builder.setFetcherConfigJsonSchema(OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonSchema));
         } catch (ClassNotFoundException | JsonProcessingException e) {
             throw new RuntimeException("Could not create json schema for " + request.getFetcherClass(), e);
