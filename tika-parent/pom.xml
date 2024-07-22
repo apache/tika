@@ -397,7 +397,7 @@
     <mockito.version>5.12.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha2 tested successfully -->
-    <netty.version>4.1.111.Final</netty.version>
+    <netty.version>4.1.112.Final</netty.version>
     <oak.jackrabbit.version>1.66.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.3.0 requires jdk17 -->
