@@ -5295,6 +5295,15 @@
       <match value="-----BEGIN EC PARAMETERS-----" type="string" offset="0"/>
     </magic>
   </mime-type>
+  <mime-type type="application/x-java-keystore">
+  	<_comment>Java Keystore</_comment>
+    <tika:link>https://en.wikipedia.org/wiki/Java_KeyStore</tika:link>
+    <magic priority="50">
+    	<!-- magic byte: https://en.wikipedia.org/wiki/List_of_file_signatures -->
+        <match value="0xfeedfeed" type="string" offset="0:4"/>
+    </magic>
+    <glob pattern="*.jks" />
+  </mime-type>
 
   <mime-type type="application/x-xfig">
     <glob pattern="*.fig"/>

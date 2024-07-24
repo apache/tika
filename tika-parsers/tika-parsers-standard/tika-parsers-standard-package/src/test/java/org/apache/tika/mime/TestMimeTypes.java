@@ -1227,6 +1227,7 @@ public class TestMimeTypes {
         // Once solved, see TIKA-3784, ought to work for name or data
         //assertType("application/x-pkcs12", "testRSAKEYandCERT.p12");
         //assertTypeByData("application/x-pkcs12", "testRSAKEYandCERT.p12"); // pass=tika
+        assertTypeByData("application/x-java-keystore", "KeyStore.jks");
     }
 
     @Test
