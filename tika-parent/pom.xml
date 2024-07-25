@@ -1034,6 +1034,12 @@
         <artifactId>nimbus-jose-jwt</artifactId>
         <version>${nimbus-jose-jwt.version}</version>
       </dependency>
+      <!-- dependency of logging-parent, default 0.3.0. TODO remove when no longer needed -->
+      <dependency>
+          <groupId>org.jspecify</groupId>
+          <artifactId>jspecify</artifactId>
+          <version>1.0.0</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
