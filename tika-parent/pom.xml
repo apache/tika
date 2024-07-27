@@ -385,7 +385,7 @@
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.30.0</jwarc.version>
-    <kafka.version>3.7.1</kafka.version>
+    <kafka.version>3.8.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.23.1</log4j2.version>
     <lucene.version>9.11.1</lucene.version>
