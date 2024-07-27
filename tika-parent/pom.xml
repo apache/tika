@@ -413,7 +413,7 @@
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.6-4</zstd.version>
-    <kafka.version>3.7.1</kafka.version>
+    <kafka.version>3.8.0</kafka.version>
     <!-- 4.2.0.Alpha2 tested successfully -->
     <netty.version>4.1.112.Final</netty.version>
     <snappy.java.version>1.1.10.5</snappy.java.version>
