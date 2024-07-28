@@ -694,11 +694,6 @@
         <version>${reactor.netty.version}</version>
       </dependency>
       <dependency>
-        <groupId>it.unimi.dsi</groupId>
-        <artifactId>fastutil</artifactId>
-        <version>8.5.13</version>
-      </dependency>
-      <dependency>
         <groupId>javax.annotation</groupId>
         <artifactId>javax.annotation-api</artifactId>
         <version>${javax.annotation.version}</version>
