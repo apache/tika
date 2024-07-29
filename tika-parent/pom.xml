@@ -410,7 +410,6 @@
     <parso.version>2.0.14</parso.version>
     <pax.exam.version>4.13.5</pax.exam.version>
     <pdfbox.version>3.0.2</pdfbox.version>
-    <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>5.3.0</poi.version>
     <protobuf.version>3.25.4</protobuf.version>
     <!-- 2.5.0-rc1 tested successfully -->
