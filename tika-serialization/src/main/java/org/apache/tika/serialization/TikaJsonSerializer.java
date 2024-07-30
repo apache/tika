@@ -106,7 +106,7 @@ public class TikaJsonSerializer {
                     .getClass()
                     .getConstructor();
         } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("class (" + obj.getClass() + ") doesn't have a no-arg constructor. Respectfully not seralizing.");
+            throw new IllegalArgumentException("class (" + obj.getClass() + ") doesn't have a no-arg constructor. Respectfully not serializing.");
         }
         try {
             if (fieldName != null) {
@@ -219,10 +219,6 @@ public class TikaJsonSerializer {
         } else {
             throw new UnsupportedOperationException("Should have been a collection?! " + clazz);
         }
-    }
-
-    private static void serializeItem(String field, Object obj, Class<?> generalType, JsonGenerator jsonGenerator) {
-
     }
 
     private static void serializePrimitiveAndBoxed(String paramName, Object obj, JsonGenerator jsonGenerator) throws IOException {

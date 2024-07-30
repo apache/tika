@@ -16,6 +16,7 @@
  */
 package org.apache.tika.metadata.filter;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -81,5 +82,9 @@ public class ClearByAttachmentTypeMetadataFilter extends MetadataFilter {
             }
         }
         this.types.addAll(types);
+    }
+
+    public List<String> getTypes() {
+        return new ArrayList<>(types);
     }
 }

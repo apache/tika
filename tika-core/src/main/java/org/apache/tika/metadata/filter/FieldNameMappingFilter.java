@@ -76,6 +76,10 @@ public class FieldNameMappingFilter extends MetadataFilter {
         }
     }
 
+    public Map<String, String> getMappins() {
+        return mappings;
+    }
+
     @Override
     public String toString() {
         return "FieldNameMappingFilter{" + "mappings=" + mappings + ", excludeUnmapped=" + excludeUnmapped + '}';

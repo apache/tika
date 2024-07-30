@@ -16,6 +16,7 @@
  */
 package org.apache.tika.metadata.filter;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -48,5 +49,9 @@ public class ExcludeFieldMetadataFilter extends MetadataFilter {
     @Field
     public void setExclude(List<String> exclude) {
         this.excludeSet.addAll(exclude);
+    }
+
+    public List<String> getExclude() {
+        return new ArrayList<>(excludeSet);
     }
 }
