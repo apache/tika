@@ -16,6 +16,7 @@
  */
 package org.apache.tika.metadata.filter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tika.exception.TikaException;
@@ -23,10 +24,23 @@ import org.apache.tika.metadata.Metadata;
 
 public class CompositeMetadataFilter extends MetadataFilter {
 
-    private final List<MetadataFilter> filters;
+    //no longer final to allow for no arg initialization during serialization
+    private List<MetadataFilter> filters;
 
+    public CompositeMetadataFilter() {
+        filters = new ArrayList<>();
+    }
     public CompositeMetadataFilter(List<MetadataFilter> filters) {
         this.filters = filters;
+    }
+
+    public void setFilters(List<MetadataFilter> filters) {
+        this.filters.clear();
+        this.filters.addAll(filters);
+    }
+
+    public List<MetadataFilter> getFilters() {
+        return filters;
     }
 
     @Override
