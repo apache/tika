@@ -673,7 +673,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
         try {
             BufferedImage image =
-                    renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType());
+                    renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType().getImageType());
 
             //TODO -- get suffix based on OcrImageType
             tmpFile = tmpResources.createTempFile();
