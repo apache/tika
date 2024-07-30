@@ -330,6 +330,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
      * @deprecated use {@link #setThrottleSeconds(String)}
      * @param sleepBeforeRetryMillis -- amount of time in millis to sleep if there was a failure
      */
+    @Deprecated
     @Field
     public void setSleepBeforeRetryMillis(long sleepBeforeRetryMillis) {
         LOGGER.info("sleepBeforeRetryMillis is deprecated. Use setThrottleSeconds instead");
