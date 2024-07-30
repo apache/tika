@@ -38,7 +38,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.pdfbox.rendering.ImageType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -1129,7 +1128,7 @@ public class PDFParserTest extends TikaTest {
                     pdfParser.getClass().getName());
             assertEquals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY,
                     ((PDFParser) pdfParser).getPDFParserConfig().getOcrStrategy());
-            assertEquals(ImageType.RGB,
+            assertEquals(PDFParserConfig.TikaImageType.GRAY.RGB,
                     ((PDFParser) pdfParser).getPDFParserConfig().getOcrImageType());
         }
     }

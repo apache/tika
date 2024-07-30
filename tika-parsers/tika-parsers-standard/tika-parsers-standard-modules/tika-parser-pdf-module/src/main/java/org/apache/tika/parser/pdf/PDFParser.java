@@ -1099,7 +1099,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         //set a default renderer if nothing was defined
         PDFBoxRenderer pdfBoxRenderer = new PDFBoxRenderer();
         pdfBoxRenderer.setDPI(config.getOcrDPI());
-        pdfBoxRenderer.setImageType(config.getOcrImageType());
+        pdfBoxRenderer.setImageType(config.getOcrImageType().getImageType());
         pdfBoxRenderer.setImageFormatName(config.getOcrImageFormatName());
         config.setRenderer(pdfBoxRenderer);
     }
