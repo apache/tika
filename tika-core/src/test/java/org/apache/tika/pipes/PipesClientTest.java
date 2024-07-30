@@ -19,6 +19,7 @@ package org.apache.tika.pipes;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.junit.jupiter.api.Assertions;
@@ -28,11 +29,14 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.filter.CompositeMetadataFilter;
+import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.filter.MockUpperCaseFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 
-class PipesClientTest {
+public class PipesClientTest {
     String fetcherName = "fs";
     String testPdfFile = "testOverlappingText.pdf";
 
@@ -49,7 +53,7 @@ class PipesClientTest {
     }
 
     @Test
-    void process() throws IOException, InterruptedException {
+    public void testBasic() throws IOException, InterruptedException {
         PipesResult pipesResult = pipesClient.process(
                 new FetchEmitTuple(testPdfFile, new FetchKey(fetcherName, testPdfFile),
                         new EmitKey(), new Metadata(), new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
@@ -57,5 +61,19 @@ class PipesClientTest {
         Assertions.assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
         Metadata metadata = pipesResult.getEmitData().getMetadataList().get(0);
         Assertions.assertEquals("testOverlappingText.pdf", metadata.get("resourceName"));
+    }
+
+    @Test
+    public void testMetadataFilter() throws IOException, InterruptedException {
+        ParseContext parseContext = new ParseContext();
+        MetadataFilter metadataFilter = new CompositeMetadataFilter(List.of(new MockUpperCaseFilter()));
+        parseContext.set(MetadataFilter.class, metadataFilter);
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(testPdfFile, new FetchKey(fetcherName, testPdfFile),
+                        new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+        Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
+        Assertions.assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
+        Metadata metadata = pipesResult.getEmitData().getMetadataList().get(0);
+        Assertions.assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get("resourceName"));
     }
 }

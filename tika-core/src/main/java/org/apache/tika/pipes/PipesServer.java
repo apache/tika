@@ -57,6 +57,7 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DigestingParser;
@@ -398,8 +399,12 @@ public class PipesServer implements Runnable {
     private void emitParseData(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData) {
         long start = System.currentTimeMillis();
         String stack = getContainerStacktrace(t, parseData.getMetadataList());
-        //we need to apply this after we pull out the stacktrace
-        filterMetadata(parseData.getMetadataList());
+        //we need to apply the metadata filter after we pull out the stacktrace
+        MetadataFilter filter = t.getParseContext().get(MetadataFilter.class);
+        if (filter == null) {
+            filter = tikaConfig.getMetadataFilter();
+        }
+        filterMetadata(filter, parseData.getMetadataList());
         ParseContext parseContext = t.getParseContext();
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = t.getOnParseException();
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
@@ -432,10 +437,10 @@ public class PipesServer implements Runnable {
         }
     }
 
-    private void filterMetadata(List<Metadata> metadataList) {
+    private void filterMetadata(MetadataFilter metadataFilter, List<Metadata> metadataList) {
         for (Metadata m : metadataList) {
             try {
-                tikaConfig.getMetadataFilter().filter(m);
+                metadataFilter.filter(m);
             } catch (TikaException e) {
                 LOG.warn("failed to filter metadata", e);
             }
