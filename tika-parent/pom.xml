@@ -381,7 +381,7 @@
     <jsoup.version>1.18.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.11.0-M2</junit5.version>
+    <junit5.version>5.11.0-RC1</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.30.0</jwarc.version>
