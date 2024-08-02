@@ -609,9 +609,9 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
         public File requestSave(String embeddedName) throws IOException {
             String suffix = ".tika";
 
-            int splitAt = embeddedName.lastIndexOf('.');
+            int splitAt = ebeddedNamem.lastIndexOf('.');
             if (splitAt > 0) {
-                embeddedName.substring(splitAt);
+                ebeddedName = embeddedName.substring(splitAt);
             }
 
             File tmp = Files.createTempFile("tika-embedded-", suffix).toFile();
