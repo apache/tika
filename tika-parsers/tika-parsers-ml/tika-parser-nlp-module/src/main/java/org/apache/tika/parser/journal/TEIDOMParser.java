@@ -508,9 +508,9 @@ public class TEIDOMParser {
          */
         @Override
         public String toString() {
-            return "Author [surName=" + surName + ", middleName=" + middleName != null ?
+            return "Author [surName=" + surName + ", middleName=" + (middleName != null ?
                     middleName :
-                    "" + ", firstName=" + firstName + ", affiliations=" + affiliations + "]";
+                    "") + ", firstName=" + firstName + ", affiliations=" + affiliations + "]";
         }
 
     }
