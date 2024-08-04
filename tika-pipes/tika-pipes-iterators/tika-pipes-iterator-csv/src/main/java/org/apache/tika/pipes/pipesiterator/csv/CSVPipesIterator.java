@@ -158,7 +158,7 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
         }
 
         if (StringUtils.isBlank(fetcherName) && !StringUtils.isBlank(fetchKeyColumn)) {
-            new TikaConfigException("If specifying a 'fetchKeyColumn', " +
+            throw new TikaConfigException("If specifying a 'fetchKeyColumn', " +
                     "you must also specify a 'fetcherName'");
         }
 
