@@ -20,6 +20,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import org.apache.tika.exception.TikaException;
 
+import java.util.Arrays;
+
 /**
  * Directory header The directory starts with a header; its format is as
  * follows: 0000: char[4] 'ITSP' 0004: DWORD Version number 1 0008: DWORD Length
@@ -118,10 +120,10 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
                 .append(ChmCommons.getLanguage(getLang_id()))
                 .append(System.getProperty("line.separator"));
         sb.append("system_uuid:=")
-                .append(getSystem_uuid())
+                .append(Arrays.toString(getSystem_uuid()))
                 .append(System.getProperty("line.separator"));
         sb.append("unknown_0044:=")
-                .append(getUnknown_0044())
+                .append(Arrays.toString(getUnknown_0044()))
                 .append(" ]");
         return sb.toString();
     }

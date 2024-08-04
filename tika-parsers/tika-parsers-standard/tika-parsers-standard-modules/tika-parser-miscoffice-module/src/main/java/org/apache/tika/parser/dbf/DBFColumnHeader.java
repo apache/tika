@@ -22,6 +22,7 @@ import static org.apache.tika.parser.dbf.DBFColumnHeader.ColType.PLUS;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -69,7 +70,7 @@ class DBFColumnHeader {
 
     @Override
     public String toString() {
-        return "DBFColumnHeader{" + "name='" + name + '\'' + ", colType=" + colType +
+        return "DBFColumnHeader{" + "name='" + Arrays.toString(name) + '\'' + ", colType=" + colType +
                 ", fieldLength=" + fieldLength + ", decimalCount=" + decimalCount + '}';
     }
 

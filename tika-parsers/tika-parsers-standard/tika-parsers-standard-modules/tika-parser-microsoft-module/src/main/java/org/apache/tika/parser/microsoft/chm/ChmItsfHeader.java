@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.chm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 
 import org.apache.tika.exception.TikaException;
 
@@ -72,8 +73,8 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
         sb.append(getUnknown_000c()).append(" ");
         sb.append(getLastModified()).append(" ");
         sb.append(getLangId()).append(" ");
-        sb.append(getDir_uuid()).append(" ");
-        sb.append(getStream_uuid()).append(" ");
+        sb.append(Arrays.toString(getDir_uuid())).append(" ");
+        sb.append(Arrays.toString(getStream_uuid())).append(" ");
         sb.append(getUnknownOffset()).append(" ");
         sb.append(getUnknownLen()).append(" ");
         sb.append(getDirOffset()).append(" ");

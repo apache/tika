@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -432,6 +433,6 @@ public class MagicDetector implements Detector {
     public String toString() {
         // Needs to be unique, as these get compared.
         return "Magic Detection for " + type + " looking for " + pattern.length + " bytes = " +
-                this.pattern + " mask = " + this.mask;
+                Arrays.toString(this.pattern) + " mask = " + Arrays.toString(this.mask);
     }
 }
