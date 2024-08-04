@@ -39,7 +39,9 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
     public StreamObjectHeaderEnd16bit(int type) throws TikaException {
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(type);
         if (this.type == null) {
-            throw new TikaException("The type value RuntimeException is not defined for the stream object end 16-bit header");
+            throw new TikaException(String.format(Locale.US,
+                    "The type value %d is not defined for the stream object end 16-bit header",
+                    type));
         }
 
     }
