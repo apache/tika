@@ -90,7 +90,6 @@ public class Param<T> implements Serializable {
 
     //one of these two is used for serialization
     private final List<String> valueStrings = new ArrayList<>();
-    private final Map<String, String> valueMap = new LinkedHashMap<>();
 
     private Class<T> type;
     private String name;
@@ -105,9 +104,7 @@ public class Param<T> implements Serializable {
         this.actualValue = value;
         if (List.class.isAssignableFrom(value.getClass())) {
             this.valueStrings.addAll((List) value);
-        } else if (Map.class.isAssignableFrom(value.getClass())) {
-            valueMap.putAll((Map)value);
-        } else {
+        } else if (!Map.class.isAssignableFrom(value.getClass())) {
             this.valueStrings.add(value.toString());
         }
         if (this.type == null) {
@@ -251,7 +248,6 @@ public class Param<T> implements Serializable {
                     throw new TikaConfigException("Duplicate keys are not allowed: " + key);
                 }
                 ((Map)ret.actualValue).put(key, value);
-                ret.valueMap.put(key, value);
             }
             child = child.getNextSibling();
         }

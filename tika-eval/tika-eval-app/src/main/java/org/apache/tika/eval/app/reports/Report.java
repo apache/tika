@@ -99,14 +99,12 @@ public class Report {
 
             int rowCount = 0;
             ResultSetMetaData meta = rs.getMetaData();
-            Set<String> colNames = new HashSet<>();
 
             Row xssfRow = sheet.createRow(rowCount++);
             //write headers and cache them to check against styles
             for (int i = 1; i <= meta.getColumnCount(); i++) {
                 Cell cell = xssfRow.createCell(i - 1);
                 cell.setCellValue(meta.getColumnLabel(i));
-                colNames.add(meta.getColumnLabel(i));
             }
 
             ResultSetMetaData resultSetMetaData = rs.getMetaData();
