@@ -561,6 +561,9 @@ public class TEIDOMParser {
          */
         @Override
         public boolean equals(Object obj) {
+            if (!(obj instanceof Affiliation)) {
+                return false;
+            }
             Affiliation otherA = (Affiliation) obj;
             return this.getAddress().equals(otherA.getAddress()) &&
                     this.getOrgName().equals(otherA.getOrgName());
@@ -633,6 +636,10 @@ public class TEIDOMParser {
          */
         @Override
         public boolean equals(Object obj) {
+            if (!(obj instanceof OrgName)) {
+                return false;
+            }
+
             OrgName otherA = (OrgName) obj;
 
             if (otherA.getTypeNames() != null) {
@@ -697,6 +704,9 @@ public class TEIDOMParser {
          */
         @Override
         public boolean equals(Object obj) {
+            if (!(obj instanceof OrgTypeName)) {
+                return false;
+            }
             OrgTypeName otherOrgName = (OrgTypeName) obj;
             return this.type.equals(otherOrgName.getType()) &&
                     this.name.equals(otherOrgName.getName());
@@ -785,6 +795,9 @@ public class TEIDOMParser {
          */
         @Override
         public boolean equals(Object obj) {
+            if (!(obj instanceof Address)) {
+                return false;
+            }
             Address otherA = (Address) obj;
             if (this.settlment == null) {
                 return otherA.getSettlment() == null;
@@ -870,6 +883,9 @@ public class TEIDOMParser {
          */
         @Override
         public boolean equals(Object obj) {
+            if (!(obj instanceof Country)) {
+                return false;
+            }
             Country otherC = (Country) obj;
 
             if (this.key == null) {
