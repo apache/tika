@@ -673,14 +673,11 @@ public class LanguageProfilerBuilder {
 
         // Inherited JavaDoc
         public boolean equals(Object obj) {
-
-            NGramEntry ngram = null;
-            try {
-                ngram = (NGramEntry) obj;
-                return ngram.seq.equals(seq);
-            } catch (Exception e) {
+            if (!(obj instanceof NGramEntry)) {
                 return false;
             }
+            NGramEntry ngram = (NGramEntry) obj;
+            return ngram.seq.equals(seq);
         }
 
     }
