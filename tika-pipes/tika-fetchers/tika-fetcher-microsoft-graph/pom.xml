@@ -29,7 +29,7 @@
   <name>Apache Tika Microsoft Graph Pipes Fetcher</name>
 
   <properties>
-    <azure-identity.version>1.13.1</azure-identity.version>
+    <azure-identity.version>1.13.2</azure-identity.version>
     <azure.json.version>1.2.0</azure.json.version>
     <microsoft-graph.version>6.13.0</microsoft-graph.version>
     <microsoft-kiota-serialization-json.version>1.1.1</microsoft-kiota-serialization-json.version>
