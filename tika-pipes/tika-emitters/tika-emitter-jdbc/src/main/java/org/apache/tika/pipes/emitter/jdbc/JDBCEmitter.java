@@ -324,10 +324,6 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     private void insertFirstOnly(String emitKey, List<Metadata> metadataList) throws SQLException {
         insertStatement.clearParameters();
         int i = 0;
-        DateFormat[] dateFormats = new DateFormat[TIKA_DATE_PATTERNS.length];
-        for (int j = 0; j < TIKA_DATE_PATTERNS.length; j++) {
-            dateFormats[i] = new SimpleDateFormat(TIKA_DATE_PATTERNS[j], Locale.US);
-        }
         insertStatement.setString(++i, emitKey);
         for (ColumnDefinition columnDefinition : columns) {
             updateValue(emitKey, insertStatement, ++i, columnDefinition, 0, metadataList);
@@ -450,7 +446,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
             insertStatement.setNull(i, Types.DOUBLE);
             return;
         }
-        Double d = Double.parseDouble(val);
+        Double d = Double.valueOf(val);
         insertStatement.setDouble(i, d);
     }
 
