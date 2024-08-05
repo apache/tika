@@ -25,16 +25,17 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import org.apache.tika.parser.ParseContext;
 
 public class ParseContextSerializer extends JsonSerializer<ParseContext> {
+    public static final String PARSE_CONTEXT = "parseContext";
 
 
     @Override
     public void serialize(ParseContext parseContext, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-        jsonGenerator.writeFieldName("parseContext");
+        jsonGenerator.writeFieldName(PARSE_CONTEXT);
         jsonGenerator.writeStartObject();
         for (String className : parseContext.keySet()) {
             try {
                 Class clazz = Class.forName(className);
-                TikaJsonSerializer.serialize(className, parseContext.get(clazz), clazz, jsonGenerator);
+                TikaJsonSerializer.serialize(className, parseContext.get(clazz), null, jsonGenerator);
             } catch (TikaSerializationException e) {
                 throw new IOException(e);
             } catch (ClassNotFoundException e) {

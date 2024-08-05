@@ -116,7 +116,7 @@ public class TikaJsonSerializer {
             jsonGenerator.writeStringField(INSTANTIATED_CLASS_KEY, obj
                     .getClass()
                     .getName());
-            if (!obj
+            if (superClass != null && !obj
                     .getClass()
                     .equals(superClass)) {
                 jsonGenerator.writeStringField(SUPER_CLASS_KEY, superClass.getName());
