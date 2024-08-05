@@ -18,9 +18,9 @@ package org.apache.tika.parser.microsoft.chm;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import org.apache.tika.exception.TikaException;
-
 import java.util.Arrays;
+
+import org.apache.tika.exception.TikaException;
 
 /**
  * Directory header The directory starts with a header; its format is as
