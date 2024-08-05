@@ -16,6 +16,8 @@
  */
 package org.apache.tika.serialization.pipes;
 
+import static org.apache.tika.serialization.ParseContextSerializer.PARSE_CONTEXT;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
@@ -28,7 +30,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.io.IOExceptionWithCause;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -36,9 +37,8 @@ import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.serialization.JsonMetadata;
+import org.apache.tika.serialization.ParseContextDeserializer;
 import org.apache.tika.serialization.ParseContextSerializer;
-import org.apache.tika.serialization.TikaJsonDeserializer;
-import org.apache.tika.serialization.TikaJsonSerializer;
 import org.apache.tika.utils.StringUtils;
 
 public class JsonFetchEmitTuple {
@@ -52,7 +52,6 @@ public class JsonFetchEmitTuple {
     public static final String EMITKEY = "emitKey";
     public static final String METADATAKEY = "metadata";
     public static final String ON_PARSE_EXCEPTION = "onParseException";
-    public static final String PARSE_CONTEXT = "parseContext";
 
     public static FetchEmitTuple fromJson(Reader reader) throws IOException {
         //try (JsonParser jParser = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
@@ -72,7 +71,8 @@ public class JsonFetchEmitTuple {
         long fetchRangeStart = readLong(FETCH_RANGE_START, root, -1l, false);
         long fetchRangeEnd = readLong(FETCH_RANGE_END, root, -1l, false);
         Metadata metadata = readMetadata(root);
-        ParseContext parseContext = readParseContext(root);
+        JsonNode parseContextNode = root.get(PARSE_CONTEXT);
+        ParseContext parseContext = parseContextNode == null ? new ParseContext() : ParseContextDeserializer.readParseContext(parseContextNode);
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = readOnParseException(root);
 
         return new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey, fetchRangeStart, fetchRangeEnd), new EmitKey(emitterName, emitKey), metadata, parseContext,
@@ -92,30 +92,6 @@ public class JsonFetchEmitTuple {
         } else {
             throw new IOException(ON_PARSE_EXCEPTION + " must be either 'skip' or 'emit'");
         }
-    }
-
-    private static ParseContext readParseContext(JsonNode root) throws IOException {
-        JsonNode contextNode = root.get(PARSE_CONTEXT);
-        if (contextNode == null) {
-            return new ParseContext();
-        }
-        ParseContext parseContext = new ParseContext();
-        Iterator<Map.Entry<String, JsonNode>> it = contextNode.fields();
-        while (it.hasNext()) {
-            Map.Entry<String, JsonNode> e = it.next();
-            String clazzName = e.getKey();
-            JsonNode obj = e.getValue();
-            String className = readVal(TikaJsonSerializer.INSTANTIATED_CLASS_KEY, obj, null, true);
-            String superClassName = readVal(TikaJsonSerializer.SUPER_CLASS_KEY, obj, className, false);
-            try {
-                Class clazz = Class.forName(className);
-                Class superClazz = clazz.equals(superClassName) ? clazz : Class.forName(superClassName);
-                parseContext.set(clazz, TikaJsonDeserializer.deserialize(clazz, superClazz, obj));
-            } catch (ReflectiveOperationException ex) {
-                throw new IOExceptionWithCause(ex);
-            }
-        }
-        return parseContext;
     }
 
     private static Metadata readMetadata(JsonNode root) {
