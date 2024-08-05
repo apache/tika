@@ -500,12 +500,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.50.0</version>
+        <version>1.51.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.15.2</version>
+        <version>1.15.3</version>
         <exclusions>
           <exclusion>
             <groupId>io.netty</groupId>
