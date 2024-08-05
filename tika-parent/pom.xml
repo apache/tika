@@ -429,7 +429,7 @@
     <tagsoup.version>1.2.1</tagsoup.version>
     <testcontainers.version>1.20.1</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
-    <tukaani.version>1.9</tukaani.version>
+    <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.11.0</twelvemonkeys.version>
     <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
     <uimafit.version>3.4.0</uimafit.version>
