@@ -30,6 +30,7 @@
 
   <properties>
     <azure-identity.version>1.13.1</azure-identity.version>
+    <azure.json.version>1.2.0</azure.json.version>
     <microsoft-graph.version>6.13.0</microsoft-graph.version>
     <microsoft-kiota-serialization-json.version>1.1.1</microsoft-kiota-serialization-json.version>
     <wiremock.version>3.3.1</wiremock.version>
@@ -47,6 +48,10 @@
           <artifactId>nimbus-jose-jwt</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>com.azure</groupId>
+          <artifactId>azure-json</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>net.java.dev.jna</groupId>
           <artifactId>jna-platform</artifactId>
         </exclusion>
@@ -55,6 +60,11 @@
           <artifactId>msal4j</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-json</artifactId>
+      <version>${azure.json.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
