@@ -203,6 +203,8 @@ public class TikaJsonSerializer {
             }
             jsonGenerator.writeEndArray();
         } else if (List.class.isAssignableFrom(clazz)) {
+            //should we get the generic type of the list via reflection
+            //so that we can set the superclass field in the item?
             jsonGenerator.writeStartArray();
             for (Object item : (List) obj) {
                 serialize(item, jsonGenerator);
