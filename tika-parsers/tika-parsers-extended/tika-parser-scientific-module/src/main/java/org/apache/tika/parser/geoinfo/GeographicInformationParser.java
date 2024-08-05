@@ -90,18 +90,14 @@ public class GeographicInformationParser implements Parser {
     public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata,
                       ParseContext parseContext) throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, geoInfoType);
-        DataStore dataStore = null;
-        DefaultMetadata defaultMetadata = null;
         XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(contentHandler, metadata);
 
         TemporaryResources tmp =
                 TikaInputStream.isTikaInputStream(inputStream) ? null : new TemporaryResources();
-        try {
-            TikaInputStream tikaInputStream = TikaInputStream.get(inputStream, tmp, metadata);
+        try (TikaInputStream tikaInputStream = TikaInputStream.get(inputStream, tmp, metadata)) {
             File file = tikaInputStream.getFile();
-            dataStore = DataStores.open(file);
-            defaultMetadata = new DefaultMetadata(dataStore.getMetadata());
-            if (defaultMetadata != null) {
+            try (DataStore dataStore = DataStores.open(file)){
+                DefaultMetadata defaultMetadata = new DefaultMetadata(dataStore.getMetadata());
                 extract(xhtmlContentHandler, metadata, defaultMetadata);
             }
 
