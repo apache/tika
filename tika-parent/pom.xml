@@ -318,6 +318,8 @@
     <azure.core.version>1.51.0</azure.core.version>
     <azure.core.http.netty.version>1.15.3</azure.core.http.netty.version>
     <azure.storage.blob.version>12.27.0</azure.storage.blob.version>
+    <azure.identity.version>1.13.2</azure.identity.version>
+    <azure.json.version>1.2.0</azure.json.version>
     <!-- 7.0.0 needs java 17 -->
     <biz.aqute.version>6.4.1</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
@@ -395,6 +397,7 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.11</mime4j.version>
     <mockito.version>5.12.0</mockito.version>
+    <mockito-junit-jupiter.version>5.12.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha2 tested successfully -->
     <netty.version>4.1.112.Final</netty.version>
