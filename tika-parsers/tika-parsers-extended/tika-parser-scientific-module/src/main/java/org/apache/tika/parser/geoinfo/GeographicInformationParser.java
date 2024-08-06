@@ -96,7 +96,7 @@ public class GeographicInformationParser implements Parser {
                 TikaInputStream.isTikaInputStream(inputStream) ? null : new TemporaryResources();
         try (TikaInputStream tikaInputStream = TikaInputStream.get(inputStream, tmp, metadata)) {
             File file = tikaInputStream.getFile();
-            try (DataStore dataStore = DataStores.open(file)){
+            try (DataStore dataStore = DataStores.open(file)) {
                 DefaultMetadata defaultMetadata = new DefaultMetadata(dataStore.getMetadata());
                 extract(xhtmlContentHandler, metadata, defaultMetadata);
             }
