@@ -35,7 +35,7 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
         for (String className : parseContext.keySet()) {
             try {
                 Class clazz = Class.forName(className);
-                TikaJsonSerializer.serialize(className, parseContext.get(clazz), null, jsonGenerator);
+                TikaJsonSerializer.serialize(className, parseContext.get(clazz), jsonGenerator);
             } catch (TikaSerializationException e) {
                 throw new IOException(e);
             } catch (ClassNotFoundException e) {

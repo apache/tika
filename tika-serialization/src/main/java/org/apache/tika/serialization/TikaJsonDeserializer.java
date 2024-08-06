@@ -47,18 +47,15 @@ public class TikaJsonDeserializer {
         String className = root
                 .get(TikaJsonSerializer.INSTANTIATED_CLASS_KEY)
                 .asText();
-        String superClass = root.has(TikaJsonSerializer.SUPER_CLASS_KEY) ? root
-                .get(TikaJsonSerializer.SUPER_CLASS_KEY)
-                .asText() : className;
 
         try {
-            return Optional.of(deserialize(Class.forName(className), Class.forName(superClass), root));
+            return Optional.of(deserialize(Class.forName(className), root));
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
     }
 
-    public static <T> T deserialize(Class<? extends T> clazz, Class<? extends T> superClazz, JsonNode root) throws ReflectiveOperationException {
+    public static <T> T deserialize(Class<? extends T> clazz, JsonNode root) throws ReflectiveOperationException {
         T obj = clazz
                 .getDeclaredConstructor()
                 .newInstance();
@@ -71,7 +68,7 @@ public class TikaJsonDeserializer {
             Map.Entry<String, JsonNode> e = fields.next();
             String name = e.getKey();
             JsonNode child = e.getValue();
-            if (TikaJsonSerializer.INSTANTIATED_CLASS_KEY.equals(name) || TikaJsonSerializer.SUPER_CLASS_KEY.equals(name)) {
+            if (TikaJsonSerializer.INSTANTIATED_CLASS_KEY.equals(name)) {
                 continue;
             }
             setValue(name, child, obj, setters);
