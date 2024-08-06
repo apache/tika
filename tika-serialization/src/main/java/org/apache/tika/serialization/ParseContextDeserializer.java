@@ -58,7 +58,7 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             try {
                 Class clazz = Class.forName(className);
                 Class superClazz = className.equals(superClassName) ? clazz : Class.forName(superClassName);
-                parseContext.set(superClazz, TikaJsonDeserializer.deserialize(clazz, superClazz, obj));
+                parseContext.set(superClazz, TikaJsonDeserializer.deserialize(clazz, obj));
             } catch (ReflectiveOperationException ex) {
                 throw new IOExceptionWithCause(ex);
             }
