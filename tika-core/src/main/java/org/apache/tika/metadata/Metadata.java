@@ -692,17 +692,17 @@ public class Metadata
     }
 
     public String toString() {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder stringBuilder = new StringBuilder();
         String[] names = names();
         for (String name : names) {
             String[] values = _getValues(name);
             for (String value : values) {
-                if (buf.length() > 0) {
-                    buf.append(" ");
+                if (stringBuilder.length() > 0) {
+                    stringBuilder.append(" ");
                 }
-                buf.append(name).append("=").append(value);
+                stringBuilder.append(name).append("=").append(value);
             }
         }
-        return buf.toString();
+        return stringBuilder.toString();
     }
 }
