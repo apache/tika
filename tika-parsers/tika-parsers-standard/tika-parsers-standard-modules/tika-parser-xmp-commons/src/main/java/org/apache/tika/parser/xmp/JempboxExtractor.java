@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.List;
+import java.util.StringJoiner;
 
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.jempbox.xmp.ResourceEvent;
@@ -102,11 +103,11 @@ public class JempboxExtractor {
         if (creators.size() == 1) {
             return creators.get(0);
         }
-        StringBuffer c = new StringBuffer();
+        StringJoiner stringJoiner = new StringJoiner(", ");
         for (String s : creators) {
-            c.append(", ").append(s);
+            stringJoiner.add(s);
         }
-        return c.substring(2);
+        return stringJoiner.toString();
     }
 
     /**

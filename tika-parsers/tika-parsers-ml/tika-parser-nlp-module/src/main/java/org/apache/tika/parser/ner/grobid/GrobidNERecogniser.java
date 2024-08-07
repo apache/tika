@@ -195,8 +195,8 @@ public class GrobidNERecogniser implements NERecogniser {
                     JSONArray measurements = convertToJSONArray(jsonObject, "measurements");
                     for (Object measurement : measurements) {
 
-                        StringBuffer measurementString = new StringBuffer();
-                        StringBuffer normalizedMeasurementString = new StringBuffer();
+                        StringBuilder measurementString = new StringBuilder();
+                        StringBuilder normalizedMeasurementString = new StringBuilder();
 
                         JSONObject quantity = (JSONObject) convertToJSONObject(measurement.toString())
                                 .get("quantity");

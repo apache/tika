@@ -201,7 +201,7 @@ public class PSDParser extends AbstractParser {
             // Read the block
             id = EndianUtils.readUShortBE(stream);
 
-            StringBuffer nameB = new StringBuffer();
+            StringBuilder nameB = new StringBuilder();
             int nameLen = 0;
             while (true) {
                 int v = stream.read();

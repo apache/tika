@@ -431,7 +431,7 @@ public class LanguageProfilerBuilder {
     // Inherited JavaDoc
     public String toString() {
 
-        StringBuffer s = new StringBuffer().append("NGramProfile: ").append(name).append("\n");
+        StringBuilder s = new StringBuilder().append("NGramProfile: ").append(name).append("\n");
 
         for (NGramEntry entry : getSorted()) {
             s.append("[").append(entry.seq).append("/").append(entry.count).append("/")

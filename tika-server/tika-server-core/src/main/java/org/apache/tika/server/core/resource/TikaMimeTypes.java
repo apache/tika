@@ -238,7 +238,7 @@ public class TikaMimeTypes {
     @GET
     @Produces("text/plain")
     public String getMimeTypesPlain() {
-        StringBuffer text = new StringBuffer();
+        StringBuilder text = new StringBuilder();
 
         for (MediaTypeDetails type : getMediaTypes()) {
             text.append(type.type.toString());
