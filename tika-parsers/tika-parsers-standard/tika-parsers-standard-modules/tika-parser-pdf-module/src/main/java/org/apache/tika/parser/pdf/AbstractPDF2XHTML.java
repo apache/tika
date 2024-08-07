@@ -1369,7 +1369,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         //                && (endBookmarkPageNumber == -1 ||
         //                currentPageNo <= endBookmarkPageNumber))
         //        {
-        super.setStartPage(1);
+        super.setStartPage(-1);
         for (PDPage page : pages) {
             if (getCurrentPageNo() >= getStartPage() && getCurrentPageNo() <= getEndPage()) {
                 processPage(page);
