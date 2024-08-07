@@ -42,7 +42,7 @@ public class DWGReadFormatRemover {
     private static final String escapeChars = "(?<!\\\\)(\\\\)(?!\\\\)";
     public String cleanupDwgString(String dwgString) {
         String cleanString = dwgString;
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
         //Strip off start/stop underline/overstrike/strike throughs
         Matcher m = Pattern.compile(underlineStrikeThrough).matcher(cleanString);
         while (m.find()) {
