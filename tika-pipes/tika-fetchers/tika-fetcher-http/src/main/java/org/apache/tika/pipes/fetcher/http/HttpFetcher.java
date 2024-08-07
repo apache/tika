@@ -30,9 +30,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.PrivateKey;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -131,6 +134,25 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     private HttpClient httpClient;
     //back-off client that disables compression
     private HttpClient noCompressHttpClient;
+    private int maxRedirects = 10;
+    //overall timeout in milliseconds
+    private long overallTimeout = -1;
+
+    private long maxSpoolSize = -1;
+
+    //max string length to read from a result if the
+    //status code was not in the 200 range
+    private int maxErrMsgSize = 10000;
+
+    //httpHeaders to capture in the metadata
+    private Set<String> httpHeaders = new HashSet<>();
+
+    //httpRequestHeaders to add to all outgoing http requests
+    private Set<String> httpRequestHeaders = new HashSet<>();
+
+    //When making the request, what User-Agent is sent.
+    //By default httpclient adds e.g. "Apache-HttpClient/4.5.13 (Java/x.y.z)"
+    private String userAgent = null;
 
     JwtGenerator jwtGenerator;
 
@@ -144,8 +166,38 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                 .setRedirectsEnabled(httpFetcherConfig.getMaxRedirects() > 0)
                 .build();
         get.setConfig(requestConfig);
+        setHttpRequestHeaders(metadata, get);
         putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
         return execute(get, metadata, httpClient, true);
+    }
+
+    private void setHttpRequestHeaders(Metadata metadata, HttpGet get) {
+        if (!StringUtils.isBlank(userAgent)) {
+            get.setHeader(USER_AGENT, userAgent);
+        }
+        // Add the headers from the Fetcher configuration.
+        if (httpRequestHeaders != null) {
+            for (String httpRequestHeader : httpRequestHeaders) {
+                parseHeaderAndPutOnRequest(get, httpRequestHeader);
+            }
+        }
+        // Additionally, headers can be specified per-fetch via the metadata.
+        String[] httpRequestHeaders = metadata.getValues("httpRequestHeaders");
+        if (httpRequestHeaders != null) {
+            for (String httpRequestHeader : httpRequestHeaders) {
+                parseHeaderAndPutOnRequest(get, httpRequestHeader);
+            }
+        }
+    }
+
+    private static void parseHeaderAndPutOnRequest(HttpGet get, String httpRequestHeader) {
+        String[] parts = httpRequestHeader
+                .trim().split(":", 2);
+        if (parts.length >= 2) {
+            String key = parts[0].trim();
+            String value = parts[1].trim();
+            get.setHeader(key, value);
+        }
     }
 
     private HttpFetcherConfig getAdditionalHttpFetcherConfig(ParseContext parseContext) throws JsonProcessingException {
@@ -466,20 +518,24 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
      */
     @Field
     public void setHttpRequestHeaders(List<String> headers) {
+        this.httpRequestHeaders.clear();
+        this.httpRequestHeaders.addAll(headers);
+
         httpFetcherConfig.setHttpRequestHeaders(new HttpHeaders());
         if (headers != null) {
+            Map<String, Collection<String>> allParsedHeaders = new HashMap<>();
             for (String header : headers) {
-                httpFetcherConfig
-                        .getHttpRequestHeaders()
-                        .getMap()
-                        .putAll(parseHeaders(header));
+                Map<String, Collection<String>> parsedHeaders = parseHeaders(header);
+                allParsedHeaders.putAll(parsedHeaders);
+                // httpFetcherConfig.getHttpRequestHeaders().getMap() doesn't work:
+                // "The map does not support put or putAll, nor do its entries support setValue."
             }
-
+            httpFetcherConfig.getHttpRequestHeaders().setMap(allParsedHeaders);
         }
     }
 
-    public static Map<String, List<String>> parseHeaders(String headersString) {
-        Map<String, List<String>> headersMap = new HashMap<>();
+    public static Map<String, Collection<String>> parseHeaders(String headersString) {
+        Map<String, Collection<String>> headersMap = new HashMap<>();
         String[] headers = headersString.split("\n");
         for (String header : headers) {
             String[] keyValue = header.split(":", 2);

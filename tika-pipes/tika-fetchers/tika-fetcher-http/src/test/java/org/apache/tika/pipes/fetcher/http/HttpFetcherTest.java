@@ -66,6 +66,7 @@ import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.FetcherManager;
@@ -97,6 +98,7 @@ class HttpFetcherTest extends TikaTest {
         httpFetcherConfig.setOverallTimeout(400_000L);
         httpFetcherConfig.setMaxSpoolSize(-1L);
 
+        httpFetcher = new HttpFetcher();
         final HttpResponse mockResponse = buildMockResponse(HttpStatus.SC_OK, IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
 
         mockClientResponse(mockResponse);
@@ -224,6 +226,13 @@ class HttpFetcherTest extends TikaTest {
         Assertions.assertEquals("fromFetchConfigValue2", fromFetchConfig2s.get(0));
         Assertions.assertEquals("fromFetchConfigValue3", fromFetchConfig2s.get(1));
 
+        metadata.set(Property.externalText("httpRequestHeaders"), new String[] {" nick1 :   val1", "nick2:   val2"});
+        httpFetcher.fetch("http://localhost", metadata, parseContext);
+        httpGet = httpGetArgumentCaptor.getValue();
+        Assertions.assertEquals("val1", httpGet.getHeaders("nick1")[0].getValue());
+        Assertions.assertEquals("val2", httpGet.getHeaders("nick2")[0].getValue());
+        // also make sure the headers from the fetcher config level are specified - see src/test/resources/tika-config-http.xml
+        Assertions.assertEquals("headerValueFromFetcherConfig", httpGet.getHeaders("headerNameFromFetcherConfig")[0].getValue());
     }
 
     @Test
