@@ -29,17 +29,26 @@ import java.util.regex.Pattern;
 public class LeipzigHelper {
 
     static Map<String, List<Path>> getFiles(Path leipzigDir) throws IOException {
-        Matcher tableMatcher = Pattern.compile("([a-z]+)_table(\\.txt)?(\\.gz)?$").matcher("");
-        Matcher leipzigMatcher =
-                Pattern.compile("([a-z]{3,3}(-(simp|trad|rom|zaw))?)[-_].*$").matcher("");
+        Matcher tableMatcher = Pattern
+                .compile("([a-z]+)_table(\\.txt)?(\\.gz)?$")
+                .matcher("");
+        Matcher leipzigMatcher = Pattern
+                .compile("([a-z]{3,3}(-(simp|trad|rom|zaw))?)[-_].*$")
+                .matcher("");
 
         Map<String, List<Path>> m = new TreeMap<>();
-        for (File f : leipzigDir.toFile().listFiles()) {
+        for (File f : leipzigDir
+                .toFile()
+                .listFiles()) {
             System.err.println(f);
             String lang = null;
-            if (tableMatcher.reset(f.getName()).find()) {
+            if (tableMatcher
+                    .reset(f.getName())
+                    .find()) {
                 lang = tableMatcher.group(1);
-            } else if (leipzigMatcher.reset(f.getName()).find()) {
+            } else if (leipzigMatcher
+                    .reset(f.getName())
+                    .find()) {
                 lang = leipzigMatcher.group(1);
             }
             if (lang == null) {

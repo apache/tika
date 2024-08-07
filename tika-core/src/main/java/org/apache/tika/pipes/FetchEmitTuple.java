@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.fetcher.FetchKey;
@@ -36,41 +37,30 @@ public class FetchEmitTuple implements Serializable {
     private final FetchKey fetchKey;
     private EmitKey emitKey;
     private final Metadata metadata;
+    private final ParseContext parseContext;
     private final ON_PARSE_EXCEPTION onParseException;
-    private HandlerConfig handlerConfig;
 
     private EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig;
 
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey) {
-        this(id, fetchKey, emitKey, new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG,
-                DEFAULT_ON_PARSE_EXCEPTION);
+        this(id, fetchKey, emitKey, new Metadata());
     }
-    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, ON_PARSE_EXCEPTION onParseException) {
-        this(id, fetchKey, emitKey, new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG,
-                onParseException);
-    }
-
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata) {
-        this(id, fetchKey, emitKey, metadata, HandlerConfig.DEFAULT_HANDLER_CONFIG,
-                DEFAULT_ON_PARSE_EXCEPTION);
+        this(id, fetchKey, emitKey, metadata, new ParseContext());
     }
 
-    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata,
-                          HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException) {
-        this(id, fetchKey, emitKey, metadata, handlerConfig, onParseException,
-                EmbeddedDocumentBytesConfig.SKIP);
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata, ParseContext parseContext) {
+        this(id, fetchKey, emitKey, metadata, parseContext, ON_PARSE_EXCEPTION.EMIT);
     }
 
-    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata,
-                          HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException,
-                          EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig) {
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata, ParseContext parseContext,
+                          ON_PARSE_EXCEPTION onParseException) {
         this.id = id;
         this.fetchKey = fetchKey;
         this.emitKey = emitKey;
         this.metadata = metadata;
-        this.handlerConfig = handlerConfig;
+        this.parseContext = parseContext;
         this.onParseException = onParseException;
-        this.embeddedDocumentBytesConfig = embeddedDocumentBytesConfig;
     }
 
     public String getId() {
@@ -88,24 +78,15 @@ public class FetchEmitTuple implements Serializable {
         return metadata;
     }
 
-    public ON_PARSE_EXCEPTION getOnParseException() {
-        return onParseException;
+    public ParseContext getParseContext() {
+        return parseContext;
     }
-
     public void setEmitKey(EmitKey emitKey) {
         this.emitKey = emitKey;
     }
 
-    public void setHandlerConfig(HandlerConfig handlerConfig) {
-        this.handlerConfig = handlerConfig;
-    }
-
-    public HandlerConfig getHandlerConfig() {
-        return handlerConfig == null ? HandlerConfig.DEFAULT_HANDLER_CONFIG : handlerConfig;
-    }
-
-    public EmbeddedDocumentBytesConfig getEmbeddedDocumentBytesConfig() {
-        return embeddedDocumentBytesConfig;
+    public ON_PARSE_EXCEPTION getOnParseException() {
+        return onParseException;
     }
 
     @Override
@@ -118,46 +99,28 @@ public class FetchEmitTuple implements Serializable {
         }
 
         FetchEmitTuple that = (FetchEmitTuple) o;
-
-        if (!Objects.equals(id, that.id)) {
-            return false;
-        }
-        if (!Objects.equals(fetchKey, that.fetchKey)) {
-            return false;
-        }
-        if (!Objects.equals(emitKey, that.emitKey)) {
-            return false;
-        }
-        if (!Objects.equals(metadata, that.metadata)) {
-            return false;
-        }
-        if (onParseException != that.onParseException) {
-            return false;
-        }
-        if (!Objects.equals(handlerConfig, that.handlerConfig)) {
-            return false;
-        }
-        return Objects.equals(embeddedDocumentBytesConfig, that.embeddedDocumentBytesConfig);
+        return Objects.equals(id, that.id) && Objects.equals(fetchKey, that.fetchKey) && Objects.equals(emitKey, that.emitKey)
+                && Objects.equals(metadata, that.metadata) &&
+                Objects.equals(parseContext, that.parseContext) && onParseException == that.onParseException &&
+                Objects.equals(embeddedDocumentBytesConfig, that.embeddedDocumentBytesConfig);
     }
 
     @Override
     public int hashCode() {
-        int result = id != null ? id.hashCode() : 0;
-        result = 31 * result + (fetchKey != null ? fetchKey.hashCode() : 0);
-        result = 31 * result + (emitKey != null ? emitKey.hashCode() : 0);
-        result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
-        result = 31 * result + (onParseException != null ? onParseException.hashCode() : 0);
-        result = 31 * result + (handlerConfig != null ? handlerConfig.hashCode() : 0);
-        result = 31 * result +
-                (embeddedDocumentBytesConfig != null ? embeddedDocumentBytesConfig.hashCode() : 0);
+        int result = Objects.hashCode(id);
+        result = 31 * result + Objects.hashCode(fetchKey);
+        result = 31 * result + Objects.hashCode(emitKey);
+        result = 31 * result + Objects.hashCode(metadata);
+        result = 31 * result + Objects.hashCode(parseContext);
+        result = 31 * result + Objects.hashCode(onParseException);
+        result = 31 * result + Objects.hashCode(embeddedDocumentBytesConfig);
         return result;
     }
 
     @Override
     public String toString() {
-        return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey=" +
-                emitKey + ", metadata=" + metadata + ", onParseException=" + onParseException +
-                ", handlerConfig=" + handlerConfig + ", embeddedDocumentBytesConfig=" +
-                embeddedDocumentBytesConfig + '}';
+        return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey=" + emitKey +
+                ", metadata=" + metadata + ", parseContext=" + parseContext +
+                ", onParseException=" + onParseException + ", embeddedDocumentBytesConfig=" + embeddedDocumentBytesConfig + '}';
     }
 }

@@ -47,8 +47,7 @@ public class AbstractBufferTest {
     @Timeout(30000)
     public void runTest() throws InterruptedException, ExecutionException {
         List<String> keys = new ArrayList<>();
-        Collections
-                .addAll(keys, new String[]{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"});
+        Collections.addAll(keys, new String[]{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"});
 
         int numGets = 100;
         int numTesters = 20;
@@ -67,8 +66,15 @@ public class AbstractBufferTest {
             Future<MyTestResult> futureResult = completionService.poll(1, TimeUnit.SECONDS);
             if (futureResult != null) {
                 results++;
-                assertEquals(keys.size(), futureResult.get().getMap().keySet().size());
-                for (Map.Entry<String, Integer> e : futureResult.get().getMap().entrySet()) {
+                assertEquals(keys.size(), futureResult
+                        .get()
+                        .getMap()
+                        .keySet()
+                        .size());
+                for (Map.Entry<String, Integer> e : futureResult
+                        .get()
+                        .getMap()
+                        .entrySet()) {
                     if (!combined.containsKey(e.getKey())) {
                         combined.put(e.getKey(), e.getValue());
                     } else {

@@ -16,17 +16,17 @@
   limitations under the License.
 -->
 <properties>
-    <parsers>
-        <parser class="org.apache.tika.parser.DefaultParser">
-            <parser-exclude class="org.apache.tika.parser.pdf.PDFParser"/>
-        </parser>
-        <parser class="org.apache.tika.parser.pdf.PDFParser">
-            <params>
-                <param name="sortByPosition" type="bool">true</param>
-            </params>
-        </parser>
-    </parsers>
-    <renderers>
-        <renderer class="org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer"/>
-    </renderers>
+  <parsers>
+    <parser class="org.apache.tika.parser.DefaultParser">
+      <parser-exclude class="org.apache.tika.parser.pdf.PDFParser"/>
+    </parser>
+    <parser class="org.apache.tika.parser.pdf.PDFParser">
+      <params>
+        <param name="sortByPosition" type="bool">true</param>
+      </params>
+    </parser>
+  </parsers>
+  <renderers>
+    <renderer class="org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer"/>
+  </renderers>
 </properties>

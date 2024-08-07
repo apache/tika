@@ -45,9 +45,7 @@ public class ServerStatusWatcher implements Runnable {
     private final ByteBuffer statusBuffer = ByteBuffer.allocate(16);
     private volatile boolean shuttingDown = false;
 
-    public ServerStatusWatcher(ServerStatus serverStatus, InputStream inputStream,
-                               Path forkedStatusPath, TikaServerConfig tikaServerConfig)
-            throws InterruptedException {
+    public ServerStatusWatcher(ServerStatus serverStatus, InputStream inputStream, Path forkedStatusPath, TikaServerConfig tikaServerConfig) throws InterruptedException {
         this.serverStatus = serverStatus;
         this.tikaServerConfig = tikaServerConfig;
         this.forkedStatusPath = forkedStatusPath;
@@ -67,8 +65,7 @@ public class ServerStatusWatcher implements Runnable {
             //this should block forever until the parent dies
             int directive = fromParent.read();
             if (directive != -1) {
-                LOG.debug("Read byte ({}) from forking process. Shouldn't have received anything",
-                        directive);
+                LOG.debug("Read byte ({}) from forking process. Shouldn't have received anything", directive);
             }
         } catch (Exception e) {
             LOG.debug("Exception reading from parent", e);
@@ -89,16 +86,23 @@ public class ServerStatusWatcher implements Runnable {
         }
 
         Instant started = Instant.now();
-        long elapsed = Duration.between(started, Instant.now()).toMillis();
-        try (FileChannel channel = FileChannel.open(forkedStatusPath, StandardOpenOption.CREATE,
-                StandardOpenOption.WRITE)) {
+        long elapsed = Duration
+                .between(started, Instant.now())
+                .toMillis();
+        try (FileChannel channel = FileChannel.open(forkedStatusPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
             while (elapsed < tikaServerConfig.getTaskTimeoutMillis()) {
                 try (FileLock lock = channel.tryLock()) {
                     if (lock != null) {
                         ((Buffer) statusBuffer).position(0);
-                        statusBuffer.putLong(0, Instant.now().toEpochMilli());
-                        statusBuffer.putInt(8, serverStatus.getStatus().getInt());
-                        statusBuffer.putInt(12, serverStatus.getTasks().size());
+                        statusBuffer.putLong(0, Instant
+                                .now()
+                                .toEpochMilli());
+                        statusBuffer.putInt(8, serverStatus
+                                .getStatus()
+                                .getInt());
+                        statusBuffer.putInt(12, serverStatus
+                                .getTasks()
+                                .size());
                         channel.write(statusBuffer);
                         channel.force(true);
                         return;
@@ -107,13 +111,14 @@ public class ServerStatusWatcher implements Runnable {
                     LOG.warn("Problem writing to status file", e);
                 }
                 Thread.sleep(100);
-                elapsed = Duration.between(started, Instant.now()).toMillis();
+                elapsed = Duration
+                        .between(started, Instant.now())
+                        .toMillis();
             }
         } catch (IOException e) {
             LOG.warn("Couldn't open forked status file for writing", e);
         }
-        throw new FatalException(
-                "Couldn't write to status file after trying for " + elapsed + " millis.");
+        throw new FatalException("Couldn't write to status file after trying for " + elapsed + " millis.");
     }
 
     private void checkForHitMaxFiles() {
@@ -128,22 +133,21 @@ public class ServerStatusWatcher implements Runnable {
 
     private void checkForTaskTimeouts() {
         Instant now = Instant.now();
-        for (TaskStatus status : serverStatus.getTasks().values()) {
-            long millisElapsed = Duration.between(status.started, now).toMillis();
+        for (TaskStatus status : serverStatus
+                .getTasks()
+                .values()) {
+            long millisElapsed = Duration
+                    .between(status.started, now)
+                    .toMillis();
             if (millisElapsed > status.timeoutMillis) {
                 serverStatus.setStatus(ServerStatus.STATUS.TIMEOUT);
                 if (status.fileName.isPresent()) {
-                    LOG.error("Timeout task {}, millis elapsed {}, timeoutMillis {}, file id {}" +
-                                    "consider increasing the allowable time with the " +
-                                    "<taskTimeoutMillis/> parameter or the {} header",
-                            status.task.toString(), millisElapsed, status.timeoutMillis,
-                            status.fileName.get(), TimeoutConfig.X_TIKA_TIMEOUT_MILLIS);
-                } else {
-                    LOG.error("Timeout task {}, millis elapsed {}; " +
-                                    "consider increasing the allowable time with the " +
-                                    "<taskTimeoutMillis/> parameter or the {} header",
-                            status.task.toString(), millisElapsed,
+                    LOG.error("Timeout task {}, millis elapsed {}, timeoutMillis {}, file id {}" + "consider increasing the allowable time with the " +
+                                    "<taskTimeoutMillis/> parameter or the {} header", status.task.toString(), millisElapsed, status.timeoutMillis, status.fileName.get(),
                             TimeoutConfig.X_TIKA_TIMEOUT_MILLIS);
+                } else {
+                    LOG.error("Timeout task {}, millis elapsed {}; " + "consider increasing the allowable time with the " + "<taskTimeoutMillis/> parameter or the {} header",
+                            status.task.toString(), millisElapsed, TimeoutConfig.X_TIKA_TIMEOUT_MILLIS);
                 }
             }
         }
@@ -192,11 +196,12 @@ public class ServerStatusWatcher implements Runnable {
                 checkForTaskTimeouts();
                 ServerStatus.STATUS currStatus = serverStatus.getStatus();
                 if (currStatus != ServerStatus.STATUS.OPERATING) {
-                    LOG.warn("forked process observed " + currStatus.name() +
-                            " and is shutting down.");
+                    LOG.warn("forked process observed " + currStatus.name() + " and is shutting down.");
                     shutdown(currStatus);
                 } else {
-                    long elapsed = Duration.between(lastWrite, Instant.now()).toMillis();
+                    long elapsed = Duration
+                            .between(lastWrite, Instant.now())
+                            .toMillis();
                     if (elapsed > tikaServerConfig.getTaskPulseMillis()) {
                         try {
                             writeStatus(false);

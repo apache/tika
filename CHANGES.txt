@@ -1,3 +1,21 @@
+Release 3.0.0-BETA2 - 07/09/2024
+
+   BREAKING CHANGES
+
+   * Updated PST parser to use standard Message metadata keys and improved
+     handling of embedded files (TIKA-4248).
+
+   * Convenience methods for XML readers were moved from ParseContext to
+     XMLReaderUtils (TIKA-4259).
+
+   Other Changes
+
+   * Add GRPC server (TIKA-4181).
+
+   * Improved configurability in tika-pipes (TIKA-4243).
+
+   * Add optional PST parser based on libpst/readpst (TIKA-4250).
+
 Release 3.0.0-BETA - 12/01/2023
 
    BREAKING CHANGES

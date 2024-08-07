@@ -58,18 +58,15 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
      * Parser, ContentHandlerFactory, OutputStreamFactory)}
      */
     @Deprecated
-    public BasicTikaFSConsumer(ArrayBlockingQueue<FileResource> queue, ParserFactory parserFactory,
-                               ContentHandlerFactory contentHandlerFactory,
-                               OutputStreamFactory fsOSFactory, TikaConfig tikaConfig) {
+    public BasicTikaFSConsumer(ArrayBlockingQueue<FileResource> queue, ParserFactory parserFactory, ContentHandlerFactory contentHandlerFactory, OutputStreamFactory fsOSFactory,
+                               TikaConfig tikaConfig) {
         super(queue);
         this.parser = parserFactory.getParser(tikaConfig);
         this.contentHandlerFactory = contentHandlerFactory;
         this.fsOSFactory = fsOSFactory;
     }
 
-    public BasicTikaFSConsumer(ArrayBlockingQueue<FileResource> queue, Parser parser,
-                               ContentHandlerFactory contentHandlerFactory,
-                               OutputStreamFactory fsOSFactory) {
+    public BasicTikaFSConsumer(ArrayBlockingQueue<FileResource> queue, Parser parser, ContentHandlerFactory contentHandlerFactory, OutputStreamFactory fsOSFactory) {
         super(queue);
         this.parser = parser;
         this.contentHandlerFactory = contentHandlerFactory;
@@ -88,7 +85,9 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
         //os can be null if fsOSFactory is set to skip processing a file if the output
         //file already exists
         if (os == null) {
-            LOG.debug("Skipping: {}", fileResource.getMetadata().get(FSProperties.FS_REL_PATH));
+            LOG.debug("Skipping: {}", fileResource
+                    .getMetadata()
+                    .get(FSProperties.FS_REL_PATH));
             return false;
         }
 
@@ -104,8 +103,7 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
         //now actually call parse!
         Throwable thrown = null;
         try {
-            parse(fileResource.getResourceId(), parser, is, handler, fileResource.getMetadata(),
-                    context);
+            parse(fileResource.getResourceId(), parser, is, handler, fileResource.getMetadata(), context);
         } catch (Error t) {
             throw t;
         } catch (Throwable t) {

@@ -37,7 +37,9 @@ public class CommonTokenOverlapCounter {
 
     private void execute(Path commonTokensDir) throws IOException {
         List<String> langs = new ArrayList<>();
-        for (File f : commonTokensDir.toFile().listFiles()) {
+        for (File f : commonTokensDir
+                .toFile()
+                .listFiles()) {
             langs.add(f.getName());
         }
         CommonTokenCountManager mgr = new CommonTokenCountManager(commonTokensDir, "");

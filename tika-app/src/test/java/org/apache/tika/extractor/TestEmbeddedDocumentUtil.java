@@ -37,9 +37,7 @@ public class TestEmbeddedDocumentUtil {
         Parser p = new AutoDetectParser();
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, p);
-        Parser txtParser = EmbeddedDocumentUtil
-                .tryToFindExistingLeafParser(org.apache.tika.parser.csv.TextAndCSVParser.class,
-                        parseContext);
+        Parser txtParser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(org.apache.tika.parser.csv.TextAndCSVParser.class, parseContext);
         assertNotNull(txtParser);
         assertEquals(org.apache.tika.parser.csv.TextAndCSVParser.class, txtParser.getClass());
 
@@ -51,9 +49,7 @@ public class TestEmbeddedDocumentUtil {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(d, true);
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, wrapper);
-        Parser txtParser = EmbeddedDocumentUtil
-                .tryToFindExistingLeafParser(org.apache.tika.parser.csv.TextAndCSVParser.class,
-                        parseContext);
+        Parser txtParser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(org.apache.tika.parser.csv.TextAndCSVParser.class, parseContext);
         assertNotNull(txtParser);
         assertEquals(org.apache.tika.parser.csv.TextAndCSVParser.class, txtParser.getClass());
     }

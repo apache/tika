@@ -40,7 +40,9 @@ public class SimpleTypeDetectorTest extends TikaTest {
 
         System.setOut(out);
 
-        assertContains("pom.xml: application/xml", buffer.toString(UTF_8.name()).trim());
+        assertContains("pom.xml: application/xml", buffer
+                .toString(UTF_8.name())
+                .trim());
     }
 
 }

@@ -78,9 +78,13 @@ public class TikaWelcome {
             Path p = endpoint.getAnnotation(Path.class);
             String basePath = null;
             if (p != null) {
-                basePath =
-                        p.value().endsWith("/") ? p.value().substring(0, p.value().length() - 2) :
-                                p.value();
+                basePath = p
+                        .value()
+                        .endsWith("/") ? p
+                        .value()
+                        .substring(0, p
+                                .value()
+                                .length() - 2) : p.value();
             }
 
             for (Method m : endpoint.getMethods()) {
@@ -121,7 +125,9 @@ public class TikaWelcome {
                 }
             }
         }
-        found.sort(Comparator.comparing((Endpoint e) -> e.path).thenComparing(e -> e.methodName));
+        found.sort(Comparator
+                .comparing((Endpoint e) -> e.path)
+                .thenComparing(e -> e.methodName));
         return found;
     }
 
@@ -149,7 +155,11 @@ public class TikaWelcome {
         if (m.find()) {
             String versionNumber = m.group();
             String miredot = "https://tika.apache.org/" + versionNumber + "/miredot/index.html";
-            h.append(" and <a href=\"").append(miredot).append("\">").append(miredot)
+            h
+                    .append(" and <a href=\"")
+                    .append(miredot)
+                    .append("\">")
+                    .append(miredot)
                     .append("</a>");
         }
         h.append("</p>\n");
@@ -213,8 +223,7 @@ public class TikaWelcome {
         public final String httpMethod;
         public final List<String> produces;
 
-        protected Endpoint(Class<?> endpoint, Method method, String path, String httpMethod,
-                           String[] produces) {
+        protected Endpoint(Class<?> endpoint, Method method, String path, String httpMethod, String[] produces) {
             this.className = endpoint.getCanonicalName();
             this.methodName = method.getName();
             this.path = path;

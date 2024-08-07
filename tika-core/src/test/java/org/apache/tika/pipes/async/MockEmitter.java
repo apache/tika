@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -40,11 +41,11 @@ public class MockEmitter extends AbstractEmitter {
     }
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList)
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
             throws IOException, TikaEmitterException {
         emit(
                 Collections.singletonList(new EmitData(new EmitKey(getName(), emitKey),
-                 metadataList)));
+                 metadataList, null, parseContext)));
     }
 
     @Override

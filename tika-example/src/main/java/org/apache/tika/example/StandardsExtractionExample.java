@@ -55,8 +55,7 @@ public class StandardsExtractionExample {
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.err.println(
-                    "Usage: " + StandardsExtractionExample.class.getName() + " /path/to/input");
+            System.err.println("Usage: " + StandardsExtractionExample.class.getName() + " /path/to/input");
             System.exit(1);
         }
         String pathname = args[0];
@@ -72,8 +71,7 @@ public class StandardsExtractionExample {
         try {
             Files.walkFileTree(folder, new SimpleFileVisitor<Path>() {
                 @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException {
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     try {
                         process(file);
                         successfulFiles++;
@@ -85,8 +83,7 @@ public class StandardsExtractionExample {
                 }
 
                 @Override
-                public FileVisitResult visitFileFailed(Path file, IOException exc)
-                        throws IOException {
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
                     failedFiles++;
                     return FileVisitResult.CONTINUE;
                 }
@@ -102,14 +99,12 @@ public class StandardsExtractionExample {
         // The StandardsExtractingContentHandler will examine any characters for
         // standard references before passing them
         // to the underlying Handler.
-        StandardsExtractingContentHandler handler =
-                new StandardsExtractingContentHandler(new BodyContentHandler(-1), metadata);
+        StandardsExtractingContentHandler handler = new StandardsExtractingContentHandler(new BodyContentHandler(-1), metadata);
         handler.setThreshold(0.75);
         try (InputStream stream = new BufferedInputStream(Files.newInputStream(path))) {
             parser.parse(stream, handler, metadata, new ParseContext());
         }
-        String[] references =
-                metadata.getValues(StandardsExtractingContentHandler.STANDARD_REFERENCES);
+        String[] references = metadata.getValues(StandardsExtractingContentHandler.STANDARD_REFERENCES);
         Collections.addAll(standardReferences, references);
     }
 }

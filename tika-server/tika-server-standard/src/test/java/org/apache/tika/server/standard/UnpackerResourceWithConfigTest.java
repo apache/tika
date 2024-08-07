@@ -51,8 +51,7 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(UnpackerResource.class);
-        sf.setResourceProvider(UnpackerResource.class,
-                new SingletonResourceProvider(new UnpackerResource()));
+        sf.setResourceProvider(UnpackerResource.class, new SingletonResourceProvider(new UnpackerResource()));
     }
 
     @Override
@@ -66,7 +65,9 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
 
     @Override
     protected InputStream getTikaConfigInputStream() throws IOException {
-        return this.getClass().getResourceAsStream("/config/tika-config-unpacker.xml");
+        return this
+                .getClass()
+                .getResourceAsStream("/config/tika-config-unpacker.xml");
     }
 
     //Test that the PDFParser's renderer can be configured at parse time
@@ -75,47 +76,47 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
     public void testPDFPerPageRenderColor() throws Exception {
 
         //default is gray scale png; change to rgb and tiff
-        Response response = WebClient.create(CXFTestBase.endPoint + ALL_PATH)
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "imageStrategy",
-                        "RenderPagesAtPageEnd")
+        Response response = WebClient
+                .create(CXFTestBase.endPoint + ALL_PATH)
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "imageStrategy", "RenderPagesAtPageEnd")
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageType", "rgb")
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageFormatName", "tiff")
-                .accept("application/zip").put(ClassLoader.getSystemResourceAsStream(
-                        "test-documents/testColorRendering.pdf"));
+                .accept("application/zip")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testColorRendering.pdf"));
         Map<String, byte[]> results = readZipArchiveBytes((InputStream) response.getEntity());
         byte[] renderedImage = null;
         for (Map.Entry<String, byte[]> e : results.entrySet()) {
-            if (e.getKey().startsWith("tika-pdfbox-rendering")) {
+            if (e
+                    .getKey()
+                    .startsWith("tika-pdfbox-rendering")) {
                 renderedImage = e.getValue();
                 break;
             }
         }
-        assertEquals("image/tiff", TikaConfig.getDefaultConfig().getDetector()
-                .detect(new ByteArrayInputStream(renderedImage), new Metadata()).toString());
+        assertEquals("image/tiff", TikaConfig
+                .getDefaultConfig()
+                .getDetector()
+                .detect(new ByteArrayInputStream(renderedImage), new Metadata())
+                .toString());
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
             BufferedImage image = ImageIO.read(is);
             //top left
-            AverageColor averageColor =
-                    getAverageColor(image, 0, image.getWidth() / 5, 0, image.getHeight() / 10);
+            AverageColor averageColor = getAverageColor(image, 0, image.getWidth() / 5, 0, image.getHeight() / 10);
             assertTrue(averageColor.getRed() > 250);
             assertTrue(averageColor.getGreen() < 1);
             assertTrue(averageColor.getBlue() < 1);
 
             //bottom left = green
-            averageColor = getAverageColor(image, 0, image.getWidth() / 5,
-                    image.getHeight() / 2 + image.getHeight() / 10,
-                    image.getHeight() / 2 + 2 * image.getHeight() / 10);
+            averageColor = getAverageColor(image, 0, image.getWidth() / 5, image.getHeight() / 2 + image.getHeight() / 10, image.getHeight() / 2 + 2 * image.getHeight() / 10);
 
             assertTrue(averageColor.getRed() < 1);
             assertTrue(averageColor.getGreen() > 250);
             assertTrue(averageColor.getBlue() < 1);
 
             //bottom right = blue
-            averageColor = getAverageColor(image, image.getWidth() / 2 + image.getWidth() / 10,
-                    image.getWidth() / 2 + 2 * image.getWidth() / 10,
-                    image.getHeight() / 2 + image.getHeight() / 10,
-                    image.getHeight() / 2 + 2 * image.getHeight() / 10);
+            averageColor = getAverageColor(image, image.getWidth() / 2 + image.getWidth() / 10, image.getWidth() / 2 + 2 * image.getWidth() / 10,
+                    image.getHeight() / 2 + image.getHeight() / 10, image.getHeight() / 2 + 2 * image.getHeight() / 10);
 
             assertTrue(averageColor.getRed() < 1);
             assertTrue(averageColor.getGreen() < 1);
@@ -127,48 +128,48 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
     public void testPDFPerPageRenderGray() throws Exception {
 
 
-        Response response = WebClient.create(CXFTestBase.endPoint + ALL_PATH)
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "imageStrategy",
-                        "RenderPagesAtPageEnd")
+        Response response = WebClient
+                .create(CXFTestBase.endPoint + ALL_PATH)
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "imageStrategy", "RenderPagesAtPageEnd")
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageType", "gray")
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageFormatName", "jpeg")
-                .accept("application/zip").put(ClassLoader.getSystemResourceAsStream(
-                        "test-documents/testColorRendering.pdf"));
+                .accept("application/zip")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testColorRendering.pdf"));
         Map<String, byte[]> results = readZipArchiveBytes((InputStream) response.getEntity());
         byte[] renderedImage = null;
         for (Map.Entry<String, byte[]> e : results.entrySet()) {
-            if (e.getKey().startsWith("tika-pdfbox-rendering")) {
+            if (e
+                    .getKey()
+                    .startsWith("tika-pdfbox-rendering")) {
                 renderedImage = e.getValue();
                 break;
             }
         }
-        assertEquals("image/jpeg", TikaConfig.getDefaultConfig().getDetector()
-                .detect(new ByteArrayInputStream(renderedImage), new Metadata()).toString());
+        assertEquals("image/jpeg", TikaConfig
+                .getDefaultConfig()
+                .getDetector()
+                .detect(new ByteArrayInputStream(renderedImage), new Metadata())
+                .toString());
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
             BufferedImage image = ImageIO.read(is);
             //top left
-            AverageColor averageColor =
-                    getAverageColor(image, 0, image.getWidth() / 5, 0, image.getHeight() / 10);
+            AverageColor averageColor = getAverageColor(image, 0, image.getWidth() / 5, 0, image.getHeight() / 10);
 
             assertTrue(averageColor.getRed() > 140 && averageColor.getRed() < 160);
             assertTrue(averageColor.getGreen() > 140 && averageColor.getGreen() < 160);
             assertTrue(averageColor.getBlue() > 140 && averageColor.getBlue() < 160);
 
             //bottom left = green
-            averageColor = getAverageColor(image, 0, image.getWidth() / 5,
-                    image.getHeight() / 2 + image.getHeight() / 10,
-                    image.getHeight() / 2 + 2 * image.getHeight() / 10);
+            averageColor = getAverageColor(image, 0, image.getWidth() / 5, image.getHeight() / 2 + image.getHeight() / 10, image.getHeight() / 2 + 2 * image.getHeight() / 10);
 
             assertTrue(averageColor.getRed() < 210 && averageColor.getRed() > 190);
             assertTrue(averageColor.getGreen() < 210 && averageColor.getGreen() > 190);
             assertTrue(averageColor.getBlue() < 210 && averageColor.getBlue() > 190);
 
             //bottom right = blue
-            averageColor = getAverageColor(image, image.getWidth() / 2 + image.getWidth() / 10,
-                    image.getWidth() / 2 + 2 * image.getWidth() / 10,
-                    image.getHeight() / 2 + image.getHeight() / 10,
-                    image.getHeight() / 2 + 2 * image.getHeight() / 10);
+            averageColor = getAverageColor(image, image.getWidth() / 2 + image.getWidth() / 10, image.getWidth() / 2 + 2 * image.getWidth() / 10,
+                    image.getHeight() / 2 + image.getHeight() / 10, image.getHeight() / 2 + 2 * image.getHeight() / 10);
             assertTrue(averageColor.getRed() < 100 && averageColor.getRed() > 90);
             assertTrue(averageColor.getGreen() < 100 && averageColor.getGreen() > 90);
             assertTrue(averageColor.getBlue() < 100 && averageColor.getBlue() > 90);

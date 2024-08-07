@@ -19,6 +19,8 @@ package org.apache.tika.pipes.emitter;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.tika.parser.ParseContext;
+
 public abstract class AbstractEmitter implements Emitter {
 
     private String name;
@@ -33,7 +35,7 @@ public abstract class AbstractEmitter implements Emitter {
     }
 
     /**
-     * The default behavior is to call {@link #emit(String, List)} on each item.
+     * The default behavior is to call {@link #emit(String, List, ParseContext)} on each item.
      * Some implementations, e.g. Solr/ES/vespa, can benefit from subclassing this and
      * emitting a bunch of docs at once.
      *
@@ -44,7 +46,7 @@ public abstract class AbstractEmitter implements Emitter {
     @Override
     public void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException {
         for (EmitData d : emitData) {
-            emit(d.getEmitKey().getEmitKey(), d.getMetadataList());
+            emit(d.getEmitKey().getEmitKey(), d.getMetadataList(), d.getParseContext());
         }
     }
 }

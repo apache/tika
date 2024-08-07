@@ -129,6 +129,7 @@
                 <filter>
                   <artifact>*:*</artifact>
                   <excludes>
+                    <exclude>META-INF/maven/plugin.xml</exclude>
                     <exclude>module-info.class</exclude>
                     <exclude>META-INF/*</exclude>
                     <exclude>LICENSE.txt</exclude>
@@ -250,7 +251,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>build-helper-maven-plugin</artifactId>
-            <version>3.5.0</version>
+            <version>3.6.0</version>
             <executions>
               <execution>
                 <phase>package</phase>
@@ -287,6 +288,6 @@
   </ciManagement>
 
   <scm>
-    <tag>3.0.0-BETA-rc1</tag>
+    <tag>3.0.0-BETA2-rc1</tag>
   </scm>
 </project>

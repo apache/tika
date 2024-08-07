@@ -87,6 +87,18 @@ public class CaptureGroupMetadataFilter extends MetadataFilter implements Initia
         this.targetField = targetField;
     }
 
+    public String getRegex() {
+        return regexString;
+    }
+
+    public String getSourceField() {
+        return sourceField;
+    }
+
+    public String getTargetField() {
+        return targetField;
+    }
+
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {

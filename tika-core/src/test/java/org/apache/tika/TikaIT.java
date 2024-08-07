@@ -28,7 +28,7 @@ public class TikaIT {
         String version = new Tika().toString();
         assertNotNull(version);
         assertTrue(
-                version.matches("Apache Tika \\d+\\.\\d+\\.\\d+(-(?:ALPHA|BETA))?(?:-SNAPSHOT)?"));
+                version.matches("Apache Tika \\d+\\.\\d+\\.\\d+(-(?:ALPHA|BETA)\\d*)?(?:-SNAPSHOT)?"));
     }
 
 }

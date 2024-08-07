@@ -21,12 +21,12 @@
   <Appenders>
     <Console name="console" target="SYSTEM_ERR">
       <PatternLayout
-          pattern="%-5p [%t] %d{HH:mm:ss,SSS} %c %m%n" />
+          pattern="%-5p [%t] %d{HH:mm:ss,SSS} %c %m%n"/>
     </Console>
   </Appenders>
   <Loggers>
     <Root level="info" additivity="false">
-      <AppenderRef ref="console" />
+      <AppenderRef ref="console"/>
     </Root>
   </Loggers>
 </Configuration>

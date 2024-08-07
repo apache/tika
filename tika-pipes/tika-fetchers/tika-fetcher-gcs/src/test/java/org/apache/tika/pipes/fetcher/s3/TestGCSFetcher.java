@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 
@@ -54,7 +55,7 @@ public class TestGCSFetcher {
                 Paths.get(this.getClass().getResource("/tika-config-gcs.xml").toURI()));
         Fetcher fetcher = fetcherManager.getFetcher("gcs");
         Metadata metadata = new Metadata();
-        try (InputStream is = fetcher.fetch(FETCH_STRING, metadata)) {
+        try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, new ParseContext())) {
             Files.copy(is, outputFile, StandardCopyOption.REPLACE_EXISTING);
         }
         assertEquals(20743, Files.size(outputFile));

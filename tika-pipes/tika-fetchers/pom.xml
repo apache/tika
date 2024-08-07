@@ -36,12 +36,13 @@
     <module>tika-fetcher-s3</module>
     <module>tika-fetcher-gcs</module>
     <module>tika-fetcher-az-blob</module>
+    <module>tika-fetcher-microsoft-graph</module>
   </modules>
 
   <dependencies>
 
   </dependencies>
   <scm>
-    <tag>3.0.0-BETA-rc1</tag>
+    <tag>3.0.0-BETA2-rc1</tag>
   </scm>
 </project>

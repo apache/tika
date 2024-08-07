@@ -353,10 +353,10 @@ class MailContentHandler implements ContentHandler {
                     metadata.add(TikaCoreProperties.CREATOR, from);
                 }
             } else if (fieldname.equalsIgnoreCase("Subject")) {
-                metadata.set(TikaCoreProperties.TITLE,
-                        ((UnstructuredField) parsedField).getValue());
-                metadata.set(TikaCoreProperties.SUBJECT,
-                        ((UnstructuredField) parsedField).getValue());
+                String txt = ((UnstructuredField) parsedField).getValue();
+                metadata.set(TikaCoreProperties.TITLE, txt);
+                metadata.set(TikaCoreProperties.SUBJECT, txt);
+                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, txt + ".eml");
             } else if (fieldname.equalsIgnoreCase("To")) {
                 processAddressList(parsedField, "To:", Metadata.MESSAGE_TO);
             } else if (fieldname.equalsIgnoreCase("CC")) {

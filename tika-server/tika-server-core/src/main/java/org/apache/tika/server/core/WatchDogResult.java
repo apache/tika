@@ -42,7 +42,6 @@ public class WatchDogResult {
 
     @Override
     public String toString() {
-        return "WatchDogResult{" + "port=" + port + ", id='" + id + '\'' + ", numRetries=" +
-                numRetries + '}';
+        return "WatchDogResult{" + "port=" + port + ", id='" + id + '\'' + ", numRetries=" + numRetries + '}';
     }
 }

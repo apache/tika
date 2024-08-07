@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.utils.ProcessUtils;
@@ -325,7 +326,7 @@ public class PipesClient implements Closeable {
             case INTERMEDIATE_RESULT:
                 LOG.debug("pipesClientId={} intermediate success: {} in {} ms", pipesClientId,
                         t.getId(), millis);
-                return deserializeIntermediateResult(t.getEmitKey());
+                return deserializeIntermediateResult(t.getEmitKey(), t.getParseContext());
             case PARSE_SUCCESS:
                 //there may have been a parse exception, but the parse didn't crash
                 LOG.debug("pipesClientId={} parse success: {} in {} ms", pipesClientId, t.getId(),
@@ -383,7 +384,7 @@ public class PipesClient implements Closeable {
         }
     }
 
-    private PipesResult deserializeIntermediateResult(EmitKey emitKey) throws IOException {
+    private PipesResult deserializeIntermediateResult(EmitKey emitKey, ParseContext parseContext) throws IOException {
 
         int length = input.readInt();
         byte[] bytes = new byte[length];

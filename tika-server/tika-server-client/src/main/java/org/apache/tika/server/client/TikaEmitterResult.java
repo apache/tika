@@ -31,8 +31,7 @@ public class TikaEmitterResult {
 
     @Override
     public String toString() {
-        return "TikaEmitterResult{" + "status=" + status + ", msg='" + msg + '\'' +
-                ", timeElapsed=" + timeElapsed + '}';
+        return "TikaEmitterResult{" + "status=" + status + ", msg='" + msg + '\'' + ", timeElapsed=" + timeElapsed + '}';
     }
 
     public STATUS getStatus() {

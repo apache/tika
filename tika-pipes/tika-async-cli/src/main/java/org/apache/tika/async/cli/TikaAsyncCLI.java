@@ -40,7 +40,7 @@ public class TikaAsyncCLI {
 
             for (FetchEmitTuple t : pipesIterator) {
                 boolean offered = processor.offer(t, TIMEOUT_MS);
-                if (! offered) {
+                if (!offered) {
                     throw new TimeoutException("timed out waiting to add a fetch emit tuple");
                 }
             }
@@ -53,8 +53,7 @@ public class TikaAsyncCLI {
                 }
             }
             long elapsed = System.currentTimeMillis() - start;
-            LOG.info("Successfully finished processing {} files in {} ms",
-                    processor.getTotalProcessed(), elapsed);
+            LOG.info("Successfully finished processing {} files in {} ms", processor.getTotalProcessed(), elapsed);
         }
     }
 }

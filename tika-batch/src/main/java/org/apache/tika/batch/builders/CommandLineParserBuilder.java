@@ -88,11 +88,17 @@ public class CommandLineParserBuilder {
         String longOpt = getString(map, "longOpt", "");
         boolean isRequired = getBoolean(map, "required", false);
         boolean hasArg = getBoolean(map, "hasArg", false);
-        if (opt.trim().length() == 0 || description.trim().length() == 0) {
+        if (opt
+                .trim()
+                .length() == 0 || description
+                .trim()
+                .length() == 0) {
             throw new IllegalArgumentException("Must specify at least option and description");
         }
         Option option = new Option(opt, description);
-        if (longOpt.trim().length() > 0) {
+        if (longOpt
+                .trim()
+                .length() > 0) {
             option.setLongOpt(longOpt);
         }
         if (isRequired) {
@@ -114,9 +120,15 @@ public class CommandLineParserBuilder {
             return defaultValue;
         }
 
-        if (n.getNodeValue().toLowerCase(Locale.ROOT).equals("true")) {
+        if (n
+                .getNodeValue()
+                .toLowerCase(Locale.ROOT)
+                .equals("true")) {
             return true;
-        } else if (n.getNodeValue().toLowerCase(Locale.ROOT).equals("false")) {
+        } else if (n
+                .getNodeValue()
+                .toLowerCase(Locale.ROOT)
+                .equals("false")) {
             return false;
         }
         return defaultValue;

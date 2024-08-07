@@ -30,14 +30,11 @@ public class CompositeParseContextConfig implements ParseContextConfig {
     final List<ParseContextConfig> configs;
 
     public CompositeParseContextConfig() {
-        configs = new ServiceLoader(
-                CompositeParseContextConfig.class.getClassLoader()).loadServiceProviders(
-                ParseContextConfig.class);
+        configs = new ServiceLoader(CompositeParseContextConfig.class.getClassLoader()).loadServiceProviders(ParseContextConfig.class);
     }
 
     @Override
-    public void configure(MultivaluedMap<String, String> httpHeaders, Metadata metadata,
-                          ParseContext context) {
+    public void configure(MultivaluedMap<String, String> httpHeaders, Metadata metadata, ParseContext context) {
         for (ParseContextConfig config : configs) {
             config.configure(httpHeaders, metadata, context);
         }

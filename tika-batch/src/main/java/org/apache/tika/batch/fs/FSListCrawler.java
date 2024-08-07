@@ -49,8 +49,7 @@ public class FSListCrawler extends FileResourceCrawler {
      * @param charset      charset of the file
      * @throws IOException
      */
-    public FSListCrawler(ArrayBlockingQueue<FileResource> fileQueue, int numConsumers, Path root,
-                         Path list, Charset charset) throws IOException {
+    public FSListCrawler(ArrayBlockingQueue<FileResource> fileQueue, int numConsumers, Path root, Path list, Charset charset) throws IOException {
         super(fileQueue, numConsumers);
         reader = Files.newBufferedReader(list, charset);
         this.root = root;
@@ -60,7 +59,9 @@ public class FSListCrawler extends FileResourceCrawler {
         String line = nextLine();
 
         while (line != null) {
-            if (Thread.currentThread().isInterrupted()) {
+            if (Thread
+                    .currentThread()
+                    .isInterrupted()) {
                 throw new InterruptedException("file adder interrupted");
             }
             Path f = Paths.get(root.toString(), line);

@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 
@@ -45,7 +46,7 @@ public class TestS3Fetcher {
         fetcher.initialize(Collections.EMPTY_MAP);
 
         Metadata metadata = new Metadata();
-        try (InputStream is = fetcher.fetch(FETCH_STRING, metadata)) {
+        try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, new ParseContext())) {
             Files.copy(is, outputFile, StandardCopyOption.REPLACE_EXISTING);
         }
     }
@@ -56,7 +57,7 @@ public class TestS3Fetcher {
                 Paths.get(this.getClass().getResource("/tika-config-s3.xml").toURI()));
         Fetcher fetcher = fetcherManager.getFetcher("s3");
         Metadata metadata = new Metadata();
-        try (InputStream is = fetcher.fetch(FETCH_STRING, metadata)) {
+        try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, new ParseContext())) {
             Files.copy(is, outputFile, StandardCopyOption.REPLACE_EXISTING);
         }
     }

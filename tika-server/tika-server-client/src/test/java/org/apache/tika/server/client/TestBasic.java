@@ -30,20 +30,24 @@ public class TestBasic {
 
     @Test
     public void testConfig() throws Exception {
-        Path p = Paths.get(
-                TestBasic.class.getResource("/tika-config-simple-fs-emitter.xml").toURI());
+        Path p = Paths.get(TestBasic.class
+                .getResource("/tika-config-simple-fs-emitter.xml")
+                .toURI());
         assertTrue(Files.isRegularFile(p));
 
         TikaServerClientConfig clientConfig = TikaServerClientConfig.build(p);
         assertEquals(6, clientConfig.getNumThreads());
-        assertEquals(5, clientConfig.getHttpClientFactory().getMaxConnections());
+        assertEquals(5, clientConfig
+                .getHttpClientFactory()
+                .getMaxConnections());
     }
 
     @Test
     @Disabled("turn this into an actual test in tika-integration-tests?")
     public void testBasic() throws Exception {
-        Path p = Paths.get(
-                TestBasic.class.getResource("/tika-config-simple-fs-emitter.xml").toURI());
+        Path p = Paths.get(TestBasic.class
+                .getResource("/tika-config-simple-fs-emitter.xml")
+                .toURI());
         assertTrue(Files.isRegularFile(p));
         String[] args = new String[]{p.toAbsolutePath().toString()};
         long start = System.currentTimeMillis();

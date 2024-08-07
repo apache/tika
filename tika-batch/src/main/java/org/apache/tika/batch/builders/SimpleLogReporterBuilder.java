@@ -29,13 +29,11 @@ import org.apache.tika.util.XMLDOMUtil;
 public class SimpleLogReporterBuilder implements StatusReporterBuilder {
 
     @Override
-    public StatusReporter build(FileResourceCrawler crawler, ConsumersManager consumersManager,
-                                Node n, Map<String, String> commandlineArguments) {
+    public StatusReporter build(FileResourceCrawler crawler, ConsumersManager consumersManager, Node n, Map<String, String> commandlineArguments) {
 
         Map<String, String> attributes = XMLDOMUtil.mapifyAttrs(n, commandlineArguments);
         long sleepMillis = PropsUtil.getLong(attributes.get("reporterSleepMillis"), 1000L);
-        long staleThresholdMillis =
-                PropsUtil.getLong(attributes.get("reporterStaleThresholdMillis"), 500000L);
+        long staleThresholdMillis = PropsUtil.getLong(attributes.get("reporterStaleThresholdMillis"), 500000L);
         StatusReporter reporter = new StatusReporter(crawler, consumersManager);
         reporter.setSleepMillis(sleepMillis);
         reporter.setStaleThresholdMillis(staleThresholdMillis);

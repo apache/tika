@@ -115,6 +115,7 @@
                   <artifact>*:*</artifact>
                   <excludes>
                     <exclude>module-info.class</exclude>
+                    <exclude>META-INF/maven/plugin.xml</exclude>
                     <exclude>LICENSE.txt</exclude>
                     <exclude>NOTICE.txt</exclude>
                     <exclude>module-info.class</exclude>
@@ -213,6 +214,6 @@
   </build>
 
   <scm>
-    <tag>3.0.0-BETA-rc1</tag>
+    <tag>3.0.0-BETA2-rc1</tag>
   </scm>
 </project>

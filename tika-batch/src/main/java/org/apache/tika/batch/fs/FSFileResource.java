@@ -57,12 +57,18 @@ public class FSFileResource implements FileResource {
         this.fullPath = fullPath;
         this.metadata = new Metadata();
         //child path must actually be a child
-        assert (fullPath.toAbsolutePath().startsWith(inputRoot.toAbsolutePath()));
-        this.relativePath = inputRoot.relativize(fullPath).toString();
+        assert (fullPath
+                .toAbsolutePath()
+                .startsWith(inputRoot.toAbsolutePath()));
+        this.relativePath = inputRoot
+                .relativize(fullPath)
+                .toString();
 
         //need to set these now so that the filter can determine
         //whether or not to crawl this file
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fullPath.getFileName().toString());
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fullPath
+                .getFileName()
+                .toString());
         long sz = -1;
         try {
             sz = Files.size(fullPath);
@@ -85,10 +91,14 @@ public class FSFileResource implements FileResource {
      * @return the lowercased extension or an empty string
      */
     private String getExtension(Path fullPath) {
-        String p = fullPath.getFileName().toString();
+        String p = fullPath
+                .getFileName()
+                .toString();
         int i = p.lastIndexOf(".");
         if (i > -1) {
-            return p.substring(i + 1).toLowerCase(Locale.ROOT);
+            return p
+                    .substring(i + 1)
+                    .toLowerCase(Locale.ROOT);
         }
         return "";
     }

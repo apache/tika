@@ -16,6 +16,7 @@
  */
 package org.apache.tika.metadata.filter;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -64,5 +65,9 @@ public class ClearByMimeMetadataFilter extends MetadataFilter {
     @Field
     public void setMimes(List<String> mimes) {
         this.mimes.addAll(mimes);
+    }
+
+    public List<String> getMimes() {
+        return new ArrayList<>(mimes);
     }
 }

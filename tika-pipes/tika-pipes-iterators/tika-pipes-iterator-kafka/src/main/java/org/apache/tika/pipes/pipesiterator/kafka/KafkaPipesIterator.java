@@ -37,6 +37,7 @@ import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -120,10 +121,8 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     public void initialize(Map<String, Param> params) {
         props = new Properties();
         safePut(props, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        safePut(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-                serializerClass(keySerializer, StringDeserializer.class));
-        safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-                serializerClass(valueSerializer, StringDeserializer.class));
+        safePut(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, serializerClass(keySerializer, StringDeserializer.class));
+        safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, serializerClass(valueSerializer, StringDeserializer.class));
         safePut(props, ConsumerConfig.GROUP_ID_CONFIG, groupId);
         safePut(props, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
         safePut(props, "group.inital.rebalance.delay.ms", groupInitialRebalanceDelayMs);
@@ -141,8 +140,7 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         super.checkInitialization(problemHandler);
         TikaConfig.mustNotBeEmpty("bootstrapServers", this.bootstrapServers);
         TikaConfig.mustNotBeEmpty("topic", this.topic);
@@ -164,10 +162,9 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("adding ({}) {} in {} ms", count, r.key(), elapsed);
                 }
-                tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherName,
-                        r.key()),
-                        new EmitKey(emitterName, r.key()), new Metadata(), handlerConfig,
-                        getOnParseException()));
+                ParseContext parseContext = new ParseContext();
+                parseContext.set(HandlerConfig.class, handlerConfig);
+                tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherName, r.key()), new EmitKey(emitterName, r.key()), new Metadata(), parseContext, getOnParseException()));
                 ++count;
             }
         } while ((emitMax > 0 || count < emitMax) && !records.isEmpty());

@@ -41,8 +41,9 @@ public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServe
     }
 
     public Response toResponse(TikaServerParseException e) {
-        if (e.getMessage() != null &&
-                e.getMessage().equals(Response.Status.UNSUPPORTED_MEDIA_TYPE.toString())) {
+        if (e.getMessage() != null && e
+                .getMessage()
+                .equals(Response.Status.UNSUPPORTED_MEDIA_TYPE.toString())) {
             return buildResponse(e, 415);
         }
         Throwable cause = e.getCause();
@@ -80,11 +81,19 @@ public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServe
                 result.flush();
             } catch (IOException e) {
                 //something went seriously wrong
-                return Response.status(500).build();
+                return Response
+                        .status(500)
+                        .build();
             }
-            return Response.status(i).entity(result.toString()).type("text/plain").build();
+            return Response
+                    .status(i)
+                    .entity(result.toString())
+                    .type("text/plain")
+                    .build();
         } else {
-            return Response.status(i).build();
+            return Response
+                    .status(i)
+                    .build();
         }
     }
 }

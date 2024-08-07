@@ -40,8 +40,7 @@ public class LeipzigSampler {
         }
     }
 
-    private void execute(Path leipzigDir, int sentsPerLang, BufferedWriter writer)
-            throws IOException {
+    private void execute(Path leipzigDir, int sentsPerLang, BufferedWriter writer) throws IOException {
         Map<String, List<Path>> fileMap = LeipzigHelper.getFiles(leipzigDir);
         for (Map.Entry<String, List<Path>> e : fileMap.entrySet()) {
             List<String> sentences = new ArrayList<>();

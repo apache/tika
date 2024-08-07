@@ -50,9 +50,10 @@ public class TranslateResource {
     private ServiceLoader loader;
 
     public TranslateResource(ServerStatus serverStatus, long timeoutMillis) {
-        this.loader =
-                new ServiceLoader(ServiceLoader.class.getClassLoader(), LoadErrorHandler.WARN);
-        this.defaultTranslator = TikaResource.getConfig().getTranslator();
+        this.loader = new ServiceLoader(ServiceLoader.class.getClassLoader(), LoadErrorHandler.WARN);
+        this.defaultTranslator = TikaResource
+                .getConfig()
+                .getTranslator();
         this.serverStatus = serverStatus;
         this.timeoutMillis = timeoutMillis;
     }
@@ -62,8 +63,7 @@ public class TranslateResource {
     @Path("/all/{translator}/{src}/{dest}")
     @Consumes("*/*")
     @Produces("text/plain")
-    public String translate(final InputStream is, @PathParam("translator") String translator,
-                            @PathParam("src") String sLang, @PathParam("dest") String dLang)
+    public String translate(final InputStream is, @PathParam("translator") String translator, @PathParam("src") String sLang, @PathParam("dest") String dLang)
             throws TikaException, IOException {
         return doTranslate(IOUtils.toString(is, UTF_8), translator, sLang, dLang);
 
@@ -74,10 +74,11 @@ public class TranslateResource {
     @Path("/all/{translator}/{dest}")
     @Consumes("*/*")
     @Produces("text/plain")
-    public String autoTranslate(final InputStream is, @PathParam("translator") String translator,
-                                @PathParam("dest") String dLang) throws TikaException, IOException {
+    public String autoTranslate(final InputStream is, @PathParam("translator") String translator, @PathParam("dest") String dLang) throws TikaException, IOException {
         final String content = IOUtils.toString(is, UTF_8);
-        LanguageResult language = new OptimaizeLangDetector().loadModels().detect(content);
+        LanguageResult language = new OptimaizeLangDetector()
+                .loadModels()
+                .detect(content);
         if (language.isUnknown()) {
             throw new TikaException("Unable to detect language to use for translation of text");
         }
@@ -88,8 +89,7 @@ public class TranslateResource {
         return doTranslate(content, translator, sLang, dLang);
     }
 
-    private String doTranslate(String content, String translator, String sLang, String dLang)
-            throws TikaException, IOException {
+    private String doTranslate(String content, String translator, String sLang, String dLang) throws TikaException, IOException {
         LOG.info("Using translator: [{}]: src: [{}]: dest: [{}]", translator, sLang, dLang);
         Translator translate = byClassName(translator);
         if (translate == null) {
@@ -111,7 +111,10 @@ public class TranslateResource {
     private Translator byClassName(String className) {
         List<Translator> translators = loader.loadStaticServiceProviders(Translator.class);
         for (Translator t : translators) {
-            if (t.getClass().getName().equals(className)) {
+            if (t
+                    .getClass()
+                    .getName()
+                    .equals(className)) {
                 return t;
             }
         }

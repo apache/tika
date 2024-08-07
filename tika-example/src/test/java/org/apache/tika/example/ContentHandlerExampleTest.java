@@ -41,13 +41,17 @@ public class ContentHandlerExampleTest {
 
     @Test
     public void testParseToPlainText() throws IOException, SAXException, TikaException {
-        String result = example.parseToPlainText().trim();
+        String result = example
+                .parseToPlainText()
+                .trim();
         assertEquals("test", result, "Expected 'test', but got '" + result + "'");
     }
 
     @Test
     public void testParseToHTML() throws IOException, SAXException, TikaException {
-        String result = example.parseToHTML().trim();
+        String result = example
+                .parseToHTML()
+                .trim();
 
         assertContains("<html", result);
         assertContains("<head>", result);
@@ -59,7 +63,9 @@ public class ContentHandlerExampleTest {
 
     @Test
     public void testParseBodyToHTML() throws IOException, SAXException, TikaException {
-        String result = example.parseBodyToHTML().trim();
+        String result = example
+                .parseBodyToHTML()
+                .trim();
 
         assertNotContained("<html", result);
         assertNotContained("<head>", result);
@@ -71,7 +77,9 @@ public class ContentHandlerExampleTest {
 
     @Test
     public void testParseOnePartToHTML() throws IOException, SAXException, TikaException {
-        String result = example.parseOnePartToHTML().trim();
+        String result = example
+                .parseOnePartToHTML()
+                .trim();
 
         assertNotContained("<html", result);
         assertNotContained("<head>", result);
@@ -91,8 +99,7 @@ public class ContentHandlerExampleTest {
 
         assertEquals(3, result.size());
         for (String chunk : result) {
-            assertTrue(chunk.length() <= example.MAXIMUM_TEXT_CHUNK_SIZE,
-                    "Chunk under max size");
+            assertTrue(chunk.length() <= example.MAXIMUM_TEXT_CHUNK_SIZE, "Chunk under max size");
         }
 
         assertContains("This is in the header", result.get(0));

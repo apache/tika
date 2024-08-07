@@ -35,6 +35,7 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -75,12 +76,15 @@ public class GCSPipesIterator extends PipesIterator implements Initializable {
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //TODO -- add other params to the builder as needed
-        storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
+        storage = StorageOptions
+                .newBuilder()
+                .setProjectId(projectId)
+                .build()
+                .getService();
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         super.checkInitialization(problemHandler);
         mustNotBeEmpty("bucket", this.bucket);
         mustNotBeEmpty("projectId", this.projectId);
@@ -98,8 +102,7 @@ public class GCSPipesIterator extends PipesIterator implements Initializable {
         if (StringUtils.isBlank(prefix)) {
             blobs = storage.list(bucket);
         } else {
-            blobs = storage.list(bucket,
-                    Storage.BlobListOption.prefix(prefix));
+            blobs = storage.list(bucket, Storage.BlobListOption.prefix(prefix));
         }
 
         for (Blob blob : blobs.iterateAll()) {
@@ -111,9 +114,9 @@ public class GCSPipesIterator extends PipesIterator implements Initializable {
             long elapsed = System.currentTimeMillis() - start;
             LOGGER.debug("adding ({}) {} in {} ms", count, blob.getName(), elapsed);
             //TODO -- allow user specified metadata as the "id"?
-            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherName,
-                    blob.getName()),
-                    new EmitKey(emitterName, blob.getName()), new Metadata(), handlerConfig,
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(HandlerConfig.class, handlerConfig);
+            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherName, blob.getName()), new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
                     getOnParseException()));
             count++;
         }

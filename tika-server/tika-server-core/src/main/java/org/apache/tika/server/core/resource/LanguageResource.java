@@ -45,7 +45,9 @@ public class LanguageResource {
     @Produces("text/plain")
     public String detect(final InputStream is) throws IOException {
         String fileTxt = IOUtils.toString(is, UTF_8);
-        LanguageResult language = new OptimaizeLangDetector().loadModels().detect(fileTxt);
+        LanguageResult language = new OptimaizeLangDetector()
+                .loadModels()
+                .detect(fileTxt);
         String detectedLang = language.getLanguage();
         LOG.info("Detecting language for incoming resource: [{}]", detectedLang);
         return detectedLang;
@@ -57,7 +59,9 @@ public class LanguageResource {
     @Consumes("*/*")
     @Produces("text/plain")
     public String detect(final String string) throws IOException {
-        LanguageResult language = new OptimaizeLangDetector().loadModels().detect(string);
+        LanguageResult language = new OptimaizeLangDetector()
+                .loadModels()
+                .detect(string);
         String detectedLang = language.getLanguage();
         LOG.info("Detecting language for incoming resource: [{}]", detectedLang);
         return detectedLang;

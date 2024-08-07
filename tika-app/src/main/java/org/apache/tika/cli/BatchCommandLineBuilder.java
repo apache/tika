@@ -77,10 +77,14 @@ class BatchCommandLineBuilder {
         boolean foundHeadlessOption = false;
         for (Map.Entry<String, String> e : jvmOpts.entrySet()) {
             fullCommand.add(e.getKey());
-            if (e.getValue().length() > 0) {
+            if (e
+                    .getValue()
+                    .length() > 0) {
                 fullCommand.add(commandLineSafe(e.getValue()));
             }
-            if (e.getKey().contains("java.awt.headless")) {
+            if (e
+                    .getKey()
+                    .contains("java.awt.headless")) {
                 foundHeadlessOption = true;
             }
         }
@@ -93,7 +97,9 @@ class BatchCommandLineBuilder {
         //now add the process commands
         for (Map.Entry<String, String> e : processArgs.entrySet()) {
             fullCommand.add(e.getKey());
-            if (e.getValue().length() > 0) {
+            if (e
+                    .getValue()
+                    .length() > 0) {
                 fullCommand.add(commandLineSafe(e.getValue()));
             }
         }
@@ -121,8 +127,7 @@ class BatchCommandLineBuilder {
      * @param commandLine args that should be part of the batch commandline
      * @param jvmArgs     args that belong as jvm arguments for the forked process
      */
-    private static void mapifyArgs(final String[] args, final Map<String, String> commandLine,
-                                   final Map<String, String> jvmArgs) {
+    private static void mapifyArgs(final String[] args, final Map<String, String> commandLine, final Map<String, String> jvmArgs) {
 
         if (args.length == 0) {
             return;
@@ -130,7 +135,9 @@ class BatchCommandLineBuilder {
 
         Matcher matcher = JVM_OPTS_PATTERN.matcher("");
         for (int i = 0; i < args.length; i++) {
-            if (matcher.reset(args[i]).find()) {
+            if (matcher
+                    .reset(args[i])
+                    .find()) {
                 String jvmArg = matcher.group(1) + matcher.group(2);
                 String v = "";
                 if (i < args.length - 1 && !args[i + 1].startsWith("-")) {
@@ -150,8 +157,7 @@ class BatchCommandLineBuilder {
         }
     }
 
-    private static void translateCommandLine(String[] args, Map<String, String> map)
-            throws IOException {
+    private static void translateCommandLine(String[] args, Map<String, String> map) throws IOException {
         //if there are only two args and they are both directories, treat the first
         //as input and the second as output.
         if (args.length == 2 && !args[0].startsWith("-") && !args[1].startsWith("-")) {
@@ -159,8 +165,7 @@ class BatchCommandLineBuilder {
             Path candOutput = Paths.get(args[1]);
 
             if (Files.isRegularFile(candOutput)) {
-                throw new IllegalArgumentException("Can't specify an existing file as the " +
-                        "second argument for the output directory of a batch process");
+                throw new IllegalArgumentException("Can't specify an existing file as the " + "second argument for the output directory of a batch process");
             }
 
             if (Files.isDirectory(candInput)) {

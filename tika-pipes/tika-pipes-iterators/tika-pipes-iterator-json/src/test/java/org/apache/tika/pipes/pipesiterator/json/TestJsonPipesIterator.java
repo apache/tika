@@ -31,9 +31,13 @@ public class TestJsonPipesIterator {
     @Test
     public void testBasic() throws Exception {
         JsonPipesIterator pipesIterator = new JsonPipesIterator();
-        pipesIterator.setJsonPath(
-                Paths.get(this.getClass().getResource("/test-documents/test.json").toURI())
-                        .toAbsolutePath().toString());
+        pipesIterator.setJsonPath(Paths
+                .get(this
+                        .getClass()
+                        .getResource("/test-documents/test.json")
+                        .toURI())
+                .toAbsolutePath()
+                .toString());
         Iterator<FetchEmitTuple> it = pipesIterator.iterator();
         while (it.hasNext()) {
             //System.out.println(it.next());
@@ -43,10 +47,13 @@ public class TestJsonPipesIterator {
     @Test
     public void testWithEmbDocBytes() throws Exception {
         JsonPipesIterator pipesIterator = new JsonPipesIterator();
-        pipesIterator.setJsonPath(
-                Paths.get(
-                        this.getClass().getResource("/test-documents/test-with-embedded-bytes.json").toURI())
-                        .toAbsolutePath().toString());
+        pipesIterator.setJsonPath(Paths
+                .get(this
+                        .getClass()
+                        .getResource("/test-documents/test-with-embedded-bytes.json")
+                        .toURI())
+                .toAbsolutePath()
+                .toString());
         Iterator<FetchEmitTuple> it = pipesIterator.iterator();
         while (it.hasNext()) {
             //System.out.println(it.next());

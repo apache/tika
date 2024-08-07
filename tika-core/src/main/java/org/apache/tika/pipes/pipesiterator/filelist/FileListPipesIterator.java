@@ -30,7 +30,9 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
@@ -67,8 +69,10 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
                 if (! line.startsWith("#") && !StringUtils.isBlank(line)) {
                     FetchKey fetchKey = new FetchKey(getFetcherName(), line);
                     EmitKey emitKey = new EmitKey(getEmitterName(), line);
+                    ParseContext parseContext = new ParseContext();
+                    parseContext.set(HandlerConfig.class, getHandlerConfig());
                     tryToAdd(new FetchEmitTuple(line, fetchKey, emitKey,
-                            new Metadata(), getHandlerConfig(), getOnParseException()));
+                            new Metadata(), parseContext, getOnParseException()));
                 }
                 line = reader.readLine();
             }

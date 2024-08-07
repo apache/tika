@@ -45,6 +45,7 @@ public class JDBCUtil {
     private final String connectionString;
     private String driverClass;
     private Connection connection = null;
+
     public JDBCUtil(String connectionString, String driverClass) {
         this.connectionString = connectionString;
         this.driverClass = driverClass;
@@ -58,7 +59,9 @@ public class JDBCUtil {
                     Properties properties = new Properties();
                     properties.load(is);
                     for (String k : properties.stringPropertyNames()) {
-                        Matcher m = Pattern.compile("(?i)jdbc:" + k).matcher(connectionString);
+                        Matcher m = Pattern
+                                .compile("(?i)jdbc:" + k)
+                                .matcher(connectionString);
                         if (m.find()) {
                             this.driverClass = properties.getProperty(k);
                         }
@@ -71,8 +74,7 @@ public class JDBCUtil {
         }
     }
 
-    public static void batchInsert(PreparedStatement insertStatement, TableInfo table,
-                                   Map<Cols, String> data) throws SQLException {
+    public static void batchInsert(PreparedStatement insertStatement, TableInfo table, Map<Cols, String> data) throws SQLException {
 
         try {
             int i = 1;
@@ -82,9 +84,7 @@ public class JDBCUtil {
             }
             for (Cols c : data.keySet()) {
                 if (!table.containsColumn(c)) {
-                    throw new IllegalArgumentException(
-                            "Can't add data to " + c + " because it doesn't exist in the table: " +
-                                    table.getName());
+                    throw new IllegalArgumentException("Can't add data to " + c + " because it doesn't exist in the table: " + table.getName());
                 }
             }
             insertStatement.addBatch();
@@ -93,8 +93,7 @@ public class JDBCUtil {
         }
     }
 
-    public static void updateInsertStatement(int dbColOffset, PreparedStatement st, ColInfo colInfo,
-                                             String value) throws SQLException {
+    public static void updateInsertStatement(int dbColOffset, PreparedStatement st, ColInfo colInfo, String value) throws SQLException {
         if (value == null) {
             st.setNull(dbColOffset, colInfo.getType());
             return;
@@ -131,8 +130,7 @@ public class JDBCUtil {
                     st.setBoolean(dbColOffset, Boolean.parseBoolean(value));
                     break;
                 default:
-                    throw new UnsupportedOperationException(
-                            "Don't yet support type: " + colInfo.getType());
+                    throw new UnsupportedOperationException("Don't yet support type: " + colInfo.getType());
             }
         } catch (NumberFormatException e) {
             if (!"".equals(value)) {
@@ -201,14 +199,15 @@ public class JDBCUtil {
 
         try (ResultSet rs = dbMeta.getTables(null, null, "%", null)) {
             while (rs.next()) {
-                tables.add(rs.getString(3).toLowerCase(Locale.US));
+                tables.add(rs
+                        .getString(3)
+                        .toLowerCase(Locale.US));
             }
         }
         return tables;
     }
 
-    public void createTables(List<TableInfo> tableInfos, CREATE_TABLE createTable)
-            throws SQLException, IOException {
+    public void createTables(List<TableInfo> tableInfos, CREATE_TABLE createTable) throws SQLException, IOException {
 
         Connection conn = getConnection();
         for (TableInfo tableInfo : tableInfos) {
@@ -250,7 +249,9 @@ public class JDBCUtil {
     //does not close the connection
     private void createTable(Connection conn, TableInfo tableInfo) throws SQLException {
         StringBuilder createSql = new StringBuilder();
-        createSql.append("CREATE TABLE ").append(tableInfo.getName());
+        createSql
+                .append("CREATE TABLE ")
+                .append(tableInfo.getName());
         createSql.append("(");
 
         int last = 0;

@@ -43,7 +43,6 @@ class TikaPipesHttpClient {
     private final String endPoint = "pipes";
 
     private final HttpClientFactory httpClientFactory;
-    private HttpClient httpClient;
     private final String endPointUrl;
     private final String tikaUrl;
     private final int maxRetries = 3;
@@ -51,12 +50,12 @@ class TikaPipesHttpClient {
     private final long maxWaitForTikaMs = 120000;
     //how often to ping /tika (in ms) to see if the server is up and running
     private final long pulseWaitForTikaMs = 1000;
+    private HttpClient httpClient;
 
     /**
-     * @param baseUrl    url to base endpoint
+     * @param baseUrl url to base endpoint
      */
-    TikaPipesHttpClient(String baseUrl, HttpClientFactory httpClientFactory)
-            throws TikaConfigException {
+    TikaPipesHttpClient(String baseUrl, HttpClientFactory httpClientFactory) throws TikaConfigException {
         if (!baseUrl.endsWith("/")) {
             baseUrl += "/";
         }
@@ -70,8 +69,7 @@ class TikaPipesHttpClient {
         return endPoint;
     }
 
-    private HttpClient getNewClient(String baseUrl)
-            throws TikaConfigException {
+    private HttpClient getNewClient(String baseUrl) throws TikaConfigException {
         if (httpClient instanceof CloseableHttpClient) {
             try {
                 ((CloseableHttpClient) httpClient).close();
@@ -112,7 +110,9 @@ class TikaPipesHttpClient {
                 }
                 long elapsed = System.currentTimeMillis() - start;
                 TikaEmitterResult.STATUS status = TikaEmitterResult.STATUS.OK;
-                if (response.getStatusLine().getStatusCode() != 200) {
+                if (response
+                        .getStatusLine()
+                        .getStatusCode() != 200) {
                     status = TikaEmitterResult.STATUS.NOT_OK;
                 } else {
                     //pull out stacktrace from parse exception?
@@ -121,8 +121,7 @@ class TikaPipesHttpClient {
             }
         } catch (TimeoutWaitingForTikaException e) {
             long elapsed = System.currentTimeMillis() - start;
-            return new TikaEmitterResult(TikaEmitterResult.STATUS.TIMED_OUT_WAITING_FOR_TIKA,
-                    elapsed, "");
+            return new TikaEmitterResult(TikaEmitterResult.STATUS.TIMED_OUT_WAITING_FOR_TIKA, elapsed, "");
         }
         long elapsed = System.currentTimeMillis() - start;
         return new TikaEmitterResult(TikaEmitterResult.STATUS.EXCEEDED_MAX_RETRIES, elapsed, "");
@@ -143,7 +142,9 @@ class TikaPipesHttpClient {
             HttpGet get = new HttpGet(tikaUrl);
             try {
                 HttpResponse response = httpClient.execute(get);
-                if (response.getStatusLine().getStatusCode() == 200) {
+                if (response
+                        .getStatusLine()
+                        .getStatusCode() == 200) {
                     LOGGER.debug("server back up");
                     return;
                 }

@@ -29,8 +29,14 @@ public class FSFileResourceTest {
     @Test
     public void testRelativization() throws Exception {
         //test assertion error if alleged child is not actually child
-        Path root = Paths.get("root/abc/def").toAbsolutePath();
-        Path allegedChild = Paths.get(root.getParent().getParent().toAbsolutePath().toString());
+        Path root = Paths
+                .get("root/abc/def")
+                .toAbsolutePath();
+        Path allegedChild = Paths.get(root
+                .getParent()
+                .getParent()
+                .toAbsolutePath()
+                .toString());
         try {
             FSFileResource r = new FSFileResource(root, allegedChild);
             fail("should have had assertion error: alleged child not actually child of root");

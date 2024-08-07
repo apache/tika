@@ -61,8 +61,7 @@ public class DBWriter implements IDBWriter {
     private final Map<String, PreparedStatement> inserts = new HashMap<>();
     private final Map<String, LastInsert> lastInsertMap = new HashMap<>();
 
-    public DBWriter(Connection connection, List<TableInfo> tableInfos, JDBCUtil dbUtil,
-                    MimeBuffer mimeBuffer) throws IOException, SQLException {
+    public DBWriter(Connection connection, List<TableInfo> tableInfos, JDBCUtil dbUtil, MimeBuffer mimeBuffer) throws IOException, SQLException {
 
         this.conn = connection;
         this.mimeBuffer = mimeBuffer;
@@ -84,7 +83,9 @@ public class DBWriter implements IDBWriter {
 
     private PreparedStatement createPreparedInsert(TableInfo tableInfo) throws SQLException {
         StringBuilder sb = new StringBuilder();
-        sb.append("INSERT INTO ").append(tableInfo.getName());
+        sb
+                .append("INSERT INTO ")
+                .append(tableInfo.getName());
         sb.append("(");
         int i = 0;
         for (ColInfo c : tableInfo.getColInfos()) {
@@ -114,8 +115,7 @@ public class DBWriter implements IDBWriter {
         try {
             PreparedStatement p = inserts.get(table.getName());
             if (p == null) {
-                throw new RuntimeException(
-                        "Failed to create prepared statement for: " + table.getName());
+                throw new RuntimeException("Failed to create prepared statement for: " + table.getName());
             }
             dbUtil.batchInsert(p, table, data);
             LastInsert lastInsert = lastInsertMap.get(table.getName());
@@ -124,8 +124,7 @@ public class DBWriter implements IDBWriter {
             if (
                 //elapsed > commitEveryXMS ||
                     lastInsert.rowCount % commitEveryXRows == 0) {
-                LOG.info("writer ({}) on table ({}) is committing after {} rows and {} ms", myId,
-                        table.getName(), lastInsert.rowCount, elapsed);
+                LOG.info("writer ({}) on table ({}) is committing after {} rows and {} ms", myId, table.getName(), lastInsert.rowCount, elapsed);
                 p.executeBatch();
                 conn.commit();
                 lastInsert.lastInsert = System.currentTimeMillis();

@@ -28,8 +28,7 @@ import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.metadata.Metadata;
 
 public abstract class FileResourceCrawler implements Callable<IFileProcessorFutureResult> {
-    protected static final Logger LOG =
-            LoggerFactory.getLogger(FileResourceCrawler.class.toString());
+    protected static final Logger LOG = LoggerFactory.getLogger(FileResourceCrawler.class.toString());
 
     protected final static int SKIPPED = 0;
     protected final static int ADDED = 1;
@@ -108,20 +107,19 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
         boolean isAdded = false;
         if (select(fileResource.getMetadata())) {
             long start = System.currentTimeMillis();
-            while (queue.offer(fileResource, PAUSE_INCREMENT_MILLIS, TimeUnit.MILLISECONDS) ==
-                    false) {
+            while (queue.offer(fileResource, PAUSE_INCREMENT_MILLIS, TimeUnit.MILLISECONDS) == false) {
                 long elapsed = System.currentTimeMillis() - start;
-                LOG.info("FileResourceCrawler is pausing. Queue is full: {} after {} ms",
-                        queue.size(), elapsed);
+                LOG.info("FileResourceCrawler is pausing. Queue is full: {} after {} ms", queue.size(), elapsed);
 
                 if (maxConsecWaitInMillis > -1 && elapsed > maxConsecWaitInMillis) {
                     timedOut = true;
-                    String msg = "FileResourceCrawler had to wait longer (" + elapsed +
-                            " ms) than allowed (" + maxConsecWaitInMillis + " ms)";
+                    String msg = "FileResourceCrawler had to wait longer (" + elapsed + " ms) than allowed (" + maxConsecWaitInMillis + " ms)";
                     LOG.error(msg);
                     throw new InterruptedException(msg);
                 }
-                if (Thread.currentThread().isInterrupted()) {
+                if (Thread
+                        .currentThread()
+                        .isInterrupted()) {
                     LOG.info("FileResourceCrawler shutting down because of interrupted thread.");
                     throw new InterruptedException("FileResourceCrawler interrupted.");
                 }
@@ -149,7 +147,9 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
                 LOG.debug("quitting the poison loop because shutDownNoPoison is now true");
                 return;
             }
-            if (Thread.currentThread().isInterrupted()) {
+            if (Thread
+                    .currentThread()
+                    .isInterrupted()) {
                 LOG.debug("thread interrupted while trying to add poison");
                 return;
             }

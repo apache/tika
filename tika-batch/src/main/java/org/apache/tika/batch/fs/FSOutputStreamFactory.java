@@ -37,8 +37,7 @@ public class FSOutputStreamFactory implements OutputStreamFactory {
     private final String suffix;
     private final COMPRESSION compression;
 
-    public FSOutputStreamFactory(Path outputRoot, FSUtil.HANDLE_EXISTING handleExisting,
-                                 COMPRESSION compression, String suffix) {
+    public FSOutputStreamFactory(Path outputRoot, FSUtil.HANDLE_EXISTING handleExisting, COMPRESSION compression, String suffix) {
         this.handleExisting = handleExisting;
         this.outputRoot = outputRoot;
         this.suffix = suffix;
@@ -65,8 +64,7 @@ public class FSOutputStreamFactory implements OutputStreamFactory {
     @Override
     public OutputStream getOutputStream(Metadata metadata) throws IOException {
         String initialRelativePath = metadata.get(FSProperties.FS_REL_PATH);
-        Path outputPath =
-                FSUtil.getOutputPath(outputRoot, initialRelativePath, handleExisting, suffix);
+        Path outputPath = FSUtil.getOutputPath(outputRoot, initialRelativePath, handleExisting, suffix);
         if (outputPath == null) {
             return null;
         }
@@ -74,8 +72,7 @@ public class FSOutputStreamFactory implements OutputStreamFactory {
             Files.createDirectories(outputPath.getParent());
             //TODO: shouldn't need this any more in java 7, right?
             if (!Files.isDirectory(outputPath.getParent())) {
-                throw new IOException(
-                        "Couldn't create parent directory for:" + outputPath.toAbsolutePath());
+                throw new IOException("Couldn't create parent directory for:" + outputPath.toAbsolutePath());
             }
         }
 

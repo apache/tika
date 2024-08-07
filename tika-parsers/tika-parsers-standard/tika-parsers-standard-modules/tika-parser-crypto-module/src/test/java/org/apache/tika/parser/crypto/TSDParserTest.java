@@ -116,7 +116,7 @@ public class TSDParserTest extends TikaTest {
     @Test
     public void testTSDFileDataRecursiveMetadataXML() throws Exception {
         List<Metadata> list = getRecursiveMetadata("MANIFEST.XML.TSD");
-        assertEquals(2, list.size());
+        assertEquals(3, list.size());
         assertContains(TSDParser.class.getName(),
                 Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }

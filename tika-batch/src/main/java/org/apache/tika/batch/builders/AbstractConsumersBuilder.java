@@ -27,12 +27,13 @@ import org.apache.tika.batch.FileResource;
 public abstract class AbstractConsumersBuilder {
 
     public static int getDefaultNumConsumers() {
-        int n = Runtime.getRuntime().availableProcessors() - 1;
+        int n = Runtime
+                .getRuntime()
+                .availableProcessors() - 1;
         return Math.max(n, 1);
     }
 
-    public abstract ConsumersManager build(Node node, Map<String, String> runtimeAttributes,
-                                           ArrayBlockingQueue<FileResource> queue);
+    public abstract ConsumersManager build(Node node, Map<String, String> runtimeAttributes, ArrayBlockingQueue<FileResource> queue);
 
 
 }

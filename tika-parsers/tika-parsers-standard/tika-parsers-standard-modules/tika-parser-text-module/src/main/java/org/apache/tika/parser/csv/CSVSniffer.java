@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.input.ProxyReader;
 
@@ -42,15 +43,15 @@ class CSVSniffer {
     private static final int PUSH_BACK = 2;
     private static final int SPACE = ' ';
 
-    private final char[] delimiters;
+    private final Set<Character> delimiters;
     private final int markLimit;
     private final double minConfidence;
 
-    CSVSniffer(char[] delimiters) {
+    CSVSniffer(Set<Character> delimiters) {
         this(DEFAULT_MARK_LIMIT, delimiters, DEFAULT_MIN_CONFIDENCE);
     }
 
-    CSVSniffer(int markLimit, char[] delimiters, double minConfidence) {
+    CSVSniffer(int markLimit, Set<Character> delimiters, double minConfidence) {
         this.markLimit = markLimit;
         this.delimiters = delimiters;
         this.minConfidence = minConfidence;
@@ -85,12 +86,17 @@ class CSVSniffer {
         //TODO: take into consideration the filename.  Perhaps require
         //a higher confidence if detection contradicts filename?
         List<CSVResult> results = sniff(reader);
-        if (results == null || results.size() == 0) {
+        if (results == null || results.isEmpty()) {
             return CSVResult.TEXT;
         }
         CSVResult bestResult = results.get(0);
         if (bestResult.getConfidence() < minConfidence) {
             return CSVResult.TEXT;
+        }
+        // TIKA-4278: colon isn't reliable, e.g. govdocs1/242/242970.txt
+        if (results.size() > 1 && bestResult.getDelimiter().equals(':') &&
+                results.get(1).getConfidence() == bestResult.getConfidence()) {
+            return results.get(1);
         }
         return bestResult;
     }
@@ -133,6 +139,8 @@ class CSVSniffer {
         Map<Integer, MutableInt> rowLengthCounts = new HashMap<>();
         int charsRead = 0;
         int colCount = 0;
+        boolean rowZero = true;
+        boolean rowZeroEmpty = false;
         int encapsulated = 0; //number of cells that are encapsulated in dquotes (for now)
         boolean parseException = false;
 
@@ -310,7 +318,6 @@ class CSVSniffer {
                 throw new EOFException();
             }
             unread(reader, c);
-            return;
         }
 
 
@@ -326,7 +333,12 @@ class CSVSniffer {
             } else {
                 cnt.increment();
             }
+            if (rowZero && colCount <= 1) {
+                // row zero single column => no delimiter in first line
+                rowZeroEmpty = true;
+            }
             colCount = 0;
+            rowZero = false;
         }
 
         void unquoted(String string) {
@@ -374,6 +386,11 @@ class CSVSniffer {
             }
             //if there's not enough info
             if (max < 0 || totalRows < 3) {
+                return 0.0;
+            }
+
+            if (rowZeroEmpty) {
+                // TIKA-4278: not credible that there would be no delimiter in row zero
                 return 0.0;
             }
 

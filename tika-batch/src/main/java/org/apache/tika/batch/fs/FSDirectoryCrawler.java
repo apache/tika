@@ -38,30 +38,28 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
     private final Comparator<Path> pathComparator = new FileNameComparator();
     private CRAWL_ORDER crawlOrder;
 
-    public FSDirectoryCrawler(ArrayBlockingQueue<FileResource> fileQueue, int numConsumers,
-                              Path root, CRAWL_ORDER crawlOrder) {
+    public FSDirectoryCrawler(ArrayBlockingQueue<FileResource> fileQueue, int numConsumers, Path root, CRAWL_ORDER crawlOrder) {
         super(fileQueue, numConsumers);
         this.root = root;
         this.startDirectory = root;
         this.crawlOrder = crawlOrder;
         if (!Files.isDirectory(startDirectory)) {
-            throw new RuntimeException(
-                    "Crawler couldn't find this directory:" + startDirectory.toAbsolutePath());
+            throw new RuntimeException("Crawler couldn't find this directory:" + startDirectory.toAbsolutePath());
         }
 
     }
 
-    public FSDirectoryCrawler(ArrayBlockingQueue<FileResource> fileQueue, int numConsumers,
-                              Path root, Path startDirectory, CRAWL_ORDER crawlOrder) {
+    public FSDirectoryCrawler(ArrayBlockingQueue<FileResource> fileQueue, int numConsumers, Path root, Path startDirectory, CRAWL_ORDER crawlOrder) {
         super(fileQueue, numConsumers);
         this.root = root;
         this.startDirectory = startDirectory;
         this.crawlOrder = crawlOrder;
-        assert (startDirectory.toAbsolutePath().startsWith(root.toAbsolutePath()));
+        assert (startDirectory
+                .toAbsolutePath()
+                .startsWith(root.toAbsolutePath()));
 
         if (!Files.isDirectory(startDirectory)) {
-            throw new RuntimeException(
-                    "Crawler couldn't find this directory:" + startDirectory.toAbsolutePath());
+            throw new RuntimeException("Crawler couldn't find this directory:" + startDirectory.toAbsolutePath());
         }
     }
 
@@ -82,8 +80,7 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
                 files.add(p);
             }
         } catch (IOException e) {
-            LOG.warn("FSFileAdder couldn't read {}: {}", directory.toAbsolutePath(), e.getMessage(),
-                    e);
+            LOG.warn("FSFileAdder couldn't read {}: {}", directory.toAbsolutePath(), e.getMessage(), e);
         }
         if (files.size() == 0) {
             LOG.info("Empty directory: {}", directory.toAbsolutePath());
@@ -100,7 +97,9 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
         int numFiles = 0;
         List<Path> directories = new LinkedList<>();
         for (Path f : files) {
-            if (Thread.currentThread().isInterrupted()) {
+            if (Thread
+                    .currentThread()
+                    .isInterrupted()) {
                 throw new InterruptedException("file adder interrupted");
             }
             if (!Files.isReadable(f)) {
@@ -157,7 +156,12 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
             if (f1 == null || f2 == null) {
                 return 0;
             }
-            return f1.getFileName().toString().compareTo(f2.getFileName().toString());
+            return f1
+                    .getFileName()
+                    .toString()
+                    .compareTo(f2
+                            .getFileName()
+                            .toString());
         }
     }
 }

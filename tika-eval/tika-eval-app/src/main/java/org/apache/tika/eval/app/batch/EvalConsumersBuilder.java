@@ -44,8 +44,7 @@ import org.apache.tika.util.XMLDOMUtil;
 public class EvalConsumersBuilder extends AbstractConsumersBuilder {
 
     @Override
-    public ConsumersManager build(Node node, Map<String, String> runtimeAttributes,
-                                  ArrayBlockingQueue<FileResource> queue) {
+    public ConsumersManager build(Node node, Map<String, String> runtimeAttributes, ArrayBlockingQueue<FileResource> queue) {
 
         List<FileResourceConsumer> consumers = new LinkedList<>();
         int numConsumers = BatchProcessBuilder.getNumConsumers(runtimeAttributes);
@@ -77,8 +76,7 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
         } else {
             throw new RuntimeException("Must specify: -db or -jdbc");
         }
-        EvalConsumerBuilder consumerBuilder = ClassLoaderUtil.buildClass(EvalConsumerBuilder.class,
-                PropsUtil.getString(localAttrs.get("consumerBuilderClass"), null));
+        EvalConsumerBuilder consumerBuilder = ClassLoaderUtil.buildClass(EvalConsumerBuilder.class, PropsUtil.getString(localAttrs.get("consumerBuilderClass"), null));
         if (consumerBuilder == null) {
             throw new RuntimeException("Must specify consumerBuilderClass in config file");
         }

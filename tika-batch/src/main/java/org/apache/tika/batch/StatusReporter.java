@@ -86,19 +86,14 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
                 double elapsedSecs = (double) elapsed / (double) 1000;
                 int avg = (elapsedSecs > 5 || cnt > 100) ? (int) ((double) cnt / elapsedSecs) : -1;
 
-                String elapsedString =
-                        DurationFormatUtils.formatMillis(System.currentTimeMillis() - start);
-                String docsPerSec = avg > -1 ?
-                        String.format(Locale.ROOT, " (%s docs per sec)", numberFormat.format(avg)) :
-                        "";
-                String msg = String.format(Locale.ROOT, "Processed %s documents in %s%s.",
-                        numberFormat.format(cnt), elapsedString, docsPerSec);
+                String elapsedString = DurationFormatUtils.formatMillis(System.currentTimeMillis() - start);
+                String docsPerSec = avg > -1 ? String.format(Locale.ROOT, " (%s docs per sec)", numberFormat.format(avg)) : "";
+                String msg = String.format(Locale.ROOT, "Processed %s documents in %s%s.", numberFormat.format(cnt), elapsedString, docsPerSec);
                 report(msg);
                 if (exceptions == 1) {
                     msg = "There has been one handled exception.";
                 } else {
-                    msg = String.format(Locale.ROOT, "There have been %s handled exceptions.",
-                            numberFormat.format(exceptions));
+                    msg = String.format(Locale.ROOT, "There have been %s handled exceptions.", numberFormat.format(exceptions));
                 }
                 report(msg);
 
@@ -108,8 +103,7 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
                 if (stillAlive == 1) {
                     msg = "There is one file processor still active.";
                 } else {
-                    msg = "There are " + numberFormat.format(stillAlive) +
-                            " file processors still active.";
+                    msg = "There are " + numberFormat.format(stillAlive) + " file processors still active.";
                 }
                 report(msg);
 
@@ -118,14 +112,12 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
                 if (crawled == 1) {
                     msg = "The directory crawler has considered 1 file,";
                 } else {
-                    msg = "The directory crawler has considered " + numberFormat.format(crawled) +
-                            " files, ";
+                    msg = "The directory crawler has considered " + numberFormat.format(crawled) + " files, ";
                 }
                 if (added == 1) {
                     msg += "and it has added 1 file.";
                 } else {
-                    msg += "and it has added " + numberFormat.format(crawler.getAdded()) +
-                            " files.";
+                    msg += "and it has added " + numberFormat.format(crawler.getAdded()) + " files.";
                 }
                 msg += "\n";
                 report(msg);
@@ -175,8 +167,7 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
             long elapsed = fs.getElapsedMillis();
             if (elapsed > staleThresholdMillis) {
                 String elapsedString = Double.toString((double) elapsed / (double) 1000);
-                report("A thread has been working on " + fs.getResourceId() + " for " +
-                        elapsedString + " seconds.");
+                report("A thread has been working on " + fs.getResourceId() + " for " + elapsedString + " seconds.");
             }
         }
     }

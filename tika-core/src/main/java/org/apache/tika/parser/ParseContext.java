@@ -16,26 +16,11 @@
  */
 package org.apache.tika.parser;
 
-import java.io.InputStream;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.transform.Transformer;
-
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.XMLReaderUtils;
+import java.util.Set;
 
 /**
  * Parse context. Used to pass context information to Tika parsers.
@@ -100,156 +85,32 @@ public class ParseContext implements Serializable {
         }
     }
 
-    /**
-     * Returns the XMLReader specified in this parsing context. If a reader
-     * is not explicitly specified, then one is created using the specified
-     * or the default SAX parser.
-     *
-     * @return XMLReader
-     * @throws TikaException
-     * @see #getSAXParser()
-     * @since Apache Tika 1.13
-     */
-    public XMLReader getXMLReader() throws TikaException {
-        XMLReader reader = get(XMLReader.class);
-        if (reader != null) {
-            return reader;
-        }
-        return XMLReaderUtils.getXMLReader();
+    public boolean isEmpty() {
+        return context.size() == 0;
     }
 
-    /**
-     * Returns the SAX parser specified in this parsing context. If a parser
-     * is not explicitly specified, then one is created using the specified
-     * or the default SAX parser factory. Consider using
-     * {@link XMLReaderUtils#parseSAX(InputStream, DefaultHandler, ParseContext)}
-     * for more efficient reuse of SAXParsers.
-     *
-     * @return SAX parser
-     * @throws TikaException if a SAX parser could not be created
-     * @see #getSAXParserFactory()
-     * @since Apache Tika 0.8
-     */
-    public SAXParser getSAXParser() throws TikaException {
-        SAXParser parser = get(SAXParser.class);
-        if (parser != null) {
-            return parser;
-        } else {
-            return XMLReaderUtils.getSAXParser();
-        }
+    //this should really only be used for serialization
+    public Set<String> keySet() {
+        return Collections
+                .unmodifiableSet(context.keySet());
     }
 
-    /**
-     * Returns the SAX parser factory specified in this parsing context.
-     * If a factory is not explicitly specified, then a default factory
-     * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware, not validating, and to use
-     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
-     *
-     * @return SAX parser factory
-     * @since Apache Tika 0.8
-     */
-    public SAXParserFactory getSAXParserFactory() {
-        SAXParserFactory factory = get(SAXParserFactory.class);
-        if (factory == null) {
-            factory = SAXParserFactory.newInstance();
-            factory.setNamespaceAware(true);
-            factory.setValidating(false);
-            try {
-                factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            } catch (ParserConfigurationException | SAXNotSupportedException e) {
-                //swallow
-            } catch (SAXNotRecognizedException e) {
-                // TIKA-271: Some XML parsers do not support the
-                // secure-processing feature, even though it's required by
-                // JAXP in Java 5. Ignoring the exception is fine here, as
-                // deployments without this feature are inherently vulnerable
-                // to XML denial-of-service attacks.
-            }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
-        return factory;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ParseContext that = (ParseContext) o;
+        return context.equals(that.context);
     }
 
-    /**
-     * Returns the DOM builder factory specified in this parsing context.
-     * If a factory is not explicitly specified, then a default factory
-     * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware and to apply reasonable security
-     * features.
-     *
-     * @return DOM parser factory
-     * @since Apache Tika 1.13
-     */
-    private DocumentBuilderFactory getDocumentBuilderFactory() {
-        //borrowed from Apache POI
-        DocumentBuilderFactory documentBuilderFactory = get(DocumentBuilderFactory.class);
-        if (documentBuilderFactory != null) {
-            return documentBuilderFactory;
-        } else {
-            return XMLReaderUtils.getDocumentBuilderFactory();
-        }
-    }
-
-    /**
-     * Returns the DOM builder specified in this parsing context.
-     * If a builder is not explicitly specified, then a builder
-     * instance is created and returned. The builder instance is
-     * configured to apply an {@link XMLReaderUtils#IGNORING_SAX_ENTITY_RESOLVER},
-     * and it sets the ErrorHandler to <code>null</code>.
-     * Consider using {@link XMLReaderUtils#buildDOM(InputStream, ParseContext)}
-     * instead for more efficient reuse of document builders.
-     *
-     * @return DOM Builder
-     * @since Apache Tika 1.13
-     */
-    public DocumentBuilder getDocumentBuilder() throws TikaException {
-        DocumentBuilder documentBuilder = get(DocumentBuilder.class);
-        if (documentBuilder != null) {
-            return documentBuilder;
-        } else {
-            return XMLReaderUtils.getDocumentBuilder();
-        }
-    }
-
-    /**
-     * Returns the StAX input factory specified in this parsing context.
-     * If a factory is not explicitly specified, then a default factory
-     * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware and to apply reasonable security
-     * using the {@link XMLReaderUtils#IGNORING_STAX_ENTITY_RESOLVER}.
-     *
-     * @return StAX input factory
-     * @since Apache Tika 1.13
-     */
-    public XMLInputFactory getXMLInputFactory() {
-        XMLInputFactory factory = get(XMLInputFactory.class);
-        if (factory != null) {
-            return factory;
-        }
-        return XMLReaderUtils.getXMLInputFactory();
-    }
-
-
-    /**
-     * Returns the transformer specified in this parsing context.
-     * <p>
-     * If a transformer is not explicitly specified, then a default transformer
-     * instance is created and returned. The default transformer instance is
-     * configured to to use
-     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
-     *
-     * @return Transformer
-     * @throws TikaException when the transformer can not be created
-     * @since Apache Tika 1.17
-     */
-    public Transformer getTransformer() throws TikaException {
-
-        Transformer transformer = get(Transformer.class);
-        if (transformer != null) {
-            return transformer;
-        }
-
-        return XMLReaderUtils.getTransformer();
+    @Override
+    public int hashCode() {
+        return context.hashCode();
     }
 
 }

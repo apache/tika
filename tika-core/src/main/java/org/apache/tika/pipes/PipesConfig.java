@@ -46,6 +46,12 @@ public class PipesConfig extends PipesConfigBase {
         return pipesConfig;
     }
 
+    public static PipesConfig load(InputStream tikaConfigInputStream) throws IOException, TikaConfigException {
+        PipesConfig pipesConfig = new PipesConfig();
+        pipesConfig.configure("pipes", tikaConfigInputStream);
+        return pipesConfig;
+    }
+
     private PipesConfig() {
 
     }

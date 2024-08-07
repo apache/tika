@@ -51,14 +51,15 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.serialization.JsonMetadataList;
+import org.apache.tika.serialization.pipes.JsonFetchEmitTuple;
 import org.apache.tika.server.core.resource.PipesResource;
 import org.apache.tika.server.core.writer.JSONObjWriter;
 import org.apache.tika.utils.ProcessUtils;
@@ -96,34 +97,20 @@ public class TikaPipesTest extends CXFTestBase {
         Files.createDirectories(TMP_OUTPUT_DIR);
 
         for (String mockFile : new String[]{"hello_world.xml", "null_pointer.xml"}) {
-            Files.copy(
-                    TikaPipesTest.class.getResourceAsStream("/test-documents/mock/" + mockFile),
-                    inputDir.resolve(mockFile));
+            Files.copy(TikaPipesTest.class.getResourceAsStream("/test-documents/mock/" + mockFile), inputDir.resolve(mockFile));
         }
         TIKA_CONFIG_PATH = Files.createTempFile(TMP_DIR, "tika-pipes-", ".xml");
         TIKA_PIPES_LOG4j2_PATH = Files.createTempFile(TMP_DIR, "log4j2-", ".xml");
-        Files.copy(TikaPipesTest.class.getResourceAsStream("/log4j2.xml"), TIKA_PIPES_LOG4j2_PATH,
-                StandardCopyOption.REPLACE_EXISTING);
-        TIKA_CONFIG_XML =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
-                        "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                        "<name>fsf</name>" +
-                        "<basePath>" + inputDir.toAbsolutePath() +
-                        "</basePath>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
-                        "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
-                        "<name>fse</name>" +
-                        "<basePath>" +
-                        TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" +
-                        "</emitter>" +
-                        "</emitters>" + "<pipes><tikaConfig>" +
-                ProcessUtils.escapeCommandLine(TIKA_CONFIG_PATH.toAbsolutePath().toString()) +
-                        "</tikaConfig><numClients>10</numClients>" +
-                        "<forkedJvmArgs>" +
-                        "<arg>-Xmx256m</arg>" +
-                        "<arg>-Dlog4j.configurationFile=file:" +
-                        ProcessUtils.escapeCommandLine(TIKA_PIPES_LOG4j2_PATH.toAbsolutePath().toString()) + "</arg>" +
-                        "</forkedJvmArgs>" +
-                        "</pipes>" + "</properties>";
+        Files.copy(TikaPipesTest.class.getResourceAsStream("/log4j2.xml"), TIKA_PIPES_LOG4j2_PATH, StandardCopyOption.REPLACE_EXISTING);
+        TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" + "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
+                "<name>fsf</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
+                "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>fse</name>" + "<basePath>" + TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" +
+                "</emitter>" + "</emitters>" + "<pipes><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG_PATH
+                .toAbsolutePath()
+                .toString()) + "</tikaConfig><numClients>10</numClients>" + "<forkedJvmArgs>" + "<arg>-Xmx256m</arg>" + "<arg>-Dlog4j.configurationFile=file:" +
+                ProcessUtils.escapeCommandLine(TIKA_PIPES_LOG4j2_PATH
+                        .toAbsolutePath()
+                        .toString()) + "</arg>" + "</forkedJvmArgs>" + "</pipes>" + "</properties>";
         Files.write(TIKA_CONFIG_PATH, TIKA_CONFIG_XML.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -182,16 +169,15 @@ public class TikaPipesTest extends CXFTestBase {
             userMetadata.add("my-key-multi", s);
         }
 
-        FetchEmitTuple t =
-                new FetchEmitTuple("myId",
-                        new FetchKey("fsf", "hello_world.xml"), new EmitKey("fse", ""),
-                        userMetadata);
+        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey("fsf", "hello_world.xml"), new EmitKey("fse", ""), userMetadata);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 
         String getUrl = endPoint + PIPES_PATH;
-        Response response =
-                WebClient.create(getUrl).accept("application/json").post(writer.toString());
+        Response response = WebClient
+                .create(getUrl)
+                .accept("application/json")
+                .post(writer.toString());
         assertEquals(200, response.getStatus());
 
         List<Metadata> metadataList = null;
@@ -200,7 +186,9 @@ public class TikaPipesTest extends CXFTestBase {
         }
         assertEquals(1, metadataList.size());
         Metadata metadata = metadataList.get(0);
-        assertEquals("hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT).trim());
+        assertEquals("hello world", metadata
+                .get(TikaCoreProperties.TIKA_CONTENT)
+                .trim());
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("你好，世界", metadata.get("title"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
@@ -216,21 +204,19 @@ public class TikaPipesTest extends CXFTestBase {
         for (String s : VALUE_ARRAY) {
             userMetadata.add("my-key-multi", s);
         }
-
+        ParseContext parseContext = new ParseContext();
+        HandlerConfig handlerConfig = new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML, HandlerConfig.PARSE_MODE.RMETA, -1, -1, true);
+        parseContext.set(HandlerConfig.class, handlerConfig);
         FetchEmitTuple t =
-                new FetchEmitTuple("myId",
-                        new FetchKey("fsf", "hello_world.xml"),
-                        new EmitKey("fse", ""),
-                        userMetadata,
-                        new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
-                                HandlerConfig.PARSE_MODE.RMETA, -1, -1, true),
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+                new FetchEmitTuple("myId", new FetchKey("fsf", "hello_world.xml"), new EmitKey("fse", ""), userMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 
         String getUrl = endPoint + PIPES_PATH;
-        Response response =
-                WebClient.create(getUrl).accept("application/json").post(writer.toString());
+        Response response = WebClient
+                .create(getUrl)
+                .accept("application/json")
+                .post(writer.toString());
         assertEquals(200, response.getStatus());
 
         List<Metadata> metadataList = null;
@@ -239,7 +225,9 @@ public class TikaPipesTest extends CXFTestBase {
         }
         assertEquals(1, metadataList.size());
         Metadata metadata = metadataList.get(0);
-        assertContains("<p>hello world</p>", metadata.get(TikaCoreProperties.TIKA_CONTENT).trim());
+        assertContains("<p>hello world</p>", metadata
+                .get(TikaCoreProperties.TIKA_CONTENT)
+                .trim());
     }
 
     @Test
@@ -250,31 +238,31 @@ public class TikaPipesTest extends CXFTestBase {
             userMetadata.add("my-key-multi", s);
         }
 
-        FetchEmitTuple t =
-                new FetchEmitTuple("myId",
-                        new FetchKey("fsf", "null_pointer.xml"),
-                        new EmitKey("fse", ""),
-                        userMetadata);
+        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey("fsf", "null_pointer.xml"), new EmitKey("fse", ""), userMetadata);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 
         String getUrl = endPoint + PIPES_PATH;
-        Response response =
-                WebClient.create(getUrl).accept("application/json").post(writer.toString());
+        Response response = WebClient
+                .create(getUrl)
+                .accept("application/json")
+                .post(writer.toString());
         assertEquals(200, response.getStatus());
 
         JsonNode jsonResponse;
-        try (Reader reader = new InputStreamReader((InputStream) response.getEntity(),
-                StandardCharsets.UTF_8)) {
+        try (Reader reader = new InputStreamReader((InputStream) response.getEntity(), StandardCharsets.UTF_8)) {
             jsonResponse = new ObjectMapper().readTree(reader);
         }
-        String parseException = jsonResponse.get("parse_exception").asText();
+        String parseException = jsonResponse
+                .get("parse_exception")
+                .asText();
         assertNotNull(parseException);
         assertContains("NullPointerException", parseException);
-        assertTrue(jsonResponse.get("emitted").asBoolean());
+        assertTrue(jsonResponse
+                .get("emitted")
+                .asBoolean());
         List<Metadata> metadataList;
-        try (Reader reader = Files
-                .newBufferedReader(TMP_OUTPUT_DIR.resolve("null_pointer.xml.json"))) {
+        try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_DIR.resolve("null_pointer.xml.json"))) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(1, metadataList.size());
@@ -282,34 +270,35 @@ public class TikaPipesTest extends CXFTestBase {
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("my-value", metadata.get("my-key"));
         assertArrayEquals(VALUE_ARRAY, metadata.getValues("my-key-multi"));
-        assertContains("NullPointerException",
-                metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        assertContains("NullPointerException", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
     }
 
     @Test
     public void testPostNPENoEmit() throws Exception {
-        FetchEmitTuple t =
-                new FetchEmitTuple("myId",
-                        new FetchKey("fsf", "null_pointer.xml"),
-                        new EmitKey("fse", ""),
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey("fsf", "null_pointer.xml"), new EmitKey("fse", ""), new Metadata(), new ParseContext(),
+                FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 
         String getUrl = endPoint + PIPES_PATH;
-        Response response =
-                WebClient.create(getUrl).accept("application/json").post(writer.toString());
+        Response response = WebClient
+                .create(getUrl)
+                .accept("application/json")
+                .post(writer.toString());
         assertEquals(200, response.getStatus());
 
         JsonNode jsonResponse;
-        try (Reader reader = new InputStreamReader((InputStream) response.getEntity(),
-                StandardCharsets.UTF_8)) {
+        try (Reader reader = new InputStreamReader((InputStream) response.getEntity(), StandardCharsets.UTF_8)) {
             jsonResponse = new ObjectMapper().readTree(reader);
         }
-        String parseException = jsonResponse.get("parse_exception").asText();
+        String parseException = jsonResponse
+                .get("parse_exception")
+                .asText();
         assertNotNull(parseException);
         assertContains("NullPointerException", parseException);
-        assertFalse(jsonResponse.get("emitted").asBoolean());
+        assertFalse(jsonResponse
+                .get("emitted")
+                .asBoolean());
         assertFalse(Files.isRegularFile(TMP_NPE_OUTPUT_FILE));
     }
 }

@@ -18,6 +18,8 @@ package org.apache.tika.parser.microsoft;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.poi.hpsf.ClassID;
@@ -37,6 +39,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -201,6 +204,21 @@ abstract class AbstractPOIFSExtractor {
             handleOLENative(dir, type, rName, metadata, xhtml, outputHtml);
         } else if (type == POIFSDocumentType.COMP_OBJ) {
             handleCompObj(dir, type, rName, metadata, xhtml, outputHtml);
+        } else if (type == POIFSDocumentType.OUTLOOK) {
+            //for Outlook try to use the title first so that we don't wind up with __substg1.0_37...
+            //if that doesn't exist, backoff to rName
+            //add the suffix
+            metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
+            String name = tryToGetMsgTitle(dir, rName);
+            if (! StringUtils.isBlank(name)) {
+                if (StringUtils.isBlank(type.getExtension())) {
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+                } else {
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
+                            name + '.' + type.getExtension());
+                }
+            }
+            parseEmbedded(dir, xhtml, metadata, outputHtml);
         } else {
             metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
             if (! StringUtils.isBlank(rName)) {
@@ -379,5 +397,23 @@ abstract class AbstractPOIFSExtractor {
             }
             embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, outputHtml);
         }
+    }
+
+
+    public static String tryToGetMsgTitle(DirectoryEntry node, String defaultVal) {
+
+        for (String entryName : new String[] {"__substg1.0_0037001F", "__substg1.0_0E1D001F", "__substg1.0_0070001F"} ) {
+            try {
+                Entry entry = node.getEntry(entryName);
+                if (entry instanceof DocumentEntry) {
+                    try (InputStream is = new BoundedInputStream(1000, new DocumentInputStream((DocumentEntry) entry))) {
+                        return org.apache.commons.io.IOUtils.toString(is, StandardCharsets.UTF_16LE);
+                    }
+                }
+            } catch (IOException e) {
+                //do nothing
+            }
+        }
+        return defaultVal;
     }
 }

@@ -20,8 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 public interface StreamEmitter extends Emitter {
-    void emit(String emitKey, InputStream inputStream, Metadata userMetadata)
+    void emit(String emitKey, InputStream inputStream, Metadata userMetadata, ParseContext parseContext)
             throws IOException, TikaEmitterException;
 }

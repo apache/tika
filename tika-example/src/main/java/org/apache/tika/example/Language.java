@@ -31,8 +31,7 @@ import org.apache.tika.parser.ParseContext;
 public class Language {
     public static void languageDetection() throws IOException {
         LanguageDetector detector = new OptimaizeLangDetector().loadModels();
-        LanguageResult result =
-                detector.detect("Alla människor är födda fria och lika i värde och rättigheter.");
+        LanguageResult result = detector.detect("Alla människor är födda fria och lika i värde och rättigheter.");
 
         System.out.println(result.getLanguage());
     }

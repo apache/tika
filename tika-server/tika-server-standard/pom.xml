@@ -195,6 +195,7 @@
                   <excludes>
                     <exclude>module-info.class</exclude>
                     <exclude>META-INF/versions/9/module-info.class</exclude>
+                    <exclude>META-INF/maven/plugin.xml</exclude>
                     <exclude>META-INF/*.SF</exclude>
                     <exclude>META-INF/*.DSA</exclude>
                     <exclude>META-INF/*.RSA</exclude>
@@ -319,6 +320,6 @@
   </build>
 
   <scm>
-    <tag>3.0.0-BETA-rc1</tag>
+    <tag>3.0.0-BETA2-rc1</tag>
   </scm>
 </project>

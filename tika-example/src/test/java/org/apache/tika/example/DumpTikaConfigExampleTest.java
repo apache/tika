@@ -46,7 +46,9 @@ public class DumpTikaConfigExampleTest {
     @BeforeEach
     public void setUp() {
         try {
-            configFile = Files.createTempFile("tmp", ".xml").toFile();
+            configFile = Files
+                    .createTempFile("tmp", ".xml")
+                    .toFile();
         } catch (IOException e) {
             throw new RuntimeException("Failed to create tmp file");
         }
@@ -68,21 +70,27 @@ public class DumpTikaConfigExampleTest {
         for (Charset charset : new Charset[]{UTF_8, UTF_16LE}) {
             for (TikaConfigSerializer.Mode mode : TikaConfigSerializer.Mode.values()) {
                 Writer writer = new OutputStreamWriter(new FileOutputStream(configFile), charset);
-                TikaConfigSerializer
-                        .serialize(TikaConfig.getDefaultConfig(), mode, writer, charset);
+                TikaConfigSerializer.serialize(TikaConfig.getDefaultConfig(), mode, writer, charset);
                 writer.flush();
                 writer.close();
 
                 TikaConfig c = new TikaConfig(configFile);
-                assertTrue(c.getParser() instanceof CompositeParser, c.getParser().toString());
-                assertTrue(c.getDetector() instanceof CompositeDetector,
-                        c.getDetector().toString());
+                assertTrue(c.getParser() instanceof CompositeParser, c
+                        .getParser()
+                        .toString());
+                assertTrue(c.getDetector() instanceof CompositeDetector, c
+                        .getDetector()
+                        .toString());
 
                 CompositeParser p = (CompositeParser) c.getParser();
-                assertTrue(p.getParsers().size() > 130, "enough parsers?");
+                assertTrue(p
+                        .getParsers()
+                        .size() > 130, "enough parsers?");
 
                 CompositeDetector d = (CompositeDetector) c.getDetector();
-                assertTrue(d.getDetectors().size() > 3, "enough detectors?");
+                assertTrue(d
+                        .getDetectors()
+                        .size() > 3, "enough detectors?");
 
                 //just try to load it into autodetect to make sure no errors are thrown
                 Parser auto = new AutoDetectParser(c);

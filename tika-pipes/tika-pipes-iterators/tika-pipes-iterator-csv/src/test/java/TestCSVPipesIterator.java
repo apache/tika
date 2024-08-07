@@ -76,10 +76,15 @@ public class TestCSVPipesIterator {
         assertEquals(5, completed);
         for (MockFetcher f : fetchers) {
             for (FetchEmitTuple t : f.pairs) {
-                String id = t.getMetadata().get("id");
-                assertEquals("path/to/my/file" + id, t.getFetchKey().getFetchKey());
-                assertEquals("project" + (Integer.parseInt(id) % 2 == 1 ? "a" : "b"),
-                        t.getMetadata().get("project"));
+                String id = t
+                        .getMetadata()
+                        .get("id");
+                assertEquals("path/to/my/file" + id, t
+                        .getFetchKey()
+                        .getFetchKey());
+                assertEquals("project" + (Integer.parseInt(id) % 2 == 1 ? "a" : "b"), t
+                        .getMetadata()
+                        .get("project"));
             }
         }
     }
@@ -99,7 +104,9 @@ public class TestCSVPipesIterator {
     }
 
     private Path get(String testFileName) throws Exception {
-        return Paths.get(TestCSVPipesIterator.class.getResource("/" + testFileName).toURI());
+        return Paths.get(TestCSVPipesIterator.class
+                .getResource("/" + testFileName)
+                .toURI());
     }
 
     private static class MockFetcher implements Callable<Integer> {

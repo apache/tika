@@ -665,16 +665,11 @@ public class Metadata
 
     public boolean equals(Object o) {
 
-        if (o == null) {
+        if (!(o instanceof Metadata)) {
             return false;
         }
 
-        Metadata other = null;
-        try {
-            other = (Metadata) o;
-        } catch (ClassCastException cce) {
-            return false;
-        }
+        Metadata other = (Metadata) o;
 
         if (other.size() != size()) {
             return false;

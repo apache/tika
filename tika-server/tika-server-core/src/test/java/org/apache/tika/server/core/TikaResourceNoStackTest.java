@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonMetadata;
+import org.apache.tika.serialization.JsonMetadata;
 import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 
@@ -60,8 +60,7 @@ public class TikaResourceNoStackTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaResource.class);
-        sf.setResourceProvider(TikaResource.class,
-                new SingletonResourceProvider(new TikaResource()));
+        sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(new TikaResource()));
     }
 
     @Override
@@ -74,8 +73,9 @@ public class TikaResourceNoStackTest extends CXFTestBase {
 
     @Test
     public void testJsonNPE() throws Exception {
-        Response response = WebClient.create(endPoint + TIKA_PATH).accept(
-                "application/json")
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_NULL_POINTER));
         assertEquals(UNPROCESSEABLE, response.getStatus());
         String content = getStringFromInputStream((InputStream) response.getEntity());
@@ -84,17 +84,15 @@ public class TikaResourceNoStackTest extends CXFTestBase {
 
     @Test
     public void testJsonWriteLimit() throws Exception {
-        Response response = WebClient.create(endPoint + TIKA_PATH)
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
                 .header("writeLimit", "100")
                 .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
         assertEquals(200, response.getStatus());
-        Metadata metadata =
-                JsonMetadata.fromJson(new InputStreamReader((InputStream) response.getEntity(),
-                        StandardCharsets.UTF_8));
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader((InputStream) response.getEntity(), StandardCharsets.UTF_8));
         assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
-        assertContains("When in the Course of human events",
-                metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("When in the Course of human events", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertNotContained("political bands", metadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 

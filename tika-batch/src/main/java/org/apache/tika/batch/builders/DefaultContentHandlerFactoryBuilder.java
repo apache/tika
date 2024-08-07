@@ -39,8 +39,7 @@ public class DefaultContentHandlerFactoryBuilder implements IContentHandlerFacto
         Map<String, String> attributes = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
         BasicContentHandlerFactory.HANDLER_TYPE type = null;
         String handlerTypeString = attributes.get("basicHandlerType");
-        type = BasicContentHandlerFactory
-                .parseHandlerType(handlerTypeString, BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
+        type = BasicContentHandlerFactory.parseHandlerType(handlerTypeString, BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
         int writeLimit = -1;
         String writeLimitString = attributes.get("writeLimit");
         if (writeLimitString != null) {

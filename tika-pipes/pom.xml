@@ -69,11 +69,13 @@
             <configuration>
               <configLocation>checkstyle.xml</configLocation>
               <inputEncoding>UTF-8</inputEncoding>
-              <consoleOutput>false</consoleOutput>
+              <consoleOutput>true</consoleOutput>
+              <logViolationsToConsole>true</logViolationsToConsole>
               <includeTestSourceDirectory>true</includeTestSourceDirectory>
               <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>
               <violationSeverity>error</violationSeverity>
               <failOnViolation>true</failOnViolation>
+              <excludeGeneratedSources>true</excludeGeneratedSources>
             </configuration>
             <goals>
               <goal>check</goal>
@@ -85,6 +87,6 @@
   </build>
 
   <scm>
-    <tag>3.0.0-BETA-rc1</tag>
+    <tag>3.0.0-BETA2-rc1</tag>
   </scm>
 </project>

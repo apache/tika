@@ -16,17 +16,17 @@
   limitations under the License.
 -->
 <properties>
-    <parsers>
-        <parser class="org.apache.tika.parser.DefaultParser">
-            <parser-exclude class="org.apache.tika.parser.pdf.PDFParser"/>
-        </parser>
-        <parser class="org.apache.tika.parser.pdf.PDFParser">
-            <params>
-                <param name="sortByPosition" type="bool">true</param>
-            </params>
-        </parser>
-    </parsers>
-    <metadataFilters>
-        <metadataFilter class="org.apache.tika.langdetect.opennlp.metadatafilter.OpenNLPMetadataFilter"/>
-    </metadataFilters>
+  <parsers>
+    <parser class="org.apache.tika.parser.DefaultParser">
+      <parser-exclude class="org.apache.tika.parser.pdf.PDFParser"/>
+    </parser>
+    <parser class="org.apache.tika.parser.pdf.PDFParser">
+      <params>
+        <param name="sortByPosition" type="bool">true</param>
+      </params>
+    </parser>
+  </parsers>
+  <metadataFilters>
+    <metadataFilter class="org.apache.tika.langdetect.opennlp.metadatafilter.OpenNLPMetadataFilter"/>
+  </metadataFilters>
 </properties>

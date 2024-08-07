@@ -37,10 +37,14 @@ public class PropsUtil {
         if (v == null || v.length() == 0) {
             return defaultMissing;
         }
-        if (v.toLowerCase(Locale.ROOT).equals("true")) {
+        if (v
+                .toLowerCase(Locale.ROOT)
+                .equals("true")) {
             return true;
         }
-        if (v.toLowerCase(Locale.ROOT).equals("false")) {
+        if (v
+                .toLowerCase(Locale.ROOT)
+                .equals("false")) {
             return false;
         }
         return defaultMissing;

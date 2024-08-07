@@ -78,8 +78,7 @@ class ParsingTransferHandler extends TransferHandler {
 
     public boolean canImport(JComponent component, DataFlavor[] flavors) {
         for (DataFlavor flavor : flavors) {
-            if (flavor.equals(DataFlavor.javaFileListFlavor) || flavor.equals(uriListFlavor) ||
-                    flavor.equals(urlListFlavor)) {
+            if (flavor.equals(DataFlavor.javaFileListFlavor) || flavor.equals(uriListFlavor) || flavor.equals(urlListFlavor)) {
                 return true;
             }
         }
@@ -90,8 +89,7 @@ class ParsingTransferHandler extends TransferHandler {
     public boolean importData(JComponent component, Transferable transferable) {
         try {
             if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                importFiles(
-                        (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor));
+                importFiles((List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor));
             } else if (transferable.isDataFlavorSupported(urlListFlavor)) {
                 Object data = transferable.getTransferData(urlListFlavor);
                 tika.openURL(new URL(data.toString()));
@@ -114,8 +112,7 @@ class ParsingTransferHandler extends TransferHandler {
         delegate.exportAsDrag(arg0, arg1, arg2);
     }
 
-    public void exportToClipboard(JComponent arg0, Clipboard arg1, int arg2)
-            throws IllegalStateException {
+    public void exportToClipboard(JComponent arg0, Clipboard arg1, int arg2) throws IllegalStateException {
         delegate.exportToClipboard(arg0, arg1, arg2);
     }
 

@@ -87,4 +87,8 @@ public class DateNormalizingMetadataFilter extends MetadataFilter {
     public void setDefaultTimeZone(String timeZoneId) {
         this.defaultTimeZone = TimeZone.getTimeZone(ZoneId.of(timeZoneId));
     }
+
+    public String getDefaultTimeZone() {
+        return this.defaultTimeZone.toZoneId().toString();
+    }
 }

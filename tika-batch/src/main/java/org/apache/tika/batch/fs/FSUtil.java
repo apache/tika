@@ -31,18 +31,23 @@ import java.util.regex.Pattern;
  */
 public class FSUtil {
 
-    private final static Pattern FILE_NAME_PATTERN =
-            Pattern.compile("\\A(.*?)(?:\\((\\d+)\\))?\\.([^\\.]+)\\Z");
+    private final static Pattern FILE_NAME_PATTERN = Pattern.compile("\\A(.*?)(?:\\((\\d+)\\))?\\.([^\\.]+)\\Z");
 
     @Deprecated
     public static boolean checkThisIsAncestorOfThat(File ancestor, File child) {
-        int ancLen = ancestor.getAbsolutePath().length();
-        int childLen = child.getAbsolutePath().length();
+        int ancLen = ancestor
+                .getAbsolutePath()
+                .length();
+        int childLen = child
+                .getAbsolutePath()
+                .length();
         if (childLen <= ancLen) {
             return false;
         }
 
-        String childBase = child.getAbsolutePath().substring(0, ancLen);
+        String childBase = child
+                .getAbsolutePath()
+                .substring(0, ancLen);
         return childBase.equals(ancestor.getAbsolutePath());
 
     }
@@ -86,11 +91,8 @@ public class FSUtil {
      * @see #getOutputPath(Path, String, HANDLE_EXISTING, String)
      */
     @Deprecated
-    public static File getOutputFile(File outputRoot, String initialRelativePath,
-                                     HANDLE_EXISTING handleExisting, String suffix)
-            throws IOException {
-        return getOutputPath(Paths.get(outputRoot.toURI()), initialRelativePath, handleExisting,
-                suffix).toFile();
+    public static File getOutputFile(File outputRoot, String initialRelativePath, HANDLE_EXISTING handleExisting, String suffix) throws IOException {
+        return getOutputPath(Paths.get(outputRoot.toURI()), initialRelativePath, handleExisting, suffix).toFile();
     }
 
     /**
@@ -122,9 +124,7 @@ public class FSUtil {
      * @return can return null
      * @throws IOException
      */
-    public static Path getOutputPath(Path outputRoot, String initialRelativePath,
-                                     HANDLE_EXISTING handleExisting, String suffix)
-            throws IOException {
+    public static Path getOutputPath(Path outputRoot, String initialRelativePath, HANDLE_EXISTING handleExisting, String suffix) throws IOException {
 
         String localSuffix = (suffix == null) ? "" : suffix;
         Path cand = FSUtil.resolveRelative(outputRoot, initialRelativePath + "." + localSuffix);
@@ -149,7 +149,9 @@ public class FSUtil {
         String fNameExt = "";
         //this doesn't include the addition of the localSuffix
         Path candOnly = FSUtil.resolveRelative(outputRoot, initialRelativePath);
-        Matcher m = FILE_NAME_PATTERN.matcher(candOnly.getFileName().toString());
+        Matcher m = FILE_NAME_PATTERN.matcher(candOnly
+                .getFileName()
+                .toString());
         if (m.find()) {
             fNameBase = m.group(1);
 
@@ -174,13 +176,11 @@ public class FSUtil {
         cnt = 0;
         while (Files.exists(cand) && cnt++ < 20000) {
             UUID uid = UUID.randomUUID();
-            cand = FSUtil.resolveRelative(outputParent,
-                    uid.toString() + fNameExt + "" + localSuffix);
+            cand = FSUtil.resolveRelative(outputParent, uid.toString() + fNameExt + "" + localSuffix);
         }
 
         if (Files.exists(cand)) {
-            throw new IOException(
-                    "Couldn't find candidate output file after trying " + "very, very hard");
+            throw new IOException("Couldn't find candidate output file after trying " + "very, very hard");
         }
         return cand;
     }

@@ -56,30 +56,29 @@ public class SimpleComparerTest extends TikaTest {
     @BeforeAll
     public static void staticSetUp() throws Exception {
         WRITER = new MockDBWriter();
-        AbstractProfiler.loadCommonTokens(
-                Paths.get(SimpleComparerTest.class.getResource("/common_tokens").toURI()), "en");
+        AbstractProfiler.loadCommonTokens(Paths.get(SimpleComparerTest.class
+                .getResource("/common_tokens")
+                .toURI()), "en");
     }
 
     @BeforeEach
     public void setUp() throws Exception {
         WRITER.clear();
         comparer = new ExtractComparer(null, null, Paths.get("extractsA"), Paths.get("extractsB"),
-                new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS, IGNORE_LENGTH,
-                        IGNORE_LENGTH), WRITER);
+                new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS, IGNORE_LENGTH, IGNORE_LENGTH), WRITER);
     }
 
     @Test
     public void testBasic() throws Exception {
-        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file1.pdf.json"),
-                getResourceAsFile("/test-dirs/extractsA/file1.pdf.json").toPath());
-        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file1.pdf.json"),
-                getResourceAsFile("/test-dirs/extractsB/file1.pdf.json").toPath());
+        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file1.pdf.json"), getResourceAsFile("/test-dirs/extractsA/file1.pdf.json").toPath());
+        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file1.pdf.json"), getResourceAsFile("/test-dirs/extractsB/file1.pdf.json").toPath());
 
         comparer.compareFiles(fpsA, fpsB);
 
         List<Map<Cols, String>> tableInfos = WRITER.getTable(ExtractComparer.CONTENT_COMPARISONS);
         Map<Cols, String> row = tableInfos.get(0);
-        assertTrue(row.get(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_A)
+        assertTrue(row
+                .get(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_A)
                 .startsWith("1,200: 1 | 120000: 1 | over: 1"));
 
         tableInfos = WRITER.getTable(ExtractComparer.CONTENTS_TABLE_A);
@@ -112,10 +111,8 @@ public class SimpleComparerTest extends TikaTest {
 
     @Test
     public void testBasicSpanish() throws Exception {
-        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file1.pdf.json"),
-                getResourceAsFile("/test-dirs/extractsA/file12_es.txt.json").toPath());
-        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file1.pdf.json"),
-                getResourceAsFile("/test-dirs/extractsB/file12_es.txt.json").toPath());
+        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file1.pdf.json"), getResourceAsFile("/test-dirs/extractsA/file12_es.txt.json").toPath());
+        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file1.pdf.json"), getResourceAsFile("/test-dirs/extractsB/file12_es.txt.json").toPath());
 
         comparer.compareFiles(fpsA, fpsB);
 
@@ -138,10 +135,8 @@ public class SimpleComparerTest extends TikaTest {
         //file names.  The test file contains MT'd Simplified Chinese with
         //known "common words" appended at end.
 
-        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file13_attachANotB.doc.json"),
-                getResourceAsFile("/test-dirs/extractsA/file13_attachANotB.doc.json").toPath());
-        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("non-existent.json"),
-                Paths.get("/test-dirs/extractsB/non-existent.json"));
+        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file13_attachANotB.doc.json"), getResourceAsFile("/test-dirs/extractsA/file13_attachANotB.doc.json").toPath());
+        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("non-existent.json"), Paths.get("/test-dirs/extractsB/non-existent.json"));
 
         comparer.compareFiles(fpsA, fpsB);
 
@@ -156,15 +151,12 @@ public class SimpleComparerTest extends TikaTest {
 
     @Test
     public void testEmpty() throws Exception {
-        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file1.pdf"),
-                getResourceAsFile("/test-dirs/extractsA/file1.pdf.json").toPath());
-        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file1.pdf"),
-                getResourceAsFile("/test-dirs/extractsB/file4_emptyB.pdf.json").toPath());
+        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file1.pdf"), getResourceAsFile("/test-dirs/extractsA/file1.pdf.json").toPath());
+        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file1.pdf"), getResourceAsFile("/test-dirs/extractsB/file4_emptyB.pdf.json").toPath());
         comparer.compareFiles(fpsA, fpsB);
         List<Map<Cols, String>> table = WRITER.getTable(ExtractComparer.EXTRACT_EXCEPTION_TABLE_B);
         Map<Cols, String> row = table.get(0);
-        assertEquals(Integer.toString(ExtractReaderException.TYPE.ZERO_BYTE_EXTRACT_FILE.ordinal()),
-                row.get(Cols.EXTRACT_EXCEPTION_ID));
+        assertEquals(Integer.toString(ExtractReaderException.TYPE.ZERO_BYTE_EXTRACT_FILE.ordinal()), row.get(Cols.EXTRACT_EXCEPTION_ID));
     }
 
 
@@ -193,19 +185,14 @@ public class SimpleComparerTest extends TikaTest {
 
     @Test
     public void testAccessException() throws Exception {
-        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file6_accessEx.pdf.json"),
-                getResourceAsFile("/test-dirs/extractsA/file6_accessEx.pdf.json").toPath());
-        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file6_accessEx.pdf.json"),
-                getResourceAsFile("/test-dirs/extractsB/file6_accessEx.pdf.json").toPath());
+        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file6_accessEx.pdf.json"), getResourceAsFile("/test-dirs/extractsA/file6_accessEx.pdf.json").toPath());
+        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file6_accessEx.pdf.json"), getResourceAsFile("/test-dirs/extractsB/file6_accessEx.pdf.json").toPath());
         comparer.compareFiles(fpsA, fpsB);
-        for (TableInfo t : new TableInfo[]{ExtractComparer.EXCEPTION_TABLE_A,
-                ExtractComparer.EXCEPTION_TABLE_B}) {
+        for (TableInfo t : new TableInfo[]{ExtractComparer.EXCEPTION_TABLE_A, ExtractComparer.EXCEPTION_TABLE_B}) {
             List<Map<Cols, String>> table = WRITER.getTable(t);
 
             Map<Cols, String> rowA = table.get(0);
-            assertEquals(
-                    Integer.toString(AbstractProfiler.EXCEPTION_TYPE.ACCESS_PERMISSION.ordinal()),
-                    rowA.get(Cols.PARSE_EXCEPTION_ID));
+            assertEquals(Integer.toString(AbstractProfiler.EXCEPTION_TYPE.ACCESS_PERMISSION.ordinal()), rowA.get(Cols.PARSE_EXCEPTION_ID));
             assertNull(rowA.get(Cols.ORIG_STACK_TRACE));
             assertNull(rowA.get(Cols.SORT_STACK_TRACE));
         }
@@ -215,8 +202,7 @@ public class SimpleComparerTest extends TikaTest {
     public void testAttachmentCounts() {
         List<Metadata> list = new ArrayList<>();
         Metadata m0 = new Metadata();
-        m0.set(TikaCoreProperties.EMBEDDED_RESOURCE_PATH,
-                "dir1/dir2/file.zip");//bad data should be ignored
+        m0.set(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, "dir1/dir2/file.zip");//bad data should be ignored
         //in the first metadata object
         list.add(m0);
         Metadata m1 = new Metadata();
@@ -249,24 +235,22 @@ public class SimpleComparerTest extends TikaTest {
 
     @Test
     public void testDifferentlyOrderedAttachments() throws Exception {
-        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file14_diffAttachOrder.json"),
-                getResourceAsFile("/test-dirs/extractsA/file14_diffAttachOrder.json").toPath());
-        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file6_accessEx.pdf.json"),
-                getResourceAsFile("/test-dirs/extractsB/file14_diffAttachOrder.json").toPath());
+        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file14_diffAttachOrder.json"), getResourceAsFile("/test-dirs/extractsA/file14_diffAttachOrder.json").toPath());
+        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file6_accessEx.pdf.json"), getResourceAsFile("/test-dirs/extractsB/file14_diffAttachOrder.json").toPath());
         comparer.compareFiles(fpsA, fpsB);
         List<Map<Cols, String>> tableInfos = WRITER.getTable(ExtractComparer.CONTENT_COMPARISONS);
         assertEquals(3, tableInfos.size());
         for (int i = 0; i < tableInfos.size(); i++) {
-            assertEquals("1.0", tableInfos.get(i).get(Cols.OVERLAP), "problem with " + i);
+            assertEquals("1.0", tableInfos
+                    .get(i)
+                    .get(Cols.OVERLAP), "problem with " + i);
         }
     }
 
     @Test
     public void testTags() throws Exception {
-        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file15_tags.json"),
-                getResourceAsFile("/test-dirs/extractsA/file15_tags.json").toPath());
-        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file15_tags.html"),
-                getResourceAsFile("/test-dirs/extractsB/file15_tags.html").toPath());
+        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file15_tags.json"), getResourceAsFile("/test-dirs/extractsA/file15_tags.json").toPath());
+        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file15_tags.html"), getResourceAsFile("/test-dirs/extractsB/file15_tags.html").toPath());
         comparer.compareFiles(fpsA, fpsB);
         List<Map<Cols, String>> tableInfosA = WRITER.getTable(ExtractComparer.TAGS_TABLE_A);
         assertEquals(1, tableInfosA.size());
@@ -284,10 +268,8 @@ public class SimpleComparerTest extends TikaTest {
 
     @Test
     public void testBadTags() throws Exception {
-        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file16_badtags.json"),
-                getResourceAsFile("/test-dirs/extractsA/file16_badTags.json").toPath());
-        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file16_badtags.html"),
-                getResourceAsFile("/test-dirs/extractsB/file16_badTags.html").toPath());
+        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file16_badtags.json"), getResourceAsFile("/test-dirs/extractsA/file16_badTags.json").toPath());
+        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file16_badtags.html"), getResourceAsFile("/test-dirs/extractsB/file16_badTags.html").toPath());
         comparer.compareFiles(fpsA, fpsB);
         List<Map<Cols, String>> tableInfosA = WRITER.getTable(ExtractComparer.TAGS_TABLE_A);
         assertEquals(1, tableInfosA.size());
@@ -304,10 +286,8 @@ public class SimpleComparerTest extends TikaTest {
 
     @Test
     public void testTagsOutOfOrder() throws Exception {
-        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file17_tagsOutOfOrder.json"),
-                getResourceAsFile("/test-dirs/extractsA/file17_tagsOutOfOrder.json").toPath());
-        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file16_badTags.html"),
-                getResourceAsFile("/test-dirs/extractsB/file16_badTags.html").toPath());
+        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file17_tagsOutOfOrder.json"), getResourceAsFile("/test-dirs/extractsA/file17_tagsOutOfOrder.json").toPath());
+        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file16_badTags.html"), getResourceAsFile("/test-dirs/extractsB/file16_badTags.html").toPath());
         comparer.compareFiles(fpsA, fpsB);
         List<Map<Cols, String>> tableInfosA = WRITER.getTable(ExtractComparer.TAGS_TABLE_A);
         assertEquals(1, tableInfosA.size());
@@ -330,16 +310,11 @@ public class SimpleComparerTest extends TikaTest {
     public void testDebug() throws Exception {
         Path commonTokens = Paths.get(getResourceAsFile("/common_tokens_short.txt").toURI());
         AbstractProfiler.loadCommonTokens(commonTokens, "en");
-        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file1.pdf.json"),
-                getResourceAsFile("/test-dirs/extractsA/file1.pdf.json").toPath());
-        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file1.pdf.json"),
-                getResourceAsFile("/test-dirs/extractsB/file1.pdf.json").toPath());
+        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file1.pdf.json"), getResourceAsFile("/test-dirs/extractsA/file1.pdf.json").toPath());
+        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file1.pdf.json"), getResourceAsFile("/test-dirs/extractsB/file1.pdf.json").toPath());
         comparer.compareFiles(fpsA, fpsB);
-        for (TableInfo t : new TableInfo[]{ExtractComparer.COMPARISON_CONTAINERS,
-                ExtractComparer.EXTRACT_EXCEPTION_TABLE_A,
-                ExtractComparer.EXTRACT_EXCEPTION_TABLE_B, ExtractComparer.EXCEPTION_TABLE_A,
-                ExtractComparer.EXCEPTION_TABLE_B, ExtractComparer.PROFILES_A,
-                ExtractComparer.PROFILES_B, ExtractComparer.CONTENTS_TABLE_A,
+        for (TableInfo t : new TableInfo[]{ExtractComparer.COMPARISON_CONTAINERS, ExtractComparer.EXTRACT_EXCEPTION_TABLE_A, ExtractComparer.EXTRACT_EXCEPTION_TABLE_B,
+                ExtractComparer.EXCEPTION_TABLE_A, ExtractComparer.EXCEPTION_TABLE_B, ExtractComparer.PROFILES_A, ExtractComparer.PROFILES_B, ExtractComparer.CONTENTS_TABLE_A,
                 ExtractComparer.CONTENTS_TABLE_B, ExtractComparer.CONTENT_COMPARISONS}) {
             //debugPrintTable(t);
         }
@@ -378,11 +353,8 @@ public class SimpleComparerTest extends TikaTest {
         EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file1.pdf.json"), p1);
         EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file1.pdf.json"), p2);
         comparer.compareFiles(fpsA, fpsB);
-        for (TableInfo t : new TableInfo[]{ExtractComparer.COMPARISON_CONTAINERS,
-                ExtractComparer.EXTRACT_EXCEPTION_TABLE_A,
-                ExtractComparer.EXTRACT_EXCEPTION_TABLE_B, ExtractComparer.EXCEPTION_TABLE_A,
-                ExtractComparer.EXCEPTION_TABLE_B, ExtractComparer.PROFILES_A,
-                ExtractComparer.PROFILES_B, ExtractComparer.CONTENTS_TABLE_A,
+        for (TableInfo t : new TableInfo[]{ExtractComparer.COMPARISON_CONTAINERS, ExtractComparer.EXTRACT_EXCEPTION_TABLE_A, ExtractComparer.EXTRACT_EXCEPTION_TABLE_B,
+                ExtractComparer.EXCEPTION_TABLE_A, ExtractComparer.EXCEPTION_TABLE_B, ExtractComparer.PROFILES_A, ExtractComparer.PROFILES_B, ExtractComparer.CONTENTS_TABLE_A,
                 ExtractComparer.CONTENTS_TABLE_B, ExtractComparer.CONTENT_COMPARISONS}) {
             debugPrintTable(t);
         }

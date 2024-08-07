@@ -253,6 +253,16 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         }
 
         TemporaryResources tmp = new TemporaryResources();
+        try {
+            _parse(stream, handler, metadata, context, tmp);
+        } finally {
+            tmp.close();
+        }
+    }
+
+    private void _parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                ParseContext context, TemporaryResources tmp)
+            throws TikaException, IOException, SAXException {
         ArchiveInputStream ais = null;
         String encoding = null;
         try {
@@ -262,7 +272,12 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             // At the end we want to close the archive stream to release
             // any associated resources, but the underlying document stream
             // should not be closed
-
+            //TODO -- we've probably already detected the stream by here. We should
+            //rely on that detection and not re-detect.
+            encoding = factory.getEntryEncoding();
+                // At the end we want to close the archive stream to release
+                // any associated resources, but the underlying document stream
+                // should not be closed
             ais = factory.createArchiveInputStream(CloseShieldInputStream.wrap(stream));
 
         } catch (StreamingNotSupportedException sne) {
@@ -298,7 +313,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 throw new TikaException("Unknown non-streaming format " + sne.getFormat(), sne);
             }
         } catch (ArchiveException e) {
-            tmp.close();
+            tmp .close();
             throw new TikaException("Unable to unpack document stream", e);
         }
 
@@ -518,7 +533,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         @Override
         public void close() throws IOException {
             file.close();
-        }   
+        }
     }
 
     /**

@@ -45,6 +45,7 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.EmitterManager;
@@ -125,6 +126,7 @@ public abstract class TikaPipesXSearchBase {
             }
             statusCounts.put(status, cnt);
         }
+        System.out.println(statusCounts);
         assertEquals(numHtmlDocs, (int) statusCounts.get("PARSE_SUCCESS"));
         //the npe is caught and counted as a "parse success with exception"
         assertEquals(1, (int) statusCounts.get("PARSE_SUCCESS_WITH_EXCEPTION"));
@@ -334,15 +336,15 @@ public abstract class TikaPipesXSearchBase {
         Metadata metadata = new Metadata();
         metadata.set("mime", "mimeA");
         metadata.set("title", "titleA");
-        emitter.emit("1", Collections.singletonList(metadata));
+        emitter.emit("1", Collections.singletonList(metadata), new ParseContext());
         JsonResponse refresh = CLIENT.getJson(endpoint + "/_refresh");
         metadata.set("title", "titleB");
-        emitter.emit("1", Collections.singletonList(metadata));
+        emitter.emit("1", Collections.singletonList(metadata), new ParseContext());
         refresh = CLIENT.getJson(endpoint + "/_refresh");
 
         Metadata metadata2 = new Metadata();
         metadata2.set("content", "the quick brown fox");
-        emitter.emit("1", Collections.singletonList(metadata2));
+        emitter.emit("1", Collections.singletonList(metadata2), new ParseContext());
         refresh = CLIENT.getJson(endpoint + "/_refresh");
 
         String query = "{ " +

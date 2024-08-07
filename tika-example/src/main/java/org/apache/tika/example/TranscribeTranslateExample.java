@@ -35,8 +35,8 @@ import org.apache.tika.language.translate.impl.GoogleTranslator;
  * into {@link Translator#translate(String, String)}.
  * The {@link GoogleTranslator} is configured with a target
  * language of "en-US".
- * @author lewismc
  *
+ * @author lewismc
  */
 public class TranscribeTranslateExample {
 
@@ -45,6 +45,7 @@ public class TranscribeTranslateExample {
      * input data. This implementation needs configured as explained in the Javadoc.
      * In this implementation, Google will try to guess the input language. The target
      * language is "en-US".
+     *
      * @param text input text to translate.
      * @return translated text String.
      */
@@ -65,6 +66,7 @@ public class TranscribeTranslateExample {
      * Use {@link org.apache.tika.parser.transcribe.aws.AmazonTranscribe} to execute transcription
      * on input data.
      * This implementation needs to be configured as explained in the Javadoc.
+     *
      * @param file the name of the file (which needs to be on the Java Classpath) to transcribe.
      * @return transcribed text.
      */
@@ -78,35 +80,35 @@ public class TranscribeTranslateExample {
      * <li><code>transcribe-translate ${tika-config.xml} ${file}</code>; which executes both
      * transcription then translation on the given resource, or
      * <li><code>transcribe ${tika-config.xml} ${file}</code>; which executes only translation</li>
+     *
      * @param args either of the commands described above and the input file
-     * (which needs to be on the Java Classpath).
-     *
-     *
-     *
-     * ${tika-config.xml} must include credentials for aws and a temporary storage bucket:
-     * <pre>
-     * {@code
-     *  <properties>
-     *   <parsers>
-     *     <parser class="org.apache.tika.parser.DefaultParser"/>
-     *     <parser class="org.apache.tika.parser.transcribe.aws.AmazonTranscribe">
-     *       <params>
-     *         <param name="bucket" type="string">bucket</param>
-     *         <param name="clientId" type="string">clientId</param>
-     *         <param name="clientSecret" type="string">clientSecret</param>
-     *       </params>
-     *     </parser>
-     *   </parsers>
-     * </properties>
-     * }
-     * </pre>
+     *             (which needs to be on the Java Classpath).
+     *             <p>
+     *             <p>
+     *             <p>
+     *             ${tika-config.xml} must include credentials for aws and a temporary storage bucket:
+     *             <pre>
+     *             {@code
+     *              <properties>
+     *               <parsers>
+     *                 <parser class="org.apache.tika.parser.DefaultParser"/>
+     *                 <parser class="org.apache.tika.parser.transcribe.aws.AmazonTranscribe">
+     *                   <params>
+     *                     <param name="bucket" type="string">bucket</param>
+     *                     <param name="clientId" type="string">clientId</param>
+     *                     <param name="clientSecret" type="string">clientSecret</param>
+     *                   </params>
+     *                 </parser>
+     *               </parsers>
+     *             </properties>
+     *             }
+     *             </pre>
      */
-    public static void main (String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         String text = null;
         if (args.length > 1) {
             if ("transcribe-translate".equals(args[1])) {
-                text = googleTranslateToEnglish(amazonTranscribe(Paths.get(args[0]),
-                        Paths.get(args[1])));
+                text = googleTranslateToEnglish(amazonTranscribe(Paths.get(args[0]), Paths.get(args[1])));
                 System.out.print("Transcription and translation successful!\nEXTRACTED TEXT: " + text);
             } else if ("transcribe".equals(args[1])) {
                 text = amazonTranscribe(Paths.get(args[0]), Paths.get(args[1]));

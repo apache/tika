@@ -41,8 +41,7 @@ public class ProduceTypeResourceComparator implements ResourceComparator {
      * In case of no matching in this list, it will be treated as media type all.
      */
     public static final List<MediaType> PRIORITIZED_MEDIA_LIST =
-            Arrays.asList(MediaType.TEXT_PLAIN_TYPE, MediaType.APPLICATION_JSON_TYPE,
-                    MediaType.TEXT_HTML_TYPE, MediaType.TEXT_XML_TYPE);
+            Arrays.asList(MediaType.TEXT_PLAIN_TYPE, MediaType.APPLICATION_JSON_TYPE, MediaType.TEXT_HTML_TYPE, MediaType.TEXT_XML_TYPE);
     /**
      * The logger
      */
@@ -83,25 +82,29 @@ public class ProduceTypeResourceComparator implements ResourceComparator {
     public int compare(OperationResourceInfo oper1, OperationResourceInfo oper2, Message message) {
         // getting all message context data
         final String httpMethod = (String) message.get(Message.HTTP_REQUEST_METHOD);
-        final MediaType contentType =
-                JAXRSUtils.toMediaType((String) message.get(Message.CONTENT_TYPE));
-        final List<MediaType> acceptTypes =
-                JAXRSUtils.parseMediaTypes((String) message.get(Message.ACCEPT_CONTENT_TYPE));
+        final MediaType contentType = JAXRSUtils.toMediaType((String) message.get(Message.CONTENT_TYPE));
+        final List<MediaType> acceptTypes = JAXRSUtils.parseMediaTypes((String) message.get(Message.ACCEPT_CONTENT_TYPE));
 
-        LOG.debug("Message Method : " + httpMethod + ", ContentType : " + contentType + ", " +
-                "Accept Types : " + acceptTypes);
+        LOG.debug("Message Method : " + httpMethod + ", ContentType : " + contentType + ", " + "Accept Types : " + acceptTypes);
 
         int result = compareProduceTypes(oper1, oper2, acceptTypes);
 
-        String m1Name = oper1.getClassResourceInfo().getServiceClass().getName() + "#" +
-                oper1.getMethodToInvoke().getName();
-        String m2Name = oper2.getClassResourceInfo().getServiceClass().getName() + "#" +
-                oper2.getMethodToInvoke().getName();
+        String m1Name = oper1
+                .getClassResourceInfo()
+                .getServiceClass()
+                .getName() + "#" + oper1
+                .getMethodToInvoke()
+                .getName();
+        String m2Name = oper2
+                .getClassResourceInfo()
+                .getServiceClass()
+                .getName() + "#" + oper2
+                .getMethodToInvoke()
+                .getName();
 
         if (result != 0) {
             String chosen = result == -1 ? m1Name : m2Name;
-            LOG.debug("Between " + m1Name + " and " + m2Name + ", " + chosen +
-                    " is chosen for handling the current request");
+            LOG.debug("Between " + m1Name + " and " + m2Name + ", " + chosen + " is chosen for handling the current request");
         }
 
         return result;
@@ -117,20 +120,23 @@ public class ProduceTypeResourceComparator implements ResourceComparator {
      * @param acceptTypes the list acceptable response mime type, for the message.
      * @return value based on chosen handler. Returns -1 if first, 1 if second and 0 if no decision.
      */
-    private int compareProduceTypes(OperationResourceInfo oper1, OperationResourceInfo oper2,
-                                    final List<MediaType> acceptTypes) {
+    private int compareProduceTypes(OperationResourceInfo oper1, OperationResourceInfo oper2, final List<MediaType> acceptTypes) {
         // getting matched produce type for both handlers.
         // this is required if a method can produce multiple types.
-        List<MediaType> op1Matched =
-                JAXRSUtils.intersectMimeTypes(acceptTypes, oper1.getProduceTypes(), true);
-        List<MediaType> op2Matched =
-                JAXRSUtils.intersectMimeTypes(acceptTypes, oper2.getProduceTypes(), true);
+        List<MediaType> op1Matched = JAXRSUtils.intersectMimeTypes(acceptTypes, oper1.getProduceTypes(), true);
+        List<MediaType> op2Matched = JAXRSUtils.intersectMimeTypes(acceptTypes, oper2.getProduceTypes(), true);
 
         // calculate the max priority for both handlers
-        int oper1Priority =
-                op1Matched.stream().mapToInt(PRIORITIZED_MEDIA_LIST::indexOf).max().getAsInt();
-        int oper2Priority =
-                op2Matched.stream().mapToInt(PRIORITIZED_MEDIA_LIST::indexOf).max().getAsInt();
+        int oper1Priority = op1Matched
+                .stream()
+                .mapToInt(PRIORITIZED_MEDIA_LIST::indexOf)
+                .max()
+                .getAsInt();
+        int oper2Priority = op2Matched
+                .stream()
+                .mapToInt(PRIORITIZED_MEDIA_LIST::indexOf)
+                .max()
+                .getAsInt();
 
         // final calculation
         return oper1Priority == oper2Priority ? 0 : (oper1Priority > oper2Priority ? -1 : 1);

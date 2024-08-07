@@ -20,12 +20,13 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 public interface Emitter {
 
     String getName();
 
-    void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException;
+    void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException, TikaEmitterException;
 
     void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException;
     //TODO -- add this later for xhtml?

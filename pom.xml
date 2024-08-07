@@ -45,6 +45,7 @@
     <module>tika-batch</module>
     <module>tika-langdetect</module>
     <module>tika-pipes</module>
+    <module>tika-grpc</module>
     <module>tika-app</module>
     <module>tika-server</module>
     <module>tika-integration-tests</module>
@@ -216,6 +217,6 @@ least three +1 Tika PMC votes are cast.
   </ciManagement>
 
   <scm>
-    <tag>3.0.0-BETA-rc1</tag>
+    <tag>3.0.0-BETA2-rc1</tag>
   </scm>
 </project>

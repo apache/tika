@@ -35,8 +35,7 @@ import org.apache.tika.sax.TeeContentHandler;
 public class LanguageDetectingParser extends DelegatingParser {
     private static final long serialVersionUID = 4291320409396502774L;
 
-    public void parse(InputStream stream, ContentHandler handler, final Metadata metadata,
-                      ParseContext context) throws SAXException, IOException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, final Metadata metadata, ParseContext context) throws SAXException, IOException, TikaException {
         LanguageHandler langHandler = new LanguageHandler();
         ContentHandler tee = new TeeContentHandler(handler, langHandler);
 

@@ -61,39 +61,30 @@ public class FileProfiler extends AbstractProfiler {
     private static final Logger LOG = LoggerFactory.getLogger(FileProfiler.class);
     private static final Tika TIKA = new Tika();
     private static final FileCommandDetector FILE_COMMAND_DETECTOR = new FileCommandDetector();
-    public static TableInfo FILE_PROFILES = HAS_FILE ? new TableInfo("file_profiles",
-            new ColInfo(Cols.FILE_PATH, Types.VARCHAR, 2048, "PRIMARY KEY"),
-            new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 2048),
-            new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24),
-            new ColInfo(Cols.LENGTH, Types.BIGINT), new ColInfo(Cols.SHA256, Types.VARCHAR, 64),
-            new ColInfo(Cols.TIKA_MIME_ID, Types.INTEGER),
-            new ColInfo(Cols.FILE_MIME_ID, Types.INTEGER)) :
-            new TableInfo("file_profiles",
-                    new ColInfo(Cols.FILE_PATH, Types.VARCHAR, 2048, "PRIMARY KEY"),
-                    new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 2048),
-                    new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24),
-                    new ColInfo(Cols.LENGTH, Types.BIGINT), new ColInfo(Cols.SHA256, Types.VARCHAR,
-                    64),
+    public static TableInfo FILE_PROFILES = HAS_FILE ?
+            new TableInfo("file_profiles", new ColInfo(Cols.FILE_PATH, Types.VARCHAR, 2048, "PRIMARY KEY"), new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 2048),
+                    new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24), new ColInfo(Cols.LENGTH, Types.BIGINT), new ColInfo(Cols.SHA256, Types.VARCHAR, 64),
+                    new ColInfo(Cols.TIKA_MIME_ID, Types.INTEGER), new ColInfo(Cols.FILE_MIME_ID, Types.INTEGER)) :
+            new TableInfo("file_profiles", new ColInfo(Cols.FILE_PATH, Types.VARCHAR, 2048, "PRIMARY KEY"), new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 2048),
+                    new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24), new ColInfo(Cols.LENGTH, Types.BIGINT), new ColInfo(Cols.SHA256, Types.VARCHAR, 64),
                     new ColInfo(Cols.TIKA_MIME_ID, Types.INTEGER));
 
 
     public static TableInfo FILE_MIME_TABLE =
-            new TableInfo("file_mimes", new ColInfo(Cols.MIME_ID, Types.INTEGER, "PRIMARY KEY"),
-                    new ColInfo(Cols.MIME_STRING, Types.VARCHAR, 256),
+            new TableInfo("file_mimes", new ColInfo(Cols.MIME_ID, Types.INTEGER, "PRIMARY KEY"), new ColInfo(Cols.MIME_STRING, Types.VARCHAR, 256),
                     new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12));
     static Options OPTIONS;
 
     static {
 
-        Option inputDir = new Option("inputDir", true,
-                "optional: directory for original binary input documents." +
-                        " If not specified, -extracts is crawled as is.");
+        Option inputDir = new Option("inputDir", true, "optional: directory for original binary input documents." + " If not specified, -extracts is crawled as is.");
 
-        OPTIONS = new Options().addOption(inputDir)
+        OPTIONS = new Options()
+                .addOption(inputDir)
                 .addOption("bc", "optional: tika-batch config file")
                 .addOption("numConsumers", true, "optional: number of consumer threads")
-                .addOption("db", true, "db file to which to write results").addOption("jdbc", true,
-                        "EXPERT: full jdbc connection string. Must specify this or -db <h2db>")
+                .addOption("db", true, "db file to which to write results")
+                .addOption("jdbc", true, "EXPERT: full jdbc connection string. Must specify this or -db <h2db>")
                 .addOption("jdbcDriver", true, "EXPERT: jdbc driver, or specify via -Djdbc.driver")
                 .addOption("tablePrefix", true, "EXPERT: optional prefix for table names")
                 .addOption("drop", false, "drop tables if they exist")
@@ -105,23 +96,22 @@ public class FileProfiler extends AbstractProfiler {
 
     private final Path inputDir;
 
-    public FileProfiler(ArrayBlockingQueue<FileResource> fileQueue, Path inputDir,
-                        IDBWriter dbWriter) {
+    public FileProfiler(ArrayBlockingQueue<FileResource> fileQueue, Path inputDir, IDBWriter dbWriter) {
         super(fileQueue, dbWriter);
         this.inputDir = inputDir;
     }
 
     public static void USAGE() {
         HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp(80,
-                "java -jar tika-eval-x.y.jar FileProfiler -inputDir docs -db mydb [-inputDir input]",
-                "Tool: Profile", FileProfiler.OPTIONS,
+        helpFormatter.printHelp(80, "java -jar tika-eval-x.y.jar FileProfiler -inputDir docs -db mydb [-inputDir input]", "Tool: Profile", FileProfiler.OPTIONS,
                 "Note: for the default h2 db, do not include the .mv.db at the end of the db name.");
     }
 
     @Override
     public boolean processFileResource(FileResource fileResource) {
-        String relPath = fileResource.getMetadata().get(FSProperties.FS_REL_PATH);
+        String relPath = fileResource
+                .getMetadata()
+                .get(FSProperties.FS_REL_PATH);
         try (InputStream is = fileResource.openInputStream()) {
             try (TikaInputStream tis = TikaInputStream.get(is)) {
                 Path path = tis.getPath();
@@ -169,7 +159,9 @@ public class FileProfiler extends AbstractProfiler {
 
     private String detectFile(TikaInputStream tis) {
         try {
-            return FILE_COMMAND_DETECTOR.detect(tis, new Metadata()).toString();
+            return FILE_COMMAND_DETECTOR
+                    .detect(tis, new Metadata())
+                    .toString();
         } catch (IOException e) {
             return DETECT_EXCEPTION;
         }

@@ -38,7 +38,7 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
@@ -57,8 +57,7 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(RecursiveMetadataResource.class);
-        sf.setResourceProvider(RecursiveMetadataResource.class,
-                new SingletonResourceProvider(new RecursiveMetadataResource()));
+        sf.setResourceProvider(RecursiveMetadataResource.class, new SingletonResourceProvider(new RecursiveMetadataResource()));
     }
 
     @Override
@@ -70,12 +69,13 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
 
     @Test
     public void testBasicFilter() throws Exception {
-        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
                 .acceptEncoding("gzip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
 
-        Reader reader = new InputStreamReader(
-                new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
+        Reader reader = new InputStreamReader(new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(5, metadataList.size());
 
@@ -84,10 +84,14 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
         expectedKeys.add("extended-properties:Application");
         expectedKeys.add("Content-Type");
         for (Metadata m : metadataList) {
-            if (m.get(Metadata.CONTENT_TYPE).equals("image/emf")) {
+            if (m
+                    .get(Metadata.CONTENT_TYPE)
+                    .equals("image/emf")) {
                 fail("emf should have been filtered out");
             }
-            if (m.get(Metadata.CONTENT_TYPE).startsWith("text/plain")) {
+            if (m
+                    .get(Metadata.CONTENT_TYPE)
+                    .startsWith("text/plain")) {
                 fail("text/plain should have been filtered out");
             }
             assertTrue(m.names().length >= 2);

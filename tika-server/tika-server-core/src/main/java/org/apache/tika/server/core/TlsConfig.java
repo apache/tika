@@ -106,8 +106,7 @@ public class TlsConfig implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         if (active) {
             if (StringUtils.isBlank(keyStoreType)) {
                 throw new TikaConfigException("must initialize keyStoreType");
@@ -118,19 +117,15 @@ public class TlsConfig implements Initializable {
             }
             if (hasTrustStore()) {
                 if (StringUtils.isBlank(trustStoreType)) {
-                    throw new TikaConfigException(
-                            "must initialize trustStoreType " + "if there's any trustStore info");
+                    throw new TikaConfigException("must initialize trustStoreType " + "if there's any trustStore info");
                 } else if (StringUtils.isBlank(trustStoreFile)) {
-                    throw new TikaConfigException(
-                            "must initialize trustStoreFile " + "if there's any trustStore info");
+                    throw new TikaConfigException("must initialize trustStoreFile " + "if there's any trustStore info");
                 } else if (StringUtils.isBlank(trustStorePassword)) {
-                    throw new TikaConfigException("must initialize trustStorePassword " +
-                            "if there's any trustStore info");
+                    throw new TikaConfigException("must initialize trustStorePassword " + "if there's any trustStore info");
                 }
             }
             if (!hasTrustStore() && isClientAuthenticationRequired()) {
-                throw new TikaConfigException("requiring client authentication, but no trust " +
-                        "store has been specified?!");
+                throw new TikaConfigException("requiring client authentication, but no trust " + "store has been specified?!");
             }
         }
     }
@@ -153,18 +148,13 @@ public class TlsConfig implements Initializable {
 
     @Override
     public String toString() {
-        return "TlsConfig{" + "active=" + active + ", passwordsAESEncrypted=" +
-                passwordsAESEncrypted + ", keyStoreType='" + keyStoreType + '\'' +
-                ", keyStorePassword='" + keyStorePassword + '\'' + ", keyStoreFile='" +
-                keyStoreFile + '\'' + ", trustStoreType='" + trustStoreType + '\'' +
-                ", trustStorePassword='" + trustStorePassword + '\'' + ", trustStoreFile='" +
-                trustStoreFile + '\'' + ", clientAuthenticationWanted=" +
-                clientAuthenticationWanted + ", isClientAuthenticationRequired=" +
+        return "TlsConfig{" + "active=" + active + ", passwordsAESEncrypted=" + passwordsAESEncrypted + ", keyStoreType='" + keyStoreType + '\'' + ", keyStorePassword='" +
+                keyStorePassword + '\'' + ", keyStoreFile='" + keyStoreFile + '\'' + ", trustStoreType='" + trustStoreType + '\'' + ", trustStorePassword='" + trustStorePassword +
+                '\'' + ", trustStoreFile='" + trustStoreFile + '\'' + ", clientAuthenticationWanted=" + clientAuthenticationWanted + ", isClientAuthenticationRequired=" +
                 clientAuthenticationRequired + '}';
     }
 
     public boolean hasTrustStore() {
-        return !StringUtils.isBlank(trustStoreType) && !StringUtils.isBlank(trustStorePassword) &&
-                !StringUtils.isBlank(trustStoreFile);
+        return !StringUtils.isBlank(trustStoreType) && !StringUtils.isBlank(trustStorePassword) && !StringUtils.isBlank(trustStoreFile);
     }
 }

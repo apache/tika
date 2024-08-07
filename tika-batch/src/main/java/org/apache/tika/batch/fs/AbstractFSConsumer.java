@@ -41,8 +41,7 @@ public abstract class AbstractFSConsumer extends FileResourceConsumer {
      * @param fileResource used by the OSFactory to create the stream
      * @return the OutputStream or null if the output file already exists
      */
-    protected OutputStream getOutputStream(OutputStreamFactory fsOSFactory,
-                                           FileResource fileResource) {
+    protected OutputStream getOutputStream(OutputStreamFactory fsOSFactory, FileResource fileResource) {
         OutputStream os = null;
         try {
             os = fsOSFactory.getOutputStream(fileResource.getMetadata());
@@ -50,9 +49,7 @@ public abstract class AbstractFSConsumer extends FileResourceConsumer {
             //This can happen if the disk has run out of space,
             //or if there was a failure with mkdirs in fsOSFactory
             LOG.error("{}", getXMLifiedLogMsg(IO_OS, fileResource.getResourceId(), e));
-            throw new BatchNoRestartError(
-                    "IOException trying to open output stream for " + fileResource.getResourceId(),
-                    e);
+            throw new BatchNoRestartError("IOException trying to open output stream for " + fileResource.getResourceId(), e);
         }
         return os;
     }

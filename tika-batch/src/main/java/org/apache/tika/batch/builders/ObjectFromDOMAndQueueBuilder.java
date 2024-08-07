@@ -32,7 +32,6 @@ import org.apache.tika.batch.FileResource;
  */
 public interface ObjectFromDOMAndQueueBuilder<T> {
 
-    public T build(Node node, Map<String, String> runtimeAttributes,
-                   ArrayBlockingQueue<FileResource> resourceQueue);
+    public T build(Node node, Map<String, String> runtimeAttributes, ArrayBlockingQueue<FileResource> resourceQueue);
 
 }

@@ -42,25 +42,20 @@ import org.apache.tika.metadata.Metadata;
 @Produces("text/csv")
 public class CSVMessageBodyWriter implements MessageBodyWriter<Metadata> {
 
-    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations,
-                               MediaType mediaType) {
+    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return Metadata.class.isAssignableFrom(type);
     }
 
-    public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations,
-                        MediaType mediaType) {
+    public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return -1;
     }
 
     @Override
     @SuppressWarnings("resource")
-    public void writeTo(Metadata metadata, Class<?> type, Type genericType,
-                        Annotation[] annotations, MediaType mediaType,
-                        MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
-            throws IOException, WebApplicationException {
+    public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
+                        OutputStream entityStream) throws IOException, WebApplicationException {
 
-        CSVPrinter writer =
-                new CSVPrinter(new OutputStreamWriter(entityStream, UTF_8), CSVFormat.EXCEL);
+        CSVPrinter writer = new CSVPrinter(new OutputStreamWriter(entityStream, UTF_8), CSVFormat.EXCEL);
 
         for (String name : metadata.names()) {
             String[] values = metadata.getValues(name);

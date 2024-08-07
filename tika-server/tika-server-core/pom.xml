@@ -164,6 +164,7 @@
                   <artifact>*:*</artifact>
                   <excludes>
                     <exclude>module-info.class</exclude>
+                    <exclude>META-INF/maven/plugin.xml</exclude>
                     <exclude>META-INF/versions/9/module-info.class</exclude>
                     <exclude>META-INF/versions/11/module-info.class</exclude>
                     <exclude>META-INF/*.SF</exclude>
@@ -283,7 +284,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
-            <version>3.2.0</version>
+            <version>3.3.0</version>
             <executions>
               <execution>
                 <phase>test</phase>
@@ -332,6 +333,6 @@
   </profiles>
 
   <scm>
-    <tag>3.0.0-BETA-rc1</tag>
+    <tag>3.0.0-BETA2-rc1</tag>
   </scm>
 </project>

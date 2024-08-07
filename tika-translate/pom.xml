@@ -80,7 +80,7 @@
     <dependency>
       <groupId>jakarta.websocket</groupId>
       <artifactId>jakarta.websocket-api</artifactId>
-      <version>2.1.1</version>
+      <version>2.2.0</version>
     </dependency>
     <dependency>
       <groupId>org.glassfish.tyrus.bundles</groupId>
@@ -221,6 +221,6 @@
   </ciManagement>
 
   <scm>
-    <tag>3.0.0-BETA-rc1</tag>
+    <tag>3.0.0-BETA2-rc1</tag>
   </scm>
 </project>

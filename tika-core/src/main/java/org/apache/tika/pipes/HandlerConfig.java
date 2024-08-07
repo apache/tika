@@ -78,6 +78,10 @@ public class HandlerConfig implements Serializable {
     PARSE_MODE parseMode = PARSE_MODE.RMETA;
 
 
+    public HandlerConfig() {
+
+    }
+
     public HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE type, PARSE_MODE parseMode,
                          int writeLimit,
                          int maxEmbeddedResources, boolean throwOnWriteLimitReached) {
@@ -92,20 +96,54 @@ public class HandlerConfig implements Serializable {
         return type;
     }
 
+    public void setType(BasicContentHandlerFactory.HANDLER_TYPE type) {
+        this.type = type;
+    }
+
+    public void setType(String typeString) {
+        setType(BasicContentHandlerFactory.HANDLER_TYPE.valueOf(typeString));
+    }
+
     public int getWriteLimit() {
         return writeLimit;
+    }
+
+    public void setWriteLimit(int writeLimit) {
+        this.writeLimit = writeLimit;
     }
 
     public int getMaxEmbeddedResources() {
         return maxEmbeddedResources;
     }
 
-    public PARSE_MODE getParseMode() {
-        return parseMode;
+    public void setMaxEmbeddedResources(int maxEmbeddedResources) {
+        this.maxEmbeddedResources = maxEmbeddedResources;
     }
 
     public boolean isThrowOnWriteLimitReached() {
         return throwOnWriteLimitReached;
+    }
+
+    public void setThrowOnWriteLimitReached(boolean throwOnWriteLimitReached) {
+        this.throwOnWriteLimitReached = throwOnWriteLimitReached;
+    }
+
+    public PARSE_MODE getParseMode() {
+        return parseMode;
+    }
+
+    public void setParseMode(PARSE_MODE parseMode) {
+        this.parseMode = parseMode;
+    }
+
+    public void setParseMode(String parseMode) {
+        this.parseMode = PARSE_MODE.parseMode(parseMode);
+    }
+
+    @Override
+    public String toString() {
+        return "HandlerConfig{" + "type=" + type + ", writeLimit=" + writeLimit + ", maxEmbeddedResources=" + maxEmbeddedResources +
+                ", throwOnWriteLimitReached=" + throwOnWriteLimitReached + ", parseMode=" + parseMode + '}';
     }
 
     @Override
@@ -116,22 +154,19 @@ public class HandlerConfig implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
+
         HandlerConfig that = (HandlerConfig) o;
-        return writeLimit == that.writeLimit && maxEmbeddedResources == that.maxEmbeddedResources &&
-                throwOnWriteLimitReached == that.throwOnWriteLimitReached && type == that.type &&
-                parseMode == that.parseMode;
+        return writeLimit == that.writeLimit && maxEmbeddedResources == that.maxEmbeddedResources && throwOnWriteLimitReached == that.throwOnWriteLimitReached &&
+                type == that.type && parseMode == that.parseMode;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, writeLimit, maxEmbeddedResources, throwOnWriteLimitReached,
-                parseMode);
-    }
-
-    @Override
-    public String toString() {
-        return "HandlerConfig{" + "type=" + type + ", writeLimit=" + writeLimit +
-                ", maxEmbeddedResources=" + maxEmbeddedResources + ", throwOnWriteLimitReached=" +
-                throwOnWriteLimitReached + ", parseMode=" + parseMode + '}';
+        int result = Objects.hashCode(type);
+        result = 31 * result + writeLimit;
+        result = 31 * result + maxEmbeddedResources;
+        result = 31 * result + Boolean.hashCode(throwOnWriteLimitReached);
+        result = 31 * result + Objects.hashCode(parseMode);
+        return result;
     }
 }

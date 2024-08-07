@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.ner;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayInputStream;
@@ -24,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
@@ -31,6 +33,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ner.opennlp.OpenNLPNERecogniser;
 import org.apache.tika.parser.ner.regex.RegexNERecogniser;
 
@@ -83,13 +86,13 @@ public class NamedEntityParserTest extends TikaTest {
         System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, classNames);
         try (InputStream is = getResourceAsStream(CONFIG_FILE)) {
             TikaConfig config = new TikaConfig(is);
-            Tika tika = new Tika(config);
             String text = "University of Southern California (USC), is located in Los Angeles ." +
                     " Campus is busy from monday to saturday";
-            Metadata md = new Metadata();
-            tika.parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), md);
+            Metadata md = getXML(
+                    UnsynchronizedByteArrayInputStream.builder().setByteArray(text.getBytes(StandardCharsets.UTF_8)).get(),
+                    new AutoDetectParser(config), new Metadata()).metadata;
             HashSet<String> keys = new HashSet<>(Arrays.asList(md.names()));
-            assumeTrue(keys.contains("NER_WEEK_DAY"));
+            assertTrue(keys.contains("NER_WEEK_DAY"));
             assumeTrue(keys.contains("NER_LOCATION"));
         }
     }

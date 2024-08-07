@@ -1,0 +1,145 @@
+// Copyright 2015 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+syntax = "proto3";
+package tika;
+
+option java_multiple_files = true;
+option java_package = "org.apache.tika";
+option java_outer_classname = "TikaProto";
+option objc_class_prefix = "HLW";
+
+// The Tika Grpc Service definition
+service Tika   {
+  /* 
+    Save a fetcher to the fetcher store.   
+  */
+  rpc SaveFetcher(SaveFetcherRequest) returns (SaveFetcherReply) {}
+  /* 
+    Get a fetcher's data from the fetcher store.   
+  */
+  rpc GetFetcher(GetFetcherRequest) returns (GetFetcherReply) {}
+  /* 
+    List fetchers that are currently in the fetcher store.   
+  */
+  rpc ListFetchers(ListFetchersRequest) returns (ListFetchersReply) {}
+  /* 
+    Delete a fetcher from the fetcher store.   
+  */
+  rpc DeleteFetcher(DeleteFetcherRequest) returns (DeleteFetcherReply) {}
+  /* 
+    Using a Fetcher in the fetcher store, send a FetchAndParse request. This will fetch, parse, and return
+    the FetchParseTuple data output from Tika Pipes. This is a synchronous call that immediately returns 1 result.
+  */
+  rpc FetchAndParse(FetchAndParseRequest) returns (FetchAndParseReply) {}
+  /*
+    Using a Fetcher in the fetcher store, send a FetchAndParse request. This will fetch, parse, and return
+    the FetchParseTuple data output from Tika Pipes. This will stream the data from the server in response.
+  */
+  rpc FetchAndParseServerSideStreaming(FetchAndParseRequest)
+    returns (stream FetchAndParseReply) {}
+  /*
+    Using a Fetcher in the fetcher store, send a FetchAndParse request. This will fetch, parse, and return
+    the FetchParseTuple data output from Tika Pipes. This serves a bi-directional stream of fetch inputs and
+    parsed outputs.
+  */
+  rpc FetchAndParseBiDirectionalStreaming(stream FetchAndParseRequest)
+    returns (stream FetchAndParseReply) {}
+  /*
+    Get the Fetcher Config schema for a given fetcher class.
+  */
+  rpc GetFetcherConfigJsonSchema(GetFetcherConfigJsonSchemaRequest) returns (GetFetcherConfigJsonSchemaReply) {}
+}
+
+message SaveFetcherRequest {
+  // A unique identifier for each fetcher. If this already exists, operation will overwrite existing.
+  string fetcher_id = 1;
+  // The full java class name of the fetcher class. List of
+  // fetcher classes is found here: https://cwiki.apache.org/confluence/display/TIKA/tika-pipes
+  string fetcher_class = 2;
+  // JSON string of the fetcher config object. To see the json schema from which to build this json,
+  // use the GetFetcherConfigJsonSchema rpc method.
+  string fetcher_config_json = 3;
+}
+
+message SaveFetcherReply {
+  // The fetcher_id that was saved.
+  string fetcher_id = 1;
+}
+
+message FetchAndParseRequest {
+  // The ID of the fetcher in the fetcher store (previously saved by SaveFetcher) to use for the fetch.
+  string fetcher_id = 1;
+  // The "Fetch Key" of the item that will be fetched.
+  string fetch_key = 2;
+  // You can supply additional fetch configuration using this. Follows same fetch configuration json schema
+  // as the fetcher configuration.
+  string additional_fetch_config_json = 3;
+}
+
+message FetchAndParseReply {
+  // Echoes the fetch_key that was sent in the request.
+  string fetch_key = 1;
+  // Metadata fields from the parse output.
+  map<string, string> fields = 2;
+  // The status from the message. See javadoc for org.apache.tika.pipes.PipesResult.STATUS for the list of status.
+  string status = 3;
+  // If there was an error, this will contain the error message.
+  string error_message = 4;
+}
+
+message DeleteFetcherRequest {
+  // ID of the fetcher to delete.
+  string fetcher_id = 1;
+}
+
+message DeleteFetcherReply {
+  // Success if the fetcher was successfully removed from the fetch store.
+  bool success = 1;
+}
+
+message GetFetcherRequest {
+  // ID of the fetcher for which to return config.
+  string fetcher_id = 1;
+}
+
+message GetFetcherReply {
+  // Echoes the ID of the fetcher being returned.
+  string fetcher_id = 1;
+  // The full Java class name of the Fetcher.
+  string fetcher_class = 2;
+  // The configuration parameters.
+  map<string, string> params = 3;
+}
+
+message ListFetchersRequest {
+  // List the fetchers starting at this page number
+  int32 page_number = 1;
+  // List this many fetchers per page.
+  int32 num_fetchers_per_page = 2;
+}
+
+message ListFetchersReply {
+  // List of fetcher configs returned by the Lists Fetchers service.
+  repeated GetFetcherReply get_fetcher_replies = 1;
+}
+
+message GetFetcherConfigJsonSchemaRequest {
+  // The full java class name of the fetcher config for which to fetch json schema.
+  string fetcher_class = 1;
+}
+
+message GetFetcherConfigJsonSchemaReply {
+  // The json schema that describes the fetcher config in string format.
+  string fetcher_config_json_schema = 1;
+}

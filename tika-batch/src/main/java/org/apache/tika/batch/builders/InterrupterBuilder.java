@@ -27,8 +27,7 @@ import org.apache.tika.batch.Interrupter;
  */
 public class InterrupterBuilder {
 
-    public Interrupter build(Node n, long pauseOnEarlyTermination,
-                             Map<String, String> commandlineArguments) {
+    public Interrupter build(Node n, long pauseOnEarlyTermination, Map<String, String> commandlineArguments) {
         return new Interrupter(pauseOnEarlyTermination);
     }
 }

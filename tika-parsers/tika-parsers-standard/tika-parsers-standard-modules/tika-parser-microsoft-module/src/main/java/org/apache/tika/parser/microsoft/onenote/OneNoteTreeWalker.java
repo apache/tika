@@ -102,7 +102,7 @@ class OneNoteTreeWalker {
     /**
      * Contains pairs of {Offset,Length} that we have added to the text stream already.
      */
-    private Set<Pair<Long, Integer>> textAlreadyFetched = new HashSet<>();
+    private final Set<Pair<Long, Integer>> textAlreadyFetched = new HashSet<>();
 
     /**
      * Create a one tree walker.
@@ -343,7 +343,7 @@ class OneNoteTreeWalker {
 
     private void handleEmbedded(int length) throws TikaException, IOException, SAXException {
         TikaInputStream stream = null;
-        ByteBuffer buf = null;
+        ByteBuffer buf;
         try {
             buf = ByteBuffer.allocate(length);
             dif.read(buf);
@@ -469,7 +469,7 @@ class OneNoteTreeWalker {
                 ByteBuffer buf = ByteBuffer.allocate(content.size());
                 dif.read(buf);
                 propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
-                if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId)) {
+                if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
                     xhtml.startElement(P);
                     xhtml.characters((String) propMap.get("dataUnicode16LE"));
                     xhtml.endElement(P);
@@ -496,7 +496,7 @@ class OneNoteTreeWalker {
                 ByteBuffer buf = ByteBuffer.allocate(content.size());
                 dif.read(buf);
                 propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
-                if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId)) {
+                if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
                     xhtml.startElement(P);
                     xhtml.characters((String) propMap.get("dataUnicode16LE"));
                     xhtml.endElement(P);

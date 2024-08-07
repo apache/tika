@@ -94,10 +94,8 @@ public class ContentHandlerExample {
     public String parseOnePartToHTML() throws IOException, SAXException, TikaException {
         // Only get things under html -> body -> div (class=header)
         XPathParser xhtmlParser = new XPathParser("xhtml", XHTMLContentHandler.XHTML);
-        Matcher divContentMatcher =
-                xhtmlParser.parse("/xhtml:html/xhtml:body/xhtml:div/descendant::node()");
-        ContentHandler handler =
-                new MatchingContentHandler(new ToXMLContentHandler(), divContentMatcher);
+        Matcher divContentMatcher = xhtmlParser.parse("/xhtml:html/xhtml:body/xhtml:div/descendant::node()");
+        ContentHandler handler = new MatchingContentHandler(new ToXMLContentHandler(), divContentMatcher);
 
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();

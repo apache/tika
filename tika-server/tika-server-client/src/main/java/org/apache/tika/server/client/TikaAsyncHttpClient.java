@@ -24,12 +24,11 @@ import org.apache.tika.exception.TikaConfigException;
  */
 class TikaAsyncHttpClient extends TikaPipesHttpClient {
 
-    private TikaAsyncHttpClient(String baseUrl, HttpClientFactory httpClientFactory)
-            throws TikaConfigException {
+    private final String endPoint = "async";
+
+    private TikaAsyncHttpClient(String baseUrl, HttpClientFactory httpClientFactory) throws TikaConfigException {
         super(baseUrl, httpClientFactory);
     }
-
-    private final String endPoint = "async";
 
     String getEndpoint() {
         return endPoint;

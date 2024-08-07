@@ -44,6 +44,10 @@ public class GeoPointMetadataFilter extends MetadataFilter {
         this.geoPointFieldName = geoPointFieldName;
     }
 
+    public String getGeoPointFieldName() {
+        return geoPointFieldName;
+    }
+
     @Override
     public void filter(Metadata metadata) throws TikaException {
         String lat = metadata.get(TikaCoreProperties.LATITUDE);

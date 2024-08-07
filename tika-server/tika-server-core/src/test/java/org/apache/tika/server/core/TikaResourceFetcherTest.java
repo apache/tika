@@ -49,8 +49,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaResource.class);
-        sf.setResourceProvider(TikaResource.class,
-                new SingletonResourceProvider(new TikaResource()));
+        sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(new TikaResource()));
     }
 
     @Override
@@ -65,16 +64,16 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     protected InputStream getTikaConfigInputStream() throws IOException {
         Path inputDir = null;
         try {
-            inputDir = Paths.get(
-                    TikaResourceFetcherTest.class.getResource("/test-documents/").toURI());
+            inputDir = Paths.get(TikaResourceFetcherTest.class
+                    .getResource("/test-documents/")
+                    .toURI());
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-        String configXML = getStringFromInputStream(
-                TikaResourceFetcherTest.class.getResourceAsStream(
-                        "/configs/tika-config-server-fetcher-template.xml"));
-        configXML = configXML.replace("{FETCHER_BASE_PATH}",
-                inputDir.toAbsolutePath().toString());
+        String configXML = getStringFromInputStream(TikaResourceFetcherTest.class.getResourceAsStream("/configs/tika-config-server-fetcher-template.xml"));
+        configXML = configXML.replace("{FETCHER_BASE_PATH}", inputDir
+                .toAbsolutePath()
+                .toString());
 
         configXML = configXML.replace("{PORT}", "9998");
         return new ByteArrayInputStream(configXML.getBytes(StandardCharsets.UTF_8));
@@ -95,16 +94,23 @@ public class TikaResourceFetcherTest extends CXFTestBase {
         MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
         map.putSingle("fetcherName", "fsf");
         map.putSingle("fetchKey", "mock/hello_world.xml");
-        Response response =
-                WebClient.create(endPoint + TIKA_PATH).headers(map).accept("text/xml").put(null);
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .headers(map)
+                .accept("text/xml")
+                .put(null);
         String xml = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("hello world", xml);
     }
 
     @Test
     public void testQueryPart() throws Exception {
-        Response response = WebClient.create(endPoint + TIKA_PATH).query("fetcherName", "fsf")
-                .query("fetchKey", "mock/hello_world.xml").accept("text/xml").put(null);
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .query("fetcherName", "fsf")
+                .query("fetchKey", "mock/hello_world.xml")
+                .accept("text/xml")
+                .put(null);
         String xml = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("hello world", xml);
     }
@@ -112,8 +118,12 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     @Test
     @Disabled("Apache's Hudson does not like the test file or the utf-8 in this source file")
     public void testNonAsciiInQueryParameters() throws Exception {
-        Response response = WebClient.create(endPoint + TIKA_PATH).query("fetcherName", "fsf")
-                .query("fetchKey", "mock/中文.xml").accept("text/xml").put(null);
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .query("fetcherName", "fsf")
+                .query("fetchKey", "mock/中文.xml")
+                .accept("text/xml")
+                .put(null);
         String xml = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("你好世界", xml);
     }
@@ -121,8 +131,12 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     @Test
     @Disabled("Apache's Hudson does not like the test file or the utf-8 in this source file")
     public void testNonAsciiUrlEncodedInQueryParameters() throws Exception {
-        Response response = WebClient.create(endPoint + TIKA_PATH).query("fetcherName", "fsf")
-                .query("fetchKey", "mock/%E4%B8%AD%E6%96%87.xml").accept("text/xml").put(null);
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .query("fetcherName", "fsf")
+                .query("fetchKey", "mock/%E4%B8%AD%E6%96%87.xml")
+                .accept("text/xml")
+                .put(null);
         String xml = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("你好世界", xml);
     }

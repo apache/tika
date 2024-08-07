@@ -46,7 +46,6 @@ import org.apache.tika.fuzzing.general.ByteInjector;
 import org.apache.tika.fuzzing.general.GeneralTransformer;
 import org.apache.tika.fuzzing.general.SpanSwapper;
 import org.apache.tika.fuzzing.general.Truncator;
-import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.PipesConfig;
 import org.apache.tika.pipes.PipesParser;
@@ -213,7 +212,8 @@ public class FuzzingCLI {
                     "." + FilenameUtils.getExtension(fetchEmitTuple.getFetchKey().getFetchKey()));
             try (InputStream is = fetcherManager.getFetcher(
                             fetchEmitTuple.getFetchKey().getFetcherName())
-                    .fetch(fetchEmitTuple.getFetchKey().getFetchKey(), new Metadata())) {
+                    .fetch(fetchEmitTuple.getFetchKey().getFetchKey(), fetchEmitTuple.getMetadata(),
+                            fetchEmitTuple.getParseContext())) {
                 try (OutputStream os = Files.newOutputStream(target)) {
                     transformer.transform(is, os);
                 }

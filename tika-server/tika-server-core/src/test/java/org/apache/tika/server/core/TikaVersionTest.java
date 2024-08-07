@@ -45,11 +45,12 @@ public class TikaVersionTest extends CXFTestBase {
 
     @Test
     public void testGetVersion() throws Exception {
-        Response response =
-                WebClient.create(endPoint + VERSION_PATH).type("text/plain").accept("text/plain")
-                        .get();
+        Response response = WebClient
+                .create(endPoint + VERSION_PATH)
+                .type("text/plain")
+                .accept("text/plain")
+                .get();
 
-        assertEquals(Tika.getString(),
-                getStringFromInputStream((InputStream) response.getEntity()));
+        assertEquals(Tika.getString(), getStringFromInputStream((InputStream) response.getEntity()));
     }
 }

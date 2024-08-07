@@ -33,16 +33,13 @@ public class PrescriptionParser extends XMLParser {
     private static final long serialVersionUID = 7690682277511967388L;
 
     @Override
-    protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata,
-                                               ParseContext context) {
+    protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata, ParseContext context) {
         String xpd = "http://example.com/2011/xpd";
 
         ContentHandler doctor = new ElementMetadataHandler(xpd, "doctor", metadata, "xpd:doctor");
-        ContentHandler patient =
-                new ElementMetadataHandler(xpd, "patient", metadata, "xpd:patient");
+        ContentHandler patient = new ElementMetadataHandler(xpd, "patient", metadata, "xpd:patient");
 
-        return new TeeContentHandler(super.getContentHandler(handler, metadata, context), doctor,
-                patient);
+        return new TeeContentHandler(super.getContentHandler(handler, metadata, context), doctor, patient);
     }
 
     @Override
