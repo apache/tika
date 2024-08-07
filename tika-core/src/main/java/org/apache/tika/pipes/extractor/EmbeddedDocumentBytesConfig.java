@@ -56,6 +56,11 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
 
     private boolean includeOriginal = false;
 
+    //This should be set per file. This allows a custom
+    //emit key base that bypasses the algorithmic generation of the emitKey
+    //from the primary json emitKey
+    private String emitKeyBase = "";
+
     /**
      * Create an EmbeddedDocumentBytesConfig with
      * {@link EmbeddedDocumentBytesConfig#extractEmbeddedDocumentBytes}
@@ -108,6 +113,7 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
     public void setSuffixStrategy(SUFFIX_STRATEGY suffixStrategy) {
         this.suffixStrategy = suffixStrategy;
     }
+
     public void setSuffixStrategy(String suffixStrategy) {
         setSuffixStrategy(SUFFIX_STRATEGY.valueOf(suffixStrategy));
     }
@@ -124,13 +130,21 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
         this.includeOriginal = includeOriginal;
     }
 
+    public void setEmitKeyBase(String emitKeyBase) {
+        this.emitKeyBase = emitKeyBase;
+    }
+
+    public String getEmitKeyBase() {
+        return emitKeyBase;
+    }
+
     @Override
     public String toString() {
-        return "EmbeddedDocumentBytesConfig{" + "extractEmbeddedDocumentBytes=" +
-                extractEmbeddedDocumentBytes + ", zeroPadName=" + zeroPadName +
-                ", suffixStrategy=" + suffixStrategy + ", embeddedIdPrefix='" + embeddedIdPrefix +
-                '\'' + ", emitter='" + emitter + '\'' + ", includeOriginal=" + includeOriginal +
-                '}';
+        return "EmbeddedDocumentBytesConfig{" + "extractEmbeddedDocumentBytes=" + extractEmbeddedDocumentBytes + ", zeroPadName=" +
+                zeroPadName + ", suffixStrategy=" +
+                suffixStrategy + ", embeddedIdPrefix='" + embeddedIdPrefix + '\'' + ", emitter='" + emitter + '\'' +
+                ", includeOriginal=" + includeOriginal + ", emitKeyBase='" +
+                emitKeyBase + '\'' + '}';
     }
 
     @Override
@@ -143,33 +157,22 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
         }
 
         EmbeddedDocumentBytesConfig that = (EmbeddedDocumentBytesConfig) o;
-
-        if (extractEmbeddedDocumentBytes != that.extractEmbeddedDocumentBytes) {
-            return false;
-        }
-        if (zeroPadName != that.zeroPadName) {
-            return false;
-        }
-        if (includeOriginal != that.includeOriginal) {
-            return false;
-        }
-        if (suffixStrategy != that.suffixStrategy) {
-            return false;
-        }
-        if (!Objects.equals(embeddedIdPrefix, that.embeddedIdPrefix)) {
-            return false;
-        }
-        return Objects.equals(emitter, that.emitter);
+        return extractEmbeddedDocumentBytes == that.extractEmbeddedDocumentBytes && zeroPadName == that.zeroPadName
+                && includeOriginal == that.includeOriginal &&
+                suffixStrategy == that.suffixStrategy && Objects.equals(embeddedIdPrefix, that.embeddedIdPrefix)
+                && Objects.equals(emitter, that.emitter) &&
+                Objects.equals(emitKeyBase, that.emitKeyBase);
     }
 
     @Override
     public int hashCode() {
-        int result = (extractEmbeddedDocumentBytes ? 1 : 0);
+        int result = Boolean.hashCode(extractEmbeddedDocumentBytes);
         result = 31 * result + zeroPadName;
-        result = 31 * result + (suffixStrategy != null ? suffixStrategy.hashCode() : 0);
-        result = 31 * result + (embeddedIdPrefix != null ? embeddedIdPrefix.hashCode() : 0);
-        result = 31 * result + (emitter != null ? emitter.hashCode() : 0);
-        result = 31 * result + (includeOriginal ? 1 : 0);
+        result = 31 * result + Objects.hashCode(suffixStrategy);
+        result = 31 * result + Objects.hashCode(embeddedIdPrefix);
+        result = 31 * result + Objects.hashCode(emitter);
+        result = 31 * result + Boolean.hashCode(includeOriginal);
+        result = 31 * result + Objects.hashCode(emitKeyBase);
         return result;
     }
 }
