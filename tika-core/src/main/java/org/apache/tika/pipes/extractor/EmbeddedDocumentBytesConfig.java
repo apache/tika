@@ -43,7 +43,8 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
             throw new IllegalArgumentException("can't parse " + s);
         }
     }
-    private final boolean extractEmbeddedDocumentBytes;
+    //for our current custom serialization, this can't be final. :(
+    private boolean extractEmbeddedDocumentBytes;
 
     private int zeroPadName = 0;
 
@@ -74,6 +75,10 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
 
     public boolean isExtractEmbeddedDocumentBytes() {
         return extractEmbeddedDocumentBytes;
+    }
+
+    public void setExtractEmbeddedDocumentBytes(boolean extractEmbeddedDocumentBytes) {
+        this.extractEmbeddedDocumentBytes = extractEmbeddedDocumentBytes;
     }
 
     public int getZeroPadName() {
