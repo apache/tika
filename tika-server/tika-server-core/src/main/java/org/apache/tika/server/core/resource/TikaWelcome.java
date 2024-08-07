@@ -193,7 +193,7 @@ public class TikaWelcome {
     @Produces("text/plain")
     public String getWelcomePlain() {
         TikaResource.checkIsOperating();
-        StringBuffer text = new StringBuffer();
+        StringBuilder text = new StringBuilder();
 
         text.append(tika.toString());
         text.append("\n");

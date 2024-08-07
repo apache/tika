@@ -190,7 +190,7 @@ public class Mp3Parser implements Parser {
             metadata.set(XMPDM.GENRE, tag.getGenre());
 
             for (ID3Comment comment : tag.getComments()) {
-                StringBuffer cmt = new StringBuffer();
+                StringBuilder cmt = new StringBuilder();
                 if (comment.getLanguage() != null) {
                     cmt.append(comment.getLanguage());
                     cmt.append(" - ");

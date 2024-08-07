@@ -52,7 +52,7 @@ public class RecentFiles {
     private SimpleDateFormat rssDateFormat = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.getDefault());
 
     public String generateRSS(Path indexFile) throws CorruptIndexException, IOException {
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
         output.append(getRSSHeaders());
         IndexSearcher searcher = null;
         try {
