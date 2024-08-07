@@ -162,6 +162,10 @@ public class TikaJsonSerializer {
         Map<String, Method> ret = new HashMap<>();
         for (Map.Entry<String, List<Method>> e : getters.entrySet()) {
             String paramName = e.getKey();
+            //figure out how to skip Class level setters/getters
+            if ("class".equals(paramName)) {
+                continue;
+            }
             List<Method> setterList = setters.get(paramName);
             if (setterList == null || setterList.size() == 0) {
                 LOG.debug("Couldn't find setter for getter: " + paramName);
