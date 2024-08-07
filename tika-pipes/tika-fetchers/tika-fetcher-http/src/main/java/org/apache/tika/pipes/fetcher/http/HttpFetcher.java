@@ -527,7 +527,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             for (String header : headers) {
                 Map<String, Collection<String>> parsedHeaders = parseHeaders(header);
                 allParsedHeaders.putAll(parsedHeaders);
-                // httpFetcherConfig.getHttpRequestHeaders().setMap doesn't work:
+                // httpFetcherConfig.getHttpRequestHeaders().getMap() doesn't work:
                 // "The map does not support put or putAll, nor do its entries support setValue."
             }
             httpFetcherConfig.getHttpRequestHeaders().setMap(allParsedHeaders);
