@@ -54,9 +54,6 @@ public class JsonFetchEmitTuple {
     public static final String ON_PARSE_EXCEPTION = "onParseException";
 
     public static FetchEmitTuple fromJson(Reader reader) throws IOException {
-        //try (JsonParser jParser = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
-        //      .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build()).createParser(reader)) {
-
         JsonNode root = new ObjectMapper().readTree(reader);
         return parseFetchEmitTuple(root);
     }

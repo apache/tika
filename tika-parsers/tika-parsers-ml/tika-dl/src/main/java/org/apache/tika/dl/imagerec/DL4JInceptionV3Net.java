@@ -261,15 +261,16 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
             LOG.info("Going to load Inception network...");
             long st = System.currentTimeMillis();
 
-            KerasModelBuilder builder =
+            try (KerasModelBuilder builder =
                     new KerasModel().modelBuilder().modelHdf5Filename(modelWeightsPath)
-                            .enforceTrainingConfig(false);
+                            .enforceTrainingConfig(false)) {
 
-            builder.inputShape(new int[]{imgHeight, imgWidth, 3});
-            KerasModel model = builder.buildModel();
-            this.graph = model.getComputationGraph();
-            long time = System.currentTimeMillis() - st;
-            LOG.info("Loaded the Inception model. Time taken={}ms", time);
+                builder.inputShape(new int[]{imgHeight, imgWidth, 3});
+                KerasModel model = builder.buildModel();
+                this.graph = model.getComputationGraph();
+                long time = System.currentTimeMillis() - st;
+                LOG.info("Loaded the Inception model. Time taken={}ms", time);
+            }
         } catch (IOException | InvalidKerasConfigurationException |
                 UnsupportedKerasConfigurationException e) {
             throw new TikaConfigException(e.getMessage(), e);

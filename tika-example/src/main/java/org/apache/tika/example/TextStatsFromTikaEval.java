@@ -56,7 +56,6 @@ public class TextStatsFromTikaEval {
          */
 
         CommonTokenResult result = (CommonTokenResult) results.get(CommonTokens.class);
-        result.getLangCode();
         return result.getOOV();
     }
 }

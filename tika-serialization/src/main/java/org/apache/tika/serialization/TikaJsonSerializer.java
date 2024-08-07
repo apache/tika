@@ -43,7 +43,6 @@ import org.slf4j.LoggerFactory;
 public class TikaJsonSerializer {
 
     public static String INSTANTIATED_CLASS_KEY = "_class";
-    public static String SUPER_CLASS_KEY = "_super_class";
     static Set<Class> PRIMITIVES = Set.of(int.class, double.class, float.class, long.class, short.class, boolean.class, String.class, byte.class, char.class);
     static Set<Class> BOXED = Set.of(Integer.class, Double.class, Float.class, Long.class, Short.class, Boolean.class, Byte.class, Character.class);
     static String SET = "set";
@@ -52,10 +51,10 @@ public class TikaJsonSerializer {
     private static String IS = "is";
 
     public static void serialize(Object obj, JsonGenerator jsonGenerator) throws TikaSerializationException, IOException {
-        serialize(null, obj, obj.getClass(), jsonGenerator);
+        serialize(null, obj, jsonGenerator);
     }
 
-    public static void serialize(String fieldName, Object obj, Class superClass, JsonGenerator jsonGenerator) throws TikaSerializationException, IOException {
+    public static void serialize(String fieldName, Object obj, JsonGenerator jsonGenerator) throws TikaSerializationException, IOException {
         if (obj == null) {
             if (fieldName == null) {
                 jsonGenerator.writeNull();
@@ -75,7 +74,7 @@ public class TikaJsonSerializer {
                 .isEnum()) {
             jsonGenerator.writeStringField(fieldName, ((Enum) obj).name());
         } else {
-            serializeObject(fieldName, obj, superClass, jsonGenerator);
+            serializeObject(fieldName, obj, jsonGenerator);
         }
     }
 
@@ -94,11 +93,10 @@ public class TikaJsonSerializer {
     /**
      * @param fieldName     can be null -- used only for logging and debugging
      * @param obj
-     * @param superClass
      * @param jsonGenerator
      * @throws TikaSerializationException
      */
-    public static void serializeObject(String fieldName, Object obj, Class superClass, JsonGenerator jsonGenerator) throws TikaSerializationException {
+    public static void serializeObject(String fieldName, Object obj, JsonGenerator jsonGenerator) throws TikaSerializationException {
 
 
         try {
@@ -116,11 +114,6 @@ public class TikaJsonSerializer {
             jsonGenerator.writeStringField(INSTANTIATED_CLASS_KEY, obj
                     .getClass()
                     .getName());
-            if (superClass != null && !obj
-                    .getClass()
-                    .equals(superClass)) {
-                jsonGenerator.writeStringField(SUPER_CLASS_KEY, superClass.getName());
-            }
             Map<String, Method> matches = getGetters(obj
                     .getClass()
                     .getMethods());
@@ -130,10 +123,7 @@ public class TikaJsonSerializer {
                     Object methodVal = e
                             .getValue()
                             .invoke(obj);
-                    Class valSuperClass = e
-                            .getValue()
-                            .getReturnType();
-                    serialize(e.getKey(), methodVal, valSuperClass, jsonGenerator);
+                    serialize(e.getKey(), methodVal, jsonGenerator);
                 } catch (IllegalAccessException | InvocationTargetException ex) {
                     throw new TikaSerializationException("couldn't write paramName=" + e.getKey(), ex);
                 }
@@ -172,6 +162,10 @@ public class TikaJsonSerializer {
         Map<String, Method> ret = new HashMap<>();
         for (Map.Entry<String, List<Method>> e : getters.entrySet()) {
             String paramName = e.getKey();
+            //figure out how to skip Class level setters/getters
+            if ("class".equals(paramName)) {
+                continue;
+            }
             List<Method> setterList = setters.get(paramName);
             if (setterList == null || setterList.size() == 0) {
                 LOG.debug("Couldn't find setter for getter: " + paramName);
@@ -203,6 +197,8 @@ public class TikaJsonSerializer {
             }
             jsonGenerator.writeEndArray();
         } else if (List.class.isAssignableFrom(clazz)) {
+            //should we get the generic type of the list via reflection
+            //so that we can set the superclass field in the item?
             jsonGenerator.writeStartArray();
             for (Object item : (List) obj) {
                 serialize(item, jsonGenerator);
@@ -211,9 +207,7 @@ public class TikaJsonSerializer {
         } else if (Map.class.isAssignableFrom(clazz)) {
             jsonGenerator.writeStartObject();
             for (Map.Entry<String, Object> e : ((Map<String, Object>) obj).entrySet()) {
-                serialize(e.getKey(), e.getValue(), e
-                        .getValue()
-                        .getClass(), jsonGenerator);
+                serialize(e.getKey(), e.getValue(), jsonGenerator);
             }
             jsonGenerator.writeEndObject();
         } else {

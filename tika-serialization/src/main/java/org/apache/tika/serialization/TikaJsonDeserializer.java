@@ -19,6 +19,8 @@ package org.apache.tika.serialization;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -45,18 +47,15 @@ public class TikaJsonDeserializer {
         String className = root
                 .get(TikaJsonSerializer.INSTANTIATED_CLASS_KEY)
                 .asText();
-        String superClass = root.has(TikaJsonSerializer.SUPER_CLASS_KEY) ? root
-                .get(TikaJsonSerializer.SUPER_CLASS_KEY)
-                .asText() : className;
 
         try {
-            return Optional.of(deserialize(Class.forName(className), Class.forName(superClass), root));
+            return Optional.of(deserialize(Class.forName(className), root));
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
     }
 
-    public static <T> T deserialize(Class<? extends T> clazz, Class<? extends T> superClazz, JsonNode root) throws ReflectiveOperationException {
+    public static <T> T deserialize(Class<? extends T> clazz, JsonNode root) throws ReflectiveOperationException {
         T obj = clazz
                 .getDeclaredConstructor()
                 .newInstance();
@@ -69,7 +68,7 @@ public class TikaJsonDeserializer {
             Map.Entry<String, JsonNode> e = fields.next();
             String name = e.getKey();
             JsonNode child = e.getValue();
-            if (TikaJsonSerializer.INSTANTIATED_CLASS_KEY.equals(name) || TikaJsonSerializer.SUPER_CLASS_KEY.equals(name)) {
+            if (TikaJsonSerializer.INSTANTIATED_CLASS_KEY.equals(name)) {
                 continue;
             }
             setValue(name, child, obj, setters);
@@ -130,7 +129,7 @@ public class TikaJsonDeserializer {
     }
 
     private static void tryArray(String name, JsonNode node, Object obj, Method setter) throws InvocationTargetException, IllegalAccessException {
-        Class argClass = setter.getReturnType();
+        Class argClass = setter.getParameterTypes()[0];
         Class componentType = argClass.getComponentType();
         if (argClass.isArray()) {
             int len = node.size();
@@ -141,10 +140,18 @@ public class TikaJsonDeserializer {
             setter.invoke(obj, arrayObject);
 
         } else if (List.class.isAssignableFrom(argClass)) {
+            Type listType = setter.getGenericParameterTypes()[0];
+            Type elementType = null;
+            if (listType instanceof ParameterizedType) {
+                elementType = ((ParameterizedType) listType).getActualTypeArguments()[0];
+            }
+            if (elementType == null) {
+                throw new IllegalArgumentException("Can't infer parameterized type for list in: " + node);
+            }
             int len = node.size();
             List<Object> list = new ArrayList<>();
             for (int i = 0; i < len; i++) {
-                list.add(getVal(componentType, node.get(i)));
+                list.add(getVal(elementType, node.get(i)));
             }
             setter.invoke(obj, list);
         }
@@ -161,8 +168,18 @@ public class TikaJsonDeserializer {
             return (T) Float.valueOf(node.floatValue());
         } else if (clazz.equals(Double.class) || clazz.equals(double.class)) {
             return (T) Double.valueOf(node.doubleValue());
+        } else if (node.isObject()) {
+            if (node.has(TikaJsonSerializer.INSTANTIATED_CLASS_KEY)) {
+                Optional<T> optional = deserializeObject(node);
+                if (optional.isPresent()) {
+                    return optional.get();
+                }
+            } else {
+                throw new IllegalArgumentException("I see a json object, but I don't see " +
+                        TikaJsonSerializer.INSTANTIATED_CLASS_KEY + ": " + node);
+            }
         }
-        //add short, boolean and full class objects?
+        //add short, boolean
         throw new IllegalArgumentException("I regret I don't yet support: " + clazz);
     }
 
