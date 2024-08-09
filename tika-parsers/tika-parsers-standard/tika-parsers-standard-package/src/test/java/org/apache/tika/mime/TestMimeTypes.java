@@ -44,6 +44,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
 public class TestMimeTypes {
 
     private static final File f = new File("/a/b/c/x.pdf");
+    private static final MimeType testType = new MimeType(MediaType.parse("foo/bar"));
+    private static final MimeType testType2 = new MimeType(MediaType.parse("foo/bar2"));
     private Tika tika;
     private MimeTypes repo;
     private URL u;
@@ -844,7 +846,6 @@ public class TestMimeTypes {
      */
     @Test
     public void testJavaRegex() throws Exception {
-        MimeType testType = new MimeType(MediaType.parse("foo/bar"));
         this.repo.add(testType);
         assertNotNull(repo.forName("foo/bar"));
         String pattern = "rtg_sst_grb_0\\.5\\.\\d{8}";
@@ -852,7 +853,6 @@ public class TestMimeTypes {
         String testFileName = "rtg_sst_grb_0.5.12345678";
         assertEquals("foo/bar", tika.detect(testFileName));
 
-        MimeType testType2 = new MimeType(MediaType.parse("foo/bar2"));
         this.repo.add(testType2);
         assertNotNull(repo.forName("foo/bar2"));
         this.repo.addPattern(testType2, pattern, false);
