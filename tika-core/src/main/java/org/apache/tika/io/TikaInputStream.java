@@ -316,7 +316,6 @@ public class TikaInputStream extends TaggedInputStream {
      * @param data     input data
      * @param metadata metadata instance
      * @return a TikaInputStream instance
-     * @throws IOException
      */
     public static TikaInputStream get(byte[] data, Metadata metadata) {
         metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
@@ -865,6 +864,7 @@ public class TikaInputStream extends TaggedInputStream {
         }
     }
 
+    @Override
     public String toString() {
         String str = "TikaInputStream of ";
         if (hasFile()) {
