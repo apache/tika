@@ -371,7 +371,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 if (htmlParser == null) {
                     htmlParser = new HtmlParser();
                 }
-                htmlParser.parse(new UnsynchronizedByteArrayInputStream(data),
+                htmlParser.parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get(),
                         new EmbeddedContentHandler(new BodyContentHandler(xhtml)), new Metadata(),
                         parseContext);
                 doneBody = true;
@@ -391,7 +391,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 if (rtfParser == null) {
                     rtfParser = new RTFParser();
                 }
-                rtfParser.parse(new UnsynchronizedByteArrayInputStream(rtf.getData()),
+                rtfParser.parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(rtf.getData()).get(),
                         new EmbeddedContentHandler(new BodyContentHandler(xhtml)), new Metadata(),
                         parseContext);
                 doneBody = true;
@@ -651,7 +651,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             if (html != null && html.length() > 0) {
                 Charset charset = null;
                 try {
-                    charset = detector.detect(new UnsynchronizedByteArrayInputStream(html.getBytes(UTF_8)),
+                    charset = detector.detect(UnsynchronizedByteArrayInputStream.builder().setByteArray(html.getBytes(UTF_8)).get(),
                             EMPTY_METADATA);
                 } catch (IOException e) {
                     //swallow

@@ -99,7 +99,7 @@ public class ChmParser extends AbstractParser {
         Metadata metadata = new Metadata();
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
         try {
-            stream = new UnsynchronizedByteArrayInputStream(byteObject);
+            stream = UnsynchronizedByteArrayInputStream.builder().setByteArray(byteObject).get();
             htmlParser.parse(stream, handler, metadata, context);
         } catch (IOException e) {
             // Pushback overflow from tagsoup

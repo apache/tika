@@ -118,7 +118,7 @@ public class OfficeParser extends AbstractOfficeParser {
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 embeddedDocumentExtractor.parseEmbedded(
                         //pass in space character so that we don't trigger a zero-byte exception
-                        new UnsynchronizedByteArrayInputStream(new byte[]{'\u0020'}), xhtml, m, true);
+                        UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[]{'\u0020'}).get(), xhtml, m, true);
             }
             return;
         }
@@ -132,7 +132,7 @@ public class OfficeParser extends AbstractOfficeParser {
             }
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 embeddedDocumentExtractor.parseEmbedded(
-                        new UnsynchronizedByteArrayInputStream(e.getValue().getBytes(StandardCharsets.UTF_8)),
+                        UnsynchronizedByteArrayInputStream.builder().setByteArray(e.getValue().getBytes(StandardCharsets.UTF_8)).get(),
                         xhtml, m, true);
             }
         }
