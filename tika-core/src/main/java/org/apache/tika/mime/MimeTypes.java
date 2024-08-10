@@ -290,7 +290,8 @@ public final class MimeTypes implements Detector, Serializable {
         // Finally, assume plain text if no control bytes are found
         try {
             TextDetector detector = new TextDetector(getMinLength());
-            UnsynchronizedByteArrayInputStream stream = new UnsynchronizedByteArrayInputStream(data);
+            UnsynchronizedByteArrayInputStream stream =
+                    UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get();
             MimeType type = forName(detector.detect(stream, new Metadata()).toString());
             return Collections.singletonList(type);
         } catch (Exception e) {
@@ -513,6 +514,7 @@ public final class MimeTypes implements Detector, Serializable {
      * @return MIME type of the document
      * @throws IOException if the document stream could not be read
      */
+    @Override
     public MediaType detect(InputStream input, Metadata metadata) throws IOException {
         List<MimeType> possibleTypes = null;
 
