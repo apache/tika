@@ -130,8 +130,7 @@ class DBFCell {
                 GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
 //        baseCalendar.set(1899, 11, 31, 0, 0, 0);
         baseCalendar.set(-4712, 0, 1, 0, 0, 0);
-        try (InputStream is = new UnsynchronizedByteArrayInputStream(getBytes())) {
-
+        try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(getBytes()).get()) {
             int date = EndianUtils.readIntLE(is);
             int time = EndianUtils.readIntLE(is);
             baseCalendar.add(Calendar.DATE, date);

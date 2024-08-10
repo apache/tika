@@ -113,8 +113,8 @@ class BinaryDataHandler extends AbstractPartHandler {
         return buffer.length() > 0;
     }
 
-    private InputStream getInputStream() {
+    private InputStream getInputStream() throws IOException {
         byte[] bytes = base64.decode(buffer.toString());
-        return new UnsynchronizedByteArrayInputStream(bytes);
+        return UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get();
     }
 }
