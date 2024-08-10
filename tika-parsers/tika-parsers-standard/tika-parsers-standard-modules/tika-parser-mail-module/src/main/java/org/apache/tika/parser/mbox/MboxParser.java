@@ -73,10 +73,12 @@ public class MboxParser extends AbstractParser {
     private boolean tracking = false;
 
 
+    @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
+    @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, TikaException, SAXException {
 
@@ -108,7 +110,7 @@ public class MboxParser extends AbstractParser {
                     if (curLine == null) {
                         break;
                     }
-                    UnsynchronizedByteArrayOutputStream message = new UnsynchronizedByteArrayOutputStream(100000);
+                    UnsynchronizedByteArrayOutputStream message = UnsynchronizedByteArrayOutputStream.builder().setBufferSize(100000).get();
                     do {
                         if (curLine.startsWith(" ") || curLine.startsWith("\t")) {
                             String latestLine = multiline.poll();

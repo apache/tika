@@ -100,8 +100,7 @@ public class ZipParserTest extends AbstractPkgTest {
 
     @Test // TIKA-936
     public void testCustomEncoding() throws Exception {
-        ArchiveStreamFactory factory = new ArchiveStreamFactory();
-        factory.setEntryEncoding("SJIS");
+        ArchiveStreamFactory factory = new ArchiveStreamFactory("SJIS");
         trackingContext.set(ArchiveStreamFactory.class, factory);
 
         try (InputStream stream = TikaInputStream.get(Base64.decodeBase64(

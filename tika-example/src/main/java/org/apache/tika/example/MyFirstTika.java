@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
 import org.xml.sax.ContentHandler;
@@ -75,7 +76,7 @@ public class MyFirstTika {
 
         AutoDetectParser parser = new AutoDetectParser(tikaConfig);
         ContentHandler handler = new BodyContentHandler();
-        TikaInputStream stream = TikaInputStream.get(new File(filename), metadata);
+        TikaInputStream stream = TikaInputStream.get(Paths.get(filename), metadata);
         parser.parse(stream, handler, metadata, new ParseContext());
         return handler.toString();
     }
@@ -91,12 +92,10 @@ public class MyFirstTika {
                 "The MIME type (based on filename) is: [" + mimeRegistry.detect(null, metadata) +
                         "]");
 
-        InputStream stream = TikaInputStream.get(new File(filename));
-        System.out.println(
-                "The MIME type (based on MAGIC) is: [" + mimeRegistry.detect(stream, metadata) +
-                        "]");
+        InputStream stream = TikaInputStream.get(Paths.get(filename));
+        System.out.println("The MIME type (based on MAGIC) is: [" + mimeRegistry.detect(stream, metadata) + "]");
 
-        stream = TikaInputStream.get(new File(filename));
+        stream = TikaInputStream.get(Paths.get(filename));
         Detector detector = tikaConfig.getDetector();
         System.out.println("The MIME type (based on the Detector interface) is: [" +
                 detector.detect(stream, metadata) + "]");

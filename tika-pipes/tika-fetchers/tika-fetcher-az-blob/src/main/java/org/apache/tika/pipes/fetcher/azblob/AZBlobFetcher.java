@@ -20,8 +20,6 @@ import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
@@ -91,9 +89,7 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
                 long start = System.currentTimeMillis();
                 TemporaryResources tmpResources = new TemporaryResources();
                 Path tmp = tmpResources.createTempFile();
-                try (OutputStream os = Files.newOutputStream(tmp)) {
-                    blobClient.download(os);
-                }
+                blobClient.downloadToFile(tmp.toRealPath().toString());
                 TikaInputStream tis = TikaInputStream.get(tmp, metadata, tmpResources);
                 long elapsed = System.currentTimeMillis() - start;
                 LOGGER.debug("took {} ms to copy to local tmp file", elapsed);

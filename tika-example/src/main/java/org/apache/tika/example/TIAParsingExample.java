@@ -100,13 +100,13 @@ public class TIAParsingExample {
         ContentHandler handler = new DefaultHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        try (InputStream stream = TikaInputStream.get(new File(filename))) {
+        try (InputStream stream = TikaInputStream.get(Paths.get(filename))) {
             parser.parse(stream, handler, metadata, context);
         }
     }
 
     public static File tikaInputStreamGetFile(String filename) throws Exception {
-        try (InputStream stream = TikaInputStream.get(new File(filename))) {
+        try (InputStream stream = TikaInputStream.get(Paths.get(filename))) {
             TikaInputStream tikaInputStream = TikaInputStream.get(stream);
             return tikaInputStream.getFile();
         }

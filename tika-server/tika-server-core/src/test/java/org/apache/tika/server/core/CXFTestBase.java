@@ -168,15 +168,16 @@ public abstract class CXFTestBase {
         Path tempFile = null;
         try {
             tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-            ZipFile zip = new ZipFile(tempFile.toFile());
-            Enumeration<ZipArchiveEntry> entries = zip.getEntries();
-            while (entries.hasMoreElements()) {
-                ZipArchiveEntry entry = entries.nextElement();
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                IOUtils.copy(zip.getInputStream(entry), bos);
-                data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
+            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
+            {
+                Enumeration<ZipArchiveEntry> entries = zip.getEntries();
+                while (entries.hasMoreElements()) {
+                    ZipArchiveEntry entry = entries.nextElement();
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    IOUtils.copy(zip.getInputStream(entry), bos);
+                    data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
+                }
             }
-            zip.close();
         } finally {
             if (tempFile != null ) {
                 Files.delete(tempFile);
@@ -190,15 +191,16 @@ public abstract class CXFTestBase {
         Path tempFile = null;
         try {
             tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-            ZipFile zip = new ZipFile(tempFile.toFile());
-            Enumeration<ZipArchiveEntry> entries = zip.getEntries();
-            while (entries.hasMoreElements()) {
-                ZipArchiveEntry entry = entries.nextElement();
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                IOUtils.copy(zip.getInputStream(entry), bos);
-                data.put(entry.getName(), bos.toByteArray());
+            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
+            {
+                Enumeration<ZipArchiveEntry> entries = zip.getEntries();
+                while (entries.hasMoreElements()) {
+                    ZipArchiveEntry entry = entries.nextElement();
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    IOUtils.copy(zip.getInputStream(entry), bos);
+                    data.put(entry.getName(), bos.toByteArray());
+                }
             }
-            zip.close();
         } finally {
             if (tempFile != null ) {
                 Files.delete(tempFile);
@@ -209,29 +211,32 @@ public abstract class CXFTestBase {
 
     protected String readArchiveText(InputStream inputStream) throws IOException {
         Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-        ZipFile zip = new ZipFile(tempFile.toFile());
-        zip.getEntry(UnpackerResource.TEXT_FILENAME);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.TEXT_FILENAME)), bos);
-
-        zip.close();
+        ByteArrayOutputStream bos;
+        try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
+        {
+            zip.getEntry(UnpackerResource.TEXT_FILENAME);
+            bos = new ByteArrayOutputStream();
+            IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.TEXT_FILENAME)), bos);
+        }
         Files.delete(tempFile);
         return bos.toString(UTF_8.name());
     }
 
     protected String readArchiveMetadataAndText(InputStream inputStream) throws IOException {
         Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-        ZipFile zip = new ZipFile(tempFile.toFile());
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        zip.getEntry(UnpackerResource.META_FILENAME);
-        IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.META_FILENAME)), bos);
-        String metadata = new String(bos.toByteArray(), UTF_8);
-
-        bos = new ByteArrayOutputStream();
-        zip.getEntry(UnpackerResource.TEXT_FILENAME);
-        IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.TEXT_FILENAME)), bos);
-        String txt = new String(bos.toByteArray(), UTF_8);
-        zip.close();
+        String metadata;
+        String txt;
+        try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
+        {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            zip.getEntry(UnpackerResource.META_FILENAME);
+            IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.META_FILENAME)), bos);
+            metadata = new String(bos.toByteArray(), UTF_8);
+            bos = new ByteArrayOutputStream();
+            zip.getEntry(UnpackerResource.TEXT_FILENAME);
+            IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.TEXT_FILENAME)), bos);
+            txt = new String(bos.toByteArray(), UTF_8);
+        }
         Files.delete(tempFile);
         return metadata + "\n\n" + txt;
     }
