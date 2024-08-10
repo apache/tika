@@ -121,10 +121,10 @@ public class DefaultZipContainerDetector implements Detector {
             return TIFF;
         }
         try {
-            String name = ArchiveStreamFactory.detect(new UnsynchronizedByteArrayInputStream(prefix,
-                            0, length));
+            String name = ArchiveStreamFactory.detect(
+                    UnsynchronizedByteArrayInputStream.builder().setByteArray(prefix).setLength(length).get());
             return PackageConstants.getMediaType(name);
-        } catch (ArchiveException e) {
+        } catch (IOException | ArchiveException e) {
             return MediaType.OCTET_STREAM;
         }
     }
@@ -132,9 +132,10 @@ public class DefaultZipContainerDetector implements Detector {
     static MediaType detectCompressorFormat(byte[] prefix, int length) {
         try {
             String type =
-                    CompressorStreamFactory.detect(new UnsynchronizedByteArrayInputStream(prefix, 0, length));
+                    CompressorStreamFactory.detect(
+                            UnsynchronizedByteArrayInputStream.builder().setByteArray(prefix).setLength(length).get());
             return CompressorConstants.getMediaType(type);
-        } catch (CompressorException e) {
+        } catch (IOException | CompressorException e) {
             return MediaType.OCTET_STREAM;
         }
     }

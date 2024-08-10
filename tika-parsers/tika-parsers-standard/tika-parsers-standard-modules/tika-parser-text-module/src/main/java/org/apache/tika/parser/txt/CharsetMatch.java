@@ -99,7 +99,12 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
         InputStream inputStream = fInputStream;
 
         if (inputStream == null) {
-            inputStream = new UnsynchronizedByteArrayInputStream(fRawInput, 0, fRawLength);
+            try {
+                inputStream = UnsynchronizedByteArrayInputStream.builder().setByteArray(fRawInput).setLength(fRawLength).get();
+            }
+            catch (IOException ex) {
+                return null;
+            }
         }
 
         try {
@@ -115,9 +120,10 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
      * to the original byte data supplied to the Charset detect operation.
      *
      * @return a String created from the converted input data.
+     * @throws IOException
      * @stable ICU 3.4
      */
-    public String getString() throws java.io.IOException {
+    public String getString() throws IOException {
         return getString(-1);
 
     }
@@ -133,23 +139,23 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
      *                  source of the data is an input stream, or -1 for
      *                  unlimited length.
      * @return a String created from the converted input data.
+     * @throws IOException
      * @stable ICU 3.4
      */
-    public String getString(int maxLength) throws java.io.IOException {
+    public String getString(int maxLength) throws IOException {
         String result = null;
         if (fInputStream != null) {
             StringBuilder sb = new StringBuilder();
             char[] buffer = new char[1024];
-            Reader reader = getReader();
-            int max = maxLength < 0 ? Integer.MAX_VALUE : maxLength;
-            int bytesRead = 0;
-
-            while ((bytesRead = reader.read(buffer, 0, Math.min(max, 1024))) > 0) {
-                sb.append(buffer, 0, bytesRead);
-                max -= bytesRead;
+            try (Reader reader = getReader()) {
+                int max = maxLength < 0 ? Integer.MAX_VALUE : maxLength;
+                int bytesRead;
+                
+                while ((bytesRead = reader.read(buffer, 0, Math.min(max, 1024))) > 0) {
+                    sb.append(buffer, 0, bytesRead);
+                    max -= bytesRead;
+                }
             }
-
-            reader.close();
 
             return sb.toString();
         } else {
@@ -235,6 +241,7 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
      * @throws ClassCastException if the argument is not a CharsetMatch.
      * @stable ICU 4.4
      */
+    @Override
     public int compareTo(CharsetMatch other) {
         int compareResult = 0;
         if (this.fConfidence > other.fConfidence) {
@@ -251,6 +258,7 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
      * @param o the CharsetMatch object to compare against
      * @return true if equal
      */
+    @Override
     public boolean equals(Object o) {
         if (o instanceof CharsetMatch) {
             CharsetMatch that = (CharsetMatch) o;
@@ -265,11 +273,13 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
      *
      * @return the hashCode
      */
+    @Override
     public int hashCode() {
         return fConfidence;
     }
     //   gave us a byte array.
 
+    @Override
     public String toString() {
         String s = "Match of " + fCharsetName;
         if (getLanguage() != null) {
