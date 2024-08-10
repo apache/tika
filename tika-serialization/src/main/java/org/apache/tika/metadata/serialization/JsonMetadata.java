@@ -31,7 +31,6 @@ import org.apache.commons.io.input.CloseShieldReader;
 import org.apache.commons.io.output.CloseShieldWriter;
 
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
 public class JsonMetadata {
