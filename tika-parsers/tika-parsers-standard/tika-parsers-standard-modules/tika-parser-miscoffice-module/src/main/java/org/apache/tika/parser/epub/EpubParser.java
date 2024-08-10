@@ -215,7 +215,7 @@ public class EpubParser implements Parser {
         }
         ZipFile zipFile = null;
         try {
-            zipFile = new ZipFile(tis.getPath().toFile());
+            zipFile = zipFile = ZipFile.builder().setFile(tis.getPath().toFile()).get();
         } catch (IOException e) {
             ParserUtils.recordParserFailure(this, e, metadata);
             return trySalvage(tis.getPath(), bodyHandler, xhtml, metadata, context);
@@ -240,7 +240,7 @@ public class EpubParser implements Parser {
             Path salvaged =
                     resources.createTempFile(FilenameUtils.getSuffixFromPath(brokenZip.getFileName().toString()));
             ZipSalvager.salvageCopy(brokenZip.toFile(), salvaged.toFile());
-            try (ZipFile zipFile = new ZipFile(salvaged.toFile())) {
+            try (ZipFile zipFile = ZipFile.builder().setFile(salvaged.toFile()).get()) {
                 return bufferedParseZipFile(zipFile, bodyHandler, xhtml, metadata, context, false);
             } catch (EpubZipException e) {
                 try (InputStream is = TikaInputStream.get(salvaged)) {
