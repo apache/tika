@@ -228,7 +228,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             try (OutputStream fos = new FileOutputStream(file)) {
                 ImageIO.write(bImage, "png", fos);
             }
-            try (TikaInputStream tis = TikaInputStream.get(file)) {
+            try (TikaInputStream tis = TikaInputStream.get(file.toPath())) {
                 parse(tis, handler, metadata, context);
             }
         }
