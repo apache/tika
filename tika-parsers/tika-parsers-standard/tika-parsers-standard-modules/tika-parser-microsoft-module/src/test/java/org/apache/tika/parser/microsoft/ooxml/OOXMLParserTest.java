@@ -287,6 +287,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
             // Allow the value to be access from the inner class
             final int currentI = i;
             ContentHandler handler = new BodyContentHandler() {
+                @Override
                 public void startDocument() {
                     assertEquals(mimeTypes[currentI], metadata.get(Metadata.CONTENT_TYPE),
                             "Mime-type checking for " + filename);
@@ -616,7 +617,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertNotContained("This is the footer text.", xml);
 
         //now test configuration via tika-config
-        Parser configuredParser = null;
+        Parser configuredParser;
         try (InputStream is =
                      OfficeParserTest.class.getResourceAsStream(
                              "tika-config-headers-footers.xml")) {
@@ -1216,7 +1217,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertNotContained("Footer - Author: John Smith", content);
 
         //now test configuration via tika-config
-        Parser configuredParser = null;
+        Parser configuredParser;
         try (InputStream is = OfficeParserTest.class.getResourceAsStream("tika-config-headers-footers.xml")) {
             configuredParser = new AutoDetectParser(new TikaConfig(is));
         }
@@ -1433,7 +1434,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
                 if (!f.getName().endsWith(".docx")) {
                     continue;
                 }
-                try (InputStream is = TikaInputStream.get(f)) {
+                try (InputStream is = TikaInputStream.get(f.toPath())) {
                     ParseContext parseContext = new ParseContext();
                     parseContext.set(OfficeParserConfig.class, officeParserConfig);
                     //test only the extraction of the main docx content, not embedded docs
@@ -1796,14 +1797,8 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
             if (i > -1) {
                 ext = pathName.substring(i);
             }
-            if (extensions.contains(ext)) {
-                return true;
-            } else {
-                return false;
-            }
+            return extensions.contains(ext);
         });
 
     }
 }
-
-
