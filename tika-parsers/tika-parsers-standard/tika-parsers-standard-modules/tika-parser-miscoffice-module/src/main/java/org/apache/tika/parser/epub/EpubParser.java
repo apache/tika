@@ -153,7 +153,7 @@ public class EpubParser implements Parser {
             throws IOException, TikaException, SAXException {
         ZipArchiveInputStream zip = new ZipArchiveInputStream(stream, "UTF-8", false, true, false);
 
-        ZipArchiveEntry entry = zip.getNextZipEntry();
+        ZipArchiveEntry entry = zip.getNextEntry();
         SAXException sax = null;
         while (entry != null) {
             if (entry.getName().equals("mimetype")) {
@@ -178,7 +178,7 @@ public class EpubParser implements Parser {
                     }
                 }
             }
-            entry = zip.getNextZipEntry();
+            entry = zip.getNextEntry();
         }
         if (sax != null) {
             throw sax;
@@ -215,7 +215,7 @@ public class EpubParser implements Parser {
         }
         ZipFile zipFile = null;
         try {
-            zipFile = zipFile = ZipFile.builder().setFile(tis.getPath().toFile()).get();
+            zipFile = ZipFile.builder().setFile(tis.getPath().toFile()).get();
         } catch (IOException e) {
             ParserUtils.recordParserFailure(this, e, metadata);
             return trySalvage(tis.getPath(), bodyHandler, xhtml, metadata, context);
