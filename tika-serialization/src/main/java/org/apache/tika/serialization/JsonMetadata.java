@@ -43,7 +43,7 @@ public class JsonMetadata {
      *
      * @param metadata metadata to write
      * @param writer   writer
-     * @throws TikaException if there is an IOException during writing
+     * @throws java.io.IOException if there is an IOException during writing
      */
     public static void toJson(Metadata metadata, Writer writer) throws IOException {
         if (metadata == null) {
@@ -56,7 +56,7 @@ public class JsonMetadata {
                         .builder()
                         .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
                         .build())
-                .createGenerator(new CloseShieldWriter(writer))) {
+                .createGenerator(CloseShieldWriter.wrap(writer))) {
             if (PRETTY_PRINT) {
                 jsonGenerator.useDefaultPrettyPrinter();
             }
@@ -103,7 +103,7 @@ public class JsonMetadata {
                         .builder()
                         .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
                         .build())
-                .createParser(new CloseShieldReader(reader))) {
+                .createParser(CloseShieldReader.wrap(reader))) {
             m = readMetadataObject(jParser);
         }
         return m;
@@ -135,7 +135,7 @@ public class JsonMetadata {
             if (token != JsonToken.FIELD_NAME) {
                 throw new IOException("expected field name, but got: " + token.name());
             }
-            String key = jParser.getCurrentName();
+            String key = jParser.currentName();
             token = jParser.nextToken();
             if (token == JsonToken.START_ARRAY) {
                 while (jParser.nextToken() != JsonToken.END_ARRAY) {

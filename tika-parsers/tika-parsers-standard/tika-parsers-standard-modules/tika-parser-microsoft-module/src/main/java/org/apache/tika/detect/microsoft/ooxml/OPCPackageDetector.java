@@ -16,8 +16,6 @@
  */
 package org.apache.tika.detect.microsoft.ooxml;
 
-import static org.apache.commons.compress.utils.IOUtils.closeQuietly;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -31,6 +29,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.io.IOUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
@@ -268,7 +267,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
             pkg = OPCPackage.open(zipEntrySource);
             type = detectOfficeOpenXML(pkg);
         } catch (SecurityException e) {
-            closeQuietly(zipEntrySource);
+            IOUtils.closeQuietly(zipEntrySource);
             //TIKA-2571
             throw e;
         } catch (InvalidFormatException | RuntimeException e) {
