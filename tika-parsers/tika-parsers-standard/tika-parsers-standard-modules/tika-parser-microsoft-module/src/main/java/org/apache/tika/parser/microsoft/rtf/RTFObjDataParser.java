@@ -85,7 +85,7 @@ class RTFObjDataParser {
      */
     protected byte[] parse(byte[] bytes, Metadata metadata, AtomicInteger unknownFilenameCount)
             throws IOException, TikaException {
-        UnsynchronizedByteArrayInputStream is = new UnsynchronizedByteArrayInputStream(bytes);
+        UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get();
         long version = readUInt(is);
         metadata.add(RTFMetadata.EMB_APP_VERSION, Long.toString(version));
 
@@ -98,13 +98,13 @@ class RTFObjDataParser {
         String topicName = readLengthPrefixedAnsiString(is).trim();
         String itemName = readLengthPrefixedAnsiString(is).trim();
 
-        if (className != null && className.length() > 0) {
+        if (className.length() > 0) {
             metadata.add(RTFMetadata.EMB_CLASS, className);
         }
-        if (topicName != null && topicName.length() > 0) {
+        if (topicName.length() > 0) {
             metadata.add(RTFMetadata.EMB_TOPIC, topicName);
         }
-        if (itemName != null && itemName.length() > 0) {
+        if (itemName.length() > 0) {
             metadata.add(RTFMetadata.EMB_ITEM, itemName);
         }
 
@@ -119,8 +119,8 @@ class RTFObjDataParser {
             //simple bitmap bytes
             return embObjBytes;
         } else {
-            UnsynchronizedByteArrayInputStream embIs = new UnsynchronizedByteArrayInputStream(embObjBytes);
-            boolean hasPoifs = false;
+            UnsynchronizedByteArrayInputStream embIs = UnsynchronizedByteArrayInputStream.builder().setByteArray(embObjBytes).get();
+            boolean hasPoifs;
             try {
                 hasPoifs = hasPOIFSHeader(embIs);
             } catch (IOException e) {
@@ -217,7 +217,7 @@ class RTFObjDataParser {
     private byte[] handlePackage(byte[] pkgBytes, Metadata metadata)
             throws IOException, TikaException {
         //now parse the package header
-        UnsynchronizedByteArrayInputStream is = new UnsynchronizedByteArrayInputStream(pkgBytes);
+        UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(pkgBytes).get();
         readUShort(is);
 
         String displayName = readAnsiString(is);
@@ -310,6 +310,7 @@ class RTFObjDataParser {
         return sb.toString();
     }
 
+    // never returns null
     private String readLengthPrefixedAnsiString(InputStream is) throws IOException, TikaException {
         long len = readUInt(is);
         byte[] bytes = readBytes(is, len);
@@ -321,6 +322,7 @@ class RTFObjDataParser {
         }
     }
 
+    // never returns null
     private byte[] readBytes(InputStream is, long len) throws IOException, TikaException {
         //initByteArray tests for "reading of too many bytes"
         byte[] bytes = initByteArray(len);
@@ -328,6 +330,7 @@ class RTFObjDataParser {
         return bytes;
     }
 
+    // never returns null
     private byte[] initByteArray(long len) throws IOException, TikaException {
         if (len < 0) {
             throw new IOException("Requested length for reading bytes < 0?!: " + len);
