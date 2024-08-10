@@ -225,7 +225,8 @@ public class FLVParser extends AbstractParser {
                 }
 
                 try (
-                        UnsynchronizedByteArrayInputStream is = new UnsynchronizedByteArrayInputStream(metaBytes);
+                        UnsynchronizedByteArrayInputStream is =
+                                UnsynchronizedByteArrayInputStream.builder().setByteArray(metaBytes).get();
                         DataInputStream dis = new DataInputStream(is);
                 ) {
                     Object data = null;

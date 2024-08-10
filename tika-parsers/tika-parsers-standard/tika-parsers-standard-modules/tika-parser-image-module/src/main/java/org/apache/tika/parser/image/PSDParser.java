@@ -145,7 +145,7 @@ public class PSDParser extends AbstractParser {
                 //if there are multiple xmps in a file, this will
                 //overwrite the data from the earlier xmp
                 JempboxExtractor ex = new JempboxExtractor(metadata);
-                ex.parse(new UnsynchronizedByteArrayInputStream(rb.data));
+                ex.parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(rb.data).get());
             }
             blocks++;
         }

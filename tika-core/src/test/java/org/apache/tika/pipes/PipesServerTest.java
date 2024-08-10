@@ -58,7 +58,7 @@ public class PipesServerTest extends TikaTest {
                 tmp.resolve("mock.xml"));
 
         PipesServer pipesServer = new PipesServer(tikaConfig,
-                new UnsynchronizedByteArrayInputStream(new byte[0]),
+                UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
                 new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
                 -1, 30000, 30000);

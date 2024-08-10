@@ -82,7 +82,7 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
                 name += '.' + type.getExtension();
             }
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
-            return new UnsynchronizedByteArrayInputStream(data);
+            return UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get();
         } else if (inputStream instanceof TikaInputStream) {
             TikaInputStream tin = (TikaInputStream) inputStream;
 
