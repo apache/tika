@@ -43,7 +43,7 @@ public class JsonMetadataList {
      * @param metadataList list of metadata to write
      * @param writer       writer
      * @param prettyPrint  whether or not to pretty print the output
-     * @throws org.apache.tika.exception.TikaException if there is an IOException during writing
+     * @throws IOException if there is an IOException during writing
      */
     public static void toJson(List<Metadata> metadataList, Writer writer, boolean prettyPrint)
             throws IOException {
@@ -54,7 +54,7 @@ public class JsonMetadataList {
         try (JsonGenerator jsonGenerator = new JsonFactory().setStreamReadConstraints(
                         StreamReadConstraints.builder().maxStringLength(
                                 TikaConfig.getMaxJsonStringFieldLength()).build())
-                .createGenerator(new CloseShieldWriter(writer))) {
+                .createGenerator(CloseShieldWriter.wrap(writer))) {
             if (prettyPrint) {
                 jsonGenerator.useDefaultPrettyPrinter();
             }
@@ -71,7 +71,7 @@ public class JsonMetadataList {
      *
      * @param metadataList list of metadata to write
      * @param writer       writer
-     * @throws org.apache.tika.exception.TikaException if there is an IOException during writing
+     * @throws IOException if there is an IOException during writing
      */
     public static void toJson(List<Metadata> metadataList, Writer writer) throws IOException {
         toJson(metadataList, writer, PRETTY_PRINT);
@@ -92,7 +92,7 @@ public class JsonMetadataList {
         ms = new ArrayList<>();
         try (JsonParser jParser = new JsonFactory().setStreamReadConstraints(StreamReadConstraints.builder()
                 .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).build())
-                .createParser(new CloseShieldReader(reader))) {
+                .createParser(CloseShieldReader.wrap(reader))) {
 
             JsonToken token = jParser.nextToken();
             if (token != JsonToken.START_ARRAY) {
@@ -106,9 +106,6 @@ public class JsonMetadataList {
                 token = jParser.nextToken();
             }
 
-        }
-        if (ms == null) {
-            return null;
         }
         //if the last object is the main document,
         //as happens with the streaming serializer,

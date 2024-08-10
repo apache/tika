@@ -17,7 +17,6 @@
 package org.apache.tika.parser.external;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -38,6 +37,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.NullOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -122,7 +122,7 @@ public class ExternalParser extends AbstractParser {
     private static Thread ignoreStream(final InputStream stream, boolean waitForDeath) {
         Thread t = new Thread(() -> {
             try {
-                IOUtils.copy(stream, NULL_OUTPUT_STREAM);
+                IOUtils.copy(stream, NullOutputStream.INSTANCE);
             } catch (IOException e) {
                 //swallow
             } finally {
