@@ -445,7 +445,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         if (detectCharsetsInEntryNames && entry instanceof ZipArchiveEntry) {
             Charset candidate =
                     getEncodingDetector().detect(
-                            new UnsynchronizedByteArrayInputStream(((ZipArchiveEntry) entry).getRawName()),
+                            UnsynchronizedByteArrayInputStream.builder().setByteArray(((ZipArchiveEntry) entry).getRawName()).get(),
                             parentMetadata);
             if (candidate != null) {
                 name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);

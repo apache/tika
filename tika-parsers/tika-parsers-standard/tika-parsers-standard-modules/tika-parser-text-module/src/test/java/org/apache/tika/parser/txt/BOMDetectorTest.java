@@ -44,13 +44,13 @@ public class BOMDetectorTest extends TikaTest {
         }) {
             UnsynchronizedByteArrayOutputStream bos = createStream(bom);
             try (BOMInputStream bomInputStream =
-                         new BOMInputStream(new UnsynchronizedByteArrayInputStream(bos.toByteArray()),
+                         new BOMInputStream(UnsynchronizedByteArrayInputStream.builder().setByteArray(bos.toByteArray()).get(),
                                  ByteOrderMark.UTF_8, ByteOrderMark.UTF_32BE, ByteOrderMark.UTF_32LE,
                                  ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE)) {
                 assertEquals(bom, bomInputStream.getBOM());
             }
             try (UnsynchronizedByteArrayInputStream is =
-                         new UnsynchronizedByteArrayInputStream(bos.toByteArray())) {
+                         UnsynchronizedByteArrayInputStream.builder().setByteArray(bos.toByteArray()).get()) {
                 assertEquals(Charset.forName(bom.getCharsetName()), detector.detect(is, new Metadata()));
                 int cnt = 0;
                 int c = is.read();
@@ -74,7 +74,7 @@ public class BOMDetectorTest extends TikaTest {
             System.arraycopy(bom.getBytes(), 0, bytes, 0, 1);
             bytes[1] = (byte)32;
             bytes[2] = (byte)32;
-            try (InputStream is = new UnsynchronizedByteArrayInputStream(bytes)) {
+            try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
                 assertNull(detector.detect(is, new Metadata()));
             }
         }

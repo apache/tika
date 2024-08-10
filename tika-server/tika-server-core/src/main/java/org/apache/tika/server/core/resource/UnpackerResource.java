@@ -222,9 +222,9 @@ public class UnpackerResource {
                     LOG.warn("Unexpected MimeTypeException", e);
                 }
             }
-            try (InputStream is = new UnsynchronizedByteArrayInputStream(data)) {
+            try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get()) {
                 if (embeddedStreamTranslator.shouldTranslate(is, metadata)) {
-                    InputStream translated = embeddedStreamTranslator.translate(new UnsynchronizedByteArrayInputStream(data), metadata);
+                    InputStream translated = embeddedStreamTranslator.translate(UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get(), metadata);
                     UnsynchronizedByteArrayOutputStream bos2 = UnsynchronizedByteArrayOutputStream
                             .builder()
                             .get();

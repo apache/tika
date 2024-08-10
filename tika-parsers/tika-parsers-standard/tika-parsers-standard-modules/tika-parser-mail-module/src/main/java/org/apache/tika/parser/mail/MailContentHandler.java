@@ -546,7 +546,7 @@ class MailContentHandler implements ContentHandler {
                     inlineMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
                             MediaType.TEXT_PLAIN.toString());
                 }
-                parser.parse(new UnsynchronizedByteArrayInputStream(part.bytes),
+                parser.parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(part.bytes).get(),
                         new EmbeddedContentHandler(new BodyContentHandler(handler)), inlineMetadata,
                         parseContext);
             } catch (SAXException | TikaException e) {

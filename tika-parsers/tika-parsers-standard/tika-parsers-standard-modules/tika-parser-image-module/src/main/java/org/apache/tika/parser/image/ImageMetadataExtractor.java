@@ -186,7 +186,7 @@ public class ImageMetadataExtractor {
 
     public void parseRawXMP(byte[] xmpData) throws IOException, SAXException, TikaException {
         XMPMetadata xmp = null;
-        try (InputStream decoded = new UnsynchronizedByteArrayInputStream(xmpData)) {
+        try (InputStream decoded = UnsynchronizedByteArrayInputStream.builder().setByteArray(xmpData).get()) {
             Document dom = XMLReaderUtils.buildDOM(decoded, EMPTY_PARSE_CONTEXT);
             if (dom != null) {
                 xmp = new XMPMetadata(dom);

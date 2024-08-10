@@ -72,7 +72,7 @@ public class GZipSpecializationDetector implements Detector {
         }
         UnsynchronizedByteArrayOutputStream bytes = UnsynchronizedByteArrayOutputStream.builder().get();
         try (InputStream is = new
-                     GzipCompressorInputStream(new UnsynchronizedByteArrayInputStream(gzippedBytes.toByteArray()))) {
+                     GzipCompressorInputStream(UnsynchronizedByteArrayInputStream.builder().setByteArray(gzippedBytes.toByteArray()).get())) {
             int c = is.read();
             //read bytes one at a time to avoid premature EOF from buffering
             while (c > -1) {
