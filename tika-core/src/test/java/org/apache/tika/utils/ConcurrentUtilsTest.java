@@ -31,13 +31,9 @@ public class ConcurrentUtilsTest {
     @Test
     public void testExecuteThread() throws Exception {
         ParseContext context = new ParseContext();
-        Future result = ConcurrentUtils.execute(context, new Runnable() {
-
-            @Override
-            public void run() {
-                //Do nothing
-
-            }
+        Future result = ConcurrentUtils.execute(context, () ->
+        {
+            //Do nothing
         });
 
         assertNull(result.get());
@@ -48,13 +44,9 @@ public class ConcurrentUtilsTest {
         TikaConfig config = TikaConfig.getDefaultConfig();
         ParseContext context = new ParseContext();
         context.set(ExecutorService.class, config.getExecutorService());
-        Future result = ConcurrentUtils.execute(context, new Runnable() {
-
-            @Override
-            public void run() {
-                //Do nothing
-
-            }
+        Future result = ConcurrentUtils.execute(context, () ->
+        {
+            //Do nothing
         });
 
         assertNull(result.get());
