@@ -222,7 +222,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 m.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
                 try {
                     htmlParser
-                            .parse(new UnsynchronizedByteArrayInputStream(v.getBytes(UTF_8)), h, m, parseContext);
+                            .parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(v.getBytes(UTF_8)).get(), h, m, parseContext);
                     handler.characters(h.toString());
                 } catch (SAXException e) {
                     WriteLimitReachedException.throwIfWriteLimitReached(e);
