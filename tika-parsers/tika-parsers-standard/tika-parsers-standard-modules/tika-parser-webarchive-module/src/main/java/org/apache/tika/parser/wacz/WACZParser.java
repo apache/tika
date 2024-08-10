@@ -86,8 +86,8 @@ public class WACZParser extends AbstractParser {
     private void processStream(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
                                EmbeddedDocumentExtractor ex) throws SAXException, IOException {
         try (ZipArchiveInputStream zais = new ZipArchiveInputStream(
-                new CloseShieldInputStream(stream))) {
-            ZipArchiveEntry zae = zais.getNextZipEntry();
+                CloseShieldInputStream.wrap(stream))) {
+            ZipArchiveEntry zae = zais.getNextEntry();
             while (zae != null) {
                 String name = zae.getName();
                 if (name.startsWith("archive/")) {
@@ -99,7 +99,7 @@ public class WACZParser extends AbstractParser {
                 }
                 //TODO -- process pages (jsonl); process indexes?!
 
-                zae = zais.getNextZipEntry();
+                zae = zais.getNextEntry();
             }
         }
     }

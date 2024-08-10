@@ -150,7 +150,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
                 tikaStream += System.currentTimeMillis() - start;
 
                 start = System.currentTimeMillis();
-                try (InputStream is = TikaInputStream.get(z)) {
+                try (InputStream is = TikaInputStream.get(z.toPath())) {
                     MediaType mt = detector.detect(is, new Metadata());
                     mediaTypeSet.add(mt);
                 }
@@ -189,7 +189,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
                 }
                 tikaStream += System.currentTimeMillis() - start;
                 start = System.currentTimeMillis();
-                try (InputStream is = TikaInputStream.get(z)) {
+                try (InputStream is = TikaInputStream.get(z.toPath())) {
                     getRecursiveMetadata(is, true);
                 }
                 tikaStreamWFile += System.currentTimeMillis() - start;
@@ -207,7 +207,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
             throws Exception {
         List<File> zips = new ArrayList<>();
         for (File f : Paths.get(getResourceAsUri("/test-documents")).toFile().listFiles()) {
-            try (InputStream is = TikaInputStream.get(f)) {
+            try (InputStream is = TikaInputStream.get(f.toPath())) {
                 MediaType mt = detector.detect(is, new Metadata());
                 if (registry.isSpecializationOf(mt, MediaType.APPLICATION_ZIP)) {
                     zips.add(f);
