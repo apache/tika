@@ -160,10 +160,12 @@ public class CompressorParser extends AbstractParser {
     }
 
 
+    @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
+    @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // At the end we want to close the compression stream to release
@@ -217,7 +219,7 @@ public class CompressorParser extends AbstractParser {
                         name.endsWith(".zlib") || name.endsWith(".pack") || name.endsWith(".br")) {
                     name = name.substring(0, name.lastIndexOf("."));
                 } else if (name.length() > 0) {
-                    name = GzipUtils.getUncompressedFilename(name);
+                    name = GzipUtils.getUncompressedFileName(name);
                 }
                 entrydata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
             }
