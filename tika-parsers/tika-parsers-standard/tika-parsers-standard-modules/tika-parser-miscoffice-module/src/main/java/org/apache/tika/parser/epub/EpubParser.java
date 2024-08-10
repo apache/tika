@@ -241,7 +241,7 @@ public class EpubParser extends AbstractParser {
             Path salvaged =
                     resources.createTempFile(FilenameUtils.getSuffixFromPath(brokenZip.getFileName().toString()));
             ZipSalvager.salvageCopy(brokenZip.toFile(), salvaged.toFile());
-            try (ZipFile zipFile = new ZipFile(salvaged.toFile())) {
+            try (ZipFile zipFile = ZipFile.builder().setFile(salvaged.toFile()).get()) {
                 return bufferedParseZipFile(zipFile, bodyHandler, xhtml, metadata, context, false);
             } catch (EpubZipException e) {
                 try (InputStream is = TikaInputStream.get(salvaged)) {

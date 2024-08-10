@@ -66,7 +66,7 @@ public class WACZParser extends AbstractParser {
         if (stream instanceof TikaInputStream) {
             ZipFile zip = (ZipFile) ((TikaInputStream) stream).getOpenContainer();
             if (zip == null && ((TikaInputStream)stream).hasFile()) {
-                zip = new ZipFile(((TikaInputStream)stream).getFile());
+                zip = ZipFile.builder().setFile(((TikaInputStream) stream).getFile()).get();
             }
             if (zip != null) {
                 try {

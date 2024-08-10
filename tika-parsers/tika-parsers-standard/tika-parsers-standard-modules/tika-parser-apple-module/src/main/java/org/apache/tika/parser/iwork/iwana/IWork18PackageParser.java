@@ -67,7 +67,7 @@ public class IWork18PackageParser extends AbstractParser {
             if (container instanceof ZipFile) {
                 zipFile = (ZipFile) container;
             } else if (tis.hasFile()) {
-                zipFile = new ZipFile(tis.getFile());
+                zipFile = ZipFile.builder().setFile(tis.getFile()).get();
             } else {
                 zipStream = new ZipInputStream(stream);
             }

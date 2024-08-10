@@ -34,7 +34,7 @@ public class IWorkDetectorTest extends TikaTest {
         String testFile = "/test-documents/testKeynote2013.detect";
         IWorkDetector detector = new IWorkDetector();
         try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream(testFile));
-                ZipFile zipFile = new ZipFile(tis.getFile())) {
+                 ZipFile zipFile = ZipFile.builder().setFile(tis.getFile()).get()) {
             MediaType result = detector.detect(zipFile, tis);
             assertEquals(IWork13DocumentType.KEYNOTE13.getType(), result);
         }
@@ -45,7 +45,7 @@ public class IWorkDetectorTest extends TikaTest {
         String testFile = "/test-documents/testKeynote2018.key";
         IWorkDetector detector = new IWorkDetector();
         try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream(testFile));
-                ZipFile zipFile = new ZipFile(tis.getFile())) {
+                 ZipFile zipFile = ZipFile.builder().setFile(tis.getFile()).get()) {
             MediaType result = detector.detect(zipFile, tis);
             assertEquals(IWork18DocumentType.KEYNOTE18.getType(), result);
         }

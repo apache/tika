@@ -49,6 +49,8 @@ public class ZipSalvager {
      *
      * @param brokenZip
      * @param salvagedZip
+     * @param allowStoredEntries
+     * @throws java.io.IOException
      */
     public static void salvageCopy(InputStream brokenZip, File salvagedZip,
                                    boolean allowStoredEntries) throws IOException {
@@ -62,7 +64,7 @@ public class ZipSalvager {
                     ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
                             new CloseShieldInputStream(brokenZip), "UTF8", false,
                             allowStoredEntries)) {
-                ZipArchiveEntry zae = zipArchiveInputStream.getNextZipEntry();
+                ZipArchiveEntry zae = zipArchiveInputStream.getNextEntry();
                 try {
                     processZAE(zae, zipArchiveInputStream, outputStream);
                 } catch (UnsupportedZipFeatureException uzfe) {
@@ -118,7 +120,7 @@ public class ZipSalvager {
                     break;
                 }
             }
-            zae = zipArchiveInputStream.getNextZipEntry();
+            zae = zipArchiveInputStream.getNextEntry();
         }
     }
 
