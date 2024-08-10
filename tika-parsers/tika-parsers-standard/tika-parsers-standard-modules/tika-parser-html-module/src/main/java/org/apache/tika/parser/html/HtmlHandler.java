@@ -354,7 +354,7 @@ class HtmlHandler extends TextContentHandler {
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
-            try (InputStream stream = new UnsynchronizedByteArrayInputStream(string.getBytes(StandardCharsets.UTF_8))) {
+            try (InputStream stream = UnsynchronizedByteArrayInputStream.builder().setByteArray(string.getBytes(StandardCharsets.UTF_8)).get()) {
                 embeddedDocumentExtractor.parseEmbedded(stream, xhtml, m, true);
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
@@ -363,7 +363,7 @@ class HtmlHandler extends TextContentHandler {
     }
 
     private void handleDataURIScheme(String string) throws SAXException {
-        DataURIScheme dataURIScheme = null;
+        DataURIScheme dataURIScheme;
         try {
             dataURIScheme = dataURISchemeUtil.parse(string);
         } catch (DataURISchemeParseException e) {
@@ -423,8 +423,8 @@ class HtmlHandler extends TextContentHandler {
             }
         }
 
-        try (InputStream stream = new UnsynchronizedByteArrayInputStream(
-                script.toString().getBytes(StandardCharsets.UTF_8))) {
+        try (InputStream stream = UnsynchronizedByteArrayInputStream.builder().setByteArray(
+                script.toString().getBytes(StandardCharsets.UTF_8)).get()) {
             embeddedDocumentExtractor.parseEmbedded(stream, xhtml, m, true);
         } catch (IOException e) {
             //shouldn't ever happen

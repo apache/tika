@@ -87,7 +87,7 @@ public class FictionBookParser extends XMLParser {
         public void endElement(String uri, String localName, String qName) throws SAXException {
             if (binaryMode) {
                 try (InputStream stream =
-                             new UnsynchronizedByteArrayInputStream(Base64.decodeBase64(binaryData.toString()))) {
+                             UnsynchronizedByteArrayInputStream.builder().setByteArray(Base64.decodeBase64(binaryData.toString())).get()) {
                     partExtractor.parseEmbedded(
                             stream, handler, metadata, true);
                 } catch (IOException e) {
