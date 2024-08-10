@@ -82,7 +82,7 @@ public class Report {
                 try (OutputStream os = Files.newOutputStream(out)) {
                     wb.write(os);
                 } finally {
-                    wb.dispose();
+                    wb.close();
                 }
             }
         }

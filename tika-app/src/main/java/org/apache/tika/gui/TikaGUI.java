@@ -284,7 +284,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
     public void openFile(File file) {
         try {
             Metadata metadata = new Metadata();
-            try (TikaInputStream stream = TikaInputStream.get(file, metadata)) {
+            try (TikaInputStream stream = TikaInputStream.get(file.toPath(), metadata)) {
                 handleStream(stream, metadata);
             }
         } catch (Throwable t) {
@@ -629,12 +629,13 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
             return downstreamParser.getSupportedTypes(context);
         }
 
+        @Override
         public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             if (name != null && wanted.containsKey(name)) {
-                FileOutputStream out = new FileOutputStream(wanted.get(name));
-                IOUtils.copy(stream, out);
-                out.close();
+                try (FileOutputStream out = new FileOutputStream(wanted.get(name))) {
+                    IOUtils.copy(stream, out);
+                }
             } else {
                 if (downstreamParser != null) {
                     downstreamParser.parse(stream, handler, metadata, context);
