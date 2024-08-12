@@ -405,7 +405,9 @@
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.11.0</twelvemonkeys.version>
+    <!-- 3.5.0 doesn't compile with jdk8 -->
     <uima.version>3.4.1</uima.version>
+    <!-- 3.5.0 doesn't compile with jdk8 -->
     <uimafit.version>3.4.0</uimafit.version>
     <uimaj.cpe.version>3.5.0</uimaj.cpe.version>
     <vorbis.version>0.8</vorbis.version>
