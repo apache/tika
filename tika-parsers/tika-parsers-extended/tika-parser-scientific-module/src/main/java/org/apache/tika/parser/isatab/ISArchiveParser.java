@@ -116,7 +116,7 @@ public class ISArchiveParser implements Parser {
         }
 
         String investigation = investigationList[0]; // TODO add to metadata?
-        try (InputStream stream = TikaInputStream.get(new File(this.location + investigation))) {
+        try (InputStream stream = TikaInputStream.get(new File(this.location + investigation).toPath())) {
             ISATabUtils.parseInvestigation(stream, xhtml, metadata, context, this.studyFileName);
         }
         xhtml.element("h1", "INVESTIGATION " + metadata.get("Investigation Identifier"));
@@ -134,9 +134,11 @@ public class ISArchiveParser implements Parser {
         for (String assayFileName : metadata.getValues(studyAssayFileNameField)) {
             xhtml.startElement("div");
             xhtml.element("h3", "ASSAY " + assayFileName);
-            InputStream stream = TikaInputStream.get(new File(this.location + assayFileName));
-            ISATabUtils.parseAssay(stream, xhtml, metadata, context);
-            stream.close();
+            // location starts with "/C:" on windows, can't use Paths.get()
+            try (InputStream stream = TikaInputStream.get(new File(this.location + assayFileName).toPath()))
+            {
+                ISATabUtils.parseAssay(stream, xhtml, metadata, context);
+            }
             xhtml.endElement("div");
         }
     }
