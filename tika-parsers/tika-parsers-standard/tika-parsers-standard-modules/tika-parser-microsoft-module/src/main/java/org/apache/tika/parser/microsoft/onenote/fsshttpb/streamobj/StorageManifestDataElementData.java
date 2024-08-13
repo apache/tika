@@ -46,8 +46,7 @@ public class StorageManifestDataElementData extends DataElementData {
      */
     @Override
     public List<Byte> serializeToByteList() throws TikaException, IOException {
-        List<Byte> byteList = new ArrayList<Byte>();
-        byteList.addAll(this.storageManifestSchemaGUID.serializeToByteList());
+        List<Byte> byteList = new ArrayList<Byte>(this.storageManifestSchemaGUID.serializeToByteList());
 
         if (this.storageManifestRootDeclareList != null) {
             for (StorageManifestRootDeclare storageManifestRootDeclare : this.storageManifestRootDeclareList) {
