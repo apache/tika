@@ -229,7 +229,7 @@ public class FuzzingCLI {
                 case TIMEOUT:
                 case UNSPECIFIED_CRASH:
                     if (tries < maxRetries) {
-                        LOG.info("trying again ({} of {}) {} : {}", tries, maxRetries,
+                        LOG.info("trying again ({} of {}) {}", tries, maxRetries,
                                 status.name());
                         return true;
                     }
