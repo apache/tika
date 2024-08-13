@@ -46,7 +46,7 @@ public class TextOnlyPDFRenderer extends PDFRenderer {
         return pageDrawer;
     }
 
-    private class TextOnlyPageDrawer extends PageDrawer {
+    private static class TextOnlyPageDrawer extends PageDrawer {
         public TextOnlyPageDrawer(PageDrawerParameters parameters) throws IOException {
             super(parameters);
         }

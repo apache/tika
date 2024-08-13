@@ -43,7 +43,7 @@ public class OPFParser extends DcXMLParser {
                 new OPFHandler(metadata));
     }
 
-    private class OPFHandler extends DefaultHandler {
+    private static class OPFHandler extends DefaultHandler {
         private final Metadata metadata;
         boolean inRenditionLayout = false;
         StringBuilder sb = new StringBuilder();

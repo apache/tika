@@ -45,7 +45,7 @@ public class NoTextPDFRenderer extends PDFRenderer {
         return pageDrawer;
     }
 
-    private class NoTextPageDrawer extends PageDrawer {
+    private static class NoTextPageDrawer extends PageDrawer {
         public NoTextPageDrawer(PageDrawerParameters parameters) throws IOException {
             super(parameters);
         }

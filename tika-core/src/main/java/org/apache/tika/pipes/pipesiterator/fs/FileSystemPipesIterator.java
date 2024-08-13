@@ -223,7 +223,7 @@ public class FileSystemPipesIterator extends PipesIterator
             totalCounterThread.interrupt();
         }
 
-        private class FSFileCounter implements FileVisitor<Path> {
+        private static class FSFileCounter implements FileVisitor<Path> {
 
             private final AtomicLong count;
             private FSFileCounter(AtomicLong count) {
