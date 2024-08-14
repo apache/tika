@@ -80,18 +80,16 @@ public class UnpackerResource {
 
     public static void metadataToCsv(Metadata metadata, OutputStream outputStream)
             throws IOException {
-        CSVPrinter writer =
-                new CSVPrinter(new OutputStreamWriter(outputStream, UTF_8), CSVFormat.EXCEL);
-
-        for (String name : metadata.names()) {
-            String[] values = metadata.getValues(name);
-            ArrayList<String> list = new ArrayList<>(values.length + 1);
-            list.add(name);
-            list.addAll(Arrays.asList(values));
-            writer.printRecord(list);
+        try (CSVPrinter writer = new CSVPrinter(new OutputStreamWriter(outputStream, UTF_8), CSVFormat.EXCEL))
+        {
+            for (String name : metadata.names()) {
+                String[] values = metadata.getValues(name);
+                ArrayList<String> list = new ArrayList<>(values.length + 1);
+                list.add(name);
+                list.addAll(Arrays.asList(values));
+                writer.printRecord(list);
+            }
         }
-
-        writer.close();
     }
 
     @Path("/{id:(/.*)?}")
@@ -231,7 +229,8 @@ public class UnpackerResource {
             }
             try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get()) {
                 if (embeddedStreamTranslator.shouldTranslate(is, metadata)) {
-                    InputStream translated = embeddedStreamTranslator.translate(UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get(), metadata);
+                    InputStream translated = embeddedStreamTranslator.translate(
+                            UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get(), metadata);
                     UnsynchronizedByteArrayOutputStream bos2 = UnsynchronizedByteArrayOutputStream
                             .builder()
                             .get();
