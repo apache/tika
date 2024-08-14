@@ -354,7 +354,8 @@ class HtmlHandler extends TextContentHandler {
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
-            try (InputStream stream = UnsynchronizedByteArrayInputStream.builder().setByteArray(string.getBytes(StandardCharsets.UTF_8)).get()) {
+            try (InputStream stream = UnsynchronizedByteArrayInputStream.builder().
+                    setByteArray(string.getBytes(StandardCharsets.UTF_8)).get()) {
                 embeddedDocumentExtractor.parseEmbedded(stream, xhtml, m, true);
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);

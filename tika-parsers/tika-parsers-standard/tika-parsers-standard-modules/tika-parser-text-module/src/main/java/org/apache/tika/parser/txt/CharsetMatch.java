@@ -100,7 +100,8 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
 
         if (inputStream == null) {
             try {
-                inputStream = UnsynchronizedByteArrayInputStream.builder().setByteArray(fRawInput).setLength(fRawLength).get();
+                inputStream = UnsynchronizedByteArrayInputStream.builder().
+                        setByteArray(fRawInput).setLength(fRawLength).get();
             }
             catch (IOException ex) {
                 return null;

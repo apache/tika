@@ -55,9 +55,11 @@ class MagicMatch implements Clause {
         return detector;
     }
 
+    @Override
     public boolean eval(byte[] data) {
         try {
-            return getDetector().detect(UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get(), new Metadata()) !=
+            return getDetector().detect(
+                    UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get(), new Metadata()) !=
                     MediaType.OCTET_STREAM;
         } catch (IOException e) {
             // Should never happen with a ByteArrayInputStream
@@ -65,10 +67,12 @@ class MagicMatch implements Clause {
         }
     }
 
+    @Override
     public int size() {
         return getDetector().getLength();
     }
 
+    @Override
     public String toString() {
         return mediaType.toString() + " " + type + " " + offset + " " + value + " " + mask;
     }
