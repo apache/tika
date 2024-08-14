@@ -67,8 +67,7 @@ public class CellIDArray extends BasicObject {
      */
     @Override
     public List<Byte> serializeToByteList() throws IOException {
-        List<Byte> byteList = new ArrayList<Byte>();
-        byteList.addAll((new Compact64bitInt(this.count)).serializeToByteList());
+        List<Byte> byteList = new ArrayList<Byte>((new Compact64bitInt(this.count)).serializeToByteList());
         if (this.content != null) {
             for (CellID extendGuid : this.content) {
                 byteList.addAll(extendGuid.serializeToByteList());
