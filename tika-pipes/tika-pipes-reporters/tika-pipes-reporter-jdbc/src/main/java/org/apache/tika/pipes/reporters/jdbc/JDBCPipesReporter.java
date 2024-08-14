@@ -395,7 +395,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                         insert.addBatch();
                     }
                     insert.executeBatch();
-                    LOG.debug("writing {} " + cache.size());
+                    LOG.debug("writing {} ", cache.size());
                     cache.clear();
                     return;
                 } catch (SQLException e) {
@@ -461,7 +461,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                 try {
                     insert.close();
                 } catch (SQLException e) {
-                    LOG.warn("exception closing insert statement", insert);
+                    LOG.warn("exception closing insert statement {}", insert);
                 }
             }
             if (connection != null) {

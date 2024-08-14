@@ -51,7 +51,7 @@ class PropertyValue {
         }
         if (type > 0 && type <= 6) {
             if (isRawText) {
-                LOG.debug("(%d)", scalar);
+                LOG.debug("{}", scalar);
             }
         } else if (type == 7) {
             OneNotePtr content = new OneNotePtr(pointer);

@@ -125,7 +125,7 @@ public class FetcherStreamFactory implements InputStreamFactory {
         try {
             return URLDecoder.decode(fetchKey, StandardCharsets.UTF_8.toString());
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-            LOG.warn("couldn't decode fetch key", fetchKey);
+            LOG.warn("couldn't decode fetch key {}", fetchKey);
         }
         return fetchKey;
     }
