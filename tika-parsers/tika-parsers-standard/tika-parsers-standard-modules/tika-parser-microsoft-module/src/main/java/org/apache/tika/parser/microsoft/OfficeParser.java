@@ -102,7 +102,7 @@ public class OfficeParser extends AbstractOfficeParser {
                                      EmbeddedDocumentExtractor embeddedDocumentExtractor)
             throws IOException, SAXException {
 
-        VBAMacroReader reader = null;
+        VBAMacroReader reader;
         Map<String, String> macros = null;
         try {
             reader = new VBAMacroReader(fs);
@@ -140,6 +140,7 @@ public class OfficeParser extends AbstractOfficeParser {
         }
     }
 
+    @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
@@ -147,6 +148,7 @@ public class OfficeParser extends AbstractOfficeParser {
     /**
      * Extracts properties and text from an MS Document input stream
      */
+    @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
@@ -160,7 +162,7 @@ public class OfficeParser extends AbstractOfficeParser {
         boolean isDirectoryNode = false;
         try {
             if (tstream == null) {
-                mustCloseFs = new POIFSFileSystem(new CloseShieldInputStream(stream));
+                mustCloseFs = new POIFSFileSystem(CloseShieldInputStream.wrap(stream));
                 root = mustCloseFs.getRoot();
             } else {
                 final Object container = tstream.getOpenContainer();
@@ -174,7 +176,7 @@ public class OfficeParser extends AbstractOfficeParser {
                     if (tstream.hasFile()) {
                         fs = new POIFSFileSystem(tstream.getFile(), true);
                     } else {
-                        fs = new POIFSFileSystem(new CloseShieldInputStream(tstream));
+                        fs = new POIFSFileSystem(CloseShieldInputStream.wrap(tstream));
                     }
                     //tstream will close the fs, no need to close this below
                     tstream.setOpenContainer(fs);
