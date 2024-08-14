@@ -240,10 +240,12 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         super(encodingDetector);
     }
 
+    @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
+    @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
@@ -441,7 +443,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         if (detectCharsetsInEntryNames && entry instanceof ZipArchiveEntry) {
             Charset candidate =
                     getEncodingDetector().detect(
-                            UnsynchronizedByteArrayInputStream.builder().setByteArray(((ZipArchiveEntry) entry).getRawName()).get(),
+                            UnsynchronizedByteArrayInputStream.builder().
+                                    setByteArray(((ZipArchiveEntry) entry).getRawName()).get(),
                             parentMetadata);
             if (candidate != null) {
                 name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);
