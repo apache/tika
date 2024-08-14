@@ -222,7 +222,8 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 m.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
                 try {
                     htmlParser
-                            .parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(v.getBytes(UTF_8)).get(), h, m, parseContext);
+                            .parse(UnsynchronizedByteArrayInputStream.builder().
+                                    setByteArray(v.getBytes(UTF_8)).get(), h, m, parseContext);
                     handler.characters(h.toString());
                 } catch (SAXException e) {
                     WriteLimitReachedException.throwIfWriteLimitReached(e);
@@ -325,7 +326,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 //TODO: find test file that has this kind of attachment
                 //and see if getFilePath or getLocalFilePath is meaningful
                 //for TikaCoreProperties.ORIGINAL_RESOURCE_NAME
-                TikaInputStream tis = null;
+                TikaInputStream tis;
                 try {
                     tis = TikaInputStream.get(spc.getStream());
                 } catch (IOException e) {

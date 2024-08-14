@@ -59,8 +59,8 @@ class MagicMatch implements Clause {
     public boolean eval(byte[] data) {
         try {
             return getDetector().detect(
-                    UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get(), new Metadata()) !=
-                    MediaType.OCTET_STREAM;
+                    UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get(),
+                    new Metadata()) != MediaType.OCTET_STREAM;
         } catch (IOException e) {
             // Should never happen with a ByteArrayInputStream
             return false;

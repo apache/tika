@@ -85,7 +85,8 @@ class RTFObjDataParser {
      */
     protected byte[] parse(byte[] bytes, Metadata metadata, AtomicInteger unknownFilenameCount)
             throws IOException, TikaException {
-        UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get();
+        UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().
+                setByteArray(bytes).get();
         long version = readUInt(is);
         metadata.add(RTFMetadata.EMB_APP_VERSION, Long.toString(version));
 
@@ -119,7 +120,8 @@ class RTFObjDataParser {
             //simple bitmap bytes
             return embObjBytes;
         } else {
-            UnsynchronizedByteArrayInputStream embIs = UnsynchronizedByteArrayInputStream.builder().setByteArray(embObjBytes).get();
+            UnsynchronizedByteArrayInputStream embIs = UnsynchronizedByteArrayInputStream.builder().
+                    setByteArray(embObjBytes).get();
             boolean hasPoifs;
             try {
                 hasPoifs = hasPOIFSHeader(embIs);
@@ -217,7 +219,8 @@ class RTFObjDataParser {
     private byte[] handlePackage(byte[] pkgBytes, Metadata metadata)
             throws IOException, TikaException {
         //now parse the package header
-        UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(pkgBytes).get();
+        UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().
+                setByteArray(pkgBytes).get();
         readUShort(is);
 
         String displayName = readAnsiString(is);

@@ -156,7 +156,8 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
         LOGGER.debug("about to emit to target container: ({}) path:({})", container, actualPath);
         BlobClient blobClient = blobContainerClient.getBlobClient(actualPath);
         updateMetadata(blobClient, userMetadata);
-        blobClient.upload(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get(), bytes.length, overwriteExisting);
+        blobClient.upload(UnsynchronizedByteArrayInputStream.builder().
+                setByteArray(bytes).get(), bytes.length, overwriteExisting);
     }
 
     private void updateMetadata(BlobClient blobClient, Metadata userMetadata) {
