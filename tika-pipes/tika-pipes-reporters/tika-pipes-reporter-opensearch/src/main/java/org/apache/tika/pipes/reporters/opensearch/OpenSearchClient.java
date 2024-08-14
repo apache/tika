@@ -102,7 +102,7 @@ public class OpenSearchClient {
                     ObjectMapper mapper = new ObjectMapper();
                     JsonNode node = mapper.readTree(reader);
                     if (LOG.isTraceEnabled()) {
-                        LOG.trace("node:", node);
+                        LOG.trace("node: {}", node);
                     }
                     return new JsonResponse(200, node);
                 }

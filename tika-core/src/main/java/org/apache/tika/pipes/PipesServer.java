@@ -204,7 +204,7 @@ public class PipesServer implements Runnable {
     }
 
     public void processRequests() {
-        LOG.debug("processing requests {}");
+        LOG.debug("processing requests");
         //initialize
         try {
             long start = System.currentTimeMillis();
