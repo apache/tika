@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.41.0</google.cloud.version>
-    <aws.version>1.12.767</aws.version>
+    <aws.version>1.12.768</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -389,8 +389,8 @@
     <pdfbox.version>2.0.32</pdfbox.version>
     <poi.version>5.3.0</poi.version>
     <quartz.version>2.3.2</quartz.version>
-    <reactor.core.version>3.6.8</reactor.core.version>
-    <reactor.netty.version>1.1.21</reactor.netty.version>
+    <reactor.core.version>3.6.9</reactor.core.version>
+    <reactor.netty.version>1.1.22</reactor.netty.version>
     <oak.jackrabbit.version>1.66.0</oak.jackrabbit.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
