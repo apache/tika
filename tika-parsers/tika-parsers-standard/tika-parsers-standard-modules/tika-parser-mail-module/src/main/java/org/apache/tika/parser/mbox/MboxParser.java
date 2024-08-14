@@ -110,7 +110,8 @@ public class MboxParser extends AbstractParser {
                     if (curLine == null) {
                         break;
                     }
-                    UnsynchronizedByteArrayOutputStream message = UnsynchronizedByteArrayOutputStream.builder().setBufferSize(100000).get();
+                    UnsynchronizedByteArrayOutputStream message =
+                            UnsynchronizedByteArrayOutputStream.builder().setBufferSize(100000).get();
                     do {
                         if (curLine.startsWith(" ") || curLine.startsWith("\t")) {
                             String latestLine = multiline.poll();
