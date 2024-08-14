@@ -90,7 +90,8 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
                     tin.getOpenContainer() instanceof DirectoryEntry) {
                 POIFSFileSystem fs = new POIFSFileSystem();
                 copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
-                try (UnsynchronizedByteArrayOutputStream bos2 = UnsynchronizedByteArrayOutputStream.builder().get()) {
+                try (UnsynchronizedByteArrayOutputStream bos2 =
+                        UnsynchronizedByteArrayOutputStream.builder().get()) {
                     fs.writeFilesystem(bos2);
                     return bos2.toInputStream();
                 }
