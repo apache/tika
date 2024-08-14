@@ -609,7 +609,7 @@ public class EpubParser extends AbstractParser {
     //for now, this simply converts all names to local names to avoid
     //namespace conflicts in the content handler. This also removes namespaces
     //from attributes
-    private class EpubNormalizingHandler extends ContentHandlerDecorator {
+    private static class EpubNormalizingHandler extends ContentHandlerDecorator {
         public EpubNormalizingHandler(ContentHandler contentHandler) {
             super(contentHandler);
         }

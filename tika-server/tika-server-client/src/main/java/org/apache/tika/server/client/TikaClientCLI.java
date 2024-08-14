@@ -112,7 +112,7 @@ public class TikaClientCLI {
                 "Each client will randomly select a server from this list", servers, numThreads);
     }
 
-    private class FetchWorker implements Callable<Long> {
+    private static class FetchWorker implements Callable<Long> {
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final TikaClient client;
 

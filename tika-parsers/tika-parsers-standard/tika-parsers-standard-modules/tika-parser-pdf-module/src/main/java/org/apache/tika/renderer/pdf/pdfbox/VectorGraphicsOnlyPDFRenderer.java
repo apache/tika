@@ -53,7 +53,7 @@ public class VectorGraphicsOnlyPDFRenderer extends PDFRenderer {
         return pageDrawer;
     }
 
-    private class VectorGraphicsOnlyDrawer extends PageDrawer {
+    private static class VectorGraphicsOnlyDrawer extends PageDrawer {
         public VectorGraphicsOnlyDrawer(PageDrawerParameters parameters) throws IOException {
             super(parameters);
         }
