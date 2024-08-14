@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.net.URL;
 import java.nio.CharBuffer;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
