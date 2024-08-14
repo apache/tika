@@ -141,7 +141,7 @@ public class LanguageIdentifier {
     public static void initProfiles() {
         clearProfiles();
 
-        errors = "";
+        StringBuilder stringBuilder = new StringBuilder();
         InputStream stream;
         stream = LanguageIdentifier.class.getResourceAsStream(PROPERTIES_OVERRIDE_FILE);
         if (stream == null) {
@@ -153,8 +153,9 @@ public class LanguageIdentifier {
                 props = new Properties();
                 props.load(stream);
             } catch (IOException e) {
-                errors += "IOException while trying to load property file. Message: " +
-                        e.getMessage() + "\n";
+                stringBuilder.append("IOException while trying to load property file. Message: ")
+                        .append(e.getMessage())
+                        .append("\n");
             }
         }
 
@@ -165,10 +166,12 @@ public class LanguageIdentifier {
             try {
                 addProfile(language);
             } catch (Exception e) {
-                errors += "Language " + language + " (" + name + ") not initialized. Message: " +
-                        e.getMessage() + "\n";
+                stringBuilder.append("Language ").append(language).append(" (").append(name)
+                        .append(") not initialized. Message: ")
+                        .append(e.getMessage()).append("\n");
             }
         }
+        errors = stringBuilder.toString();
     }
 
     /**
