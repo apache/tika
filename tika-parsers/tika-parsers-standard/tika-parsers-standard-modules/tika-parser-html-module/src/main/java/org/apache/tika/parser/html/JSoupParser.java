@@ -229,7 +229,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         }
     }
 
-    private class RuntimeSAXException extends RuntimeException {
+    private static class RuntimeSAXException extends RuntimeException {
         private SAXException wrapped;
 
         private RuntimeSAXException(SAXException e) {

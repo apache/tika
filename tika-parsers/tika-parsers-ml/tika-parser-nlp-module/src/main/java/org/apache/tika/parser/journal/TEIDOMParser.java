@@ -428,7 +428,7 @@ public class TEIDOMParser {
         }
     }
 
-    class Author {
+    static class Author {
 
         private String surName;
 

@@ -256,7 +256,7 @@ public class FuzzingCLI {
 
     }
 
-    private class FileAdder implements Callable<Integer> {
+    private static class FileAdder implements Callable<Integer> {
         private final PipesIterator pipesIterator;
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private int added = 0;

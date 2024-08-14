@@ -829,7 +829,7 @@ public class PipesServer implements Runnable {
         }
     }
 
-    class MetadataListAndEmbeddedBytes {
+    static class MetadataListAndEmbeddedBytes {
         final List<Metadata> metadataList;
         final Optional<EmbeddedDocumentBytesHandler> embeddedDocumentBytesHandler;
 
