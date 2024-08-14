@@ -83,8 +83,7 @@ public class ExGUIDArray extends BasicObject {
     public List<Byte> serializeToByteList() throws IOException {
         this.count.setDecodedValue(this.content.size());
 
-        List<Byte> result = new ArrayList<>();
-        result.addAll(this.count.serializeToByteList());
+        List<Byte> result = new ArrayList<>(this.count.serializeToByteList());
         for (ExGuid extendGuid : this.content) {
             result.addAll(extendGuid.serializeToByteList());
         }

@@ -95,8 +95,7 @@ public class PipesConfigBase extends ConfigBase {
 
     public List<String> getForkedJvmArgs() {
         //defensive copy
-        List<String> ret = new ArrayList<>();
-        ret.addAll(forkedJvmArgs);
+        List<String> ret = new ArrayList<>(forkedJvmArgs);
         return ret;
     }
 

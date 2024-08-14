@@ -133,8 +133,7 @@ public class Icu4jEncodingDetector implements EncodingDetector {
     }
 
     public List<String> getIgnoreCharsets() {
-        List<String> ret = new ArrayList<>();
-        ret.addAll(ignoreCharsets);
+        List<String> ret = new ArrayList<>(ignoreCharsets);
         Collections.sort(ret);
         return ret;
     }
