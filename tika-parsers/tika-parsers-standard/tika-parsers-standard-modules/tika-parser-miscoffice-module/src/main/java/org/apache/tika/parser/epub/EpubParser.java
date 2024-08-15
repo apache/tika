@@ -153,7 +153,7 @@ public class EpubParser implements Parser {
             throws IOException, TikaException, SAXException {
         ZipArchiveInputStream zip = new ZipArchiveInputStream(stream, "UTF-8", false, true, false);
 
-        ZipArchiveEntry entry = zip.getNextZipEntry();
+        ZipArchiveEntry entry = zip.getNextEntry();
         SAXException sax = null;
         while (entry != null) {
             if (entry.getName().equals("mimetype")) {
@@ -178,7 +178,7 @@ public class EpubParser implements Parser {
                     }
                 }
             }
-            entry = zip.getNextZipEntry();
+            entry = zip.getNextEntry();
         }
         if (sax != null) {
             throw sax;
@@ -215,7 +215,7 @@ public class EpubParser implements Parser {
         }
         ZipFile zipFile = null;
         try {
-            zipFile = new ZipFile(tis.getPath().toFile());
+            zipFile = ZipFile.builder().setFile(tis.getPath().toFile()).get();
         } catch (IOException e) {
             ParserUtils.recordParserFailure(this, e, metadata);
             return trySalvage(tis.getPath(), bodyHandler, xhtml, metadata, context);
@@ -240,7 +240,7 @@ public class EpubParser implements Parser {
             Path salvaged =
                     resources.createTempFile(FilenameUtils.getSuffixFromPath(brokenZip.getFileName().toString()));
             ZipSalvager.salvageCopy(brokenZip.toFile(), salvaged.toFile());
-            try (ZipFile zipFile = new ZipFile(salvaged.toFile())) {
+            try (ZipFile zipFile = ZipFile.builder().setFile(salvaged.toFile()).get()) {
                 return bufferedParseZipFile(zipFile, bodyHandler, xhtml, metadata, context, false);
             } catch (EpubZipException e) {
                 try (InputStream is = TikaInputStream.get(salvaged)) {
@@ -612,7 +612,7 @@ public class EpubParser implements Parser {
     //for now, this simply converts all names to local names to avoid
     //namespace conflicts in the content handler. This also removes namespaces
     //from attributes
-    private class EpubNormalizingHandler extends ContentHandlerDecorator {
+    private static class EpubNormalizingHandler extends ContentHandlerDecorator {
         public EpubNormalizingHandler(ContentHandler contentHandler) {
             super(contentHandler);
         }

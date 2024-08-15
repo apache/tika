@@ -55,7 +55,7 @@ public class JsonMetadataList {
                         .builder()
                         .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
                         .build())
-                .createGenerator(new CloseShieldWriter(writer))) {
+                .createGenerator(CloseShieldWriter.wrap(writer))) {
             if (prettyPrint) {
                 jsonGenerator.useDefaultPrettyPrinter();
             }
@@ -96,7 +96,7 @@ public class JsonMetadataList {
                         .builder()
                         .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
                         .build())
-                .createParser(new CloseShieldReader(reader))) {
+                .createParser(CloseShieldReader.wrap(reader))) {
 
             JsonToken token = jParser.nextToken();
             if (token != JsonToken.START_ARRAY) {

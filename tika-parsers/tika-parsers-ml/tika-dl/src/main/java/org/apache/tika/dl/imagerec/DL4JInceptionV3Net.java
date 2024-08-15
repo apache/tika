@@ -196,7 +196,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
     private File retrieveFile(String path) {
         File file = new File(path);
         if (!file.exists()) {
-            LOG.warn("File {} not found in local file system." + " Asking the classloader", path);
+            LOG.warn("File {} not found in local file system. Asking the classloader", path);
             URL url = getClass().getClassLoader().getResource(path);
             if (url == null) {
                 LOG.debug("Classloader does not know the file {}", path);

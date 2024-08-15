@@ -88,8 +88,7 @@ public class RevisionManifestDataElementData extends DataElementData {
      */
     @Override
     public List<Byte> serializeToByteList() throws TikaException, IOException {
-        List<Byte> byteList = new ArrayList<>();
-        byteList.addAll(this.revisionManifest.serializeToByteList());
+        List<Byte> byteList = new ArrayList<>(this.revisionManifest.serializeToByteList());
 
         if (this.revisionManifestRootDeclareList != null) {
             for (RevisionManifestRootDeclare revisionManifestRootDeclare : this.revisionManifestRootDeclareList) {

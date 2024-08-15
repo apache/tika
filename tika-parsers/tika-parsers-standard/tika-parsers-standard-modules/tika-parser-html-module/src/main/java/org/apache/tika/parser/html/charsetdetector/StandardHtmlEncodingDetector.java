@@ -78,7 +78,7 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
         int limit = getMarkLimit();
         input.mark(limit);
         // Never read more than the first META_TAG_BUFFER_SIZE bytes
-        InputStream limitedStream = new BoundedInputStream(input, limit);
+        InputStream limitedStream = BoundedInputStream.builder().setInputStream(input).setMaxCount(limit).get();
         PreScanner preScanner = new PreScanner(limitedStream);
 
         // The order of priority for detection is:

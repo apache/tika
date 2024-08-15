@@ -18,12 +18,12 @@
 package org.apache.tika.parser.geo.topic.gazetteer;
 
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -73,7 +73,7 @@ public class GeoGazetteerClient {
             HttpGet httpGet = new HttpGet(uri.build());
 
             HttpResponse resp = httpClient.execute(httpGet);
-            String respJson = IOUtils.toString(resp.getEntity().getContent(), Charsets.UTF_8);
+            String respJson = IOUtils.toString(resp.getEntity().getContent(), StandardCharsets.UTF_8);
 
             @SuppressWarnings("serial") Type typeDef =
                     new TypeToken<Map<String, List<Location>>>() {

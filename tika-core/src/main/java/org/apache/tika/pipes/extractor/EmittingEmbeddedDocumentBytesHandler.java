@@ -20,8 +20,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.io.IOExceptionWithCause;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.AbstractEmbeddedDocumentBytesHandler;
 import org.apache.tika.metadata.Metadata;
@@ -67,7 +65,7 @@ public class EmittingEmbeddedDocumentBytesHandler extends AbstractEmbeddedDocume
         try {
             emitter.emit(emitKey, inputStream, METADATA, PARSE_CONTEXT);
         } catch (TikaEmitterException e) {
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
     }
 

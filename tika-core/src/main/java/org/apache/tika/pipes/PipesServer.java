@@ -169,7 +169,7 @@ public class PipesServer implements Runnable {
             PipesServer server =
                     new PipesServer(tikaConfig, System.in, System.out, maxForEmitBatchBytes,
                             serverParseTimeoutMillis, serverWaitTimeoutMillis);
-            System.setIn(new UnsynchronizedByteArrayInputStream(new byte[0]));
+            System.setIn(UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get());
             System.setOut(System.err);
             Thread watchdog = new Thread(server, "Tika Watchdog");
             watchdog.setDaemon(true);
@@ -205,7 +205,7 @@ public class PipesServer implements Runnable {
     }
 
     public void processRequests() {
-        LOG.debug("processing requests {}");
+        LOG.debug("processing requests");
         //initialize
         try {
             long start = System.currentTimeMillis();
@@ -727,7 +727,7 @@ public class PipesServer implements Runnable {
             byte[] bytes = new byte[length];
             input.readFully(bytes);
             try (ObjectInputStream objectInputStream = new ObjectInputStream(
-                    new UnsynchronizedByteArrayInputStream(bytes))) {
+                    UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
                 return (FetchEmitTuple) objectInputStream.readObject();
             }
         } catch (IOException e) {
@@ -829,7 +829,7 @@ public class PipesServer implements Runnable {
         }
     }
 
-    class MetadataListAndEmbeddedBytes {
+    static class MetadataListAndEmbeddedBytes {
         final List<Metadata> metadataList;
         final Optional<EmbeddedDocumentBytesHandler> embeddedDocumentBytesHandler;
 

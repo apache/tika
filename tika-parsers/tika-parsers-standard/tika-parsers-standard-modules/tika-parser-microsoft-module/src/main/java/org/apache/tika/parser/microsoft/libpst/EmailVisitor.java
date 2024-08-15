@@ -23,7 +23,6 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -83,7 +82,7 @@ public class EmailVisitor implements FileVisitor<Path> {
             try {
                 embeddedDocumentExtractor.parseEmbedded(is, xhtml, emailMetadata, true);
             } catch (SAXException e) {
-                throw new IOExceptionWithCause(e);
+                throw new IOException(e);
             }
         }
     }

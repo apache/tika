@@ -122,7 +122,7 @@ public class MockParser implements Parser {
         Document doc = null;
         try {
             DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder(context);
-            doc = docBuilder.parse(new CloseShieldInputStream(stream));
+            doc = docBuilder.parse(CloseShieldInputStream.wrap(stream));
         } catch (SAXException e) {
             //to distinguish between SAX on read vs SAX while writing
             throw new IOException(e);

@@ -27,7 +27,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.commons.io.IOExceptionWithCause;
 
 import org.apache.tika.parser.ParseContext;
 
@@ -60,7 +59,7 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
                 Class superClazz = className.equals(superClassName) ? clazz : Class.forName(superClassName);
                 parseContext.set(superClazz, TikaJsonDeserializer.deserialize(clazz, obj));
             } catch (ReflectiveOperationException ex) {
-                throw new IOExceptionWithCause(ex);
+                throw new IOException(ex);
             }
         }
         return parseContext;

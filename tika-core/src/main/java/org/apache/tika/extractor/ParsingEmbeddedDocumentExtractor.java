@@ -62,6 +62,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         this.context = context;
     }
 
+    @Override
     public boolean shouldParseEmbedded(Metadata metadata) {
         DocumentSelector selector = context.get(DocumentSelector.class);
         if (selector != null) {
@@ -79,6 +80,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         return true;
     }
 
+    @Override
     public void parseEmbedded(
             InputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml)
             throws SAXException, IOException {
@@ -99,7 +101,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         // Use the delegate parser to parse this entry
         try (TemporaryResources tmp = new TemporaryResources()) {
             final TikaInputStream newStream =
-                    TikaInputStream.get(new CloseShieldInputStream(stream), tmp, metadata);
+                    TikaInputStream.get(CloseShieldInputStream.wrap(stream), tmp, metadata);
             if (stream instanceof TikaInputStream) {
                 final Object container = ((TikaInputStream) stream).getOpenContainer();
                 if (container != null) {

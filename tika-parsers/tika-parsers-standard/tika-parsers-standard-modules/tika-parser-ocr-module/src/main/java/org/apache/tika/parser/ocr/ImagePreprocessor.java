@@ -95,7 +95,7 @@ class ImagePreprocessor implements Serializable {
             }
             final String[] args = stream.flatMap(Collection::stream).toArray(String[]::new);
             commandLine.addArguments(args, true);
-            DefaultExecutor executor = new DefaultExecutor();
+            DefaultExecutor executor = DefaultExecutor.builder().get();
             try {
                 executor.execute(commandLine);
             } catch (SecurityException e) {

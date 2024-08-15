@@ -170,7 +170,7 @@ public class RTFParserTest extends TikaTest {
     public void testMaxLength() throws Exception {
         File file = getResourceAsFile("/test-documents/testRTFJapanese.rtf");
         Metadata metadata = new Metadata();
-        InputStream stream = TikaInputStream.get(file, metadata);
+        InputStream stream = TikaInputStream.get(file.toPath(), metadata);
 
         // Test w/ default limit:
         Tika localTika = new Tika();
@@ -181,7 +181,7 @@ public class RTFParserTest extends TikaTest {
 
         // Test setting max length on the instance:
         localTika.setMaxStringLength(200);
-        stream = TikaInputStream.get(file, metadata);
+        stream = TikaInputStream.get(file.toPath(), metadata);
         content = localTika.parseToString(stream, metadata);
 
         // parseToString closes for convenience:
@@ -189,7 +189,7 @@ public class RTFParserTest extends TikaTest {
         assertTrue(content.length() <= 200);
 
         // Test setting max length per-call:
-        stream = TikaInputStream.get(file, metadata);
+        stream = TikaInputStream.get(file.toPath(), metadata);
         content = localTika.parseToString(stream, metadata, 100);
         // parseToString closes for convenience:
         //stream.close();

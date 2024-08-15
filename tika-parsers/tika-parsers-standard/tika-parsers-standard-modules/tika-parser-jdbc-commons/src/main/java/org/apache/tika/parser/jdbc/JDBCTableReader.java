@@ -201,7 +201,7 @@ public class JDBCTableReader {
         String s = clob.getSubString(0, readSize);
         if (embeddedDocumentUtil.shouldParseEmbedded(m)) {
             embeddedDocumentUtil
-                    .parseEmbedded(new UnsynchronizedByteArrayInputStream(s.getBytes(UTF_8)), handler, m, true);
+                    .parseEmbedded(UnsynchronizedByteArrayInputStream.builder().setByteArray(s.getBytes(UTF_8)).get(), handler, m, true);
         }
     }
 

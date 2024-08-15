@@ -68,7 +68,7 @@ public class SQLite3ParserTest extends TikaTest {
             }
         }
         try (TikaInputStream outer = TikaInputStream.get(getResourceAsStream(TEST_FILE1))) {
-            try (TikaInputStream inner = TikaInputStream.get(outer.getFile())) {
+            try (TikaInputStream inner = TikaInputStream.get(outer.getPath())) {
                 _testBasic(inner);
             }
         }
@@ -143,7 +143,6 @@ public class SQLite3ParserTest extends TikaTest {
             wrapper.parse(is, handler, metadata, new ParseContext());
         }
         List<Metadata> metadataList = handler.getMetadataList();
-        int i = 0;
         assertEquals(5, metadataList.size());
         //make sure the \t are inserted in a body handler
 

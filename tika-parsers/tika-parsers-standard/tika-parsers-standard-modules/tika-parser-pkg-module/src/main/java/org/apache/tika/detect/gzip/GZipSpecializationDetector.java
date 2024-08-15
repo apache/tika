@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 
@@ -48,7 +48,9 @@ public class GZipSpecializationDetector implements Detector {
         input.mark(2);
         byte[] firstTwo = new byte[2];
         try {
-            IOUtils.readFully(input, firstTwo);
+            // do not change this to commons-io IOUtils.readFully because
+            // org.apache.tika.parser.AutoDetectParserConfigTest tests will fail
+            org.apache.commons.compress.utils.IOUtils.readFully(input, firstTwo);
         } finally {
             input.reset();
         }
@@ -64,7 +66,7 @@ public class GZipSpecializationDetector implements Detector {
         int buffSize = 1024;
         UnsynchronizedByteArrayOutputStream gzippedBytes = UnsynchronizedByteArrayOutputStream.builder().get();
         try {
-            IOUtils.copyRange(input, buffSize, gzippedBytes);
+            IOUtils.copyLarge(input, gzippedBytes, 0, buffSize);
         } catch (IOException e) {
             //swallow
         } finally {
@@ -72,7 +74,7 @@ public class GZipSpecializationDetector implements Detector {
         }
         UnsynchronizedByteArrayOutputStream bytes = UnsynchronizedByteArrayOutputStream.builder().get();
         try (InputStream is = new
-                     GzipCompressorInputStream(new UnsynchronizedByteArrayInputStream(gzippedBytes.toByteArray()))) {
+                     GzipCompressorInputStream(UnsynchronizedByteArrayInputStream.builder().setByteArray(gzippedBytes.toByteArray()).get())) {
             int c = is.read();
             //read bytes one at a time to avoid premature EOF from buffering
             while (c > -1) {
