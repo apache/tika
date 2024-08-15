@@ -107,6 +107,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             MediaType.set(ZIP, JAR, AR, ARJ, CPIO, DUMP, TAR, SEVENZ);
     // the mark limit used for stream
     private static final int MARK_LIMIT = 100 * 1024 * 1024; // 100M
+    // The number of bytes of entry name to detect charset properly
+    private static final int MIN_BYTES_FOR_DETECTING_CHARSET = 100;
 
 
     static final Set<MediaType> loadPackageSpecializations() {
@@ -254,11 +256,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             stream = new BufferedInputStream(stream);
         }
 
-        TemporaryResources tmp = new TemporaryResources();
-        try {
+        try (TemporaryResources tmp = new TemporaryResources()) {
             _parse(stream, handler, metadata, context, tmp);
-        } finally {
-            tmp.close();
         }
     }
 
@@ -441,10 +440,20 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         
         //Try to detect charset of archive entry in case of non-unicode filename is used
         if (detectCharsetsInEntryNames && entry instanceof ZipArchiveEntry) {
+            // Extend short entry name to improve accuracy of charset detection
+            byte[] entryName = ((ZipArchiveEntry) entry).getRawName();
+            byte[] extendedEntryName = entryName;
+            if (0 < entryName.length && entryName.length < MIN_BYTES_FOR_DETECTING_CHARSET) {
+                int len = entryName.length * (MIN_BYTES_FOR_DETECTING_CHARSET / entryName.length);
+                extendedEntryName = new byte[len];
+                for (int i = 0; i < len; i++) {
+                    extendedEntryName[i] = entryName[i % entryName.length];
+                }
+            }
+
             Charset candidate =
                     getEncodingDetector().detect(
-                            UnsynchronizedByteArrayInputStream.builder().
-                                    setByteArray(((ZipArchiveEntry) entry).getRawName()).get(),
+                            UnsynchronizedByteArrayInputStream.builder().setByteArray(extendedEntryName).get(),
                             parentMetadata);
             if (candidate != null) {
                 name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);
