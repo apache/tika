@@ -35,7 +35,7 @@ public class PackageParserTest extends TikaTest {
     @Test
     public void handleEntryNameWithCharsetShiftJIS() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testZipEntryNameCharsetShiftSJIS.zip");
+        assertContains("文章", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertContains("文章", metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertContains("文章", metadataList.get(3).get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 }
