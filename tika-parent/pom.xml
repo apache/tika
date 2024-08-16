@@ -445,6 +445,7 @@
     <zstd.version>1.5.6-4</zstd.version>
     <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
     <javacpp.version>1.5.10</javacpp.version>
+    <pf4j.version>3.12.0</pf4j.version>
   </properties>
 
   <dependencyManagement>
@@ -1035,6 +1036,12 @@
           <artifactId>jspecify</artifactId>
           <version>1.0.0</version>
       </dependency>
+      <dependency>
+        <groupId>org.pf4j</groupId>
+        <artifactId>pf4j</artifactId>
+        <version>${pf4j.version}</version>
+      </dependency>
+
     </dependencies>
   </dependencyManagement>
 

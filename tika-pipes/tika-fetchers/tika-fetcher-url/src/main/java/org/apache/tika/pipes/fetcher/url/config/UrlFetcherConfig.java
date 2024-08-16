@@ -14,27 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetcher;
+package org.apache.tika.pipes.fetcher.url.config;
 
-import java.io.IOException;
-import java.io.InputStream;
+import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 
-import org.pf4j.ExtensionPoint;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-
-/**
- * Interface for an object that will fetch an InputStream given
- * a fetch string.  This will also update the metadata object
- * based on the fetch.
- * <p>
- * Implementations of Fetcher must be thread safe.
- */
-public interface Fetcher extends ExtensionPoint {
-
-    String getName();
-
-    InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException;
+public class UrlFetcherConfig extends AbstractConfig {
+    // no fetcher config needed at this time.
 }

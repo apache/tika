@@ -14,27 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetcher;
+package org.apache.tika.pipes.fetchers.microsoftgraph;
 
-import java.io.IOException;
-import java.io.InputStream;
+import org.pf4j.Plugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.pf4j.ExtensionPoint;
+public class MicrosoftGraphPlugin extends Plugin {
+    private static final Logger LOG = LoggerFactory.getLogger(MicrosoftGraphPlugin.class);
+    @Override
+    public void start() {
+        LOG.info("Starting");
+        super.start();
+    }
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
+    @Override
+    public void stop() {
+        LOG.info("Stopping");
+        super.stop();
+    }
 
-/**
- * Interface for an object that will fetch an InputStream given
- * a fetch string.  This will also update the metadata object
- * based on the fetch.
- * <p>
- * Implementations of Fetcher must be thread safe.
- */
-public interface Fetcher extends ExtensionPoint {
-
-    String getName();
-
-    InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException;
+    @Override
+    public void delete() {
+        LOG.info("Deleting");
+        super.delete();
+    }
 }

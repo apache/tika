@@ -41,6 +41,7 @@
     <j2objc-annotations.version>3.0.0</j2objc-annotations.version>
     <!-- javadocs doesn't build for generated code -->
     <maven.javadoc.skip>true</maven.javadoc.skip>
+    <pf4j.version>3.12.0</pf4j.version>
   </properties>
 
   <dependencyManagement>
@@ -225,6 +226,11 @@
     <dependency>
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-jsonSchema</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.pf4j</groupId>
+      <artifactId>pf4j</artifactId>
+      <version>${pf4j.version}</version>
     </dependency>
     <dependency>
       <groupId>com.asarkar.grpc</groupId>

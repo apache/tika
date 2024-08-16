@@ -21,6 +21,8 @@ import static io.grpc.health.v1.HealthCheckResponse.ServingStatus;
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.beust.jcommander.JCommander;
@@ -32,11 +34,15 @@ import io.grpc.ServerCredentials;
 import io.grpc.TlsServerCredentials;
 import io.grpc.protobuf.services.HealthStatusManager;
 import io.grpc.protobuf.services.ProtoReflectionService;
+import org.pf4j.DefaultPluginManager;
+import org.pf4j.PluginManager;
+import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
+import org.apache.tika.pipes.fetcher.Fetcher;
 
 /**
  * Server that manages startup/shutdown of the GRPC Tika server.
@@ -45,11 +51,16 @@ public class TikaGrpcServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(TikaGrpcServer.class);
     public static final int TIKA_SERVER_GRPC_DEFAULT_PORT = 50052;
     private Server server;
+    // create the plugin manager
+    private PluginManager pluginManager;
     @Parameter(names = {"-p", "--port"}, description = "The grpc server port", help = true)
     private Integer port = TIKA_SERVER_GRPC_DEFAULT_PORT;
 
-    @Parameter(names = {"-c", "--config"}, description = "The grpc server port", help = true)
+    @Parameter(names = {"-c", "--config"}, description = "The grpc server configuration XML file", help = true)
     private File tikaConfigXml;
+
+    @Parameter(names = {"-d", "--plugins-dir"}, description = "Tika pipes plugin root directories", help = true)
+    private List<Path> pluginDirs;
 
     @Parameter(names = {"-s", "--secure"}, description = "Enable credentials required to access this grpc server")
     private boolean secure;
@@ -95,11 +106,25 @@ public class TikaGrpcServer {
                 TikaConfigSerializer.serialize(new TikaConfig(), TikaConfigSerializer.Mode.STATIC_FULL, fw, StandardCharsets.UTF_8);
             }
         }
+        pluginManager = pluginDirs == null ? new DefaultPluginManager() : new DefaultPluginManager(pluginDirs);
+        pluginManager.loadPlugins();
+        LOGGER.info("Loaded {} plugins", pluginManager.getPlugins().size());
+        pluginManager.startPlugins();
+        for (PluginWrapper plugin : pluginManager.getStartedPlugins()) {
+            LOGGER.info("Add-in " + plugin.getPluginId() + " : " + plugin.getDescriptor() + " has started.");
+            for (Class<?> extension : pluginManager.getExtensionClasses(plugin.getPluginId())) {
+                LOGGER.info("    Extension " + extension + " has been registered -- {}", extension.isAssignableFrom(Fetcher.class));
+                LOGGER.info("     or                                             -- {}", Fetcher.class.isAssignableFrom(extension));
+            }
+        }
+        for (PluginWrapper plugin : pluginManager.getUnresolvedPlugins()) {
+            LOGGER.warn("Add-in " + plugin.getPluginId() + " : " + plugin.getDescriptor() + " is unresolved.");
+        }
         File tikaConfigFile = new File(tikaConfigXml.getAbsolutePath());
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);
         server = Grpc
                 .newServerBuilderForPort(port, creds)
-                .addService(new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath()))
+                .addService(new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath(), pluginManager))
                 .addService(healthStatusManager.getHealthService())
                 .addService(ProtoReflectionService.newInstance())
                 .build()

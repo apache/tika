@@ -25,19 +25,9 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tika-fetcher-s3</artifactId>
-    <name>Apache Tika S3 fetcher</name>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-s3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-        </dependency>
-    </dependencies>
+    <artifactId>tika-fetcher-url</artifactId>
+    <name>Apache Tika URL Fetcher</name>
+    <description>Apache Tika Pipes Fetcher for HTTP URLs</description>
 
     <build>
         <plugins>

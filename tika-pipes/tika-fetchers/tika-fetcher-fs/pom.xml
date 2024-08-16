@@ -25,18 +25,11 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tika-fetcher-s3</artifactId>
-    <name>Apache Tika S3 fetcher</name>
+    <artifactId>tika-fetcher-fs</artifactId>
+    <name>Apache Tika FS Fetcher</name>
+    <description>Apache Tika Pipes Fetcher for Local File System</description>
 
     <dependencies>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-s3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-        </dependency>
     </dependencies>
 
     <build>

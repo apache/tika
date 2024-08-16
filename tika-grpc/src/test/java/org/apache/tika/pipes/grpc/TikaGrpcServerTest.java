@@ -52,6 +52,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.pf4j.DefaultPluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,7 +94,7 @@ public class TikaGrpcServerTest {
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath()))
+                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath(), new DefaultPluginManager()))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -188,7 +189,7 @@ public class TikaGrpcServerTest {
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath()))
+                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath(), new DefaultPluginManager()))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));

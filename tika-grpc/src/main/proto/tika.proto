@@ -59,6 +59,11 @@ service Tika   {
     Get the Fetcher Config schema for a given fetcher class.
   */
   rpc GetFetcherConfigJsonSchema(GetFetcherConfigJsonSchemaRequest) returns (GetFetcherConfigJsonSchemaReply) {}
+  /*
+    List fetcher plugins
+  */
+  rpc ListFetcherPlugins(ListFetcherPluginsRequest) returns (ListFetcherPluginsReply) {}
+
 }
 
 message SaveFetcherRequest {
@@ -142,4 +147,11 @@ message GetFetcherConfigJsonSchemaRequest {
 message GetFetcherConfigJsonSchemaReply {
   // The json schema that describes the fetcher config in string format.
   string fetcher_config_json_schema = 1;
+}
+
+message ListFetcherPluginsRequest {
+}
+
+message ListFetcherPluginsReply {
+  string fetcher_plugin_id = 1;
 }

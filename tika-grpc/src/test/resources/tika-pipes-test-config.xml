@@ -13,8 +13,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
--->
-<properties>
+--><properties>
   <async>
     <staleFetcherTimeoutSeconds>600</staleFetcherTimeoutSeconds>
     <staleFetcherDelaySeconds>60</staleFetcherDelaySeconds>
@@ -30,6 +29,5 @@
       <maxForEmitBatchBytes>-1</maxForEmitBatchBytes> <!-- disable emit -->
     </params>
   </pipes>
-  <fetchers>
-  </fetchers>
+  <fetchers/>
 </properties>

@@ -45,6 +45,7 @@ import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -59,6 +60,8 @@ import org.apache.tika.GetFetcherConfigJsonSchemaReply;
 import org.apache.tika.GetFetcherConfigJsonSchemaRequest;
 import org.apache.tika.GetFetcherReply;
 import org.apache.tika.GetFetcherRequest;
+import org.apache.tika.ListFetcherPluginsReply;
+import org.apache.tika.ListFetcherPluginsRequest;
 import org.apache.tika.ListFetchersReply;
 import org.apache.tika.ListFetchersRequest;
 import org.apache.tika.SaveFetcherReply;
@@ -76,6 +79,7 @@ import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 import org.apache.tika.pipes.fetcher.config.FetcherConfigContainer;
 
@@ -87,6 +91,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     }
     public static final JsonSchemaGenerator JSON_SCHEMA_GENERATOR = new JsonSchemaGenerator(OBJECT_MAPPER);
 
+    private final PluginManager pluginManager;
+
     /**
      * FetcherID is key, The pair is the Fetcher object and the Metadata
      */
@@ -96,9 +102,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     String tikaConfigPath;
 
-    TikaGrpcServerImpl(String tikaConfigPath)
-            throws TikaConfigException, IOException, ParserConfigurationException,
-            TransformerException, SAXException {
+    TikaGrpcServerImpl(String tikaConfigPath, PluginManager pluginManager) throws TikaConfigException, IOException,
+            ParserConfigurationException, TransformerException, SAXException {
         File tikaConfigFile = new File(tikaConfigPath);
         if (!tikaConfigFile.canWrite()) {
             File tmpTikaConfigFile = File.createTempFile("configCopy", tikaConfigFile.getName());
@@ -114,8 +119,15 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
         expiringFetcherStore = new ExpiringFetcherStore(pipesConfig.getStaleFetcherTimeoutSeconds(),
                 pipesConfig.getStaleFetcherDelaySeconds());
+
         this.tikaConfigPath = tikaConfigPath;
         updateTikaConfig();
+
+        this.pluginManager = pluginManager;
+        List<Fetcher> fetchers = pluginManager.getExtensions(Fetcher.class);
+        for (Fetcher fetcher : fetchers) {
+
+        }
     }
 
     private void updateTikaConfig()
@@ -407,6 +419,14 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
         responseObserver.onNext(builder.build());
         responseObserver.onCompleted();
+    }
+
+    @Override
+    public void listFetcherPlugins(ListFetcherPluginsRequest request, StreamObserver<ListFetcherPluginsReply> responseObserver) {
+        for (Fetcher extension : pluginManager.getExtensions(Fetcher.class)) {
+            responseObserver.onNext(ListFetcherPluginsReply.newBuilder().setFetcherPluginId(extension.getName()).build());
+        }
+
     }
 
     private boolean deleteFetcher(String fetcherName) {

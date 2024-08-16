@@ -57,11 +57,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>com.microsoft.graph</groupId>
       <artifactId>microsoft-graph</artifactId>
       <version>${microsoft-graph.version}</version>
@@ -81,16 +76,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
       <version>${mockito-junit-jupiter.version}</version>
@@ -101,7 +86,6 @@
       <artifactId>nimbus-jose-jwt</artifactId>
     </dependency>
   </dependencies>
-
   <build>
     <plugins>
       <plugin>
@@ -158,6 +142,10 @@
                 <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
                   <resource>META-INF/DEPENDENCIES</resource>
                   <file>target/classes/META-INF/DEPENDENCIES</file>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                  <resource>META-INF/extensions.idx</resource>
+                  <file>target/classes/META-INF/extensions.idx</file>
                 </transformer>
               </transformers>
             </configuration>
