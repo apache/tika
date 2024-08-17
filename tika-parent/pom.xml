@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.41.0</google.cloud.version>
-    <aws.version>1.12.768</aws.version>
+    <aws.version>1.12.769</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -318,7 +318,7 @@
     <bouncycastle.version>1.78.1</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <commons.cli.version>1.8.0</commons.cli.version>
+    <commons.cli.version>1.9.0</commons.cli.version>
     <commons.codec.version>1.17.1</commons.codec.version>
     <!-- 4.5.0-M2 successfully tested -->
     <commons.collections4.version>4.4</commons.collections4.version>
@@ -339,7 +339,7 @@
     <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions > 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
-    <guava.version>33.2.1-jre</guava.version>
+    <guava.version>33.3.0-jre</guava.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
@@ -419,7 +419,7 @@
     <!-- 4.2.0.Alpha2 tested successfully -->
     <netty.version>4.1.112.Final</netty.version>
     <snappy.java.version>1.1.10.6</snappy.java.version>
-    <logback.version>1.5.6</logback.version>
+    <logback.version>1.5.7</logback.version>
     <javacpp.version>1.5.10</javacpp.version>
     <!-- h2 2.3 requires jdk11 -->
     <h2.version>2.2.224</h2.version>
