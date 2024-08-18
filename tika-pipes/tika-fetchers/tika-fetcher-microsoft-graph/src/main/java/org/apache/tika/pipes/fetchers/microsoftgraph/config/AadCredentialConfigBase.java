@@ -16,25 +16,12 @@
  */
 package org.apache.tika.pipes.fetchers.microsoftgraph.config;
 
-public abstract class AadCredentialConfigBase {
-    private String tenantId;
-    private String clientId;
+public interface AadCredentialConfigBase<T> {
+    String getTenantId();
 
-    public String getTenantId() {
-        return tenantId;
-    }
+    T setTenantId(String tenantId);
 
-    public AadCredentialConfigBase setTenantId(String tenantId) {
-        this.tenantId = tenantId;
-        return this;
-    }
+    String getClientId();
 
-    public String getClientId() {
-        return clientId;
-    }
-
-    public AadCredentialConfigBase setClientId(String clientId) {
-        this.clientId = clientId;
-        return this;
-    }
+    T setClientId(String clientId);
 }
