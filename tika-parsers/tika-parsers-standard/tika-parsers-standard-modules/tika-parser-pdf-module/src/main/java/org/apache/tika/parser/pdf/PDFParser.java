@@ -700,8 +700,8 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         XFAExtractor ex = new XFAExtractor();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
-        try (InputStream is = new UnsynchronizedByteArrayInputStream(
-                pdDocument.getDocumentCatalog().getAcroForm(null).getXFA().getBytes())) {
+        try (InputStream is = 
+                UnsynchronizedByteArrayInputStream.builder().setByteArray(pdDocument.getDocumentCatalog().getAcroForm(null).getXFA().getBytes()).get()) {
             ex.extract(is, xhtml, metadata, context);
         } catch (XMLStreamException e) {
             throw new TikaException("XML error in XFA", e);

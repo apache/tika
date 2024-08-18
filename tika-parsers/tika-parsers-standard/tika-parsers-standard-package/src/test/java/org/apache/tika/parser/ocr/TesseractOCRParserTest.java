@@ -256,7 +256,7 @@ public class TesseractOCRParserTest extends TikaTest {
         ParseContext context = new ParseContext();
         context.set(TesseractOCRConfig.class, config);
         List<Metadata> metadataList = getRecursiveMetadata("testOCR.pptx", context);
-        debug(metadataList);
+
         //0 is main doc, 1 is embedded image, 2 is thumbnail
         assertEquals(3, metadataList.size());
         assertContains("This is some text", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));

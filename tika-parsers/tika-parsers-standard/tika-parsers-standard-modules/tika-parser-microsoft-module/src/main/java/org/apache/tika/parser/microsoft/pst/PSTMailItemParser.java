@@ -115,7 +115,7 @@ public class PSTMailItemParser implements Parser {
                         metadata, context);
             } else {
                 byte[] data = htmlChunk.getBytes(StandardCharsets.UTF_8);
-                htmlParser.parse(new UnsynchronizedByteArrayInputStream(data),
+                htmlParser.parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get(),
                         new EmbeddedContentHandler(new BodyContentHandler(xhtml)), new Metadata(), context);
             }
             return;

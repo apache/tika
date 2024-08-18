@@ -69,7 +69,7 @@ public class TruncatedOOXMLTest extends TikaTest {
             assertEquals(targetLength, bos.toByteArray().length);
         }
         try {
-            InputStream is = truncate("testWORD_various.docx", length + 1);
+            truncate("testWORD_various.docx", length + 1);
             fail("should have thrown EOF");
         } catch (EOFException e) {
             //swallow
@@ -93,7 +93,7 @@ public class TruncatedOOXMLTest extends TikaTest {
             }
             try (InputStream is = new FileInputStream(f)) {
                 ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(is);
-                ZipArchiveEntry zae = zipArchiveInputStream.getNextZipEntry();
+                ZipArchiveEntry zae = zipArchiveInputStream.getNextEntry();
                 int cnt = 0;
                 while (zae != null && !zae.isDirectory() && ++cnt <= 10) {
                     System.out.println(f.getName() + " : " + zae.getName());
@@ -102,7 +102,7 @@ public class TruncatedOOXMLTest extends TikaTest {
                         IOUtils.copy(zipArchiveInputStream, bos);
                         System.out.println(new String(bos.toByteArray(), StandardCharsets.UTF_8));
                     }
-                    zae = zipArchiveInputStream.getNextZipEntry();
+                    zae = zipArchiveInputStream.getNextEntry();
                 }
             } catch (Exception e) {
                 System.out.println(f.getName() + " : " + e.getMessage());

@@ -121,10 +121,10 @@ public class DefaultZipContainerDetector implements Detector {
             return TIFF;
         }
         try {
-            String name = ArchiveStreamFactory.detect(new UnsynchronizedByteArrayInputStream(prefix,
-                            0, length));
+            String name = ArchiveStreamFactory.detect(
+                    UnsynchronizedByteArrayInputStream.builder().setByteArray(prefix).setLength(length).get());
             return PackageConstants.getMediaType(name);
-        } catch (ArchiveException e) {
+        } catch (IOException | ArchiveException e) {
             return MediaType.OCTET_STREAM;
         }
     }
@@ -132,9 +132,10 @@ public class DefaultZipContainerDetector implements Detector {
     static MediaType detectCompressorFormat(byte[] prefix, int length) {
         try {
             String type =
-                    CompressorStreamFactory.detect(new UnsynchronizedByteArrayInputStream(prefix, 0, length));
+                    CompressorStreamFactory.detect(
+                            UnsynchronizedByteArrayInputStream.builder().setByteArray(prefix).setLength(length).get());
             return CompressorConstants.getMediaType(type);
-        } catch (CompressorException e) {
+        } catch (IOException | CompressorException e) {
             return MediaType.OCTET_STREAM;
         }
     }
@@ -206,7 +207,7 @@ public class DefaultZipContainerDetector implements Detector {
     private MediaType detectZipFormatOnFile(TikaInputStream tis, Metadata metadata) {
         ZipFile zip = null;
         try {
-            zip = new ZipFile(tis.getFile()); // TODO: hasFile()?
+            zip = ZipFile.builder().setFile(tis.getFile()).get(); // TODO: hasFile()?
 
             for (ZipContainerDetector zipDetector : getDetectors()) {
                 MediaType type = zipDetector.detect(zip, tis);
@@ -267,13 +268,13 @@ public class DefaultZipContainerDetector implements Detector {
         StreamingDetectContext detectContext = new StreamingDetectContext();
         try (ZipArchiveInputStream zis = new ZipArchiveInputStream(
                 CloseShieldInputStream.wrap(input), "UTF8", false, allowStoredEntries)) {
-            ZipArchiveEntry zae = zis.getNextZipEntry();
+            ZipArchiveEntry zae = zis.getNextEntry();
             while (zae != null) {
                 MediaType mt = detect(zae, zis, detectContext);
                 if (mt != null) {
                     return mt;
                 }
-                zae = zis.getNextZipEntry();
+                zae = zis.getNextEntry();
             }
         } catch (UnsupportedZipFeatureException zfe) {
             if (allowStoredEntries == false &&
@@ -318,7 +319,7 @@ public class DefaultZipContainerDetector implements Detector {
         if (loader != null && loader.isDynamic()) {
             List<ZipContainerDetector> dynamicDetectors =
                     loader.loadDynamicServiceProviders(ZipContainerDetector.class);
-            if (dynamicDetectors.size() > 0) {
+            if (!dynamicDetectors.isEmpty()) {
                 List<ZipContainerDetector> zipDetectors = new ArrayList<>(staticZipDetectors);
                 zipDetectors.addAll(dynamicDetectors);
                 return zipDetectors;

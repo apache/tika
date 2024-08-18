@@ -16,9 +16,9 @@
  */
 package org.apache.tika.parser.code;
 
-import static com.uwyn.jhighlight.renderer.XhtmlRendererFactory.CPP;
-import static com.uwyn.jhighlight.renderer.XhtmlRendererFactory.GROOVY;
-import static com.uwyn.jhighlight.renderer.XhtmlRendererFactory.JAVA;
+import static org.codelibs.jhighlight.renderer.XhtmlRendererFactory.CPP;
+import static org.codelibs.jhighlight.renderer.XhtmlRendererFactory.GROOVY;
+import static org.codelibs.jhighlight.renderer.XhtmlRendererFactory.JAVA;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,11 +30,11 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.uwyn.jhighlight.renderer.Renderer;
-import com.uwyn.jhighlight.renderer.XhtmlRendererFactory;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.ccil.cowan.tagsoup.HTMLSchema;
 import org.ccil.cowan.tagsoup.Schema;
+import org.codelibs.jhighlight.renderer.Renderer;
+import org.codelibs.jhighlight.renderer.XhtmlRendererFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -59,7 +59,7 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
 
     private static final long serialVersionUID = -4543476498190054160L;
 
-    private static final Pattern authorPattern = Pattern.compile("(?im)@author (.*) *$");
+    private static final Pattern AUTHORPATTERN = Pattern.compile("(?im)@author (.*) *$");
 
     private static final Map<MediaType, String> TYPES_TO_RENDERER =
             new HashMap<MediaType, String>() {
@@ -139,7 +139,7 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
 
 
     private String parserAuthor(String line) {
-        Matcher m = authorPattern.matcher(line);
+        Matcher m = AUTHORPATTERN.matcher(line);
         if (m.find()) {
             return m.group(1).trim();
         }

@@ -41,11 +41,19 @@ public abstract class AbstractEmbeddedDocumentBytesHandler implements EmbeddedDo
                 Integer.toString(embeddedId);
 
 
-        StringBuilder emitKey = new StringBuilder(containerEmitKey)
-                .append("/")
-                .append(FilenameUtils.getName(containerEmitKey))
-                .append(embeddedDocumentBytesConfig.getEmbeddedIdPrefix())
-                .append(embeddedIdString);
+        StringBuilder emitKey = new StringBuilder();
+        if (StringUtils.isBlank(embeddedDocumentBytesConfig.getEmitKeyBase())) {
+            emitKey.append(containerEmitKey);
+            emitKey.append("/")
+                    .append(FilenameUtils.getName(containerEmitKey));
+        } else {
+            emitKey.append(embeddedDocumentBytesConfig.getEmitKeyBase());
+        }
+        //at this point the emit key has the full "file" part, now we
+        //add the embedded id prefix, the embedded id string and then maybe
+        //the file extension
+        emitKey.append(embeddedDocumentBytesConfig.getEmbeddedIdPrefix())
+                    .append(embeddedIdString);
 
         if (embeddedDocumentBytesConfig.getSuffixStrategy().equals(
                 EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.EXISTING)) {

@@ -145,7 +145,7 @@ public class PSDParser implements Parser {
                 //if there are multiple xmps in a file, this will
                 //overwrite the data from the earlier xmp
                 JempboxExtractor ex = new JempboxExtractor(metadata);
-                ex.parse(new UnsynchronizedByteArrayInputStream(rb.data));
+                ex.parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(rb.data).get());
             }
             blocks++;
         }
@@ -201,7 +201,7 @@ public class PSDParser implements Parser {
             // Read the block
             id = EndianUtils.readUShortBE(stream);
 
-            StringBuffer nameB = new StringBuffer();
+            StringBuilder nameB = new StringBuilder();
             int nameLen = 0;
             while (true) {
                 int v = stream.read();

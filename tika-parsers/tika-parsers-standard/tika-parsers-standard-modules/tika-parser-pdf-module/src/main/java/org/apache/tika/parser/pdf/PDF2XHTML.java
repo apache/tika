@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSStream;
@@ -125,7 +124,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                 throw new TikaException("Unable to extract PDF content", e);
             }
         }
-        if (pdf2XHTML.exceptions.size() > 0) {
+        if (!pdf2XHTML.exceptions.isEmpty()) {
             //throw the first
             throw new TikaException("Unable to extract PDF content", pdf2XHTML.exceptions.get(0));
         }
@@ -187,7 +186,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            handleCatchableIOE(new IOExceptionWithCause(e));
+            handleCatchableIOE(new IOException(e));
         }
     }
 
@@ -203,7 +202,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                         processedInlineImages, inlineImageCounter, xhtml, metadata, context);
         engine.run();
         List<IOException> engineExceptions = engine.getExceptions();
-        if (engineExceptions.size() > 0) {
+        if (!engineExceptions.isEmpty()) {
             IOException first = engineExceptions.remove(0);
             if (config.isCatchIntermediateIOExceptions()) {
                 exceptions.addAll(engineExceptions);

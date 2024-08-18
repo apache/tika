@@ -431,7 +431,7 @@ public class LanguageProfilerBuilder {
     // Inherited JavaDoc
     public String toString() {
 
-        StringBuffer s = new StringBuffer().append("NGramProfile: ").append(name).append("\n");
+        StringBuilder s = new StringBuilder().append("NGramProfile: ").append(name).append("\n");
 
         for (NGramEntry entry : getSorted()) {
             s.append("[").append(entry.seq).append("/").append(entry.count).append("/")
@@ -673,14 +673,11 @@ public class LanguageProfilerBuilder {
 
         // Inherited JavaDoc
         public boolean equals(Object obj) {
-
-            NGramEntry ngram = null;
-            try {
-                ngram = (NGramEntry) obj;
-                return ngram.seq.equals(seq);
-            } catch (Exception e) {
+            if (!(obj instanceof NGramEntry)) {
                 return false;
             }
+            NGramEntry ngram = (NGramEntry) obj;
+            return ngram.seq.equals(seq);
         }
 
     }

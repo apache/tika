@@ -208,7 +208,7 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
     }
 
     private static String getString(Element element) {
-        StringBuffer s = new StringBuffer();
+        StringBuilder s = new StringBuilder();
 
         NodeList children = element.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {

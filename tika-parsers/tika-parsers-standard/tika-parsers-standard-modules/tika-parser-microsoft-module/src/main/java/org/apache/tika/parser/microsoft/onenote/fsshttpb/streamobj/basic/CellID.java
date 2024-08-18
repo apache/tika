@@ -82,11 +82,10 @@ public class CellID extends BasicObject {
      */
     @Override
     public boolean equals(Object obj) {
-        CellID another = (CellID) obj;
-
-        if (another == null) {
+        if (!(obj instanceof CellID)) {
             return false;
         }
+        CellID another = (CellID) obj;
 
         if (another.extendGUID1 != null && another.extendGUID2 != null &&
                 this.extendGUID1 != null && this.extendGUID2 != null) {

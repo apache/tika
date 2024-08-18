@@ -31,7 +31,7 @@ class AutoPageNumberUtils {
     private static final int MAX = 26;
 
     public static String asAlphaNumeric(int i) {
-        StringBuffer sbuff = new StringBuffer();
+        StringBuilder stringBuilder = new StringBuilder();
         int index = i % MAX;
         int ratio = i / MAX;
 
@@ -41,9 +41,9 @@ class AutoPageNumberUtils {
         }
 
         for (int j = 0; j <= ratio; j++) {
-            sbuff.append(ALPHABET[index - 1]);
+            stringBuilder.append(ALPHABET[index - 1]);
         }
-        return sbuff.toString();
+        return stringBuilder.toString();
     }
 
     public static String asAlphaNumericLower(int i) {

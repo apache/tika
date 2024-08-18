@@ -33,6 +33,10 @@ public class HttpHeaders {
         return headers;
     }
 
+    /**
+     * @return the headers as a map; The map does not support {@code put} or {@code putAll}, nor do
+     * its entries support {@link Entry#setValue setValue}, so you can't use this to add headers.
+     */
     public Map<String, Collection<String>> getMap() {
         return headers.asMap();
     }

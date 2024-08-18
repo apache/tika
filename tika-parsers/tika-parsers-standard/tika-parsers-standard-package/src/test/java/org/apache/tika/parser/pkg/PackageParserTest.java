@@ -31,4 +31,11 @@ public class PackageParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("gbk.zip");
         assertContains("审计压缩", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
+
+    @Test
+    public void handleEntryNameWithCharsetShiftJIS() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testZipEntryNameCharsetShiftSJIS.zip");
+        assertContains("文章", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertContains("文章", metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+    }
 }

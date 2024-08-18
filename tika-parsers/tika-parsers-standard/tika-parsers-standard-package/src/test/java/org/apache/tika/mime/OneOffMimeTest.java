@@ -67,7 +67,7 @@ public class OneOffMimeTest extends TikaTest {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, p.getFileName().toString());
         assertEquals(expected,
-                getRecursiveMetadata(new UnsynchronizedByteArrayInputStream(new byte[0]),
+                getRecursiveMetadata(UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
                         metadata,
                         new ParseContext(), true).get(0).get(Metadata.CONTENT_TYPE));
     }

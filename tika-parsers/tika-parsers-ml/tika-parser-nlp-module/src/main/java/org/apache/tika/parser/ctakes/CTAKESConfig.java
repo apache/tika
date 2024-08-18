@@ -16,13 +16,13 @@
  */
 package org.apache.tika.parser.ctakes;
 
-import static org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Properties;
+
+import org.apache.commons.io.output.NullOutputStream;
 
 /**
  * Configuration for {@link CTAKESContentHandler}.
@@ -52,7 +52,7 @@ public class CTAKESConfig implements Serializable {
     private CTAKESSerializer serializerType = CTAKESSerializer.XMI;
 
     // OutputStream object used for CAS serialization
-    private OutputStream stream = NULL_OUTPUT_STREAM;
+    private OutputStream stream = NullOutputStream.INSTANCE;
 
     // Enables CAS serialization
     private boolean serialize = false;
@@ -96,12 +96,10 @@ public class CTAKESConfig implements Serializable {
         } catch (IOException e) {
             // TODO warning
         } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException ioe) {
-                    // TODO warning
-                }
+            try {
+                stream.close();
+            } catch (IOException ioe) {
+                // TODO warning
             }
         }
 

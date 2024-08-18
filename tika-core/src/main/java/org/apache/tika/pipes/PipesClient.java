@@ -368,7 +368,7 @@ public class PipesClient implements Closeable {
         byte[] bytes = new byte[length];
         input.readFully(bytes);
         try (ObjectInputStream objectInputStream = new ObjectInputStream(
-                new UnsynchronizedByteArrayInputStream(bytes))) {
+                UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
             EmitData emitData = (EmitData) objectInputStream.readObject();
 
             String stack = emitData.getContainerStackTrace();
@@ -390,7 +390,7 @@ public class PipesClient implements Closeable {
         byte[] bytes = new byte[length];
         input.readFully(bytes);
         try (ObjectInputStream objectInputStream = new ObjectInputStream(
-                new UnsynchronizedByteArrayInputStream(bytes))) {
+                UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
             Metadata metadata = (Metadata) objectInputStream.readObject();
             EmitData emitData = new EmitData(emitKey, Collections.singletonList(metadata));
             return new PipesResult(PipesResult.STATUS.INTERMEDIATE_RESULT, emitData, true);

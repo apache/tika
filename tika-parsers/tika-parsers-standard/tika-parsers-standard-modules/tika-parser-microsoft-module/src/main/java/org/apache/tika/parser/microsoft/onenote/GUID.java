@@ -133,7 +133,7 @@ public class GUID implements Comparable<GUID> {
     }
 
     public String getGuidString() {
-        return guid.toString();
+        return Arrays.toString(guid);
     }
 
     public List<Byte> toByteArray() {

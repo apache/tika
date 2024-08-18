@@ -36,8 +36,7 @@ public class ObjectSpaceObjectStreamOfOSIDs {
      * @return Return the byte list which store the byte information of ObjectSpaceObjectStreamOfOSIDs
      */
     public List<Byte> serializeToByteList() throws IOException {
-        List<Byte> byteList = new ArrayList<>();
-        byteList.addAll(this.header.serializeToByteList());
+        List<Byte> byteList = new ArrayList<>(this.header.serializeToByteList());
         for (CompactID compactID : this.body) {
             byteList.addAll(compactID.serializeToByteList());
         }

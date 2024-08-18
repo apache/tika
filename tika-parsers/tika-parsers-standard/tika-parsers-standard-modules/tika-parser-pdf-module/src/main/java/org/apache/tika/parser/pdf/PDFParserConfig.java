@@ -179,7 +179,7 @@ public class PDFParserConfig implements Serializable {
      * @param extractInlineImageMetadataOnly
      * @since 1.25
      */
-    void setExtractInlineImageMetadataOnly(boolean extractInlineImageMetadataOnly) {
+    public void setExtractInlineImageMetadataOnly(boolean extractInlineImageMetadataOnly) {
         this.extractInlineImageMetadataOnly = extractInlineImageMetadataOnly;
         userConfigured.add("extractInlineImageMetadataOnly");
     }

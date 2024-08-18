@@ -302,7 +302,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                 }
                 if (bytes != null) {
-                    try (InputStream is = new UnsynchronizedByteArrayInputStream(bytes)) {
+                    try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
                         parseMetadata(is, xfaMetadata);
                     }
                 }
@@ -1181,7 +1181,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             InputStream is = null;
             try {
                 is = new BufferedInputStream(
-                        new UnsynchronizedByteArrayInputStream(pdxfa.getBytes()));
+                        UnsynchronizedByteArrayInputStream.builder().setByteArray(pdxfa.getBytes()).get());
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             }
@@ -1369,7 +1369,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         //                && (endBookmarkPageNumber == -1 ||
         //                currentPageNo <= endBookmarkPageNumber))
         //        {
-        super.setStartPage(-1);
+        super.setStartPage(1);
         for (PDPage page : pages) {
             if (getCurrentPageNo() >= getStartPage() && getCurrentPageNo() <= getEndPage()) {
                 processPage(page);
