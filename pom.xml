@@ -114,6 +114,7 @@
                         <include name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}-bin.tgz*" />
                         <include name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}-bin.zip*" />
                         <include name="tika-eval/tika-eval-app/target/tika-eval-app-${project.version}.jar*" />
+                        <include name="tika-grpc/target/tika-grpc-${project.version}.zip*" />
                       </fileset>
                     </copy>
                     <checksum algorithm="SHA-512" fileext=".sha512">
