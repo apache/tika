@@ -295,8 +295,8 @@
     <maven.assembly.version>3.7.1</maven.assembly.version>
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
-    <maven.failsafe.version>3.3.1</maven.failsafe.version>
-    <maven.surefire.version>3.3.1</maven.surefire.version>
+    <maven.failsafe.version>3.4.0</maven.failsafe.version>
+    <maven.surefire.version>3.4.0</maven.surefire.version>
     <maven.javadoc.version>3.8.0</maven.javadoc.version>
     <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
@@ -309,7 +309,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.41.0</google.cloud.version>
-    <aws.version>1.12.767</aws.version>
+    <aws.version>1.12.769</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -328,7 +328,7 @@
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <c3p0.version>0.10.1</c3p0.version>
-    <commons.cli.version>1.8.0</commons.cli.version>
+    <commons.cli.version>1.9.0</commons.cli.version>
     <commons.codec.version>1.17.1</commons.codec.version>
     <commons.collections4.version>4.5.0-M2</commons.collections4.version>
     <commons.compress.version>1.27.0</commons.compress.version>
@@ -350,8 +350,8 @@
     <freemarker.version>2.3.33</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.11.0</gson.version>
-    <guava.version>33.2.1-jre</guava.version>
-    <h2.version>2.3.230</h2.version>
+    <guava.version>33.3.0-jre</guava.version>
+    <h2.version>2.3.232</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
@@ -391,7 +391,7 @@
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.23.1</log4j2.version>
     <lucene.version>9.11.1</lucene.version>
-    <maven.plugin.annotations.version>3.13.1</maven.plugin.annotations.version>
+    <maven.plugin.annotations.version>3.14.0</maven.plugin.annotations.version>
     <mchange.version>0.3.1</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
@@ -401,7 +401,7 @@
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha2 tested successfully -->
     <netty.version>4.1.112.Final</netty.version>
-    <oak.jackrabbit.version>1.66.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>1.68.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.3.0 requires jdk17 -->
     <opennlp.version>2.2.0</opennlp.version>
@@ -417,8 +417,8 @@
     <protobuf.version>3.25.4</protobuf.version>
     <!-- 2.5.0-rc1 tested successfully -->
     <quartz.version>2.3.2</quartz.version>
-    <reactor.core.version>3.6.8</reactor.core.version>
-    <reactor.netty.version>1.1.21</reactor.netty.version>
+    <reactor.core.version>3.6.9</reactor.core.version>
+    <reactor.netty.version>1.1.22</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
     <slf4j.version>2.0.16</slf4j.version>
@@ -427,7 +427,7 @@
     <solrj.version>8.11.3</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17  -->
     <spring.version>5.3.39</spring.version>
-    <sqlite.version>3.46.0.1</sqlite.version>
+    <sqlite.version>3.46.1.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <testcontainers.version>1.20.1</testcontainers.version>
@@ -444,7 +444,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.4</zookeeper.version>
-    <logback.version>1.5.6</logback.version>
+    <logback.version>1.5.7</logback.version>
     <zstd.version>1.5.6-4</zstd.version>
     <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
     <javacpp.version>1.5.10</javacpp.version>
