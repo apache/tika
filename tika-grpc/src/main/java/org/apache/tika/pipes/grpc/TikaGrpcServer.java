@@ -34,7 +34,6 @@ import io.grpc.ServerCredentials;
 import io.grpc.TlsServerCredentials;
 import io.grpc.protobuf.services.HealthStatusManager;
 import io.grpc.protobuf.services.ProtoReflectionService;
-import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginManager;
 import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
@@ -43,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.pipes.fetcher.Fetcher;
+import org.apache.tika.pipes.grpc.plugin.GrpcPluginManager;
 
 /**
  * Server that manages startup/shutdown of the GRPC Tika server.
@@ -106,7 +106,7 @@ public class TikaGrpcServer {
                 TikaConfigSerializer.serialize(new TikaConfig(), TikaConfigSerializer.Mode.STATIC_FULL, fw, StandardCharsets.UTF_8);
             }
         }
-        pluginManager = pluginDirs == null ? new DefaultPluginManager() : new DefaultPluginManager(pluginDirs);
+        pluginManager = pluginDirs == null ? new GrpcPluginManager() : new GrpcPluginManager(pluginDirs);
         pluginManager.loadPlugins();
         LOGGER.info("Loaded {} plugins", pluginManager.getPlugins().size());
         pluginManager.startPlugins();

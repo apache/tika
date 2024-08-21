@@ -50,7 +50,6 @@ public class FileSystemFetcherTest {
         FileSystemFetcher f = new FileSystemFetcher();
         assertThrows(InvalidPathException.class, () -> {
             f.setBasePath("bad\u0000path");
-            f.setName("fs");
             f.checkInitialization(InitializableProblemHandler.IGNORE);
         });
     }
