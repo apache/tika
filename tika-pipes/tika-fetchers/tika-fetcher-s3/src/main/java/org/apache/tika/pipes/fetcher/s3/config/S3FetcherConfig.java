@@ -16,9 +16,16 @@
  */
 package org.apache.tika.pipes.fetcher.s3.config;
 
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
-public class S3FetcherConfig extends AbstractConfig {
+public class S3FetcherConfig extends FetcherConfig {
+
+    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(S3FetcherConfig.class);
+
+    @Override
+    public String getPluginId() {
+        return PLUGIN_ID;
+    }
     private boolean spoolToTemp;
     private String region;
     private String profile;

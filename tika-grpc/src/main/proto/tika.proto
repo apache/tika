@@ -71,7 +71,7 @@ message SaveFetcherRequest {
   string fetcher_id = 1;
   // The full java class name of the fetcher class. List of
   // fetcher classes is found here: https://cwiki.apache.org/confluence/display/TIKA/tika-pipes
-  string fetcher_class = 2;
+  string plugin_id = 2;
   // JSON string of the fetcher config object. To see the json schema from which to build this json,
   // use the GetFetcherConfigJsonSchema rpc method.
   string fetcher_config_json = 3;
@@ -122,7 +122,7 @@ message GetFetcherReply {
   // Echoes the ID of the fetcher being returned.
   string fetcher_id = 1;
   // The full Java class name of the Fetcher.
-  string fetcher_class = 2;
+  string plugin_id = 2;
   // The configuration parameters.
   map<string, string> params = 3;
 }
@@ -141,7 +141,7 @@ message ListFetchersReply {
 
 message GetFetcherConfigJsonSchemaRequest {
   // The full java class name of the fetcher config for which to fetch json schema.
-  string fetcher_class = 1;
+  string plugin_id = 1;
 }
 
 message GetFetcherConfigJsonSchemaReply {

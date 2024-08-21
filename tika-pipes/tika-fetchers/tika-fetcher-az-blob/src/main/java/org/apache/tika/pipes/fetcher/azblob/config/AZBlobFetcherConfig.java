@@ -16,9 +16,17 @@
  */
 package org.apache.tika.pipes.fetcher.azblob.config;
 
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
-public class AZBlobFetcherConfig extends AbstractConfig {
+public class AZBlobFetcherConfig extends FetcherConfig {
+
+    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(AZBlobFetcherConfig.class);
+
+    @Override
+    public String getPluginId() {
+        return PLUGIN_ID;
+    }
+
     private boolean spoolToTemp;
     private String sasToken;
     private String endpoint;

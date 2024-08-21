@@ -16,9 +16,16 @@
  */
 package org.apache.tika.pipes.fetcher.fs.config;
 
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
-public class FileSystemFetcherConfig extends AbstractConfig {
+public class FileSystemFetcherConfig extends FetcherConfig {
+
+    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(FileSystemFetcherConfig.class);
+
+    @Override
+    public String getPluginId() {
+        return PLUGIN_ID;
+    }
     private String basePath;
     private boolean extractFileSystemMetadata;
 

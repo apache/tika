@@ -16,9 +16,16 @@
  */
 package org.apache.tika.pipes.fetcher.gcs.config;
 
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
-public class GCSFetcherConfig extends AbstractConfig {
+public class GCSFetcherConfig extends FetcherConfig {
+
+    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(GCSFetcherConfig.class);
+
+    @Override
+    public String getPluginId() {
+        return PLUGIN_ID;
+    }
     private boolean spoolToTemp;
     private String projectId;
     private String bucket;

@@ -16,6 +16,30 @@
  */
 package org.apache.tika.pipes.fetcher.config;
 
-public abstract class AbstractConfig {
-    //  Nothing to do here yet.
+import java.io.IOException;
+import java.util.Properties;
+
+public abstract class FetcherConfig {
+    private String fetcherId;
+
+    abstract public String getPluginId();
+
+    public String getFetcherId() {
+        return fetcherId;
+    }
+
+    public FetcherConfig setFetcherId(String fetcherId) {
+        this.fetcherId = fetcherId;
+        return this;
+    }
+
+    public static String getPluginIdForFetcherConfig(Class<?> clazz) {
+        Properties properties = new Properties();
+        try {
+            properties.load(clazz.getResourceAsStream("/plugin.properties"));
+            return properties.getProperty("plugin.id");
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot find plugin.properties for plugin", e);
+        }
+    }
 }

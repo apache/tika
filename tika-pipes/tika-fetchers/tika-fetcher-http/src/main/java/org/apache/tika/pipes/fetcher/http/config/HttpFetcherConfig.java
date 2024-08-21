@@ -19,9 +19,16 @@ package org.apache.tika.pipes.fetcher.http.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
-public class HttpFetcherConfig extends AbstractConfig {
+public class HttpFetcherConfig extends FetcherConfig {
+
+    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(HttpFetcherConfig.class);
+
+    @Override
+    public String getPluginId() {
+        return PLUGIN_ID;
+    }
     private String userName;
     private String password;
     private String ntDomain;

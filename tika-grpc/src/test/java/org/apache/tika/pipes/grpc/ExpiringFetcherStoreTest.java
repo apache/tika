@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
 class ExpiringFetcherStoreTest {
 
@@ -42,7 +42,7 @@ class ExpiringFetcherStoreTest {
                 }
             };
             fetcher.setName("nick");
-            AbstractConfig config = new AbstractConfig() {
+            FetcherConfig config = new FetcherConfig() {
             };
             expiringFetcherStore.createFetcher(fetcher, config);
 

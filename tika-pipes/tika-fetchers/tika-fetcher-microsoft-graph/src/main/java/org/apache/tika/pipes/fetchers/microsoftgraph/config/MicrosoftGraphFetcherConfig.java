@@ -19,9 +19,15 @@ package org.apache.tika.pipes.fetchers.microsoftgraph.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
-public class MicrosoftGraphFetcherConfig extends AbstractConfig {
+public class MicrosoftGraphFetcherConfig extends FetcherConfig {
+
+    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(MicrosoftGraphFetcherConfig.class);
+    @Override
+    public String getPluginId() {
+        return PLUGIN_ID;
+    }
     private long[] throttleSeconds;
     private boolean spoolToTemp;
     private ClientSecretCredentialsConfig clientSecretCredentialsConfig;

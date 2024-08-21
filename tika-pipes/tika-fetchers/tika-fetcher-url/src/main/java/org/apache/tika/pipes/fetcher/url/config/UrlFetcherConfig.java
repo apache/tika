@@ -16,8 +16,14 @@
  */
 package org.apache.tika.pipes.fetcher.url.config;
 
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
-public class UrlFetcherConfig extends AbstractConfig {
-    // no fetcher config needed at this time.
+public class UrlFetcherConfig extends FetcherConfig {
+
+    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(UrlFetcherConfig.class);
+
+    @Override
+    public String getPluginId() {
+        return PLUGIN_ID;
+    }
 }
