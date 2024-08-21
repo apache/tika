@@ -180,7 +180,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     private final Set<COSBase> extractedFiles = new HashSet<>();
     //zero-based pageIndex
     int pageIndex = 0;
-    int startPage = -1;
     //private in PDFTextStripper...must have own copy because we override processpages
     int unmappedUnicodeCharsPerPage = 0;
     int totalCharsPerPage = 0;
@@ -1358,18 +1357,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      */
     @Override
     protected void processPages(PDPageTree pages) throws IOException {
-        //we currently need this hack because we aren't able to increment
-        //the private currentPageNo in PDFTextStripper,
-        //and PDFTextStripper's processPage relies on that variable
-        //being >= startPage when deciding whether or not to process a page
-        // See:
-        // if (currentPageNo >= startPage && currentPageNo <= endPage
-        //                && (startBookmarkPageNumber == -1 ||
-        //                currentPageNo >= startBookmarkPageNumber)
-        //                && (endBookmarkPageNumber == -1 ||
-        //                currentPageNo <= endBookmarkPageNumber))
-        //        {
-        super.setStartPage(1);
         for (PDPage page : pages) {
             if (getCurrentPageNo() >= getStartPage() && getCurrentPageNo() <= getEndPage()) {
                 processPage(page);
@@ -1392,15 +1379,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                         "to implement this.");
     }
 
-    @Override
-    public int getStartPage() {
-        return startPage;
-    }
-
-    @Override
-    public void setStartPage(int startPage) {
-        this.startPage = startPage;
-    }
 
     @Override
     protected void showGlyph(Matrix textRenderingMatrix, PDFont font, int code,
