@@ -108,7 +108,7 @@ public class FetcherStreamFactory implements InputStreamFactory {
                 Fetcher fetcher = fetcherManager.getFetcher(fetcherName);
                 if (fetchRangeStart > -1 && fetchRangeEnd > -1 && !(fetcher instanceof RangeFetcher)) {
                     throw new IllegalArgumentException(
-                            "Can't call a fetch with a range on a fetcher that" + " is not a RangeFetcher: name=" + fetcher.getName() + " class=" + fetcher.getClass());
+                            "Can't call a fetch with a range on a fetcher that" + " is not a RangeFetcher: pluginId=" + fetcher.getPluginId() + " class=" + fetcher.getClass());
                 }
                 return fetcher.fetch(fetchKey, metadata, parseContext);
             } catch (TikaException e) {

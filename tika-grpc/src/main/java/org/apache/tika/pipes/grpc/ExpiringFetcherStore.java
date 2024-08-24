@@ -29,14 +29,12 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.pipes.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
 public class ExpiringFetcherStore implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(ExpiringFetcherStore.class);
     public static final long EXPIRE_JOB_INITIAL_DELAY = 1L;
-    private final Map<String, AbstractFetcher> fetchers = Collections.synchronizedMap(new HashMap<>());
-    private final Map<String, AbstractConfig> fetcherConfigs = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, FetcherConfig> fetcherConfigs = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, Instant> fetcherLastAccessed = Collections.synchronizedMap(new HashMap<>());
 
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -44,18 +42,18 @@ public class ExpiringFetcherStore implements AutoCloseable {
     public ExpiringFetcherStore(int expireAfterSeconds, int checkForExpiredFetchersDelaySeconds) {
         executorService.scheduleAtFixedRate(() -> {
             Set<String> expired = new HashSet<>();
-            for (String fetcherName : fetchers.keySet()) {
-                Instant lastAccessed = fetcherLastAccessed.get(fetcherName);
+            for (String fetcherId : fetcherConfigs.keySet()) {
+                Instant lastAccessed = fetcherLastAccessed.get(fetcherId);
                 if (lastAccessed == null) {
-                    LOG.error("Detected a fetcher with no last access time. FetcherName={}", fetcherName);
-                    expired.add(fetcherName);
+                    LOG.error("Detected a fetcher with no last access time. fetcherId={}", fetcherId);
+                    expired.add(fetcherId);
                 } else if (Instant
                         .now()
                         .isAfter(lastAccessed.plusSeconds(expireAfterSeconds))) {
-                    LOG.info("Detected stale fetcher {} hasn't been accessed in {} seconds. " + "Deleting.", fetcherName, Instant
+                    LOG.info("Detected stale fetcher {} hasn't been accessed in {} seconds. " + "Deleting.", fetcherId, Instant
                             .now()
                             .getEpochSecond() - lastAccessed.getEpochSecond());
-                    expired.add(fetcherName);
+                    expired.add(fetcherId);
                 }
             }
             for (String expiredFetcherId : expired) {
@@ -64,18 +62,13 @@ public class ExpiringFetcherStore implements AutoCloseable {
         }, EXPIRE_JOB_INITIAL_DELAY, checkForExpiredFetchersDelaySeconds, TimeUnit.SECONDS);
     }
 
-    public boolean deleteFetcher(String fetcherName) {
-        boolean success = fetchers.remove(fetcherName) != null;
-        fetcherConfigs.remove(fetcherName);
-        fetcherLastAccessed.remove(fetcherName);
+    public boolean deleteFetcher(String fetcherId) {
+        boolean success = fetcherConfigs.remove(fetcherId) != null;
+        fetcherLastAccessed.remove(fetcherId);
         return success;
     }
 
-    public Map<String, AbstractFetcher> getFetchers() {
-        return fetchers;
-    }
-
-    public Map<String, AbstractConfig> getFetcherConfigs() {
+    public Map<String, FetcherConfig> getFetcherConfigs() {
         return fetcherConfigs;
     }
 
@@ -83,15 +76,15 @@ public class ExpiringFetcherStore implements AutoCloseable {
      * This method will get the fetcher, but will also log the access the fetcher as having
      * been accessed. This prevents the scheduled job from removing the stale fetcher.
      */
-    public <T extends AbstractFetcher> T getFetcherAndLogAccess(String fetcherName) {
-        fetcherLastAccessed.put(fetcherName, Instant.now());
-        return (T) fetchers.get(fetcherName);
+    public <C extends FetcherConfig> C getFetcherAndLogAccess(String fetcherId) {
+        fetcherLastAccessed.put(fetcherId, Instant.now());
+        return (C) fetcherConfigs.get(fetcherId);
     }
 
-    public <T extends AbstractFetcher, C extends AbstractConfig> void createFetcher(T fetcher, C config) {
-        fetchers.put(fetcher.getName(), fetcher);
-        fetcherConfigs.put(fetcher.getName(), config);
-        getFetcherAndLogAccess(fetcher.getName());
+    public <C extends FetcherConfig> void createFetcher(String fetcherId, C config) {
+        config.setFetcherId(fetcherId);
+        fetcherConfigs.put(fetcherId, config);
+        getFetcherAndLogAccess(fetcherId);
     }
 
     @Override

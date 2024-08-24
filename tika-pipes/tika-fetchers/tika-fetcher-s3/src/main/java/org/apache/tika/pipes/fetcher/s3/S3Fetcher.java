@@ -41,6 +41,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
+import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +67,7 @@ import org.apache.tika.utils.StringUtils;
  * The bucket must be specified via the tika-config or before
  * initialization, and the fetch key is "path/to/my_file.pdf".
  */
+@Extension
 public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFetcher {
     public S3Fetcher() {
 

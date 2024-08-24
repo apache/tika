@@ -58,6 +58,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.conn.ConnectionShutdownException;
 import org.apache.http.util.EntityUtils;
+import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,6 +89,7 @@ import org.apache.tika.utils.StringUtils;
 /**
  * Based on Apache httpclient
  */
+@Extension
 public class HttpFetcher extends AbstractFetcher implements Initializable, RangeFetcher {
     public HttpFetcher() {
 

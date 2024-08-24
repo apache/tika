@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Locale;
 
+import org.pf4j.Extension;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -33,6 +35,7 @@ import org.apache.tika.pipes.fetcher.AbstractFetcher;
  * Please use the FileSystemFetcher for that.  If you need more advanced control (passwords,
  * timeouts, proxies, etc), please use the tika-fetcher-http module.
  */
+@Extension
 public class UrlFetcher extends AbstractFetcher {
 
     @Override

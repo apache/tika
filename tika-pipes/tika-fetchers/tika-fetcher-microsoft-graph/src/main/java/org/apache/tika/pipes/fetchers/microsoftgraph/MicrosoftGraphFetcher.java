@@ -24,6 +24,7 @@ import java.util.Map;
 import com.azure.identity.ClientCertificateCredentialBuilder;
 import com.azure.identity.ClientSecretCredentialBuilder;
 import com.microsoft.graph.serviceclient.GraphServiceClient;
+import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +45,7 @@ import org.apache.tika.pipes.fetchers.microsoftgraph.config.MicrosoftGraphFetche
  * Fetches files from Microsoft Graph API.
  * Fetch keys are ${siteDriveId},${driveItemId}
  */
+@Extension
 public class MicrosoftGraphFetcher extends AbstractFetcher implements Initializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(MicrosoftGraphFetcher.class);
     private GraphServiceClient graphClient;

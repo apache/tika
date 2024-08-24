@@ -29,6 +29,7 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.azure.storage.blob.models.BlobProperties;
+import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +57,7 @@ import org.apache.tika.utils.StringUtils;
  * 2) If you have different endpoints or sas tokens or containers across
  * your requests, your fetchKey will be the complete SAS url pointing to the blob.
  */
+@Extension
 public class AZBlobFetcher extends AbstractFetcher implements Initializable {
     public AZBlobFetcher() {
 

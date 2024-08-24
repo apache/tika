@@ -47,15 +47,15 @@ public class FetcherManager extends ConfigBase {
 
     public FetcherManager(List<Fetcher> fetchers) throws TikaConfigException {
         for (Fetcher fetcher : fetchers) {
-            String name = fetcher.getName();
+            String name = fetcher.getPluginId();
             if (name == null || name.trim().length() == 0) {
                 throw new TikaConfigException("fetcher name must not be blank");
             }
-            if (fetcherMap.containsKey(fetcher.getName())) {
+            if (fetcherMap.containsKey(fetcher.getPluginId())) {
                 throw new TikaConfigException(
-                        "Multiple fetchers cannot support the same prefix: " + fetcher.getName());
+                        "Multiple fetchers cannot support the same prefix: " + fetcher.getPluginId());
             }
-            fetcherMap.put(fetcher.getName(), fetcher);
+            fetcherMap.put(fetcher.getPluginId(), fetcher);
         }
     }
 

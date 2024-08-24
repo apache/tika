@@ -16,29 +16,23 @@
  */
 package org.apache.tika.pipes.fetcher;
 
-import org.apache.tika.config.Field;
-
-
 public abstract class AbstractFetcher implements Fetcher {
 
-    private String name;
+    private String pluginId;
 
     public AbstractFetcher() {
 
     }
 
-    public AbstractFetcher(String name) {
-        this.name = name;
+    public AbstractFetcher(String pluginId) {
+        this.pluginId = pluginId;
     }
 
-    @Override
-    public String getName() {
-        return name;
+    public String getPluginId() {
+        return pluginId;
     }
 
-    @Field
-    public void setName(String name) {
-        this.name = name;
+    public void setPluginId(String pluginId) {
+        this.pluginId = pluginId;
     }
-
 }

@@ -14,8 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetcher.config;
+package org.apache.tika.pipes.grpc.exception;
 
-public abstract class AbstractConfig {
-    //  Nothing to do here yet.
+public class TikaGrpcException extends RuntimeException {
+    public TikaGrpcException(Throwable cause) {
+        super(cause);
+    }
+
+    public TikaGrpcException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public TikaGrpcException(String message) {
+        super(message);
+    }
 }

@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -34,24 +33,11 @@ import org.apache.tika.pipes.async.AsyncConfig;
 import org.apache.tika.pipes.async.MockReporter;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.EmitterManager;
-import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
-import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
 
 public class TikaPipesConfigTest extends AbstractTikaConfigTest {
     //this handles tests for the newer pipes type configs.
-
-    @Test
-    public void testFetchers() throws Exception {
-        FetcherManager m = FetcherManager.load(getConfigFilePath("fetchers-config.xml"));
-        Fetcher f1 = m.getFetcher("fs1");
-        assertEquals(Paths.get("/my/base/path1"), ((FileSystemFetcher) f1).getBasePath());
-
-        Fetcher f2 = m.getFetcher("fs2");
-        assertEquals(Paths.get("/my/base/path2"), ((FileSystemFetcher) f2).getBasePath());
-    }
-
     @Test
     public void testDuplicateFetchers() throws Exception {
         //can't have two fetchers with the same name

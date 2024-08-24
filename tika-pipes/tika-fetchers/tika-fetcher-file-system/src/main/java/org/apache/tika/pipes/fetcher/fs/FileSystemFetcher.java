@@ -27,6 +27,7 @@ import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import java.util.Map;
 
+import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +46,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.fs.config.FileSystemFetcherConfig;
 
+@Extension
 public class FileSystemFetcher extends AbstractFetcher implements Initializable {
     public FileSystemFetcher() {
     }

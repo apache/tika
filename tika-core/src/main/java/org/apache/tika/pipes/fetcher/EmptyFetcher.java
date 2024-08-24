@@ -25,9 +25,11 @@ import org.apache.tika.parser.ParseContext;
 
 public class EmptyFetcher implements Fetcher {
 
+    public static final String PLUGIN_ID = "empty-fetcher";
+
     @Override
-    public String getName() {
-        return "empty";
+    public String getPluginId() {
+        return PLUGIN_ID;
     }
 
     @Override

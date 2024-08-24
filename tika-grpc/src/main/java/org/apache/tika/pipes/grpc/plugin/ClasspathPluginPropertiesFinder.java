@@ -14,29 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetcher.fs.config;
+package org.apache.tika.pipes.grpc.plugin;
 
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-public class FileSystemFetcherConfig extends AbstractConfig {
-    private String basePath;
-    private boolean extractFileSystemMetadata;
+import org.pf4j.PropertiesPluginDescriptorFinder;
 
-    public String getBasePath() {
-        return basePath;
-    }
-
-    public FileSystemFetcherConfig setBasePath(String basePath) {
-        this.basePath = basePath;
-        return this;
-    }
-
-    public boolean isExtractFileSystemMetadata() {
-        return extractFileSystemMetadata;
-    }
-
-    public FileSystemFetcherConfig setExtractFileSystemMetadata(boolean extractFileSystemMetadata) {
-        this.extractFileSystemMetadata = extractFileSystemMetadata;
-        return this;
+public class ClasspathPluginPropertiesFinder extends PropertiesPluginDescriptorFinder {
+    @Override
+    protected Path getPropertiesPath(Path pluginPath, String propertiesFileName) {
+        Path propertiesPath = super.getPropertiesPath(pluginPath, propertiesFileName);
+        if (!propertiesPath.toFile().exists()) {
+            // If in development mode, we can also pull the plugin.properties from $pluginDir/src/main/resources/plugin.properties
+            propertiesPath = Paths.get(propertiesPath.getParent().toAbsolutePath().toString(), "src", "main", "resources", "plugin.properties");
+        }
+        return propertiesPath;
     }
 }

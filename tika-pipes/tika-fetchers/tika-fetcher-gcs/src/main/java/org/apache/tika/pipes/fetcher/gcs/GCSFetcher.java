@@ -27,6 +27,7 @@ import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +47,7 @@ import org.apache.tika.pipes.fetcher.gcs.config.GCSFetcherConfig;
 /**
  * Fetches files from google cloud storage. Must set projectId and bucket via the config.
  */
+@Extension
 public class GCSFetcher extends AbstractFetcher implements Initializable {
     public GCSFetcher() {
 
