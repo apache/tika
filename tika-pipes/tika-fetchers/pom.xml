@@ -38,7 +38,7 @@
     <module>tika-fetcher-gcs</module>
     <module>tika-fetcher-az-blob</module>
     <module>tika-fetcher-microsoft-graph</module>
-    <module>tika-fetcher-fs</module>
+    <module>tika-fetcher-file-system</module>
     <module>tika-fetcher-url</module>
   </modules>
 

@@ -20,7 +20,7 @@ import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
 public class GCSFetcherConfig extends FetcherConfig {
 
-    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(GCSFetcherConfig.class);
+    public static final String PLUGIN_ID = "gcs-fetcher";
 
     @Override
     public String getPluginId() {

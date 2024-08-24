@@ -35,13 +35,11 @@ import io.grpc.TlsServerCredentials;
 import io.grpc.protobuf.services.HealthStatusManager;
 import io.grpc.protobuf.services.ProtoReflectionService;
 import org.pf4j.PluginManager;
-import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
-import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.grpc.plugin.GrpcPluginManager;
 
 /**
@@ -110,16 +108,6 @@ public class TikaGrpcServer {
         pluginManager.loadPlugins();
         LOGGER.info("Loaded {} plugins", pluginManager.getPlugins().size());
         pluginManager.startPlugins();
-        for (PluginWrapper plugin : pluginManager.getStartedPlugins()) {
-            LOGGER.info("Add-in " + plugin.getPluginId() + " : " + plugin.getDescriptor() + " has started.");
-            for (Class<?> extension : pluginManager.getExtensionClasses(plugin.getPluginId())) {
-                LOGGER.info("    Extension " + extension + " has been registered -- {}", extension.isAssignableFrom(Fetcher.class));
-                LOGGER.info("     or                                             -- {}", Fetcher.class.isAssignableFrom(extension));
-            }
-        }
-        for (PluginWrapper plugin : pluginManager.getUnresolvedPlugins()) {
-            LOGGER.warn("Add-in " + plugin.getPluginId() + " : " + plugin.getDescriptor() + " is unresolved.");
-        }
         File tikaConfigFile = new File(tikaConfigXml.getAbsolutePath());
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);
         server = Grpc

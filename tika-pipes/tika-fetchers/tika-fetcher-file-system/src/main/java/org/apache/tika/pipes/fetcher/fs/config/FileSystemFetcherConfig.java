@@ -20,7 +20,7 @@ import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
 public class FileSystemFetcherConfig extends FetcherConfig {
 
-    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(FileSystemFetcherConfig.class);
+    public static final String PLUGIN_ID = "file-system-fetcher";
 
     @Override
     public String getPluginId() {

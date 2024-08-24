@@ -55,7 +55,7 @@ import org.apache.tika.FetchAndParseRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
-import org.apache.tika.pipes.fetcher.http.HttpFetcher;
+import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 
 /**
  * This test will start an HTTP server using jetty.
@@ -155,7 +155,7 @@ class PipesBiDirectionalStreamingIntegrationTest {
         SaveFetcherRequest saveFetcherRequest = SaveFetcherRequest
                 .newBuilder()
                 .setFetcherId(httpFetcherId)
-                .setFetcherClass(HttpFetcher.class.getName())
+                .setPluginId(HttpFetcherConfig.PLUGIN_ID)
                 .setFetcherConfigJson(OBJECT_MAPPER.writeValueAsString(ImmutableMap
                         .builder()
                         .put("requestTimeout", 30_000)

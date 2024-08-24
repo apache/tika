@@ -220,7 +220,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         FetcherConfig fetcherConfig =
                 expiringFetcherStore.getFetcherAndLogAccess(request.getFetcherId());
         if (fetcherConfig == null) {
-            throw new RuntimeException(
+            throw new TikaGrpcException(
                     "Could not find fetcher with name " + request.getFetcherId());
         }
         Metadata tikaMetadata = new Metadata();
@@ -258,7 +258,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             }
             responseObserver.onNext(fetchReplyBuilder.build());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new TikaGrpcException(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -276,7 +276,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             saveFetcher(request.getFetcherId(), request.getPluginId(), fetcherConfigMap, tikaParamsMap);
             updateTikaConfig();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new TikaGrpcException(e);
         }
         responseObserver.onNext(reply);
         responseObserver.onCompleted();
@@ -389,7 +389,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             try {
                 updateTikaConfig();
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new TikaGrpcException(e);
             }
         }
         responseObserver.onNext(DeleteFetcherReply.newBuilder().setSuccess(successfulDelete).build());
@@ -404,7 +404,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             JsonSchema jsonSchema = JSON_SCHEMA_GENERATOR.generateSchema(fetcher.getClass());
             builder.setFetcherConfigJsonSchema(OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonSchema));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Could not create json schema for fetcher with plugin ID " + request.getPluginId(), e);
+            throw new TikaGrpcException("Could not create json schema for fetcher with plugin ID " + request.getPluginId(), e);
         }
         responseObserver.onNext(builder.build());
         responseObserver.onCompleted();
@@ -414,7 +414,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         return pluginManager.getExtensions(Fetcher.class, pluginId)
                             .stream()
                             .findFirst()
-                            .orElseThrow();
+                            .orElseThrow(() -> new TikaGrpcException("Could not find Fetcher extension for plugin " + pluginId));
     }
 
     @Override

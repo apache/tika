@@ -23,7 +23,7 @@ import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
 public class HttpFetcherConfig extends FetcherConfig {
 
-    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(HttpFetcherConfig.class);
+    public static final String PLUGIN_ID = "http-fetcher";
 
     @Override
     public String getPluginId() {

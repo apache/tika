@@ -26,7 +26,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-fetcher-fs</artifactId>
+  <artifactId>tika-fetcher-file-system</artifactId>
   <name>Apache Tika FS Fetcher</name>
   <description>Apache Tika Pipes Fetcher for Local File System</description>
 
@@ -58,7 +58,7 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
           <descriptors>
-            <descriptor>${project.basedir}/src/assembly/assembly.xml</descriptor>
+            <descriptor>src/main/assembly/assembly.xml</descriptor>
           </descriptors>
           <appendAssemblyId>false</appendAssemblyId>
         </configuration>

@@ -20,7 +20,7 @@ import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
 public class S3FetcherConfig extends FetcherConfig {
 
-    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(S3FetcherConfig.class);
+    public static final String PLUGIN_ID = "s3-fetcher";
 
     @Override
     public String getPluginId() {

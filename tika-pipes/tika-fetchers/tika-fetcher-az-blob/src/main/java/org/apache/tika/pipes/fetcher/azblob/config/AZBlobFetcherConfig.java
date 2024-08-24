@@ -20,7 +20,7 @@ import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
 public class AZBlobFetcherConfig extends FetcherConfig {
 
-    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(AZBlobFetcherConfig.class);
+    public static final String PLUGIN_ID = "az-blob-fetcher";
 
     @Override
     public String getPluginId() {

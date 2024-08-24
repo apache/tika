@@ -20,7 +20,7 @@ import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
 public class UrlFetcherConfig extends FetcherConfig {
 
-    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(UrlFetcherConfig.class);
+    public static final String PLUGIN_ID = "url-fetcher";
 
     @Override
     public String getPluginId() {

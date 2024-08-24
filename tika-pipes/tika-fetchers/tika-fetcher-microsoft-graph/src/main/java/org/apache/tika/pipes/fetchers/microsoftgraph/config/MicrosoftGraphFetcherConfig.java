@@ -23,7 +23,7 @@ import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 
 public class MicrosoftGraphFetcherConfig extends FetcherConfig {
 
-    public static final String PLUGIN_ID = getPluginIdForFetcherConfig(MicrosoftGraphFetcherConfig.class);
+    public static final String PLUGIN_ID = "microsoft-graph-fetcher";
     @Override
     public String getPluginId() {
         return PLUGIN_ID;
