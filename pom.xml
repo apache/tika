@@ -115,6 +115,13 @@
                         <include name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}-bin.zip*" />
                         <include name="tika-eval/tika-eval-app/target/tika-eval-app-${project.version}.jar*" />
                         <include name="tika-grpc/target/tika-grpc-${project.version}.zip*" />
+                        <include name="tika-pipes/tika-fetchers/tika-fetcher-microsoft-graph/target/tika-fetcher-microsoft-graph-${project.version}.zip*" />
+                        <include name="tika-pipes/tika-fetchers/tika-fetcher-s3/target/tika-fetcher-s3-${project.version}.zip*" />
+                        <include name="tika-pipes/tika-fetchers/tika-fetcher-az-blob/target/tika-fetcher-az-blob-${project.version}.zip*" />
+                        <include name="tika-pipes/tika-fetchers/tika-fetcher-gcs/target/tika-fetcher-gcs-${project.version}.zip*" />
+                        <include name="tika-pipes/tika-fetchers/tika-fetcher-file-system/target/tika-fetcher-file-system-${project.version}.zip*" />
+                        <include name="tika-pipes/tika-fetchers/tika-fetcher-url/target/tika-fetcher-url-${project.version}.zip*" />
+                        <include name="tika-pipes/tika-fetchers/tika-fetcher-http/target/tika-fetcher-http-${project.version}.zip*" />
                       </fileset>
                     </copy>
                     <checksum algorithm="SHA-512" fileext=".sha512">
