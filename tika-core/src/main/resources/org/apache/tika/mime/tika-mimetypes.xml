@@ -5880,6 +5880,7 @@
   <mime-type type="audio/vnd.vmx.cvsd"/>
   <mime-type type="audio/vorbis-config"/>
   <mime-type type="audio/x-aac">
+    <alias type="audio/aac"/>
     <glob pattern="*.aac"/>
     <magic priority="30">
       <!-- Without ID3 tags -->
