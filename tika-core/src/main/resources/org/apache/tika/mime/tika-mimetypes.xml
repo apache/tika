@@ -5957,6 +5957,7 @@
   </mime-type>
 
   <mime-type type="audio/x-flac">
+    <alias type="audio/flac" />
     <acronym>FLAC</acronym>
     <_comment>Free Lossless Audio Codec</_comment>
     <magic priority="50">
