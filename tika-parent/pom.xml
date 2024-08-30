@@ -414,7 +414,7 @@
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <zstd.version>1.5.6-4</zstd.version>
+    <zstd.version>1.5.6-5</zstd.version>
     <kafka.version>3.8.0</kafka.version>
     <!-- 4.2.0.Alpha2 tested successfully -->
     <netty.version>4.1.112.Final</netty.version>
