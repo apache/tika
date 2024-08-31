@@ -336,7 +336,7 @@
     <commons.exec.version>1.4.0</commons.exec.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <commons.io.version>2.16.1</commons.io.version>
-    <commons.lang3.version>3.16.0</commons.lang3.version>
+    <commons.lang3.version>3.17.0</commons.lang3.version>
     <commons.logging.version>1.3.4</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.11.1</commons.net.version>
@@ -358,6 +358,7 @@
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.22.0</jackrabbit.version>
+    <!-- 2.18.0-rc1 tested successfully -->
     <jackson.version>2.17.2</jackson.version>
     <jackcess.version>4.0.7</jackcess.version>
     <jackcess.encrypt.version>4.0.2</jackcess.encrypt.version>
