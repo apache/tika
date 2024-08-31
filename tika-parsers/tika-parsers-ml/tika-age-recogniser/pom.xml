@@ -92,6 +92,12 @@
         <artifactId>jackson-mapper-asl</artifactId>
         <version>1.9.13</version>
       </dependency>
+      <!-- avoid convergence error with hadoop-yarn-common vs jackson-module-jaxb-annotations -->
+      <dependency>
+        <groupId>javax.xml.bind</groupId>
+        <artifactId>jaxb-api</artifactId>
+        <version>2.3.1</version>
+      </dependency>
 
       <!-- avoid conflicts because of age-predictor-api -->
       <dependency>
