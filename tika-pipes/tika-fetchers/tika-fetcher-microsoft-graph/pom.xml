@@ -39,9 +39,20 @@
     <wiremock.version>3.3.1</wiremock.version>
     <mockito-junit-jupiter.version>5.13.0</mockito-junit-jupiter.version>
     <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
-    <msal4j.version>1.17.0</msal4j.version>
+    <msal4j.version>1.17.1</msal4j.version>
     <kotlin-stdlib.version>2.0.20</kotlin-stdlib.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+	  <!-- Dependency convergence error oauth2-oidc-sdk vs msal4j TODO check after msal4j update -->
+      <dependency>
+        <groupId>net.minidev</groupId>
+        <artifactId>json-smart</artifactId>
+        <version>2.5.1</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
