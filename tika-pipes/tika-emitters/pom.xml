@@ -42,6 +42,15 @@
     <module>tika-emitter-jdbc</module>
   </modules>
 
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-pipes-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
   <scm>
     <tag>3.0.0-BETA2-rc1</tag>
   </scm>

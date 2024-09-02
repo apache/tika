@@ -23,7 +23,7 @@ public class AZBlobFetcherConfig extends FetcherConfig {
     public static final String PLUGIN_ID = "az-blob-fetcher";
 
     @Override
-    public String getPluginId() {
+    public String getFetcherPluginId() {
         return PLUGIN_ID;
     }
 

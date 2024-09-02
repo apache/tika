@@ -22,6 +22,7 @@ import java.io.InputStream;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.AbstractEmbeddedDocumentBytesHandler;
+import org.apache.tika.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;

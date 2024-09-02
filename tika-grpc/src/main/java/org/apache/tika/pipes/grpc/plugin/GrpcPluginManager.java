@@ -70,7 +70,9 @@ public class GrpcPluginManager extends DefaultPluginManager {
     private void checkFetcherExtensions(PluginWrapper plugin) {
         for (Class<?> extensionClass : getExtensionClasses(Fetcher.class, plugin.getPluginId())) {
             if (!Fetcher.class.isAssignableFrom(extensionClass)) {
-                throw new TikaGrpcException("Something is wrong with the classpath. " + Fetcher.class.getName() + " should be assignable from " + extensionClass.getName() + ". Did tika-core accidentally get in your plugin lib?");
+                throw new TikaGrpcException("Something is wrong with the classpath. " + Fetcher.class.getName() +
+                        " should be assignable from " + extensionClass.getName() +
+                        ". Did tika-core accidentally get in your plugin lib?");
             }
             LOGGER.info("    Extension " + extensionClass + " has been registered to plugin " + plugin.getPluginId());
         }

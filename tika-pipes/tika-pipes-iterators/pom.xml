@@ -44,6 +44,14 @@
     <module>tika-pipes-iterator-az-blob</module>
   </modules>
 
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-pipes-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+
   <scm>
     <tag>3.0.0-BETA2-rc1</tag>
   </scm>

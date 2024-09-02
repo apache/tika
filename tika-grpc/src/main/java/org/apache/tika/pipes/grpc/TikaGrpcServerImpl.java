@@ -139,7 +139,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             fetchersElement.removeChild(fetchersElement.getChildNodes().item(i));
         }
         for (var fetcherConfigEntry : expiringFetcherStore.getFetcherConfigs().entrySet()) {
-            Fetcher fetcherObject = getFetcher(fetcherConfigEntry.getValue().getPluginId());
+            Fetcher fetcherObject = getFetcher(fetcherConfigEntry.getValue().getFetcherPluginId());
             Map<String, Object> fetcherConfigParams = OBJECT_MAPPER.convertValue(
                     expiringFetcherStore.getFetcherConfigs().get(fetcherConfigEntry.getKey()),
                     new TypeReference<>() {
@@ -218,7 +218,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private void fetchAndParseImpl(FetchAndParseRequest request,
                                    StreamObserver<FetchAndParseReply> responseObserver) {
         FetcherConfig fetcherConfig =
-                expiringFetcherStore.getFetcherAndLogAccess(request.getFetcherId());
+                expiringFetcherStore.getFetcherConfigAndLogAccess(request.getFetcherId());
         if (fetcherConfig == null) {
             throw new TikaGrpcException(
                     "Could not find fetcher with name " + request.getFetcherId());
@@ -339,7 +339,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             return;
         }
         getFetcherReply.setFetcherId(request.getFetcherId());
-        getFetcherReply.setPluginId(fetcherConfig.getPluginId());
+        getFetcherReply.setPluginId(fetcherConfig.getFetcherPluginId());
         Map<String, Object> paramMap = OBJECT_MAPPER.convertValue(fetcherConfig, new TypeReference<>() {});
         paramMap.forEach(
                 (k, v) -> getFetcherReply.putParams(Objects.toString(k), Objects.toString(v)));
@@ -364,7 +364,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             Map.Entry<String, FetcherConfig> fetcherConfigEntry) {
         FetcherConfig fetcherConfig = fetcherConfigEntry.getValue();
         GetFetcherReply.Builder replyBuilder =
-                GetFetcherReply.newBuilder().setPluginId(fetcherConfig.getPluginId())
+                GetFetcherReply.newBuilder().setPluginId(fetcherConfig.getFetcherPluginId())
                         .setFetcherId(fetcherConfig.getFetcherId());
         loadParamsIntoReply(fetcherConfig, replyBuilder);
         return replyBuilder;

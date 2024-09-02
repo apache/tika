@@ -26,7 +26,7 @@ public class HttpFetcherConfig extends FetcherConfig {
     public static final String PLUGIN_ID = "http-fetcher";
 
     @Override
-    public String getPluginId() {
+    public String getFetcherPluginId() {
         return PLUGIN_ID;
     }
     private String userName;

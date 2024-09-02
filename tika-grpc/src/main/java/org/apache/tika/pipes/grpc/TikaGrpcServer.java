@@ -106,7 +106,6 @@ public class TikaGrpcServer {
         }
         pluginManager = pluginDirs == null ? new GrpcPluginManager() : new GrpcPluginManager(pluginDirs);
         pluginManager.loadPlugins();
-        LOGGER.info("Loaded {} plugins", pluginManager.getPlugins().size());
         pluginManager.startPlugins();
         File tikaConfigFile = new File(tikaConfigXml.getAbsolutePath());
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);

@@ -68,7 +68,7 @@ class ExpiringFetcherStoreTest {
         fetcher.setPluginId("nicksPlugin");
         return new FetcherConfig() {
             @Override
-            public String getPluginId() {
+            public String getFetcherPluginId() {
                 return fetcher.getPluginId();
             }
         };

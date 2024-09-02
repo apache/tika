@@ -76,7 +76,7 @@ public class ExpiringFetcherStore implements AutoCloseable {
      * This method will get the fetcher, but will also log the access the fetcher as having
      * been accessed. This prevents the scheduled job from removing the stale fetcher.
      */
-    public <C extends FetcherConfig> C getFetcherAndLogAccess(String fetcherId) {
+    public <C extends FetcherConfig> C getFetcherConfigAndLogAccess(String fetcherId) {
         fetcherLastAccessed.put(fetcherId, Instant.now());
         return (C) fetcherConfigs.get(fetcherId);
     }
@@ -84,7 +84,7 @@ public class ExpiringFetcherStore implements AutoCloseable {
     public <C extends FetcherConfig> void createFetcher(String fetcherId, C config) {
         config.setFetcherId(fetcherId);
         fetcherConfigs.put(fetcherId, config);
-        getFetcherAndLogAccess(fetcherId);
+        getFetcherConfigAndLogAccess(fetcherId);
     }
 
     @Override

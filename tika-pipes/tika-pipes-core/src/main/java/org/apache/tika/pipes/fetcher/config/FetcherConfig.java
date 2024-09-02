@@ -19,7 +19,7 @@ package org.apache.tika.pipes.fetcher.config;
 public abstract class FetcherConfig {
     private String fetcherId;
 
-    abstract public String getPluginId();
+    abstract public String getFetcherPluginId();
 
     public String getFetcherId() {
         return fetcherId;

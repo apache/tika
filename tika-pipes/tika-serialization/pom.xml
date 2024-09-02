@@ -24,9 +24,9 @@
 
   <parent>
     <groupId>org.apache.tika</groupId>
-    <artifactId>tika-parent</artifactId>
+    <artifactId>tika-pipes</artifactId>
     <version>3.0.0-SNAPSHOT</version>
-    <relativePath>../tika-parent/pom.xml</relativePath>
+    <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>tika-serialization</artifactId>
@@ -44,6 +44,12 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-pipes-core</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

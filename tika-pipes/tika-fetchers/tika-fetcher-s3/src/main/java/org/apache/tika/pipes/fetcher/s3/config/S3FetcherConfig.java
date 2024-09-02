@@ -23,7 +23,7 @@ public class S3FetcherConfig extends FetcherConfig {
     public static final String PLUGIN_ID = "s3-fetcher";
 
     @Override
-    public String getPluginId() {
+    public String getFetcherPluginId() {
         return PLUGIN_ID;
     }
     private boolean spoolToTemp;
