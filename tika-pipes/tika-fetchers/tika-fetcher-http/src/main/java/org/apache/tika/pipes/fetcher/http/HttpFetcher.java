@@ -169,9 +169,18 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                 throw new TikaException("Could not generate JWT", e);
             }
         }
+        placeHeadersOnGetRequest(httpGet);
     }
 
-    private static void placeHeaderOnGetRequest(HttpGet get, String httpRequestHeader) {
+    private void placeHeadersOnGetRequest(HttpGet httpGet) {
+        if (httpFetcherConfig.getHttpRequestHeaders() != null) {
+            for (String httpRequestHeader : httpFetcherConfig.getHttpRequestHeaders()) {
+                placeHeaderOnGetRequest(httpGet, httpRequestHeader);
+            }
+        }
+    }
+
+    private void placeHeaderOnGetRequest(HttpGet httpGet, String httpRequestHeader) {
         int idxOfEquals = httpRequestHeader.indexOf(':');
         if (idxOfEquals == -1) {
             return;
@@ -182,8 +191,9 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         String headerValue = httpRequestHeader
                 .substring(idxOfEquals + 1)
                 .trim();
-        get.setHeader(headerKey, headerValue);
+        httpGet.setHeader(headerKey, headerValue);
     }
+
 
     private InputStream execute(HttpGet get, Metadata metadata, HttpClient client, boolean retryOnBadLength) throws IOException {
         HttpClientContext context = HttpClientContext.create();
@@ -299,7 +309,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                     .getValue());
         }
 
-        //load headers
+        //load response headers
         if (httpFetcherConfig.getHttpHeaders() != null) {
             for (String h : httpFetcherConfig.getHttpHeaders()) {
                 Header[] headers = response.getHeaders(h);
