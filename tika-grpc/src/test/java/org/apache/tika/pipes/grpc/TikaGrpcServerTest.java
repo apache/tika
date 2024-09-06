@@ -49,12 +49,10 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +68,6 @@ import org.apache.tika.TikaGrpc;
 import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 import org.apache.tika.pipes.fetcher.fs.config.FileSystemFetcherConfig;
-import org.apache.tika.pipes.grpc.plugin.GrpcPluginManager;
 
 @ExtendWith(GrpcCleanupExtension.class)
 public class TikaGrpcServerTest {
@@ -89,21 +86,11 @@ public class TikaGrpcServerTest {
     }
 
     static final int NUM_FETCHERS_TO_CREATE = 10;
-    static PluginManager pluginManager;
+    static List<Path> pluginDirs;
 
     @BeforeAll
-    static void loadPluginManager() throws Exception {
-        System.setProperty("pf4j.mode", "development"); // Development mode lets you work from source dir easier.
-        Path fetchersPath = Path.of("..", "tika-pipes", "tika-fetchers");
-        LOG.info("Using pf4j in development mode using plugins dir: {}", fetchersPath.toFile().getCanonicalPath());
-        pluginManager = new GrpcPluginManager(fetchersPath);
-        pluginManager.loadPlugins();
-        pluginManager.startPlugins();
-    }
-
-    @AfterAll
-    static void killPluginManager() {
-        pluginManager.stopPlugins();
+    static void loadPluginManager() {
+        pluginDirs = Collections.singletonList(Path.of("..", "tika-pipes", "tika-fetchers"));
     }
 
     @Test
@@ -114,7 +101,7 @@ public class TikaGrpcServerTest {
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath(), pluginManager))
+                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath(), pluginDirs))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -209,7 +196,7 @@ public class TikaGrpcServerTest {
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath(), pluginManager))
+                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath(), pluginDirs))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));

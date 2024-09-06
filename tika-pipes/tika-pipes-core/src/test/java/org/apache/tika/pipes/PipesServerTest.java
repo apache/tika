@@ -29,6 +29,9 @@ import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.pf4j.PluginManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.BasicEmbeddedDocumentBytesHandler;
@@ -37,10 +40,11 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.plugin.TikaPluginManager;
 
 public class PipesServerTest extends TikaTest {
+    private static final Logger LOG = LoggerFactory.getLogger(PipesServerTest.class);
 
     /**
      * This test is useful for stepping through the debugger on PipesServer
@@ -64,16 +68,24 @@ public class PipesServerTest extends TikaTest {
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
                 new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
-                -1, 30000, 30000);
+                -1, 30000, 30000, null);
 
         pipesServer.initializeResources();
 
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fs", "mock.xml"),
                 new EmitKey("", ""));
-        Fetcher fetcher = FetcherManager.load(tikaConfig).getFetcher();
+
+        System.setProperty("pf4j.mode", "development"); // Development mode lets you work from source dir easier.
+        Path fetchersPath = Path.of("..", "tika-fetchers");
+        LOG.info("Using pf4j in development mode using plugins dir: {}", fetchersPath.toFile().getCanonicalPath());
+        PluginManager pluginManager = new TikaPluginManager(fetchersPath);
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+        FetcherManager fetcherManager = FetcherManager.load(pluginManager);
+
         PipesServer.MetadataListAndEmbeddedBytes
-                parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
+                parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcherManager.getFetcher("file-system-fetcher"));
         assertEquals("5f3b924303e960ce35d7f705e91d3018dd110a9c3cef0546a91fe013d6dad6fd",
                 parseData.metadataList.get(0).get("X-TIKA:digest:SHA-256"));
     }
@@ -99,7 +111,7 @@ public class PipesServerTest extends TikaTest {
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
                 new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
-                -1, 30000, 30000);
+                -1, 30000, 30000, null);
 
         pipesServer.initializeResources();
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig =
@@ -111,9 +123,16 @@ public class PipesServerTest extends TikaTest {
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fs", "mock.xml"),
                 new EmitKey("", ""), new Metadata(), parseContext);
-        Fetcher fetcher = FetcherManager.load(tikaConfig).getFetcher();
+        System.setProperty("pf4j.mode", "development"); // Development mode lets you work from source dir easier.
+        Path fetchersPath = Path.of("..", "..");
+        LOG.info("Using pf4j in development mode using plugins dir: {}", fetchersPath.toFile().getCanonicalPath());
+        PluginManager pluginManager = new TikaPluginManager(fetchersPath);
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+        FetcherManager fetcherManager = FetcherManager.load(pluginManager);
+
         PipesServer.MetadataListAndEmbeddedBytes
-                parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
+                parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcherManager.getFetcher());
         assertEquals(2, parseData.metadataList.size());
 
         byte[] bytes0 =
@@ -155,7 +174,7 @@ public class PipesServerTest extends TikaTest {
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
                 new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
-                -1, 30000, 30000);
+                -1, 30000, 30000, null);
 
         pipesServer.initializeResources();
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig =
@@ -168,9 +187,16 @@ public class PipesServerTest extends TikaTest {
                 new FetchKey("fs", "mock.xml"),
                 new EmitKey("", ""), new Metadata(), parseContext);
 
-        Fetcher fetcher = FetcherManager.load(tikaConfig).getFetcher();
+        System.setProperty("pf4j.mode", "development"); // Development mode lets you work from source dir easier.
+        Path fetchersPath = Path.of("..", "..");
+        LOG.info("Using pf4j in development mode using plugins dir: {}", fetchersPath.toFile().getCanonicalPath());
+        PluginManager pluginManager = new TikaPluginManager(fetchersPath);
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+        FetcherManager fetcherManager = FetcherManager.load(pluginManager);
+
         PipesServer.MetadataListAndEmbeddedBytes
-                parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
+                parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcherManager.getFetcher());
         assertEquals(2, parseData.metadataList.size());
 
         byte[] bytes0 =

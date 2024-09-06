@@ -38,8 +38,12 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.pf4j.PluginManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -51,11 +55,25 @@ import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.pipes.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.plugin.TikaPluginManager;
 
 @Disabled("turn these into actual tests with mock s3")
 public class PipeIntegrationTests {
+    private static final Logger LOG = LoggerFactory.getLogger(PipeIntegrationTests.class);
 
     private static final Path OUTDIR = Paths.get("");
+
+    PluginManager pluginManager;
+
+    @BeforeEach
+    void init() throws IOException {
+        System.setProperty("pf4j.mode", "development"); // Development mode lets you work from source dir easier.
+        Path fetchersPath = Path.of("..", "..");
+        LOG.info("Using pf4j in development mode using plugins dir: {}", fetchersPath.toFile().getCanonicalPath());
+        pluginManager = new TikaPluginManager(fetchersPath);
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+    }
 
     @Test
     public void testBruteForce() throws Exception {
@@ -146,7 +164,7 @@ public class PipeIntegrationTests {
     }
 
     private Fetcher getFetcher(String fileName, String fetcherName) throws Exception {
-        FetcherManager manager = FetcherManager.load(getPath(fileName));
+        FetcherManager manager = FetcherManager.load(pluginManager);
         return manager.getFetcher(fetcherName);
     }
 

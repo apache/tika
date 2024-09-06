@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -561,6 +562,9 @@ public class PipesClient implements Closeable {
         commandLine.add(Long.toString(pipesConfig.getMaxForEmitBatchBytes()));
         commandLine.add(Long.toString(pipesConfig.getTimeoutMillis()));
         commandLine.add(Long.toString(pipesConfig.getShutdownClientAfterMillis()));
+        for (Path pluginDir : pipesConfig.getPluginDirs()) {
+            commandLine.add(ProcessUtils.escapeCommandLine(pluginDir.toAbsolutePath().toString()));
+        }
         LOG.debug("pipesClientId={}: commandline: {}", pipesClientId, commandLine);
         return commandLine.toArray(new String[0]);
     }

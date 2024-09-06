@@ -28,7 +28,6 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -60,6 +59,9 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.pf4j.PluginManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.client.HttpClientFactory;
@@ -74,8 +76,10 @@ import org.apache.tika.pipes.fetcher.config.FetcherConfigContainer;
 import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 import org.apache.tika.pipes.fetcher.http.config.HttpHeaders;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
+import org.apache.tika.pipes.plugin.TikaPluginManager;
 
 class HttpFetcherTest extends TikaTest {
+    private static final Logger LOG = LoggerFactory.getLogger(HttpFetcherTest.class);
     private static final String TEST_URL = "wontbecalled";
     private static final String CONTENT = "request content";
 
@@ -266,9 +270,13 @@ class HttpFetcherTest extends TikaTest {
     }
 
     FetcherManager getFetcherManager(String path) throws Exception {
-        return FetcherManager.load(Paths.get(HttpFetcherTest.class
-                .getResource("/" + path)
-                .toURI()));
+        System.setProperty("pf4j.mode", "development"); // Development mode lets you work from source dir easier.
+        Path fetchersPath = Path.of("..", "..");
+        LOG.info("Using pf4j in development mode using plugins dir: {}", fetchersPath.toFile().getCanonicalPath());
+        PluginManager pluginManager = new TikaPluginManager(fetchersPath);
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+        return FetcherManager.load(pluginManager);
     }
 
     private void mockClientResponse(final HttpResponse response) throws Exception {

@@ -43,8 +43,8 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.PipesReporterBase;
 import org.apache.tika.pipes.PipesResult;
+import org.apache.tika.pipes.reporter.PipesReporterBase;
 import org.apache.tika.utils.StringUtils;
 
 /**

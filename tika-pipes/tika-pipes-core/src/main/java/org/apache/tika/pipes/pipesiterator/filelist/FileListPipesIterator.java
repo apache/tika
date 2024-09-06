@@ -59,7 +59,7 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
     private Path fileListPath;
 
     @Override
-    protected void enqueue() throws IOException, TimeoutException, InterruptedException {
+    public void enqueue() throws IOException, TimeoutException, InterruptedException {
         try (BufferedReader reader = Files.newBufferedReader(fileListPath, StandardCharsets.UTF_8)) {
             if (hasHeader) {
                 reader.readLine();

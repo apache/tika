@@ -170,7 +170,7 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
     }
 
     @Override
-    protected void enqueue() throws InterruptedException, IOException, TimeoutException {
+    public void enqueue() throws InterruptedException, IOException, TimeoutException {
         String fetcherName = getFetcherName();
         String emitterName = getEmitterName();
 

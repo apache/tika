@@ -21,21 +21,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.pf4j.PluginManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.plugin.TikaPluginManager;
 
 @Disabled("write actual unit tests")
 public class TestGCSFetcher {
+    private static final Logger LOG = LoggerFactory.getLogger(TestGCSFetcher.class);
 
     private static final String FETCH_STRING = "testExtraSpaces.pdf";
 
@@ -48,11 +52,15 @@ public class TestGCSFetcher {
         outputFile = Files.createTempFile(TEMP_DIR, "tika-test", ".pdf");
     }
 
-
     @Test
     public void testConfig() throws Exception {
-        FetcherManager fetcherManager = FetcherManager.load(
-                Paths.get(this.getClass().getResource("/tika-config-gcs.xml").toURI()));
+        System.setProperty("pf4j.mode", "development"); // Development mode lets you work from source dir easier.
+        Path fetchersPath = Path.of("..", "..");
+        LOG.info("Using pf4j in development mode using plugins dir: {}", fetchersPath.toFile().getCanonicalPath());
+        PluginManager pluginManager = new TikaPluginManager(fetchersPath);
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+        FetcherManager fetcherManager = FetcherManager.load(pluginManager);
         Fetcher fetcher = fetcherManager.getFetcher("gcs");
         Metadata metadata = new Metadata();
         try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, new ParseContext())) {

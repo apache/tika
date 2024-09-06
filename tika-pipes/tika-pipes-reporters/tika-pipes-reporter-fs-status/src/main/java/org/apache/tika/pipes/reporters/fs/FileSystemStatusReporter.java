@@ -40,10 +40,10 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.PipesReporter;
 import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.async.AsyncStatus;
 import org.apache.tika.pipes.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.reporter.PipesReporter;
 import org.apache.tika.utils.ExceptionUtils;
 
 /**

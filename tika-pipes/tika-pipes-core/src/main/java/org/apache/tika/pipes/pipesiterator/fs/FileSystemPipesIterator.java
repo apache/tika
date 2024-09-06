@@ -72,7 +72,7 @@ public class FileSystemPipesIterator extends PipesIterator
     }
 
     @Override
-    protected void enqueue() throws InterruptedException, IOException, TimeoutException {
+    public void enqueue() throws InterruptedException, IOException, TimeoutException {
         if (!Files.isDirectory(basePath)) {
             throw new IllegalArgumentException(
                     "\"basePath\" directory does not exist: " + basePath.toAbsolutePath());

@@ -34,10 +34,11 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.pf4j.PluginManager;
 
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.plugin.TikaPluginManager;
 import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 
@@ -81,10 +82,16 @@ public class TikaResourceFetcherTest extends CXFTestBase {
 
     @Override
     protected InputStreamFactory getInputStreamFactory(InputStream is) {
+        System.setProperty("pf4j.mode", "development"); // Development mode lets you work from source dir easier.
+        Path fetchersPath = Path.of("..", "..");
+        PluginManager pluginManager = new TikaPluginManager(fetchersPath);
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+        FetcherManager fetcherManager = FetcherManager.load(pluginManager);
+
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            FetcherManager fetcherManager = FetcherManager.load(tis.getPath());
             return new FetcherStreamFactory(fetcherManager);
-        } catch (IOException | TikaConfigException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

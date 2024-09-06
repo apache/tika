@@ -23,7 +23,7 @@ import java.nio.file.Path;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.PipesConfigBase;
-import org.apache.tika.pipes.PipesReporter;
+import org.apache.tika.pipes.reporter.PipesReporter;
 
 public class AsyncConfig extends PipesConfigBase {
 

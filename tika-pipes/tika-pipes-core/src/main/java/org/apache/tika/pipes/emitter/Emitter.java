@@ -19,10 +19,12 @@ package org.apache.tika.pipes.emitter;
 import java.io.IOException;
 import java.util.List;
 
+import org.pf4j.ExtensionPoint;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
-public interface Emitter {
+public interface Emitter extends ExtensionPoint {
 
     String getName();
 

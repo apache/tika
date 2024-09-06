@@ -21,30 +21,39 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.pf4j.PluginManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.plugin.TikaPluginManager;
 import org.apache.tika.serialization.JsonMetadataList;
 
 @Disabled("write actual unit tests")
 public class TestAZBlobFetcher extends TikaTest {
+    private static final Logger LOG = LoggerFactory.getLogger(TestAZBlobFetcher.class);
 
     private static final String FETCH_STRING = "something-or-other/test-out.json";
 
     @Test
     public void testConfig() throws Exception {
-        FetcherManager fetcherManager = FetcherManager.load(Paths.get(this
-                .getClass()
-                .getResource("/tika-config-az-blob.xml")
-                .toURI()));
+        System.setProperty("pf4j.mode", "development"); // Development mode lets you work from source dir easier.
+        Path fetchersPath = Path.of("..", "..");
+        LOG.info("Using pf4j in development mode using plugins dir: {}", fetchersPath.toFile().getCanonicalPath());
+        PluginManager pluginManager = new TikaPluginManager(fetchersPath);
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+        FetcherManager fetcherManager = FetcherManager.load(pluginManager);
+
         Fetcher fetcher = fetcherManager.getFetcher("az-blob");
         List<Metadata> metadataList = null;
         try (Reader reader = new BufferedReader(new InputStreamReader(fetcher.fetch(FETCH_STRING, new Metadata(), new ParseContext()), StandardCharsets.UTF_8))) {

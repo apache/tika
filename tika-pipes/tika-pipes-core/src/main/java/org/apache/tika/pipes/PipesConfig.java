@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -34,6 +36,10 @@ public class PipesConfig extends PipesConfigBase {
     private long maxWaitForClientMillis = 60000;
 
     public static PipesConfig load(Path tikaConfig) throws IOException, TikaConfigException {
+        return load(tikaConfig, new ArrayList<>());
+    }
+
+    public static PipesConfig load(Path tikaConfig, List<Path> pluginDirs) throws IOException, TikaConfigException {
         PipesConfig pipesConfig = new PipesConfig();
         try (InputStream is = Files.newInputStream(tikaConfig)) {
             Set<String> settings = pipesConfig.configure("pipes", is);

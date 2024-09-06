@@ -17,38 +17,27 @@
 package org.apache.tika.pipes.grpc;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
 import com.google.rpc.Status;
 import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.DeleteFetcherReply;
@@ -66,7 +55,6 @@ import org.apache.tika.ListFetchersRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
-import org.apache.tika.config.Initializable;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -77,7 +65,6 @@ import org.apache.tika.pipes.PipesConfig;
 import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.config.FetcherConfig;
 import org.apache.tika.pipes.fetcher.config.FetcherConfigContainer;
 import org.apache.tika.pipes.grpc.exception.TikaGrpcException;
@@ -90,8 +77,6 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     }
     public static final JsonSchemaGenerator JSON_SCHEMA_GENERATOR = new JsonSchemaGenerator(OBJECT_MAPPER);
 
-    private final PluginManager pluginManager;
-
     /**
      * FetcherID is key, The pair is the Fetcher object and the Metadata
      */
@@ -99,9 +84,10 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     PipesClient pipesClient;
     ExpiringFetcherStore expiringFetcherStore;
 
+
     String tikaConfigPath;
 
-    TikaGrpcServerImpl(String tikaConfigPath, PluginManager pluginManager) throws TikaConfigException, IOException,
+    TikaGrpcServerImpl(String tikaConfigPath, List<Path> pluginDirs) throws TikaConfigException, IOException,
             ParserConfigurationException, TransformerException, SAXException {
         File tikaConfigFile = new File(tikaConfigPath);
         if (!tikaConfigFile.canWrite()) {
@@ -113,72 +99,72 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             tikaConfigFile = tmpTikaConfigFile;
             tikaConfigPath = tikaConfigFile.getAbsolutePath();
         }
-        pipesConfig = PipesConfig.load(tikaConfigFile.toPath());
+        pipesConfig = PipesConfig.load(tikaConfigFile.toPath(), pluginDirs);
         pipesClient = new PipesClient(pipesConfig);
 
         expiringFetcherStore = new ExpiringFetcherStore(pipesConfig.getStaleFetcherTimeoutSeconds(),
                 pipesConfig.getStaleFetcherDelaySeconds());
 
         this.tikaConfigPath = tikaConfigPath;
-        updateTikaConfig();
-
-        this.pluginManager = pluginManager;
     }
-
-    private void updateTikaConfig()
-            throws ParserConfigurationException, IOException, SAXException, TransformerException {
-        Document tikaConfigDoc =
-                DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(tikaConfigPath);
-
-        Element fetchersElement = (Element) tikaConfigDoc.getElementsByTagName("fetchers").item(0);
-        if (fetchersElement == null) {
-            fetchersElement = tikaConfigDoc.createElement("fetchers");
-            tikaConfigDoc.getDocumentElement().appendChild(fetchersElement);
-        }
-        for (int i = 0; i < fetchersElement.getChildNodes().getLength(); ++i) {
-            fetchersElement.removeChild(fetchersElement.getChildNodes().item(i));
-        }
-        for (var fetcherConfigEntry : expiringFetcherStore.getFetcherConfigs().entrySet()) {
-            Fetcher fetcherObject = getFetcher(fetcherConfigEntry.getValue().getFetcherPluginId());
-            Map<String, Object> fetcherConfigParams = OBJECT_MAPPER.convertValue(
-                    expiringFetcherStore.getFetcherConfigs().get(fetcherConfigEntry.getKey()),
-                    new TypeReference<>() {
-                    });
-            Element fetcher = tikaConfigDoc.createElement("fetcher");
-            fetcher.setAttribute("class", fetcherObject.getClass().getName());
-            Element pluginIdElm = tikaConfigDoc.createElement("pluginId");
-            pluginIdElm.setTextContent(fetcherObject.getPluginId());
-            fetcher.appendChild(pluginIdElm);
-            populateFetcherConfigs(fetcherConfigParams, tikaConfigDoc, fetcher);
-            fetchersElement.appendChild(fetcher);
-        }
-        DOMSource source = new DOMSource(tikaConfigDoc);
-        FileWriter writer = new FileWriter(tikaConfigPath, StandardCharsets.UTF_8);
-        StreamResult result = new StreamResult(writer);
-
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
-        transformer.transform(source, result);
-    }
-
-    private void populateFetcherConfigs(Map<String, Object> fetcherConfigParams,
-                                        Document tikaConfigDoc, Element fetcher) {
-        for (var configParam : fetcherConfigParams.entrySet()) {
-            Element configElm = tikaConfigDoc.createElement(configParam.getKey());
-            fetcher.appendChild(configElm);
-            if (configParam.getValue() instanceof List) {
-                List configParamVal = (List) configParam.getValue();
-                String singularName = configParam.getKey().substring(0, configParam.getKey().length() - 1);
-                for (Object configParamObj : configParamVal) {
-                    Element childElement = tikaConfigDoc.createElement(singularName);
-                    childElement.setTextContent(Objects.toString(configParamObj));
-                    configElm.appendChild(childElement);
-                }
-            } else {
-                configElm.setTextContent(Objects.toString(configParam.getValue()));
-            }
-        }
-    }
+//
+//
+//    private void updateTikaConfig()
+//            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+//        Document tikaConfigDoc =
+//                DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(tikaConfigPath);
+//
+//        Element fetchersElement = (Element) tikaConfigDoc.getElementsByTagName("fetchers").item(0);
+//        if (fetchersElement == null) {
+//            fetchersElement = tikaConfigDoc.createElement("fetchers");
+//            tikaConfigDoc.getDocumentElement().appendChild(fetchersElement);
+//        }
+//        for (int i = 0; i < fetchersElement.getChildNodes().getLength(); ++i) {
+//            fetchersElement.removeChild(fetchersElement.getChildNodes().item(i));
+//        }
+//        for (var fetcherConfigEntry : expiringFetcherStore.getFetcherConfigs().entrySet()) {
+//            Fetcher fetcherObject = getFetcher(fetcherConfigEntry.getValue().getFetcherPluginId());
+//            Map<String, Object> fetcherConfigParams = OBJECT_MAPPER.convertValue(
+//                    expiringFetcherStore.getFetcherConfigs().get(fetcherConfigEntry.getKey()),
+//                    new TypeReference<>() {
+//                    });
+//            Element fetcher = tikaConfigDoc.createElement("fetcher");
+//            fetcher.setAttribute("class", fetcherConfigEntry.getValue().getClass().getName());
+//
+//            Element fetcherIdElm = tikaConfigDoc.createElement("fetcherId");
+//            fetcherIdElm.setTextContent(fetcherObject.getPluginId());
+//            fetcher.appendChild(fetcherIdElm);
+//
+//            populateFetcherConfigs(fetcherConfigParams, tikaConfigDoc, fetcher);
+//            fetchersElement.appendChild(fetcher);
+//        }
+//        DOMSource source = new DOMSource(tikaConfigDoc);
+//        FileWriter writer = new FileWriter(tikaConfigPath, StandardCharsets.UTF_8);
+//        StreamResult result = new StreamResult(writer);
+//
+//        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+//        Transformer transformer = transformerFactory.newTransformer();
+//        transformer.transform(source, result);
+//    }
+//
+//    private void populateFetcherConfigs(Map<String, Object> fetcherConfigParams,
+//                                        Document tikaConfigDoc, Element fetcher) {
+//        for (var configParam : fetcherConfigParams.entrySet()) {
+//            Element configElm = tikaConfigDoc.createElement(configParam.getKey());
+//            fetcher.appendChild(configElm);
+//            if (configParam.getValue() instanceof List) {
+//                List configParamVal = (List) configParam.getValue();
+//                String singularName = configParam.getKey().substring(0, configParam.getKey().length() - 1);
+//                for (Object configParamObj : configParamVal) {
+//                    Element childElement = tikaConfigDoc.createElement(singularName);
+//                    childElement.setTextContent(Objects.toString(configParamObj));
+//                    configElm.appendChild(childElement);
+//                }
+//            } else {
+//                configElm.setTextContent(Objects.toString(configParam.getValue()));
+//            }
+//        }
+//    }
 
     @Override
     public void fetchAndParseServerSideStreaming(FetchAndParseRequest request,
@@ -268,47 +254,47 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void saveFetcher(SaveFetcherRequest request,
                               StreamObserver<SaveFetcherReply> responseObserver) {
-        SaveFetcherReply reply =
-                SaveFetcherReply.newBuilder().setFetcherId(request.getFetcherId()).build();
-        try {
-            Map<String, Object> fetcherConfigMap = OBJECT_MAPPER.readValue(request.getFetcherConfigJson(), new TypeReference<>() {});
-            Map<String, Param> tikaParamsMap = createTikaParamMap(fetcherConfigMap);
-            saveFetcher(request.getFetcherId(), request.getPluginId(), fetcherConfigMap, tikaParamsMap);
-            updateTikaConfig();
-        } catch (Exception e) {
-            throw new TikaGrpcException(e);
-        }
-        responseObserver.onNext(reply);
-        responseObserver.onCompleted();
+//        SaveFetcherReply reply =
+//                SaveFetcherReply.newBuilder().setFetcherId(request.getFetcherId()).build();
+//        try {
+//            Map<String, Object> fetcherConfigMap = OBJECT_MAPPER.readValue(request.getFetcherConfigJson(), new TypeReference<>() {});
+//            Map<String, Param> tikaParamsMap = createTikaParamMap(fetcherConfigMap);
+//            saveFetcher(request.getFetcherId(), request.getPluginId(), fetcherConfigMap, tikaParamsMap);
+//            updateTikaConfig();
+//        } catch (Exception e) {
+//            throw new TikaGrpcException(e);
+//        }
+//        responseObserver.onNext(reply);
+//        responseObserver.onCompleted();
     }
 
     private void saveFetcher(String fetcherId, String pluginId, Map<String, Object> paramsMap, Map<String, Param> tikaParamsMap) {
-        try {
-            if (paramsMap == null) {
-                paramsMap = new LinkedHashMap<>();
-            }
-            Fetcher fetcher = getFetcher(pluginId);
-            Class<? extends Fetcher> fetcherClass = fetcher.getClass();
-            String configClassName =
-                    fetcherClass.getPackageName() + ".config." + fetcherClass.getSimpleName() +
-                            "Config";
-
-            Class<? extends FetcherConfig> configClass =
-                    (Class<? extends FetcherConfig>) Class.forName(configClassName, true, fetcher.getClass().getClassLoader());
-            FetcherConfig configObject = OBJECT_MAPPER.convertValue(paramsMap, configClass);
-            if (Initializable.class.isAssignableFrom(fetcherClass)) {
-                Initializable initializable = (Initializable) fetcher;
-                initializable.initialize(tikaParamsMap);
-            }
-            if (expiringFetcherStore.deleteFetcher(fetcherId)) {
-                LOG.info("Updating fetcher {}", fetcherId);
-            } else {
-                LOG.info("Creating new fetcher {}", fetcherId);
-            }
-            expiringFetcherStore.createFetcher(fetcherId, configObject);
-        } catch (ClassNotFoundException | TikaConfigException e) {
-            throw new TikaGrpcException("Could not create fetcher", e);
-        }
+//        try {
+//            if (paramsMap == null) {
+//                paramsMap = new LinkedHashMap<>();
+//            }
+//            Fetcher fetcher = getFetcher(pluginId);
+//            Class<? extends Fetcher> fetcherClass = fetcher.getClass();
+//            String configClassName =
+//                    fetcherClass.getPackageName() + ".config." + fetcherClass.getSimpleName() +
+//                            "Config";
+//
+//            Class<? extends FetcherConfig> configClass =
+//                    (Class<? extends FetcherConfig>) Class.forName(configClassName, true, fetcher.getClass().getClassLoader());
+//            FetcherConfig configObject = OBJECT_MAPPER.convertValue(paramsMap, configClass);
+//            if (Initializable.class.isAssignableFrom(fetcherClass)) {
+//                Initializable initializable = (Initializable) fetcher;
+//                initializable.initialize(tikaParamsMap);
+//            }
+//            if (expiringFetcherStore.deleteFetcher(fetcherId)) {
+//                LOG.info("Updating fetcher {}", fetcherId);
+//            } else {
+//                LOG.info("Creating new fetcher {}", fetcherId);
+//            }
+//            expiringFetcherStore.createFetcher(fetcherId, configObject);
+//        } catch (ClassNotFoundException | TikaConfigException e) {
+//            throw new TikaGrpcException("Could not create fetcher", e);
+//        }
     }
 
     private static Map<String, Param> createTikaParamMap(Map<String, Object> fetcherConfigMap) {
@@ -386,11 +372,11 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                               StreamObserver<DeleteFetcherReply> responseObserver) {
         boolean successfulDelete = deleteFetcher(request.getFetcherId());
         if (successfulDelete) {
-            try {
-                updateTikaConfig();
-            } catch (Exception e) {
-                throw new TikaGrpcException(e);
-            }
+//            try {
+//                updateTikaConfig();
+//            } catch (Exception e) {
+//                throw new TikaGrpcException(e);
+//            }
         }
         responseObserver.onNext(DeleteFetcherReply.newBuilder().setSuccess(successfulDelete).build());
         responseObserver.onCompleted();
@@ -398,33 +384,21 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     @Override
     public void getFetcherConfigJsonSchema(GetFetcherConfigJsonSchemaRequest request, StreamObserver<GetFetcherConfigJsonSchemaReply> responseObserver) {
-        GetFetcherConfigJsonSchemaReply.Builder builder = GetFetcherConfigJsonSchemaReply.newBuilder();
-        try {
-            Fetcher fetcher = getFetcher(request.getPluginId());
-            JsonSchema jsonSchema = JSON_SCHEMA_GENERATOR.generateSchema(fetcher.getClass());
-            builder.setFetcherConfigJsonSchema(OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonSchema));
-        } catch (JsonProcessingException e) {
-            throw new TikaGrpcException("Could not create json schema for fetcher with plugin ID " + request.getPluginId(), e);
-        }
-        responseObserver.onNext(builder.build());
-        responseObserver.onCompleted();
-    }
-
-    private Fetcher getFetcher(String pluginId) {
-        return pluginManager.getExtensions(Fetcher.class, pluginId)
-                            .stream()
-                            .findFirst()
-                            .orElseThrow(() -> new TikaGrpcException("Could not find Fetcher extension for plugin " + pluginId));
+//        GetFetcherConfigJsonSchemaReply.Builder builder = GetFetcherConfigJsonSchemaReply.newBuilder();
+//        try {
+//            Fetcher fetcher = getFetcher(request.getPluginId());
+//            JsonSchema jsonSchema = JSON_SCHEMA_GENERATOR.generateSchema(fetcher.getClass());
+//            builder.setFetcherConfigJsonSchema(OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonSchema));
+//        } catch (JsonProcessingException e) {
+//            throw new TikaGrpcException("Could not create json schema for fetcher with plugin ID " + request.getPluginId(), e);
+//        }
+//        responseObserver.onNext(builder.build());
+//        responseObserver.onCompleted();
     }
 
     @Override
     public void listFetcherPlugins(ListFetcherPluginsRequest request, StreamObserver<ListFetcherPluginsReply> responseObserver) {
-        for (Fetcher fetcher : pluginManager.getExtensions(Fetcher.class)) {
-            responseObserver.onNext(ListFetcherPluginsReply.newBuilder()
-                                                           .setFetcherPluginId(fetcher.getPluginId())
-                                                           .build());
-        }
-
+        // todo
     }
 
     private boolean deleteFetcher(String fetcherName) {

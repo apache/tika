@@ -16,18 +16,15 @@
  */
 package org.apache.tika.pipes.fetcher;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import org.pf4j.PluginManager;
 
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
+import org.apache.tika.pipes.exception.PipesRuntimeException;
+import org.apache.tika.pipes.plugin.TikaPluginManager;
 
 /**
  * Utility class to hold multiple fetchers.
@@ -35,42 +32,32 @@ import org.apache.tika.exception.TikaException;
  * This forbids multiple fetchers supporting the same name.
  */
 public class FetcherManager extends ConfigBase {
+    private final PluginManager pluginManager;
 
-    public static FetcherManager load(Path p) throws IOException, TikaConfigException {
-        try (InputStream is =
-                     Files.newInputStream(p)) {
-            return FetcherManager.buildComposite("fetchers", FetcherManager.class,
-                    "fetcher", Fetcher.class, is);
-        }
-    }
-    private final Map<String, Fetcher> fetcherMap = new ConcurrentHashMap<>();
-
-    public FetcherManager(List<Fetcher> fetchers) throws TikaConfigException {
-        for (Fetcher fetcher : fetchers) {
-            String name = fetcher.getPluginId();
-            if (name == null || name.trim().length() == 0) {
-                throw new TikaConfigException("fetcher name must not be blank");
-            }
-            if (fetcherMap.containsKey(fetcher.getPluginId())) {
-                throw new TikaConfigException(
-                        "Multiple fetchers cannot support the same prefix: " + fetcher.getPluginId());
-            }
-            fetcherMap.put(fetcher.getPluginId(), fetcher);
-        }
+    public FetcherManager() throws TikaConfigException {
+        pluginManager = new TikaPluginManager();
     }
 
-    public Fetcher getFetcher(String fetcherName) throws IOException, TikaException {
-        Fetcher fetcher = fetcherMap.get(fetcherName);
-        if (fetcher == null) {
-            throw new IllegalArgumentException(
-                    "Can't find fetcher for fetcherName: " + fetcherName + ". I've loaded: " +
-                            fetcherMap.keySet());
-        }
-        return fetcher;
+    public FetcherManager(PluginManager pluginManager) {
+        this.pluginManager = pluginManager;
+    }
+
+    public static FetcherManager load(PluginManager pluginManager) {
+        return new FetcherManager(pluginManager);
+    }
+
+    public Fetcher getFetcher(String pluginId) {
+        return pluginManager.getExtensions(Fetcher.class, pluginId)
+                            .stream()
+                            .findFirst()
+                            .orElseThrow(() -> new PipesRuntimeException("Could not find Fetcher extension for plugin " + pluginId));
     }
 
     public Set<String> getSupported() {
-        return fetcherMap.keySet();
+        return pluginManager.getExtensions(Fetcher.class)
+                            .stream()
+                            .map(Fetcher::getPluginId)
+                            .collect(Collectors.toSet());
     }
 
     /**
@@ -80,17 +67,9 @@ public class FetcherManager extends ConfigBase {
      * @return
      */
     public Fetcher getFetcher() {
-        if (fetcherMap.size() == 0) {
-            throw new IllegalArgumentException("fetchers size must == 1 for the no arg call");
-        }
-        if (fetcherMap.size() > 1) {
-            throw new IllegalArgumentException("need to specify 'fetcherName' if > 1 fetchers are" +
-                    " available");
-        }
-        for (Fetcher fetcher : fetcherMap.values()) {
-            return fetcher;
-        }
-        //this should be unreachable?!
-        throw new IllegalArgumentException("fetchers size must == 0");
+        return pluginManager.getExtensions(Fetcher.class)
+                            .stream()
+                            .findFirst()
+                            .orElseThrow(() -> new PipesRuntimeException("Could not find any instances of the Fetcher extension"));
     }
 }

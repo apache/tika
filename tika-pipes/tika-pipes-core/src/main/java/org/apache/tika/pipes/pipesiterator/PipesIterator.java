@@ -41,6 +41,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
+import org.apache.tika.pipes.pipesiterator.fs.IPipesIterator;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
 /**
@@ -51,7 +52,7 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
  * next() is called after hasNext() has returned false.
  */
 public abstract class PipesIterator extends ConfigBase
-        implements Callable<Integer>, Iterable<FetchEmitTuple>, Initializable  {
+        implements IPipesIterator, Callable<Integer>, Iterable<FetchEmitTuple>, Initializable {
 
     public static final long DEFAULT_MAX_WAIT_MS = 300_000;
     public static final int DEFAULT_QUEUE_SIZE = 1000;
@@ -177,9 +178,7 @@ public abstract class PipesIterator extends ConfigBase
         return new HandlerConfig(handlerType, parseMode, writeLimit, maxEmbeddedResources,
                 throwOnWriteLimitReached);
     }
-
-    protected abstract void enqueue() throws IOException, TimeoutException, InterruptedException;
-
+    
     protected void tryToAdd(FetchEmitTuple p) throws InterruptedException, TimeoutException {
         added++;
         boolean offered = queue.offer(p, maxWaitMs, TimeUnit.MILLISECONDS);

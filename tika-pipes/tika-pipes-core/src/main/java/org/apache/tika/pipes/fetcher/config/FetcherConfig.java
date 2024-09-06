@@ -21,6 +21,10 @@ public abstract class FetcherConfig {
 
     abstract public String getFetcherPluginId();
 
+    public void setFetcherPluginId(String fetcherPluginId) {
+        // no op - we put this here to appease the ConfigBase
+    }
+
     public String getFetcherId() {
         return fetcherId;
     }

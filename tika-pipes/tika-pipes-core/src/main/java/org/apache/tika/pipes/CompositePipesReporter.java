@@ -27,6 +27,7 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.reporter.PipesReporter;
 
 public class CompositePipesReporter extends PipesReporter implements Initializable {
 

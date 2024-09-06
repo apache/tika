@@ -50,6 +50,12 @@
       <artifactId>tika-pipes-core</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.pf4j</groupId>
+      <artifactId>pf4j</artifactId>
+      <!-- !!! VERY IMPORTANT -->
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <scm>

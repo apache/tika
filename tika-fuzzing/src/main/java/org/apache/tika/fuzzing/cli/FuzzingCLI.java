@@ -77,7 +77,7 @@ public class FuzzingCLI {
         ArrayBlockingQueue<FetchEmitTuple> q = new ArrayBlockingQueue(10000);
 
         PipesConfig pipesConfig = PipesConfig.load(config.getTikaConfig());
-        FetcherManager fetcherManager = FetcherManager.load(config.getTikaConfig());
+        FetcherManager fetcherManager = new FetcherManager();
 
         int totalThreads = pipesConfig.getNumClients() + 1;
 

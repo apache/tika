@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.grpc.plugin;
+package org.apache.tika.pipes.plugin;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -26,19 +26,19 @@ import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.pipes.exception.PipesRuntimeException;
 import org.apache.tika.pipes.fetcher.Fetcher;
-import org.apache.tika.pipes.grpc.exception.TikaGrpcException;
 
-public class GrpcPluginManager extends DefaultPluginManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GrpcPluginManager.class);
-    public GrpcPluginManager() {
+public class TikaPluginManager extends DefaultPluginManager {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TikaPluginManager.class);
+    public TikaPluginManager() {
     }
 
-    public GrpcPluginManager(Path... pluginsRoots) {
+    public TikaPluginManager(Path... pluginsRoots) {
         super(pluginsRoots);
     }
 
-    public GrpcPluginManager(List<Path> pluginsRoots) {
+    public TikaPluginManager(List<Path> pluginsRoots) {
         super(pluginsRoots);
     }
 
@@ -70,7 +70,7 @@ public class GrpcPluginManager extends DefaultPluginManager {
     private void checkFetcherExtensions(PluginWrapper plugin) {
         for (Class<?> extensionClass : getExtensionClasses(Fetcher.class, plugin.getPluginId())) {
             if (!Fetcher.class.isAssignableFrom(extensionClass)) {
-                throw new TikaGrpcException("Something is wrong with the classpath. " + Fetcher.class.getName() +
+                throw new PipesRuntimeException("Something is wrong with the classpath. " + Fetcher.class.getName() +
                         " should be assignable from " + extensionClass.getName() +
                         ". Did tika-core accidentally get in your plugin lib?");
             }

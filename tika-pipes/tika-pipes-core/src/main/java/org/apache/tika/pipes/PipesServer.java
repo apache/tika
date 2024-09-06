@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +36,7 @@ import java.util.Optional;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
+import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -74,6 +76,7 @@ import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.pipes.extractor.EmittingEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.plugin.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -89,7 +92,6 @@ import org.apache.tika.utils.StringUtils;
  * the PipesClient.
  */
 public class PipesServer implements Runnable {
-
     private static final Logger LOG = LoggerFactory.getLogger(PipesServer.class);
 
     //this has to be some number not close to 0-3
@@ -143,10 +145,12 @@ public class PipesServer implements Runnable {
     private volatile boolean parsing;
     private volatile long since;
 
+    private PluginManager pluginManager;
+    private List<Path> pluginDirs;
 
     public PipesServer(Path tikaConfigPath, InputStream in, PrintStream out,
                        long maxForEmitBatchBytes, long serverParseTimeoutMillis,
-                       long serverWaitTimeoutMillis)
+                       long serverWaitTimeoutMillis, List<Path> pluginDirs)
             throws IOException, TikaException, SAXException {
         this.tikaConfigPath = tikaConfigPath;
         this.input = new DataInputStream(in);
@@ -156,8 +160,8 @@ public class PipesServer implements Runnable {
         this.serverWaitTimeoutMillis = serverWaitTimeoutMillis;
         this.parsing = false;
         this.since = System.currentTimeMillis();
+        this.pluginDirs = pluginDirs;
     }
-
 
     public static void main(String[] args) throws Exception {
         try {
@@ -165,10 +169,14 @@ public class PipesServer implements Runnable {
             long maxForEmitBatchBytes = Long.parseLong(args[1]);
             long serverParseTimeoutMillis = Long.parseLong(args[2]);
             long serverWaitTimeoutMillis = Long.parseLong(args[3]);
+            List<Path> pluginPaths = new ArrayList<>();
+            for (int i = 4; i < args.length; ++i) {
+                pluginPaths.add(Paths.get(args[i]));
+            }
 
             PipesServer server =
                     new PipesServer(tikaConfig, System.in, System.out, maxForEmitBatchBytes,
-                            serverParseTimeoutMillis, serverWaitTimeoutMillis);
+                            serverParseTimeoutMillis, serverWaitTimeoutMillis, pluginPaths);
             System.setIn(UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get());
             System.setOut(System.err);
             Thread watchdog = new Thread(server, "Tika Watchdog");
@@ -455,10 +463,6 @@ public class PipesServer implements Runnable {
             LOG.warn(noFetcherMsg);
             write(STATUS.FETCHER_NOT_FOUND, noFetcherMsg);
             return null;
-        } catch (IOException | TikaException e) {
-            LOG.warn("Couldn't initialize fetcher for fetch id '" + t.getId() + "'", e);
-            write(STATUS.FETCHER_INITIALIZATION_EXCEPTION, ExceptionUtils.getStackTrace(e));
-            return null;
         }
     }
 
@@ -743,8 +747,11 @@ public class PipesServer implements Runnable {
 
     protected void initializeResources() throws TikaException, IOException, SAXException {
         //TODO allowed named configurations in tika config
+        pluginManager = pluginDirs == null || pluginDirs.isEmpty() ? new TikaPluginManager() : new TikaPluginManager(pluginDirs);
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
         this.tikaConfig = new TikaConfig(tikaConfigPath);
-        this.fetcherManager = FetcherManager.load(tikaConfigPath);
+        this.fetcherManager = FetcherManager.load(pluginManager);
         //skip initialization of the emitters if emitting
         //from the pipesserver is turned off.
         if (maxForEmitBatchBytes > -1) {

@@ -37,13 +37,13 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.PipesClient;
 import org.apache.tika.pipes.PipesException;
-import org.apache.tika.pipes.PipesReporter;
 import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.pipesiterator.TotalCounter;
+import org.apache.tika.pipes.reporter.PipesReporter;
 
 /**
  * This is the main class for handling async requests. This manages

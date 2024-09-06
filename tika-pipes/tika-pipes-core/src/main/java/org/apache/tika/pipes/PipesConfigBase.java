@@ -60,6 +60,7 @@ public class PipesConfigBase extends ConfigBase {
     private int staleFetcherDelaySeconds = DEFAULT_STALE_FETCHER_DELAY_SECONDS;
     private List<String> forkedJvmArgs = new ArrayList<>();
     private Path tikaConfig;
+    private List<Path> pluginDirs;
     private String javaPath = "java";
 
     public long getTimeoutMillis() {
@@ -188,5 +189,13 @@ public class PipesConfigBase extends ConfigBase {
 
     public void setStaleFetcherDelaySeconds(int staleFetcherDelaySeconds) {
         this.staleFetcherDelaySeconds = staleFetcherDelaySeconds;
+    }
+
+    public List<Path> getPluginDirs() {
+        return pluginDirs;
+    }
+
+    public void setPluginDirs(List<Path> pluginDirs) {
+        this.pluginDirs = pluginDirs;
     }
 }

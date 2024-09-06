@@ -34,13 +34,11 @@ import io.grpc.ServerCredentials;
 import io.grpc.TlsServerCredentials;
 import io.grpc.protobuf.services.HealthStatusManager;
 import io.grpc.protobuf.services.ProtoReflectionService;
-import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
-import org.apache.tika.pipes.grpc.plugin.GrpcPluginManager;
 
 /**
  * Server that manages startup/shutdown of the GRPC Tika server.
@@ -50,7 +48,6 @@ public class TikaGrpcServer {
     public static final int TIKA_SERVER_GRPC_DEFAULT_PORT = 50052;
     private Server server;
     // create the plugin manager
-    private PluginManager pluginManager;
     @Parameter(names = {"-p", "--port"}, description = "The grpc server port", help = true)
     private Integer port = TIKA_SERVER_GRPC_DEFAULT_PORT;
 
@@ -104,14 +101,11 @@ public class TikaGrpcServer {
                 TikaConfigSerializer.serialize(new TikaConfig(), TikaConfigSerializer.Mode.STATIC_FULL, fw, StandardCharsets.UTF_8);
             }
         }
-        pluginManager = pluginDirs == null ? new GrpcPluginManager() : new GrpcPluginManager(pluginDirs);
-        pluginManager.loadPlugins();
-        pluginManager.startPlugins();
         File tikaConfigFile = new File(tikaConfigXml.getAbsolutePath());
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);
         server = Grpc
                 .newServerBuilderForPort(port, creds)
-                .addService(new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath(), pluginManager))
+                .addService(new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath(), pluginDirs))
                 .addService(healthStatusManager.getHealthService())
                 .addService(ProtoReflectionService.newInstance())
                 .build()

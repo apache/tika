@@ -14,47 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.async;
+package org.apache.tika.pipes.reporter.logging;
 
-import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.tika.config.Field;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.reporter.PipesReporter;
 
-public class MockReporter extends PipesReporter {
-
-    static ArrayBlockingQueue<PipesResult> RESULTS = new ArrayBlockingQueue<>(10000);
-
-    private String endpoint;
+/**
+ * Simple PipesReporter that logs everything at the debug level.
+ */
+public class LoggingPipesReporter extends PipesReporter {
+    Logger LOGGER = LoggerFactory.getLogger(LoggingPipesReporter.class);
 
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-        RESULTS.add(result);
+        LOGGER.debug("{} {} {}", t, result, elapsed);
     }
 
     @Override
     public void error(Throwable t) {
-
+        LOGGER.error("pipes error", t);
     }
 
     @Override
     public void error(String msg) {
-
-    }
-
-    @Field
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
-    }
-
-    public String getEndpoint() {
-        return endpoint;
-    }
-
-    @Override
-    public String toString() {
-        return "MockReporter{" + "endpoint='" + endpoint + '\'' + '}';
+        LOGGER.error("error {}", msg);
     }
 }

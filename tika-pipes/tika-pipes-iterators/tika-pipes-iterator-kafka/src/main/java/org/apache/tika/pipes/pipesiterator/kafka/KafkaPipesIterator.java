@@ -147,7 +147,7 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     }
 
     @Override
-    protected void enqueue() throws InterruptedException, TimeoutException {
+    public void enqueue() throws InterruptedException, TimeoutException {
         String fetcherName = getFetcherName();
         String emitterName = getEmitterName();
         long start = System.currentTimeMillis();

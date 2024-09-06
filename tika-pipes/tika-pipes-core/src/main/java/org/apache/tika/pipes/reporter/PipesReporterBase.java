@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes;
+package org.apache.tika.pipes.reporter;
 
 import java.util.HashSet;
 import java.util.List;
@@ -26,6 +26,7 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.PipesResult;
 
 /**
  * Base class that includes filtering by {@link PipesResult.STATUS}

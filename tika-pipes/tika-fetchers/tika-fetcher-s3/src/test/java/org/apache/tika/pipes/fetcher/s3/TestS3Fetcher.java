@@ -25,14 +25,20 @@ import java.util.Collections;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.pf4j.PluginManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.plugin.TikaPluginManager;
 
 @Disabled("write actual unit tests")
 public class TestS3Fetcher {
+    private static final Logger LOG = LoggerFactory.getLogger(TestS3Fetcher.class);
+
     private static final String FETCH_STRING = "";
     private final Path outputFile = Paths.get("");
     private final String region = "us-east-1";
@@ -53,8 +59,14 @@ public class TestS3Fetcher {
 
     @Test
     public void testConfig() throws Exception {
-        FetcherManager fetcherManager = FetcherManager.load(
-                Paths.get(this.getClass().getResource("/tika-config-s3.xml").toURI()));
+        System.setProperty("pf4j.mode", "development"); // Development mode lets you work from source dir easier.
+        Path fetchersPath = Path.of("..", "..");
+        LOG.info("Using pf4j in development mode using plugins dir: {}", fetchersPath.toFile().getCanonicalPath());
+        PluginManager pluginManager = new TikaPluginManager(fetchersPath);
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+        FetcherManager fetcherManager = FetcherManager.load(pluginManager);
+
         Fetcher fetcher = fetcherManager.getFetcher("s3");
         Metadata metadata = new Metadata();
         try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, new ParseContext())) {

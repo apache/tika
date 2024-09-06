@@ -37,8 +37,8 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.ExternalProcess;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.PipesReporter;
 import org.apache.tika.pipes.PipesResult;
+import org.apache.tika.pipes.reporter.PipesReporter;
 import org.apache.tika.utils.StringUtils;
 
 /**

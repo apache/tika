@@ -45,7 +45,7 @@ public class JsonPipesIterator extends PipesIterator implements Initializable {
     private Path jsonPath;
 
     @Override
-    protected void enqueue() throws InterruptedException, IOException, TimeoutException {
+    public void enqueue() throws InterruptedException, IOException, TimeoutException {
         try (BufferedReader reader = Files.newBufferedReader(jsonPath, StandardCharsets.UTF_8)) {
             String line = reader.readLine();
             while (line != null) {

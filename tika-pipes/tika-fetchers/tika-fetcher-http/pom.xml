@@ -69,7 +69,7 @@
             <configuration>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>compile</includeScope>
-              <excludeArtifactIds>tika-core</excludeArtifactIds>
+              <excludeArtifactIds>tika-core,tika-pipes-core</excludeArtifactIds>
             </configuration>
           </execution>
         </executions>

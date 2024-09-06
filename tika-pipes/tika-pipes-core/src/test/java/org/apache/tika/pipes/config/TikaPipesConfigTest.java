@@ -29,41 +29,15 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.config.AbstractTikaConfigTest;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.CompositePipesReporter;
-import org.apache.tika.pipes.PipesReporter;
 import org.apache.tika.pipes.async.AsyncConfig;
 import org.apache.tika.pipes.async.MockReporter;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.EmitterManager;
-import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.reporter.PipesReporter;
 
 public class TikaPipesConfigTest extends AbstractTikaConfigTest {
     //this handles tests for the newer pipes type configs.
-    @Test
-    public void testDuplicateFetchers() throws Exception {
-        //can't have two fetchers with the same name
-        assertThrows(TikaConfigException.class, () -> {
-            FetcherManager.load(getConfigFilePath("fetchers-duplicate-config.xml"));
-        });
-    }
-
-    @Test
-    public void testNoNameFetchers() throws Exception {
-        //can't have two fetchers with an empty name
-        assertThrows(TikaConfigException.class, () -> {
-            FetcherManager.load(getConfigFilePath("fetchers-noname-config.xml"));
-        });
-    }
-
-    @Test
-    public void testNoBasePathFetchers() throws Exception {
-        //no basepath is allowed as of > 2.3.0
-        //test that this does not throw an exception.
-
-        FetcherManager fetcherManager = FetcherManager.load(
-                getConfigFilePath("fetchers-nobasepath-config.xml"));
-    }
-
     @Test
     public void testEmitters() throws Exception {
         EmitterManager emitterManager =
