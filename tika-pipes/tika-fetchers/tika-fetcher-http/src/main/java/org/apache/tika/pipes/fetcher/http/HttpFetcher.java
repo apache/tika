@@ -71,7 +71,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
-import org.apache.tika.pipes.fetcher.http.config.AdditionalHttpHeaders;
 import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtPrivateKeyCreds;
@@ -138,7 +137,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                 .setRedirectsEnabled(httpFetcherConfig.getMaxRedirects() > 0)
                 .build();
         get.setConfig(requestConfig);
-        putAdditionalHeadersOnRequest(parseContext, get);
+        putAdditionalHeadersOnRequest(get, metadata);
         return execute(get, metadata, httpClient, true);
     }
 
@@ -146,21 +145,23 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata,
                              ParseContext parseContext) throws IOException, TikaException {
         HttpGet get = new HttpGet(fetchKey);
-        putAdditionalHeadersOnRequest(parseContext, get);
+        putAdditionalHeadersOnRequest(get, metadata);
 
         get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
         return execute(get, metadata, httpClient, true);
     }
 
-    private void putAdditionalHeadersOnRequest(ParseContext parseContext, HttpGet httpGet) throws TikaException {
+    private void putAdditionalHeadersOnRequest(HttpGet httpGet, Metadata requestMetadata) throws TikaException {
         if (!StringUtils.isBlank(httpFetcherConfig.getUserAgent())) {
             httpGet.setHeader(USER_AGENT, httpFetcherConfig.getUserAgent());
         }
-        AdditionalHttpHeaders additionalHttpHeaders = parseContext.get(AdditionalHttpHeaders.class);
-        if (additionalHttpHeaders != null) {
-            additionalHttpHeaders
-                    .getHeaders()
-                    .forEach(httpGet::setHeader);
+        if (requestMetadata != null) {
+            String [] httpRequestHeaders = requestMetadata.getValues("httpRequestHeaders");
+            if (httpRequestHeaders != null) {
+                for (String httpRequestHeader : httpRequestHeaders) {
+                    placeHeaderOnGetRequest(httpGet, httpRequestHeader);
+                }
+            }
         }
         if (jwtGenerator != null) {
             try {
