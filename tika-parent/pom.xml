@@ -307,7 +307,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.42.0</google.cloud.version>
-    <aws.version>1.12.770</aws.version>
+    <aws.version>1.12.771</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -360,7 +360,7 @@
     <jbig2.version>3.0.4</jbig2.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
-    <jetty.version>9.4.55.v20240627</jetty.version>
+    <jetty.version>9.4.56.v20240826</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.14.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
@@ -368,7 +368,7 @@
     <junit5.version>5.11.0</junit5.version>
     <junrar.version>7.5.5</junrar.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.23.1</log4j2.version>
+    <log4j2.version>2.24.0</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
     <!-- lucene >= 9.x requires Java 11 -->
     <lucene.version>8.11.3</lucene.version>
@@ -419,7 +419,7 @@
     <!-- 4.2.0.Alpha2 tested successfully -->
     <netty.version>4.1.112.Final</netty.version>
     <snappy.java.version>1.1.10.6</snappy.java.version>
-    <logback.version>1.5.7</logback.version>
+    <logback.version>1.5.8</logback.version>
     <javacpp.version>1.5.10</javacpp.version>
     <!-- h2 2.3 requires jdk11 -->
     <h2.version>2.2.224</h2.version>
