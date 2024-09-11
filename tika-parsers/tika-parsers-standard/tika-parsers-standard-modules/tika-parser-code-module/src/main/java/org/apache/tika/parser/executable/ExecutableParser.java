@@ -139,7 +139,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
                 metadata.set(ARCHITECTURE_BITS, "32");
                 break;
             case 0x8664:
-                metadata.set(MACHINE_TYPE, MACHINE_x86_32);
+                metadata.set(MACHINE_TYPE, MACHINE_x86_64);
                 metadata.set(ENDIAN, Endian.LITTLE.getName());
                 metadata.set(ARCHITECTURE_BITS, "64");
                 break;
