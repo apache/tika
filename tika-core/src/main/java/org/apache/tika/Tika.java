@@ -497,39 +497,36 @@ public class Tika {
 
     /**
      * Parses the given document and returns the extracted text content.
-     * The given input stream is closed by this method. This method lets
-     * you control the maxStringLength per call.
+     * The given input stream is closed by this method. This method allows
+     * you to control the maximum string length per call.
      * <p>
-     * To avoid unpredictable excess memory use, the returned string contains
+     * To avoid unpredictable excess memory usage, the returned string contains
      * only up to maxLength (parameter) first characters extracted
      * from the input document.
      * <p>
      * <strong>NOTE:</strong> Unlike most other Tika methods that take an
      * {@link InputStream}, this method will close the given stream for
-     * you as a convenience. With other methods you are still responsible
-     * for closing the stream or a wrapper instance returned by Tika.
+     * you as a convenience. With other methods, you are still responsible
+     * for closing the stream or any wrapper instance returned by Tika.
      *
      * @param stream    the document to be parsed
      * @param metadata  document metadata
      * @param maxLength maximum length of the returned string
      * @return extracted text content
-     * @throws IOException   if the document can not be read
-     * @throws TikaException if the document can not be parsed
+     * @throws IOException   if the document cannot be read
+     * @throws TikaException if the document cannot be parsed
      */
     public String parseToString(InputStream stream, Metadata metadata, int maxLength)
             throws IOException, TikaException {
         WriteOutContentHandler handler = new WriteOutContentHandler(maxLength);
-        try {
-            ParseContext context = new ParseContext();
-            context.set(Parser.class, parser);
-            parser.parse(stream, new BodyContentHandler(handler), metadata, context);
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, parser);
+        try (InputStream autoCloseStream = stream) {
+            parser.parse(autoCloseStream, new BodyContentHandler(handler), metadata, context);
         } catch (SAXException e) {
             if (!WriteLimitReachedException.isWriteLimitReached(e)) {
-                // This should never happen with BodyContentHandler...
                 throw new TikaException("Unexpected SAX processing failure", e);
             }
-        } finally {
-            stream.close();
         }
         return handler.toString();
     }
