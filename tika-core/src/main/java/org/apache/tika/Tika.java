@@ -519,17 +519,15 @@ public class Tika {
     public String parseToString(InputStream stream, Metadata metadata, int maxLength)
             throws IOException, TikaException {
         WriteOutContentHandler handler = new WriteOutContentHandler(maxLength);
-        try {
-            ParseContext context = new ParseContext();
-            context.set(Parser.class, parser);
-            parser.parse(stream, new BodyContentHandler(handler), metadata, context);
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, parser);
+        try (InputStream autoCloseStream = stream) {
+            parser.parse(autoCloseStream, new BodyContentHandler(handler), metadata, context);
         } catch (SAXException e) {
             if (!WriteLimitReachedException.isWriteLimitReached(e)) {
                 // This should never happen with BodyContentHandler...
                 throw new TikaException("Unexpected SAX processing failure", e);
             }
-        } finally {
-            stream.close();
         }
         return handler.toString();
     }
