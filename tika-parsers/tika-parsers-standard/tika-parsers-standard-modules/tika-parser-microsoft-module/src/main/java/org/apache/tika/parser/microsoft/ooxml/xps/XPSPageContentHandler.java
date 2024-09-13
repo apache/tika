@@ -73,6 +73,9 @@ class XPSPageContentHandler extends DefaultHandler {
     private static final String P = "p";
     private static final String HREF = "href";
     private static final String A = "a";
+
+    private static final char[] SPACE = new char[]{' '};
+
     //sort based on y coordinate of first element in each row
     //this requires every row to have at least one element
     private static Comparator<? super List<GlyphRun>> ROW_SORTER =
@@ -286,9 +289,13 @@ class XPSPageContentHandler extends DefaultHandler {
         }*/
 
         xhml.startElement(P);
+        boolean needsSpace = false;
         for (GlyphRun run : row) {
-            //figure out if you need to add a space
+            if (needsSpace && run.unicodeString.charAt(0) != ' ') {
+                xhml.ignorableWhitespace(SPACE, 0, SPACE.length);
+            }
             xhml.characters(run.unicodeString);
+            needsSpace = run.unicodeString.charAt(run.unicodeString.length() - 1) != ' ';
         }
         xhml.endElement(P);
     }

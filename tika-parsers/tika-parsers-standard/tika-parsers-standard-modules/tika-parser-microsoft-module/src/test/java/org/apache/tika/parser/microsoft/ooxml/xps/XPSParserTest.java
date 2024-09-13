@@ -48,8 +48,7 @@ public class XPSParserTest extends TikaTest {
         assertContains("<p>Attachment Test</p>", content);
         assertContains("<div class=\"canvas\"><p>Different", content);
 
-        //I'd want this to be "tika content", but copy+paste in Windows yields tikacontent
-        assertContains("tikacontent", content);
+        assertContains("tika content", content);
 
 
         assertEquals("image/jpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
@@ -138,4 +137,13 @@ public class XPSParserTest extends TikaTest {
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
+    @Test
+    public void testSpreadsheetXPS() throws Exception {
+        Path path = Paths.get(XPSParserTest.class.getResource("/test-documents/testXLSX.xps").toURI());
+        List<Metadata> metadataList = getRecursiveMetadata(path, true);
+        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
+        assertContains("x", content);
+        assertContains("abcde1234f", content);
+        assertNotContained("xabcde1234f", content);
+    }
 }
