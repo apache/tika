@@ -447,7 +447,7 @@
     <zookeeper.version>3.8.4</zookeeper.version>
     <logback.version>1.5.8</logback.version>
     <zstd.version>1.5.6-5</zstd.version>
-    <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>9.41.1</nimbus-jose-jwt.version>
     <javacpp.version>1.5.10</javacpp.version>
   </properties>
 
