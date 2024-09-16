@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.Set;
 import javax.xml.XMLConstants;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.DataNode;
@@ -127,7 +128,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         HtmlMapper mapper = context.get(HtmlMapper.class, new DefaultHtmlMapper());
 
         //do better with baseUri?
-        Document document = Jsoup.parse(stream, charset.name(), "");
+        Document document = Jsoup.parse(CloseShieldInputStream.wrap(stream), charset.name(), "");
         document.quirksMode(Document.QuirksMode.quirks);
         ContentHandler xhtml = new XHTMLDowngradeHandler(
                 new HtmlHandler(mapper, handler, metadata, context, extractScripts));

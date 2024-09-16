@@ -121,13 +121,15 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         //literally writing out a file per request
         Path p = stream.getPath();
         try {
-            parse(stream, handler, metadata);
+            //warp in CloseShieldInputStream to ensure that a misbehaving parser isn't closing
+            //the stream and thereby deleting the temp file.
+            parse(CloseShieldInputStream.wrap(stream), handler, metadata);
         } finally {
             storeEmbeddedBytes(p, metadata);
         }
     }
 
-    private void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata)
+    private void parse(InputStream stream, ContentHandler handler, Metadata metadata)
             throws TikaException, IOException, SAXException {
         getDelegatingParser().parse(stream,
                 new EmbeddedContentHandler(new BodyContentHandler(handler)),

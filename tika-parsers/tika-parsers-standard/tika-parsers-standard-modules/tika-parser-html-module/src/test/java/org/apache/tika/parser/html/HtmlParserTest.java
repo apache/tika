@@ -32,6 +32,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -78,6 +79,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
 
 public class HtmlParserTest extends TikaTest {
 
@@ -1241,6 +1243,20 @@ public class HtmlParserTest extends TikaTest {
 
         assertEquals("ActualTitle", m.get(TikaCoreProperties.TITLE));
         assertEquals("OldMetaTitle", m.get("title"));
+    }
+
+    @Test
+    public void testStreamNotClosed() throws Exception {
+        String path = "/test-documents/testHTML.html";
+        Metadata metadata = new Metadata();
+        Path tmp = null;
+        try (TikaInputStream stream = TikaInputStream.get(getResourceAsStream(path))) {
+            //spool tika stream to disk
+            tmp = stream.getPath();
+            new JSoupParser().parse(stream, new WriteOutContentHandler(), metadata, new ParseContext());
+            //make sure that the tmp file is still there
+            assertTrue(Files.isRegularFile(tmp));
+        }
     }
 
     private class EncodingDetectorRunner implements Callable<String> {
