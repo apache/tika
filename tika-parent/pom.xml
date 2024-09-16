@@ -362,7 +362,7 @@
     <jempbox.version>1.8.17</jempbox.version>
     <jetty.version>9.4.56.v20240826</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
-    <jna.version>5.14.0</jna.version>
+    <jna.version>5.15.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.11.0</junit5.version>
@@ -390,7 +390,7 @@
     <pdfbox.version>2.0.32</pdfbox.version>
     <poi.version>5.3.0</poi.version>
     <quartz.version>2.3.2</quartz.version>
-    <reactor.core.version>3.6.9</reactor.core.version>
+    <reactor.core.version>3.6.10</reactor.core.version>
     <reactor.netty.version>1.1.22</reactor.netty.version>
     <oak.jackrabbit.version>1.68.0</oak.jackrabbit.version>
     <rome.version>2.1.0</rome.version>
