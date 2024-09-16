@@ -379,7 +379,7 @@
     <!-- 12.0.* needs java 17 -->
     <jetty.version>11.0.23</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
-    <jna.version>5.14.0</jna.version>
+    <jna.version>5.15.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <jsoup.version>1.18.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
