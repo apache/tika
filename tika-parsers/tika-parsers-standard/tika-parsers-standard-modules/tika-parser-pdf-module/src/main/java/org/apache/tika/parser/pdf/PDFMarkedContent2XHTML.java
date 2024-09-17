@@ -185,7 +185,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                             continue;
                         }
                         if (((COSDictionary) kidbase).containsKey(COSName.KIDS)) {
-                            findPages(((COSDictionary) kidbase).getItem(COSName.KIDS), pageRefs);
+                            findPages(((COSDictionary) kidbase).getDictionaryObject(COSName.KIDS), pageRefs);
                         }
                     }
                 }
@@ -202,7 +202,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
 
         List<ObjectRef> pageRefs = new ArrayList<>();
         //STEP 1: get the page refs
-        findPages(pdDocument.getPages().getCOSObject().getItem(COSName.KIDS), pageRefs);
+        findPages(pdDocument.getPages().getCOSObject().getDictionaryObject(COSName.KIDS), pageRefs);
         //confirm the right number of pages was found
         if (pageRefs.size() != pdDocument.getNumberOfPages()) {
             throw new IOException(new TikaException(
@@ -288,9 +288,9 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                         roleMap);
             }
 
-            COSBase n = dict.getItem(COSName.S);
+            COSName n = dict.getCOSName(COSName.S);
             String name = "";
-            if (n instanceof COSName) {
+            if (n != null) {
                 name = ((COSName) n).getName();
             }
             COSBase grandkids = dict.getItem(COSName.K);
