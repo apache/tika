@@ -329,7 +329,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                     }
 
                     // remove transformation
-                    COSArray contents = (COSArray) page.getCOSObject().getItem(COSName.CONTENTS);
+                    COSArray contents = page.getCOSObject().getCOSArray(COSName.CONTENTS);
                     contents.remove(0);
                 }
             }
