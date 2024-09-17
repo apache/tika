@@ -178,14 +178,13 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                     COSBase kidbase = ((COSObject) kid).getObject();
                     if (kidbase instanceof COSDictionary) {
                         COSDictionary dict = (COSDictionary) kidbase;
-                        if (dict.containsKey(COSName.TYPE) &&
-                                COSName.PAGE.equals(dict.getCOSName(COSName.TYPE))) {
-                            pageRefs.add(new ObjectRef(((COSObject) kid).getObjectNumber(),
-                                    ((COSObject) kid).getGenerationNumber()));
+                        if (COSName.PAGE.equals(dict.getCOSName(COSName.TYPE))) {
+                            pageRefs.add(new ObjectRef(((COSObject) kid).getKey().getNumber(),
+                                    ((COSObject) kid).getKey().getGeneration()));
                             continue;
                         }
-                        if (((COSDictionary) kidbase).containsKey(COSName.KIDS)) {
-                            findPages(((COSDictionary) kidbase).getDictionaryObject(COSName.KIDS), pageRefs);
+                        if (dict.containsKey(COSName.KIDS)) {
+                            findPages(dict.getDictionaryObject(COSName.KIDS), pageRefs);
                         }
                     }
                 }
