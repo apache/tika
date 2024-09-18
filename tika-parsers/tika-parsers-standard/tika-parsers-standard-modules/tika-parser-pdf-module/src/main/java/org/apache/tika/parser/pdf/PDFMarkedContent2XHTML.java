@@ -37,7 +37,6 @@ import org.apache.pdfbox.cos.COSObject;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageTree;
-import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDObjectReference;
 import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructureTreeRoot;
 import org.apache.pdfbox.pdmodel.documentinterchange.markedcontent.PDMarkedContent;
 import org.apache.pdfbox.text.PDFMarkedContentExtractor;
@@ -281,9 +280,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             // and maybe dereference COSObject first, i.e. before the first "if"?
             COSDictionary dict = (COSDictionary) ((COSObject) kids).getObject();
             COSName type = dict.getCOSName(COSName.TYPE);
-            if (COSName.getPDFName(PDObjectReference.TYPE).equals(type)) // OBJR
-            {
-                recurse(dict.getDictionaryObject(COSName.OBJ), currentPageRef,depth + 1, paragraphs,
+            if (COSName.OBJR.equals(type)) {
+                recurse(dict.getDictionaryObject(COSName.OBJ), currentPageRef, depth + 1, paragraphs,
                         roleMap);
             }
 
