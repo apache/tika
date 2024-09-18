@@ -278,6 +278,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 ((COSObject) kids).getObject() instanceof COSDictionary) {
             //TODO should be merged with COSDictionary segment below?
             // and maybe dereference COSObject first, i.e. before the first "if"?
+            // No, because we're using the object key for a map
+            // However, we could replace ObjectRef with COSBase for currentPageRef. 
             COSDictionary dict = (COSDictionary) ((COSObject) kids).getObject();
             COSName type = dict.getCOSName(COSName.TYPE);
             if (COSName.OBJR.equals(type)) {
