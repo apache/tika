@@ -5642,7 +5642,7 @@
     <glob pattern="*.mp4a"/>
     <glob pattern="*.m4a"/>
     <glob pattern="*.m4b"/>
-    <sub-class-of type="application/quicktime" />
+    <sub-class-of type="video/mp4" />
   </mime-type>
   <mime-type type="audio/mp4a-latm"/>
   <mime-type type="audio/mpa"/>
