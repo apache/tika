@@ -4308,10 +4308,288 @@
   </mime-type>
   <mime-type type="application/x-mach-o">
     <_comment>Mach-O</_comment>
+    <tika:link>https://www.nationalarchives.gov.uk/PRONOM/fmt/692</tika:link>
     <tika:link>https://www.nationalarchives.gov.uk/PRONOM/fmt/693</tika:link>
     <magic priority="50">
+      <match value="0xFEEDFACE" offset="0"/>
+      <match value="0xCEFAEDFE" offset="0"/>
       <match value="0xFEEDFACF" offset="0"/>
       <match value="0xCFFAEDFE" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-mach-o-object">
+    <_comment>Mach-O relocatable object file</_comment>
+    <magic priority="55">
+      <match value="0xFEEDFACE" offset="0">
+        <match value="0x00000001" type="host32" offset="12"/>
+        <match value="0x00000001" type="big32" offset="12"/>
+        <match value="0x00000001" type="little32" offset="12"/>
+      </match>
+      <match value="0xCEFAEDFE" offset="0">
+        <match value="0x00000001" type="host32" offset="12"/>
+        <match value="0x00000001" type="big32" offset="12"/>
+        <match value="0x00000001" type="little32" offset="12"/>
+      </match>
+      <match value="0xFEEDFACF" offset="0">
+        <match value="0x00000001" type="host32" offset="12"/>
+        <match value="0x00000001" type="big32" offset="12"/>
+        <match value="0x00000001" type="little32" offset="12"/>
+      </match>
+      <match value="0xCFFAEDFE" offset="0">
+        <match value="0x00000001" type="host32" offset="12"/>
+        <match value="0x00000001" type="big32" offset="12"/>
+        <match value="0x00000001" type="little32" offset="12"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-mach-o-executable">
+    <_comment>Mach-O executable</_comment>
+    <magic priority="55">
+      <match value="0xFEEDFACE" offset="0">
+        <match value="0x00000002" type="host32" offset="12"/>
+        <match value="0x00000002" type="big32" offset="12"/>
+        <match value="0x00000002" type="little32" offset="12"/>
+      </match>
+      <match value="0xCEFAEDFE" offset="0">
+        <match value="0x00000002" type="host32" offset="12"/>
+        <match value="0x00000002" type="big32" offset="12"/>
+        <match value="0x00000002" type="little32" offset="12"/>
+      </match>
+      <match value="0xFEEDFACF" offset="0">
+        <match value="0x00000002" type="host32" offset="12"/>
+        <match value="0x00000002" type="big32" offset="12"/>
+        <match value="0x00000002" type="little32" offset="12"/>
+      </match>
+      <match value="0xCFFAEDFE" offset="0">
+        <match value="0x00000002" type="host32" offset="12"/>
+        <match value="0x00000002" type="big32" offset="12"/>
+        <match value="0x00000002" type="little32" offset="12"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-mach-o-fvmlib">
+    <_comment>Mach-O fixed VM shared library</_comment>
+    <magic priority="55">
+      <match value="0xFEEDFACE" offset="0">
+        <match value="0x00000003" type="host32" offset="12"/>
+        <match value="0x00000003" type="big32" offset="12"/>
+        <match value="0x00000003" type="little32" offset="12"/>
+      </match>
+      <match value="0xCEFAEDFE" offset="0">
+        <match value="0x00000003" type="host32" offset="12"/>
+        <match value="0x00000003" type="big32" offset="12"/>
+        <match value="0x00000003" type="little32" offset="12"/>
+      </match>
+      <match value="0xFEEDFACF" offset="0">
+        <match value="0x00000003" type="host32" offset="12"/>
+        <match value="0x00000003" type="big32" offset="12"/>
+        <match value="0x00000003" type="little32" offset="12"/>
+      </match>
+      <match value="0xCFFAEDFE" offset="0">
+        <match value="0x00000003" type="host32" offset="12"/>
+        <match value="0x00000003" type="big32" offset="12"/>
+        <match value="0x00000003" type="little32" offset="12"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-mach-o-core">
+    <_comment>Mach-O core file</_comment>
+    <magic priority="55">
+      <match value="0xFEEDFACE" offset="0">
+        <match value="0x00000004" type="host32" offset="12"/>
+        <match value="0x00000004" type="big32" offset="12"/>
+        <match value="0x00000004" type="little32" offset="12"/>
+      </match>
+      <match value="0xCEFAEDFE" offset="0">
+        <match value="0x00000004" type="host32" offset="12"/>
+        <match value="0x00000004" type="big32" offset="12"/>
+        <match value="0x00000004" type="little32" offset="12"/>
+      </match>
+      <match value="0xFEEDFACF" offset="0">
+        <match value="0x00000004" type="host32" offset="12"/>
+        <match value="0x00000004" type="big32" offset="12"/>
+        <match value="0x00000004" type="little32" offset="12"/>
+      </match>
+      <match value="0xCFFAEDFE" offset="0">
+        <match value="0x00000004" type="host32" offset="12"/>
+        <match value="0x00000004" type="big32" offset="12"/>
+        <match value="0x00000004" type="little32" offset="12"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-mach-o-preload">
+    <_comment>Mach-O preloaded executable</_comment>
+    <magic priority="55">
+      <match value="0xFEEDFACE" offset="0">
+        <match value="0x00000005" type="host32" offset="12"/>
+        <match value="0x00000005" type="big32" offset="12"/>
+        <match value="0x00000005" type="little32" offset="12"/>
+      </match>
+      <match value="0xCEFAEDFE" offset="0">
+        <match value="0x00000005" type="host32" offset="12"/>
+        <match value="0x00000005" type="big32" offset="12"/>
+        <match value="0x00000005" type="little32" offset="12"/>
+      </match>
+      <match value="0xFEEDFACF" offset="0">
+        <match value="0x00000005" type="host32" offset="12"/>
+        <match value="0x00000005" type="big32" offset="12"/>
+        <match value="0x00000005" type="little32" offset="12"/>
+      </match>
+      <match value="0xCFFAEDFE" offset="0">
+        <match value="0x00000005" type="host32" offset="12"/>
+        <match value="0x00000005" type="big32" offset="12"/>
+        <match value="0x00000005" type="little32" offset="12"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-mach-o-dylib">
+    <_comment>Mach-O dynamic shared library</_comment>
+    <magic priority="55">
+      <match value="0xFEEDFACE" offset="0">
+        <match value="0x00000006" type="host32" offset="12"/>
+        <match value="0x00000006" type="big32" offset="12"/>
+        <match value="0x00000006" type="little32" offset="12"/>
+      </match>
+      <match value="0xCEFAEDFE" offset="0">
+        <match value="0x00000006" type="host32" offset="12"/>
+        <match value="0x00000006" type="big32" offset="12"/>
+        <match value="0x00000006" type="little32" offset="12"/>
+      </match>
+      <match value="0xFEEDFACF" offset="0">
+        <match value="0x00000006" type="host32" offset="12"/>
+        <match value="0x00000006" type="big32" offset="12"/>
+        <match value="0x00000006" type="little32" offset="12"/>
+      </match>
+      <match value="0xCFFAEDFE" offset="0">
+        <match value="0x00000006" type="host32" offset="12"/>
+        <match value="0x00000006" type="big32" offset="12"/>
+        <match value="0x00000006" type="little32" offset="12"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-mach-o-dylinker">
+    <_comment>Mach-O dynamic link editor</_comment>
+    <magic priority="55">
+      <match value="0xFEEDFACE" offset="0">
+        <match value="0x00000007" type="host32" offset="12"/>
+        <match value="0x00000007" type="big32" offset="12"/>
+        <match value="0x00000007" type="little32" offset="12"/>
+      </match>
+      <match value="0xCEFAEDFE" offset="0">
+        <match value="0x00000007" type="host32" offset="12"/>
+        <match value="0x00000007" type="big32" offset="12"/>
+        <match value="0x00000007" type="little32" offset="12"/>
+      </match>
+      <match value="0xFEEDFACF" offset="0">
+        <match value="0x00000007" type="host32" offset="12"/>
+        <match value="0x00000007" type="big32" offset="12"/>
+        <match value="0x00000007" type="little32" offset="12"/>
+      </match>
+      <match value="0xCFFAEDFE" offset="0">
+        <match value="0x00000007" type="host32" offset="12"/>
+        <match value="0x00000007" type="big32" offset="12"/>
+        <match value="0x00000007" type="little32" offset="12"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-mach-o-bundle">
+    <_comment>Mach-O dynamic bundle</_comment>
+    <magic priority="55">
+      <match value="0xFEEDFACE" offset="0">
+        <match value="0x00000008" type="host32" offset="12"/>
+        <match value="0x00000008" type="big32" offset="12"/>
+        <match value="0x00000008" type="little32" offset="12"/>
+      </match>
+      <match value="0xCEFAEDFE" offset="0">
+        <match value="0x00000008" type="host32" offset="12"/>
+        <match value="0x00000008" type="big32" offset="12"/>
+        <match value="0x00000008" type="little32" offset="12"/>
+      </match>
+      <match value="0xFEEDFACF" offset="0">
+        <match value="0x00000008" type="host32" offset="12"/>
+        <match value="0x00000008" type="big32" offset="12"/>
+        <match value="0x00000008" type="little32" offset="12"/>
+      </match>
+      <match value="0xCFFAEDFE" offset="0">
+        <match value="0x00000008" type="host32" offset="12"/>
+        <match value="0x00000008" type="big32" offset="12"/>
+        <match value="0x00000008" type="little32" offset="12"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-mach-o-dylib-stub">
+    <_comment>Mach-O shared library for static linking</_comment>
+    <magic priority="55">
+      <match value="0xFEEDFACE" offset="0">
+        <match value="0x00000009" type="host32" offset="12"/>
+        <match value="0x00000009" type="big32" offset="12"/>
+        <match value="0x00000009" type="little32" offset="12"/>
+      </match>
+      <match value="0xCEFAEDFE" offset="0">
+        <match value="0x00000009" type="host32" offset="12"/>
+        <match value="0x00000009" type="big32" offset="12"/>
+        <match value="0x00000009" type="little32" offset="12"/>
+      </match>
+      <match value="0xFEEDFACF" offset="0">
+        <match value="0x00000009" type="host32" offset="12"/>
+        <match value="0x00000009" type="big32" offset="12"/>
+        <match value="0x00000009" type="little32" offset="12"/>
+      </match>
+      <match value="0xCFFAEDFE" offset="0">
+        <match value="0x00000009" type="host32" offset="12"/>
+        <match value="0x00000009" type="big32" offset="12"/>
+        <match value="0x00000009" type="little32" offset="12"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-mach-o-dsym">
+    <_comment>Mach-O debug symbols file</_comment>
+    <magic priority="55">
+      <match value="0xFEEDFACE" offset="0">
+        <match value="0x0000000A" type="host32" offset="12"/>
+        <match value="0x0000000A" type="big32" offset="12"/>
+        <match value="0x0000000A" type="little32" offset="12"/>
+      </match>
+      <match value="0xCEFAEDFE" offset="0">
+        <match value="0x0000000A" type="host32" offset="12"/>
+        <match value="0x0000000A" type="big32" offset="12"/>
+        <match value="0x0000000A" type="little32" offset="12"/>
+      </match>
+      <match value="0xFEEDFACF" offset="0">
+        <match value="0x0000000A" type="host32" offset="12"/>
+        <match value="0x0000000A" type="big32" offset="12"/>
+        <match value="0x0000000A" type="little32" offset="12"/>
+      </match>
+      <match value="0xCFFAEDFE" offset="0">
+        <match value="0x0000000A" type="host32" offset="12"/>
+        <match value="0x0000000A" type="big32" offset="12"/>
+        <match value="0x0000000A" type="little32" offset="12"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-mach-o-kext-bundle">
+    <_comment>Mach-O kext bundle</_comment>
+    <magic priority="55">
+      <match value="0xFEEDFACE" offset="0">
+        <match value="0x0000000B" type="host32" offset="12"/>
+        <match value="0x0000000B" type="big32" offset="12"/>
+        <match value="0x0000000B" type="little32" offset="12"/>
+      </match>
+      <match value="0xCEFAEDFE" offset="0">
+        <match value="0x0000000B" type="host32" offset="12"/>
+        <match value="0x0000000B" type="big32" offset="12"/>
+        <match value="0x0000000B" type="little32" offset="12"/>
+      </match>
+      <match value="0xFEEDFACF" offset="0">
+        <match value="0x0000000B" type="host32" offset="12"/>
+        <match value="0x0000000B" type="big32" offset="12"/>
+        <match value="0x0000000B" type="little32" offset="12"/>
+      </match>
+      <match value="0xCFFAEDFE" offset="0">
+        <match value="0x0000000B" type="host32" offset="12"/>
+        <match value="0x0000000B" type="big32" offset="12"/>
+        <match value="0x0000000B" type="little32" offset="12"/>
+      </match>
     </magic>
   </mime-type>
   <mime-type type="application/x-memgraph">
