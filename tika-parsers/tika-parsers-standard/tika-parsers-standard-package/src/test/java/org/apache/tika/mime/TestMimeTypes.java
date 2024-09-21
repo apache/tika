@@ -743,7 +743,26 @@ public class TestMimeTypes {
         //assertTypeDetection("AutoDetectParser.class", "application/java-vm");
 
         // OSX Native Extension
-        assertTypeDetection("testJNILIB.jnilib", "application/x-java-jnilib");
+        assertTypeDetection("testJNILIB.jnilib",
+                "application/x-java-jnilib",
+                "application/x-mach-o-universal",
+                "application/x-java-jnilib");
+    }
+
+    @Test
+    public void testMachO() throws Exception {
+        assertTypeDetection("testMacOS-x86_64-arm64",
+                "application/octet-stream",
+                "application/x-mach-o-universal",
+                "application/x-mach-o-universal");
+        assertTypeDetection("testMacOS-x86_64",
+                "application/octet-stream",
+                "application/x-mach-o-executable",
+                "application/x-mach-o-executable");
+        assertTypeDetection("testMacOS-arm64",
+                "application/octet-stream",
+                "application/x-mach-o-executable",
+                "application/x-mach-o-executable");
     }
 
     @Test
