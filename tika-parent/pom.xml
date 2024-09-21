@@ -306,7 +306,7 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.42.0</google.cloud.version>
+    <google.cloud.version>2.43.0</google.cloud.version>
     <aws.version>1.12.772</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
@@ -325,7 +325,7 @@
     <commons.compress.version>1.27.1</commons.compress.version>
     <commons.csv.version>1.11.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
-    <commons.io.version>2.16.1</commons.io.version>
+    <commons.io.version>2.17.0</commons.io.version>
     <commons.lang3.version>3.17.0</commons.lang3.version>
     <commons.logging.version>1.3.4</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
@@ -498,7 +498,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.27.1</version>
+        <version>12.28.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
@@ -601,7 +601,7 @@
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
-        <version>3.25.4</version>
+        <version>3.25.5</version>
       </dependency>
       <dependency>
         <groupId>com.h2database</groupId>
