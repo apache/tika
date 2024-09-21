@@ -53,10 +53,27 @@ public class ExecutableParser implements Parser, MachineMetadata {
     private static final MediaType ELF_EXECUTABLE = MediaType.application("x-executable");
     private static final MediaType ELF_SHAREDLIB = MediaType.application("x-sharedlib");
     private static final MediaType ELF_COREDUMP = MediaType.application("x-coredump");
+    private static final MediaType MACH_O = MediaType.application("x-mach-o");
+    private static final MediaType MACH_O_OBJECT = MediaType.application("x-mach-o-object");
+    private static final MediaType MACH_O_EXECUTABLE = MediaType.application("x-mach-o-executable");
+    private static final MediaType MACH_O_FVMLIB = MediaType.application("x-mach-o-fvmlib");
+    private static final MediaType MACH_O_CORE = MediaType.application("x-mach-o-core");
+    private static final MediaType MACH_O_PRELOAD = MediaType.application("x-mach-o-preload");
+    private static final MediaType MACH_O_DYLIB = MediaType.application("x-mach-o-dylib");
+    private static final MediaType MACH_O_DYLINKER = MediaType.application("x-mach-o-dylinker");
+    private static final MediaType MACH_O_BUNDLE = MediaType.application("x-mach-o-bundle");
+    private static final MediaType MACH_O_DYLIB_STUB = MediaType.application("x-mach-o-dylib-stub");
+    private static final MediaType MACH_O_DSYM = MediaType.application("x-mach-o-dsym");
+    private static final MediaType MACH_O_KEXT_BUNDLE = MediaType.application(
+            "x-mach-o-kext-bundle");
+
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<>(
                     Arrays.asList(PE_EXE, ELF_GENERAL, ELF_OBJECT, ELF_EXECUTABLE, ELF_SHAREDLIB,
-                            ELF_COREDUMP)));
+                            ELF_COREDUMP, MACH_O, MACH_O_OBJECT, MACH_O_EXECUTABLE,
+                            MACH_O_FVMLIB, MACH_O_CORE, MACH_O_PRELOAD, MACH_O_DYLIB,
+                            MACH_O_DYLINKER, MACH_O_BUNDLE, MACH_O_DYLIB_STUB, MACH_O_DSYM,
+                            MACH_O_KEXT_BUNDLE)));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -76,6 +93,13 @@ public class ExecutableParser implements Parser, MachineMetadata {
         } else if (first4[0] == (byte) 0x7f && first4[1] == (byte) 'E' && first4[2] == (byte) 'L' &&
                 first4[3] == (byte) 'F') {
             parseELF(xhtml, metadata, stream, first4);
+        } else if ((first4[0] == (byte) 0xCF || first4[0] == (byte) 0xCE) &&
+                first4[1] == (byte) 0xFA && first4[2] == (byte) 0xED && first4[3] == (byte) 0xFE) {
+            parseMachO(xhtml, metadata, stream, first4);
+        } else if (first4[0] == (byte) 0xFE && first4[1] == (byte) 0xED &&
+                first4[2] == (byte) 0xFA &&
+                (first4[3] == (byte) 0xCF || first4[3] == (byte) 0xCE)) {
+            parseMachO(xhtml, metadata, stream, first4);
         }
 
 
@@ -403,5 +427,104 @@ public class ExecutableParser implements Parser, MachineMetadata {
 
         // Bytes 20-23 are the version
         // TODO
+    }
+
+    /**
+     * Parses a Mach-O file
+     */
+    public void parseMachO(XHTMLContentHandler xhtml, Metadata metadata, InputStream stream,
+                           byte[] first4) throws TikaException, IOException {
+        var isLE = first4[3] == (byte) 0xFE;
+        if (isLE) {
+            metadata.set(ENDIAN, Endian.LITTLE.getName());
+        } else {
+            metadata.set(ENDIAN, Endian.BIG.getName());
+        }
+
+        // Bytes 5-8 are the CPU type and architecture bits
+        var cpuType = isLE
+                ? EndianUtils.readIntLE(stream)
+                : EndianUtils.readIntBE(stream);
+        if ((cpuType >> 24) == 1) {
+            metadata.set(ARCHITECTURE_BITS, "64");
+        }
+        switch (cpuType) {
+            case 1:
+                metadata.set(MACHINE_TYPE, MACHINE_VAX);
+                break;
+            case 6:
+                metadata.set(MACHINE_TYPE, MACHINE_M68K);
+                break;
+            case 7:
+                metadata.set(MACHINE_TYPE, MACHINE_x86_32);
+                break;
+            case (7 | 0x01000000):
+                metadata.set(MACHINE_TYPE, MACHINE_x86_64);
+                break;
+            case 8:
+                metadata.set(MACHINE_TYPE, MACHINE_MIPS);
+                break;
+            case 12:
+            case (12 | 0x01000000):
+                metadata.set(MACHINE_TYPE, MACHINE_ARM);
+                break;
+            case 13:
+                metadata.set(MACHINE_TYPE, MACHINE_M88K);
+                break;
+            case 14:
+                metadata.set(MACHINE_TYPE, MACHINE_SPARC);
+                break;
+            case 18:
+                metadata.set(MACHINE_TYPE, MACHINE_PPC);
+                break;
+        }
+
+        // Bytes 9-12 are the CPU subtype
+        var cpuSubtype = isLE
+                ? EndianUtils.readIntLE(stream)
+                : EndianUtils.readIntBE(stream);
+
+        // Bytes 13-16 are the file type
+        var fileType = isLE
+                ? EndianUtils.readIntLE(stream)
+                : EndianUtils.readIntBE(stream);
+        switch (fileType) {
+            case 0x1:
+                metadata.set(Metadata.CONTENT_TYPE, MACH_O_OBJECT.toString());
+                break;
+            case 0x2:
+                metadata.set(Metadata.CONTENT_TYPE, MACH_O_EXECUTABLE.toString());
+                break;
+            case 0x3:
+                metadata.set(Metadata.CONTENT_TYPE, MACH_O_FVMLIB.toString());
+                break;
+            case 0x4:
+                metadata.set(Metadata.CONTENT_TYPE, MACH_O_CORE.toString());
+                break;
+            case 0x5:
+                metadata.set(Metadata.CONTENT_TYPE, MACH_O_PRELOAD.toString());
+                break;
+            case 0x6:
+                metadata.set(Metadata.CONTENT_TYPE, MACH_O_DYLIB.toString());
+                break;
+            case 0x7:
+                metadata.set(Metadata.CONTENT_TYPE, MACH_O_DYLINKER.toString());
+                break;
+            case 0x8:
+                metadata.set(Metadata.CONTENT_TYPE, MACH_O_BUNDLE.toString());
+                break;
+            case 0x9:
+                metadata.set(Metadata.CONTENT_TYPE, MACH_O_DYLIB_STUB.toString());
+                break;
+            case 0xa:
+                metadata.set(Metadata.CONTENT_TYPE, MACH_O_DSYM.toString());
+                break;
+            case 0xb:
+                metadata.set(Metadata.CONTENT_TYPE, MACH_O_KEXT_BUNDLE.toString());
+                break;
+            default:
+                metadata.set(Metadata.CONTENT_TYPE, MACH_O.toString());
+                break;
+        }
     }
 }
