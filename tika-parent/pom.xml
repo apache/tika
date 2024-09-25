@@ -323,7 +323,7 @@
     <!-- 4.5.0-M2 successfully tested -->
     <commons.collections4.version>4.4</commons.collections4.version>
     <commons.compress.version>1.27.1</commons.compress.version>
-    <commons.csv.version>1.11.0</commons.csv.version>
+    <commons.csv.version>1.12.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
     <commons.io.version>2.17.0</commons.io.version>
     <commons.lang3.version>3.17.0</commons.lang3.version>
@@ -339,7 +339,7 @@
     <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions > 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
-    <guava.version>33.3.0-jre</guava.version>
+    <guava.version>33.3.1-jre</guava.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
@@ -365,7 +365,7 @@
     <jna.version>5.15.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.11.0</junit5.version>
+    <junit5.version>5.11.1</junit5.version>
     <junrar.version>7.5.5</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.24.0</log4j2.version>
