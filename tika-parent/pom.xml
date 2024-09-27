@@ -308,7 +308,7 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.43.0</google.cloud.version>
+    <google.cloud.version>2.43.1</google.cloud.version>
     <aws.version>1.12.772</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
@@ -359,8 +359,7 @@
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.22.0</jackrabbit.version>
-    <!-- 2.18.0-rc1 tested successfully -->
-    <jackson.version>2.17.2</jackson.version>
+    <jackson.version>2.18.0</jackson.version>
     <jackcess.version>4.0.7</jackcess.version>
     <jackcess.encrypt.version>4.0.2</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
@@ -429,7 +428,7 @@
     <solrj.version>8.11.3</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17  -->
     <spring.version>5.3.39</spring.version>
-    <sqlite.version>3.46.1.0</sqlite.version>
+    <sqlite.version>3.46.1.2</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <testcontainers.version>1.20.1</testcontainers.version>
@@ -1138,10 +1137,11 @@
               <version>1.3.3</version>
             </coordinate>
             <!-- brought in by gcs (google-cloud-storage) fetcher -->
+            <!-- CVE-2024-23082 and CVE-2024-23081 are disputed -->
             <coordinate>
               <groupId>org.threeten</groupId>
               <artifactId>threetenbp</artifactId>
-              <version>1.6.9</version>
+              <version>1.7.0</version>
             </coordinate>
             <coordinate>
               <groupId>joda-time</groupId>
