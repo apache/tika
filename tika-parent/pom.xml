@@ -309,14 +309,14 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.43.1</google.cloud.version>
-    <aws.version>1.12.772</aws.version>
+    <aws.version>1.12.773</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
     <asm.version>9.7</asm.version>
-    <azure.core.version>1.52.0</azure.core.version>
-    <azure.core.http.netty.version>1.15.4</azure.core.http.netty.version>
+    <azure.core.version>1.53.0</azure.core.version>
+    <azure.core.http.netty.version>1.15.5</azure.core.http.netty.version>
     <azure.storage.blob.version>12.28.0</azure.storage.blob.version>
     <azure-identity.version>1.14.0</azure-identity.version>
     <azure.json.version>1.2.0</azure.json.version>
@@ -397,10 +397,10 @@
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.11</mime4j.version>
-    <mockito.version>5.14.0</mockito.version>
+    <mockito.version>5.14.1</mockito.version>
     <mockito-junit-jupiter.version>5.14.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <!-- 4.2.0.Alpha3 tested successfully -->
+    <!-- 4.2.0.Alpha4 tested successfully -->
     <netty.version>4.1.113.Final</netty.version>
     <oak.jackrabbit.version>1.70.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
@@ -447,7 +447,7 @@
     <zookeeper.version>3.8.4</zookeeper.version>
     <logback.version>1.5.8</logback.version>
     <zstd.version>1.5.6-6</zstd.version>
-    <nimbus-jose-jwt.version>9.41.1</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>
     <javacpp.version>1.5.10</javacpp.version>
   </properties>
 
