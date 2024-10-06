@@ -297,7 +297,7 @@
     <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
     <maven.failsafe.version>3.5.0</maven.failsafe.version>
     <maven.surefire.version>3.5.0</maven.surefire.version>
-    <maven.javadoc.version>3.10.0</maven.javadoc.version>
+    <maven.javadoc.version>3.10.1</maven.javadoc.version>
     <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.0</maven.shade.version>
@@ -398,7 +398,7 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.11</mime4j.version>
     <mockito.version>5.14.1</mockito.version>
-    <mockito-junit-jupiter.version>5.14.0</mockito-junit-jupiter.version>
+    <mockito-junit-jupiter.version>5.14.1</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
     <netty.version>4.1.113.Final</netty.version>
