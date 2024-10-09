@@ -289,7 +289,7 @@
     <project.build.outputTimestamp>1720795989</project.build.outputTimestamp>
     <!-- plugin versions -->
     <checkstyle.plugin.version>3.5.0</checkstyle.plugin.version>
-    <forbiddenapis.version>3.7</forbiddenapis.version>
+    <forbiddenapis.version>3.8</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.7.1</maven.assembly.version>
@@ -308,7 +308,7 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.43.1</google.cloud.version>
+    <google.cloud.version>2.43.2</google.cloud.version>
     <aws.version>1.12.773</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
@@ -317,7 +317,8 @@
     <asm.version>9.7.1</asm.version>
     <azure.core.version>1.53.0</azure.core.version>
     <azure.core.http.netty.version>1.15.5</azure.core.http.netty.version>
-    <azure.storage.blob.version>12.28.0</azure.storage.blob.version>
+    <azure.storage.blob.version>12.28.1</azure.storage.blob.version>
+    <azure.storage.common>12.27.1</azure.storage.common>
     <azure-identity.version>1.14.0</azure-identity.version>
     <azure.json.version>1.2.0</azure.json.version>
     <!-- 7.0.0 needs java 17 -->
@@ -434,7 +435,7 @@
     <testcontainers.version>1.20.2</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.10</tukaani.version>
-    <twelvemonkeys.version>3.11.0</twelvemonkeys.version>
+    <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
     <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
     <uimafit.version>3.4.0</uimafit.version>
     <uimaj.core.version>3.4.1</uimaj.core.version>
@@ -445,7 +446,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.4</zookeeper.version>
-    <logback.version>1.5.8</logback.version>
+    <logback.version>1.5.9</logback.version>
     <zstd.version>1.5.6-6</zstd.version>
     <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>
     <javacpp.version>1.5.10</javacpp.version>
@@ -547,6 +548,11 @@
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
         <version>${azure.storage.blob.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-storage-common</artifactId>
+        <version>${azure.storage.common}</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
