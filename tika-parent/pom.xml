@@ -288,7 +288,7 @@
     <project.build.outputTimestamp>1711465721</project.build.outputTimestamp>
     <!-- plugin versions -->
     <checkstyle.plugin.version>3.5.0</checkstyle.plugin.version>
-    <forbiddenapis.version>3.7</forbiddenapis.version>
+    <forbiddenapis.version>3.8</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.7.1</maven.assembly.version>
@@ -306,7 +306,7 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.43.1</google.cloud.version>
+    <google.cloud.version>2.43.2</google.cloud.version>
     <aws.version>1.12.773</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
@@ -405,7 +405,7 @@
     <test.containers.version>1.20.2</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.10</tukaani.version>
-    <twelvemonkeys.version>3.11.0</twelvemonkeys.version>
+    <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
     <!-- 3.5.0 doesn't compile with jdk8 -->
     <uima.version>3.4.1</uima.version>
     <!-- 3.5.0 doesn't compile with jdk8 -->
@@ -419,7 +419,7 @@
     <!-- 4.2.0.Alpha4 tested successfully -->
     <netty.version>4.1.114.Final</netty.version>
     <snappy.java.version>1.1.10.7</snappy.java.version>
-    <logback.version>1.5.8</logback.version>
+    <logback.version>1.5.9</logback.version>
     <javacpp.version>1.5.10</javacpp.version>
     <!-- h2 2.3 requires jdk11 -->
     <h2.version>2.2.224</h2.version>
@@ -498,7 +498,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.28.0</version>
+        <version>12.28.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-storage-common</artifactId>
+        <version>12.27.1</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
