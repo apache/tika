@@ -240,6 +240,18 @@ public class TextAndCSVParserTest extends TikaTest {
         assertEquals("text/x-vcalendar; charset=ISO-8859-1", r.metadata.get(Metadata.CONTENT_TYPE));
     }
 
+    @Test
+    public void testCustomizingDelimiter() throws Exception {
+        TikaConfig tikaConfig = null;
+        try (InputStream is = TextAndCSVParserTest.class.getResourceAsStream("/test-configs/tika-config-colon-delimiter.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
+        Parser p = new AutoDetectParser(tikaConfig);
+        XMLResult r = getXML("testColonDelimited.txt", p);
+        assertEquals("colon", r.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
+        assertContains("colon", r.metadata.get(Metadata.CONTENT_TYPE));
+    }
+
     private void assertContainsIgnoreWhiteSpaceDiffs(String expected, String xml) {
         assertContains(expected, xml.replaceAll("[\r\n\t ]", " "));
     }
