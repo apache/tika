@@ -16,10 +16,11 @@
  */
 package org.apache.tika.parser.csv;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TextAndCSVConfig {
+public class TextAndCSVConfig implements Serializable {
 
     private static final Map<Character, String> DELIMITER_TO_NAME_MAP = new HashMap<>();
     private static final Map<String, Character> NAME_TO_DELIMITER_MAP = new HashMap<>();
