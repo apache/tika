@@ -33,7 +33,7 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <microsoft-graph.version>6.17.0</microsoft-graph.version>
+    <microsoft-graph.version>6.18.0</microsoft-graph.version>
     <microsoft-kiota-serialization-json.version>1.1.1</microsoft-kiota-serialization-json.version>
     <wiremock.version>3.3.1</wiremock.version>
     <msal4j.version>1.17.2</msal4j.version>
@@ -42,11 +42,49 @@
 
   <dependencyManagement>
     <dependencies>
-	  <!-- Dependency convergence error oauth2-oidc-sdk vs msal4j TODO check after msal4j update -->
+      <!-- Dependency convergence error oauth2-oidc-sdk vs msal4j TODO check after msal4j update -->
       <dependency>
         <groupId>net.minidev</groupId>
         <artifactId>json-smart</artifactId>
         <version>2.5.1</version>
+      </dependency>
+      <!-- com.microsoft.kiota Dependency convergence errors since microsoft-graph-core 6.18.0
+           TODO try removing this when 6.18.1 comes out
+      -->
+      <dependency>
+        <groupId>com.microsoft.kiota</groupId>
+        <artifactId>microsoft-kiota-serialization-json</artifactId>
+        <version>1.5.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.microsoft.kiota</groupId>
+        <artifactId>microsoft-kiota-serialization-form</artifactId>
+        <version>1.5.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.microsoft.kiota</groupId>
+        <artifactId>microsoft-kiota-authentication-azure</artifactId>
+        <version>1.5.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.microsoft.kiota</groupId>
+        <artifactId>microsoft-kiota-http-okHttp</artifactId>
+        <version>1.5.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.microsoft.kiota</groupId>
+        <artifactId>microsoft-kiota-abstractions</artifactId>
+        <version>1.5.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.microsoft.kiota</groupId>
+        <artifactId>microsoft-kiota-serialization-text</artifactId>
+        <version>1.5.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.microsoft.kiota</groupId>
+        <artifactId>microsoft-kiota-serialization-multipart</artifactId>
+        <version>1.5.1</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
