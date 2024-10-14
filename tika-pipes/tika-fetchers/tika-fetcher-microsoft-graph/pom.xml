@@ -34,7 +34,7 @@
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <microsoft-graph.version>6.18.0</microsoft-graph.version>
-    <microsoft-kiota-serialization-json.version>1.1.1</microsoft-kiota-serialization-json.version>
+    <microsoft-kiota.version>1.7.0</microsoft-kiota.version>
     <wiremock.version>3.3.1</wiremock.version>
     <msal4j.version>1.17.2</msal4j.version>
     <kotlin-stdlib.version>2.0.21</kotlin-stdlib.version>
@@ -48,43 +48,43 @@
         <artifactId>json-smart</artifactId>
         <version>2.5.1</version>
       </dependency>
-      <!-- com.microsoft.kiota Dependency convergence errors since microsoft-graph-core 6.18.0
-           TODO try removing this when 6.18.1 comes out
+      <!-- avoid com.microsoft.kiota Dependency convergence errors / outdated versions
+           since microsoft-graph-core 6.18.0
       -->
       <dependency>
         <groupId>com.microsoft.kiota</groupId>
         <artifactId>microsoft-kiota-serialization-json</artifactId>
-        <version>1.7.0</version>
+        <version>${microsoft-kiota.version}</version>
       </dependency>
       <dependency>
         <groupId>com.microsoft.kiota</groupId>
         <artifactId>microsoft-kiota-serialization-form</artifactId>
-        <version>1.7.0</version>
+        <version>${microsoft-kiota.version}</version>
       </dependency>
       <dependency>
         <groupId>com.microsoft.kiota</groupId>
         <artifactId>microsoft-kiota-authentication-azure</artifactId>
-        <version>1.7.0</version>
+        <version>${microsoft-kiota.version}</version>
       </dependency>
       <dependency>
         <groupId>com.microsoft.kiota</groupId>
         <artifactId>microsoft-kiota-http-okHttp</artifactId>
-        <version>1.7.0</version>
+        <version>${microsoft-kiota.version}</version>
       </dependency>
       <dependency>
         <groupId>com.microsoft.kiota</groupId>
         <artifactId>microsoft-kiota-abstractions</artifactId>
-        <version>1.7.0</version>
+        <version>${microsoft-kiota.version}</version>
       </dependency>
       <dependency>
         <groupId>com.microsoft.kiota</groupId>
         <artifactId>microsoft-kiota-serialization-text</artifactId>
-        <version>1.7.0</version>
+        <version>${microsoft-kiota.version}</version>
       </dependency>
       <dependency>
         <groupId>com.microsoft.kiota</groupId>
         <artifactId>microsoft-kiota-serialization-multipart</artifactId>
-        <version>1.7.0</version>
+        <version>${microsoft-kiota.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
