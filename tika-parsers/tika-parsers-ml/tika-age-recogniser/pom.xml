@@ -131,7 +131,7 @@
       <dependency>
           <groupId>org.apache.curator</groupId>
           <artifactId>curator-recipes</artifactId>
-          <version>5.7.0</version>
+          <version>5.7.1</version>
       </dependency>
 
       <!-- avoid many security and convergence problems (still not perfect) -->
