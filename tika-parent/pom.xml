@@ -419,7 +419,8 @@
     <!-- 4.2.0.Alpha4 tested successfully -->
     <netty.version>4.1.114.Final</netty.version>
     <snappy.java.version>1.1.10.7</snappy.java.version>
-    <logback.version>1.5.9</logback.version>
+    <!-- can't update to 1.4, these need jdk11 -->
+    <logback.version>1.3.14</logback.version>
     <javacpp.version>1.5.10</javacpp.version>
     <!-- h2 2.3 requires jdk11 -->
     <h2.version>2.2.224</h2.version>
