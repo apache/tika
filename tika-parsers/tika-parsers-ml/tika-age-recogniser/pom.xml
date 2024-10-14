@@ -31,6 +31,9 @@
   <name>Apache Tika age recogniser</name>
   <url>http://maven.apache.org</url>
 
+  <properties>
+      <curator.version>5.7.1</curator.version>
+  </properties>
 
   <!-- we're not maintaining this module.
   Keep this here instead of cluttering the parent pom -->
@@ -131,7 +134,7 @@
       <dependency>
           <groupId>org.apache.curator</groupId>
           <artifactId>curator-recipes</artifactId>
-          <version>5.7.1</version>
+          <version>${curator.version}</version>
       </dependency>
 
       <!-- avoid many security and convergence problems (still not perfect) -->
@@ -140,12 +143,12 @@
       <dependency>
           <groupId>org.apache.curator</groupId>
           <artifactId>curator-framework</artifactId>
-          <version>5.7.1</version>
+          <version>${curator.version}</version>
       </dependency>
       <dependency>
           <groupId>org.apache.curator</groupId>
           <artifactId>curator-client</artifactId>
-          <version>5.7.1</version>
+          <version>${curator.version}</version>
       </dependency>
       <dependency>
           <groupId>org.apache.ivy</groupId>
