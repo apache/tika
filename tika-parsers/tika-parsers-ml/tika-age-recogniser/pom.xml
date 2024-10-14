@@ -55,7 +55,7 @@
       <dependency>
         <groupId>net.bytebuddy</groupId>
         <artifactId>byte-buddy</artifactId>
-        <version>1.15.3</version>
+        <version>1.15.4</version>
       </dependency>
       <dependency>
         <groupId>org.scala-lang</groupId>
