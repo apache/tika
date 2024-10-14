@@ -84,7 +84,7 @@
       <dependency>
         <groupId>com.microsoft.kiota</groupId>
         <artifactId>microsoft-kiota-serialization-multipart</artifactId>
-        <version>1.5.1</version>
+        <version>1.7.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
