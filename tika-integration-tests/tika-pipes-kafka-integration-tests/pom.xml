@@ -76,6 +76,6 @@
   </dependencies>
 
   <scm>
-    <tag>3.0.0-BETA2-rc1</tag>
+    <tag>3.0.0</tag>
   </scm>
 </project>

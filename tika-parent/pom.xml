@@ -1436,7 +1436,7 @@
       <url>https://github.com/apache/tika</url>
   -->
   <scm>
-    <tag>3.0.0-BETA2-rc1</tag>
+    <tag>3.0.0</tag>
     <connection>scm:git:https://github.com/apache/</connection>
     <developerConnection>scm:git:https://github.com/apache/</developerConnection>
     <url>https://github.com/apache/tika</url>
