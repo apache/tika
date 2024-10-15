@@ -1,3 +1,7 @@
+Release 3.0.0 - 10/15/2024
+
+   * Fix regression in TextAndCSVParser (TIKA-4278).
+
 Release 3.0.0-BETA2 - 07/09/2024
 
    BREAKING CHANGES
