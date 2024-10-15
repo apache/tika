@@ -1396,6 +1396,7 @@
             <version>${maven.javadoc.version}</version>
             <configuration>
               <doclint>none</doclint>
+              <sourcepath>src/main/java</sourcepath>
             </configuration>
           </plugin>
         </plugins>
