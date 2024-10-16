@@ -18,14 +18,14 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<Configuration status="WARN">
+<Configuration>
   <Appenders>
     <Console name="Console" target="SYSTEM_ERR">
       <PatternLayout pattern="%-5p [%t] %d{HH:mm:ss,SSS} %c %m%n"/>
     </Console>
   </Appenders>
   <Loggers>
-    <Root level="info">
+    <Root level="error">
       <AppenderRef ref="Console"/>
     </Root>
   </Loggers>

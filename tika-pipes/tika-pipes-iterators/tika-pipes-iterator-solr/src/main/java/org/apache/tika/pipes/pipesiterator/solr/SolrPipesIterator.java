@@ -24,12 +24,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
+import org.apache.solr.client.solrj.impl.Http2SolrClient;
 import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
@@ -49,6 +51,7 @@ import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Iterates through results from a Solr query.
@@ -232,11 +235,21 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
 
     private SolrClient createSolrClient() throws TikaConfigException {
         if (solrUrls == null || solrUrls.isEmpty()) {
+            //TODO -- there's more that we need to pass through, including ssl etc.
+            Http2SolrClient.Builder http2SolrClientBuilder = new Http2SolrClient.Builder();
+            if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
+                http2SolrClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
+            }
+            http2SolrClientBuilder
+                    .withRequestTimeout(httpClientFactory.getRequestTimeout(), TimeUnit.MILLISECONDS)
+                    .withConnectionTimeout(connectionTimeout, TimeUnit.MILLISECONDS);
+
+
+            Http2SolrClient http2SolrClient = http2SolrClientBuilder.build();
             return new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(solrZkChroot))
-                    .withHttpClient(httpClientFactory.build())
-                    .withConnectionTimeout(connectionTimeout)
-                    .withSocketTimeout(socketTimeout)
+                    .withHttpClient(http2SolrClient)
                     .build();
+
         }
         return new LBHttpSolrClient.Builder()
                 .withConnectionTimeout(connectionTimeout)
