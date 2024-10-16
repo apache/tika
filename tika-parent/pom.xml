@@ -1103,6 +1103,12 @@
         <version>3.2.0</version>
         <configuration>
           <excludeCoordinates>
+            <!-- solr emitter -->
+            <coordinate>
+              <groupId>org.eclipse.jetty</groupId>
+              <artifactId>jetty-http</artifactId>
+              <version>11.0.24</version>
+            </coordinate>
             <coordinate>
               <groupId>io.netty</groupId>
               <artifactId>netty-handler</artifactId>
