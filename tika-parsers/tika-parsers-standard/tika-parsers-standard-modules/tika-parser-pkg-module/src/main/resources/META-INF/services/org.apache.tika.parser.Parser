@@ -16,4 +16,3 @@
 org.apache.tika.parser.pkg.CompressorParser
 org.apache.tika.parser.pkg.PackageParser
 org.apache.tika.parser.pkg.RarParser
-org.apache.tika.parser.pkg.UniversalExecutableParser
