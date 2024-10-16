@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -47,6 +48,9 @@ public class UniversalExecutableParser implements Parser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-mach-o-universal"));
+
+    private static final int MAX_ARCHS_COUNT = 1000;
+    private static final int MAX_ARCH_SIZE = 500_000_000;//arbitrary
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext arg0) {
@@ -98,7 +102,9 @@ public class UniversalExecutableParser implements Parser {
         if (archsCount < 1) {
             throw new TikaException("Invalid number of architectures: " + archsCount);
         }
-        //TODO -- add check for a max archsCount to avoid memory issues
+        if (archsCount > MAX_ARCHS_COUNT) {
+            throw new TikaException("Number of architectures=" + archsCount + " greater than max allowed=" + MAX_ARCHS_COUNT);
+        }
 
         currentOffset += 4;
 
@@ -122,6 +128,9 @@ public class UniversalExecutableParser implements Parser {
                     ? (isLE ? EndianUtils.readLongLE(stream) : EndianUtils.readLongBE(stream))
                     : (isLE ? EndianUtils.readIntLE(stream) : EndianUtils.readIntBE(stream));
 
+            if (size < 0 || size > MAX_ARCH_SIZE) {
+                throw new TikaException("Arch size=" + size + " must be > 0 and < " + MAX_ARCH_SIZE);
+            }
             offsetAndSizePerArch[archIndex] = Pair.of(offset, size);
 
             if (is64) {
@@ -133,16 +142,16 @@ public class UniversalExecutableParser implements Parser {
             currentOffset += archStructSize;
         }
         if (unsortedOffsets) {
-            Arrays.sort(offsetAndSizePerArch, Comparator.comparingLong(Pair::getLeft));
+            Arrays.sort(offsetAndSizePerArch, Comparator.comparingLong(entry -> (long) entry.getLeft()));
         }
 
         for (int archIndex = 0; archIndex < archsCount; archIndex++) {
-            long skipUntilStart = offsetAndSizePerArch[archIndex].getLeft() - currentOffset;
+            long skipUntilStart = (long)offsetAndSizePerArch[archIndex].getLeft() - currentOffset;
             IOUtils.skipFully(stream, skipUntilStart);
             currentOffset += skipUntilStart;
-
-            //TODO -- bounds check getRight() value earlier to avoid overflow ???
-            byte[] perArchMachO = new byte[(int) offsetAndSizePerArch[archIndex].getRight()];
+            long sz = (long)offsetAndSizePerArch[archIndex].getRight();
+            //we bounds checked this above.
+            byte[] perArchMachO = new byte[(int)sz];
             IOUtils.readFully(stream, perArchMachO);
             currentOffset += perArchMachO.length;
 
@@ -154,26 +163,4 @@ public class UniversalExecutableParser implements Parser {
         }
     }
 
-    private static class Pair {
-
-        static Pair of(long left, long right) {
-            return new Pair(left, right);
-        }
-
-        public Pair(long left, long right) {
-            this.left = left;
-            this.right = right;
-        }
-
-        private final long left;
-        private final long right;
-
-        public long getLeft() {
-            return left;
-        }
-
-        public long getRight() {
-            return right;
-        }
-    }
 }
