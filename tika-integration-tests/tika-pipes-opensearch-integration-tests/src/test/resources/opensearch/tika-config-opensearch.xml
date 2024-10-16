@@ -81,8 +81,8 @@
       <connectionTimeout>10000</connectionTimeout>
       <socketTimeout>60000</socketTimeout>
       <includeRouting>{INCLUDE_ROUTING}</includeRouting>
-      <userName>admin</userName>
-      <password>admin</password>
+      <userName>{OPENSEARCH_USERNAME}</userName>
+      <password>{OPENSEARCH_PASSWORD}</password>
     </pipesReporter>
   </async>
   <fetchers>
@@ -101,8 +101,8 @@
       <idField>_id</idField>
       <connectionTimeout>10000</connectionTimeout>
       <socketTimeout>60000</socketTimeout>
-      <userName>admin</userName>
-      <password>admin</password>
+      <userName>{OPENSEARCH_USERNAME}</userName>
+      <password>{OPENSEARCH_PASSWORD}</password>
     </emitter>
   </emitters>
   <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
