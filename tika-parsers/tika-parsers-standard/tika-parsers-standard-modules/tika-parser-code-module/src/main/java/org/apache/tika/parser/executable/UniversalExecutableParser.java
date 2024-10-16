@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.pkg;
+package org.apache.tika.parser.executable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,7 +24,6 @@ import java.util.Comparator;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -69,11 +68,11 @@ public class UniversalExecutableParser implements Parser {
 
         if ((first4[0] == (byte) 0xBF || first4[0] == (byte) 0xBE) &&
                 first4[1] == (byte) 0xBA && first4[2] == (byte) 0xFE && first4[3] == (byte) 0xCA) {
-            parseMachO(xhtml, extractor, handler, metadata, stream, first4);
+            parseMachO(xhtml, extractor, metadata, stream, first4);
         } else if (first4[0] == (byte) 0xCA && first4[1] == (byte) 0xFE &&
                 first4[2] == (byte) 0xBA &&
                 (first4[3] == (byte) 0xBF || first4[3] == (byte) 0xBE)) {
-            parseMachO(xhtml, extractor, handler, metadata, stream, first4);
+            parseMachO(xhtml, extractor, metadata, stream, first4);
         } else {
             throw new UnsupportedFormatException("Not a universal executable file");
         }
@@ -85,32 +84,32 @@ public class UniversalExecutableParser implements Parser {
      * Parses a Mach-O Universal file
      */
     public void parseMachO(XHTMLContentHandler xhtml, EmbeddedDocumentExtractor extractor,
-                           ContentHandler handler, Metadata metadata, InputStream stream,
+                           Metadata metadata, InputStream stream,
                            byte[] first4)
             throws IOException, SAXException, TikaException {
         var currentOffset = (long) first4.length;
         var isLE = first4[3] == (byte) 0xCA;
         var is64 = first4[isLE ? 0 : 3] == (byte) 0xBF;
-        var archStructSize = 4 /* cputype */ + 4 /* cpusubtype */ + (is64
+        int archStructSize = 4 /* cputype */ + 4 /* cpusubtype */ + (is64
                 ? 8 /* offset */ + 8 /* size */ + 4 /* align */ + 4 /* reserved */
                 : 4 /* offset */ + 4 /* size */ + 4 /* align */);
 
-        var archsCount = isLE ? EndianUtils.readIntLE(stream) : EndianUtils.readIntBE(stream);
+        int archsCount = isLE ? EndianUtils.readIntLE(stream) : EndianUtils.readIntBE(stream);
         if (archsCount < 1) {
             throw new TikaException("Invalid number of architectures: " + archsCount);
         }
+        //TODO -- add check for a max archsCount to avoid memory issues
+
         currentOffset += 4;
 
-        var archsSize = archsCount * archStructSize;
+        long archsSize = (long) archsCount * archStructSize;
 
         var unsortedOffsets = false;
         var offsetAndSizePerArch = new Pair[archsCount];
-        for (var archIndex = 0; archIndex < archsCount; archIndex++) {
-            if (stream.skip(8) != 8) {
-                throw new TikaException("Failed to skip cputype and cpusubtype");
-            }
+        for (int archIndex = 0; archIndex < archsCount; archIndex++) {
+            IOUtils.skipFully(stream, 8);
 
-            var offset = is64
+            long offset = is64
                     ? (isLE ? EndianUtils.readLongLE(stream) : EndianUtils.readLongBE(stream))
                     : (isLE ? EndianUtils.readIntLE(stream) : EndianUtils.readIntBE(stream));
             if (offset < 4 + 4 + archsSize) {
@@ -119,46 +118,62 @@ public class UniversalExecutableParser implements Parser {
             if (!unsortedOffsets && archIndex > 0 && offset < (long) offsetAndSizePerArch[archIndex - 1].getLeft()) {
                 unsortedOffsets = true;
             }
-            var size = is64
+            long size = is64
                     ? (isLE ? EndianUtils.readLongLE(stream) : EndianUtils.readLongBE(stream))
                     : (isLE ? EndianUtils.readIntLE(stream) : EndianUtils.readIntBE(stream));
 
             offsetAndSizePerArch[archIndex] = Pair.of(offset, size);
 
             if (is64) {
-                if (stream.skip(8) != 8) {
-                    throw new TikaException("Failed to skip align and reserved");
-                }
+                IOUtils.skipFully(stream, 8);
             } else {
-                if (stream.skip(4) != 4) {
-                    throw new TikaException("Failed to skip align");
-                }
+                IOUtils.skipFully(stream, 4);
             }
 
             currentOffset += archStructSize;
         }
         if (unsortedOffsets) {
-            Arrays.sort(offsetAndSizePerArch, Comparator.comparingLong(entry -> (long) entry.getLeft()));
+            Arrays.sort(offsetAndSizePerArch, Comparator.comparingLong(Pair::getLeft));
         }
 
-        for (var archIndex = 0; archIndex < archsCount; archIndex++) {
-            var skipUntilStart = (long) offsetAndSizePerArch[archIndex].getLeft() - currentOffset;
-            if (stream.skip(skipUntilStart) != skipUntilStart) {
-                throw new TikaException("Failed to skip to the start of the per-architecture Mach-O");
-            }
+        for (int archIndex = 0; archIndex < archsCount; archIndex++) {
+            long skipUntilStart = offsetAndSizePerArch[archIndex].getLeft() - currentOffset;
+            IOUtils.skipFully(stream, skipUntilStart);
             currentOffset += skipUntilStart;
 
-            var perArchMachO = new byte[(int) (long) offsetAndSizePerArch[archIndex].getRight()];
-            if (stream.read(perArchMachO) != perArchMachO.length) {
-                throw new TikaException("Failed to read the per-architecture Mach-O");
-            }
+            //TODO -- bounds check getRight() value earlier to avoid overflow ???
+            byte[] perArchMachO = new byte[(int) offsetAndSizePerArch[archIndex].getRight()];
+            IOUtils.readFully(stream, perArchMachO);
             currentOffset += perArchMachO.length;
 
             var perArchMetadata = new Metadata();
             var tikaInputStream = TikaInputStream.get(perArchMachO, perArchMetadata);
             if (extractor.shouldParseEmbedded(perArchMetadata)) {
-                extractor.parseEmbedded(tikaInputStream, handler, perArchMetadata, true);
+                extractor.parseEmbedded(tikaInputStream, xhtml, perArchMetadata, true);
             }
+        }
+    }
+
+    private static class Pair {
+
+        static Pair of(long left, long right) {
+            return new Pair(left, right);
+        }
+
+        public Pair(long left, long right) {
+            this.left = left;
+            this.right = right;
+        }
+
+        private final long left;
+        private final long right;
+
+        public long getLeft() {
+            return left;
+        }
+
+        public long getRight() {
+            return right;
         }
     }
 }

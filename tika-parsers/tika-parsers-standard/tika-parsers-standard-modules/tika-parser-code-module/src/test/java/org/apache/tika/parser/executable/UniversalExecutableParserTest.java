@@ -14,41 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.pkg;
+package org.apache.tika.parser.executable;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.io.InputStream;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.BodyContentHandler;
 
 /**
  * Test case for parsing universal executable files.
  */
-public class UniversalExecutableParserTest extends AbstractPkgTest {
+public class UniversalExecutableParserTest extends TikaTest {
 
     @Test
     public void testMachO() throws Exception {
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-
-        try (InputStream stream = getResourceAsStream("/test-documents/testMacOS-x86_64-arm64")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, monitoringContext);
-        }
-
-        assertEquals(2, monitor.filenames.size());
-        assertEquals(2, monitor.mediaTypes.size());
-
-        for (String filename : monitor.filenames) {
-            assertNull(filename);
-        }
-        for (String mediaType : monitor.mediaTypes) {
-            assertEquals("application/x-mach-o-executable", mediaType);
+        List<Metadata> metadataList = getRecursiveMetadata("testMacOS-x86_64-arm64");
+        assertEquals(3, metadataList.size());
+        assertEquals("application/x-mach-o-universal", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        for (int i = 1; i < 3; i++) {
+            assertEquals("application/x-mach-o-executable", metadataList.get(i).get(Metadata.CONTENT_TYPE));
         }
     }
 }
