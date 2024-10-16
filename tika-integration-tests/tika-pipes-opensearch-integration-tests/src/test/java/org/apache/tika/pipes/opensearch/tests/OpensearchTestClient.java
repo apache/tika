@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.xsearch.tests;
+package org.apache.tika.pipes.opensearch.tests;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -41,16 +41,16 @@ import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
  * This expands on the OpenSearchClient for testing purposes.
  * This has more functionality than is needed for sending docs to OpenSearch
  */
-public class XSearchTestClient extends OpenSearchClient {
+public class OpensearchTestClient extends OpenSearchClient {
 
-    public XSearchTestClient(String openSearchUrl, HttpClient httpClient,
-                             OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
-                             OpenSearchEmitter.UpdateStrategy updateStrategy,
-                             String embeddedFileFieldName) {
+    public OpensearchTestClient(String openSearchUrl, HttpClient httpClient,
+                                OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
+                                OpenSearchEmitter.UpdateStrategy updateStrategy,
+                                String embeddedFileFieldName) {
         super(openSearchUrl, httpClient, attachmentStrategy, updateStrategy, embeddedFileFieldName);
     }
 
-    protected JsonResponse putJson(String url, String json) throws IOException {
+    public JsonResponse putJson(String url, String json) throws IOException {
         HttpPut httpRequest = new HttpPut(url);
         ByteArrayEntity entity = new ByteArrayEntity(json.getBytes(StandardCharsets.UTF_8));
         httpRequest.setEntity(entity);

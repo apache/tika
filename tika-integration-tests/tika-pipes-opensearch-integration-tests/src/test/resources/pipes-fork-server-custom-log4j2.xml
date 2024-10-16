@@ -17,7 +17,7 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<Configuration status="INFO">
+<Configuration>
   <Appenders>
     <Console name="console" target="SYSTEM_ERR">
       <PatternLayout
@@ -25,7 +25,8 @@
     </Console>
   </Appenders>
   <Loggers>
-    <Root level="info" additivity="false">
+    <!-- turn off logging for the forked processes -->
+    <Root level="fatal" additivity="false">
       <AppenderRef ref="console" />
     </Root>
   </Loggers>

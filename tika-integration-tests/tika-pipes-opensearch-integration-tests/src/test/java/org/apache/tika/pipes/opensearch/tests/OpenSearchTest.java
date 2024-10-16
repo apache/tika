@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.xsearch.tests;
+package org.apache.tika.pipes.opensearch.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -36,14 +36,17 @@ import java.util.regex.Pattern;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.io.TempDir;
+import org.opensearch.testcontainers.OpensearchContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.client.HttpClientFactory;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.HandlerConfig;
@@ -52,53 +55,53 @@ import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.opensearch.JsonResponse;
 import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
 
-public abstract class TikaPipesXSearchBase {
-
-    //@TempDir -- we can't use this yet because of junit4+junit5
-    private Path pipesDirectory;
-
-    private Path testDocDirectory;
+public class OpenSearchTest {
+    private static DockerImageName OPENSEARCH_IMAGE = DockerImageName.parse("opensearchproject/opensearch:2.17.1");
+    private static OpensearchContainer<?> CONTAINER;
 
     protected static final String TEST_INDEX = "tika-pipes-index";
     private int numTestDocs = 0;
-    private static String OPEN_SEARCH_HOST;
-    private static int OPEN_SEARCH_PORT;
-    //this includes only the base, not the collection, e.g. https://localhost:49213
-    protected static String OPEN_SEARCH_ENDPOINT_BASE;
-    private static XSearchTestClient CLIENT;
 
 
-    @BeforeEach
-    public void setUp() throws IOException {
-        pipesDirectory = Files.createTempDirectory("tika-opensearch-integration-");
-        testDocDirectory = pipesDirectory.resolve("docs");
+    @BeforeAll
+    public static void setUp() {
+        CONTAINER = new OpensearchContainer<>(OPENSEARCH_IMAGE).withSecurityEnabled();
+        CONTAINER.start();
+        HttpClientFactory httpClientFactory = new HttpClientFactory();
+        httpClientFactory.setUserName(CONTAINER.getUsername());
+        httpClientFactory.setPassword(CONTAINER.getPassword());
     }
+
+    @AfterAll
+    public static void tearDown() {
+        CONTAINER.close();
+    }
+
     @AfterEach
-    public void tearDown() throws Exception {
-        //we shouldn't have to do this because of @TempDir
-        //there are some timing/order issues because of the joint junit 4 and 5
-        FileUtils.deleteDirectory(pipesDirectory.toFile());
-        JsonResponse response = CLIENT.deleteIndex(OPEN_SEARCH_ENDPOINT_BASE + TEST_INDEX);
-        assertEquals(200, response.getStatus());
-        assertTrue(response.getJson().get("acknowledged").asBoolean());
+    public void clearIndex() throws TikaConfigException, IOException {
+        OpensearchTestClient client = getNewClient();
+        String endpoint = CONTAINER.getHttpHostAddress() + "/" + TEST_INDEX;
+        client.deleteIndex(endpoint);
     }
 
     @Test
-    public void testBasicFSToOpenSearch() throws Exception {
+    public void testBasicFSToOpenSearch(@TempDir Path pipesDirectory, @TempDir Path testDocDirectory) throws Exception {
+
+        OpensearchTestClient client = getNewClient();
         int numHtmlDocs = 42;
-        createTestHtmlFiles("Happiness", numHtmlDocs);
+        createTestHtmlFiles("Happiness", numHtmlDocs, testDocDirectory);
 
-        String endpoint = OPEN_SEARCH_ENDPOINT_BASE + TEST_INDEX;
-        sendMappings(endpoint, TEST_INDEX, "opensearch-mappings.json");
+        String endpoint = CONTAINER.getHttpHostAddress() + "/" + TEST_INDEX;
+        sendMappings(client, endpoint, TEST_INDEX, "opensearch-mappings.json");
 
-        runPipes(OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
-                OpenSearchEmitter.UpdateStrategy.UPSERT,
-                HandlerConfig.PARSE_MODE.CONCATENATE, endpoint);
+        runPipes(client, OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
+                OpenSearchEmitter.UpdateStrategy.UPSERT, HandlerConfig.PARSE_MODE.CONCATENATE, endpoint,
+                pipesDirectory, testDocDirectory);
 
         String query = "{ \"track_total_hits\": true, \"query\": { \"match\": { \"content\": { " +
                 "\"query\": \"happiness\" } } } }";
 
-        JsonResponse results = CLIENT.postJson(endpoint + "/_search", query);
+        JsonResponse results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + 1,
                 results.getJson().get("hits").get("total").get("value").asInt());
@@ -106,7 +109,7 @@ public abstract class TikaPipesXSearchBase {
         //now try match all
         query = "{ \"track_total_hits\": true, \"query\": { \"match_all\": {} }, " +
                 "\"from\": 0, \"size\": 1000 }";
-        results = CLIENT.postJson(endpoint + "/_search", query);
+        results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + numTestDocs,
                 results.getJson().get("hits").get("total").get("value").asInt());
@@ -126,30 +129,33 @@ public abstract class TikaPipesXSearchBase {
             }
             statusCounts.put(status, cnt);
         }
-        System.out.println(statusCounts);
         assertEquals(numHtmlDocs, (int) statusCounts.get("PARSE_SUCCESS"));
         //the npe is caught and counted as a "parse success with exception"
         assertEquals(1, (int) statusCounts.get("PARSE_SUCCESS_WITH_EXCEPTION"));
         //the embedded docx is emitted directly
         assertEquals(1, (int) statusCounts.get("EMIT_SUCCESS"));
         assertEquals(2, (int) statusCounts.get("OOM"));
+
     }
 
-    @Test
-    public void testParentChildFSToOpenSearch() throws Exception {
-        int numHtmlDocs = 42;
-        createTestHtmlFiles("Happiness", numHtmlDocs);
-        String endpoint = OPEN_SEARCH_ENDPOINT_BASE + TEST_INDEX;
-        sendMappings(endpoint, TEST_INDEX, "opensearch-parent-child-mappings.json");
 
-        runPipes(OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD,
+    @Test
+    public void testParentChildFSToOpenSearch(@TempDir Path pipesDirectory, @TempDir Path testDocDirectory) throws Exception {
+        int numHtmlDocs = 42;
+        OpensearchTestClient client = getNewClient();
+
+        createTestHtmlFiles("Happiness", numHtmlDocs, testDocDirectory);
+        String endpoint = CONTAINER.getHttpHostAddress() + "/" + TEST_INDEX;
+        sendMappings(client, endpoint, TEST_INDEX, "opensearch-parent-child-mappings.json");
+
+        runPipes(client, OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD,
                 OpenSearchEmitter.UpdateStrategy.OVERWRITE,
-                HandlerConfig.PARSE_MODE.RMETA, endpoint);
+                HandlerConfig.PARSE_MODE.RMETA, endpoint, pipesDirectory, testDocDirectory);
 
         String query = "{ \"track_total_hits\": true, \"query\": { \"match\": { \"content\": { " +
                 "\"query\": \"happiness\" } } } }";
 
-        JsonResponse results = CLIENT.postJson(endpoint + "/_search", query);
+        JsonResponse results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + 1, results.getJson().get("hits").get("total").get("value").asInt());
 
@@ -158,7 +164,7 @@ public abstract class TikaPipesXSearchBase {
                 //"\"from\":0, \"size\":1000," +
                 "\"track_total_hits\": true, \"query\": { " +
                 "\"match_all\": {} } }";
-        results = CLIENT.postJson(endpoint + "/_search", query);
+        results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + 3 + 12, // 3 mock files and...
                 // the .docx file has 11 embedded files, plus itself
@@ -168,17 +174,18 @@ public abstract class TikaPipesXSearchBase {
         query = "{ \"track_total_hits\": true, \"query\": { \"query_string\": { " +
                 "\"default_field\": \"content\",  " +
                 "\"query\": \"embed4 zip\" , \"minimum_should_match\":2 } } } ";
-        results = CLIENT.postJson(endpoint + "/_search", query);
+        results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(1,
                 results.getJson().get("hits").get("total").get("value").asInt());
         JsonNode source = results.getJson().get("hits").get("hits").get(0).get("_source");
 
-        Matcher m = Pattern.compile("\\Atest_recursive_embedded" +
-                ".docx-[0-9a-f]{8}-[0-9a-f]{4}-" +
-                "[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\Z").matcher(
-                results.getJson().get("hits").get("hits").get(0).get("_id").asText()
-        );
+        Matcher m = Pattern
+                .compile("\\Atest_recursive_embedded" +
+                        ".docx-[0-9a-f]{8}-[0-9a-f]{4}-" +
+                        "[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\Z").matcher(
+                        results.getJson().get("hits").get("hits").get(0).get("_id").asText()
+                );
         assertTrue(m.find(), "test_recursive_embedded.docx_$guid");
         assertEquals("test_recursive_embedded.docx",
                 results.getJson().get("hits").get("hits").get(0).get("_routing").asText());
@@ -193,27 +200,30 @@ public abstract class TikaPipesXSearchBase {
         query = "{ \"track_total_hits\": true, \"query\": { \"parent_id\": { " +
                 "\"type\": \"embedded\",  " +
                 "\"id\": \"test_recursive_embedded.docx\" } } } ";
-        results = CLIENT.postJson(endpoint + "/_search", query);
+        results = client.postJson(endpoint + "/_search", query);
         assertEquals(11,
                 results.getJson().get("hits").get("total").get("value").asInt());
     }
 
 
     @Test
-    public void testSeparateDocsFSToOpenSearch() throws Exception {
-        int numHtmlDocs = 42;
-        createTestHtmlFiles("Happiness", numHtmlDocs);
-        String endpoint = OPEN_SEARCH_ENDPOINT_BASE + TEST_INDEX;
-        sendMappings(endpoint, TEST_INDEX, "opensearch-mappings.json");
+    public void testSeparateDocsFSToOpenSearch(@TempDir Path pipesDirectory, @TempDir Path testDocDirectory) throws Exception {
+        OpensearchTestClient client = getNewClient();
 
-        runPipes(OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
+        int numHtmlDocs = 42;
+        createTestHtmlFiles("Happiness", numHtmlDocs, testDocDirectory);
+        String endpoint = CONTAINER.getHttpHostAddress() + "/" + TEST_INDEX;
+        sendMappings(client, endpoint, TEST_INDEX, "opensearch-mappings.json");
+
+        runPipes(client, OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
                 OpenSearchEmitter.UpdateStrategy.OVERWRITE,
-                HandlerConfig.PARSE_MODE.RMETA, endpoint);
+                HandlerConfig.PARSE_MODE.RMETA, endpoint,
+                pipesDirectory, testDocDirectory);
 
         String query = "{ \"track_total_hits\": true, \"query\": { \"match\": { \"content\": { " +
                 "\"query\": \"happiness\" } } } }";
 
-        JsonResponse results = CLIENT.postJson(endpoint + "/_search", query);
+        JsonResponse results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + 1,
                 results.getJson().get("hits").get("total").get("value").asInt());
@@ -223,7 +233,7 @@ public abstract class TikaPipesXSearchBase {
                 //"\"from\":0, \"size\":1000," +
                 "\"track_total_hits\": true, \"query\": { " +
                 "\"match_all\": {} } }";
-        results = CLIENT.postJson(endpoint + "/_search", query);
+        results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + 3 + 12, //3 for the mock docs,
                 // and the .docx file has 11 embedded files, plus itself
@@ -233,7 +243,7 @@ public abstract class TikaPipesXSearchBase {
         query = "{ \"track_total_hits\": true, \"query\": { \"query_string\": { " +
                 "\"default_field\": \"content\",  " +
                 "\"query\": \"embed4 zip\" , \"minimum_should_match\":2 } } } ";
-        results = CLIENT.postJson(endpoint + "/_search", query);
+        results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(1,
                 results.getJson().get("hits").get("total").get("value").asInt());
@@ -257,26 +267,28 @@ public abstract class TikaPipesXSearchBase {
         query = "{ \"track_total_hits\": true, \"query\": { \"parent_id\": { " +
                 "\"type\": \"embedded\",  " +
                 "\"id\": \"test_recursive_embedded.docx\" } } } ";
-        results = CLIENT.postJson(endpoint + "/_search", query);
+        results = client.postJson(endpoint + "/_search", query);
         assertEquals(400, results.getStatus());
     }
 
     @Test
-    public void testUpsertSeparateDocsFSToOpenSearch() throws Exception {
+    public void testUpsertSeparateDocsFSToOpenSearch(@TempDir Path pipesDirectory, @TempDir Path testDocDirectory) throws Exception {
+        OpensearchTestClient client = getNewClient();
+
         //now test that this works with upsert
         int numHtmlDocs = 42;
-        createTestHtmlFiles("Happiness", numHtmlDocs);
-        String endpoint = OPEN_SEARCH_ENDPOINT_BASE + TEST_INDEX;
-        sendMappings(endpoint, TEST_INDEX, "opensearch-mappings.json");
+        createTestHtmlFiles("Happiness", numHtmlDocs, testDocDirectory);
+        String endpoint = CONTAINER.getHttpHostAddress() + "/" + TEST_INDEX;
+        sendMappings(client, endpoint, TEST_INDEX, "opensearch-mappings.json");
 
-        runPipes(OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
+        runPipes(client, OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
                 OpenSearchEmitter.UpdateStrategy.UPSERT,
-                HandlerConfig.PARSE_MODE.RMETA, endpoint);
+                HandlerConfig.PARSE_MODE.RMETA, endpoint, pipesDirectory, testDocDirectory);
 
         String query = "{ \"track_total_hits\": true, \"query\": { \"match\": { \"content\": { " +
                 "\"query\": \"happiness\" } } } }";
 
-        JsonResponse results = CLIENT.postJson(endpoint + "/_search", query);
+        JsonResponse results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + 1,
                 results.getJson().get("hits").get("total").get("value").asInt());
@@ -286,7 +298,7 @@ public abstract class TikaPipesXSearchBase {
                 //"\"from\":0, \"size\":1000," +
                 "\"track_total_hits\": true, \"query\": { " +
                 "\"match_all\": {} } }";
-        results = CLIENT.postJson(endpoint + "/_search", query);
+        results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + 3 + 12, //3 for the mock docs,
                 // and the .docx file has 11 embedded files, plus itself
@@ -296,7 +308,7 @@ public abstract class TikaPipesXSearchBase {
         query = "{ \"track_total_hits\": true, \"query\": { \"query_string\": { " +
                 "\"default_field\": \"content\",  " +
                 "\"query\": \"embed4 zip\" , \"minimum_should_match\":2 } } } ";
-        results = CLIENT.postJson(endpoint + "/_search", query);
+        results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(1,
                 results.getJson().get("hits").get("total").get("value").asInt());
@@ -320,38 +332,41 @@ public abstract class TikaPipesXSearchBase {
         query = "{ \"track_total_hits\": true, \"query\": { \"parent_id\": { " +
                 "\"type\": \"embedded\",  " +
                 "\"id\": \"test_recursive_embedded.docx\" } } } ";
-        results = CLIENT.postJson(endpoint + "/_search", query);
+        results = client.postJson(endpoint + "/_search", query);
         assertEquals(400, results.getStatus());
     }
 
     @Test
-    public void testUpsert() throws Exception {
-        String endpoint = OPEN_SEARCH_ENDPOINT_BASE + TEST_INDEX;
-        sendMappings(endpoint, TEST_INDEX, "opensearch-mappings.json");
+    public void testUpsert(@TempDir Path pipesDirectory, @TempDir Path testDocDirectory) throws Exception {
+        OpensearchTestClient client = getNewClient();
+
+        String endpoint = CONTAINER.getHttpHostAddress() + "/" + TEST_INDEX;
+        sendMappings(client, endpoint, TEST_INDEX, "opensearch-mappings.json");
         Path tikaConfigFile =
                 getTikaConfigFile(OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
                         OpenSearchEmitter.UpdateStrategy.UPSERT, HandlerConfig.PARSE_MODE.RMETA,
-                        endpoint);
-        Emitter emitter = EmitterManager.load(tikaConfigFile).getEmitter();
+                        endpoint, pipesDirectory, testDocDirectory);
+        Emitter emitter = EmitterManager
+                .load(tikaConfigFile).getEmitter();
         Metadata metadata = new Metadata();
         metadata.set("mime", "mimeA");
         metadata.set("title", "titleA");
         emitter.emit("1", Collections.singletonList(metadata), new ParseContext());
-        JsonResponse refresh = CLIENT.getJson(endpoint + "/_refresh");
+        JsonResponse refresh = client.getJson(endpoint + "/_refresh");
         metadata.set("title", "titleB");
         emitter.emit("1", Collections.singletonList(metadata), new ParseContext());
-        refresh = CLIENT.getJson(endpoint + "/_refresh");
+        refresh = client.getJson(endpoint + "/_refresh");
 
         Metadata metadata2 = new Metadata();
         metadata2.set("content", "the quick brown fox");
         emitter.emit("1", Collections.singletonList(metadata2), new ParseContext());
-        refresh = CLIENT.getJson(endpoint + "/_refresh");
+        refresh = client.getJson(endpoint + "/_refresh");
 
         String query = "{ " +
                 //"\"from\":0, \"size\":1000," +
                 "\"track_total_hits\": true, \"query\": { " +
                 "\"match_all\": {} } }";
-        JsonResponse response = CLIENT.postJson(endpoint + "/_search", query);
+        JsonResponse response = client.postJson(endpoint + "/_search", query);
         JsonNode doc1 = response.getJson().get("hits").get("hits").get(0).get(
                 "_source");
         assertEquals("mimeA", doc1.get("mime").asText());
@@ -359,16 +374,28 @@ public abstract class TikaPipesXSearchBase {
         assertEquals("the quick brown fox", doc1.get("content").asText());
     }
 
-    protected void sendMappings(String endpoint, String index, String mappingsFile) throws Exception {
+
+
+    private OpensearchTestClient getNewClient() throws TikaConfigException {
+        HttpClientFactory httpClientFactory = new HttpClientFactory();
+        httpClientFactory.setUserName(CONTAINER.getUsername());
+        httpClientFactory.setPassword(CONTAINER.getPassword());
+
+        return new OpensearchTestClient(CONTAINER.getHttpHostAddress(), httpClientFactory.build(), OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
+                OpenSearchEmitter.UpdateStrategy.OVERWRITE, OpenSearchEmitter.DEFAULT_EMBEDDED_FILE_FIELD_NAME);
+
+    }
+
+    protected void sendMappings(OpensearchTestClient client, String endpoint, String index, String mappingsFile) throws Exception {
         //create the collection with mappings
-        String mappings = IOUtils.toString(TikaPipesXSearchBase.class.getResourceAsStream(
+        String mappings = IOUtils.toString(OpenSearchTest.class.getResourceAsStream(
                 "/opensearch/" + mappingsFile), StandardCharsets.UTF_8);
         int status = -1;
         int tries = 0;
         JsonResponse response = null;
         //need to wait a bit sometimes before OpenSearch is up
         while (status != 200 && tries++ < 20) {
-            response = CLIENT.putJson(endpoint, mappings);
+            response = client.putJson(endpoint, mappings);
             if (status != 200) {
                 Thread.sleep(1000);
             }
@@ -383,40 +410,41 @@ public abstract class TikaPipesXSearchBase {
 
     }
 
-    private void runPipes(OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
+
+    private void runPipes(OpensearchTestClient client, OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
                           OpenSearchEmitter.UpdateStrategy updateStrategy,
-                          HandlerConfig.PARSE_MODE parseMode, String endpoint) throws Exception {
+                          HandlerConfig.PARSE_MODE parseMode, String endpoint, Path pipesDirectory, Path testDocDirectory) throws Exception {
 
         Path tikaConfigFile = getTikaConfigFile(attachmentStrategy, updateStrategy, parseMode,
-                endpoint);
+                endpoint, pipesDirectory, testDocDirectory);
 
         TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.toAbsolutePath().toString()});
 
         //refresh to make sure the content is searchable
-        JsonResponse refresh = CLIENT.getJson(endpoint + "/_refresh");
+        JsonResponse refresh = client.getJson(endpoint + "/_refresh");
 
     }
 
     private Path getTikaConfigFile(OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
                                    OpenSearchEmitter.UpdateStrategy updateStrategy,
-                                   HandlerConfig.PARSE_MODE parseMode, String endpoint) throws
-            IOException {
+                                   HandlerConfig.PARSE_MODE parseMode, String endpoint,
+                                   Path pipesDirectory, Path testDocDirectory) throws IOException {
         Path tikaConfigFile = pipesDirectory.resolve("ta-opensearch.xml");
         Path log4jPropFile = pipesDirectory.resolve("tmp-log4j2.xml");
-        try (InputStream is = TikaPipesXSearchBase.class
+        try (InputStream is = OpenSearchTest.class
                 .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
             Files.copy(is, log4jPropFile);
         }
 
         String tikaConfigTemplateXml;
-        try (InputStream is = TikaPipesXSearchBase.class
+        try (InputStream is = OpenSearchTest.class
                 .getResourceAsStream("/opensearch/tika-config-opensearch.xml")) {
             tikaConfigTemplateXml = IOUtils.toString(is, StandardCharsets.UTF_8);
         }
 
         String tikaConfigXml =
                 createTikaConfigXml(tikaConfigFile, log4jPropFile, tikaConfigTemplateXml,
-                        attachmentStrategy, updateStrategy, parseMode, endpoint);
+                        attachmentStrategy, updateStrategy, parseMode, endpoint, testDocDirectory);
         writeStringToPath(tikaConfigFile, tikaConfigXml);
 
         return tikaConfigFile;
@@ -427,15 +455,17 @@ public abstract class TikaPipesXSearchBase {
                                        String tikaConfigTemplateXml,
                                        OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
                                        OpenSearchEmitter.UpdateStrategy updateStrategy,
-                                       HandlerConfig.PARSE_MODE parseMode, String endpoint) {
+                                       HandlerConfig.PARSE_MODE parseMode, String endpoint, Path testDocDirectory) {
         String res =
                 tikaConfigTemplateXml.replace("{TIKA_CONFIG}", tikaConfigFile.toAbsolutePath().toString())
-                        .replace("{ATTACHMENT_STRATEGY}", attachmentStrategy.toString())
-                        .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.toAbsolutePath().toString())
-                        .replace("{UPDATE_STRATEGY}", updateStrategy.toString())
-                        .replaceAll("\\{PATH_TO_DOCS\\}", 
-                                Matcher.quoteReplacement(testDocDirectory.toAbsolutePath().toString()))
-                        .replace("{PARSE_MODE}", parseMode.name());
+                                     .replace("{ATTACHMENT_STRATEGY}", attachmentStrategy.toString())
+                                     .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.toAbsolutePath().toString())
+                                     .replace("{UPDATE_STRATEGY}", updateStrategy.toString())
+                        .replaceAll("\\{OPENSEARCH_USERNAME\\}", CONTAINER.getUsername())
+                                     .replaceAll("\\{OPENSEARCH_PASSWORD\\}", CONTAINER.getPassword())
+                                     .replaceAll("\\{PATH_TO_DOCS\\}",
+                                             Matcher.quoteReplacement(testDocDirectory.toAbsolutePath().toString()))
+                                     .replace("{PARSE_MODE}", parseMode.name());
 
         if (attachmentStrategy == OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD) {
             res = res.replace("{INCLUDE_ROUTING}", "true");
@@ -448,23 +478,8 @@ public abstract class TikaPipesXSearchBase {
 
     }
 
-    public void setupXSearch(GenericContainer<?> openSearchContainer, String protocol) throws Exception {
-        OPEN_SEARCH_HOST = openSearchContainer.getHost();
-        OPEN_SEARCH_PORT = openSearchContainer.getMappedPort(9200);
-        OPEN_SEARCH_ENDPOINT_BASE = protocol + OPEN_SEARCH_HOST + ":" + OPEN_SEARCH_PORT + "/";
-        HttpClientFactory httpClientFactory = new HttpClientFactory();
-        httpClientFactory.setUserName("admin");
-        httpClientFactory.setPassword("admin");
 
-        //attachment strategy is not used here...TODO clean this up
-        CLIENT = new XSearchTestClient(OPEN_SEARCH_ENDPOINT_BASE,
-                httpClientFactory.build(),
-                OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
-                OpenSearchEmitter.UpdateStrategy.OVERWRITE,
-                OpenSearchEmitter.DEFAULT_EMBEDDED_FILE_FIELD_NAME);
-    }
-
-    private void createTestHtmlFiles(String bodyContent, int numHtmlDocs) throws Exception {
+    private void createTestHtmlFiles(String bodyContent, int numHtmlDocs, Path testDocDirectory) throws Exception {
         Files.createDirectories(testDocDirectory);
         for (int i = 0; i < numHtmlDocs; ++i) {
             String html = "<html><body>" + bodyContent +  "</body></html>";
@@ -472,7 +487,8 @@ public abstract class TikaPipesXSearchBase {
             writeStringToPath(p, html);
         }
         File testDocuments =
-                Paths.get(TikaPipesXSearchBase.class.getResource("/test-documents").toURI()).toFile();
+                Paths
+                        .get(OpenSearchTest.class.getResource("/test-documents").toURI()).toFile();
         for (File f : testDocuments.listFiles()) {
             Path targ = testDocDirectory.resolve(f.getName());
             Files.copy(f.toPath(), targ);
@@ -483,6 +499,4 @@ public abstract class TikaPipesXSearchBase {
     private static void writeStringToPath(Path path, String string) throws IOException {
         Files.write(path, string.getBytes(StandardCharsets.UTF_8));
     }
-
-
 }
