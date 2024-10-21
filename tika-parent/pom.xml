@@ -309,7 +309,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.43.2</google.cloud.version>
-    <aws.version>1.12.773</aws.version>
+    <aws.version>1.12.776</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -398,7 +398,7 @@
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.11</mime4j.version>
-    <mockito.version>5.14.1</mockito.version>
+    <mockito.version>5.14.2</mockito.version>
     <mockito-junit-jupiter.version>5.14.1</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
@@ -419,8 +419,8 @@
     <protobuf.version>3.25.5</protobuf.version>
     <!-- 2.5.0-rc1 tested successfully -->
     <quartz.version>2.3.2</quartz.version>
-    <reactor.core.version>3.6.10</reactor.core.version>
-    <reactor.netty.version>1.1.22</reactor.netty.version>
+    <reactor.core.version>3.6.11</reactor.core.version>
+    <reactor.netty.version>1.1.23</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
     <slf4j.version>2.0.16</slf4j.version>
@@ -446,7 +446,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
     <zookeeper.version>3.8.4</zookeeper.version>
-    <logback.version>1.5.10</logback.version>
+    <logback.version>1.5.11</logback.version>
     <zstd.version>1.5.6-6</zstd.version>
     <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>
     <javacpp.version>1.5.10</javacpp.version>
