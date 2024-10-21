@@ -19,7 +19,7 @@ name: main jdk21 build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ branch_3x ]
 
 jobs:
   build:
