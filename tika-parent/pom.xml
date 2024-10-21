@@ -399,7 +399,7 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.11</mime4j.version>
     <mockito.version>5.14.2</mockito.version>
-    <mockito-junit-jupiter.version>5.14.1</mockito-junit-jupiter.version>
+    <mockito-junit-jupiter.version>5.14.2</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
     <netty.version>4.1.114.Final</netty.version>
