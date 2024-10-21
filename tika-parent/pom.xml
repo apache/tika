@@ -322,7 +322,7 @@
     <azure-identity.version>1.14.0</azure-identity.version>
     <azure.json.version>1.2.0</azure.json.version>
     <!-- 7.0.0 needs java 17 -->
-    <biz.aqute.version>6.4.1</biz.aqute.version>
+    <biz.aqute.version>7.0.0</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
     <bouncycastle.version>1.78.1</bouncycastle.version>
@@ -342,7 +342,7 @@
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.11.1</commons.net.version>
     <!-- can't update to 6, this requires jdk17 -->
-    <ctakes.version>5.1.0</ctakes.version>
+    <ctakes.version>6.0.0</ctakes.version>
     <cxf.version>4.0.5</cxf.version>
     <ddplist.version>1.28</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
@@ -367,7 +367,7 @@
     <jakarta.activation.version>2.1.3</jakarta.activation.version>
     <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
     <!-- can't update to 4.0.0, needs jdk17 -->
-    <jakarta.ws.rs.version>3.1.0</jakarta.ws.rs.version>
+    <jakarta.ws.rs.version>4.0.0</jakarta.ws.rs.version>
     <jakarta.xml.bind.version>4.0.2</jakarta.xml.bind.version>
     <jakarta.xml.soap.version>3.0.2</jakarta.xml.soap.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
@@ -399,7 +399,7 @@
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.11</mime4j.version>
-    <mockito.version>5.14.1</mockito.version>
+    <mockito.version>5.14.2</mockito.version>
     <mockito-junit-jupiter.version>5.14.2</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
@@ -407,7 +407,7 @@
     <oak.jackrabbit.version>1.70.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.3.0 requires jdk17 -->
-    <opennlp.version>2.2.0</opennlp.version>
+    <opennlp.version>2.4.0</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
@@ -438,8 +438,8 @@
     <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
     <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
-    <uimafit.version>3.4.0</uimafit.version>
-    <uimaj.core.version>3.4.1</uimaj.core.version>
+    <uimafit.version>3.5.0</uimafit.version>
+    <uimaj.core.version>3.5.0</uimaj.core.version>
     <uimaj.cpe.version>3.5.0</uimaj.cpe.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
