@@ -94,6 +94,8 @@ class PipesBiDirectionalStreamingIntegrationTest {
 
         ResourceHandler resourceHandler = new ResourceHandler();
         resourceHandler.setDirAllowed(true);
+        // TODO when using jetty 12:
+        // resourceHandler.setBaseResourceAsString("src/test/resources/test-files")        
         resourceHandler.setBaseResource(new PathResource(Paths.get("src", "test", "resources", "test-files")));
         httpServer.setHandler(resourceHandler);
         httpServer.start();
