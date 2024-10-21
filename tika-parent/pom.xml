@@ -321,7 +321,6 @@
     <azure.storage.common>12.27.1</azure.storage.common>
     <azure-identity.version>1.14.0</azure-identity.version>
     <azure.json.version>1.2.0</azure.json.version>
-    <!-- 7.0.0 needs java 17 -->
     <biz.aqute.version>7.0.0</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
@@ -341,7 +340,6 @@
     <commons.logging.version>1.3.4</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.11.1</commons.net.version>
-    <!-- can't update to 6, this requires jdk17 -->
     <ctakes.version>6.0.0</ctakes.version>
     <cxf.version>4.0.5</cxf.version>
     <ddplist.version>1.28</ddplist.version>
@@ -366,7 +364,6 @@
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
     <jakarta.activation.version>2.1.3</jakarta.activation.version>
     <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
-    <!-- can't update to 4.0.0, needs jdk17 -->
     <jakarta.ws.rs.version>4.0.0</jakarta.ws.rs.version>
     <jakarta.xml.bind.version>4.0.2</jakarta.xml.bind.version>
     <jakarta.xml.soap.version>3.0.2</jakarta.xml.soap.version>
@@ -406,7 +403,6 @@
     <netty.version>4.1.114.Final</netty.version>
     <oak.jackrabbit.version>1.70.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
-    <!-- 2.3.0 requires jdk17 -->
     <opennlp.version>2.4.0</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
@@ -428,8 +424,7 @@
     <sis.version>1.4</sis.version>
     <snappy.version>1.1.10.7</snappy.version>
     <solrj.version>8.11.4</solrj.version>
-    <!-- NOTE: Spring 6 requires jdk17  -->
-    <spring.version>5.3.39</spring.version>
+    <spring.version>6.1.14</spring.version>
     <sqlite.version>3.46.1.3</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <tagsoup.version>1.2.1</tagsoup.version>
@@ -502,7 +497,6 @@
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-bom</artifactId>
-        <!-- 12.x requires Java 17 -->
         <version>${jetty.version}</version>
         <type>pom</type>
         <scope>import</scope>
