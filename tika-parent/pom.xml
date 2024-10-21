@@ -419,7 +419,7 @@
     <protobuf.version>3.25.5</protobuf.version>
     <!-- 2.5.0-rc1 tested successfully -->
     <quartz.version>2.3.2</quartz.version>
-    <reactor.core.version>3.6.10</reactor.core.version>
+    <reactor.core.version>3.6.11</reactor.core.version>
     <reactor.netty.version>1.1.23</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
