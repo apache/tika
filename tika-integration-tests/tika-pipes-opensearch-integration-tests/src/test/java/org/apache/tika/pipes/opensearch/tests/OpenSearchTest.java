@@ -42,6 +42,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.opensearch.testcontainers.OpensearchContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
@@ -55,6 +56,7 @@ import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.opensearch.JsonResponse;
 import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
 
+@Testcontainers(disabledWithoutDocker = true)
 public class OpenSearchTest {
     private static DockerImageName OPENSEARCH_IMAGE = DockerImageName.parse("opensearchproject/opensearch:2.17.1");
     private static OpensearchContainer<?> CONTAINER;

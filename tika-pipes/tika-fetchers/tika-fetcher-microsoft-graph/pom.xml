@@ -21,7 +21,7 @@
   <parent>
     <artifactId>tika-fetchers</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>3.0.1-SNAPSHOT</version>
+    <version>4.0.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -32,7 +32,7 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <microsoft-graph.version>6.18.0</microsoft-graph.version>
+    <microsoft-graph.version>6.19.0</microsoft-graph.version>
     <microsoft-kiota.version>1.7.0</microsoft-kiota.version>
     <wiremock.version>3.3.1</wiremock.version>
     <msal4j.version>1.17.2</msal4j.version>

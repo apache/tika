@@ -31,7 +31,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>3.0.1-SNAPSHOT</version>
+  <version>4.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -281,9 +281,9 @@
   </contributors>
 
   <properties>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-    <maven.compiler.release>11</maven.compiler.release>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <project.build.outputTimestamp>1729074250</project.build.outputTimestamp>
@@ -309,7 +309,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.43.2</google.cloud.version>
-    <aws.version>1.12.773</aws.version>
+    <aws.version>1.12.776</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -321,8 +321,7 @@
     <azure.storage.common>12.27.1</azure.storage.common>
     <azure-identity.version>1.14.0</azure-identity.version>
     <azure.json.version>1.2.0</azure.json.version>
-    <!-- 7.0.0 needs java 17 -->
-    <biz.aqute.version>6.4.1</biz.aqute.version>
+    <biz.aqute.version>7.0.0</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
     <bouncycastle.version>1.78.1</bouncycastle.version>
@@ -341,8 +340,8 @@
     <commons.logging.version>1.3.4</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.11.1</commons.net.version>
-    <!-- can't update to 6, this requires jdk17 -->
-    <ctakes.version>5.1.0</ctakes.version>
+    <ctakes.version>6.0.0</ctakes.version>
+    <!-- TODO when 4.1.0 comes out, try updating jetty to 12 -->
     <cxf.version>4.0.5</cxf.version>
     <ddplist.version>1.28</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
@@ -366,8 +365,7 @@
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
     <jakarta.activation.version>2.1.3</jakarta.activation.version>
     <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
-    <!-- can't update to 4.0.0, needs jdk17 -->
-    <jakarta.ws.rs.version>3.1.0</jakarta.ws.rs.version>
+    <jakarta.ws.rs.version>4.0.0</jakarta.ws.rs.version>
     <jakarta.xml.bind.version>4.0.2</jakarta.xml.bind.version>
     <jakarta.xml.soap.version>3.0.2</jakarta.xml.soap.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
@@ -377,36 +375,40 @@
     <jcommander.version>1.82</jcommander.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
-    <!-- 12.0.* needs java 17 -->
+    <!-- 12.0.* needs cxf 4.1.0, see https://issues.apache.org/jira/browse/CXF-9034 ,
+         or it will fail in tika-server-core with 
+         IllegalAccessError: class org.apache.cxf.transport.http_jetty.JettyHTTPServerEngine tried to access protected method 'void org.eclipse.jetty.server.Handler$AbstractContainer.<init>()'     
+    -->
     <jetty.version>11.0.24</jetty.version>
+    <jetty.http2.version>11.0.24</jetty.http2.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.15.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <jsoup.version>1.18.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.11.2</junit5.version>
+    <junit5.version>5.11.3</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.30.0</jwarc.version>
     <kafka.version>3.8.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.24.1</log4j2.version>
+    <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.0</lucene.version>
     <maven.plugin.annotations.version>3.15.0</maven.plugin.annotations.version>
     <mchange.version>0.3.1</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.11</mime4j.version>
-    <mockito.version>5.14.1</mockito.version>
-    <mockito-junit-jupiter.version>5.14.1</mockito-junit-jupiter.version>
+    <mockito.version>5.14.2</mockito.version>
+    <mockito-junit-jupiter.version>5.14.2</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
     <netty.version>4.1.114.Final</netty.version>
     <oak.jackrabbit.version>1.70.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
-    <!-- 2.3.0 requires jdk17 -->
-    <opennlp.version>2.2.0</opennlp.version>
+    <opennlp.version>2.4.0</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
@@ -419,16 +421,15 @@
     <protobuf.version>3.25.5</protobuf.version>
     <!-- 2.5.0-rc1 tested successfully -->
     <quartz.version>2.3.2</quartz.version>
-    <reactor.core.version>3.6.10</reactor.core.version>
-    <reactor.netty.version>1.1.22</reactor.netty.version>
+    <reactor.core.version>3.6.11</reactor.core.version>
+    <reactor.netty.version>1.1.23</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
     <slf4j.version>2.0.16</slf4j.version>
     <sis.version>1.4</sis.version>
     <snappy.version>1.1.10.7</snappy.version>
     <solrj.version>9.7.0</solrj.version>
-    <!-- NOTE: Spring 6 requires jdk17  -->
-    <spring.version>5.3.39</spring.version>
+    <spring.version>6.1.14</spring.version>
     <sqlite.version>3.46.1.3</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <tagsoup.version>1.2.1</tagsoup.version>
@@ -437,15 +438,15 @@
     <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
     <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
-    <uimafit.version>3.4.0</uimafit.version>
-    <uimaj.core.version>3.4.1</uimaj.core.version>
+    <uimafit.version>3.5.0</uimafit.version>
+    <uimaj.core.version>3.5.0</uimaj.core.version>
     <uimaj.cpe.version>3.5.0</uimaj.cpe.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
     <woodstox.core.version>7.0.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.2</zookeeper.version>
-    <logback.version>1.5.10</logback.version>
+    <logback.version>1.5.11</logback.version>
     <zstd.version>1.5.6-6</zstd.version>
     <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>
     <javacpp.version>1.5.10</javacpp.version>
@@ -500,10 +501,30 @@
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-bom</artifactId>
-        <!-- 12.x requires Java 17 -->
         <version>${jetty.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <!-- avoid outdated http2 dependencies when using solr 8 -->
+      <dependency>
+          <groupId>org.eclipse.jetty.http2</groupId>
+          <artifactId>http2-http-client-transport</artifactId>
+          <version>${jetty.http2.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.eclipse.jetty.http2</groupId>
+          <artifactId>http2-hpack</artifactId> 
+          <version>${jetty.http2.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.eclipse.jetty.http2</groupId>
+          <artifactId>http2-client</artifactId>
+          <version>${jetty.http2.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.eclipse.jetty.http2</groupId>
+          <artifactId>http2-common</artifactId>
+          <version>${jetty.http2.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jsoup</groupId>
@@ -1076,7 +1097,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven.compiler.plugin.version}</version>
         <configuration>
-          <release>11</release>
+          <release>17</release>
         </configuration>
       </plugin>
       <!--
