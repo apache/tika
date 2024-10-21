@@ -33,6 +33,7 @@
 
   <properties>
       <curator.version>5.7.1</curator.version>
+      <hadoop.version>3.4.1</hadoop.version>
   </properties>
 
   <!-- we're not maintaining this module.
@@ -158,7 +159,7 @@
       <dependency>
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-common</artifactId>
-          <version>3.4.1</version>
+          <version>${hadoop.version}</version>
           <exclusions>
               <exclusion>
                   <groupId>org.bouncycastle</groupId>
@@ -169,17 +170,17 @@
       <dependency>
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-annotations</artifactId>
-          <version>3.4.1</version>
+          <version>${hadoop.version}</version>
       </dependency>
       <dependency>
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-mapreduce-client-core</artifactId>
-          <version>3.4.1</version>
+          <version>${hadoop.version}</version>
       </dependency>
       <dependency>
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-client</artifactId>
-          <version>3.4.1</version>
+          <version>${hadoop.version}</version>
       </dependency>
       <dependency>
           <groupId>io.dropwizard.metrics</groupId>
