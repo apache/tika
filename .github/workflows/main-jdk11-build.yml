@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: main jdk11 build
+name: branch_3x jdk11 build
 
 on:
   pull_request:
