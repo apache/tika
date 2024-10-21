@@ -219,7 +219,7 @@
       <dependency>
           <groupId>org.jline</groupId>
           <artifactId>jline</artifactId>
-          <version>3.27.0</version>
+          <version>3.27.1</version>
       </dependency>
       <dependency>
           <groupId>javax.activation</groupId>
