@@ -1142,6 +1142,15 @@
                 <artifactId>hdf5-platform</artifactId>
                 <version>1.14.3-1.5.10</version>
             </coordinate>
+            <!-- https://github.com/jetty/jetty.project/pull/12012 
+                 "As stated in CVE-2024-6763, the use of Jetty server, or Jetty client, does not make you vulnerable to that CVE.
+                  The code for HttpURI is also quite different in those older, no longer supported, versions of Jetty.
+            -->
+            <coordinate>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-http</artifactId>
+                <version>9.4.56.v20240826</version>
+            </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
         </configuration>
