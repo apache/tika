@@ -499,7 +499,9 @@ public class TikaCLI {
         }
         JsonMetadataList.setPrettyPrinting(prettyPrint);
         try (Writer writer = getOutputWriter(output, encoding)) {
-            JsonMetadataList.toJson(handler.getMetadataList(), writer);
+            List<Metadata> metadataList = handler.getMetadataList();
+            metadataList = config.getMetadataListFilter().filter(metadataList);
+            JsonMetadataList.toJson(metadataList, writer);
         }
     }
 

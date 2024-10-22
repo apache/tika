@@ -58,6 +58,8 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.listfilter.MetadataListFilter;
+import org.apache.tika.metadata.listfilter.NoOpListFilter;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DigestingParser;
@@ -400,11 +402,8 @@ public class PipesServer implements Runnable {
         long start = System.currentTimeMillis();
         String stack = getContainerStacktrace(t, parseData.getMetadataList());
         //we need to apply the metadata filter after we pull out the stacktrace
-        MetadataFilter filter = t.getParseContext().get(MetadataFilter.class);
-        if (filter == null) {
-            filter = tikaConfig.getMetadataFilter();
-        }
-        filterMetadata(filter, parseData.getMetadataList());
+        filterMetadata(t, parseData.getMetadataList());
+        filterMetadataList(t, parseData);
         ParseContext parseContext = t.getParseContext();
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = t.getOnParseException();
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
@@ -437,13 +436,32 @@ public class PipesServer implements Runnable {
         }
     }
 
-    private void filterMetadata(MetadataFilter metadataFilter, List<Metadata> metadataList) {
+    private void filterMetadata(FetchEmitTuple t, List<Metadata> metadataList) {
+        MetadataFilter filter = t.getParseContext().get(MetadataFilter.class);
+        if (filter == null) {
+            filter = tikaConfig.getMetadataFilter();
+        }
         for (Metadata m : metadataList) {
             try {
-                metadataFilter.filter(m);
+                filter.filter(m);
             } catch (TikaException e) {
                 LOG.warn("failed to filter metadata", e);
             }
+        }
+    }
+
+    private void filterMetadataList(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData) {
+        MetadataListFilter filter = t.getParseContext().get(MetadataListFilter.class);
+        if (filter == null) {
+            filter = tikaConfig.getMetadataListFilter();
+        }
+        if (filter instanceof NoOpListFilter) {
+            return;
+        }
+        try {
+            parseData.filter(filter);
+        } catch (TikaException e) {
+            LOG.warn("failed to filter metadata list", e);
         }
     }
 
@@ -830,7 +848,8 @@ public class PipesServer implements Runnable {
     }
 
     static class MetadataListAndEmbeddedBytes {
-        final List<Metadata> metadataList;
+
+        List<Metadata> metadataList;
         final Optional<EmbeddedDocumentBytesHandler> embeddedDocumentBytesHandler;
 
         public MetadataListAndEmbeddedBytes(List<Metadata> metadataList,
@@ -841,6 +860,10 @@ public class PipesServer implements Runnable {
 
         public List<Metadata> getMetadataList() {
             return metadataList;
+        }
+
+        public void filter(MetadataListFilter filter) throws TikaException {
+            metadataList = filter.filter(metadataList);
         }
 
         public EmbeddedDocumentBytesHandler getEmbeddedDocumentBytesHandler() {
