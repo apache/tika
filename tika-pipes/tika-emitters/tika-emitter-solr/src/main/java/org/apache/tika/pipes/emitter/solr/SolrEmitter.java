@@ -25,9 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
+import org.apache.solr.client.solrj.impl.Http2SolrClient;
 import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.client.solrj.response.UpdateResponse;
@@ -46,6 +48,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
+import org.apache.tika.utils.StringUtils;
 
 
 public class SolrEmitter extends AbstractEmitter implements Initializable {
@@ -307,9 +310,21 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         if (solrUrls == null || solrUrls.isEmpty()) {
+            //TODO -- there's more that we need to pass through, including ssl etc.
+            Http2SolrClient.Builder http2SolrClientBuilder = new Http2SolrClient.Builder();
+            if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
+                http2SolrClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
+            }
+            http2SolrClientBuilder
+                    .withRequestTimeout(httpClientFactory.getRequestTimeout(), TimeUnit.MILLISECONDS)
+                    .withConnectionTimeout(connectionTimeout, TimeUnit.MILLISECONDS);
+
+
+            Http2SolrClient http2SolrClient = http2SolrClientBuilder.build();
             solrClient = new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(solrZkChroot))
-                    .withConnectionTimeout(connectionTimeout).withSocketTimeout(socketTimeout)
-                    .withHttpClient(httpClientFactory.build()).build();
+                    .withHttpClient(http2SolrClient)
+                    .build();
+
         } else {
             solrClient = new LBHttpSolrClient.Builder().withConnectionTimeout(connectionTimeout)
                     .withSocketTimeout(socketTimeout).withHttpClient(httpClientFactory.build())
