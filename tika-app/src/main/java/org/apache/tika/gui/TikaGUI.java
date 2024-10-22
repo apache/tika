@@ -38,6 +38,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.swing.Box;
@@ -152,9 +153,11 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
      * File chooser.
      */
     private final JFileChooser chooser = new JFileChooser();
+    private final TikaConfig tikaConfig;
 
-    public TikaGUI(Parser parser) {
+    public TikaGUI(Parser parser, TikaConfig tikaConfig) {
         super("Apache Tika");
+        this.tikaConfig = tikaConfig;
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         addMenuBar();
@@ -198,8 +201,9 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         final TikaConfig finalConfig = config;
         SwingUtilities.invokeLater(() -> new TikaGUI(
-                new DigestingParser(new AutoDetectParser(finalConfig), new CommonsDigester(MAX_MARK, CommonsDigester.DigestAlgorithm.MD5, CommonsDigester.DigestAlgorithm.SHA256),
-                        false)).setVisible(true));
+                new DigestingParser(new AutoDetectParser(finalConfig),
+                        new CommonsDigester(MAX_MARK, CommonsDigester.DigestAlgorithm.MD5, CommonsDigester.DigestAlgorithm.SHA256),
+                        false), finalConfig).setVisible(true));
     }
 
     private void addMenuBar() {
@@ -374,7 +378,9 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
             wrapper.parse(input, recursiveParserWrapperHandler, new Metadata(), new ParseContext());
             StringWriter jsonBuffer = new StringWriter();
             JsonMetadataList.setPrettyPrinting(true);
-            JsonMetadataList.toJson(recursiveParserWrapperHandler.getMetadataList(), jsonBuffer);
+            List<Metadata> metadataList = recursiveParserWrapperHandler.getMetadataList();
+            metadataList = tikaConfig.getMetadataListFilter().filter(metadataList);
+            JsonMetadataList.toJson(metadataList, jsonBuffer);
             setText(json, jsonBuffer.toString());
         }
         layout.show(cards, "metadata");
