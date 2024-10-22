@@ -19,6 +19,7 @@ package org.apache.tika.server.core.resource;
 
 import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
 import static org.apache.tika.server.core.resource.TikaResource.fillParseContext;
+import static org.apache.tika.server.core.resource.TikaResource.getConfig;
 
 import java.io.InputStream;
 import java.util.List;
@@ -40,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.listfilter.MetadataListFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -84,8 +86,8 @@ public class RecursiveMetadataResource {
             //we shouldn't get here?
             LOG.error("something went seriously wrong", e);
         }
-
-        return handler.getMetadataList();
+        MetadataListFilter metadataListFilter = context.get(MetadataListFilter.class, getConfig().getMetadataListFilter());
+        return metadataListFilter.filter(handler.getMetadataList());
     }
 
     static HandlerConfig buildHandlerConfig(MultivaluedMap<String, String> httpHeaders, String handlerTypeName, HandlerConfig.PARSE_MODE parseMode) {

@@ -32,6 +32,9 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.MockUpperCaseFilter;
+import org.apache.tika.metadata.listfilter.AttachmentCountingListFilter;
+import org.apache.tika.metadata.listfilter.CompositeMetadataListFilter;
+import org.apache.tika.metadata.listfilter.MetadataListFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
@@ -75,5 +78,19 @@ public class PipesClientTest {
         Assertions.assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
         Metadata metadata = pipesResult.getEmitData().getMetadataList().get(0);
         Assertions.assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get("resourceName"));
+    }
+
+    @Test
+    public void testMetadataListFilter() throws IOException, InterruptedException {
+        ParseContext parseContext = new ParseContext();
+        MetadataListFilter metadataFilter = new CompositeMetadataListFilter(List.of(new AttachmentCountingListFilter()));
+        parseContext.set(MetadataListFilter.class, metadataFilter);
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple("mock/embedded.xml", new FetchKey(fetcherName, "mock/embedded.xml"),
+                        new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+        Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
+        Assertions.assertEquals(5, pipesResult.getEmitData().getMetadataList().size());
+        Metadata metadata = pipesResult.getEmitData().getMetadataList().get(0);
+        Assertions.assertEquals(4, Integer.parseInt(metadata.get("X-TIKA:attachment_count")));
     }
 }
