@@ -2,8 +2,8 @@ Welcome to Apache Tika  <https://tika.apache.org/>
 =================================================
 
 [![license](https://img.shields.io/github/license/apache/tika.svg?maxAge=2592000)](http://www.apache.org/licenses/LICENSE-2.0)
-[![Jenkins](https://img.shields.io/jenkins/s/https/ci-builds.apache.org/job/Tika/job/tika-main-jdk8.svg?maxAge=3600)](https://ci-builds.apache.org/job/Tika/job/tika-main-jdk8/)
-[![Jenkins tests](https://img.shields.io/jenkins/t/https/ci-builds.apache.org/job/Tika/job/tika-main-jdk8.svg?maxAge=3600)](https://ci-builds.apache.org/job/Tika/job/tika-main-jdk8/lastBuild/testReport/)
+[![Jenkins](https://img.shields.io/jenkins/s/https/ci-builds.apache.org/job/Tika/job/tika-main-jdk17.svg?maxAge=3600)](https://ci-builds.apache.org/job/Tika/job/tika-main-jdk17/)
+[![Jenkins tests](https://img.shields.io/jenkins/t/https/ci-builds.apache.org/job/Tika/job/tika-main-jdk17.svg?maxAge=3600)](https://ci-builds.apache.org/job/Tika/job/tika-main-jdk17/lastBuild/testReport/)
 [![Maven Central](https://img.shields.io/maven-central/v/org.apache.tika/tika.svg?maxAge=86400)](http://search.maven.org/#search|ga|1|g%3A%22org.apache.tika%22)
 
 Apache Tika(TM) is a toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.
@@ -18,9 +18,10 @@ Pre-built binaries of Apache Tika standalone applications are available
 from https://tika.apache.org/download.html . Pre-built binaries of all the
 Tika jars can be fetched from Maven Central or your favourite Maven mirror.
 
-**Tika 1.X reached End of Life (EOL) on September 30, 2022.**  
+**Tika 2.X and support for Java 8 is planned to reach End of Life (EOL) in April, 2025. 
+See [Tika Roadmap 2.x, 3.x and beyond](https://cwiki.apache.org/confluence/display/TIKA/Tika+Roadmap+--+2.x%2C+3.x+and+Beyond).** 
 
-Tika is based on **Java 11** and uses the [Maven 3](https://maven.apache.org) build system. 
+Tika is based on **Java 17** and uses the [Maven 3](https://maven.apache.org) build system. 
 **N.B.** [Docker](https://www.docker.com/products/personal) is used for tests in tika-integration-tests.
 As of Tika 2.5.1, if Docker is not installed, those tests are skipped.  Docker is required for a successful
 build on earlier 2.x versions.
@@ -61,7 +62,7 @@ If you use Apache Maven:
       <dependency>
        <groupId>org.apache.tika</groupId>
        <artifactId>tika-bom</artifactId>
-       <version>2.x.y</version>
+       <version>4.x.y</version>
        <type>pom</type>
        <scope>import</scope>
       </dependency>
@@ -82,18 +83,16 @@ For Gradle:
 
 ```kotlin
 dependencies {
-  implementation(platform("org.apache.tika:tika-bom:2.x.y"))
+  implementation(platform("org.apache.tika:tika-bom:4.x.y"))
 
   // version not required since bom (platform in Gradle terms)
   implementation("org.apache.tika:tika-parsers-standard-package")
 }
 ```
 
-Migrating to 2.x
+Migrating to 4.x
 ================
-The initial 2.x release notes are available in the [archives](https://archive.apache.org/dist/tika/2.0.0/CHANGES-2.0.0.txt).
-
-See our [wiki](https://cwiki.apache.org/confluence/display/TIKA/Migrating+to+Tika+2.0.0) for the latest.
+TBD
 
 Contributing via Github
 =======================
@@ -107,12 +106,12 @@ See the [pull request template](https://github.com/apache/tika/blob/main/.github
 
 Building from a Specific Tag
 ============================
-Let's assume that you want to build the 2.5.0 tag:
+Let's assume that you want to build the 3.0.1 tag:
 ```
 0. Download and install hub.github.com
 1. git clone https://github.com/apache/tika.git 
 2. cd tika
-3. git checkout 2.5.0
+3. git checkout 3.0.1
 4. mvn clean install
 ```
 
