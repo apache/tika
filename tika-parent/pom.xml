@@ -1363,7 +1363,7 @@
             <version>${maven.javadoc.version}</version>
             <configuration>
               <doclint>none</doclint>
-              <source>1.8</source>
+              <source>8</source>
             </configuration>
           </plugin>
         </plugins>
