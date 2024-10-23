@@ -59,6 +59,8 @@ class XPSPageContentHandler extends DefaultHandler {
     private static final String BIDI_LEVEL = "BidiLevel";
     private static final String INDICES = "Indices";
     private static final String NAME = "Name";
+    private static final String FONT_RENDERING_EM_SIZE = "FontRenderingEmSize";
+    private static final String FONT_URI = "FontUri";
     private static final String PATH = "Path";
     private static final String NAVIGATE_URI = "FixedPage.NavigateUri";
     private static final String IMAGE_SOURCE = "ImageSource";
@@ -76,6 +78,15 @@ class XPSPageContentHandler extends DefaultHandler {
 
     private static final char[] SPACE = new char[]{' '};
 
+    // Estimate width of glyph when better information is not available, measured in em
+    private static final float ESTIMATE_GLYPH_WIDTH = 0.5f;
+
+    // The threshold for the horizontal distance between glyph runs to insert a whitespace, measured in em
+    private static final float WHITESPACE_THRESHOLD = 0.3f;
+
+    // The threshold for the vertical distance between glyph runs to be considered on the same row, measured in em
+    private static final float ROW_COMBINE_THRESHOLD = 0.5f;
+
     //sort based on y coordinate of first element in each row
     //this requires every row to have at least one element
     private static Comparator<? super List<GlyphRun>> ROW_SORTER =
@@ -87,6 +98,18 @@ class XPSPageContentHandler extends DefaultHandler {
                 }
                 return 0;
             };
+    private static Comparator<GlyphRun> LTR_SORTER = new Comparator<GlyphRun>() {
+        @Override
+        public int compare(GlyphRun a, GlyphRun b) {
+            return Float.compare(a.left(), b.left());
+        }
+    };
+    private static Comparator<GlyphRun> RTL_SORTER = new Comparator<GlyphRun>() {
+        @Override
+        public int compare(GlyphRun a, GlyphRun b) {
+            return Float.compare(b.left(), a.left());
+        }
+    };
     private final XHTMLContentHandler xhml;
     private final Map<String, Metadata> embeddedInfos;
     //path in zip file for an image rendered on this page
@@ -96,7 +119,7 @@ class XPSPageContentHandler extends DefaultHandler {
     //buffer for the glyph runs within a given canvas
     //in insertion order
     private Map<String, List<GlyphRun>> canvases = new LinkedHashMap<>();
-    private Set<String> urls = new LinkedHashSet();
+    private Set<String> urls = new LinkedHashSet<String>();
     private Stack<String> canvasStack = new Stack<>();
 
     public XPSPageContentHandler(XHTMLContentHandler xhtml, Map<String, Metadata> embeddedInfos) {
@@ -143,7 +166,9 @@ class XPSPageContentHandler extends DefaultHandler {
         Float originY = null;
         String unicodeString = null;
         int bidilevel = 1;
-        String indicesString = null;
+        List<GlyphIndex> indices = null;
+        float fontSize = 0;
+        String fontUri = null;
 
         for (int i = 0; i < atts.getLength(); i++) {
             String lName = atts.getLocalName(i);
@@ -152,13 +177,13 @@ class XPSPageContentHandler extends DefaultHandler {
 
             if (ORIGIN_X.equals(lName) && value.length() > 0) {
                 try {
-                    originX = Float.parseFloat(atts.getValue(i));
+                    originX = Float.parseFloat(value);
                 } catch (NumberFormatException e) {
                     throw new SAXException(e);
                 }
             } else if (ORIGIN_Y.equals(lName) && value.length() > 0) {
                 try {
-                    originY = Float.parseFloat(atts.getValue(i));
+                    originY = Float.parseFloat(value);
                 } catch (NumberFormatException e) {
                     throw new SAXException(e);
                 }
@@ -166,14 +191,18 @@ class XPSPageContentHandler extends DefaultHandler {
                 unicodeString = atts.getValue(i);
             } else if (BIDI_LEVEL.equals(lName) && value.length() > 0) {
                 try {
-                    bidilevel = Integer.parseInt(atts.getValue(i));
+                    bidilevel = Integer.parseInt(value);
                 } catch (NumberFormatException e) {
                     throw new SAXException(e);
                 }
             } else if (INDICES.equals(lName)) {
-                indicesString = atts.getValue(i);
+                indices = parseIndicesString(value);
             } else if (NAME.equals(lName)) {
                 name = value;
+            } else if (FONT_RENDERING_EM_SIZE.equals(lName)) {
+                fontSize = Float.parseFloat(value);
+            } else if (FONT_URI.equals(lName)) {
+                fontUri = value;
             }
         }
         if (unicodeString != null) {
@@ -184,10 +213,38 @@ class XPSPageContentHandler extends DefaultHandler {
             if (runs == null) {
                 runs = new ArrayList<>();
             }
-            runs.add(new GlyphRun(name, originY, originX, unicodeString, bidilevel, indicesString));
+            runs.add(new GlyphRun(name, originY, originX, unicodeString, bidilevel, indices, fontSize, fontUri));
             canvases.put(currentCanvasClip, runs);
         }
+    }
 
+    // Parses a indices string into a list of GlyphIndex
+    private static List<GlyphIndex> parseIndicesString(String indicesString) throws SAXException {
+        try {
+            ArrayList<GlyphIndex> indices = new ArrayList<>();
+            for (String indexString : indicesString.split(";", -1)) {
+                if (indexString.isEmpty()) {
+                    indices.add(new GlyphIndex(0, 0.0f));
+                    continue;
+                }
+                int commaIndex = indexString.indexOf(',');
+                if (commaIndex == -1) {
+                    int glyphIndex = Integer.parseInt(indexString);
+                    indices.add(new GlyphIndex(glyphIndex, 0.0f));
+                } else {
+                    int glyphIndex = 0;
+                    if (commaIndex > 0) {
+                        glyphIndex = Integer.parseInt(indexString.substring(0, commaIndex));
+                    }
+                    // Advance is measured in hundreths so divide by 100
+                    float advance = Float.parseFloat(indexString.substring(commaIndex + 1)) / 100.0f;
+                    indices.add(new GlyphIndex(glyphIndex, advance));
+                }
+            }
+            return indices;
+        } catch (NumberFormatException e) {
+            throw new SAXException(e);
+        }
     }
 
     @Override
@@ -237,7 +294,6 @@ class XPSPageContentHandler extends DefaultHandler {
         }
 
         for (Map.Entry<String, List<GlyphRun>> e : canvases.entrySet()) {
-            String clip = e.getKey();
             List<GlyphRun> runs = e.getValue();
             if (runs.size() == 0) {
                 continue;
@@ -266,38 +322,43 @@ class XPSPageContentHandler extends DefaultHandler {
     }
 
     private void writeRow(List<GlyphRun> row) throws SAXException {
-/*
-        int rtl = 0;
-        int ltr = 0;
-        //if the row is entirely rtl, sort all as rtl
-        //otherwise sort ltr
-        for (GlyphRun r : row) {
-            //ignore directionality of pure spaces
-            if (r.unicodeString == null || r.unicodeString.trim().length() == 0) {
-                continue;
-            }
-            if (r.direction == GlyphRun.DIRECTION.RTL) {
-                rtl++;
-            } else {
-                ltr++;
-            }
-        }
-        if (rtl > 0 && ltr == 0) {
-            Collections.sort(row, GlyphRun.RTL_COMPARATOR);
-        } else {
-            Collections.sort(row, GlyphRun.LTR_COMPARATOR);
-        }*/
+        sortRow(row);
 
         xhml.startElement(P);
-        boolean needsSpace = false;
+        GlyphRun previous = null;
         for (GlyphRun run : row) {
-            if (needsSpace && run.unicodeString.charAt(0) != ' ') {
-                xhml.ignorableWhitespace(SPACE, 0, SPACE.length);
+            if (previous != null) {
+                float distanceFromPrevious = run.left() - previous.right();
+                float averageFontSize = (run.fontSize + previous.fontSize) / 2f;
+                if (distanceFromPrevious > averageFontSize * WHITESPACE_THRESHOLD) {
+                    xhml.ignorableWhitespace(SPACE, 0, SPACE.length);
+                }
             }
             xhml.characters(run.unicodeString);
-            needsSpace = run.unicodeString.charAt(run.unicodeString.length() - 1) != ' ';
+            previous = run;
         }
         xhml.endElement(P);
+    }
+
+    private static void sortRow(List<GlyphRun> row) {
+        boolean allRTL = true;
+        for (GlyphRun run : row)  {
+            if (run.unicodeString.trim().length() == 0) {
+                // ignore whitespace for all RTL check
+                continue;
+            }
+            if (run.direction == GlyphRun.DIRECTION.LTR) {
+                allRTL = false;
+                break;
+            }
+        }
+        if (allRTL) {
+            // If all the text in a row is RTL then sort it in reverse
+            java.util.Collections.sort(row, RTL_SORTER);
+        } else {
+            // Otherwise sort it from left to right
+            java.util.Collections.sort(row, LTR_SORTER);
+        }
     }
 
     //returns a List of rows (where a row is a list of glyphruns)
@@ -315,9 +376,9 @@ class XPSPageContentHandler extends DefaultHandler {
                 boolean addedNewRow = false;
                 //can rely on the last row having the highest y
                 List<GlyphRun> row = rows.get(rows.size() - 1);
-                //0.5 is a purely heuristic/magical number that should be derived
-                //from the data, not made up. TODO: fix this
-                if (Math.abs(glyphRun.originY - row.get(0).originY) < 0.5) {
+                GlyphRun lastRun = row.get(row.size() - 1);
+                float averageFontSize = (glyphRun.fontSize + lastRun.fontSize) / 2f;
+                if (Math.abs(glyphRun.originY - lastRun.originY) < averageFontSize * ROW_COMBINE_THRESHOLD) {
                     row.add(glyphRun);
                 } else {
                     row = new ArrayList<>();
@@ -346,19 +407,23 @@ class XPSPageContentHandler extends DefaultHandler {
         private final String name;
         private final float originY;
         private final float originX;
-        //not currently used, but could be used for bidi text calculations
         private final String unicodeString;
-        private final String indicesString;
-        //not used yet
+        private final List<GlyphIndex> indices;
         private final DIRECTION direction;
-//not currently used, but could be used for width calculations
+        // Fonts em-size
+        private final float fontSize;
+        // Not used currently
+        private final String fontUri;
 
         private GlyphRun(String name, float originY, float originX, String unicodeString,
-                         Integer bidiLevel, String indicesString) {
+                         Integer bidiLevel, List<GlyphIndex> indices, float fontSize, String fontUri) {
             this.name = name;
             this.unicodeString = unicodeString;
             this.originY = originY;
             this.originX = originX;
+            this.fontSize = fontSize;
+            this.fontUri = fontUri;
+            this.indices = indices;
             if (bidiLevel == null) {
                 direction = DIRECTION.LTR;
             } else {
@@ -368,12 +433,60 @@ class XPSPageContentHandler extends DefaultHandler {
                     direction = DIRECTION.RTL;
                 }
             }
-            this.indicesString = indicesString;
         }
 
         private enum DIRECTION {
             LTR, RTL
         }
+
+        private float left() {
+            if (direction == DIRECTION.LTR) {
+                return originX;
+            } else {
+                return originX - width();
+            }
+        }
+
+        private float right() {
+            if (direction == DIRECTION.LTR) {
+                return originX + width();
+            } else {
+                return originX;
+            }
+        }
+
+        private float width() {
+            float width = 0.0f;
+            for (int i = 0; i < indices.size(); i++) {
+                if (indices.get(i).advance == 0.0) {
+                    if (i == 0) {
+                        // If this is the first glyph use hard coded estimate
+                        width += ESTIMATE_GLYPH_WIDTH;
+                    } else {
+                        // If advance is 0.0 it is probably the last glyph in the run, we don't know how wide it is so we use the average of the previous widths as an estimate
+                        width += width / i;
+                    }
+                } else {
+                    width += indices.get(i).advance;
+                }
+            }
+            return width * fontSize;
+        }
+    }
+
+    final static class GlyphIndex {
+        // The index of the glyph in the font
+        private final int index;
+        // The placement of the glyph that follows relative to the origin of the current glyph. Measured as a multiple of the fonts em-size.
+        // Should be multiplied by the font em-size to get a value that can be compared across GlyphRuns
+        // Will be zero for the last glpyh in a glyph run
+        private final float advance;
+
+        private GlyphIndex(int index, float advance) {
+            this.index = index;
+            this.advance = advance;
+        }
+
     }
 
 }

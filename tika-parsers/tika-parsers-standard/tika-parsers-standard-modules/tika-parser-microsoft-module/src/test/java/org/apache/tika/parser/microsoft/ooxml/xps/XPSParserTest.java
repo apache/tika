@@ -103,14 +103,14 @@ public class XPSParserTest extends TikaTest {
                 XPSParserTest.class.getResource("/test-documents/testXPSWithDataDescriptor.xps")
                         .toURI());
         //test both path and stream based
-        List<Metadata> metadataList = getRecursiveMetadata(path, true);
+        List<Metadata> metadataList = getRecursiveMetadata(path);
         assertEquals(2, metadataList.size());
         assertContains("This is my XPS document test",
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Files.copy(path, bos);
-        metadataList = getRecursiveMetadata(new ByteArrayInputStream(bos.toByteArray()), true);
+        metadataList = getRecursiveMetadata(new ByteArrayInputStream(bos.toByteArray()), false);
         assertEquals(2, metadataList.size());
         assertContains("This is my XPS document test",
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
@@ -124,14 +124,14 @@ public class XPSParserTest extends TikaTest {
         Path path = Paths.get(
                 XPSParserTest.class.getResource("/test-documents/testXPSWithDataDescriptor2.xps")
                         .toURI());
-        List<Metadata> metadataList = getRecursiveMetadata(path, true);
+        List<Metadata> metadataList = getRecursiveMetadata(path);
         assertEquals(2, metadataList.size());
         assertContains("How was I supposed to know",
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Files.copy(path, bos);
-        metadataList = getRecursiveMetadata(new ByteArrayInputStream(bos.toByteArray()), true);
+        metadataList = getRecursiveMetadata(new ByteArrayInputStream(bos.toByteArray()), false);
         assertEquals(2, metadataList.size());
         assertContains("How was I supposed to know",
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
@@ -140,10 +140,20 @@ public class XPSParserTest extends TikaTest {
     @Test
     public void testSpreadsheetXPS() throws Exception {
         Path path = Paths.get(XPSParserTest.class.getResource("/test-documents/testXLSX.xps").toURI());
-        List<Metadata> metadataList = getRecursiveMetadata(path, true);
+        List<Metadata> metadataList = getRecursiveMetadata(path);
         String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
-        assertContains("x", content);
-        assertContains("abcde1234f", content);
-        assertNotContained("xabcde1234f", content);
+        assertContains("abcd efg", content);
+        assertContains("foo bar baz", content);
+        assertContains("spaced out", content);
+    }
+
+    @Test
+    public void testTextDocumentXPS() throws Exception {
+        Path path = Paths.get(XPSParserTest.class.getResource("/test-documents/test_text.xps").toURI());
+        List<Metadata> metadataList = getRecursiveMetadata(path);
+        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
+        assertContains("Rainbow", content);
+        assertContains("Large font size", content);
+        assertContains("Parts of this are in italics and bold.", content);
     }
 }
