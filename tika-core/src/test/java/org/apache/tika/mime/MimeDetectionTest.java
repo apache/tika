@@ -156,6 +156,9 @@ public class MimeDetectionTest {
 
         assertTrue(REGISTRY.isSpecializationOf(MediaType.parse("application/vnd.apple.iwork"),
                 MediaType.APPLICATION_ZIP));
+
+        assertTrue(REGISTRY.isSpecializationOf(MediaType.parse("application/json"),
+                MediaType.TEXT_PLAIN));
     }
 
     @SuppressWarnings("unused")
