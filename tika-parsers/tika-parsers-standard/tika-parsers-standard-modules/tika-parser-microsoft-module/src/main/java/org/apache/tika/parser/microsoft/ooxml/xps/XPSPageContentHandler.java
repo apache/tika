@@ -463,7 +463,8 @@ class XPSPageContentHandler extends DefaultHandler {
                         // If this is the first glyph use hard coded estimate
                         width += ESTIMATE_GLYPH_WIDTH;
                     } else {
-                        // If advance is 0.0 it is probably the last glyph in the run, we don't know how wide it is so we use the average of the previous widths as an estimate
+                        // If advance is 0.0 it is probably the last glyph in the run, we don't know how wide it is
+                        // so we use the average of the previous widths as an estimate
                         width += width / i;
                     }
                 } else {
@@ -477,7 +478,8 @@ class XPSPageContentHandler extends DefaultHandler {
     final static class GlyphIndex {
         // The index of the glyph in the font
         private final int index;
-        // The placement of the glyph that follows relative to the origin of the current glyph. Measured as a multiple of the fonts em-size.
+        // The placement of the glyph that follows relative to the origin of the current glyph.
+        // Measured as a multiple of the fonts em-size.
         // Should be multiplied by the font em-size to get a value that can be compared across GlyphRuns
         // Will be zero for the last glpyh in a glyph run
         private final float advance;
