@@ -300,14 +300,14 @@
     <maven.failsafe.version>3.5.1</maven.failsafe.version>
     <maven.surefire.version>3.5.1</maven.surefire.version>
     <maven.shade.version>3.6.0</maven.shade.version>
-    <maven.project.info.reports.version>3.7.0</maven.project.info.reports.version>
+    <maven.project.info.reports.version>3.8.0</maven.project.info.reports.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.43.2</google.cloud.version>
-    <aws.version>1.12.776</aws.version>
+    <google.cloud.version>2.44.0</google.cloud.version>
+    <aws.version>1.12.777</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -403,7 +403,7 @@
     <spring.version>5.3.39</spring.version>
     <sqlite.version>3.46.1.3</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
-    <test.containers.version>1.20.2</test.containers.version>
+    <test.containers.version>1.20.3</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
@@ -536,7 +536,7 @@
       <dependency>
         <groupId>com.fasterxml.woodstox</groupId>
         <artifactId>woodstox-core</artifactId>
-        <version>7.0.0</version>
+        <version>7.1.0</version>
       </dependency>
       <dependency>
         <groupId>com.mchange</groupId>
