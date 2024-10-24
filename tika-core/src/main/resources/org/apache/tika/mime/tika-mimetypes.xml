@@ -404,7 +404,7 @@
   </mime-type>
 
   <mime-type type="application/json">
-    <sub-class-of type="application/javascript"/>
+    <sub-class-of type="text/javascript"/>
     <glob pattern="*.json"/>
   </mime-type>
 
