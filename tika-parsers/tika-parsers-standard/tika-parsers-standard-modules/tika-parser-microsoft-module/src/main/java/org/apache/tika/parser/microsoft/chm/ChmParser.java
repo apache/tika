@@ -93,16 +93,13 @@ public class ChmParser implements Parser {
 
 
     private void parsePage(byte[] byteObject, Parser htmlParser, ContentHandler xhtml,
-                           ParseContext context) throws TikaException, SAXException { // throws IOException
+                           ParseContext context) throws TikaException, IOException, SAXException { // throws IOException
         InputStream stream = null;
         Metadata metadata = new Metadata();
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
-        try {
-            stream = UnsynchronizedByteArrayInputStream.builder().setByteArray(byteObject).get();
-            htmlParser.parse(stream, handler, metadata, context);
-        } catch (IOException e) {
-            // Pushback overflow from tagsoup
-        }
+        stream = UnsynchronizedByteArrayInputStream.builder().setByteArray(byteObject).get();
+        htmlParser.parse(stream, handler, metadata, context);
+
     }
 
 }

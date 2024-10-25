@@ -279,7 +279,7 @@ public class SimpleComparerTest extends TikaTest {
         List<Map<Cols, String>> tableInfosB = WRITER.getTable(ExtractComparer.TAGS_TABLE_B);
         assertEquals(1, tableInfosB.size());
         Map<Cols, String> tableInfoB = tableInfosB.get(0);
-        //there actually is a tag problem, but tagsoup fixes it.
+        //there actually is a tag problem, but jsoup fixes it.
         //this confirms behavior.
         assertEquals("false", tableInfoB.get(Cols.TAGS_PARSE_EXCEPTION));
     }
