@@ -41,8 +41,8 @@
       <version>${jhighlight.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.ccil.cowan.tagsoup</groupId>
-      <artifactId>tagsoup</artifactId>
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
     </dependency>
     <dependency>
       <groupId>org.ow2.asm</groupId>

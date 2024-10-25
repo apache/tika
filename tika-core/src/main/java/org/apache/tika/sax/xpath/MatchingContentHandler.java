@@ -69,8 +69,7 @@ public class MatchingContentHandler extends ContentHandlerDecorator {
         if (matcher.matchesElement()) {
             super.endElement(uri, localName, name);
         }
-        // Sometimes tagsoup returns double end tags, so the stack might
-        // be empty! TODO: Remove this when the tagsoup problem is fixed.
+        // this was originally added for tagsoup, but we need it generally
         if (!matchers.isEmpty()) {
             matcher = matchers.removeFirst();
         }
