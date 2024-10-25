@@ -20,14 +20,24 @@ package org.apache.tika.eval.core.util;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import javax.xml.XMLConstants;
 
-import org.ccil.cowan.tagsoup.jaxp.SAXParserImpl;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Attribute;
+import org.jsoup.nodes.DataNode;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.NodeFilter;
+import org.jsoup.select.NodeTraversor;
 import org.xml.sax.Attributes;
-import org.xml.sax.InputSource;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
@@ -53,11 +63,106 @@ public class ContentTagParser {
         Map<String, Integer> tags = new HashMap<>();
         XHTMLContentTagHandler xhtmlContentTagHandler =
                 new XHTMLContentTagHandler(uppercaseTagsOfInterest, tags);
-        SAXParserImpl.newInstance(null)
-                .parse(new InputSource(new StringReader(html)), xhtmlContentTagHandler);
+        Document document = Jsoup.parse(html);
+        NodeTraversor.filter(new TikaNodeFilter(xhtmlContentTagHandler), document);
+
         return new ContentTags(xhtmlContentTagHandler.toString(), tags);
     }
 
+    private static class TikaNodeFilter implements NodeFilter {
+        boolean ignore = true;
+        ContentHandler handler;
+
+        private TikaNodeFilter(ContentHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public NodeFilter.FilterResult head(Node node, int i) {
+            //skip document fragment
+            if ("html".equals(node.nodeName())) {
+                ignore = false;
+            }
+            if (ignore) {
+                return FilterResult.CONTINUE;
+            }
+            if (node instanceof TextNode) {
+                String txt = ((TextNode) node).getWholeText();
+                if (txt != null) {
+                    char[] chars = txt.toCharArray();
+                    try {
+                        if (chars.length > 0) {
+                            handler.characters(chars, 0, chars.length);
+                        }
+                    } catch (SAXException e) {
+                        throw new RuntimeSAXException(e);
+                    }
+                }
+                return NodeFilter.FilterResult.CONTINUE;
+            } else if (node instanceof DataNode) {
+                //maybe handle script data directly here instead of
+                //passing it through to the HTMLHandler?
+                String txt = ((DataNode) node).getWholeData();
+                if (txt != null) {
+                    char[] chars = txt.toCharArray();
+                    try {
+                        if (chars.length > 0) {
+                            handler.characters(chars, 0, chars.length);
+                        }
+                    } catch (SAXException e) {
+                        throw new RuntimeSAXException(e);
+                    }
+                }
+                return NodeFilter.FilterResult.CONTINUE;
+            }
+            AttributesImpl attributes = new AttributesImpl();
+            Iterator<Attribute> jsoupAttrs = node
+                    .attributes()
+                    .iterator();
+            while (jsoupAttrs.hasNext()) {
+                Attribute jsoupAttr = jsoupAttrs.next();
+                attributes.addAttribute("", jsoupAttr.getKey(), jsoupAttr.getKey(), "", jsoupAttr.getValue());
+            }
+            try {
+                handler.startElement("", node.nodeName(), node.nodeName(), attributes);
+            } catch (SAXException e) {
+                throw new RuntimeSAXException(e);
+            }
+            return NodeFilter.FilterResult.CONTINUE;
+        }
+
+        @Override
+        public NodeFilter.FilterResult tail(Node node, int i) {
+            if ("html".equals(node.nodeName())) {
+                ignore = true;
+            }
+            if (ignore) {
+                return FilterResult.CONTINUE;
+            }
+            if (node instanceof TextNode || node instanceof DataNode) {
+                return NodeFilter.FilterResult.CONTINUE;
+            }
+
+            try {
+                handler.endElement(XMLConstants.NULL_NS_URI, node.nodeName(), node.nodeName());
+            } catch (SAXException e) {
+                throw new RuntimeSAXException(e);
+            }
+            return NodeFilter.FilterResult.CONTINUE;
+        }
+    }
+
+    private static class RuntimeSAXException extends RuntimeException {
+        private SAXException wrapped;
+
+        private RuntimeSAXException(SAXException e) {
+            this.wrapped = e;
+        }
+
+        SAXException getWrapped() {
+            return wrapped;
+        }
+    }
 
     private static class XHTMLContentTagHandler extends ToTextContentHandler {
         //Used to have a stack to make sure that starting/ending tags were matched

@@ -69,7 +69,7 @@
                   <exclude>org.apache.lucene:lucene-core:jar:</exclude>
                   <exclude>org.apache.lucene:lucene-analysis-common:jar:</exclude>
                   <exclude>org.apache.lucene:lucene-analysis-icu:jar:</exclude>
-                  <exclude>org.ccil.cowan.tagsoup:tagsoup:jar:</exclude>
+                  <exclude>org.jsoup:jar:</exclude>
                   <exclude>com.ibm.icu:icu4j:jar:</exclude>
                   <exclude>com.fasterxml.jackson.core:jackson-core:jar:</exclude>
                   <exclude>com.fasterxml.jackson.core:jackson-databind:jar:</exclude>
