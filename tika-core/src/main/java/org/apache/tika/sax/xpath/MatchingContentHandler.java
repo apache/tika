@@ -69,6 +69,10 @@ public class MatchingContentHandler extends ContentHandlerDecorator {
         if (matcher.matchesElement()) {
             super.endElement(uri, localName, name);
         }
+        // this was originally added for tagsoup, but we need it generally
+        if (!matchers.isEmpty()) {
+            matcher = matchers.removeFirst();
+        }
     }
 
     public void characters(char[] ch, int start, int length) throws SAXException {
