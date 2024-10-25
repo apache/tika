@@ -158,7 +158,7 @@ application/x-executable	class org.apache.tika.parser.executable.ExecutableParse
 application/x-fast	class org.apache.tika.parser.gdal.GDALParser
 application/x-fictionbook+xml	class org.apache.tika.parser.xml.FictionBookParser
 application/x-font-adobe-metric	class org.apache.tika.parser.font.AdobeFontMetricParser
-application/x-font-ttf	class org.apache.tika.parser.font.TrueTypeParser
+font/ttf	class org.apache.tika.parser.font.TrueTypeParser
 application/x-generic-bin	class org.apache.tika.parser.gdal.GDALParser
 application/x-geo-pdf	class org.apache.tika.parser.gdal.GDALParser
 application/x-gmt	class org.apache.tika.parser.gdal.GDALParser
