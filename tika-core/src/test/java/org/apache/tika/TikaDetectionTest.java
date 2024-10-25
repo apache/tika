@@ -574,11 +574,11 @@ public class TikaDetectionTest {
         assertEquals("application/x-font-bdf", tika.detect("x.bdf"));
         assertEquals("application/x-font-ghostscript", tika.detect("x.gsf"));
         assertEquals("application/x-font-linux-psf", tika.detect("x.psf"));
-        assertEquals("application/x-font-otf", tika.detect("x.otf"));
+        assertEquals("font/otf", tika.detect("x.otf"));
         assertEquals("application/x-font-pcf", tika.detect("x.pcf"));
         assertEquals("application/x-font-snf", tika.detect("x.snf"));
-        assertEquals("application/x-font-ttf", tika.detect("x.ttf"));
-        assertEquals("application/x-font-ttf", tika.detect("x.ttc"));
+        assertEquals("font/ttf", tika.detect("x.ttf"));
+        assertEquals("font/ttf", tika.detect("x.ttc"));
         assertEquals("application/x-font-type1", tika.detect("x.pfa"));
         assertEquals("application/x-font-type1", tika.detect("x.pfb"));
         // TODO Get these fixed upstream too

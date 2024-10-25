@@ -4071,16 +4071,6 @@
     <glob pattern="*.psf"/>
   </mime-type>
 
-  <mime-type type="application/x-font-otf">
-    <alias type="application/vnd.ms-opentype"/>
-    <acronym>OTF</acronym>
-    <_comment>OpenType Font</_comment>
-    <magic priority="40">
-      <match value="OTTO\x00" type="string" offset="0"/>
-    </magic>
-    <glob pattern="*.otf"/>
-  </mime-type>
-
   <mime-type type="application/x-font-pcf">
     <glob pattern="*.pcf"/>
   </mime-type>
@@ -4089,16 +4079,6 @@
   </mime-type>
   <mime-type type="application/x-font-speedo"/>
   <mime-type type="application/x-font-sunos-news"/>
-
-  <mime-type type="application/x-font-ttf">
-    <acronym>TTF</acronym>
-    <_comment>TrueType Font</_comment>
-    <glob pattern="*.ttf"/>
-    <glob pattern="*.ttc"/>
-    <magic priority="40">
-      <match value="0x00010000" type="string" offset="0"/>
-    </magic>
-  </mime-type>
 
   <mime-type type="application/x-font-type1">
     <glob pattern="*.pfa"/>
@@ -6335,6 +6315,29 @@
   <mime-type type="chemical/x-xyz">
     <glob pattern="*.xyz"/>
   </mime-type>
+
+  <mime-type type="font/otf">
+    <alias type="application/x-font-otf"/>
+    <alias type="application/vnd.ms-opentype"/>
+    <acronym>OTF</acronym>
+    <_comment>OpenType Font</_comment>
+    <magic priority="40">
+      <match value="OTTO\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.otf"/>
+  </mime-type>
+
+  <mime-type type="font/ttf">
+    <alias type="application/x-font-ttf"/>
+    <acronym>TTF</acronym>
+    <_comment>TrueType Font</_comment>
+    <glob pattern="*.ttf"/>
+    <glob pattern="*.ttc"/>
+    <magic priority="40">
+      <match value="0x00010000" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="image/x-3ds">
     <_comment>3D Studio (V1)</_comment>
     <magic priority="50">
