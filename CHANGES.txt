@@ -1,3 +1,17 @@
+Release 4.0.0-BETA1 - ???
+  BREAKING CHANGES
+
+Release 3.1.0 - ??
+
+   * Add support for MachO via Alexey Pelykh (TIKA-4309).
+
+   * Add logic to inject spaces in XPS files based on font widths via Ruairidh Williamson (TIKA-4315).
+
+   * Mime type "application/json" is now a sub class of "text/javascript" not "application/javascript" (TIKA-4336)
+
+   * Remove tagsoup from the project entirely. Note that
+     some of the tags produced by the SourceCodeParser are slightly different (TIKA-4338)
+
 Release 3.0.0 - 10/15/2024
 
    * Fix regression in TextAndCSVParser (TIKA-4278).
