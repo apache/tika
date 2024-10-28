@@ -427,7 +427,8 @@
     <javacpp.version>1.5.10</javacpp.version>
     <!-- h2 2.3 requires jdk11 -->
     <h2.version>2.2.224</h2.version>
-    <zookeeper.version>3.9.3</zookeeper.version>
+    <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
+    <zookeeper.version>3.8.4</zookeeper.version>
   </properties>
 
   <dependencyManagement>
