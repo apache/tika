@@ -288,7 +288,7 @@
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <project.build.outputTimestamp>1729074250</project.build.outputTimestamp>
     <!-- plugin versions -->
-    <checkstyle.plugin.version>3.5.0</checkstyle.plugin.version>
+    <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
     <forbiddenapis.version>3.8</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
@@ -308,7 +308,7 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.44.0</google.cloud.version>
+    <google.cloud.version>2.44.1</google.cloud.version>
     <aws.version>1.12.777</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
@@ -447,8 +447,7 @@
     <vorbis.version>0.8</vorbis.version>
     <woodstox.core.version>7.1.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <!-- This has to be < 3.9 to work with Solr 8's integration tests -->
-    <zookeeper.version>3.8.4</zookeeper.version>
+    <zookeeper.version>3.9.3</zookeeper.version>
     <logback.version>1.5.11</logback.version>
     <zstd.version>1.5.6-6</zstd.version>
     <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>
