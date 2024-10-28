@@ -301,6 +301,8 @@
     <maven.surefire.version>3.5.1</maven.surefire.version>
     <maven.shade.version>3.6.0</maven.shade.version>
     <maven.project.info.reports.version>3.8.0</maven.project.info.reports.version>
+    <maven.site.version>3.8.0</maven.site.version>
+    <maven.exec.version>3.5.0</maven.exec.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
@@ -415,7 +417,7 @@
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <zstd.version>1.5.6-6</zstd.version>
+    <zstd.version>1.5.6-7</zstd.version>
     <kafka.version>3.8.0</kafka.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
     <netty.version>4.1.114.Final</netty.version>
@@ -982,7 +984,7 @@
       <dependency>
         <groupId>org.apache.maven.plugin-tools</groupId>
         <artifactId>maven-plugin-annotations</artifactId>
-        <version>3.15.0</version>
+        <version>3.15.1</version>
       </dependency>
       <!-- for zookeeper to avoid CVE-2023-6378 -->
       <dependency>
