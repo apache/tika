@@ -396,7 +396,7 @@
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.24.1</log4j2.version>
     <lucene.version>9.12.0</lucene.version>
-    <maven.plugin.annotations.version>3.15.0</maven.plugin.annotations.version>
+    <maven.plugin.annotations.version>3.15.1</maven.plugin.annotations.version>
     <mchange.version>0.3.1</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
@@ -448,10 +448,12 @@
     <woodstox.core.version>7.1.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.3</zookeeper.version>
-    <logback.version>1.5.11</logback.version>
-    <zstd.version>1.5.6-6</zstd.version>
+    <logback.version>1.5.12</logback.version>
+    <zstd.version>1.5.6-7</zstd.version>
     <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>
     <javacpp.version>1.5.10</javacpp.version>
+    <maven.site.version>3.8.0</maven.site.version>
+    <maven.exec.version>3.5.0</maven.exec.version>
   </properties>
 
   <dependencyManagement>
