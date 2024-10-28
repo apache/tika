@@ -213,32 +213,27 @@ class XPSPageContentHandler extends DefaultHandler {
             if (runs == null) {
                 runs = new ArrayList<>();
             }
+            if (indices == null) {
+                indices = new ArrayList<>();
+            }
             runs.add(new GlyphRun(name, originY, originX, unicodeString, bidilevel, indices, fontSize, fontUri));
             canvases.put(currentCanvasClip, runs);
         }
     }
 
     // Parses a indices string into a list of GlyphIndex
-    private static List<GlyphIndex> parseIndicesString(String indicesString) throws SAXException {
+    private List<GlyphIndex> parseIndicesString(String indicesString) throws SAXException {
         try {
             ArrayList<GlyphIndex> indices = new ArrayList<>();
             for (String indexString : indicesString.split(";", -1)) {
-                if (indexString.isEmpty()) {
-                    indices.add(new GlyphIndex(0, 0.0f));
-                    continue;
-                }
-                int commaIndex = indexString.indexOf(',');
-                if (commaIndex == -1) {
-                    int glyphIndex = Integer.parseInt(indexString);
-                    indices.add(new GlyphIndex(glyphIndex, 0.0f));
+                // We only want to extract the advance which will be the second comma separated value
+                String[] commaSplit = indexString.split(",", -1);
+                if (commaSplit.length < 2) {
+                    indices.add(new GlyphIndex(0.0f));
                 } else {
-                    int glyphIndex = 0;
-                    if (commaIndex > 0) {
-                        glyphIndex = Integer.parseInt(indexString.substring(0, commaIndex));
-                    }
                     // Advance is measured in hundreths so divide by 100
-                    float advance = Float.parseFloat(indexString.substring(commaIndex + 1)) / 100.0f;
-                    indices.add(new GlyphIndex(glyphIndex, advance));
+                    float advance = Float.parseFloat(commaSplit[1]) / 100.0f;
+                    indices.add(new GlyphIndex(advance));
                 }
             }
             return indices;
@@ -475,18 +470,21 @@ class XPSPageContentHandler extends DefaultHandler {
     }
 
     final static class GlyphIndex {
-        // The index of the glyph in the font
-        private final int index;
+        // TODO: Parse other elements of GlyphIndex
+        
+        // private int index;
+        // private int clusterCodeUnitCount;
+        // private int clusterGlyphCount;
+
         // The placement of the glyph that follows relative to the origin of the current glyph. Measured as a multiple of the fonts em-size.
         // Should be multiplied by the font em-size to get a value that can be compared across GlyphRuns
         // Will be zero for the last glpyh in a glyph run
         private final float advance;
+        // private float uOffset;
+        // private float vOffset;
 
-        private GlyphIndex(int index, float advance) {
-            this.index = index;
+        private GlyphIndex(float advance) {
             this.advance = advance;
         }
-
     }
-
 }
