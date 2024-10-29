@@ -67,7 +67,6 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.Tika;
 import org.apache.tika.async.cli.TikaAsyncCLI;
-import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.detect.CompositeDetector;
@@ -229,11 +228,6 @@ public class TikaCLI {
         if (cli.testForHelp(args)) {
             cli.usage();
             return;
-        } else if (cli.testForBatch(args)) {
-            String[] batchArgs = BatchCommandLineBuilder.build(args);
-            BatchProcessDriverCLI batchDriver = new BatchProcessDriverCLI(batchArgs);
-            batchDriver.execute();
-            return;
         } else if (cli.testForAsync(args)) {
             async(args);
             return;
@@ -322,10 +316,22 @@ public class TikaCLI {
     }
 
     private boolean testForAsync(String[] args) {
+        if (args.length == 2) {
+            if (Files.isDirectory(Paths.get(args[0]))) {
+                return true;
+            }
+        }
         for (String arg : args) {
             if (arg.equals("-a") || arg.equals("--async")) {
                 return true;
             }
+            if (arg.equals("-i") || arg.startsWith("--input")) {
+                return true;
+            }
+            if (arg.equals("-o") || arg.startsWith("--output")) {
+                return true;
+            }
+
         }
         return false;
     }

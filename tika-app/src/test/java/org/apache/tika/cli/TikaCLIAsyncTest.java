@@ -20,17 +20,30 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-public class TikaCLIAsyncTest extends TikaCLITest {
+public class TikaCLIAsyncTest {
+
+
+    static final File TEST_DATA_FILE = new File("src/test/resources/test-data");
+
+    /* Test members */
+    private ByteArrayOutputStream outContent = null;
+    private ByteArrayOutputStream errContent = null;
+    private PrintStream stdout = null;
+    private PrintStream stderr = null;
 
     private static Path ASYNC_CONFIG;
     @TempDir
@@ -47,6 +60,45 @@ public class TikaCLIAsyncTest extends TikaCLITest {
                 "<fetcherName>fsf</fetcherName>" + "<emitterName>fse</emitterName>" + "</pipesIterator>" + "</properties>";
         Files.write(ASYNC_CONFIG, xml.getBytes(UTF_8));
     }
+
+    /**
+     * reset resourcePrefix
+     * save original System.out and System.err
+     * clear outContent and errContent if they are not empty
+     * set outContent and errContent as System.out and System.err
+     */
+    @BeforeEach
+    public void setUp() throws Exception {
+        stdout = System.out;
+        stderr = System.err;
+        resetContent();
+    }
+
+    /**
+     * Tears down the test. Returns the System.out and System.err
+     */
+    @AfterEach
+    public void tearDown() {
+        System.setOut(stdout);
+        System.setErr(stderr);
+    }
+
+    /**
+     * clear outContent and errContent if they are not empty by create a new one.
+     * set outContent and errContent as System.out and System.err
+     */
+    private void resetContent() throws Exception {
+        if (outContent == null || outContent.size() > 0) {
+            outContent = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(outContent, true, UTF_8.name()));
+        }
+
+        if (errContent == null || errContent.size() > 0) {
+            errContent = new ByteArrayOutputStream();
+            System.setErr(new PrintStream(errContent, true, UTF_8.name()));
+        }
+    }
+
 
     @Test
     public void testAsync() throws Exception {
@@ -83,5 +135,14 @@ public class TikaCLIAsyncTest extends TikaCLITest {
         }
     }
 
+    /**
+     * reset outContent and errContent if they are not empty
+     * run given params in TikaCLI and return outContent String with UTF-8
+     */
+    String getParamOutContent(String... params) throws Exception {
+        resetContent();
+        TikaCLI.main(params);
+        return outContent.toString("UTF-8");
+    }
 
 }
