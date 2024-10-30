@@ -26,7 +26,6 @@ import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.filter.MetadataFilter;
 
 public abstract class MetadataListFilter extends ConfigBase implements Serializable {
     /**
@@ -40,7 +39,7 @@ public abstract class MetadataListFilter extends ConfigBase implements Serializa
             IOException {
         try {
             return buildComposite("metadataListFilters", CompositeMetadataListFilter.class,
-                    "metadataListFilter", MetadataFilter.class, root);
+                    "metadataListFilter", MetadataListFilter.class, root);
         } catch (TikaConfigException e) {
             if (allowMissing && e.getMessage().contains("could not find metadataListFilters")) {
                 return new NoOpListFilter();
