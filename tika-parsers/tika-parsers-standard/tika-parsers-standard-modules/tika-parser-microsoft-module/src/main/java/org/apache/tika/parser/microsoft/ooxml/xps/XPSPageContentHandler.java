@@ -53,6 +53,8 @@ class XPSPageContentHandler extends DefaultHandler {
     private static final String CANVAS = "Canvas";
     private static final String CLIP = "Clip";
     private static final String NULL_CLIP = "NULL_CLIP";
+    private static final String VISUAL_BRUSH = "VisualBrush";
+    private static final String TRANSFORM = "Transform";
     private static final String UNICODE_STRING = "UnicodeString";
     private static final String ORIGIN_X = "OriginX";
     private static final String ORIGIN_Y = "OriginY";
@@ -83,6 +85,9 @@ class XPSPageContentHandler extends DefaultHandler {
 
     // The threshold for the horizontal distance between glyph runs to insert a whitespace, measured in em
     private static final float WHITESPACE_THRESHOLD = 0.3f;
+
+    // The threshold for the horizontal distance between glyphs to split that glyph run into two, measured in em
+    private static final float SPLIT_THRESHOLD = 1.0f;
 
     // The threshold for the vertical distance between glyph runs to be considered on the same row, measured in em
     private static final float ROW_COMBINE_THRESHOLD = 0.5f;
@@ -147,6 +152,15 @@ class XPSPageContentHandler extends DefaultHandler {
                 canvasStack.push(clip);
             }
             return;
+        } else if (VISUAL_BRUSH.equals(localName)) {
+            // Also push visual brush transform onto stack as this will move children
+            String transform = getVal(TRANSFORM, atts);
+            if (transform == null) {
+                canvasStack.push(NULL_CLIP);
+            } else {
+                canvasStack.push(transform);
+            }
+            return;
         } else if (PATH.equals(localName)) {
             //for now just grab them and dump them at the end of the page.
             String url = getVal(NAVIGATE_URI, atts);
@@ -165,7 +179,7 @@ class XPSPageContentHandler extends DefaultHandler {
         Float originX = null;
         Float originY = null;
         String unicodeString = null;
-        int bidilevel = 1;
+        Integer bidilevel = null;
         List<GlyphIndex> indices = null;
         float fontSize = 0;
         String fontUri = null;
@@ -208,8 +222,13 @@ class XPSPageContentHandler extends DefaultHandler {
         if (unicodeString != null) {
             originX = (originX == null) ? Integer.MIN_VALUE : originX;
             originY = (originY == null) ? Integer.MAX_VALUE : originY;
-            String currentCanvasClip = (canvasStack.size() > 0) ? canvasStack.peek() : NULL_CLIP;
-            List<GlyphRun> runs = canvases.get(currentCanvasClip);
+            StringBuilder canvasStringBuilder = new StringBuilder();
+            for (String s : canvasStack) {
+                canvasStringBuilder.append(s);
+                canvasStringBuilder.append(';');
+            }
+            String canvasCombined = canvasStringBuilder.toString();
+            List<GlyphRun> runs = canvases.get(canvasCombined);
             if (runs == null) {
                 runs = new ArrayList<>();
             }
@@ -217,7 +236,7 @@ class XPSPageContentHandler extends DefaultHandler {
                 indices = new ArrayList<>();
             }
             runs.add(new GlyphRun(name, originY, originX, unicodeString, bidilevel, indices, fontSize, fontUri));
-            canvases.put(currentCanvasClip, runs);
+            canvases.put(canvasCombined, runs);
         }
     }
 
@@ -317,6 +336,7 @@ class XPSPageContentHandler extends DefaultHandler {
     }
 
     private void writeRow(List<GlyphRun> row) throws SAXException {
+        row = splitRow(row);
         sortRow(row);
 
         xhml.startElement(P);
@@ -333,6 +353,62 @@ class XPSPageContentHandler extends DefaultHandler {
             previous = run;
         }
         xhml.endElement(P);
+    }
+
+    // Returns a new list of glyph runs in a row after splitting any runs with large advances into multiple runs
+    // This fixes issues where a single run has a large advance and text visually is placed in that gap so should be read in a different order
+    private static List<GlyphRun> splitRow(List<GlyphRun> row) {
+        List<GlyphRun> newRuns = new ArrayList<>();
+        for (int j = 0; j < row.size(); j++) {
+            GlyphRun run = row.get(j);
+            // TODO: Implement splitting for RTL too
+            if (run.direction != GlyphRun.DIRECTION.LTR) {
+                newRuns.add(run);
+                continue;
+            }
+            float width = 0f;
+            for (int i = 0; i < run.indices.size() - 1; i++) {
+                GlyphIndex index = run.indices.get(i);
+                if (index.advance == 0.0f) {
+                    if (i == 0) {
+                        // If this is the first glyph use hard coded estimate
+                        width += ESTIMATE_GLYPH_WIDTH;
+                    } else {
+                        // If advance is 0.0 it is probably the last glyph in the run, we don't know how wide it is so we use the average of the previous widths as an estimate
+                        width += width / i;
+                    }
+                } else {
+                    width += index.advance;
+                }
+                if (index.advance > SPLIT_THRESHOLD) {
+                    newRuns.add(new GlyphRun(
+                            run.name,
+                            run.originY,
+                            run.originX,
+                            run.unicodeString.substring(0, i + 1),
+                            null,
+                            run.indices.subList(0, i + 1),
+                            run.fontSize,
+                            run.fontUri
+                    ));
+                    run.indices.set(i, new GlyphIndex(0.0f));
+                    run = new GlyphRun(
+                        run.name,
+                        run.originY,
+                        run.originX + width * run.fontSize,
+                        run.unicodeString.substring(i + 1, run.unicodeString.length()),
+                        null,
+                        run.indices.subList(i + 1, run.indices.size()),
+                        run.fontSize,
+                        run.fontUri
+                    );
+                    i = 0;
+                    width = 0f;
+                }
+            }
+            newRuns.add(run);
+        }
+        return newRuns;
     }
 
     private static void sortRow(List<GlyphRun> row) {
@@ -369,11 +445,10 @@ class XPSPageContentHandler extends DefaultHandler {
                 continue;
             } else {
                 boolean addedNewRow = false;
-                //can rely on the last row having the highest y
-                List<GlyphRun> row = rows.get(rows.size() - 1);
-                GlyphRun lastRun = row.get(row.size() - 1);
-                float averageFontSize = (glyphRun.fontSize + lastRun.fontSize) / 2f;
-                if (Math.abs(glyphRun.originY - lastRun.originY) < averageFontSize * ROW_COMBINE_THRESHOLD) {
+                List<GlyphRun> row = findClosestRowVertically(rows, glyphRun.originY);
+                GlyphRun firstRun = row.get(0);
+                float averageFontSize = (glyphRun.fontSize + firstRun.fontSize) / 2f;
+                if (Math.abs(glyphRun.originY - firstRun.originY) < averageFontSize * ROW_COMBINE_THRESHOLD) {
                     row.add(glyphRun);
                 } else {
                     row = new ArrayList<>();
@@ -393,6 +468,30 @@ class XPSPageContentHandler extends DefaultHandler {
             }
         }
         return rows;
+    }
+
+    // Search to find the closest row vertically to the y, if rows is empty returns null
+    private List<GlyphRun> findClosestRowVertically(List<List<GlyphRun>> rows, float y) {
+        List<GlyphRun> best = null;
+        float bestDistance = Float.POSITIVE_INFINITY;
+        // Loop backwards since normally XPS files are in order so we will match the last element
+        // TODO: This could be optimised using a binary search since we know rows is sorted
+        for (int i = rows.size() - 1; i >= 0; i--) {
+            List<GlyphRun> row = rows.get(i);
+            if (row.size() == 0) {
+                continue;
+            }
+            float distance = Math.abs(row.get(row.size() - 1).originY - y);
+            // There is nothing better than 0
+            if (distance == 0f) {
+                return row;
+            }
+            if (distance < bestDistance) {
+                best = row;
+                bestDistance = distance;
+            }
+        }
+        return best;
     }
 
     final static class GlyphRun {
