@@ -59,5 +59,8 @@ class AadCredentialConfigBaseTest {
         String str = new ObjectMapper().writeValueAsString(microsoftGraphFetcherConfig);
         MicrosoftGraphFetcherConfig backAgain = new ObjectMapper().readValue(str, MicrosoftGraphFetcherConfig.class);
         Assertions.assertEquals(microsoftGraphFetcherConfig.getCredentials().getClientId(), backAgain.getCredentials().getClientId());
+        ClientCertificateCredentialsConfig backAgainCreds = (ClientCertificateCredentialsConfig) backAgain.getCredentials();
+        Assertions.assertEquals(microsoftGraphFetcherConfig.getCredentials().getClientId(), backAgain.getCredentials().getClientId());
+        Assertions.assertEquals("nick", new String(backAgainCreds.getCertificateBytes()));
     }
 }
