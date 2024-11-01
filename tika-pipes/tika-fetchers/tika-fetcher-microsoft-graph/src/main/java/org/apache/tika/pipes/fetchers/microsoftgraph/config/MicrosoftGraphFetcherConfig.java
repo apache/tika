@@ -24,8 +24,11 @@ import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 public class MicrosoftGraphFetcherConfig extends AbstractConfig {
     private long[] throttleSeconds;
     private boolean spoolToTemp;
-    private AadCredentialConfigBase credentials;
-
+    protected String tenantId;
+    protected String clientId;
+    private String clientSecret;
+    private String certificateBytesBase64;
+    private String certificatePassword;
     private List<String> scopes = new ArrayList<>();
 
     public boolean isSpoolToTemp() {
@@ -46,12 +49,47 @@ public class MicrosoftGraphFetcherConfig extends AbstractConfig {
         return this;
     }
 
-    public AadCredentialConfigBase getCredentials() {
-        return credentials;
+    public String getTenantId() {
+        return tenantId;
     }
 
-    public MicrosoftGraphFetcherConfig setCredentials(AadCredentialConfigBase credentials) {
-        this.credentials = credentials;
+    public MicrosoftGraphFetcherConfig setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+        return this;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public MicrosoftGraphFetcherConfig setClientId(String clientId) {
+        this.clientId = clientId;
+        return this;
+    }
+
+    public String getClientSecret() {
+        return clientSecret;
+    }
+
+    public MicrosoftGraphFetcherConfig setClientSecret(String clientSecret) {
+        this.clientSecret = clientSecret;
+        return this;
+    }
+
+    public String getCertificateBytesBase64() {
+        return certificateBytesBase64;
+    }
+
+    public void setCertificateBytesBase64(String certificateBytesBase64) {
+        this.certificateBytesBase64 = certificateBytesBase64;
+    }
+
+    public String getCertificatePassword() {
+        return certificatePassword;
+    }
+
+    public MicrosoftGraphFetcherConfig setCertificatePassword(String certificatePassword) {
+        this.certificatePassword = certificatePassword;
         return this;
     }
 
