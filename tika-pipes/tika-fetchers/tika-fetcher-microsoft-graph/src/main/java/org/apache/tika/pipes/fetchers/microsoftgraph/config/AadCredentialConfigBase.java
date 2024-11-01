@@ -16,6 +16,16 @@
  */
 package org.apache.tika.pipes.fetchers.microsoftgraph.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = ClientCertificateCredentialsConfig.class, name = "ClientCertificateCredentials"),
+        @JsonSubTypes.Type(value = ClientSecretCredentialsConfig.class, name = "ClientSecretCredentials") }
+)
 public abstract class AadCredentialConfigBase {
     private String tenantId;
     private String clientId;
