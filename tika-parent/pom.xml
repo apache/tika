@@ -315,8 +315,8 @@
         See TIKA-2992.
     -->
     <asm.version>9.7.1</asm.version>
-    <azure.core.version>1.53.0</azure.core.version>
-    <azure.core.http.netty.version>1.15.5</azure.core.http.netty.version>
+    <azure.core.version>1.54.0</azure.core.version>
+    <azure.core.http.netty.version>1.15.6</azure.core.http.netty.version>
     <azure.storage.blob.version>12.28.1</azure.storage.blob.version>
     <azure.storage.common>12.27.1</azure.storage.common>
     <azure-identity.version>1.14.0</azure-identity.version>
@@ -451,7 +451,7 @@
     <zookeeper.version>3.8.4</zookeeper.version>
     <logback.version>1.5.12</logback.version>
     <zstd.version>1.5.6-7</zstd.version>
-    <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>9.45</nimbus-jose-jwt.version>
     <javacpp.version>1.5.10</javacpp.version>
     <maven.site.version>3.8.0</maven.site.version>
     <maven.exec.version>3.5.0</maven.exec.version>
@@ -568,12 +568,6 @@
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
         <version>${azure.core.http.netty.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-transport-native-epoll</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
       <dependency>
         <groupId>com.drewnoakes</groupId>
