@@ -39,6 +39,7 @@
     <module>tika-bom</module>
     <module>tika-core</module>
     <module>tika-serialization</module>
+    <module>tika-detectors</module>
     <module>tika-parsers</module>
     <module>tika-bundles</module>
     <module>tika-xmp</module>
@@ -54,7 +55,6 @@
     <module>tika-translate</module>
     <module>tika-example</module>
     <module>tika-java7</module>
-    <module>tika-detectors</module>
     <module>tika-handlers</module>
   </modules>
 
