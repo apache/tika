@@ -20,7 +20,7 @@
     <detector class="org.apache.tika.detect.DefaultDetector"/>
     <detector class="org.apache.tika.detect.magika.MagikaDetector">
       <params>
-        <param name="magikaPath" type="string">magika</param> <!-- or replace with full path to the commandline -->
+        <param name="magikaPath" type="string">/home/tallison/.cargo/bin/magika</param> <!-- or replace with full path to the commandline -->
         <param name="useMime" type="bool">true</param>
       </params>
     </detector>

@@ -69,6 +69,8 @@ public class MagikaDetector implements Detector {
             Property.externalText(MAGIKA_PREFIX + "label");
     public static Property MAGIKA_MIME =
             Property.externalText(MAGIKA_PREFIX + "mime_type");
+    public static Property MAGIKA_IS_TEXT =
+            Property.externalBoolean(MAGIKA_PREFIX + "is_text");
 
     public static Property MAGIKA_ERRORS =
             Property.externalTextBag(MAGIKA_PREFIX + "errors");
@@ -101,15 +103,21 @@ public class MagikaDetector implements Detector {
             result = ProcessUtils.execute(new ProcessBuilder(commandline),
                     1000, 1000, 1000);
         } catch (IOException e) {
-            LOGGER.debug("problem with magika: " + result.getStderr());
+            LOGGER.debug("problem with magika");
             return false;
         }
 
         if (result.getExitValue() != 0) {
             return false;
         }
+        /* python
         Matcher m = Pattern
                 .compile("Magika version:\\s+(.{4,50})").matcher("");
+
+        */
+        //rust
+        Matcher m = Pattern
+                .compile("magika ([^\\s]{4,50})").matcher("");
         for (String line : result.getStdout().split("[\r\n]+")) {
             if (m.reset(line).find()) {
                 MAGIKA_VERSION_STRING = m.group(1);
@@ -211,9 +219,17 @@ public class MagikaDetector implements Detector {
         }
         //for now just take the first value
         JsonNode root = rootArray.get(0);
+        //this is the more modern version
+        if (root.has("result")) {
+            return processNewer(root.get("result"), metadata, returnMime);
+        } else {
+            return processOlder(root, metadata, returnMime);
+        }
+    }
+
+    private static MediaType processOlder(JsonNode root, Metadata metadata, boolean returnMime) {
         metadata.set(MAGIKA_STATUS, "ok");
         //TODO -- should we get values in "dl" instead or in addition?
-
         if (! root.has("output")) {
             //do something else
             return MediaType.OCTET_STREAM;
@@ -233,6 +249,46 @@ public class MagikaDetector implements Detector {
         }
 
         return MediaType.OCTET_STREAM;
+
+    }
+
+    private static MediaType processNewer(JsonNode result, Metadata metadata, boolean returnMime) {
+        metadata.set(MAGIKA_STATUS, "ok");
+        //TODO -- should we get values in "dl" instead or in addition?
+        addString(result, "status", MAGIKA_STATUS, metadata);
+
+        if (! result.has("value")) {
+            return MediaType.OCTET_STREAM;
+        }
+        JsonNode mValue = result.get("value");
+
+        if (! mValue.has("output")) {
+            //do something else
+            return MediaType.OCTET_STREAM;
+        }
+
+        if (mValue.has("score")) {
+            double score = mValue.get("score").asDouble(-1.0);
+            metadata.set(MAGIKA_SCORE, score);
+        }
+
+        JsonNode mOutput = mValue.get("output");
+        if (mOutput.has("score")) {
+            double score = mOutput.get("score").asDouble(-1.0);
+            metadata.set(MAGIKA_SCORE, score);
+        }
+        addString(mOutput, "description", MAGIKA_DESCRIPTION, metadata);
+        addString(mOutput, "group", MAGIKA_GROUP, metadata);
+        addString(mOutput, "label", MAGIKA_LABEL, metadata);
+        addString(mOutput, "mime_type", MAGIKA_MIME, metadata);
+        setBoolean(mOutput, "is_text", MAGIKA_IS_TEXT, metadata);
+        metadata.set(MAGIKA_VERSION, MAGIKA_VERSION_STRING);
+        if (returnMime && ! StringUtils.isBlank(metadata.get(MAGIKA_MIME))) {
+            return MediaType.parse(metadata.get(MAGIKA_MIME));
+        }
+
+        return MediaType.OCTET_STREAM;
+
     }
 
     private static void setBoolean(JsonNode node, String jsonKey, Property property,

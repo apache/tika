@@ -1,21 +1,33 @@
 [
   {
-    "path": "...im2txtapi.py",
-    "dl": {
-      "ct_label": "python",
-      "score": 0.9999871253967285,
-      "group": "code",
-      "mime_type": "text/x-python",
-      "magic": "Python script",
-      "description": "Python source"
-    },
-    "output": {
-      "ct_label": "python",
-      "score": 0.9999871253967285,
-      "group": "code",
-      "mime_type": "text/x-python",
-      "magic": "Python script",
-      "description": "Python source"
+    "path": "./tests_data/basic/python/code.py",
+    "result": {
+      "status": "ok",
+      "value": {
+        "dl": {
+          "description": "Python source",
+          "extensions": [
+            "py",
+            "pyi"
+          ],
+          "group": "code",
+          "is_text": true,
+          "label": "python",
+          "mime_type": "text/x-python"
+        },
+        "output": {
+          "description": "Python source",
+          "extensions": [
+            "py",
+            "pyi"
+          ],
+          "group": "code",
+          "is_text": true,
+          "label": "python",
+          "mime_type": "text/x-python"
+        },
+        "score": 0.753000020980835
+      }
     }
   }
 ]

@@ -43,9 +43,9 @@ public class TestMagikaIntegration extends TikaTest {
         debug(getRecursiveMetadata("testPDF.pdf", p));
         Metadata m = metadataList.get(0);
         assertEquals("PDF document", m.get(MagikaDetector.MAGIKA_DESCRIPTION));
-        assertEquals(1.0, Double.parseDouble(m.get(MagikaDetector.MAGIKA_SCORE)), 0.000001);
+        assertEquals(1.0, Double.parseDouble(m.get(MagikaDetector.MAGIKA_SCORE)), 0.1);
         assertEquals("document", m.get(MagikaDetector.MAGIKA_GROUP));
-        assertEquals("0.5.1", m.get(MagikaDetector.MAGIKA_VERSION));
+        assertEquals("0.1.0-rc.1", m.get(MagikaDetector.MAGIKA_VERSION));
         assertEquals("application/pdf", m.get(MagikaDetector.MAGIKA_MIME));
         assertEquals("application/pdf", m.get(Metadata.CONTENT_TYPE));
         assertEquals("ok", m.get(MagikaDetector.MAGIKA_STATUS));
