@@ -1062,22 +1062,11 @@
               <version>2.18.0</version>
             </exclude>
             <exclude>
-              <!-- sonatype https://github.com/google/guava/issues/4011 -->
-              <groupId>com.google.guava</groupId>
-              <artifactId>guava</artifactId>
-              <version>32.0.0-jre</version>
-            </exclude>
-            <exclude>
               <!-- CVE-2018-18928 does affect the java library not just the c/c++ library,
               upon further research -->
               <groupId>com.ibm.icu</groupId>
               <artifactId>icu4j</artifactId>
               <version>${icu4j.version}</version>
-            </exclude>
-            <exclude>
-              <groupId>io.netty</groupId>
-              <artifactId>netty-handler</artifactId>
-              <version>${netty.version}</version>
             </exclude>
             <exclude>
               <!-- the most recent cve in sonatype for this artifact is 2.11.0,
