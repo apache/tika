@@ -1103,11 +1103,6 @@
               <artifactId>jetty-http</artifactId>
               <version>11.0.24</version>
             </coordinate>
-            <coordinate>
-              <groupId>io.netty</groupId>
-              <artifactId>netty-handler</artifactId>
-              <version>${netty.version}</version>
-            </coordinate>
             <!-- these are used by the nlp-module -->
             <coordinate>
               <groupId>org.apache.lucene</groupId>
@@ -1148,11 +1143,6 @@
               <groupId>org.threeten</groupId>
               <artifactId>threetenbp</artifactId>
               <version>1.7.0</version>
-            </coordinate>
-            <coordinate>
-              <groupId>joda-time</groupId>
-              <artifactId>joda-time</artifactId>
-              <version>2.12.7</version>
             </coordinate>
             <!-- while waiting for 1.14.4 to appear on maven central, see
                  https://www.hdfgroup.org/2024/05/new-hdf5-cve-issues-fixed-in-1-14-4/
