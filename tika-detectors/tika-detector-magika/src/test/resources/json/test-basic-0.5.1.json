@@ -1,0 +1,21 @@
+[
+  {
+    "path": "...im2txtapi.py",
+    "dl": {
+      "ct_label": "python",
+      "score": 0.9999871253967285,
+      "group": "code",
+      "mime_type": "text/x-python",
+      "magic": "Python script",
+      "description": "Python source"
+    },
+    "output": {
+      "ct_label": "python",
+      "score": 0.9999871253967285,
+      "group": "code",
+      "mime_type": "text/x-python",
+      "magic": "Python script",
+      "description": "Python source"
+    }
+  }
+]

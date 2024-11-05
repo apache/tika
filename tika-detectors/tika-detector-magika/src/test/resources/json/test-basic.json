@@ -1,0 +1,33 @@
+[
+  {
+    "path": "./tests_data/basic/python/code.py",
+    "result": {
+      "status": "ok",
+      "value": {
+        "dl": {
+          "description": "Python source",
+          "extensions": [
+            "py",
+            "pyi"
+          ],
+          "group": "code",
+          "is_text": true,
+          "label": "python",
+          "mime_type": "text/x-python"
+        },
+        "output": {
+          "description": "Python source",
+          "extensions": [
+            "py",
+            "pyi"
+          ],
+          "group": "code",
+          "is_text": true,
+          "label": "python",
+          "mime_type": "text/x-python"
+        },
+        "score": 0.753000020980835
+      }
+    }
+  }
+]

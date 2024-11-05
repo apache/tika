@@ -35,5 +35,6 @@
 
   <modules>
     <module>tika-detector-siegfried</module>
+    <module>tika-detector-magika</module>
   </modules>
 </project>
