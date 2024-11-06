@@ -1075,12 +1075,6 @@
               <artifactId>xercesImpl</artifactId>
               <version>${xerces.version}</version>
             </exclude>
-            <!-- these are used by the nlp-module -->
-            <exclude>
-              <groupId>org.apache.lucene</groupId>
-              <artifactId>lucene-queryparser</artifactId>
-              <version>4.0.0</version>
-            </exclude>
             <!-- this one is used in tika-example -->
             <exclude>
               <!-- sonatype: https://github.com/apache/commons-dbcp/commit/a4c5af0da1de3a7f50c72fc7edaa1f653ca276dd -->
