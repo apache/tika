@@ -1103,12 +1103,6 @@
               <artifactId>jetty-http</artifactId>
               <version>11.0.24</version>
             </coordinate>
-            <!-- these are used by the nlp-module -->
-            <coordinate>
-              <groupId>org.apache.lucene</groupId>
-              <artifactId>lucene-queryparser</artifactId>
-              <version>4.0.0</version>
-            </coordinate>
             <!-- this one is used in tika-example -->
             <coordinate>
               <!-- sonatype: https://github.com/apache/commons-dbcp/commit/a4c5af0da1de3a7f50c72fc7edaa1f653ca276dd -->
