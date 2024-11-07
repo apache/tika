@@ -227,24 +227,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 }
             }
 
-
-            xhtml.element("h1", subject);
-
-            // Output the from and to details in text, as you
-            //  often want them in text form for searching
-            xhtml.startElement("dl");
-            if (from != null) {
-                header(xhtml, "From", from);
-            }
-            header(xhtml, "To", msg.getDisplayTo());
-            header(xhtml, "Cc", msg.getDisplayCC());
-            header(xhtml, "Bcc", msg.getDisplayBCC());
-            try {
-                header(xhtml, "Recipients", msg.getRecipientEmailAddress());
-            } catch (ChunkNotFoundException e) {
-                //swallow
-            }
-            xhtml.endElement("dl");
+            writeSelectHeadersInBody(subject, from, msg, xhtml);
 
             // Get the message body. Preference order is: html, rtf, text
             Chunk htmlChunk = null;
@@ -265,16 +248,12 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
             // Process the attachments
             for (AttachmentChunks attachment : msg.getAttachmentFiles()) {
-                xhtml.startElement("div", "class", "attachment-entry");
 
                 String filename = null;
                 if (attachment.getAttachLongFileName() != null) {
                     filename = attachment.getAttachLongFileName().getValue();
                 } else if (attachment.getAttachFileName() != null) {
                     filename = attachment.getAttachFileName().getValue();
-                }
-                if (filename != null && filename.length() > 0) {
-                    xhtml.element("h1", filename);
                 }
 
                 if (attachment.getAttachData() != null) {
@@ -286,8 +265,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                     handleEmbeddedOfficeDoc(attachment.getAttachmentDirectory().getDirectory(), filename,
                             xhtml, true);
                 }
-
-                xhtml.endElement("div");
             }
         } catch (ChunkNotFoundException e) {
             throw new TikaException("POI MAPIMessage broken - didn't return null on missing chunk",
@@ -302,6 +279,31 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         }
     }
 
+    private void writeSelectHeadersInBody(String subject, String from, MAPIMessage msg, XHTMLContentHandler xhtml)
+            throws SAXException, ChunkNotFoundException {
+        if (! officeParserConfig.isWriteSelectHeadersInBody()) {
+            return;
+        }
+        xhtml.element("h1", subject);
+
+        // Output the from and to details in text, as you
+        //  often want them in text form for searching
+        xhtml.startElement("dl");
+        if (from != null) {
+            header(xhtml, "From", from);
+        }
+        header(xhtml, "To", msg.getDisplayTo());
+        header(xhtml, "Cc", msg.getDisplayCC());
+        header(xhtml, "Bcc", msg.getDisplayBCC());
+        try {
+            header(xhtml, "Recipients", msg.getRecipientEmailAddress());
+        } catch (ChunkNotFoundException e) {
+            //swallow
+        }
+        xhtml.endElement("dl");
+
+    }
+
     private void handleBodyChunks(Chunk htmlChunk, Chunk rtfChunk, Chunk textChunk,
                                   XHTMLContentHandler xhtml)
             throws SAXException, IOException, TikaException {
@@ -310,9 +312,18 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             extractAllAlternatives(htmlChunk, rtfChunk, textChunk, xhtml);
             return;
         }
-
+        if (officeParserConfig.isWriteSelectHeadersInBody()) {
+            xhtml.startElement("div", "class", "message-body");
+            _handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml);
+            xhtml.endElement("div");
+        } else {
+            _handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml);
+        }
+    }
+    private void _handleBodyChunks(Chunk htmlChunk, Chunk rtfChunk, Chunk textChunk,
+                                  XHTMLContentHandler xhtml)
+            throws SAXException, IOException, TikaException {
         boolean doneBody = false;
-        xhtml.startElement("div", "class", "message-body");
         if (htmlChunk != null) {
             byte[] data = null;
             if (htmlChunk instanceof ByteChunk) {
@@ -341,21 +352,19 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 MAPIRtfAttribute rtf =
                         new MAPIRtfAttribute(MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(),
                                 chunk.getValue());
-                Parser rtfParser = EmbeddedDocumentUtil
+                RTFParser rtfParser = (RTFParser) EmbeddedDocumentUtil
                         .tryToFindExistingLeafParser(RTFParser.class, parseContext);
                 if (rtfParser == null) {
                     rtfParser = new RTFParser();
                 }
-                rtfParser.parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(rtf.getData()).get(),
-                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)), new Metadata(),
-                        parseContext);
+                rtfParser.parseInline(UnsynchronizedByteArrayInputStream.builder().setByteArray(rtf.getData()).get(),
+                        xhtml, new Metadata(), parseContext);
                 doneBody = true;
             }
         }
         if (textChunk != null && (extractAllAlternatives || !doneBody)) {
             xhtml.element("p", ((StringChunk) textChunk).getValue());
         }
-        xhtml.endElement("div");
 
     }
 

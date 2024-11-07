@@ -34,8 +34,9 @@ public class OfficeParserConfig implements Serializable {
 
     private boolean useSAXDocxExtractor = false;
     private boolean useSAXPptxExtractor = false;
-    private boolean extractAllAlternativesFromMSG;
 
+    private boolean extractAllAlternativesFromMSG = false;
+    private boolean writeSelectHeadersInBody = false;
     private String dateOverrideFormat = null;
     private int maxOverride = 0;//ignore
 
@@ -199,6 +200,20 @@ public class OfficeParserConfig implements Serializable {
      */
     public void setExtractAllAlternativesFromMSG(boolean extractAllAlternativesFromMSG) {
         this.extractAllAlternativesFromMSG = extractAllAlternativesFromMSG;
+    }
+
+    public boolean isWriteSelectHeadersInBody() {
+        return writeSelectHeadersInBody;
+    }
+
+    /**
+     * If set to <code>true</code>, this will add to/from/cc into the
+     * body content.
+     *
+     * @param val
+     */
+    public void setWriteSelectHeadersInBody(boolean val) {
+        this.writeSelectHeadersInBody = val;
     }
 
     public boolean isIncludeMissingRows() {

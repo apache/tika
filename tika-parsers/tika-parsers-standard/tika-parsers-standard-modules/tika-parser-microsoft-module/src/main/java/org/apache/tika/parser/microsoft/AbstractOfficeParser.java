@@ -180,4 +180,18 @@ public abstract class AbstractOfficeParser implements Parser {
     public boolean isIncludeHeadersAndFooters() {
         return defaultOfficeParserConfig.isIncludeHeadersAndFooters();
     }
+
+    /**
+     * If set to <code>true</code>, this will write the to/from/cc into the body content
+     *
+     * @param val
+     */
+    @Field
+    public void setWriteSelectHeadersInBody(boolean val) {
+        defaultOfficeParserConfig.setWriteSelectHeadersInBody(val);
+    }
+
+    public boolean isWriteSelectHeadersInBody() {
+        return defaultOfficeParserConfig.isWriteSelectHeadersInBody();
+    }
 }
