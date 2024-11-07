@@ -51,10 +51,9 @@ public class OutlookPSTParserTest extends TikaTest {
         assertTrue(output.contains("<meta name=\"Content-Type\" content=\"application/vnd.ms-outlook-pst\""));
 
         assertTrue(output.contains("<body><div class=\"email-folder\"><h1>"));
-        assertTrue(output.contains("<div class=\"embedded\" id=\"&lt;530D9CAC.5080901@gmail.com&gt;\">" + "<h1>Re: Feature Generators</h1>"));
+        assertTrue(output.contains("<div class=\"embedded\" id=\"&lt;530D9CAC.5080901@gmail.com&gt;\">"));
         assertTrue(output.contains(
-                "<div class=\"embedded\" id=\"&lt;1393363252.28814.YahooMailNeo@web140906.mail" + ".bf1.yahoo.com&gt;\"><h1>Re: init tokenizer fails: \"Bad type in " +
-                        "putfield/putstatic\"</h1>"));
+                "<div class=\"embedded\" id=\"&lt;1393363252.28814.YahooMailNeo@web140906.mail" + ".bf1.yahoo.com&gt;\">"));
         assertTrue(output.contains("Gary Murphy commented on TIKA-1250:"));
 
         assertTrue(output.contains("<div class=\"email-folder\"><h1>Racine (pour la recherche)</h1>"));
@@ -79,6 +78,8 @@ public class OutlookPSTParserTest extends TikaTest {
         assertEquals("kottmann@gmail.com", m1.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
         assertEquals("NOTE", m1.get(Office.MAPI_MESSAGE_CLASS));
         assertEquals("/Début du fichier de données Outlook", m1.get(PST.PST_FOLDER_PATH));
+        //test that subject is making it into the xhtml
+        assertContains("<meta name=\"dc:subject\" content=\"Re: Feature Generators\"", m1.get(TikaCoreProperties.TIKA_CONTENT));
 
         Metadata m6 = metadataList.get(6);
         assertEquals("Couchbase", m6.get(Message.MESSAGE_FROM_NAME));
