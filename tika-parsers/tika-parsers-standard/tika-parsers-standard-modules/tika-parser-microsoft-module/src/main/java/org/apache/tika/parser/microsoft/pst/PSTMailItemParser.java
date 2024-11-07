@@ -87,11 +87,11 @@ public class PSTMailItemParser implements Parser {
     private void parseMailAndAttachments(PSTMessage pstMsg, XHTMLContentHandler handler, Metadata metadata, ParseContext context,
                                          EmbeddedDocumentExtractor embeddedExtractor)
             throws SAXException, IOException, TikaException {
+        extractMetadata(pstMsg, metadata);
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "class", "class", "CDATA", "embedded");
         attributes.addAttribute("", "id", "id", "CDATA", pstMsg.getInternetMessageId());
         handler.startElement("div", attributes);
-        handler.element("h1", pstMsg.getSubject());
 
         parseMailItem(pstMsg, handler, metadata, context);
         parseMailAttachments(pstMsg, handler, metadata, context, embeddedExtractor);
@@ -100,7 +100,7 @@ public class PSTMailItemParser implements Parser {
 
     private void parseMailItem(PSTMessage pstMail, XHTMLContentHandler xhtml,
                                 Metadata metadata, ParseContext context) throws SAXException, IOException, TikaException {
-        extractMetadata(pstMail, metadata);
+
         //try the html first. It preserves logical paragraph markers
         String htmlChunk = pstMail.getBodyHTML();
         if (! StringUtils.isBlank(htmlChunk)) {

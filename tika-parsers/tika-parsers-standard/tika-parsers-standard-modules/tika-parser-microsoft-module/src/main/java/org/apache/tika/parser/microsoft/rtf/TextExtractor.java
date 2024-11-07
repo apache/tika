@@ -17,6 +17,8 @@
 
 package org.apache.tika.parser.microsoft.rtf;
 
+import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
@@ -36,7 +38,9 @@ import java.util.Stack;
 import java.util.TimeZone;
 
 import org.apache.commons.io.IOUtils;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -47,7 +51,6 @@ import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.CharsetUtils;
 
 /* Tokenizes and performs a "shallow" parse of the RTF
@@ -256,7 +259,7 @@ final class TextExtractor {
     // close the group, we restore it
     private final LinkedList<GroupState> groupStates = new LinkedList<>();
     private final StringBuilder pendingBuffer = new StringBuilder();
-    private final XHTMLContentHandler out;
+    private final ContentHandler out;
     private final Metadata metadata;
     private final RTFEmbObjHandler embObjHandler;
     // How many next ansi chars we should skip; this
@@ -330,7 +333,7 @@ final class TextExtractor {
     //to defend against DoS with memory consumption
     private int maxStackSize = 1000;
 
-    public TextExtractor(XHTMLContentHandler out, Metadata metadata,
+    public TextExtractor(ContentHandler out, Metadata metadata,
                          RTFEmbObjHandler embObjHandler) {
         this.metadata = metadata;
         this.out = out;
@@ -464,7 +467,6 @@ final class TextExtractor {
     }
 
     private void extract(PushbackInputStream in) throws IOException, SAXException, TikaException {
-        out.startDocument();
 
         while (true) {
             final int b = in.read();
@@ -503,7 +505,6 @@ final class TextExtractor {
         while (paragraphStack.size() > 0) {
             end(paragraphStack.pop());
         }
-        out.endDocument();
     }
 
     private void parseControlToken(PushbackInputStream in)
@@ -1084,11 +1085,11 @@ final class TextExtractor {
     }
 
     private void end(String tag) throws IOException, SAXException, TikaException {
-        out.endElement(tag);
+        out.endElement(XHTML, tag, tag);
     }
 
     private void start(String tag) throws IOException, SAXException, TikaException {
-        out.startElement(tag);
+        out.startElement(XHTML, tag, tag, new AttributesImpl());
     }
 
     // Handle non-parameter control word:
@@ -1357,7 +1358,9 @@ final class TextExtractor {
         } else if (equals("fldrslt") && fieldState == 2) {
             assert pendingURL != null;
             lazyStartParagraph();
-            out.startElement("a", "href", pendingURL);
+            AttributesImpl attrs = new AttributesImpl();
+            attrs.addAttribute(XHTML, "href", "href", "CDATA", pendingURL);
+            out.startElement("", "a", "a", attrs);
             pendingURL = null;
             fieldState = 3;
             groupState.ignore = false;

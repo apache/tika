@@ -64,17 +64,36 @@ public class RTFParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "application/rtf");
         TaggedInputStream tagged = new TaggedInputStream(stream);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
         try {
-            XHTMLContentHandler xhtmlHandler = new XHTMLContentHandler(handler, metadata);
-            RTFEmbObjHandler embObjHandler =
-                    new RTFEmbObjHandler(xhtmlHandler, metadata, context, getMemoryLimitInKb());
-            final TextExtractor ert = new TextExtractor(xhtmlHandler, metadata, embObjHandler);
-            ert.setIgnoreListMarkup(ignoreListMarkup);
-            ert.extract(stream);
+            parseInline(stream, xhtml, metadata, context);
         } catch (IOException e) {
             tagged.throwIfCauseOf(e);
             throw new TikaException("Error parsing an RTF document", e);
+        } finally {
+            xhtml.endDocument();
         }
+    }
+
+    /**
+     * This bypasses wrapping the handler for inline parsing (in at least the OutlookExtractor).
+     *
+     * @param is
+     * @param handler
+     * @param metadata
+     * @param context
+     * @throws TikaException
+     * @throws IOException
+     * @throws SAXException
+     */
+    public void parseInline(InputStream is, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws TikaException, IOException, SAXException {
+        RTFEmbObjHandler embObjHandler =
+                new RTFEmbObjHandler(handler, metadata, context, getMemoryLimitInKb());
+        final TextExtractor ert = new TextExtractor(handler, metadata, embObjHandler);
+        ert.setIgnoreListMarkup(ignoreListMarkup);
+        ert.extract(is);
     }
 
     public int getMemoryLimitInKb() {
