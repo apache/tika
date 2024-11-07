@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +73,7 @@ public class MicrosoftGraphFetcher extends AbstractFetcher implements Initializa
      */
     @Field
     public void setThrottleSeconds(String commaDelimitedLongs) throws TikaConfigException {
-        String[] longStrings = commaDelimitedLongs.split(",");
+        String[] longStrings = (commaDelimitedLongs == null ? "" : commaDelimitedLongs).split(",");
         long[] seconds = new long[longStrings.length];
         for (int i = 0; i < longStrings.length; i++) {
             try {
@@ -120,7 +121,10 @@ public class MicrosoftGraphFetcher extends AbstractFetcher implements Initializa
 
     @Field
     public void setScopes(List<String> scopes) {
-        this.config.setScopes(scopes);
+        config.setScopes(new ArrayList<>(scopes));
+        if (config.getScopes().isEmpty()) {
+            config.getScopes().add("https://graph.microsoft.com/.default");
+        }
     }
 
     @Override
