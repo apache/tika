@@ -1119,13 +1119,6 @@
               <artifactId>jetty-http</artifactId>
               <version>11.0.24</version>
             </coordinate>
-            <!-- this one is used in tika-example -->
-            <coordinate>
-              <!-- sonatype: https://github.com/apache/commons-dbcp/commit/a4c5af0da1de3a7f50c72fc7edaa1f653ca276dd -->
-              <groupId>commons-dbcp</groupId>
-              <artifactId>commons-dbcp</artifactId>
-              <version>1.4</version>
-            </coordinate>
             <!-- used only in tests and in tika-eval, and this problem requires the use of the console.
                  https://github.com/h2database/h2database/issues/1294 -->
             <coordinate>
