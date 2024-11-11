@@ -449,7 +449,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.3</zookeeper.version>
     <zstd.version>1.5.6-7</zstd.version>
-    <nimbus-jose-jwt.version>9.45</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>9.46</nimbus-jose-jwt.version>
     <javacpp.version>1.5.10</javacpp.version>
   </properties>
 
