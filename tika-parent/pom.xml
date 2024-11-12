@@ -392,8 +392,8 @@
     <pdfbox.version>2.0.32</pdfbox.version>
     <poi.version>5.3.0</poi.version>
     <quartz.version>2.3.2</quartz.version>
-    <reactor.core.version>3.6.11</reactor.core.version>
-    <reactor.netty.version>1.1.23</reactor.netty.version>
+    <reactor.core.version>3.7.0</reactor.core.version>
+    <reactor.netty.version>1.2.0</reactor.netty.version>
     <oak.jackrabbit.version>1.70.0</oak.jackrabbit.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
