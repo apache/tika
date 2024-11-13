@@ -391,6 +391,7 @@
     <pax.exam.version>4.13.5</pax.exam.version>
     <pdfbox.version>2.0.32</pdfbox.version>
     <poi.version>5.3.0</poi.version>
+    <!-- 2.5.0 needs jakarta.xml.bind 4.0.2 in tika-parser-scientific-module -->
     <quartz.version>2.3.2</quartz.version>
     <reactor.core.version>3.7.0</reactor.core.version>
     <reactor.netty.version>1.2.0</reactor.netty.version>
@@ -919,7 +920,7 @@
       <dependency>
         <groupId>org.quartz-scheduler</groupId>
         <artifactId>quartz</artifactId>
-        <version>2.3.2</version>
+        <version>${quartz.version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
