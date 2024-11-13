@@ -90,7 +90,7 @@ public class DigestingParserTest extends TikaTest {
 
 
         expected.put(CommonsDigester.DigestAlgorithm.MD2, "d768c8e27b0b52c6eaabfaa7122d1d4f");
-        expected.put(CommonsDigester.DigestAlgorithm.MD5, "59f626e09a8c16ab6dbc2800c685f772");
+        expected.put(CommonsDigester.DigestAlgorithm.MD5, "59F626E09A8C16AB6DBC2800C685F772");
         expected.put(CommonsDigester.DigestAlgorithm.SHA1, "PIPQAHIWHLEQ3DVFJQCQ7L22HADZPCFG");
         expected.put(CommonsDigester.DigestAlgorithm.SHA256,
                 "c4b7fab030a8b6a9d6691f6699ac8e6f" + "82bc53764a0f1430d134ae3b70c32654");
@@ -105,7 +105,7 @@ public class DigestingParserTest extends TikaTest {
         Metadata m = new Metadata();
         XMLResult xml = getXML("test_recursive_embedded.docx",
                 new DigestingParser(AUTO_DETECT_PARSER,
-                        new CommonsDigester(UNLIMITED, "md5,sha256,sha384,sha512,sha1:32"), false)
+                        new CommonsDigester(UNLIMITED, "MD5,sha256,sha384,sha512,sha1:32"), false)
                 , m);
         for (CommonsDigester.DigestAlgorithm algo : new CommonsDigester.DigestAlgorithm[]{
                 CommonsDigester.DigestAlgorithm.MD5, CommonsDigester.DigestAlgorithm.SHA1,
