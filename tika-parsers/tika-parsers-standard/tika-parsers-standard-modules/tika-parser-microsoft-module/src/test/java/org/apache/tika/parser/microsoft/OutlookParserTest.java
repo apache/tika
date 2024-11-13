@@ -53,19 +53,20 @@ public class OutlookParserTest extends TikaTest {
 
     @Test
     public void testOutlookParsing() throws Exception {
-
-        //test default behavior
+        Metadata metadata = new Metadata();
+        //test turning off header injection
         List<Metadata> metadataList = getRecursiveMetadata("test-outlook.msg", AUTO_DETECT_PARSER,
-                BasicContentHandlerFactory.HANDLER_TYPE.BODY);
+                metadata, configureDontInjectHeaders(),
+                true, BasicContentHandlerFactory.HANDLER_TYPE.BODY);
         assertNotContained("Microsoft Outlook Express 6", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
 
-        //test legacy behavior
+        //test default
         ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
+        metadata = new Metadata();
 
         try (InputStream stream = getResourceAsStream("/test-documents/test-outlook.msg")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, configureInjectHeaders());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
         assertEquals("application/vnd.ms-outlook", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Microsoft Outlook Express 6", metadata.get(TikaCoreProperties.TITLE));
@@ -107,7 +108,7 @@ public class OutlookParserTest extends TikaTest {
         Metadata metadata = new Metadata();
 
         try (InputStream stream = getResourceAsStream("/test-documents/testMSG.msg")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, configureInjectHeaders());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
         assertEquals("application/vnd.ms-outlook", metadata.get(Metadata.CONTENT_TYPE));
@@ -185,7 +186,7 @@ public class OutlookParserTest extends TikaTest {
         handler.setResult(new StreamResult(sw));
 
         try (InputStream stream = getResourceAsStream("/test-documents/testMSG_chinese.msg")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, configureInjectHeaders());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
         // As the HTML version should have been processed, ensure
@@ -243,11 +244,6 @@ public class OutlookParserTest extends TikaTest {
     @Test
     public void testOutlookHTMLfromRTF() throws Exception {
 
-        //test default behavior
-        List<Metadata> metadataList = getRecursiveMetadata("test-outlook2003.msg");
-        assertNotContained("<dd>New Outlook User</dd>", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-
-        //test legacy behavior with the configuration set
         Metadata metadata = new Metadata();
 
         // Check the HTML version
@@ -259,7 +255,7 @@ public class OutlookParserTest extends TikaTest {
         handler.setResult(new StreamResult(sw));
 
         try (InputStream stream = getResourceAsStream("/test-documents/test-outlook2003.msg")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, configureInjectHeaders());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
         // As the HTML version should have been processed, ensure
@@ -280,12 +276,17 @@ public class OutlookParserTest extends TikaTest {
         // Make sure we don't have nested html docs
         assertEquals(2, content.split("<body>").length);
         assertEquals(2, content.split("<\\/body>").length);
+
+        //test configurable behavior
+        List<Metadata> metadataList = getRecursiveMetadata("test-outlook2003.msg", AUTO_DETECT_PARSER, new Metadata(),
+                configureDontInjectHeaders(), true);
+        assertNotContained("<dd>New Outlook User</dd>", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
-    private ParseContext configureInjectHeaders() {
+    private ParseContext configureDontInjectHeaders() {
         ParseContext parseContext = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
-        officeParserConfig.setWriteSelectHeadersInBody(true);
+        officeParserConfig.setWriteSelectHeadersInBody(false);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
         return parseContext;
     }

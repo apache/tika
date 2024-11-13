@@ -36,7 +36,8 @@ public class OfficeParserConfig implements Serializable {
     private boolean useSAXPptxExtractor = false;
 
     private boolean extractAllAlternativesFromMSG = false;
-    private boolean writeSelectHeadersInBody = false;
+    //we'll stop doing this in 4.x
+    private boolean writeSelectHeadersInBody = true;
     private String dateOverrideFormat = null;
     private int maxOverride = 0;//ignore
 

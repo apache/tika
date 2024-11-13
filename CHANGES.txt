@@ -3,6 +3,9 @@ Release 4.0.0-BETA1 - ???
 
 Release 3.1.0 - ??
 
+   * Allow users to turn off the injection of some headers into the content stream of MSG
+     files (TIKA-4345).
+
    * Add a wrapper for Google's magika detector (TIKA-4344).
 
    * Add support for MachO via Alexey Pelykh (TIKA-4309).
