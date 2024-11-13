@@ -302,7 +302,7 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.0</maven.shade.version>
     <maven.project.info.reports.version>3.8.0</maven.project.info.reports.version>
-    <puppycrawl.version>10.20.0</puppycrawl.version>
+    <puppycrawl.version>10.20.1</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
     <scm.version>2.1.0</scm.version>
 
@@ -319,7 +319,7 @@
     <azure.core.http.netty.version>1.15.6</azure.core.http.netty.version>
     <azure.storage.blob.version>12.28.1</azure.storage.blob.version>
     <azure.storage.common>12.27.1</azure.storage.common>
-    <azure-identity.version>1.14.0</azure-identity.version>
+    <azure-identity.version>1.14.1</azure-identity.version>
     <azure.json.version>1.2.0</azure.json.version>
     <biz.aqute.version>7.0.0</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
@@ -394,7 +394,7 @@
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.30.0</jwarc.version>
-    <kafka.version>3.8.1</kafka.version>
+    <kafka.version>3.9.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.24.1</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
@@ -411,7 +411,7 @@
     <netty.version>4.1.114.Final</netty.version>
     <oak.jackrabbit.version>1.70.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
-    <opennlp.version>2.4.0</opennlp.version>
+    <opennlp.version>2.5.0</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
@@ -422,10 +422,9 @@
     <pdfbox.version>3.0.3</pdfbox.version>
     <poi.version>5.3.0</poi.version>
     <protobuf.version>3.25.5</protobuf.version>
-    <!-- 2.5.0-rc1 tested successfully -->
-    <quartz.version>2.3.2</quartz.version>
-    <reactor.core.version>3.6.11</reactor.core.version>
-    <reactor.netty.version>1.1.23</reactor.netty.version>
+    <quartz.version>2.5.0</quartz.version>
+    <reactor.core.version>3.7.0</reactor.core.version>
+    <reactor.netty.version>1.2.0</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
     <slf4j.version>2.0.16</slf4j.version>
@@ -448,9 +447,8 @@
     <woodstox.core.version>7.1.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.3</zookeeper.version>
-    <logback.version>1.5.12</logback.version>
     <zstd.version>1.5.6-7</zstd.version>
-    <nimbus-jose-jwt.version>9.45</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>9.46</nimbus-jose-jwt.version>
     <javacpp.version>1.5.10</javacpp.version>
   </properties>
 
@@ -676,10 +674,6 @@
           <!-- to avoid maven-enforcer convergence error,
             let's make this explicit -->
           <exclusion>
-            <groupId>com.healthmarketscience.jackcess</groupId>
-            <artifactId>jackcess</artifactId>
-          </exclusion>
-          <exclusion>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
           </exclusion>
@@ -902,6 +896,10 @@
         <artifactId>poi-ooxml</artifactId>
         <version>${poi.version}</version>
       </dependency>
+      <!-- prevent zookeeper 3.9.2 from being used in Apache Solr emitter 
+      through 9.7.0
+      TODO recheck when solr > 9.7.0
+      -->
       <dependency>
         <groupId>org.apache.zookeeper</groupId>
         <artifactId>zookeeper</artifactId>
@@ -1029,17 +1027,6 @@
         <artifactId>maven-plugin-annotations</artifactId>
         <version>${maven.plugin.annotations.version}</version>
       </dependency>
-      <!-- for zookeeper to avoid CVE-2023-6378 -->
-      <dependency>
-          <groupId>ch.qos.logback</groupId>
-          <artifactId>logback-core</artifactId>
-          <version>${logback.version}</version>
-      </dependency>
-      <dependency>
-          <groupId>ch.qos.logback</groupId>
-          <artifactId>logback-classic</artifactId>
-          <version>${logback.version}</version>
-      </dependency>
       <dependency>
           <groupId>org.bytedeco</groupId>
           <artifactId>hdf5</artifactId>
@@ -1124,13 +1111,6 @@
               <groupId>org.eclipse.jetty</groupId>
               <artifactId>jetty-http</artifactId>
               <version>11.0.24</version>
-            </coordinate>
-            <!-- this one is used in tika-example -->
-            <coordinate>
-              <!-- sonatype: https://github.com/apache/commons-dbcp/commit/a4c5af0da1de3a7f50c72fc7edaa1f653ca276dd -->
-              <groupId>commons-dbcp</groupId>
-              <artifactId>commons-dbcp</artifactId>
-              <version>1.4</version>
             </coordinate>
             <!-- used only in tests and in tika-eval, and this problem requires the use of the console.
                  https://github.com/h2database/h2database/issues/1294 -->
