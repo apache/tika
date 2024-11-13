@@ -1,7 +1,14 @@
 Release 4.0.0-BETA1 - ???
   BREAKING CHANGES
 
+   * Headers are no longer injected into the body/content of MSG files (TIKA-4345). Please open
+     a ticket if you need this behavior across email formats.
+
+
 Release 3.1.0 - ??
+
+   * Allow users to turn off the injection of some headers into the content stream of MSG
+     files (TIKA-4345).
 
    * Add a wrapper for Google's magika detector (TIKA-4344).
 

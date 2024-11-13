@@ -227,8 +227,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 }
             }
 
-            writeSelectHeadersInBody(subject, from, msg, xhtml);
-
             // Get the message body. Preference order is: html, rtf, text
             Chunk htmlChunk = null;
             Chunk rtfChunk = null;
@@ -279,31 +277,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         }
     }
 
-    private void writeSelectHeadersInBody(String subject, String from, MAPIMessage msg, XHTMLContentHandler xhtml)
-            throws SAXException, ChunkNotFoundException {
-        if (! officeParserConfig.isWriteSelectHeadersInBody()) {
-            return;
-        }
-        xhtml.element("h1", subject);
-
-        // Output the from and to details in text, as you
-        //  often want them in text form for searching
-        xhtml.startElement("dl");
-        if (from != null) {
-            header(xhtml, "From", from);
-        }
-        header(xhtml, "To", msg.getDisplayTo());
-        header(xhtml, "Cc", msg.getDisplayCC());
-        header(xhtml, "Bcc", msg.getDisplayBCC());
-        try {
-            header(xhtml, "Recipients", msg.getRecipientEmailAddress());
-        } catch (ChunkNotFoundException e) {
-            //swallow
-        }
-        xhtml.endElement("dl");
-
-    }
-
     private void handleBodyChunks(Chunk htmlChunk, Chunk rtfChunk, Chunk textChunk,
                                   XHTMLContentHandler xhtml)
             throws SAXException, IOException, TikaException {
@@ -312,13 +285,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             extractAllAlternatives(htmlChunk, rtfChunk, textChunk, xhtml);
             return;
         }
-        if (officeParserConfig.isWriteSelectHeadersInBody()) {
-            xhtml.startElement("div", "class", "message-body");
-            _handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml);
-            xhtml.endElement("div");
-        } else {
-            _handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml);
-        }
+        _handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml);
+
     }
     private void _handleBodyChunks(Chunk htmlChunk, Chunk rtfChunk, Chunk textChunk,
                                   XHTMLContentHandler xhtml)

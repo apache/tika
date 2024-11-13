@@ -54,18 +54,12 @@ public class OutlookParserTest extends TikaTest {
     @Test
     public void testOutlookParsing() throws Exception {
 
-        //test default behavior
-        List<Metadata> metadataList = getRecursiveMetadata("test-outlook.msg", AUTO_DETECT_PARSER,
-                BasicContentHandlerFactory.HANDLER_TYPE.BODY);
-        assertNotContained("Microsoft Outlook Express 6", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
-
-        //test legacy behavior
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
         try (InputStream stream = getResourceAsStream("/test-documents/test-outlook.msg")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, configureInjectHeaders());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
         assertEquals("application/vnd.ms-outlook", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Microsoft Outlook Express 6", metadata.get(TikaCoreProperties.TITLE));
@@ -90,9 +84,9 @@ public class OutlookParserTest extends TikaTest {
         assertEquals("2007-04-05T16:26:06Z", metadata.get(TikaCoreProperties.CREATED));
 
         String content = handler.toString();
-        assertContains("Microsoft Outlook Express 6", content);
-        assertContains("L'\u00C9quipe Microsoft Outlook Express", content);
-        assertContains("Nouvel utilisateur de Outlook Express", content);
+        assertNotContained("Microsoft Outlook Express 6", content);
+        assertNotContained("L'\u00C9quipe Microsoft Outlook Express", content);
+        assertNotContained("Nouvel utilisateur de Outlook Express", content);
         assertContains("Messagerie et groupes de discussion", content);
     }
 
@@ -107,7 +101,7 @@ public class OutlookParserTest extends TikaTest {
         Metadata metadata = new Metadata();
 
         try (InputStream stream = getResourceAsStream("/test-documents/testMSG.msg")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, configureInjectHeaders());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
         assertEquals("application/vnd.ms-outlook", metadata.get(Metadata.CONTENT_TYPE));
@@ -115,7 +109,6 @@ public class OutlookParserTest extends TikaTest {
         String content = handler.toString();
         Pattern pattern = Pattern.compile("From");
         Matcher matcher = pattern.matcher(content);
-        assertTrue(matcher.find());
         assertFalse(matcher.find());
 
         //test that last header is added
@@ -185,13 +178,13 @@ public class OutlookParserTest extends TikaTest {
         handler.setResult(new StreamResult(sw));
 
         try (InputStream stream = getResourceAsStream("/test-documents/testMSG_chinese.msg")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, configureInjectHeaders());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
         // As the HTML version should have been processed, ensure
         //  we got some of the links
         String content = sw.toString();
-        assertContains("<dd>tests.chang@fengttt.com</dd>", content);
+        assertNotContained("<dd>tests.chang@fengttt.com</dd>", content);
         assertContains("<p>Alfresco MSG format testing", content);
         assertContains("<li>1", content);
         assertContains("<li>2", content);
@@ -259,13 +252,13 @@ public class OutlookParserTest extends TikaTest {
         handler.setResult(new StreamResult(sw));
 
         try (InputStream stream = getResourceAsStream("/test-documents/test-outlook2003.msg")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, configureInjectHeaders());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
         // As the HTML version should have been processed, ensure
         //  we got some of the links
         String content = sw.toString().replaceAll("[\\r\\n\\t]+", " ").replaceAll(" +", " ");
-        assertContains("<dd>New Outlook User</dd>", content);
+        assertNotContained("<dd>New Outlook User</dd>", content);
         assertContains("designed <i>to help you", content);
         assertContains(
                 "<p> <a href=\"http://r.office.microsoft.com/r/rlidOutlookWelcomeMail10?clid=1033\">Cached Exchange Mode</a>",
@@ -280,14 +273,6 @@ public class OutlookParserTest extends TikaTest {
         // Make sure we don't have nested html docs
         assertEquals(2, content.split("<body>").length);
         assertEquals(2, content.split("<\\/body>").length);
-    }
-
-    private ParseContext configureInjectHeaders() {
-        ParseContext parseContext = new ParseContext();
-        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
-        officeParserConfig.setWriteSelectHeadersInBody(true);
-        parseContext.set(OfficeParserConfig.class, officeParserConfig);
-        return parseContext;
     }
 
     @Test
