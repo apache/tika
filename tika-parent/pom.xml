@@ -411,7 +411,7 @@
     <netty.version>4.1.114.Final</netty.version>
     <oak.jackrabbit.version>1.70.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
-    <opennlp.version>2.4.0</opennlp.version>
+    <opennlp.version>2.5.0</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
@@ -422,8 +422,7 @@
     <pdfbox.version>3.0.3</pdfbox.version>
     <poi.version>5.3.0</poi.version>
     <protobuf.version>3.25.5</protobuf.version>
-    <!-- 2.5.0-rc1 tested successfully -->
-    <quartz.version>2.3.2</quartz.version>
+    <quartz.version>2.5.0</quartz.version>
     <reactor.core.version>3.7.0</reactor.core.version>
     <reactor.netty.version>1.2.0</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
