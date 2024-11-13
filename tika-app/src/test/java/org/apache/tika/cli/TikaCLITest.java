@@ -139,7 +139,7 @@ public class TikaCLITest {
         String content = getParamOutContent("-x", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains("?xml version=\"1.0\" encoding=\"UTF-8\"?"));
 
-        content = getParamOutContent("-x", "--digest=SHA256", resourcePrefix + "alice.cli.test");
+        content = getParamOutContent("-x", "--digest=sha256", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains("<meta name=\"X-TIKA:digest:SHA256\" content=\"e90779adbac09c4ee"));
 
     }
@@ -155,7 +155,7 @@ public class TikaCLITest {
         assertTrue(content.contains("html xmlns=\"http://www.w3.org/1999/xhtml"));
         assertTrue(content.contains("<title></title>"), "Expanded <title></title> element should be present");
 
-        content = getParamOutContent("-h", "--digest=SHA384", resourcePrefix + "alice.cli.test");
+        content = getParamOutContent("-h", "--digest=sha384", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains("<meta name=\"X-TIKA:digest:SHA384\" content=\"c69ea023f5da95a026"));
     }
 
@@ -207,7 +207,7 @@ public class TikaCLITest {
 
         content = getParamOutContent("-m", "--digest=SHA512", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains("text/plain"));
-        assertTrue(content.contains("X-TIKA:digest:SHA512: dd459d99bc19ff78fd31fbae46e0"));
+        assertTrue(content.contains("X-TIKA:digest:SHA512: DD459D99BC19FF78FD31FBAE46E0"));
     }
 
     /**
@@ -459,7 +459,7 @@ public class TikaCLITest {
 
     @Test
     public void testDigestInJson() throws Exception {
-        String content = getParamOutContent("-J", "-r", "-t", "--digest=MD5", resourcePrefix + "test_recursive_embedded.docx");
+        String content = getParamOutContent("-J", "-r", "-t", "--digest=md5", resourcePrefix + "test_recursive_embedded.docx");
         assertTrue(content.contains("\"X-TIKA:digest:MD5\" : \"59f626e09a8c16ab6dbc2800c685f772\","));
         assertTrue(content.contains("\"X-TIKA:digest:MD5\" : \"f9627095ef86c482e61d99f0cc1cf87d\""));
     }
