@@ -380,6 +380,9 @@
     <!-- mockito >= 5 requires jdk11 -->
     <mockito.version>4.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
+    <!-- 4.2.0.Alpha4 tested successfully -->
+    <netty.version>4.1.115.Final</netty.version>
+    <oak.jackrabbit.version>1.70.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
     <opennlp.version>1.9.4</opennlp.version>
@@ -1113,7 +1116,7 @@
                 <artifactId>hdf5-platform</artifactId>
                 <version>1.14.3-1.5.10</version>
             </coordinate>
-            <!-- https://github.com/jetty/jetty.project/pull/12012 
+            <!-- https://github.com/jetty/jetty.project/pull/12012
                  "As stated in CVE-2024-6763, the use of Jetty server, or Jetty client, does not make you vulnerable to that CVE.
                   The code for HttpURI is also quite different in those older, no longer supported, versions of Jetty.
             -->
