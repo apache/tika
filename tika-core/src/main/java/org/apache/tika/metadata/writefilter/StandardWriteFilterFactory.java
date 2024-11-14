@@ -33,7 +33,8 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
     public static int DEFAULT_TOTAL_ESTIMATED_BYTES = 10 * 1024 * 1024;
     public static int DEFAULT_MAX_VALUES_PER_FIELD = 10;
 
-    private Set<String> includeFields = null;
+    private Set<String> includeFields = Collections.EMPTY_SET;
+    private Set<String> excludeFields = Collections.EMPTY_SET;
     private int maxKeySize = DEFAULT_MAX_KEY_SIZE;
     private int maxFieldSize = DEFAULT_MAX_FIELD_SIZE;
     private int maxTotalEstimatedBytes = DEFAULT_TOTAL_ESTIMATED_BYTES;
@@ -55,13 +56,20 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
         }
 
         return new StandardWriteFilter(maxKeySize, maxFieldSize,
-                maxTotalEstimatedBytes, maxValuesPerField, includeFields, includeEmpty);
+                maxTotalEstimatedBytes, maxValuesPerField, includeFields,
+                excludeFields, includeEmpty);
     }
 
     public void setIncludeFields(List<String> includeFields) {
         Set<String> keys = ConcurrentHashMap.newKeySet(includeFields.size());
         keys.addAll(includeFields);
         this.includeFields = Collections.unmodifiableSet(keys);
+    }
+
+    public void setExcludeFields(List<String> excludeFields) {
+        Set<String> keys = ConcurrentHashMap.newKeySet(excludeFields.size());
+        keys.addAll(excludeFields);
+        this.excludeFields = Collections.unmodifiableSet(keys);
     }
 
     public void setMaxTotalEstimatedBytes(int maxTotalEstimatedBytes) {

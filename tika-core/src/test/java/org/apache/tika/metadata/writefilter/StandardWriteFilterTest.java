@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -116,7 +117,7 @@ public class StandardWriteFilterTest extends TikaTest {
     @Test
     public void testKeySizeFilter() throws Exception {
         Metadata metadata = filter(10, 1000, 10000, 100,
-                null, true);
+                Collections.EMPTY_SET, Collections.EMPTY_SET, true);
         //test that must add keys are not truncated
         metadata.add(TikaCoreProperties.TIKA_PARSED_BY, "some-long-parser1");
         metadata.add(TikaCoreProperties.TIKA_PARSED_BY, "some-long-parser2");
@@ -138,13 +139,13 @@ public class StandardWriteFilterTest extends TikaTest {
         String k = "dc:creator";//20 bytes
         //key is > maxTotalBytes, so the value isn't even added
         Metadata metadata = filter(100, 10000, 10,
-                100, null, false);
+                100, Collections.EMPTY_SET, Collections.EMPTY_SET, false);
         metadata.set(k, "ab");
         assertEquals(1, metadata.names().length);
         assertEquals("true", metadata.get(TikaCoreProperties.TRUNCATED_METADATA));
 
         metadata = filter(100, 10000, 50, 100,
-                null, false);
+                Collections.EMPTY_SET, Collections.EMPTY_SET, false);
         for (int i = 0; i < 10; i++) {
             metadata.set(k, "abcde");
         }
@@ -178,7 +179,8 @@ public class StandardWriteFilterTest extends TikaTest {
     @Test
     public void testMinSizeForAlwaysInclude() throws Exception {
         //test that mimes don't get truncated
-        Metadata metadata = filter(100, 10, 10000, 100, null, true);
+        Metadata metadata = filter(100, 10, 10000, 100,
+                Collections.EMPTY_SET, Collections.EMPTY_SET, true);
 
         String mime = getLongestMime().toString();
         metadata.set(Metadata.CONTENT_TYPE, mime);
@@ -192,21 +194,47 @@ public class StandardWriteFilterTest extends TikaTest {
 
     @Test
     public void testMaxFieldValues() throws Exception {
-        Metadata metadata = filter(100, 10000, 10000, 3, null, true);
+        Metadata metadata = filter(100, 10000, 10000, 3,
+                Collections.EMPTY_SET, Collections.EMPTY_SET, true);
         for (int i = 0; i < 10; i++) {
             metadata.add(TikaCoreProperties.SUBJECT, "ab");
         }
         assertEquals(3, metadata.getValues(TikaCoreProperties.SUBJECT).length);
     }
 
+    @Test
+    public void testExclude() throws Exception {
+        TikaConfig tikaConfig =
+                new TikaConfig(TikaConfigTest.class.getResourceAsStream("TIKA-3695-exclude.xml"));
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        String mock = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
+                "<mock>";
+        mock += "<metadata action=\"add\" name=\"dc:creator\">01234567890123456789</metadata>";
+        mock += "<metadata action=\"add\" name=\"subject\">01234567890123456789</metadata>";
+        mock += "<metadata action=\"add\" name=\"subjectB\">01234567890123456789</metadata>";
+        mock += "<write element=\"p\" times=\"1\"> hello </write>\n";
+        mock += "</mock>";
+        Metadata metadata = new Metadata();
+        List<Metadata> metadataList =
+                getRecursiveMetadata(new ByteArrayInputStream(mock.getBytes(StandardCharsets.UTF_8)),
+                        parser, metadata, new ParseContext(), true);
+        assertEquals(1, metadataList.size());
+        metadata = metadataList.get(0);
+        assertEquals(9, metadata.names().length);
+        assertEquals("01234567890123456789", metadata.get("dc:creator"));
+        assertEquals("01234567890123456789", metadata.get("subjectB"));
+        assertNull(metadata.get("subject"));
+    }
+
+
     private void assertTruncated(Metadata metadata) {
         assertEquals("true", metadata.get(TikaCoreProperties.TRUNCATED_METADATA));
     }
     private Metadata filter(int maxKeySize, int maxFieldSize, int maxTotalBytes,
                             int maxValuesPerField,
-                            Set<String> includeFields, boolean includeEmpty) {
+                            Set<String> includeFields, Set<String> excludeFields, boolean includeEmpty) {
         MetadataWriteFilter filter = new StandardWriteFilter(maxKeySize, maxFieldSize,
-                maxTotalBytes, maxValuesPerField, includeFields, includeEmpty);
+                maxTotalBytes, maxValuesPerField, includeFields, excludeFields, includeEmpty);
         Metadata metadata = new Metadata();
         metadata.setMetadataWriteFilter(filter);
         return metadata;
