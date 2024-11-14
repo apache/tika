@@ -7298,6 +7298,8 @@
     <root-XML localName="SCRIPT"/>
     <root-XML localName="frameset"/>
     <root-XML localName="FRAMESET"/>
+    <root-XML localName="iframe"/>
+    <root-XML localName="IFRAME"/>
     <magic priority="60">
       <match value="(?i)&lt;(html|head|body|title|div)[ >]" type="regex" offset="0"/>
       <match value="(?i)&lt;h[123][ >]" type="regex" offset="0"/>
