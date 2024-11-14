@@ -199,6 +199,9 @@ public class TesseractOCRConfig implements Serializable {
      * @param pageSeparator
      */
     public void setPageSeparator(String pageSeparator) {
+        if (pageSeparator.isBlank()) {
+            return;
+        }
         Matcher m = ALLOWABLE_PAGE_SEPARATORS_PATTERN.matcher(pageSeparator);
         if (!m.find()) {
             throw new IllegalArgumentException(pageSeparator + " contains illegal characters.\n" +
