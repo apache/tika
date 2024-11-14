@@ -113,6 +113,7 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
 
 
     private final Set<String> includeFields;
+    private final Set<String> excludeFields;
 
     private Map<String, Integer> fieldSizes = new HashMap<>();
 
@@ -125,12 +126,14 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
      * @param maxEstimatedSize
      * @param includeFields if null or empty, all fields are included; otherwise, which fields
      *                      to add to the metadata object.
+     * @param excludeFields these fields will not be included (unless they're in {@link StandardWriteFilter#ALWAYS_SET_FIELDS})
      * @param includeEmpty if <code>true</code>, this will set or add an empty value to the
      *                     metadata object.
      */
     protected StandardWriteFilter(int maxKeySize, int maxFieldSize, int maxEstimatedSize,
                                int maxValuesPerField,
                                Set<String> includeFields,
+                               Set<String> excludeFields,
                                boolean includeEmpty) {
 
         this.maxKeySize = maxKeySize;
@@ -138,6 +141,7 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
         this.maxTotalEstimatedSize = maxEstimatedSize;
         this.maxValuesPerField = maxValuesPerField;
         this.includeFields = includeFields;
+        this.excludeFields = excludeFields;
         this.includeEmpty = includeEmpty;
     }
 
@@ -176,6 +180,7 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
             setAlwaysInclude(field, value, data);
             return;
         }
+
         StringSizePair filterKey = filterKey(field, value, data);
         setFilterKey(filterKey, value, data);
     }
@@ -433,11 +438,10 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
         if (ALWAYS_SET_FIELDS.contains(name)) {
             return true;
         }
-        if (includeFields == null ||
-                includeFields.contains(name)) {
-            return true;
+        if (excludeFields.contains(name)) {
+            return false;
         }
-        return false;
+        return includeFields.isEmpty() || includeFields.contains(name);
     }
 
     private static int estimateSize(String s) {
