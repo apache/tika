@@ -74,6 +74,8 @@ public class MimeDetectionTest {
         testFile("text/html", "testlargerbuffer.html");
         // test fragment of HTML with <div> (TIKA-1102)
         testFile("text/html", "htmlfragment");
+        // test fragment of HTML with <iframe> and potentially misleading file suffix
+        testFile("text/html", "test-html-snippet-iframe.jsp");
         // test binary CGM detection (TIKA-1170)
         testFile("image/cgm", "plotutils-bin-cgm-v3.cgm");
         // test HTML detection of malformed file, previously identified as image/cgm (TIKA-1170)
