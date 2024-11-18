@@ -316,7 +316,7 @@
     -->
     <asm.version>9.7.1</asm.version>
     <azure.core.version>1.54.0</azure.core.version>
-    <azure.core.http.netty.version>1.15.6</azure.core.http.netty.version>
+    <azure.core.http.netty.version>1.15.7</azure.core.http.netty.version>
     <azure.storage.blob.version>12.28.1</azure.storage.blob.version>
     <azure.storage.common>12.27.1</azure.storage.common>
     <azure-identity.version>1.14.2</azure-identity.version>
