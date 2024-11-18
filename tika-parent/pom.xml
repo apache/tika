@@ -318,7 +318,7 @@
     <azure.core.version>1.54.0</azure.core.version>
     <azure.core.http.netty.version>1.15.7</azure.core.http.netty.version>
     <azure.storage.blob.version>12.28.1</azure.storage.blob.version>
-    <azure.storage.common>12.27.1</azure.storage.common>
+    <azure.storage.common>12.28.0</azure.storage.common>
     <azure-identity.version>1.14.2</azure-identity.version>
     <azure.json.version>1.2.0</azure.json.version>
     <biz.aqute.version>7.0.0</biz.aqute.version>
