@@ -37,15 +37,18 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.microsoft.libpst.LibPstParser;
 import org.apache.tika.sax.BodyContentHandler;
 
 /**
@@ -207,6 +210,23 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             ParseContext context = new ParseContext();
             parser.parse(stream, output, new Metadata(), context);
             assertContains("Moby Dick", output.toString());
+        }
+    }
+
+    @Test
+    public void testLibPstParser() throws Exception {
+        if (! LibPstParser.checkQuietly()) {
+            return;
+        }
+        TikaConfig tikaConfig = new TikaConfig(
+                ForkParserIntegrationTest.class.getResourceAsStream("/configs/tika-config-lib-pst.xml"));
+        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
+                new AutoDetectParser(tikaConfig))) {
+            ContentHandler output = new BodyContentHandler();
+            InputStream stream = getResourceAsStream("/test-documents/testPST.pst");
+            ParseContext context = new ParseContext();
+            parser.parse(stream, output, new Metadata(), context);
+            assertContains("Barry Olddog", output.toString());
         }
     }
 
