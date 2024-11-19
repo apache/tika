@@ -200,7 +200,6 @@ public class TikaCLI {
      */
     private String password = System.getenv("TIKA_PASSWORD");
     private DigestingParser.Digester digester = null;
-    private boolean asyncMode = false;
     private boolean pipeMode = true;
     private boolean fork = false;
     private boolean prettyPrint;
@@ -404,8 +403,6 @@ public class TikaCLI {
             // ignore, as container-aware detectors are now always used
         } else if (arg.equals("-f") || arg.equals("--fork")) {
             fork = true;
-        } else if (arg.equals("-a") || arg.equals("--async")) {
-            asyncMode = true;
         } else if (arg.startsWith("--config=")) {
             configFilePath = arg.substring("--config=".length());
         } else if (arg.startsWith("--digest=")) {
