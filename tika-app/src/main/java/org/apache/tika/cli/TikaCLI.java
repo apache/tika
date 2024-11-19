@@ -340,9 +340,12 @@ public class TikaCLI {
         if (configFilePath == null && context.get(PDFParserConfig.class) == null) {
             PDFParserConfig pdfParserConfig = new PDFParserConfig();
             pdfParserConfig.setExtractInlineImages(true);
+            pdfParserConfig.setExtractIncrementalUpdateInfo(true);
             pdfParserConfig.setParseIncrementalUpdates(true);
-            String warn = "As a convenience, TikaCLI has turned on extraction of\n" + "inline images and incremental updates for the PDFParser (TIKA-2374 and " + "TIKA-4017).\n" +
-                    "Aside from the -z option, this is not the default behavior\n" + "in Tika generally or in tika-server.";
+            String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
+                    "inline images and incremental updates for the PDFParser (TIKA-2374, " +
+                    "TIKA-4017 and TIKA-4354).\n" +
+                    "This is not the default behavior in Tika generally or in tika-server.";
             LOG.info(warn);
             context.set(PDFParserConfig.class, pdfParserConfig);
         }
@@ -446,7 +449,6 @@ public class TikaCLI {
             }
             extractDir = new File(dirPath);
         } else if (arg.equals("-z") || arg.equals("--extract")) {
-            configurePDFExtractSettings();
             type = NO_OUTPUT;
             context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor());
         } else if (arg.equals("-r") || arg.equals("--pretty-print")) {
@@ -475,6 +477,7 @@ public class TikaCLI {
                 } else {
                     url = new URL(arg);
                 }
+                configurePDFExtractSettings();
                 if (recursiveJSON) {
                     handleRecursiveJson(url, System.out);
                 } else {
