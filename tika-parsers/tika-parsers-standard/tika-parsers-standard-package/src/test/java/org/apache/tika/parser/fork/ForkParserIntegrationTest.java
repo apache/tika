@@ -215,7 +215,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
 
     @Test
     public void testLibPstParser() throws Exception {
-        if (! LibPstParser.checkQuietly()) {
+        if (! new LibPstParser().checkQuietly()) {
             return;
         }
         TikaConfig tikaConfig = new TikaConfig(
