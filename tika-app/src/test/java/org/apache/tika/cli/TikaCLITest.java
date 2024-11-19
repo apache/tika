@@ -241,6 +241,14 @@ public class TikaCLITest {
         assertTrue(fb > -1 && title > -1 && fb > title);
     }
 
+    @Test
+    public void testDefaultPDFIncrementalUpdateSettings() throws Exception {
+        String json = getParamOutContent("-J",
+                resourcePrefix + "testPDF_incrementalUpdates.pdf");
+        assertTrue(json.contains("pdf:incrementalUpdateCount\":\"2\""));
+        assertTrue(json.contains("embeddedResourceType\":\"VERSION\""));
+    }
+
     /**
      * Tests -l option of the cli
      *
