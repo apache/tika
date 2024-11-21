@@ -316,7 +316,7 @@
     -->
     <asm.version>9.7.1</asm.version>
     <azure.core.version>1.54.1</azure.core.version>
-    <azure.core.http.netty.version>1.15.1</azure.core.http.netty.version>
+    <azure.core.http.netty.version>1.15.7</azure.core.http.netty.version>
     <azure.storage.blob.version>12.29.0</azure.storage.blob.version>
     <azure.storage.common>12.28.0</azure.storage.common>
     <azure-identity.version>1.14.2</azure-identity.version>
@@ -336,7 +336,7 @@
     <commons.csv.version>1.12.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
-    <commons.io.version>2.17.0</commons.io.version>
+    <commons.io.version>2.18.0</commons.io.version>
     <commons.lang3.version>3.17.0</commons.lang3.version>
     <commons.logging.version>1.3.4</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
@@ -391,7 +391,7 @@
     <junit5.version>5.11.3</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
-    <jwarc.version>0.31.0</jwarc.version>
+    <jwarc.version>0.31.1</jwarc.version>
     <kafka.version>3.9.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.24.0</log4j2.version>
