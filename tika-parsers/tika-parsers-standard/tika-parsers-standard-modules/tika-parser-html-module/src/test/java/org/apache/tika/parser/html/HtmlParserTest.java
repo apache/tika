@@ -70,6 +70,7 @@ import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Geographic;
+import org.apache.tika.metadata.HTML;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -109,8 +110,8 @@ public class HtmlParserTest extends TikaTest {
         }
 
         assertEquals("Title : Test Indexation Html", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("Tika Developers", metadata.get("Author"));
-        assertEquals("5", metadata.get("refresh"));
+        assertEquals("Tika Developers", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("5", metadata.get(HTML.PREFIX_HTML_META + "refresh"));
 
         assertEquals("51.2312", metadata.get(Geographic.LATITUDE));
         assertEquals("-5.1987", metadata.get(Geographic.LONGITUDE));
@@ -152,8 +153,8 @@ public class HtmlParserTest extends TikaTest {
                 metadata.get(Metadata.CONTENT_TYPE).startsWith("application/xhtml+xml; charset="));
         assertEquals("XHTML test document", metadata.get(TikaCoreProperties.TITLE));
 
-        assertEquals("Tika Developers", metadata.get("Author"));
-        assertEquals("5", metadata.get("refresh"));
+        assertEquals("Tika Developers", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("5", metadata.get(HTML.PREFIX_HTML_META + "refresh"));
         assertContains("ability of Apache Tika", content);
         assertContains("extract content", content);
         assertContains("an XHTML document", content);
@@ -809,8 +810,8 @@ public class HtmlParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         new JSoupParser().parse(new ByteArrayInputStream(test1.getBytes(ISO_8859_1)),
                 new BodyContentHandler(), metadata, new ParseContext());
-        assertEquals("some description", metadata.get("og:description"));
-        assertTrue(metadata.isMultiValued("og:image"));
+        assertEquals("some description", metadata.get(HTML.PREFIX_HTML_META + "og:description"));
+        assertTrue(metadata.isMultiValued(HTML.PREFIX_HTML_META + "og:image"));
     }
 
     // TIKA-1011
@@ -1220,19 +1221,15 @@ public class HtmlParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testHTML_metadata.html");
         Metadata m = metadataList.get(0);
         assertEquals("Free Web tutorials", m.get(TikaCoreProperties.DESCRIPTION));
-        assertEquals("Free Web tutorials", m.get("description"));
 
         assertEquals("HTML,CSS,XML,JavaScript", m.get(TikaCoreProperties.SUBJECT));
-        assertEquals("HTML,CSS,XML,JavaScript", m.get("keywords"));
 
         assertEquals("HTML,CSS,XML,JavaScript", m.get(Office.KEYWORDS));
         assertEquals("HTML,CSS,XML,JavaScript", m.get(Office.KEYWORDS));
 
         assertEquals("OldMetaTitle", m.get(TikaCoreProperties.TITLE));
-        assertEquals("OldMetaTitle", m.get("title"));
 
         assertEquals("John Doe", m.get(TikaCoreProperties.CREATOR));
-        assertEquals("John Doe", m.get("author"));
     }
 
     @Test
@@ -1242,7 +1239,7 @@ public class HtmlParserTest extends TikaTest {
         Metadata m = metadataList.get(0);
 
         assertEquals("ActualTitle", m.get(TikaCoreProperties.TITLE));
-        assertEquals("OldMetaTitle", m.get("title"));
+        assertEquals("OldMetaTitle", m.get(HTML.PREFIX_HTML_META + TikaCoreProperties.TITLE.getName()));
     }
 
     @Test
