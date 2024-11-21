@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.HTML;
 import org.apache.tika.utils.ProcessUtils;
 
 /**
@@ -219,7 +220,7 @@ public class TikaCLITest {
     public void testJsonMetadataOutput() throws Exception {
         String json = getParamOutContent("--json", "--digest=MD2", resourcePrefix + "testJsonMultipleInts.html");
         //TIKA-1310
-        assertTrue(json.contains("\"fb:admins\":\"1,2,3,4\","));
+        assertTrue(json.contains("\"" + HTML.PREFIX_HTML_META + "fb:admins\":\"1,2,3,4\","));
         assertTrue(json.contains("\"X-TIKA:digest:MD2\":"));
     }
 

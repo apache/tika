@@ -153,7 +153,7 @@ public class PDFParserConfig implements Serializable {
 
     private Renderer renderer;
 
-    private boolean extractIncrementalUpdateInfo = false;
+    private boolean extractIncrementalUpdateInfo = true;
 
     private boolean parseIncrementalUpdates = false;
 
@@ -876,7 +876,8 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * The maximum number of incremental updates to parse.
+     * The maximum number of incremental updates to parse if
+     * {@link #setParseIncrementalUpdates(boolean)} is set to <code>true</code>
      *
      * @param maxIncrementalUpdates
      */
