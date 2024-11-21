@@ -308,8 +308,8 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.44.1</google.cloud.version>
-    <aws.version>1.12.777</aws.version>
+    <google.cloud.version>2.45.0</google.cloud.version>
+    <aws.version>1.12.778</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -382,7 +382,7 @@
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
     <netty.version>4.1.115.Final</netty.version>
-    <oak.jackrabbit.version>1.70.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>1.72.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
     <opennlp.version>1.9.4</opennlp.version>
@@ -409,7 +409,7 @@
     <spring.version>5.3.39</spring.version>
     <sqlite.version>3.47.0.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
-    <test.containers.version>1.20.3</test.containers.version>
+    <test.containers.version>1.20.4</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
@@ -426,7 +426,7 @@
     <snappy.java.version>1.1.10.7</snappy.java.version>
     <!-- can't update to 1.4, these need jdk11 -->
     <logback.version>1.3.14</logback.version>
-    <javacpp.version>1.5.10</javacpp.version>
+    <javacpp.version>1.5.11</javacpp.version>
     <!-- h2 2.3 requires jdk11 -->
     <h2.version>2.2.224</h2.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
@@ -505,22 +505,22 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.28.1</version>
+        <version>12.29.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-common</artifactId>
-        <version>12.27.1</version>
+        <version>12.28.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.54.0</version>
+        <version>1.54.1</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.15.6</version>
+        <version>1.15.1</version>
       </dependency>
       <dependency>
         <groupId>com.drewnoakes</groupId>
@@ -885,7 +885,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.30.0</version>
+        <version>0.31.0</version>
       </dependency>
       <dependency>
         <groupId>org.opengis</groupId>
@@ -1040,7 +1040,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.17.1</version>
+        <version>2.18.0</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
