@@ -26,15 +26,15 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-fetcher-microsoft-graph</artifactId>
-  <name>Microsoft Graph Tika Pipes Fetcher</name>
+  <name>Apache Tika Microsoft Graph Pipes Fetcher</name>
 
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <microsoft-graph.version>6.20.0</microsoft-graph.version>
+    <microsoft-graph.version>6.21.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
-    <msal4j.version>1.17.2</msal4j.version>
+    <msal4j.version>1.17.3</msal4j.version>
     <kotlin-stdlib.version>2.0.21</kotlin-stdlib.version>
   </properties>
 
