@@ -432,7 +432,7 @@
     <sis.version>1.4</sis.version>
     <snappy.version>1.1.10.7</snappy.version>
     <solrj.version>9.7.0</solrj.version>
-    <spring.version>6.1.14</spring.version>
+    <spring.version>6.2.0</spring.version>
     <sqlite.version>3.47.0.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>1.20.4</testcontainers.version>
@@ -448,7 +448,7 @@
     <woodstox.core.version>7.1.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.3</zookeeper.version>
-    <zstd.version>1.5.6-7</zstd.version>
+    <zstd.version>1.5.6-8</zstd.version>
     <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
     <javacpp.version>1.5.11</javacpp.version>
   </properties>
