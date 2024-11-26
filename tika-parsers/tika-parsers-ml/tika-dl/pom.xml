@@ -75,14 +75,6 @@
           <groupId>org.bytedeco</groupId>
           <artifactId>ffmpeg</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.bytedeco</groupId>
-          <artifactId>javacpp</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.bytedeco</groupId>
-          <artifactId>javacpp-platform</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -102,12 +94,6 @@
       <artifactId>deeplearning4j-modelimport</artifactId>
       <version>${dl4j.version}</version>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.bytedeco</groupId>
-          <artifactId>javacpp</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
@@ -120,12 +106,6 @@
       <artifactId>nd4j-api</artifactId>
       <version>${dl4j.version}</version>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-net</groupId>
-          <artifactId>commons-net</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.nd4j</groupId>
