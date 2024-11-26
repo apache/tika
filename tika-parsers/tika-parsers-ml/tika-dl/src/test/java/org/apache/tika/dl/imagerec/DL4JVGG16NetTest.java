@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.File;
 import java.io.InputStream;
 
 import org.apache.commons.lang3.SystemUtils;
@@ -34,10 +33,6 @@ public class DL4JVGG16NetTest {
 
     @Test
     public void recognise() throws Exception {
-        String dir = System.getProperty("user.home");
-        File f1 = new File(dir, ".tika-dl/models/keras/inception-v3/inception_v3_keras_2.h5");
-        File f2 = new File(dir, ".tika-dl/models/keras/inception-v3/imagenet_class_index.json");
-        System.out.println("cache file sizes: " + f1.length() + " " + f2.length());
         assumeFalse(SystemUtils.OS_ARCH.equals("aarch64"), "doesn't yet work on aarch64");
         TikaConfig config = null;
         try (InputStream is = getClass().getResourceAsStream("dl4j-vgg16-config.xml")) {
