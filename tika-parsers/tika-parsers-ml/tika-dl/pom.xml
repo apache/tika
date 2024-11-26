@@ -56,6 +56,10 @@
           <groupId>org.bytedeco</groupId>
           <artifactId>javacpp-platform</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>it.unimi.dsi</groupId>
+          <artifactId>fastutil</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <!-- TODO restore after ffmpeg has been updated -->
@@ -94,6 +98,10 @@
         <exclusion>
           <groupId>org.bytedeco</groupId>
           <artifactId>javacpp</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>it.unimi.dsi</groupId>
+          <artifactId>fastutil</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -149,6 +157,11 @@
       <groupId>org.bytedeco</groupId>
       <artifactId>javacpp-platform</artifactId>
       <version>${javacpp.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>it.unimi.dsi</groupId>
+      <artifactId>fastutil</artifactId>
+      <version>8.1.1</version>
     </dependency>
   </dependencies>
 
