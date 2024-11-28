@@ -1,0 +1,96 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>tika-fetchers</artifactId>
+        <groupId>org.apache.tika</groupId>
+        <version>3.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>tika-fetcher-google</artifactId>
+    <name>Google Tika Pipes Fetcher</name>
+
+    <properties>
+        <google.api.client.version>2.2.0</google.api.client.version>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <azure-identity.version>1.11.0</azure-identity.version>
+        <microsoft-graph.version>6.4.0</microsoft-graph.version>
+        <microsoft-kiota-serialization-json.version>1.1.1</microsoft-kiota-serialization-json.version>
+        <junit-jupiter-engine.version>5.11.0-M2</junit-jupiter-engine.version>
+        <wiremock.version>3.3.1</wiremock.version>
+        <mockito-junit-jupiter.version>5.3.1</mockito-junit-jupiter.version>
+        <nimbus-jose-jwt.version>9.37.3</nimbus-jose-jwt.version>
+    </properties>
+
+    <dependencies>
+        <!-- Apache Tika Core -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Google Drive API Client -->
+        <dependency>
+            <groupId>com.google.api-client</groupId>
+            <artifactId>google-api-client</artifactId>
+            <version>${google.api.client.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.auth</groupId>
+            <artifactId>google-auth-library-oauth2-http</artifactId>
+            <version>1.19.0</version>
+        </dependency>
+
+        <!-- Google Drive API -->
+        <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-drive</artifactId>
+            <version>v3-rev20241027-2.0.0</version>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- Apache Commons IO -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                <archive>
+                    <manifestEntries>
+                    <Automatic-Module-Name>org.apache.tika.pipes.fetcher.s3</Automatic-Module-Name>
+                    </manifestEntries>
+                </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+  <scm>
+    <tag>3.0.0-BETA-rc1</tag>
+  </scm>
+</project>
