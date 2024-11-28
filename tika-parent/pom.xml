@@ -309,7 +309,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.45.0</google.cloud.version>
-    <aws.version>1.12.778</aws.version>
+    <aws.version>1.12.779</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -363,7 +363,7 @@
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.22.0</jackrabbit.version>
-    <jackson.version>2.18.1</jackson.version>
+    <jackson.version>2.18.2</jackson.version>
     <jackcess.version>4.0.7</jackcess.version>
     <jackcess.encrypt.version>4.0.2</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
@@ -433,7 +433,7 @@
     <snappy.version>1.1.10.7</snappy.version>
     <solrj.version>9.7.0</solrj.version>
     <spring.version>6.2.0</spring.version>
-    <sqlite.version>3.47.0.0</sqlite.version>
+    <sqlite.version>3.47.1.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>1.20.4</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
