@@ -293,6 +293,7 @@
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.7.1</maven.assembly.version>
+    <!-- can't update to 6, needs jdk17 -->
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
     <maven.failsafe.version>3.5.2</maven.failsafe.version>
@@ -385,7 +386,7 @@
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.15.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
-    <jsoup.version>1.18.1</jsoup.version>
+    <jsoup.version>1.18.3</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.11.3</junit5.version>
