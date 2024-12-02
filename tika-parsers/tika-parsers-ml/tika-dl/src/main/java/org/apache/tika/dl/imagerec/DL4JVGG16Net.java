@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.datavec.image.loader.NativeImageLoader;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.util.ModelSerializer;
@@ -98,6 +99,10 @@ public class DL4JVGG16Net implements ObjectRecogniser {
         try {
             if (serialize) {
                 if (cacheDir.exists()) {
+                    FileUtils.deleteDirectory(cacheDir);
+                }
+                if (cacheDir.exists()) {
+                    LOG.info("Trying to load preprocessed model from {}", cacheDir);
                     model = ModelSerializer.restoreComputationGraph(cacheDir);
                     LOG.info("Preprocessed Model Loaded from {}", cacheDir);
                 } else {
