@@ -416,7 +416,7 @@
     <uima.version>3.4.1</uima.version>
     <!-- 3.5.0 doesn't compile with jdk8 -->
     <uimafit.version>3.4.0</uimafit.version>
-    <uimaj.cpe.version>3.5.0</uimaj.cpe.version>
+    <uimaj.cpe.version>3.6.0</uimaj.cpe.version>
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
