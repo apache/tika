@@ -439,10 +439,9 @@
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
-    <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
     <uimafit.version>3.5.0</uimafit.version>
     <uimaj.core.version>3.5.0</uimaj.core.version>
-    <uimaj.cpe.version>3.5.0</uimaj.cpe.version>
+    <uimaj.cpe.version>3.6.0</uimaj.cpe.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
     <woodstox.core.version>7.1.0</woodstox.core.version>
