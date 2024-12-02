@@ -146,42 +146,10 @@ public interface Office {
             PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "object-count");
 
     /**
-     * MAPI message class.  What type of .msg/MAPI file is it?
-     */
-    Property MAPI_MESSAGE_CLASS = Property.internalClosedChoise(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "mapi-message-class",
-            "APPOINTMENT", "CONTACT", "NOTE", "STICKY_NOTE", "POST", "TASK", "UNKNOWN",
-            "UNSPECIFIED");
-
-    Property MAPI_SENT_BY_SERVER_TYPE = Property.internalText(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "mapi-sent-by-server-type");
-
-    Property MAPI_FROM_REPRESENTING_NAME = Property.internalText(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "mapi-from-representing-name");
-
-    Property MAPI_FROM_REPRESENTING_EMAIL = Property.internalText(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "mapi-from-representing-email");
-
-    Property MAPI_MESSAGE_CLIENT_SUBMIT_TIME = Property.internalDate(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "mapi-msg-client-submit-time");
-
-    /**
      * Embedded files may have a "progID" associated with them, such as
      * Word.Document.12 or AcroExch.Document.DC
      */
     Property PROG_ID = Property.internalText("msoffice:progID");
 
     Property OCX_NAME = Property.internalText("msoffice:ocxName");
-    Property MAPI_RECIPIENTS_STRING = Property.internalText(PREFIX_DOC_META +
-            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "mapi-recipients-string");
-    Property MAPI_IMPORTANCE = Property.internalInteger(PREFIX_DOC_META +
-            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "mapi-importance");
-    Property MAPI_PRIORTY = Property.internalInteger(PREFIX_DOC_META +
-            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "mapi-importance");
-    Property MAPI_IS_FLAGGED = Property.internalBoolean(PREFIX_DOC_META +
-            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "mapi-is-flagged");
 }

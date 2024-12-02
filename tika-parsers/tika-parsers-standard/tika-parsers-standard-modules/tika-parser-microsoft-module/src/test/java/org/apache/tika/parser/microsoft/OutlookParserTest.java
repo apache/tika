@@ -36,9 +36,9 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -119,12 +119,12 @@ public class OutlookParserTest extends TikaTest {
                         "    by apache.org (qpsmtpd/0.29) with ESMTP; Thu, 29 Jan 2009 11:17:08 " +
                         "-0800",
                 Arrays.asList(metadata.getValues("Message:Raw-Header:Received")));
-        assertEquals("EX", metadata.get(Office.MAPI_SENT_BY_SERVER_TYPE));
-        assertEquals("NOTE", metadata.get(Office.MAPI_MESSAGE_CLASS));
+        assertEquals("EX", metadata.get(MAPI.SENT_BY_SERVER_TYPE));
+        assertEquals("NOTE", metadata.get(MAPI.MESSAGE_CLASS));
         assertEquals("Jukka Zitting", metadata.get(Message.MESSAGE_FROM_NAME));
         assertEquals("jukka.zitting@gmail.com", metadata.get(Message.MESSAGE_FROM_EMAIL));
-        assertEquals("Jukka Zitting", metadata.get(Office.MAPI_FROM_REPRESENTING_NAME));
-        assertEquals("jukka.zitting@gmail.com", metadata.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
+        assertEquals("Jukka Zitting", metadata.get(MAPI.FROM_REPRESENTING_NAME));
+        assertEquals("jukka.zitting@gmail.com", metadata.get(MAPI.FROM_REPRESENTING_EMAIL));
 
         //to-name is empty, make sure that we get an empty string.
         assertEquals("tika-dev@lucene.apache.org", metadata.get(Message.MESSAGE_TO_EMAIL));
@@ -199,9 +199,19 @@ public class OutlookParserTest extends TikaTest {
 
         assertEquals("tests.chang@fengttt.com", metadata.get(Message.MESSAGE_TO_EMAIL));
 
-        assertEquals("Tests Chang@FT (張毓倫)", metadata.get(Office.MAPI_FROM_REPRESENTING_NAME));
+        assertEquals("Tests Chang@FT (張毓倫)", metadata.get(MAPI.FROM_REPRESENTING_NAME));
         assertEquals("/O=FT GROUP/OU=FT/CN=RECIPIENTS/CN=LYDIACHANG",
-                metadata.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
+                metadata.get(MAPI.FROM_REPRESENTING_EMAIL));
+
+        assertEquals("c=TW;a= ;p=FT GROUP;l=FTM02-110329085248Z-89735\u0000",
+                metadata.get(MAPI.SUBMISSION_ID));
+        assertEquals("<EBB9951D34EA4B41B70AB946CF3FB6EC1A297D98@ftm02.FT.FTG.COM>",
+                metadata.get(MAPI.INTERNET_MESSAGE_ID));
+        assertTrue(metadata.get(MAPI.SUBMISSION_ACCEPTED_AT_TIME).startsWith("2011-03-29"));
+        assertTrue(metadata.get("mapi:client-submit-time").startsWith("2011-03-29"));
+        assertTrue(metadata.get("mapi:message-delivery-time").startsWith("2011-03-29"));
+        assertTrue(metadata.get("mapi:last-modification-time").startsWith("2011-03-29"));
+        assertTrue(metadata.get("mapi:creation-time").startsWith("2011-03-29"));
     }
 
     @Test
@@ -224,6 +234,11 @@ public class OutlookParserTest extends TikaTest {
         String content = sw.toString();
         assertEquals(2, content.split("<body>").length);
         assertEquals(2, content.split("<\\/body>").length);
+        assertEquals("01ccb5408a75b6cf3ad7837949b698499034202313ef000002a160", metadata.get(MAPI.CONVERSATION_INDEX));
+        assertEquals("<C8508767C15DBF40A21693142739EA8D564D18FDA1@EXVMBX018-1.exch018.msoutlookonline.net>",
+                metadata.get(MAPI.INTERNET_REFERENCES));
+        assertEquals("<C8508767C15DBF40A21693142739EA8D564D18FDA1@EXVMBX018-1.exch018.msoutlookonline.net>",
+                metadata.get(MAPI.IN_REPLY_TO_ID));
     }
 
     @Test
@@ -289,8 +304,8 @@ public class OutlookParserTest extends TikaTest {
 
     private void testMsgClass(String expected, Metadata metadata) {
         assertTrue(expected.equalsIgnoreCase(
-                                metadata.get(Office.MAPI_MESSAGE_CLASS).replaceAll("_", "")),
-                expected + ", but got: " + metadata.get(Office.MAPI_MESSAGE_CLASS));
+                                metadata.get(MAPI.MESSAGE_CLASS).replaceAll("_", "")),
+                expected + ", but got: " + metadata.get(MAPI.MESSAGE_CLASS));
     }
 
     @Test

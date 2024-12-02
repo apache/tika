@@ -36,9 +36,9 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.PST;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -139,31 +139,31 @@ public class PSTMailItemParser implements Parser {
         metadata.set(Metadata.MESSAGE_FROM, pstMail.getSenderName());
         metadata.set(TikaCoreProperties.CREATOR, pstMail.getSenderName());
         metadata.set(TikaCoreProperties.CREATED, pstMail.getCreationTime());
-        metadata.set(Office.MAPI_MESSAGE_CLIENT_SUBMIT_TIME, pstMail.getClientSubmitTime());
+        metadata.set(MAPI.SUBMISSION_ACCEPTED_AT_TIME, pstMail.getClientSubmitTime());
         metadata.set(TikaCoreProperties.MODIFIED, pstMail.getLastModificationTime());
         metadata.set(TikaCoreProperties.COMMENTS, pstMail.getComment());
         metadata.set(PST.DESCRIPTOR_NODE_ID, valueOf(pstMail.getDescriptorNodeId()));
         metadata.set(Message.MESSAGE_FROM_EMAIL, pstMail.getSenderEmailAddress());
         if (! StringUtils.isBlank(pstMail.getRecipientsString()) &&
                 ! pstMail.getRecipientsString().equals("No recipients table!")) {
-            metadata.set(Office.MAPI_RECIPIENTS_STRING, pstMail.getRecipientsString());
+            metadata.set(MAPI.RECIPIENTS_STRING, pstMail.getRecipientsString());
         }
         metadata.set(Message.MESSAGE_TO_DISPLAY_NAME, pstMail.getDisplayTo());
         metadata.set(Message.MESSAGE_CC_DISPLAY_NAME, pstMail.getDisplayCC());
         metadata.set(Message.MESSAGE_BCC_DISPLAY_NAME, pstMail.getDisplayBCC());
-        metadata.set(Office.MAPI_IMPORTANCE, pstMail.getImportance());
-        metadata.set(Office.MAPI_PRIORTY, pstMail.getPriority());
-        metadata.set(Office.MAPI_IS_FLAGGED, pstMail.isFlagged());
-        metadata.set(Office.MAPI_MESSAGE_CLASS,
+        metadata.set(MAPI.IMPORTANCE, pstMail.getImportance());
+        metadata.set(MAPI.PRIORTY, pstMail.getPriority());
+        metadata.set(MAPI.IS_FLAGGED, pstMail.isFlagged());
+        metadata.set(MAPI.MESSAGE_CLASS,
                 OutlookExtractor.getMessageClass(pstMail.getMessageClass()));
 
         metadata.set(Message.MESSAGE_FROM_EMAIL, pstMail.getSenderEmailAddress());
 
-        metadata.set(Office.MAPI_FROM_REPRESENTING_EMAIL,
+        metadata.set(MAPI.FROM_REPRESENTING_EMAIL,
                 pstMail.getSentRepresentingEmailAddress());
 
         metadata.set(Message.MESSAGE_FROM_NAME, pstMail.getSenderName());
-        metadata.set(Office.MAPI_FROM_REPRESENTING_NAME, pstMail.getSentRepresentingName());
+        metadata.set(MAPI.FROM_REPRESENTING_NAME, pstMail.getSentRepresentingName());
 
         //add recipient details
         try {
