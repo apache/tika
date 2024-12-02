@@ -18,6 +18,7 @@
 package org.apache.tika.dl.imagerec;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.datavec.image.loader.NativeImageLoader;
 import org.deeplearning4j.nn.graph.ComputationGraph;
@@ -98,8 +100,17 @@ public class DL4JVGG16Net implements ObjectRecogniser {
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
             if (serialize) {
+                //temporary workaround nullifies caching to attempt to fix jenkins builds
                 if (cacheDir.exists()) {
-                    FileUtils.deleteDirectory(cacheDir);
+                    if (cacheDir.isFile()) {
+                        try (InputStream is = new FileInputStream(cacheDir)) {
+                            String sha256 = DigestUtils.sha256Hex(is);
+                            LOG.info("sha256 of existing {} is {}", cacheDir, sha256);
+                        } catch (IOException e) {
+                            LOG.warn("io exception digesting " + cacheDir, e);
+                        }
+                    }
+                    FileUtils.deleteDirectory(cacheDir.getParentFile());
                 }
                 if (cacheDir.exists()) {
                     LOG.info("Trying to load preprocessed model from {}", cacheDir);
