@@ -260,9 +260,11 @@ public class TikaCLI {
         for (String arg : args) {
             if (arg.startsWith(config)) {
                 tikaConfigPath = arg.substring(config.length());
+                TikaAsyncCLI.main(new String[]{tikaConfigPath});
+                return;
             }
         }
-        TikaAsyncCLI.main(new String[]{tikaConfigPath});
+        TikaAsyncCLI.main(args);
     }
 
     /**
