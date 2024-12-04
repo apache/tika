@@ -941,6 +941,7 @@ final class TextExtractor {
         } else {
             // In document
             if (equals("b")) {
+                //TIKA-4361 -- need to make sure we're not in an href?
                 // b0
                 assert param == 0;
                 if (groupState.bold) {
@@ -1085,6 +1086,9 @@ final class TextExtractor {
     }
 
     private void end(String tag) throws IOException, SAXException, TikaException {
+        if ("b".equals(tag)) {
+            System.out.println("ending b");
+        }
         out.endElement(XHTML, tag, tag);
     }
 
@@ -1479,29 +1483,31 @@ final class TextExtractor {
         if (groupStates.size() > 0) {
             // Restore group state:
             final GroupState outerGroupState = groupStates.removeLast();
-
-            // Close italic, if outer does not have italic or
-            // bold changed:
-            if (groupState.italic) {
-                if (!outerGroupState.italic || groupState.bold != outerGroupState.bold) {
-                    end("i");
-                    groupState.italic = false;
+            //only modify styles if we're not in a hyperlink
+            if (fieldState == 0) {
+                // Close italic, if outer does not have italic or
+                // bold changed:
+                if (groupState.italic) {
+                    if (!outerGroupState.italic || groupState.bold != outerGroupState.bold) {
+                        end("i");
+                        groupState.italic = false;
+                    }
                 }
-            }
 
-            // Close bold
-            if (groupState.bold && !outerGroupState.bold) {
-                end("b");
-            }
+                // Close bold
+                if (groupState.bold && !outerGroupState.bold) {
+                    end("b");
+                }
 
-            // Open bold
-            if (!groupState.bold && outerGroupState.bold) {
-                start("b");
-            }
+                // Open bold
+                if (!groupState.bold && outerGroupState.bold) {
+                    start("b");
+                }
 
-            // Open italic
-            if (!groupState.italic && outerGroupState.italic) {
-                start("i");
+                // Open italic
+                if (!groupState.italic && outerGroupState.italic) {
+                    start("i");
+                }
             }
             groupState = outerGroupState;
         }
