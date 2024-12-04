@@ -143,7 +143,7 @@ class HtmlHandler extends TextContentHandler {
                     addHtmlMetadata(atts.getValue("name"), atts.getValue("content"));
                 } else if (atts.getValue("property") != null) {
                     // TIKA-983: Handle <meta property="og:xxx" content="yyy" /> tags
-                    metadata.add(atts.getValue("property"), atts.getValue("content"));
+                    metadata.add(HTML.PREFIX_HTML_META + atts.getValue("property"), atts.getValue("content"));
                 }
             } else if ("BASE".equals(name) && atts.getValue("href") != null) {
                 startElementWithSafeAttributes("base", atts);
@@ -222,14 +222,15 @@ class HtmlHandler extends TextContentHandler {
             if (property.equals(TikaCoreProperties.TITLE) && isTitleSetToMetadata) {
                 //prefer the title element if it is already set
                 //do nothing
+                metadata.add(HTML.PREFIX_HTML_META + TikaCoreProperties.TITLE.getName(), value);
             } else if (property.isMultiValuePermitted()) {
                 metadata.add(property, value);
             } else {
                 metadata.set(property, value);
             }
+        } else {
+            metadata.add(HTML.PREFIX_HTML_META + name, value);
         }
-        //TODO -- we should prefix these raw names to avoid collisions
-        metadata.add(name, value);
     }
 
     private void startElementWithSafeAttributes(String name, Attributes atts) throws SAXException {

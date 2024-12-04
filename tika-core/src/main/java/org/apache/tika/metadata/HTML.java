@@ -16,7 +16,7 @@ package org.apache.tika.metadata; /*
  */
 
 public interface HTML {
-    String PREFIX_HTML_META = "html_meta";
+    String PREFIX_HTML_META = "html_meta" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
 
     /**
@@ -24,6 +24,6 @@ public interface HTML {
      * is set in the embedded document's metadata
      */
     Property SCRIPT_SOURCE = Property.internalText(
-            PREFIX_HTML_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "scriptSrc");
+            PREFIX_HTML_META + "scriptSrc");
 
 }

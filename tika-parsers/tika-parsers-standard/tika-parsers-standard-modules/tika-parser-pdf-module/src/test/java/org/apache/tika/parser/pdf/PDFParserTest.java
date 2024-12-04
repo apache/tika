@@ -150,7 +150,7 @@ public class PDFParserTest extends TikaTest {
     }
 
     @Test
-    public void testCustomMetadata() throws Exception {
+    public void testCustomMetadataInPDDocInfo() throws Exception {
 
         XMLResult r = getXML("testPDF-custommetadata.pdf");
         Metadata metadata = r.metadata;
@@ -158,12 +158,12 @@ public class PDFParserTest extends TikaTest {
         assertEquals("Document author", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Document title", metadata.get(TikaCoreProperties.TITLE));
 
-        assertEquals("Custom Value", metadata.get("Custom Property"));
+        assertEquals("Custom Value", metadata.get(PDF.PDF_DOC_INFO_CUSTOM_PREFIX + "Custom Property"));
 
-        assertEquals("Array Entry 1", metadata.get("Custom Array"));
-        assertEquals(2, metadata.getValues("Custom Array").length);
-        assertEquals("Array Entry 1", metadata.getValues("Custom Array")[0]);
-        assertEquals("Array Entry 2", metadata.getValues("Custom Array")[1]);
+        assertEquals("Array Entry 1", metadata.get(PDF.PDF_DOC_INFO_CUSTOM_PREFIX + "Custom Array"));
+        assertEquals(2, metadata.getValues(PDF.PDF_DOC_INFO_CUSTOM_PREFIX + "Custom Array").length);
+        assertEquals("Array Entry 1", metadata.getValues(PDF.PDF_DOC_INFO_CUSTOM_PREFIX + "Custom Array")[0]);
+        assertEquals("Array Entry 2", metadata.getValues(PDF.PDF_DOC_INFO_CUSTOM_PREFIX + "Custom Array")[1]);
 
         assertContains("Hello World!", r.xml);
     }

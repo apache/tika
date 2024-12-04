@@ -219,7 +219,7 @@ public class TikaCLITest {
     public void testJsonMetadataOutput() throws Exception {
         String json = getParamOutContent("--json", "--digest=MD2", resourcePrefix + "testJsonMultipleInts.html");
         //TIKA-1310
-        assertTrue(json.contains("\"" + "fb:admins\":\"1,2,3,4\","));
+        assertTrue(json.contains("\"html_meta:fb:admins\":\"1,2,3,4\","));
         assertTrue(json.contains("\"X-TIKA:digest:MD2\":"));
     }
 
