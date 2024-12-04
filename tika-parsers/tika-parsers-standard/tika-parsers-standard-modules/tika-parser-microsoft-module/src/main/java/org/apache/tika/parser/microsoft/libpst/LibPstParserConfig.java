@@ -16,7 +16,9 @@
  */
 package org.apache.tika.parser.microsoft.libpst;
 
-public class LibPstParserConfig {
+import java.io.Serializable;
+
+public class LibPstParserConfig implements Serializable {
 
     private long timeoutSeconds = 600;
     /**
