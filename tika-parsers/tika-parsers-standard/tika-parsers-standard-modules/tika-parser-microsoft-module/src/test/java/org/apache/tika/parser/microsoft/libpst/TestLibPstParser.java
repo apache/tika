@@ -40,7 +40,8 @@ public class TestLibPstParser extends TikaTest {
 
     @BeforeAll
     public static void setUp() {
-        LIBPST_EXISTS = LibPstParser.checkQuietly();
+        //test that readpst is on the path
+        LIBPST_EXISTS = new LibPstParser().checkQuietly();
     }
 
     @Test

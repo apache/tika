@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * This is an optional PST parser that relies on the user installing
@@ -65,8 +67,10 @@ public class LibPstParser implements Parser, Initializable {
     private static final int MAX_STDERR = 10000;
     private static final String READ_PST_COMMAND = "readpst";
 
-    private LibPstParserConfig defaultConfig = new LibPstParserConfig();
-
+    private final LibPstParserConfig defaultConfig = new LibPstParserConfig();
+    //for security purposes, this cannot be set via the parseContext. This must
+    //be set via the usual @Field setters in tika-config.xml
+    private String readPstPath = "";
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
         return SUPPORTED;
@@ -125,9 +129,10 @@ public class LibPstParser implements Parser, Initializable {
         Files.walkFileTree(outDir, new EmailVisitor(outDir, config.isProcessEmailAsMsg(), xhtml, metadata, parseContext));
     }
 
-    private ProcessBuilder getProcessBuilder(Path pst, LibPstParserConfig config, Path outDir, Path debugFile) {
+    private ProcessBuilder getProcessBuilder(Path pst, LibPstParserConfig config, Path outDir, Path debugFile)
+            throws TikaConfigException {
         List commands = new ArrayList<String>();
-        commands.add(READ_PST_COMMAND);
+        commands.add(getFullReadPstCommand());
         if (config.isDebug()) {
             commands.add("-d");
             commands.add(ProcessUtils.escapeCommandLine(debugFile
@@ -157,6 +162,13 @@ public class LibPstParser implements Parser, Initializable {
 
     @Override
     public void initialize(Map<String, Param> map) throws TikaConfigException {
+        if (readPstPath.contains("\u0000")) {
+            throw new TikaConfigException("path can't include null values");
+        }
+        String fullReadPstCommand = getFullReadPstCommand();
+        if (! Files.isRegularFile(Paths.get(fullReadPstCommand))) {
+            throw new TikaConfigException("I regret I can't find the readpst executable: " + fullReadPstCommand);
+        }
         try {
             check();
         } catch (IOException e) {
@@ -171,8 +183,10 @@ public class LibPstParser implements Parser, Initializable {
     }
 
     //throws exception if readpst is not available
-    private static void check() throws TikaConfigException, IOException {
-        ProcessBuilder pb = new ProcessBuilder(READ_PST_COMMAND, "-V");
+    private void check() throws TikaConfigException, IOException {
+        String fullReadPstCommand = getFullReadPstCommand();
+
+        ProcessBuilder pb = new ProcessBuilder(ProcessUtils.escapeCommandLine(fullReadPstCommand), "-V");
         FileProcessResult result = ProcessUtils.execute(pb, 30000, 10000, 10000);
         if (result.getExitValue() != 0) {
             throw new TikaConfigException(
@@ -183,13 +197,23 @@ public class LibPstParser implements Parser, Initializable {
         }
     }
 
-    public static boolean checkQuietly() {
+    public boolean checkQuietly() {
         try {
             check();
         } catch (TikaConfigException | IOException e) {
             return false;
         }
         return true;
+    }
+
+    private String getFullReadPstCommand() throws TikaConfigException {
+        if (StringUtils.isBlank(readPstPath)) {
+            return READ_PST_COMMAND;
+        }
+        if (! readPstPath.endsWith("/") && readPstPath.endsWith("\\")) {
+            return readPstPath + "/" + READ_PST_COMMAND;
+        }
+        return readPstPath + READ_PST_COMMAND;
     }
 
     @Field
@@ -212,5 +236,14 @@ public class LibPstParser implements Parser, Initializable {
         defaultConfig.setMaxEmails(maxEmails);
     }
 
+    /**
+     * This should include the path up to but not including 'readpst', e.g. "C:\my_bin" where
+     * readpst is at "C:\my_bin\readpst"
+     * @param readPstPath
+     */
+    @Field
+    public void setReadPstPath(String readPstPath) {
+        this.readPstPath = readPstPath;
+    }
 
 }
