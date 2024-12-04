@@ -260,9 +260,11 @@ public class TikaCLI {
         for (String arg : args) {
             if (arg.startsWith(config)) {
                 tikaConfigPath = arg.substring(config.length());
+                TikaAsyncCLI.main(new String[]{tikaConfigPath});
+                return;
             }
         }
-        TikaAsyncCLI.main(new String[]{tikaConfigPath});
+        TikaAsyncCLI.main(args);
     }
 
     /**
@@ -342,7 +344,7 @@ public class TikaCLI {
             pdfParserConfig.setExtractIncrementalUpdateInfo(true);
             pdfParserConfig.setParseIncrementalUpdates(true);
             String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
-                    "inline images and incremental updates for the PDFParser (TIKA-2374, " +
+                    "inline images and parsing of incremental updates for the PDFParser (TIKA-2374, " +
                     "TIKA-4017 and TIKA-4354).\n" +
                     "This is not the default behavior in Tika generally or in tika-server.";
             LOG.info(warn);

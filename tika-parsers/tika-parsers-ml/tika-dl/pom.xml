@@ -31,6 +31,33 @@
   <name>Apache Tika Deep Learning (powered by DL4J)</name>
   <url>http://maven.apache.org</url>
 
+
+  <dependencyManagement>
+      <dependencies>
+          <dependency>
+              <groupId>org.bytedeco</groupId>
+              <artifactId>openblas-platform</artifactId>
+              <version>0.3.28-1.5.11</version>
+          </dependency>
+          <dependency>
+              <groupId>org.bytedeco</groupId>
+              <artifactId>openblas</artifactId>
+              <version>0.3.28-1.5.11</version>
+          </dependency>
+          <!-- can't update above 4.5.5-1.5.7, UnsatisfiedLinkError: no jniopencv_core in java.library.path -->
+          <dependency>
+              <groupId>org.bytedeco</groupId>
+              <artifactId>opencv</artifactId>
+              <version>4.5.5-1.5.7</version>
+          </dependency>
+          <dependency>
+              <groupId>it.unimi.dsi</groupId>
+              <artifactId>fastutil</artifactId>
+              <version>${fastutil.version}</version>
+          </dependency>
+      </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -48,25 +75,14 @@
           <groupId>org.bytedeco</groupId>
           <artifactId>ffmpeg</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.bytedeco</groupId>
-          <artifactId>javacpp</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.bytedeco</groupId>
-          <artifactId>javacpp-platform</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
-    <!-- TODO restore after ffmpeg has been updated -->
-    <!--
     <dependency>
       <groupId>org.bytedeco</groupId>
       <artifactId>ffmpeg</artifactId>
-      <version>6.1.1-1.5.10</version>
+      <version>7.1-1.5.11</version>
       <scope>provided</scope>
     </dependency>
-    -->
     <dependency>
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-zoo</artifactId>
@@ -78,56 +94,24 @@
       <artifactId>deeplearning4j-modelimport</artifactId>
       <version>${dl4j.version}</version>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.bytedeco</groupId>
-          <artifactId>javacpp</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-nn</artifactId>
       <version>${dl4j.version}</version>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.bytedeco</groupId>
-          <artifactId>javacpp</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.nd4j</groupId>
       <artifactId>nd4j-api</artifactId>
       <version>${dl4j.version}</version>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-net</groupId>
-          <artifactId>commons-net</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.bytedeco</groupId>
-          <artifactId>javacpp</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.nd4j</groupId>
       <artifactId>nd4j-native-platform</artifactId>
       <version>${dl4j.version}</version>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.bytedeco</groupId>
-          <artifactId>javacpp</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.bytedeco</groupId>
-          <artifactId>javacpp-platform</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>

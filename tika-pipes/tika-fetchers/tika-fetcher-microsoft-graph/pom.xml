@@ -26,64 +26,26 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-fetcher-microsoft-graph</artifactId>
-  <name>Microsoft Graph Tika Pipes Fetcher</name>
+  <name>Apache Tika Microsoft Graph Pipes Fetcher</name>
 
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <microsoft-graph.version>6.20.0</microsoft-graph.version>
-    <microsoft-kiota.version>1.7.0</microsoft-kiota.version>
+    <microsoft-graph.version>6.22.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
-    <msal4j.version>1.17.2</msal4j.version>
-    <kotlin-stdlib.version>2.0.21</kotlin-stdlib.version>
+    <!-- when updating msal4j, check whether json-smart is still needed below -->
+    <msal4j.version>1.17.3</msal4j.version>
+    <kotlin-stdlib.version>2.1.0</kotlin-stdlib.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
-      <!-- Dependency convergence error oauth2-oidc-sdk vs msal4j TODO check after msal4j update -->
+      <!-- Dependency convergence error oauth2-oidc-sdk vs msal4j TODO check after msal4j update >1.7.3 -->
       <dependency>
         <groupId>net.minidev</groupId>
         <artifactId>json-smart</artifactId>
         <version>2.5.1</version>
-      </dependency>
-      <!-- avoid com.microsoft.kiota Dependency convergence errors / outdated versions
-           since microsoft-graph-core 6.18.0
-      -->
-      <dependency>
-        <groupId>com.microsoft.kiota</groupId>
-        <artifactId>microsoft-kiota-serialization-json</artifactId>
-        <version>${microsoft-kiota.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.microsoft.kiota</groupId>
-        <artifactId>microsoft-kiota-serialization-form</artifactId>
-        <version>${microsoft-kiota.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.microsoft.kiota</groupId>
-        <artifactId>microsoft-kiota-authentication-azure</artifactId>
-        <version>${microsoft-kiota.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.microsoft.kiota</groupId>
-        <artifactId>microsoft-kiota-http-okHttp</artifactId>
-        <version>${microsoft-kiota.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.microsoft.kiota</groupId>
-        <artifactId>microsoft-kiota-abstractions</artifactId>
-        <version>${microsoft-kiota.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.microsoft.kiota</groupId>
-        <artifactId>microsoft-kiota-serialization-text</artifactId>
-        <version>${microsoft-kiota.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.microsoft.kiota</groupId>
-        <artifactId>microsoft-kiota-serialization-multipart</artifactId>
-        <version>${microsoft-kiota.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
