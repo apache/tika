@@ -26,9 +26,9 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.PST;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -74,9 +74,9 @@ public class OutlookPSTParserTest extends TikaTest {
         assertEquals("", m1.get(Message.MESSAGE_CC_DISPLAY_NAME));
         assertEquals("", m1.get(Message.MESSAGE_BCC_DISPLAY_NAME));
         assertEquals("kottmann@gmail.com", m1.get(Message.MESSAGE_FROM_EMAIL));
-        assertEquals("Jörn Kottmann", m1.get(Office.MAPI_FROM_REPRESENTING_NAME));
-        assertEquals("kottmann@gmail.com", m1.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
-        assertEquals("NOTE", m1.get(Office.MAPI_MESSAGE_CLASS));
+        assertEquals("Jörn Kottmann", m1.get(MAPI.FROM_REPRESENTING_NAME));
+        assertEquals("kottmann@gmail.com", m1.get(MAPI.FROM_REPRESENTING_EMAIL));
+        assertEquals("NOTE", m1.get(MAPI.MESSAGE_CLASS));
         assertEquals("/Début du fichier de données Outlook", m1.get(PST.PST_FOLDER_PATH));
         //test that subject is making it into the xhtml
         assertContains("<meta name=\"dc:subject\" content=\"Re: Feature Generators\"", m1.get(TikaCoreProperties.TIKA_CONTENT));
@@ -84,11 +84,11 @@ public class OutlookPSTParserTest extends TikaTest {
         Metadata m6 = metadataList.get(6);
         assertEquals("Couchbase", m6.get(Message.MESSAGE_FROM_NAME));
         assertEquals("couchbase@couchbase.com", m6.get(Message.MESSAGE_FROM_EMAIL));
-        assertEquals("Couchbase", m6.get(Office.MAPI_FROM_REPRESENTING_NAME));
-        assertEquals("couchbase@couchbase.com", m6.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
-        assertEquals("NOTE", m1.get(Office.MAPI_MESSAGE_CLASS));
-        assertNull(m1.get(Office.MAPI_RECIPIENTS_STRING));
-        assertContains("2014-02-26", m1.get(Office.MAPI_MESSAGE_CLIENT_SUBMIT_TIME));
+        assertEquals("Couchbase", m6.get(MAPI.FROM_REPRESENTING_NAME));
+        assertEquals("couchbase@couchbase.com", m6.get(MAPI.FROM_REPRESENTING_EMAIL));
+        assertEquals("NOTE", m1.get(MAPI.MESSAGE_CLASS));
+        assertNull(m1.get(MAPI.RECIPIENTS_STRING));
+        assertContains("2014-02-26", m1.get(MAPI.SUBMISSION_ACCEPTED_AT_TIME));
 
         //test full EX email
         assertEquals(
