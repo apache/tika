@@ -17,10 +17,10 @@
 package org.apache.tika.pipes.fetchers.google;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -34,7 +34,6 @@ import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +43,7 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -140,6 +140,7 @@ public class GoogleFetcher extends AbstractFetcher implements Initializable {
     public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
         int tries = 0;
         Exception ex = null;
+        TemporaryResources tmp = null;
 
         do {
             long start = System.currentTimeMillis();
@@ -169,10 +170,10 @@ public class GoogleFetcher extends AbstractFetcher implements Initializable {
                 }
 
                 if (spoolToTemp) {
-                    File tempFile = Files.createTempFile("spooled-temp", ".dat").toFile();
-                    FileUtils.copyInputStreamToFile(is, tempFile);
-                    LOGGER.info("Spooled to temp file {}", tempFile);
-                    return TikaInputStream.get(tempFile.toPath());
+                    tmp = new TemporaryResources();
+                    Path tmpPath = tmp.createTempFile(fileId + ".dat");
+                    Files.copy(is, tmpPath);
+                    return TikaInputStream.get(tmpPath);
                 }
                 return TikaInputStream.get(is);
 
