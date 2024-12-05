@@ -31,10 +31,17 @@ public interface MAPI {
 
     /**
      * MAPI message class.  What type of .msg/MAPI file is it?
+     * This is normalized via "mapi_message_classes.properties
      */
     Property MESSAGE_CLASS =
-            Property.internalClosedChoise(PREFIX_MAPI_META + "message-class", "APPOINTMENT", "CONTACT", "NOTE", "STICKY_NOTE",
-                    "POST", "TASK", "UNKNOWN", "UNSPECIFIED");
+            Property.internalText(PREFIX_MAPI_META + "message-class");
+
+    /**
+     * MAPI message class.  What type of .msg/MAPI file is it?
+     * This is the raw value that is retrieved from the underlying chunk
+     */
+    Property MESSAGE_CLASS_RAW =
+            Property.internalText(PREFIX_MAPI_META + "message-class-raw");
 
     Property SENT_BY_SERVER_TYPE = Property.internalText(PREFIX_MAPI_META + "sent-by-server-type");
 

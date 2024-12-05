@@ -155,7 +155,9 @@ public class PSTMailItemParser implements Parser {
         metadata.set(MAPI.PRIORTY, pstMail.getPriority());
         metadata.set(MAPI.IS_FLAGGED, pstMail.isFlagged());
         metadata.set(MAPI.MESSAGE_CLASS,
-                OutlookExtractor.getMessageClass(pstMail.getMessageClass()));
+                OutlookExtractor.getNormalizedMessageClass(pstMail.getMessageClass()));
+        metadata.set(MAPI.MESSAGE_CLASS_RAW, pstMail.getMessageClass());
+
 
         metadata.set(Message.MESSAGE_FROM_EMAIL, pstMail.getSenderEmailAddress());
 
