@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 
-public class GoogleFetcherConfig extends AbstractConfig {
+public class GoogleDriveFetcherConfig extends AbstractConfig {
     private long[] throttleSeconds;
     private boolean spoolToTemp;
     protected String serviceAccountKeyBase64;
@@ -32,7 +32,7 @@ public class GoogleFetcherConfig extends AbstractConfig {
         return spoolToTemp;
     }
 
-    public GoogleFetcherConfig setSpoolToTemp(boolean spoolToTemp) {
+    public GoogleDriveFetcherConfig setSpoolToTemp(boolean spoolToTemp) {
         this.spoolToTemp = spoolToTemp;
         return this;
     }
@@ -41,7 +41,7 @@ public class GoogleFetcherConfig extends AbstractConfig {
         return throttleSeconds;
     }
 
-    public GoogleFetcherConfig setThrottleSeconds(long[] throttleSeconds) {
+    public GoogleDriveFetcherConfig setThrottleSeconds(long[] throttleSeconds) {
         this.throttleSeconds = throttleSeconds;
         return this;
     }
@@ -50,7 +50,7 @@ public class GoogleFetcherConfig extends AbstractConfig {
         return serviceAccountKeyBase64;
     }
 
-    public GoogleFetcherConfig setServiceAccountKeyBase64(String serviceAccountKeyBase64) {
+    public GoogleDriveFetcherConfig setServiceAccountKeyBase64(String serviceAccountKeyBase64) {
         this.serviceAccountKeyBase64 = serviceAccountKeyBase64;
         return this;
     }
@@ -59,7 +59,7 @@ public class GoogleFetcherConfig extends AbstractConfig {
         return subjectUser;
     }
 
-    public GoogleFetcherConfig setSubjectUser(String subjectUser) {
+    public GoogleDriveFetcherConfig setSubjectUser(String subjectUser) {
         this.subjectUser = subjectUser;
         return this;
     }
@@ -68,7 +68,7 @@ public class GoogleFetcherConfig extends AbstractConfig {
         return scopes;
     }
 
-    public GoogleFetcherConfig setScopes(List<String> scopes) {
+    public GoogleDriveFetcherConfig setScopes(List<String> scopes) {
         this.scopes = scopes;
         return this;
     }

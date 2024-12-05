@@ -48,19 +48,19 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.fetchers.google.config.GoogleFetcherConfig;
+import org.apache.tika.pipes.fetchers.google.config.GoogleDriveFetcherConfig;
 
 
 /**
- * Google Fetcher allows the fetching of files from a Google Drive, using a
+ * GoogleDrive Fetcher allows the fetching of files from a Google Drive, using a
  * service account key.
  *
  * Fetch Keys are ${fileId},${subjectUser}, where the subject user is the
  * organizer of the file. This user is necessary as part of the key as the
  * service account must act on behalf of the user when querying for the file.
  */
-public class GoogleFetcher extends AbstractFetcher implements Initializable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GoogleFetcher.class);
+public class GoogleDriveFetcher extends AbstractFetcher implements Initializable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GoogleDriveFetcher.class);
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
 
     private GoogleCredentials baseCredentials;
@@ -69,14 +69,14 @@ public class GoogleFetcher extends AbstractFetcher implements Initializable {
     private boolean spoolToTemp;
     private List<String> scopes;
 
-    private GoogleFetcherConfig config = new GoogleFetcherConfig();
+    private GoogleDriveFetcherConfig config = new GoogleDriveFetcherConfig();
 
-    public GoogleFetcher() {
+    public GoogleDriveFetcher() {
         scopes = new ArrayList<>();
         scopes.add(DriveScopes.DRIVE_READONLY);
     }
 
-    public GoogleFetcher(GoogleFetcherConfig config) {
+    public GoogleDriveFetcher(GoogleDriveFetcherConfig config) {
         this.config = config;
     }
 
