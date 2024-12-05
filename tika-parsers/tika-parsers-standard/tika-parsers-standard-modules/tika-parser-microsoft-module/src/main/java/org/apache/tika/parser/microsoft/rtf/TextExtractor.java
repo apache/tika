@@ -1086,9 +1086,6 @@ final class TextExtractor {
     }
 
     private void end(String tag) throws IOException, SAXException, TikaException {
-        if ("b".equals(tag)) {
-            System.out.println("ending b");
-        }
         out.endElement(XHTML, tag, tag);
     }
 
