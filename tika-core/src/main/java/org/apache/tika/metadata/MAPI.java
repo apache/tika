@@ -17,13 +17,10 @@
 package org.apache.tika.metadata;
 
 /**
- * Office Document properties collection. These properties apply to
- * Office / Productivity Documents of all forms, including (but not limited
- * to) MS Office and OpenDocument formats.
- * This is a logical collection of properties, which may be drawn from a
- * few different external definitions.
  *
- * @since Apache Tika 1.2
+ * Properties that typically appear in MSG/PST message format files.
+ *
+ * @since Apache Tika 4.0
  */
 public interface MAPI {
 
