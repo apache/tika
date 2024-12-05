@@ -38,6 +38,9 @@ public class GoogleDriveFetcherConfig extends AbstractConfig {
     }
 
     public long[] getThrottleSeconds() {
+        if (throttleSeconds == null) {
+            return new long[]{5, 10, 15}; // Default retry intervals
+        }
         return throttleSeconds;
     }
 
