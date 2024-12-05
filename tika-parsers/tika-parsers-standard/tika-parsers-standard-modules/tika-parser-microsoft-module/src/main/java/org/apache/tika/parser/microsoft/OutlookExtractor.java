@@ -18,7 +18,9 @@ package org.apache.tika.parser.microsoft;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -106,6 +108,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
     private static final Map<MAPIProperty, Property> LITERAL_TIME_PROPERTIES = new HashMap<>();
 
+    private static final Map<String, String> MESSAGE_CLASSES = new LinkedHashMap<>();
+
     static {
         for (MAPIProperty property : LITERAL_TIME_MAPI_PROPERTIES) {
             String name = property.mapiProperty.toLowerCase(Locale.ROOT);
@@ -115,7 +119,30 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             Property tikaProp = Property.internalDate(name);
             LITERAL_TIME_PROPERTIES.put(property, tikaProp);
         }
+
+        try (BufferedReader r = new BufferedReader(
+                new InputStreamReader(
+                        OutlookExtractor.class.getResourceAsStream("/mapi_message_classes.properties"), UTF_8))) {
+            String line = r.readLine();
+            while (line != null) {
+                if (line.isBlank() || line.startsWith("#")) {
+                    line = r.readLine();
+                    continue;
+                }
+                String[] cols = line.split("\\s+");
+                String lcKey = cols[0].toLowerCase(Locale.ROOT);
+                String value = cols[1];
+                if (MESSAGE_CLASSES.containsKey(lcKey)) {
+                    throw new IllegalArgumentException("Can't have duplicate keys: " + lcKey);
+                }
+                MESSAGE_CLASSES.put(lcKey, value);
+                line = r.readLine();
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("can't find mapi_message_classes.properties?!");
+        }
     }
+
     //this according to the spec; in practice, it is probably more likely
     //that a "split field" fails to start with a space character than
     //that a real header contains anything but [-_A-Za-z0-9].
@@ -153,134 +180,115 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     }
 
     private static void setFirstChunk(List<Chunk> chunks, Property property, Metadata metadata) {
-        if (chunks == null || chunks.size() < 1 || chunks.get(0) == null) {
+        if (chunks == null || chunks.isEmpty() || chunks.get(0) == null) {
             return;
         }
         metadata.set(property, chunks.get(0).toString());
     }
 
-    private static void addFirstChunk(List<Chunk> chunks, Property property, Metadata metadata) {
-        if (chunks == null || chunks.size() < 1 || chunks.get(0) == null) {
-            return;
-        }
-        metadata.add(property, chunks.get(0).toString());
-    }
-
-    //Still needed by PSTParser
-    public static String getMessageClass(String messageClass) {
-        if (messageClass == null || messageClass.trim().length() == 0) {
+    public static String getNormalizedMessageClass(String messageClass) {
+        if (messageClass == null || messageClass.isBlank()) {
             return "UNSPECIFIED";
-        } else if (messageClass.equalsIgnoreCase("IPM.Note")) {
-            return "NOTE";
-        } else if (messageClass.equalsIgnoreCase("IPM.Contact")) {
-            return "CONTACT";
-        } else if (messageClass.equalsIgnoreCase("IPM.Appointment")) {
-            return "APPOINTMENT";
-        } else if (messageClass.equalsIgnoreCase("IPM.StickyNote")) {
-            return "STICKY_NOTE";
-        } else if (messageClass.equalsIgnoreCase("IPM.Task")) {
-            return "TASK";
-        } else if (messageClass.equalsIgnoreCase("IPM.Post")) {
-            return "POST";
-        } else {
-            return "UNKNOWN";
         }
+        String lc = messageClass.toLowerCase(Locale.ROOT);
+        if (MESSAGE_CLASSES.containsKey(lc)) {
+            return MESSAGE_CLASSES.get(lc);
+        }
+        return "UNKNOWN";
     }
 
     public void parse(XHTMLContentHandler xhtml)
             throws TikaException, SAXException, IOException {
         try {
-            msg.setReturnNullOnMissingChunk(true);
-
-            try {
-                parentMetadata.set(MAPI.MESSAGE_CLASS, msg.getMessageClassEnum().name());
-            } catch (ChunkNotFoundException e) {
-                //swallow
-            }
-
-            // If the message contains strings that aren't stored
-            //  as Unicode, try to sort out an encoding for them
-            if (msg.has7BitEncodingStrings()) {
-                guess7BitEncoding(msg);
-            }
-
-            // Start with the metadata
-            Map<String, String[]> headers = normalizeHeaders(msg.getHeaders());
-
-            handleFromTo(headers, parentMetadata);
-            handleMessageInfo(msg, headers, parentMetadata);
-
-            try {
-                for (String recipientAddress : msg.getRecipientEmailAddressList()) {
-                    if (recipientAddress != null) {
-                        parentMetadata.add(Metadata.MESSAGE_RECIPIENT_ADDRESS, recipientAddress);
-                    }
-                }
-            } catch (ChunkNotFoundException he) {
-                // Will be fixed in POI 3.7 Final
-            }
-
-            for (Map.Entry<String, String[]> e : headers.entrySet()) {
-                String headerKey = e.getKey();
-                for (String headerValue : e.getValue()) {
-                    parentMetadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + headerKey, headerValue);
-                }
-            }
-
-            handleGeneralDates(msg, headers, parentMetadata);
-
-            // Get the message body. Preference order is: html, rtf, text
-            Chunk htmlChunk = null;
-            Chunk rtfChunk = null;
-            Chunk textChunk = null;
-            for (Chunk chunk : msg.getMainChunks().getChunks()) {
-                if (chunk.getChunkId() == MAPIProperty.BODY_HTML.id) {
-                    htmlChunk = chunk;
-                }
-                if (chunk.getChunkId() == MAPIProperty.RTF_COMPRESSED.id) {
-                    rtfChunk = chunk;
-                }
-                if (chunk.getChunkId() == MAPIProperty.BODY.id) {
-                    textChunk = chunk;
-                }
-            }
-            handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml);
-
-            // Process the attachments
-            for (AttachmentChunks attachment : msg.getAttachmentFiles()) {
-
-                String filename = null;
-                if (attachment.getAttachLongFileName() != null) {
-                    filename = attachment.getAttachLongFileName().getValue();
-                } else if (attachment.getAttachFileName() != null) {
-                    filename = attachment.getAttachFileName().getValue();
-                }
-
-                if (attachment.getAttachData() != null) {
-                    handleEmbeddedResource(
-                            TikaInputStream.get(attachment.getAttachData().getValue()), filename,
-                            null, null, xhtml, true);
-                }
-                if (attachment.getAttachmentDirectory() != null) {
-                    handleEmbeddedOfficeDoc(attachment.getAttachmentDirectory().getDirectory(), filename,
-                            xhtml, true);
-                }
-            }
+            _parse(xhtml);
         } catch (ChunkNotFoundException e) {
             throw new TikaException("POI MAPIMessage broken - didn't return null on missing chunk",
                     e);
-        } finally {
+        } /*finally {
             //You'd think you'd want to call msg.close().
             //Don't do that.  That closes down the file system.
             //If an msg has multiple msg attachments, some of them
             //can reside in the same file system.  After the first
             //child is read, the fs is closed, and the other children
             //get a java.nio.channels.ClosedChannelException
-        }
+        }*/
     }
 
-    private void handleMessageInfo(MAPIMessage msg, Map<String, String[]> headers, Metadata metadata)
-            throws ChunkNotFoundException {
+    private void _parse(XHTMLContentHandler xhtml) throws TikaException, SAXException,
+            IOException, ChunkNotFoundException {
+        msg.setReturnNullOnMissingChunk(true);
+
+        // If the message contains strings that aren't stored
+        //  as Unicode, try to sort out an encoding for them
+        if (msg.has7BitEncodingStrings()) {
+            guess7BitEncoding(msg);
+        }
+
+        // Start with the metadata
+        Map<String, String[]> headers = normalizeHeaders(msg.getHeaders());
+
+        handleFromTo(headers, parentMetadata);
+        handleMessageInfo(msg, headers, parentMetadata);
+
+        try {
+            for (String recipientAddress : msg.getRecipientEmailAddressList()) {
+                if (recipientAddress != null) {
+                    parentMetadata.add(Metadata.MESSAGE_RECIPIENT_ADDRESS, recipientAddress);
+                }
+            }
+        } catch (ChunkNotFoundException e) {
+            //you'd think we wouldn't need this. we do.
+        }
+
+        for (Map.Entry<String, String[]> e : headers.entrySet()) {
+            String headerKey = e.getKey();
+            for (String headerValue : e.getValue()) {
+                parentMetadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + headerKey, headerValue);
+            }
+        }
+
+        handleGeneralDates(msg, headers, parentMetadata);
+
+        // Get the message body. Preference order is: html, rtf, text
+        Chunk htmlChunk = null;
+        Chunk rtfChunk = null;
+        Chunk textChunk = null;
+        for (Chunk chunk : msg.getMainChunks().getChunks()) {
+            if (chunk.getChunkId() == MAPIProperty.BODY_HTML.id) {
+                htmlChunk = chunk;
+            }
+            if (chunk.getChunkId() == MAPIProperty.RTF_COMPRESSED.id) {
+                rtfChunk = chunk;
+            }
+            if (chunk.getChunkId() == MAPIProperty.BODY.id) {
+                textChunk = chunk;
+            }
+        }
+        handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml);
+
+        // Process the attachments
+        for (AttachmentChunks attachment : msg.getAttachmentFiles()) {
+
+            String filename = null;
+            if (attachment.getAttachLongFileName() != null) {
+                filename = attachment.getAttachLongFileName().getValue();
+            } else if (attachment.getAttachFileName() != null) {
+                filename = attachment.getAttachFileName().getValue();
+            }
+
+            if (attachment.getAttachData() != null) {
+                handleEmbeddedResource(
+                        TikaInputStream.get(attachment.getAttachData().getValue()), filename,
+                        null, null, xhtml, true);
+            }
+            if (attachment.getAttachmentDirectory() != null) {
+                handleEmbeddedOfficeDoc(attachment.getAttachmentDirectory().getDirectory(), filename,
+                        xhtml, true);
+            }
+        }
+
+    }
+    private void handleMessageInfo(MAPIMessage msg, Map<String, String[]> headers, Metadata metadata) throws ChunkNotFoundException {
         //this is the literal subject including "re: "
         metadata.set(TikaCoreProperties.TITLE, msg.getSubject());
         //this is the original topic for the thread without the "re: "
@@ -289,51 +297,66 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         metadata.set(TikaCoreProperties.DESCRIPTION, topic);
         metadata.set(MAPI.CONVERSATION_TOPIC, topic);
         Chunks mainChunks = msg.getMainChunks();
-        if (mainChunks != null) {
-            if (mainChunks.getMessageId() != null) {
-                metadata.set(MAPI.INTERNET_MESSAGE_ID, mainChunks
-                        .getMessageId()
-                        .getValue());
-            }
+        if (mainChunks == null) {
+            return;
+        }
+        if (mainChunks.getMessageId() != null) {
+            metadata.set(MAPI.INTERNET_MESSAGE_ID, mainChunks
+                    .getMessageId()
+                    .getValue());
+        }
 
-            List<Chunk> conversationIndex = mainChunks.getAll().get(MAPIProperty.CONVERSATION_INDEX);
-            if (conversationIndex != null && ! conversationIndex.isEmpty()) {
-                Chunk chunk = conversationIndex.get(0);
-                if (chunk instanceof  ByteChunk) {
-                    byte[] bytes = ((ByteChunk)chunk).getValue();
-                    String hex = Hex.encodeHexString(bytes);
-                    metadata.set(MAPI.CONVERSATION_INDEX, hex);
+        String mc = msg.getStringFromChunk(mainChunks.getMessageClass());
+        if (mc != null) {
+            metadata.set(MAPI.MESSAGE_CLASS_RAW, mc);
+        }
+        metadata.set(MAPI.MESSAGE_CLASS, getNormalizedMessageClass(mc));
+        List<Chunk> conversationIndex = mainChunks
+                .getAll()
+                .get(MAPIProperty.CONVERSATION_INDEX);
+        if (conversationIndex != null && !conversationIndex.isEmpty()) {
+            Chunk chunk = conversationIndex.get(0);
+            if (chunk instanceof ByteChunk) {
+                byte[] bytes = ((ByteChunk) chunk).getValue();
+                String hex = Hex.encodeHexString(bytes);
+                metadata.set(MAPI.CONVERSATION_INDEX, hex);
+            }
+        }
+
+        List<Chunk> internetReferences = mainChunks
+                .getAll()
+                .get(MAPIProperty.INTERNET_REFERENCES);
+        if (internetReferences != null) {
+            for (Chunk ref : internetReferences) {
+                if (ref instanceof StringChunk) {
+                    metadata.add(MAPI.INTERNET_REFERENCES, ((StringChunk) ref).getValue());
                 }
             }
+        }
+        List<Chunk> inReplyToIds = mainChunks
+                .getAll()
+                .get(MAPIProperty.IN_REPLY_TO_ID);
+        if (inReplyToIds != null && !inReplyToIds.isEmpty()) {
+            metadata.add(MAPI.IN_REPLY_TO_ID, inReplyToIds
+                    .get(0)
+                    .toString());
+        }
 
-            List<Chunk> internetReferences = mainChunks.getAll().get(MAPIProperty.INTERNET_REFERENCES);
-            if (internetReferences != null) {
-                for (Chunk ref : internetReferences) {
-                    if (ref instanceof StringChunk) {
-                        metadata.add(MAPI.INTERNET_REFERENCES, ((StringChunk) ref).getValue());
-                    }
-                }
+        for (Map.Entry<MAPIProperty, Property> e : LITERAL_TIME_PROPERTIES.entrySet()) {
+            List<PropertyValue> timeProp = mainChunks
+                    .getProperties()
+                    .get(e.getKey());
+            if (timeProp != null && !timeProp.isEmpty()) {
+                Calendar cal = ((PropertyValue.TimePropertyValue) timeProp.get(0)).getValue();
+                metadata.set(e.getValue(), cal);
             }
-            List<Chunk> inReplyToIds = mainChunks.getAll().get(MAPIProperty.IN_REPLY_TO_ID);
-            if (inReplyToIds != null && ! inReplyToIds.isEmpty()) {
-                metadata.add(MAPI.IN_REPLY_TO_ID, inReplyToIds.get(0).toString());
-            }
+        }
 
-            for (Map.Entry<MAPIProperty, Property> e : LITERAL_TIME_PROPERTIES.entrySet()) {
-                List<PropertyValue> timeProp = mainChunks.getProperties().get(e.getKey());
-                if (timeProp != null && ! timeProp.isEmpty()) {
-                    Calendar cal = ((PropertyValue.TimePropertyValue)timeProp.get(0)).getValue();
-                    metadata.set(e.getValue(), cal);
-                }
-            }
-
-            MessageSubmissionChunk messageSubmissionChunk = mainChunks.getSubmissionChunk();
-            if (messageSubmissionChunk != null) {
-                String submissionId = messageSubmissionChunk.getSubmissionId();
-                metadata.set(MAPI.SUBMISSION_ID, submissionId);
-                metadata.set(MAPI.SUBMISSION_ACCEPTED_AT_TIME, messageSubmissionChunk.getAcceptedAtTime());
-            }
-
+        MessageSubmissionChunk messageSubmissionChunk = mainChunks.getSubmissionChunk();
+        if (messageSubmissionChunk != null) {
+            String submissionId = messageSubmissionChunk.getSubmissionId();
+            metadata.set(MAPI.SUBMISSION_ID, submissionId);
+            metadata.set(MAPI.SUBMISSION_ACCEPTED_AT_TIME, messageSubmissionChunk.getAcceptedAtTime());
         }
     }
 
