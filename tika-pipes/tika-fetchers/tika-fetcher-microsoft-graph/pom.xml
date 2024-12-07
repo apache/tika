@@ -32,7 +32,7 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <microsoft-graph.version>6.22.0</microsoft-graph.version>
+    <microsoft-graph.version>6.23.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
     <!-- when updating msal4j, check whether json-smart is still needed below -->
     <msal4j.version>1.17.3</msal4j.version>
