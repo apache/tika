@@ -321,7 +321,7 @@
     <azure.storage.common>12.28.0</azure.storage.common>
     <azure-identity.version>1.14.2</azure-identity.version>
     <azure.json.version>1.2.0</azure.json.version>
-    <biz.aqute.version>7.0.0</biz.aqute.version>
+    <biz.aqute.version>7.1.0</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
     <bouncycastle.version>1.79</bouncycastle.version>
@@ -412,7 +412,7 @@
     <netty.version>4.1.115.Final</netty.version>
     <oak.jackrabbit.version>1.72.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
-    <opennlp.version>2.5.0</opennlp.version>
+    <opennlp.version>2.5.1</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
@@ -556,7 +556,6 @@
       <dependency>
         <groupId>biz.aQute.bnd</groupId>
         <artifactId>biz.aQute.bndlib</artifactId>
-        <!-- can't update to 7.0.0: "class file has wrong version 61.0, should be 55.0" -->
         <version>${biz.aqute.version}</version>
       </dependency>
       <dependency>
