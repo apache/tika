@@ -295,7 +295,7 @@
     <!-- can't update to 6, needs jdk17 -->
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
-    <maven.javadoc.version>3.11.1</maven.javadoc.version>
+    <maven.javadoc.version>3.11.2</maven.javadoc.version>
     <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.failsafe.version>3.5.2</maven.failsafe.version>
@@ -392,7 +392,8 @@
     <osgi.core.version>6.0.0</osgi.core.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
     <parso.version>2.0.14</parso.version>
-    <pax.exam.version>4.14.0</pax.exam.version>
+    <!-- 4.14.0 needs jdk11 -->
+    <pax.exam.version>4.13.5</pax.exam.version>
     <pdfbox.version>2.0.32</pdfbox.version>
     <poi.version>5.3.0</poi.version>
     <!-- 2.5.0 needs jakarta.xml.bind 4.0.2 in tika-parser-scientific-module -->
