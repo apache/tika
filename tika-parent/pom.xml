@@ -639,6 +639,16 @@
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
+        <exclusions>
+            <exclusion>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>com.google.j2objc</groupId>
+                <artifactId>j2objc-annotations</artifactId>
+            </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>com.googlecode.json-simple</groupId>
@@ -1047,6 +1057,26 @@
           <groupId>org.jspecify</groupId>
           <artifactId>jspecify</artifactId>
           <version>1.0.0</version>
+      </dependency>
+      <dependency>
+          <groupId>com.google.http-client</groupId>
+          <artifactId>google-http-client</artifactId>
+          <version>1.45.2</version>
+      </dependency>
+      <dependency>
+          <groupId>com.google.http-client</groupId>
+          <artifactId>google-http-client-gson</artifactId>
+          <version>1.45.2</version>
+      </dependency>
+      <dependency>
+          <groupId>io.grpc</groupId>
+          <artifactId>grpc-context</artifactId>
+          <version>1.68.2</version>
+      </dependency>
+      <dependency>
+          <groupId>com.google.auth</groupId>
+          <artifactId>google-auth-library-credentials</artifactId>
+          <version>1.30.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

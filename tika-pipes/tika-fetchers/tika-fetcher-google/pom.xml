@@ -32,7 +32,7 @@
     <name>Google Tika Pipes Fetcher</name>
 
     <properties>
-        <google.api.client.version>2.2.0</google.api.client.version>
+        <google.api.client.version>2.7.0</google.api.client.version>
     </properties>
 
     <dependencies>
@@ -48,12 +48,28 @@
             <groupId>com.google.api-client</groupId>
             <artifactId>google-api-client</artifactId>
             <version>${google.api.client.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.auth</groupId>
+                    <artifactId>google-auth-library-oauth2-http</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>com.google.auth</groupId>
             <artifactId>google-auth-library-oauth2-http</artifactId>
-            <version>1.19.0</version>
+            <version>1.30.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.errorprone</groupId>
+                    <artifactId>error_prone_annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.j2objc</groupId>
+                    <artifactId>j2objc-annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Google Drive API -->

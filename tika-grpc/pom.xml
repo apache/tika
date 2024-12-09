@@ -224,7 +224,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-    <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-fetcher-google</artifactId>
       <version>${project.version}</version>
