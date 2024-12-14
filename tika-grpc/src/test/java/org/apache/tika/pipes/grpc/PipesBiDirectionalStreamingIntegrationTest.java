@@ -41,7 +41,6 @@ import org.apache.commons.io.FileUtils;
 import org.awaitility.Awaitility;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ResourceHandler;
-import org.eclipse.jetty.util.resource.PathResource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -94,9 +93,7 @@ class PipesBiDirectionalStreamingIntegrationTest {
 
         ResourceHandler resourceHandler = new ResourceHandler();
         resourceHandler.setDirAllowed(true);
-        // TODO when using jetty 12:
-        // resourceHandler.setBaseResourceAsString("src/test/resources/test-files")        
-        resourceHandler.setBaseResource(new PathResource(Paths.get("src", "test", "resources", "test-files")));
+        resourceHandler.setBaseResourceAsString("src/test/resources/test-files");
         httpServer.setHandler(resourceHandler);
         httpServer.start();
 
