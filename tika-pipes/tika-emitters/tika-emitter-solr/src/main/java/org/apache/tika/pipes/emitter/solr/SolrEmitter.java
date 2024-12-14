@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.solr.client.solrj.impl.Http2SolrClient;
-import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
+import org.apache.solr.client.solrj.impl.LBHttp2SolrClient;
 import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
@@ -326,7 +326,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
                     .build();
 
         } else {
-            solrClient = new LBHttpSolrClient.Builder().withConnectionTimeout(connectionTimeout, TimeUnit.MILLISECONDS)
+            solrClient = new LBHttp2SolrClient.Builder().withConnectionTimeout(connectionTimeout, TimeUnit.MILLISECONDS)
                     .withSocketTimeout(socketTimeout, TimeUnit.MILLISECONDS).withHttpClient(httpClientFactory.build())
                     .withBaseEndpoints(solrUrls.toArray(new String[]{})).build();
         }
