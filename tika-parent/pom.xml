@@ -335,8 +335,8 @@
     <commons.net.version>3.11.1</commons.net.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <ctakes.version>5.1.0</ctakes.version>
-    <!-- can't update to 3.6.0, needs jdk11 ? -->
-    <cxf.version>3.5.9</cxf.version>
+    <!-- can't update to 3.6.0, needs jdk11 -->
+    <cxf.version>3.5.10</cxf.version>
     <ddplist.version>1.28</ddplist.version>
     <!-- can't update to 1.0.0-M2.1, needs jdk11 -->
     <dl4j.version>1.0.0-M2</dl4j.version>
