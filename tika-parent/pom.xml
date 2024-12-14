@@ -344,6 +344,7 @@
     <commons.net.version>3.11.1</commons.net.version>
     <!-- can't update to 6, this requires jdk17 -->
     <ctakes.version>5.1.0</ctakes.version>
+    <!-- can't update to 4.1.0, this requires jdk17 -->
     <cxf.version>4.0.6</cxf.version>
     <ddplist.version>1.28</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
