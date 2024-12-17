@@ -530,7 +530,6 @@ public class PDFParserTest extends TikaTest {
 
         config.setSortByPosition(true);
         context.set(PDFParserConfig.class, config);
-        //stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
         content = getText("testPDFTwoTextBoxes.pdf", new Metadata(), context);
         content = content.replaceAll("\\s+", " ");
         // Column text is now interleaved:
