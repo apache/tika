@@ -420,6 +420,7 @@
     <osgi.util.version>1.2.0</osgi.util.version>
     <parso.version>2.0.14</parso.version>
     <pax.exam.version>4.14.0</pax.exam.version>
+    <!-- TODO when updating to 3.0.4, search for TIKA-2342 and achtivate the changes -->
     <pdfbox.version>3.0.3</pdfbox.version>
     <poi.version>5.3.0</poi.version>
     <protobuf.version>3.25.5</protobuf.version>
