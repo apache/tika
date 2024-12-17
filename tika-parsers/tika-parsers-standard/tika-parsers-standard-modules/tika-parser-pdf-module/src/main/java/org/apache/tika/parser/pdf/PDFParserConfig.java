@@ -65,6 +65,9 @@ public class PDFParserConfig implements Serializable {
     // True if we let PDFBox remove duplicate overlapping text:
     private boolean suppressDuplicateOverlappingText = false;
 
+    // True if we let PDFBox ignore spaces in the content stream and rely purely on the algorithm:
+    private boolean ignoreContentStreamSpaceGlyphs = false;
+
     // True if we extract annotation text ourselves
     // (workaround for PDFBOX-1143):
     private boolean extractAnnotationText = true;
@@ -223,6 +226,8 @@ public class PDFParserConfig implements Serializable {
             pdf2XHTML.setDropThreshold(dropThreshold);
         }
         pdf2XHTML.setSuppressDuplicateOverlappingText(isSuppressDuplicateOverlappingText());
+        // TODO TIKA-2342 activate after PDFBox release
+        //pdf2XHTML.setIgnoreContentStreamSpaceGlyphs(isIgnoreContentStreamSpaceGlyphs());
     }
 
     /**
@@ -402,6 +407,24 @@ public class PDFParserConfig implements Serializable {
     public void setSuppressDuplicateOverlappingText(boolean suppressDuplicateOverlappingText) {
         this.suppressDuplicateOverlappingText = suppressDuplicateOverlappingText;
         userConfigured.add("suppressDuplicateOverlappingText");
+    }
+
+    /**
+     * @see #setIgnoreContentStreamSpaceGlyphs(boolean)
+     */
+    public boolean isIgnoreContentStreamSpaceGlyphs() {
+        return ignoreContentStreamSpaceGlyphs;
+    }
+
+    /**
+     * If true, the parser should ignore spaces in the content stream and rely purely on the
+     * algorithm to determine where word breaks are (PDFBOX-3774). This can improve text extraction
+     * results where the content stream is sorted by position and has text overlapping spaces, but
+     * could cause some word breaks to not be added to the output. By default this is disabled.
+     */
+    public void setIgnoreContentStreamSpaceGlyphs(boolean ignoreContentStreamSpaceGlyphs) {
+        this.ignoreContentStreamSpaceGlyphs = ignoreContentStreamSpaceGlyphs;
+        userConfigured.add("ignoreContentStreamSpaceGlyphs");
     }
 
     /**

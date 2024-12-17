@@ -760,6 +760,24 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     }
 
     /**
+     * If true, the parser should ignore spaces in the content stream and rely purely on the
+     * algorithm to determine where word breaks are (PDFBOX-3774). This can improve text extraction
+     * results where the content stream is sorted by position and has text overlapping spaces, but
+     * could cause some word breaks to not be added to the output. By default this is disabled.
+     */
+    @Field
+    public void setIgnoreContentStreamSpaceGlyphs(boolean v) {
+        defaultConfig.setIgnoreContentStreamSpaceGlyphs(v);
+    }
+
+    /**
+     * @see #setIgnoreContentStreamSpaceGlyphs(boolean)
+     */
+    public boolean isIgnoreContentStreamSpaceGlyphs() {
+        return defaultConfig.isIgnoreContentStreamSpaceGlyphs();
+    }
+
+    /**
      * If true, the parser should try to remove duplicated
      * text over the same region.  This is needed for some
      * PDFs that achieve bolding by re-writing the same
