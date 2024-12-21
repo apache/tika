@@ -31,14 +31,14 @@
   <properties>
     <microsoft-graph.version>6.24.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
-    <!-- when updating msal4j, check whether json-smart is still needed below -->
-    <msal4j.version>1.17.3</msal4j.version>
+    <!-- TODO when updating msal4j >1.18.0, check whether json-smart is still needed below -->
+    <msal4j.version>1.18.0</msal4j.version>
     <kotlin-stdlib.version>2.1.0</kotlin-stdlib.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
-      <!-- Dependency convergence error oauth2-oidc-sdk vs msal4j TODO check after msal4j update >1.7.3 -->
+      <!-- Dependency convergence error oauth2-oidc-sdk vs msal4j TODO check after msal4j update >1.18.0 -->
       <dependency>
         <groupId>net.minidev</groupId>
         <artifactId>json-smart</artifactId>
