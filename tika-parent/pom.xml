@@ -453,7 +453,7 @@
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.4</zookeeper.version>
     <zstd.version>1.5.6-8</zstd.version>
-    <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>9.48</nimbus-jose-jwt.version>
     <javacpp.version>1.5.11</javacpp.version>
     <maven.site.version>3.8.0</maven.site.version>
     <maven.exec.version>3.5.0</maven.exec.version>
