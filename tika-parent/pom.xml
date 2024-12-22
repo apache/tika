@@ -297,19 +297,19 @@
     <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
     <maven.failsafe.version>3.5.2</maven.failsafe.version>
     <maven.surefire.version>3.5.2</maven.surefire.version>
-    <maven.javadoc.version>3.11.1</maven.javadoc.version>
+    <maven.javadoc.version>3.11.2</maven.javadoc.version>
     <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.0</maven.shade.version>
     <maven.project.info.reports.version>3.8.0</maven.project.info.reports.version>
-    <puppycrawl.version>10.20.2</puppycrawl.version>
+    <puppycrawl.version>10.21.0</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
     <scm.version>2.1.0</scm.version>
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.45.0</google.cloud.version>
-    <aws.version>1.12.779</aws.version>
+    <google.cloud.version>2.46.0</google.cloud.version>
+    <aws.version>1.12.780</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -321,7 +321,7 @@
     <azure.storage.common>12.28.0</azure.storage.common>
     <azure-identity.version>1.14.2</azure-identity.version>
     <azure.json.version>1.2.0</azure.json.version>
-    <biz.aqute.version>7.0.0</biz.aqute.version>
+    <biz.aqute.version>7.1.0</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
     <bouncycastle.version>1.79</bouncycastle.version>
@@ -330,7 +330,7 @@
     <c3p0.version>0.10.1</c3p0.version>
     <commons.cli.version>1.9.0</commons.cli.version>
     <commons.codec.version>1.17.1</commons.codec.version>
-    <!-- 4.5.0-M2 successfully tested -->
+    <!-- 4.5.0-M3 successfully tested -->
     <commons.collections4.version>4.4</commons.collections4.version>
     <commons.compress.version>1.27.1</commons.compress.version>
     <commons.csv.version>1.12.0</commons.csv.version>
@@ -342,8 +342,9 @@
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.11.1</commons.net.version>
     <ctakes.version>6.0.0</ctakes.version>
-    <!-- TODO when 4.1.0 comes out, try updating jetty to 12 -->
-    <cxf.version>4.0.5</cxf.version>
+    <!-- can't use 4.1.0, fails in tika server core because it uses jetty 12, which we can't
+         use due to the problems explained there -->
+    <cxf.version>4.0.6</cxf.version>
     <ddplist.version>1.28</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
@@ -352,7 +353,7 @@
     <freemarker.version>2.3.33</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.11.0</gson.version>
-    <guava.version>33.3.1-jre</guava.version>
+    <guava.version>33.4.0-jre</guava.version>
     <h2.version>2.3.232</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
@@ -379,10 +380,12 @@
     <jcommander.version>1.82</jcommander.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
-    <!-- 12.0.* needs cxf 4.1.0, see https://issues.apache.org/jira/browse/CXF-9034 ,
-         or it will fail in tika-server-core with 
-         IllegalAccessError: class org.apache.cxf.transport.http_jetty.JettyHTTPServerEngine tried to access protected method 'void org.eclipse.jetty.server.Handler$AbstractContainer.<init>()'     
-    -->
+    <!-- can't update to jetty 12 because of problem in solr integration tests
+	 due to Http2SolrClient (solrj 9.7.0) 
+         expecting org.eclipse.jetty.client.util.InputStreamResponseListener
+         but this class is now in org.eclipse.jetty.client, see also 
+         https://jetty.org/docs/jetty/12/programming-guide/migration/11-to-12.html 
+         when updating, see also TODO in PipesBiDirectionalStreamingIntegrationTest -->
     <jetty.version>11.0.24</jetty.version>
     <jetty.http2.version>11.0.24</jetty.http2.version>
     <jhighlight.version>1.1.0</jhighlight.version>
@@ -391,13 +394,13 @@
     <jsoup.version>1.18.3</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.11.3</junit5.version>
+    <junit5.version>5.11.4</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.31.1</jwarc.version>
     <kafka.version>3.9.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.24.2</log4j2.version>
+    <log4j2.version>2.24.3</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.0</lucene.version>
     <maven.plugin.annotations.version>3.15.1</maven.plugin.annotations.version>
@@ -408,31 +411,33 @@
     <mockito.version>5.14.2</mockito.version>
     <mockito-junit-jupiter.version>5.14.2</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <!-- 4.2.0.Alpha4 tested successfully -->
+    <!-- 4.2.0.RC1 tested successfully -->
     <netty.version>4.1.115.Final</netty.version>
     <oak.jackrabbit.version>1.72.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
-    <opennlp.version>2.5.0</opennlp.version>
+    <opennlp.version>2.5.1</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
     <osgi.core.version>6.0.0</osgi.core.version>
     <osgi.util.version>1.2.0</osgi.util.version>
     <parso.version>2.0.14</parso.version>
-    <pax.exam.version>4.13.5</pax.exam.version>
+    <pax.exam.version>4.14.0</pax.exam.version>
+    <!-- TODO when updating to 3.0.4, search for TIKA-2342 and achtivate the changes,
+         also update the documentation with the new option    -->
     <pdfbox.version>3.0.3</pdfbox.version>
     <poi.version>5.3.0</poi.version>
     <protobuf.version>3.25.5</protobuf.version>
     <quartz.version>2.5.0</quartz.version>
-    <reactor.core.version>3.7.0</reactor.core.version>
-    <reactor.netty.version>1.2.0</reactor.netty.version>
+    <reactor.core.version>3.7.1</reactor.core.version>
+    <reactor.netty.version>1.2.1</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
     <slf4j.version>2.0.16</slf4j.version>
     <sis.version>1.4</sis.version>
     <snappy.version>1.1.10.7</snappy.version>
     <solrj.version>9.7.0</solrj.version>
-    <spring.version>6.2.0</spring.version>
+    <spring.version>6.2.1</spring.version>
     <sqlite.version>3.47.1.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>1.20.4</testcontainers.version>
@@ -448,7 +453,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.3</zookeeper.version>
     <zstd.version>1.5.6-8</zstd.version>
-    <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>9.48</nimbus-jose-jwt.version>
     <javacpp.version>1.5.11</javacpp.version>
   </properties>
 
@@ -556,7 +561,6 @@
       <dependency>
         <groupId>biz.aQute.bnd</groupId>
         <artifactId>biz.aQute.bndlib</artifactId>
-        <!-- can't update to 7.0.0: "class file has wrong version 61.0, should be 55.0" -->
         <version>${biz.aqute.version}</version>
       </dependency>
       <dependency>
@@ -1051,32 +1055,6 @@
         <groupId>com.nimbusds</groupId>
         <artifactId>nimbus-jose-jwt</artifactId>
         <version>${nimbus-jose-jwt.version}</version>
-      </dependency>
-      <!-- dependency of logging-parent, default 0.3.0. TODO remove when no longer needed -->
-      <dependency>
-          <groupId>org.jspecify</groupId>
-          <artifactId>jspecify</artifactId>
-          <version>1.0.0</version>
-      </dependency>
-      <dependency>
-          <groupId>com.google.http-client</groupId>
-          <artifactId>google-http-client</artifactId>
-          <version>1.45.2</version>
-      </dependency>
-      <dependency>
-          <groupId>com.google.http-client</groupId>
-          <artifactId>google-http-client-gson</artifactId>
-          <version>1.45.2</version>
-      </dependency>
-      <dependency>
-          <groupId>io.grpc</groupId>
-          <artifactId>grpc-context</artifactId>
-          <version>1.68.2</version>
-      </dependency>
-      <dependency>
-          <groupId>com.google.auth</groupId>
-          <artifactId>google-auth-library-credentials</artifactId>
-          <version>1.30.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

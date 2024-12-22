@@ -326,9 +326,9 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
                     .build();
 
         } else {
-            solrClient = new LBHttpSolrClient.Builder().withConnectionTimeout(connectionTimeout)
-                    .withSocketTimeout(socketTimeout).withHttpClient(httpClientFactory.build())
-                    .withBaseSolrUrls(solrUrls.toArray(new String[]{})).build();
+            solrClient = new LBHttpSolrClient.Builder().withConnectionTimeout(connectionTimeout, TimeUnit.MILLISECONDS)
+                    .withSocketTimeout(socketTimeout, TimeUnit.MILLISECONDS).withHttpClient(httpClientFactory.build())
+                    .withBaseEndpoints(solrUrls.toArray(new String[]{})).build();
         }
     }
 

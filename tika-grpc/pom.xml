@@ -34,8 +34,7 @@
   </parent>
 
   <properties>
-    <grpc.version>1.68.2</grpc.version>
-    <protoc.version>3.25.3</protoc.version>
+    <grpc.version>1.69.0</grpc.version>
     <asarkar-grpc-test.version>1.2.2</asarkar-grpc-test.version>
     <awaitility.version>4.2.2</awaitility.version>
     <j2objc-annotations.version>3.0.0</j2objc-annotations.version>
@@ -264,7 +263,7 @@
         <artifactId>protobuf-maven-plugin</artifactId>
         <version>0.6.1</version>
         <configuration>
-          <protocArtifact>com.google.protobuf:protoc:${protoc.version}:exe:${os.detected.classifier}</protocArtifact>
+          <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
           <pluginId>grpc-java</pluginId>
           <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
         </configuration>

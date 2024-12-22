@@ -29,19 +29,16 @@
   <name>Apache Tika Microsoft Graph Pipes Fetcher</name>
 
   <properties>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <microsoft-graph.version>6.22.0</microsoft-graph.version>
+    <microsoft-graph.version>6.24.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
-    <!-- when updating msal4j, check whether json-smart is still needed below -->
-    <msal4j.version>1.17.3</msal4j.version>
+    <!-- TODO when updating msal4j >1.18.0, check whether json-smart is still needed below -->
+    <msal4j.version>1.18.0</msal4j.version>
     <kotlin-stdlib.version>2.1.0</kotlin-stdlib.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
-      <!-- Dependency convergence error oauth2-oidc-sdk vs msal4j TODO check after msal4j update >1.7.3 -->
+      <!-- Dependency convergence error oauth2-oidc-sdk vs msal4j TODO check after msal4j update >1.18.0 -->
       <dependency>
         <groupId>net.minidev</groupId>
         <artifactId>json-smart</artifactId>
@@ -56,10 +53,6 @@
       <artifactId>azure-identity</artifactId>
       <version>${azure-identity.version}</version>
       <exclusions>
-        <exclusion>
-          <groupId>com.nimbusds</groupId>
-          <artifactId>nimbus-jose-jwt</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>net.java.dev.jna</groupId>
           <artifactId>jna-platform</artifactId>
@@ -81,22 +74,10 @@
       <version>${microsoft-graph.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>com.nimbusds</groupId>
-          <artifactId>nimbus-jose-jwt</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.jetbrains.kotlin</groupId>
-          <artifactId>kotlin-stdlib-jdk8</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.jetbrains.kotlin</groupId>
           <artifactId>kotlin-stdlib-jdk8</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.nimbusds</groupId>
-      <artifactId>nimbus-jose-jwt</artifactId>
     </dependency>
     <dependency>
       <groupId>com.microsoft.azure</groupId>

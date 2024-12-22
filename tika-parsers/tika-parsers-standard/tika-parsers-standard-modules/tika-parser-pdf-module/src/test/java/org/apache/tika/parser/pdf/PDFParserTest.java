@@ -465,6 +465,37 @@ public class PDFParserTest extends TikaTest {
 
     }
 
+    // TODO TIKA-2342 activate after PDFBox release
+    // @Test
+    public void testIgnoreContentStreamSpaceGlyphs() throws Exception {
+        PDFParser parser = new PDFParser();
+        // Default is false (keep spaces, don't sort):
+        XMLResult r = getXML("testContentStreamSpaceGlyphs.pdf", parser);
+        assertContains("(                                      )overlap", r.xml);
+
+        parser.getPDFParserConfig().setIgnoreContentStreamSpaceGlyphs(true);
+        r = getXML("testContentStreamSpaceGlyphs.pdf", parser);
+        assertContains("( )overlap", r.xml);
+        parser.getPDFParserConfig().setSortByPosition(true);
+        r = getXML("testContentStreamSpaceGlyphs.pdf", parser);
+        assertContains("( overlap )", r.xml);
+
+        //now try with autodetect
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        context.set(PDFParserConfig.class, config);
+        r = getXML("testContentStreamSpaceGlyphs.pdf", context);
+        // Default is false (keep spaces, don't sort):
+        assertContains("(                                      )overlap", r.xml);
+
+        config.setIgnoreContentStreamSpaceGlyphs(true);
+        r = getXML("testContentStreamSpaceGlyphs.pdf", context);
+        assertContains("( )overlap", r.xml);
+        config.setSortByPosition(true);
+        r = getXML("testContentStreamSpaceGlyphs.pdf", context);
+        assertContains("( overlap )", r.xml);
+    }
+
     @Test
     public void testSortByPosition() throws Exception {
         PDFParser parser = new PDFParser();
@@ -499,7 +530,6 @@ public class PDFParserTest extends TikaTest {
 
         config.setSortByPosition(true);
         context.set(PDFParserConfig.class, config);
-        stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
         content = getText("testPDFTwoTextBoxes.pdf", new Metadata(), context);
         content = content.replaceAll("\\s+", " ");
         // Column text is now interleaved:
