@@ -351,7 +351,7 @@
     <fakeload.version>0.7.0</fakeload.version>
     <fastutil.version>8.5.15</fastutil.version>
     <felix.scr.version>1.12.0</felix.scr.version>
-    <freemarker.version>2.3.33</freemarker.version>
+    <freemarker.version>2.3.34</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.11.0</gson.version>
     <guava.version>33.4.0-jre</guava.version>
@@ -385,7 +385,7 @@
     <!-- 12.0.* needs java 17 -->
     <jetty.version>11.0.24</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
-    <jna.version>5.15.0</jna.version>
+    <jna.version>5.16.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <jsoup.version>1.18.3</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
@@ -408,7 +408,7 @@
     <mockito-junit-jupiter.version>5.14.2</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
-    <netty.version>4.1.115.Final</netty.version>
+    <netty.version>4.1.116.Final</netty.version>
     <oak.jackrabbit.version>1.72.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.3.0 requires jdk17 -->
