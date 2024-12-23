@@ -365,7 +365,7 @@
     <jempbox.version>1.8.17</jempbox.version>
     <jetty.version>9.4.56.v20240826</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
-    <jna.version>5.15.0</jna.version>
+    <jna.version>5.16.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.11.4</junit5.version>
@@ -382,7 +382,7 @@
     <mockito.version>4.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
-    <netty.version>4.1.115.Final</netty.version>
+    <netty.version>4.1.116.Final</netty.version>
     <oak.jackrabbit.version>1.72.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
@@ -854,7 +854,7 @@
       <dependency>
         <groupId>org.freemarker</groupId>
         <artifactId>freemarker</artifactId>
-        <version>2.3.33</version>
+        <version>2.3.34</version>
       </dependency>
       <dependency>
         <groupId>org.glassfish.jaxb</groupId>
