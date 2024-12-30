@@ -302,7 +302,7 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.0</maven.shade.version>
     <maven.project.info.reports.version>3.8.0</maven.project.info.reports.version>
-    <puppycrawl.version>10.21.0</puppycrawl.version>
+    <puppycrawl.version>10.21.1</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
     <scm.version>2.1.0</scm.version>
 
@@ -415,7 +415,7 @@
     <netty.version>4.1.116.Final</netty.version>
     <oak.jackrabbit.version>1.72.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
-    <opennlp.version>2.5.1</opennlp.version>
+    <opennlp.version>2.5.2</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
