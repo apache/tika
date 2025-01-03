@@ -46,6 +46,10 @@ public class JarDetector implements ZipContainerDetector {
             if (zip.getEntry("META-INF/application.xml") != null) {
                 return MediaType.application("x-tika-java-enterprise-archive");
             }
+            // AAB archive
+             if (zip.getEntry("base/manifest/AndroidManifest.xml") != null) {
+                return MediaType.application("x-authorware-bin");
+            }
 
             // Looks like a regular Jar Archive
             return MediaType.application("java-archive");
@@ -69,7 +73,10 @@ public class JarDetector implements ZipContainerDetector {
         } else if (name.equals("META-INF/MANIFEST.MF")) {
             // It's a Jar file, or something based on Jar
             detectContext.set(SeenManifest.class, SEEN_MANIFEST);
-        }
+        } else if (name.equals("base/manifest/AndroidManifest.xml") != null) {
+                return MediaType.application("x-authorware-bin");
+            }
+        
         SeenManifest seenManifest = detectContext.get(SeenManifest.class);
 
         if (seenManifest != null) {
@@ -79,7 +86,11 @@ public class JarDetector implements ZipContainerDetector {
             } else if (name.equals("WEB-INF/")) {
                 // Check for WAR and EAR
                 return MediaType.application("x-tika-java-web-archive");
+            } else if (name.equals("base/manifest/AndroidManifest.xml") != null) {
+                // Check for AAB bundle
+                return MediaType.application("x-authorware-bin");
             }
+        
             if (name.equals("META-INF/application.xml")) {
                 return MediaType.application("x-tika-java-enterprise-archive");
             }
