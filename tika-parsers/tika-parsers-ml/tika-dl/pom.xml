@@ -77,12 +77,15 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <!-- TODO restore after ffmpeg has been updated -->
+    <!--
     <dependency>
       <groupId>org.bytedeco</groupId>
       <artifactId>ffmpeg</artifactId>
       <version>7.1-1.5.11</version>
       <scope>provided</scope>
     </dependency>
+    -->
     <dependency>
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-zoo</artifactId>
