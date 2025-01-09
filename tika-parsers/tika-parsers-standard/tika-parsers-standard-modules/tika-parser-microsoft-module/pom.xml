@@ -30,6 +30,10 @@
   <name>Apache Tika Microsoft parser module</name>
 
   <dependencies>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
     <!-- needed for msg files -->
     <dependency>
       <groupId>${project.groupId}</groupId>
