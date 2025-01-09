@@ -422,7 +422,7 @@
     <pax.exam.version>4.14.0</pax.exam.version>
     <!-- TODO when updating to 3.0.4, search for TIKA-2342 and achtivate the changes -->
     <pdfbox.version>3.0.3</pdfbox.version>
-    <poi.version>5.3.0</poi.version>
+    <poi.version>5.4.0</poi.version>
     <protobuf.version>3.25.5</protobuf.version>
     <quartz.version>2.5.0</quartz.version>
     <reactor.core.version>3.7.1</reactor.core.version>
@@ -505,6 +505,16 @@
         <groupId>org.apache.sis.core</groupId>
         <artifactId>sis-metadata</artifactId>
         <version>${sis.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-utils</artifactId>
+        <version>3.5.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-classworlds</artifactId>
+        <version>2.8.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
