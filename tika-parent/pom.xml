@@ -322,7 +322,7 @@
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <commons.cli.version>1.9.0</commons.cli.version>
-    <commons.codec.version>1.17.1</commons.codec.version>
+    <commons.codec.version>1.17.2</commons.codec.version>
     <!-- 4.5.0-M2 successfully tested -->
     <commons.collections4.version>4.4</commons.collections4.version>
     <commons.compress.version>1.27.1</commons.compress.version>
@@ -379,7 +379,7 @@
     <lucene.version>8.11.4</lucene.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
-    <mime4j.version>0.8.11</mime4j.version>
+    <mime4j.version>0.8.12</mime4j.version>
     <!-- mockito >= 5 requires jdk11 -->
     <mockito.version>4.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
