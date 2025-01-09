@@ -397,7 +397,7 @@
     <!-- 4.14.0 needs jdk11 -->
     <pax.exam.version>4.13.5</pax.exam.version>
     <pdfbox.version>2.0.32</pdfbox.version>
-    <poi.version>5.3.0</poi.version>
+    <poi.version>5.4.0</poi.version>
     <!-- 2.5.0 needs jakarta.xml.bind 4.0.2 in tika-parser-scientific-module -->
     <quartz.version>2.3.2</quartz.version>
     <reactor.core.version>3.7.1</reactor.core.version>
@@ -847,6 +847,11 @@
         <groupId>org.ccil.cowan.tagsoup</groupId>
         <artifactId>tagsoup</artifactId>
         <version>1.2.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-classworlds</artifactId>
+        <version>2.8.0</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
