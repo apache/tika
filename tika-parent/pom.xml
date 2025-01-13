@@ -320,7 +320,7 @@
     <azure.core.http.netty.version>1.15.7</azure.core.http.netty.version>
     <azure.storage.blob.version>12.29.0</azure.storage.blob.version>
     <azure.storage.common>12.28.0</azure.storage.common>
-    <azure-identity.version>1.14.2</azure-identity.version>
+    <azure-identity.version>1.15.0</azure-identity.version>
     <azure.json.version>1.2.0</azure.json.version>
     <!-- 7.0.0 needs java 17 -->
     <biz.aqute.version>6.4.1</biz.aqute.version>
@@ -334,7 +334,7 @@
     <commons.codec.version>1.17.2</commons.codec.version>
     <commons.collections4.version>4.4</commons.collections4.version>
     <commons.compress.version>1.27.1</commons.compress.version>
-    <commons.csv.version>1.12.0</commons.csv.version>
+    <commons.csv.version>1.13.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <commons.io.version>2.18.0</commons.io.version>
