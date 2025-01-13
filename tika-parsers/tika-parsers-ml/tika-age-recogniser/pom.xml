@@ -69,7 +69,7 @@
       <dependency>
           <groupId>org.scala-lang</groupId>
           <artifactId>scala-compiler</artifactId>
-          <version>2.13.15</version>
+          <version>2.13.16</version>
       </dependency>
       <dependency>
         <groupId>commons-net</groupId>
@@ -277,6 +277,10 @@
         <exclusion>
           <groupId>org.bouncycastle</groupId>
           <artifactId>bcprov-jdk15on</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.jline</groupId>
+          <artifactId>jline</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
