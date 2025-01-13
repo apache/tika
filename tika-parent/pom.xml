@@ -326,7 +326,7 @@
     <!-- 4.5.0-M2 successfully tested -->
     <commons.collections4.version>4.4</commons.collections4.version>
     <commons.compress.version>1.27.1</commons.compress.version>
-    <commons.csv.version>1.12.0</commons.csv.version>
+    <commons.csv.version>1.13.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
     <commons.io.version>2.18.0</commons.io.version>
     <commons.lang3.version>3.17.0</commons.lang3.version>
