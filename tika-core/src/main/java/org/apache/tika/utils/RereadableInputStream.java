@@ -257,7 +257,8 @@ public class RereadableInputStream extends InputStream {
             // If we have a buffer, then we'll read from it
             if (byteBuffer != null) {
                 readingFromBuffer = true;
-                inputStream = new UnsynchronizedByteArrayInputStream(byteBuffer, 0, bufferHighWaterMark);
+                inputStream = UnsynchronizedByteArrayInputStream.builder().
+                        setByteArray(byteBuffer).setOffset(0).setLength(bufferHighWaterMark).get();
             } else {
                 // No buffer, which means we've switched to a file
                 inputStream = new BufferedInputStream(new FileInputStream(storeFile));
