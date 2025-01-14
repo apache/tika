@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
@@ -192,14 +193,13 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             return;
         }
 
-        CSVFormat csvFormat = CSVFormat.EXCEL.builder().setDelimiter(params.getDelimiter()).build();
+        CSVFormat csvFormat = CSVFormat.EXCEL.builder().setDelimiter(params.getDelimiter()).get();
         metadata.set(DELIMITER_PROPERTY,
                 CHAR_TO_STRING_DELIMITER_MAP.get(csvFormat.getDelimiterString().charAt(0)));
 
         XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(handler, metadata);
         int totalRows = 0;
-        try (org.apache.commons.csv.CSVParser commonsParser = new org.apache.commons.csv.CSVParser(
-                reader, csvFormat)) {
+        try (CSVParser commonsParser = CSVParser.builder().setReader(reader).setFormat(csvFormat).get()) {
             xhtmlContentHandler.startDocument();
             xhtmlContentHandler.startElement(TABLE);
             int firstRowColCount = 0;
