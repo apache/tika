@@ -80,16 +80,13 @@ public class MetadataResourceTest extends CXFTestBase {
                 WebClient.create(endPoint + META_PATH).type("application/msword").accept("text/csv")
                         .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
 
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-
-        CSVParser csvReader = new CSVParser(reader, CSVFormat.EXCEL);
-
         Map<String, String> metadata = new HashMap<>();
-
-        for (CSVRecord r : csvReader) {
-            metadata.put(r.get(0), r.get(1));
+        try (Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+                CSVParser csvReader = CSVParser.builder().setReader(reader).setFormat(CSVFormat.EXCEL).get()) {
+            for (CSVRecord r : csvReader) {
+                metadata.put(r.get(0), r.get(1));
+            }
         }
-        csvReader.close();
 
         assertNotNull(metadata.get(TikaCoreProperties.CREATOR.getName()));
         assertEquals("Maxim Valyanskiy", metadata.get(TikaCoreProperties.CREATOR.getName()));
