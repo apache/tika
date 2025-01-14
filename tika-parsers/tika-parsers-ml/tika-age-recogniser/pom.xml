@@ -73,11 +73,6 @@
         </exclusions>
       </dependency>
       <dependency>
-          <groupId>org.jline</groupId>
-          <artifactId>jline</artifactId>
-          <version>3.28.0</version>
-      </dependency>
-      <dependency>
         <groupId>net.bytebuddy</groupId>
         <artifactId>byte-buddy</artifactId>
         <version>1.15.11</version>
