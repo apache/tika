@@ -23,7 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.math.BigInteger;
 import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +39,7 @@ public class ParamTest {
         list.add("fox");
         Object[] objects =
                 new Object[]{list, Integer.MAX_VALUE, 2.5f, 4000.57576, true, false, Long.MAX_VALUE,
-                        "Hello this is a boring string", new URL("http://apache.org"),
+                        "Hello this is a boring string", new URI("http://apache.org").toURL(),
                         new URI("tika://org.apache.tika.ner.parser?impl=xyz"),
                         new BigInteger(Long.MAX_VALUE + "").add(
                                 new BigInteger(Long.MAX_VALUE + "")), new File("."),};
