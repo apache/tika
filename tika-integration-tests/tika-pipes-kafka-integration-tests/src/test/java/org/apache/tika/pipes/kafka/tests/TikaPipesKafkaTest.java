@@ -93,7 +93,7 @@ public class TikaPipesKafkaTest {
     private final File testFileFolder = new File("target", "test-files");
 
     private final Set<String> waitingFor = new HashSet<>();
-    KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.1"));
+    KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.1").asCompatibleSubstituteFor("apache/kafka"));
 
     private void createTestFiles() throws Exception {
         if (testFileFolder.mkdirs()) {
