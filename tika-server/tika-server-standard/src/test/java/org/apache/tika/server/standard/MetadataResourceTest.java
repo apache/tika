@@ -82,7 +82,7 @@ public class MetadataResourceTest extends CXFTestBase {
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
 
-        CSVParser csvReader = new CSVParser(reader, CSVFormat.EXCEL);
+        CSVParser csvReader = CSVParser.builder().setReader(reader).setFormat(CSVFormat.EXCEL).get();
 
         Map<String, String> metadata = new HashMap<>();
 
@@ -129,15 +129,13 @@ public class MetadataResourceTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
         // Check results
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        CSVParser csvReader = new CSVParser(reader, CSVFormat.EXCEL);
-
         Map<String, String> metadata = new HashMap<>();
-
-        for (CSVRecord r : csvReader) {
-            metadata.put(r.get(0), r.get(1));
+        try (Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+                CSVParser csvReader = CSVParser.builder().setReader(reader).setFormat(CSVFormat.EXCEL).get()) {
+            for (CSVRecord r : csvReader) {
+                metadata.put(r.get(0), r.get(1));
+            }
         }
-        csvReader.close();
 
         assertNotNull(metadata.get(TikaCoreProperties.CREATOR.getName()));
         assertEquals("pavel", metadata.get(TikaCoreProperties.CREATOR.getName()));
