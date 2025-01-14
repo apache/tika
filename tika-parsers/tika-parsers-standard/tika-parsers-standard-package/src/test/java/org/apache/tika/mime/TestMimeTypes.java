@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -53,7 +54,7 @@ public class TestMimeTypes {
         TikaConfig config = TikaConfig.getDefaultConfig();
         repo = config.getMimeRepository();
         tika = new Tika(config);
-        u = new URL("http://mydomain.com/x.pdf?x=y");
+        u = new URI("http://mydomain.com/x.pdf?x=y").toURL();
     }
 
     @Test

@@ -19,6 +19,8 @@ package org.apache.tika.fork;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
@@ -37,7 +39,7 @@ class MemoryURLStreamHandler extends URLStreamHandler {
     public static URL createURL(byte[] data) {
         try {
             int i = counter.incrementAndGet();
-            URL url = new URL("tika-in-memory", "localhost", "/" + i);
+            URL url = new URI("tika-in-memory", "localhost", "/" + i).toURL();
 
             MemoryURLStreamRecord record = new MemoryURLStreamRecord();
             record.url = new WeakReference<>(url);
@@ -45,7 +47,7 @@ class MemoryURLStreamHandler extends URLStreamHandler {
             records.add(record);
 
             return url;
-        } catch (MalformedURLException e) {
+        } catch (MalformedURLException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }

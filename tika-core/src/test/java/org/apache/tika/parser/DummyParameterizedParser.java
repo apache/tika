@@ -90,8 +90,8 @@ public class DummyParameterizedParser implements Parser {
 
     public DummyParameterizedParser() {
         try {
-            xurl = new URL("http://tika.apache.org/url");
-        } catch (MalformedURLException e) {
+            xurl = new URI("http://tika.apache.org/url").toURL();
+        } catch (MalformedURLException | URISyntaxException e) {
             throw new IllegalArgumentException(e);
         }
         try {

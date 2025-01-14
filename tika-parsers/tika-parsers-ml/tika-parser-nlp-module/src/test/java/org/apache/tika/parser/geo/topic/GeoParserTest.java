@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
@@ -111,6 +111,6 @@ public class GeoParserTest extends TikaTest {
         assertNotNull(geoParser);
         assertEquals("http://localhost/gazetteerRestEndpoint",
                 geoParser.getGazetteerRestEndpoint());
-        assertEquals(new URL("file:/ner/model/url"), geoParser.getNerModelUrl());
+        assertEquals(new URI("file:/ner/model/url").toURL(), geoParser.getNerModelUrl());
     }
 }
