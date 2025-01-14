@@ -96,7 +96,7 @@ public class TestChmBlockInfo {
                 .getDirectoryListingEntryList()) {
             chmBlockInfo = ChmBlockInfo
                     .getChmBlockInfoInstance(directoryListingEntry, (int) clrt.getBlockLen(),
-                            chmLzxcControlData);
+                            chmLzxcControlData, null);
             // Assert.assertTrue(!directoryListingEntry.getName().isEmpty() &&
             // chmBlockInfo.toString() != null);
             assertTrue(!ChmCommons.isEmpty(directoryListingEntry.getName()) &&
