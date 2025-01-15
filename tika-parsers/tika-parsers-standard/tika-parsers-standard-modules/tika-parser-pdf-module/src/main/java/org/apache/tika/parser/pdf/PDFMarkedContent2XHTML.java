@@ -280,6 +280,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             // and maybe dereference COSObject first, i.e. before the first "if"?
             // No, because we're using the object key for a map
             // However, we could replace ObjectRef with COSBase for currentPageRef. 
+            // This way we could also get rid of findPages because that logic is in the
+            // iterator of PageTree which we get by calling PDDocument.getPages()
             COSDictionary dict = (COSDictionary) ((COSObject) kids).getObject();
             COSName type = dict.getCOSName(COSName.TYPE);
             if (COSName.OBJR.equals(type)) {
