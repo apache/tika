@@ -139,7 +139,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 throw new TikaException("Unable to extract PDF content", e);
             }
         }
-        if (pdfMarkedContent2XHTML.exceptions.size() > 0) {
+        if (!pdfMarkedContent2XHTML.exceptions.isEmpty()) {
             //throw the first
             throw new TikaException("Unable to extract PDF content",
                     pdfMarkedContent2XHTML.exceptions.get(0));
@@ -192,7 +192,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     }
 
     @Override
-    protected void processPages(PDPageTree pages) throws IOException {
+    protected void processPages(PDPageTree pageTree) throws IOException {
 
         //this is a 0-indexed list of object refs for each page
         //we need this to map the mcids later...
@@ -200,7 +200,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
 
         List<ObjectRef> pageRefs = new ArrayList<>();
         //STEP 1: get the page refs
-        findPages(pdDocument.getPages().getCOSObject().getDictionaryObject(COSName.KIDS), pageRefs);
+        findPages(pageTree.getCOSObject().getDictionaryObject(COSName.KIDS), pageRefs);
         //confirm the right number of pages was found
         if (pageRefs.size() != pdDocument.getNumberOfPages()) {
             throw new IOException(new TikaException(
@@ -215,7 +215,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         Map<String, HtmlTag> roleMap = loadRoleMap(structureTreeRoot.getRoleMap());
 
         //STEP 3: load all of the text, mapped to MCIDs
-        Map<MCID, String> paragraphs = loadTextByMCID(pageRefs);
+        Map<MCID, String> paragraphs = loadTextByMCID(pageTree, pageRefs);
 
         //STEP 4: now recurse the the structure tree root and output the structure
         //and the text bits from paragraphs
@@ -254,7 +254,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         //TODO: figure out when we're crossing page boundaries during the recursion
         // step above and do the page by page processing then...rather than dumping this
         // all here.
-        for (PDPage page : pdDocument.getPages()) {
+        for (PDPage page : pageTree) {
             startPage(page);
             endPage(page);
         }
@@ -410,10 +410,10 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         return roleMap.get(name);
     }
 
-    private Map<MCID, String> loadTextByMCID(List<ObjectRef> pageRefs) throws IOException {
+    private Map<MCID, String> loadTextByMCID(PDPageTree pageTree, List<ObjectRef> pageRefs) throws IOException {
         int pageCount = 1;
         Map<MCID, String> paragraphs = new HashMap<>();
-        for (PDPage page : pdDocument.getPages()) {
+        for (PDPage page : pageTree) {
             ObjectRef pageRef = pageRefs.get(pageCount - 1);
             PDFMarkedContentExtractor ex = new PDFMarkedContentExtractor();
             try {
