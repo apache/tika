@@ -57,7 +57,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
+import org.testcontainers.kafka.ConfluentKafkaContainer;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 import org.testcontainers.utility.DockerImageName;
 
@@ -93,7 +93,8 @@ public class TikaPipesKafkaTest {
     private final File testFileFolder = new File("target", "test-files");
 
     private final Set<String> waitingFor = new HashSet<>();
-    KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.1").asCompatibleSubstituteFor("apache/kafka"));
+    // https://java.testcontainers.org/modules/kafka/#using-orgtestcontainerskafkaconfluentkafkacontainer
+    ConfluentKafkaContainer kafka = new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.0"));
 
     private void createTestFiles() throws Exception {
         if (testFileFolder.mkdirs()) {
