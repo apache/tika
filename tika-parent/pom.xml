@@ -324,7 +324,7 @@
     <biz.aqute.version>7.1.0</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
-    <bouncycastle.version>1.79</bouncycastle.version>
+    <bouncycastle.version>1.80</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <c3p0.version>0.10.1</c3p0.version>
@@ -429,8 +429,8 @@
     <poi.version>5.4.0</poi.version>
     <protobuf.version>3.25.5</protobuf.version>
     <quartz.version>2.5.0</quartz.version>
-    <reactor.core.version>3.7.1</reactor.core.version>
-    <reactor.netty.version>1.2.1</reactor.netty.version>
+    <reactor.core.version>3.7.2</reactor.core.version>
+    <reactor.netty.version>1.2.2</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
     <slf4j.version>2.0.16</slf4j.version>
@@ -1088,6 +1088,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven.compiler.plugin.version}</version>
         <configuration>
+          <showDeprecation>true</showDeprecation>
+          <compilerArgument>-Xlint:deprecation</compilerArgument>
           <release>17</release>
         </configuration>
       </plugin>
