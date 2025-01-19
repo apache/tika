@@ -410,7 +410,7 @@
     <!-- NOTE: Spring 6 requires jdk17  -->
     <!-- remove from ossindex when bumping from 5.3.39 -->
     <spring.version>5.3.39</spring.version>
-    <sqlite.version>3.47.2.0</sqlite.version>
+    <sqlite.version>3.48.0.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.20.4</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
