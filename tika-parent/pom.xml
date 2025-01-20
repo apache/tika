@@ -438,7 +438,7 @@
     <snappy.version>1.1.10.7</snappy.version>
     <solrj.version>9.7.0</solrj.version>
     <spring.version>6.2.1</spring.version>
-    <sqlite.version>3.47.2.0</sqlite.version>
+    <sqlite.version>3.48.0.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>1.20.4</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
