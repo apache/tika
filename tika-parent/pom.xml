@@ -384,7 +384,7 @@
     <mockito.version>4.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
-    <netty.version>4.1.116.Final</netty.version>
+    <netty.version>4.1.117.Final</netty.version>
     <oak.jackrabbit.version>1.74.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
