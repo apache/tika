@@ -51,7 +51,7 @@ public class JarDetector implements ZipContainerDetector {
                 return MediaType.application("x-tika-java-enterprise-archive");
             }
             // AAB archive
-             if (zip.getEntry("base/manifest/AndroidManifest.xml") != null) {
+            if (zip.getEntry("base/manifest/AndroidManifest.xml") != null) {
                 return MediaType.application("x-authorware-bin");
             }
 
@@ -72,29 +72,23 @@ public class JarDetector implements ZipContainerDetector {
                                            StreamingDetectContext detectContext) {
 
         String name = zae.getName();
+
         if (name.equals("AndroidManifest.xml")) {
             return MediaType.application("vnd.android.package-archive");
+        } else if (name.equals("base/manifest/AndroidManifest.xml")) {
+            return MediaType.application("x-authorware-bin");
         } else if (name.equals("META-INF/MANIFEST.MF")) {
             // It's a Jar file, or something based on Jar
             detectContext.set(SeenManifest.class, SEEN_MANIFEST);
-        } else if (name.equals("base/manifest/AndroidManifest.xml") != null) {
-                return MediaType.application("x-authorware-bin");
-            }
+        }
         
         SeenManifest seenManifest = detectContext.get(SeenManifest.class);
 
         if (seenManifest != null) {
-            if (name.equals("AndroidManifest.xml")) {
-                // Is it an Android APK?
-                return MediaType.application("vnd.android.package-archive");
-            } else if (name.equals("WEB-INF/")) {
+            if (name.equals("WEB-INF/")) {
                 // Check for WAR and EAR
                 return MediaType.application("x-tika-java-web-archive");
-            } else if (name.equals("base/manifest/AndroidManifest.xml") != null) {
-                // Check for AAB bundle
-                return MediaType.application("x-authorware-bin");
             }
-        
             if (name.equals("META-INF/application.xml")) {
                 return MediaType.application("x-tika-java-enterprise-archive");
             }
