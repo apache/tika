@@ -465,8 +465,7 @@ public class PDFParserTest extends TikaTest {
 
     }
 
-    // TODO TIKA-2342 activate after PDFBox release
-    // @Test
+    @Test
     public void testIgnoreContentStreamSpaceGlyphs() throws Exception {
         PDFParser parser = new PDFParser();
         // Default is false (keep spaces, don't sort):

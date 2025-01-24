@@ -226,8 +226,7 @@ public class PDFParserConfig implements Serializable {
             pdf2XHTML.setDropThreshold(dropThreshold);
         }
         pdf2XHTML.setSuppressDuplicateOverlappingText(isSuppressDuplicateOverlappingText());
-        // TODO TIKA-2342 activate after PDFBox release
-        //pdf2XHTML.setIgnoreContentStreamSpaceGlyphs(isIgnoreContentStreamSpaceGlyphs());
+        pdf2XHTML.setIgnoreContentStreamSpaceGlyphs(isIgnoreContentStreamSpaceGlyphs());
     }
 
     /**
