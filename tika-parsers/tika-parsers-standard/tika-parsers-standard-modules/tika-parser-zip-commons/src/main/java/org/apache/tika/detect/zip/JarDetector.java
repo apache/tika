@@ -25,6 +25,10 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
+/**
+ * This detector detects JAR files and file type variants of zip subtypes
+ * that may contain a MANIFEST.MF
+ */
 public class JarDetector implements ZipContainerDetector {
 
     private static SeenManifest SEEN_MANIFEST = new SeenManifest();
