@@ -393,7 +393,8 @@ class OneNoteTreeWalker {
     private boolean propertyIsBinary(OneNotePropertyEnum property) {
         return property == OneNotePropertyEnum.RgOutlineIndentDistance ||
                 property == OneNotePropertyEnum.NotebookManagementEntityGuid ||
-                property == OneNotePropertyEnum.RichEditTextUnicode;
+                property == OneNotePropertyEnum.RichEditTextUnicode ||
+                property == OneNotePropertyEnum.CachedTitleString;
     }
 
     /**
@@ -508,7 +509,9 @@ class OneNoteTreeWalker {
                                     dif.size());
                 }
                 if (propertyValue.propertyId.propertyEnum ==
-                        OneNotePropertyEnum.RichEditTextUnicode) {
+                        OneNotePropertyEnum.RichEditTextUnicode
+                        || propertyValue.propertyId.propertyEnum ==
+                        OneNotePropertyEnum.CachedTitleString) {
                     if (!options.isOnlyLatestRevision()
                             || (parentPropertyId != null &&
                             parentPropertyId.propertyEnum != OneNotePropertyEnum.ElementChildNodesOfVersionHistory)) {
