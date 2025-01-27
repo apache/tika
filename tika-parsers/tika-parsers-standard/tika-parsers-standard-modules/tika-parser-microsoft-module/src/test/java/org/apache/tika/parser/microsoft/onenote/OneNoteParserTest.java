@@ -288,4 +288,14 @@ public class OneNoteParserTest extends TikaTest {
 
         assertEquals(1, StringUtils.countMatches(txt, "Sunday morning"));
     }
+
+    /**
+     * TIKA-4303 - test extract Chinese
+     */
+    @Test
+    public void testExtractChinese() throws Exception {
+        Metadata metadata = new Metadata();
+        XMLResult xml = getXML("test-tika-4303-Chinese-notes.one", metadata);
+        assertContains("<p>中文标题</p>", xml.xml);
+    }
 }
