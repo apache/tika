@@ -100,6 +100,15 @@ May the gods of dependency management fix this in the future.
 
   <build>
     <plugins>
+      <!-- because of protobuf 3.25.6. The actual problem is in netcdf4. Might be a false alarm,
+           because https://github.com/protocolbuffers/protobuf/security/advisories/GHSA-h4h5-3hr4-j3g2
+           mentions older versions of protobuf        -->
+      <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+              <argLine>-Dcom.google.protobuf.use_unsafe_pre22_gencode</argLine>
+          </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
