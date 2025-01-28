@@ -302,13 +302,13 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.0</maven.shade.version>
     <maven.project.info.reports.version>3.8.0</maven.project.info.reports.version>
-    <puppycrawl.version>10.21.1</puppycrawl.version>
+    <puppycrawl.version>10.21.2</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
     <scm.version>2.1.0</scm.version>
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.47.0</google.cloud.version>
+    <google.cloud.version>2.48.0</google.cloud.version>
     <aws.version>1.12.780</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
@@ -329,7 +329,7 @@
     <brotli.version>0.1.2</brotli.version>
     <c3p0.version>0.10.1</c3p0.version>
     <commons.cli.version>1.9.0</commons.cli.version>
-    <commons.codec.version>1.17.2</commons.codec.version>
+    <commons.codec.version>1.18.0</commons.codec.version>
     <!-- 4.5.0-M3 successfully tested -->
     <commons.collections4.version>4.4</commons.collections4.version>
     <commons.compress.version>1.27.1</commons.compress.version>
