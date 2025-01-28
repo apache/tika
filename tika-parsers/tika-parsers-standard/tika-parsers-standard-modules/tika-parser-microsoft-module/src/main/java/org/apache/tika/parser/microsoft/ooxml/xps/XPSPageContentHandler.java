@@ -32,6 +32,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 
 /**
@@ -247,10 +248,10 @@ class XPSPageContentHandler extends DefaultHandler {
             for (String indexString : indicesString.split(";", -1)) {
                 // We only want to extract the advance which will be the second comma separated value
                 String[] commaSplit = indexString.split(",", -1);
-                if (commaSplit.length < 2) {
+                if (commaSplit.length < 2 || StringUtils.isBlank(commaSplit[1])) {
                     indices.add(new GlyphIndex(0.0f));
                 } else {
-                    // Advance is measured in hundreths so divide by 100
+                    // Advance is measured in hundredths so divide by 100
                     float advance = Float.parseFloat(commaSplit[1]) / 100.0f;
                     indices.add(new GlyphIndex(advance));
                 }
