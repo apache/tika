@@ -941,27 +941,32 @@ final class TextExtractor {
         } else {
             // In document
             if (equals("b")) {
-                //TIKA-4361 -- need to make sure we're not in an href?
                 // b0
                 assert param == 0;
-                if (groupState.bold) {
-                    pushText();
-                    if (groupState.italic) {
-                        end("i");
+                //only modify styles if we're not in a hyperlink
+                if (fieldState == 0) {
+                    if (groupState.bold) {
+                        pushText();
+                        if (groupState.italic) {
+                            end("i");
+                        }
+                        end("b");
+                        if (groupState.italic) {
+                            start("i");
+                        }
+                        groupState.bold = false;
                     }
-                    end("b");
-                    if (groupState.italic) {
-                        start("i");
-                    }
-                    groupState.bold = false;
                 }
             } else if (equals("i")) {
                 // i0
                 assert param == 0;
-                if (groupState.italic) {
-                    pushText();
-                    end("i");
-                    groupState.italic = false;
+                //only modify styles if we're not in a hyperlink
+                if (fieldState == 0) {
+                    if (groupState.italic) {
+                        pushText();
+                        end("i");
+                        groupState.italic = false;
+                    }
                 }
             } else if (equals("f")) {
                 // Change current font
@@ -1174,23 +1179,27 @@ final class TextExtractor {
                 inHeader = false;
             }
         } else {
-            if (equals("b")) {
-                if (!groupState.bold) {
-                    pushText();
-                    lazyStartParagraph();
-                    if (groupState.italic) {
-                        // Make sure nesting is always <b><i>
-                        end("i");
+            //only modify styles if we're not in a hyperlink
+            if (fieldState == 0) {
+                if (equals("b")) {
+                    if (!groupState.bold) {
+                        pushText();
+                        lazyStartParagraph();
+                        if (groupState.italic) {
+                            // Make sure nesting is always <b><i>
+                            end("i");
+                        }
+                        groupState.bold = true;
+                        startStyles(groupState);
                     }
-                    groupState.bold = true;
-                    startStyles(groupState);
-                }
-            } else if (equals("i")) {
-                if (!groupState.italic) {
-                    pushText();
-                    lazyStartParagraph();
-                    groupState.italic = true;
-                    start("i");
+                } else if (equals("i")) {
+                    //START I
+                    if (!groupState.italic) {
+                        pushText();
+                        lazyStartParagraph();
+                        groupState.italic = true;
+                        start("i");
+                    }
                 }
             }
         }
