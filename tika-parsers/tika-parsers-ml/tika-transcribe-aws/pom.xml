@@ -25,7 +25,7 @@
   <parent>
     <artifactId>tika-parsers-ml</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>3.1.0</version>
+    <version>3.1.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>tika-transcribe-aws</artifactId>
@@ -132,6 +132,6 @@
   </build>
 
   <scm>
-    <tag>tika-3.1.0-rc1</tag>
+    <tag>3.0.0-rc1</tag>
   </scm>
 </project>
