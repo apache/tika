@@ -309,7 +309,7 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.47.0</google.cloud.version>
+    <google.cloud.version>2.48.0</google.cloud.version>
     <aws.version>1.12.780</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
@@ -322,7 +322,7 @@
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <commons.cli.version>1.9.0</commons.cli.version>
-    <commons.codec.version>1.17.2</commons.codec.version>
+    <commons.codec.version>1.18.0</commons.codec.version>
     <!-- 4.5.0-M2 successfully tested -->
     <commons.collections4.version>4.4</commons.collections4.version>
     <commons.compress.version>1.27.1</commons.compress.version>
