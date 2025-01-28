@@ -1,7 +1,4 @@
-Release 4.0.0-BETA1 - ???
-  BREAKING CHANGES
-
-Release 3.1.0 - ??
+Release 3.1.0 - 01/28/25
 
    * Allow users to turn off the injection of some headers into the content stream of MSG
      files (TIKA-4345).
