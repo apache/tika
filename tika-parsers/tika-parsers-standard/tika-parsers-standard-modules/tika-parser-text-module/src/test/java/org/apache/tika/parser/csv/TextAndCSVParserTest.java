@@ -243,7 +243,8 @@ public class TextAndCSVParserTest extends TikaTest {
     @Test
     public void testCustomizingDelimiter() throws Exception {
         TikaConfig tikaConfig = null;
-        try (InputStream is = TextAndCSVParserTest.class.getResourceAsStream("/test-configs/tika-config-colon-delimiter.xml")) {
+        try (InputStream is = TextAndCSVParserTest.class.getResourceAsStream(
+                "/test-configs/tika-config-colon-delimiter.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         Parser p = new AutoDetectParser(tikaConfig);

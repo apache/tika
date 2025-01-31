@@ -180,7 +180,8 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         }
 
         CSVFormat csvFormat = CSVFormat.EXCEL.builder().setDelimiter(params.getDelimiter()).build();
-        metadata.set(DELIMITER_PROPERTY, textAndCSVConfig.getDelimiterToNameMap().get(csvFormat.getDelimiterString().charAt(0)));
+        metadata.set(DELIMITER_PROPERTY, textAndCSVConfig.getDelimiterToNameMap().get(
+                csvFormat.getDelimiterString().charAt(0)));
 
         XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(handler, metadata);
         int totalRows = 0;
@@ -259,7 +260,8 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         xhtml.endDocument();
     }
 
-    private Reader detect(CSVParams params, TextAndCSVConfig textAndCSVConfig, InputStream stream, Metadata metadata,
+    private Reader detect(CSVParams params, TextAndCSVConfig textAndCSVConfig,
+                          InputStream stream, Metadata metadata,
                           ParseContext context) throws IOException, TikaException {
         //if the file was already identified as not .txt, .csv or .tsv
         //don't even try to csv or not
@@ -288,7 +290,8 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         if (params.getDelimiter() == null &&
                 (params.getMediaType() == null || isCSVOrTSV(params.getMediaType()))) {
 
-            CSVSniffer sniffer = new CSVSniffer(markLimit, textAndCSVConfig.getDelimiterToNameMap().keySet(), minConfidence);
+            CSVSniffer sniffer = new CSVSniffer(markLimit,
+                    textAndCSVConfig.getDelimiterToNameMap().keySet(), minConfidence);
             CSVResult result = sniffer.getBest(reader, metadata);
             params.setMediaType(result.getMediaType());
             params.setDelimiter(result.getDelimiter());
