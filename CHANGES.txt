@@ -1,3 +1,6 @@
+Release 2.9.3 - 2/1/2025
+   * Dependency upgrades.
+
 Release 2.9.2 - 3/26/2024
 
    * Dependency upgrades including temporary workarounds for regressions in commons-compress.
