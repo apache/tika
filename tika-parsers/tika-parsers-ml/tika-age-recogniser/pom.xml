@@ -75,7 +75,7 @@
       <dependency>
         <groupId>net.bytebuddy</groupId>
         <artifactId>byte-buddy</artifactId>
-        <version>1.16.1</version>
+        <version>1.17.0</version>
       </dependency>
       <dependency>
         <groupId>commons-net</groupId>
@@ -214,7 +214,7 @@
       <dependency>
           <groupId>org.jline</groupId>
           <artifactId>jline</artifactId>
-          <version>3.28.0</version>
+          <version>3.29.0</version>
       </dependency>
       <dependency>
           <groupId>javax.activation</groupId>
