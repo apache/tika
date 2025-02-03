@@ -33,7 +33,7 @@
     <wiremock.version>3.3.1</wiremock.version>
     <!-- TODO when updating msal4j >1.18.0, check whether json-smart is still needed below -->
     <msal4j.version>1.18.0</msal4j.version>
-    <kotlin-stdlib.version>2.1.0</kotlin-stdlib.version>
+    <kotlin-stdlib.version>2.1.10</kotlin-stdlib.version>
   </properties>
 
   <dependencyManagement>
