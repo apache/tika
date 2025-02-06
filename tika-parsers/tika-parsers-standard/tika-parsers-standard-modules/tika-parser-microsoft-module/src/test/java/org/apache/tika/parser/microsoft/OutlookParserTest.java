@@ -299,13 +299,20 @@ public class OutlookParserTest extends TikaTest {
         }
 
         testMsgClass("NOTE", getXML("test-outlook2003.msg").metadata);
-
     }
 
     private void testMsgClass(String expected, Metadata metadata) {
         assertTrue(expected.equalsIgnoreCase(
                                 metadata.get(MAPI.MESSAGE_CLASS).replaceAll("_", "")),
                 expected + ", but got: " + metadata.get(MAPI.MESSAGE_CLASS));
+    }
+
+    @Test
+    public void testAppointment() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testMSG_Appointment.msg");
+        Metadata m = metadataList.get(0);
+        assertTrue(m.get(MAPI.APPT_START_TIME).contains("2017-02-28T18"));
+        assertTrue(m.get(MAPI.APPT_END_TIME).contains("2017-02-28T19"));
     }
 
     @Test
