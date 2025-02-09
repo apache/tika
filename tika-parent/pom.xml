@@ -309,7 +309,7 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.48.0</google.cloud.version>
+    <google.cloud.version>2.48.1</google.cloud.version>
     <aws.version>1.12.780</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
@@ -330,7 +330,7 @@
     <commons.exec.version>1.4.0</commons.exec.version>
     <commons.io.version>2.18.0</commons.io.version>
     <commons.lang3.version>3.17.0</commons.lang3.version>
-    <commons.logging.version>1.3.4</commons.logging.version>
+    <commons.logging.version>1.3.5</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.11.1</commons.net.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
@@ -518,12 +518,17 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.54.1</version>
+        <version>1.55.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.15.7</version>
+        <version>1.15.8</version>
+      </dependency>
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-xml</artifactId>
+        <version>1.2.0</version>
       </dependency>
       <dependency>
         <groupId>com.drewnoakes</groupId>
