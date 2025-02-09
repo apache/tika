@@ -1162,6 +1162,12 @@
         <version>3.2.0</version>
         <configuration>
           <excludeCoordinates>
+            <!-- json-smart 2.5.2 to be released soon https://github.com/netplex/json-smart-v2 -->
+            <coordinate>
+              <groupId>net.minidev</groupId>
+              <artifactId>json-smart</artifactId>
+              <version>2.5.1</version>
+            </coordinate>
             <!-- solr emitter -->
             <coordinate>
               <groupId>org.eclipse.jetty</groupId>
