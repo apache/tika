@@ -321,7 +321,7 @@
     <azure.storage.blob.version>12.29.0</azure.storage.blob.version>
     <azure.storage.common>12.28.0</azure.storage.common>
     <azure-identity.version>1.15.0</azure-identity.version>
-    <azure.json.version>1.2.0</azure.json.version>
+    <azure.json.version>1.4.0</azure.json.version>
     <azure.xml.version>1.2.0</azure.xml.version>
     <!-- 7.0.0 needs java 17 -->
     <biz.aqute.version>6.4.1</biz.aqute.version>
@@ -586,6 +586,11 @@
         <groupId>com.azure</groupId>
         <artifactId>azure-xml</artifactId>
         <version>${azure.xml.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-json</artifactId>
+        <version>${azure.json.version}</version>
       </dependency>
       <dependency>
         <groupId>com.drewnoakes</groupId>
