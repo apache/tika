@@ -316,12 +316,13 @@
         See TIKA-2992.
     -->
     <asm.version>9.7.1</asm.version>
-    <azure.core.version>1.54.1</azure.core.version>
-    <azure.core.http.netty.version>1.15.7</azure.core.http.netty.version>
+    <azure.core.version>1.55.0</azure.core.version>
+    <azure.core.http.netty.version>1.15.8</azure.core.http.netty.version>
     <azure.storage.blob.version>12.29.0</azure.storage.blob.version>
     <azure.storage.common>12.28.0</azure.storage.common>
     <azure-identity.version>1.15.0</azure-identity.version>
     <azure.json.version>1.2.0</azure.json.version>
+    <azure.xml.version>1.2.0</azure.xml.version>
     <!-- 7.0.0 needs java 17 -->
     <biz.aqute.version>6.4.1</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
@@ -339,7 +340,7 @@
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <commons.io.version>2.18.0</commons.io.version>
     <commons.lang3.version>3.17.0</commons.lang3.version>
-    <commons.logging.version>1.3.4</commons.logging.version>
+    <commons.logging.version>1.3.5</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.11.1</commons.net.version>
     <!-- can't update to 6, this requires jdk17 -->
@@ -580,6 +581,11 @@
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
         <version>${azure.core.http.netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-xml</artifactId>
+        <version>${azure.xml.version}</version>
       </dependency>
       <dependency>
         <groupId>com.drewnoakes</groupId>
@@ -1150,6 +1156,12 @@
         <version>3.2.0</version>
         <configuration>
           <excludeCoordinates>
+            <!-- json-smart 2.5.2 to be released soon https://github.com/netplex/json-smart-v2 -->
+            <coordinate>
+              <groupId>net.minidev</groupId>
+              <artifactId>json-smart</artifactId>
+              <version>2.5.1</version>
+            </coordinate>
             <!-- solr emitter -->
             <coordinate>
               <groupId>org.eclipse.jetty</groupId>
