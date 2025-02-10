@@ -315,7 +315,7 @@
         See TIKA-2992.
     -->
     <asm.version>9.7.1</asm.version>
-    <azure.core.version>1.54.1</azure.core.version>
+    <azure.core.version>1.55.0</azure.core.version>
     <azure.core.http.netty.version>1.15.8</azure.core.http.netty.version>
     <azure.storage.blob.version>12.29.0</azure.storage.blob.version>
     <azure.storage.common>12.28.0</azure.storage.common>
