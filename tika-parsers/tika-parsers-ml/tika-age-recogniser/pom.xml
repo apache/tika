@@ -239,7 +239,7 @@
       <dependency>
           <groupId>org.glassfish.hk2</groupId>
           <artifactId>osgi-resource-locator</artifactId>
-          <version>2.4.0</version>
+          <version>3.0.0</version>
       </dependency>
       <dependency>
           <groupId>dnsjava</groupId>
