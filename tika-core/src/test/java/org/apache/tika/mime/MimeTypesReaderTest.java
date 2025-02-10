@@ -37,7 +37,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -291,9 +290,9 @@ public class MimeTypesReaderTest {
     
     @Test
     public void testMSAccessByName() {
-    	MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
-		MediaType result = mimeTypes.getMimeType("testfile1.accdb").getType();
-		assertEquals("application/x-msaccess", result.toString());
+        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
+        MediaType result = mimeTypes.getMimeType("testfile1.accdb").getType();
+        assertEquals("application/x-msaccess", result.toString());
     }  
     
     @Test
