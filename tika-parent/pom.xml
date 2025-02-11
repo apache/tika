@@ -413,7 +413,7 @@
     <mockito-junit-jupiter.version>5.15.2</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.RC1 tested successfully -->
-    <netty.version>4.1.117.Final</netty.version>
+    <netty.version>4.1.118.Final</netty.version>
     <oak.jackrabbit.version>1.74.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.3</opennlp.version>
@@ -428,8 +428,8 @@
     <poi.version>5.4.0</poi.version>
     <protobuf.version>3.25.6</protobuf.version>
     <quartz.version>2.5.0</quartz.version>
-    <reactor.core.version>3.7.2</reactor.core.version>
-    <reactor.netty.version>1.2.2</reactor.netty.version>
+    <reactor.core.version>3.7.3</reactor.core.version>
+    <reactor.netty.version>1.2.3</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
     <slf4j.version>2.0.16</slf4j.version>
