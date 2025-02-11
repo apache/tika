@@ -1188,6 +1188,12 @@
               <artifactId>uimaj-core</artifactId>
               <version>3.4.1</version>
             </coordinate>
+            <!-- until CVE-2025-24970 is fixed -->
+            <coordinate>
+              <groupId>io.netty</groupId>
+              <artifactId>netty-handler</artifactId>
+              <version>4.1.117.Final</version>
+            </coordinate>
             <!-- provided dependency brought in by org.deeplearning4j:deeplearning4j-utility-iterators -->
             <coordinate>
               <groupId>org.threeten</groupId>
