@@ -287,6 +287,14 @@ public class MimeTypesReaderTest {
         assertEquals(List.of(".js", ".mjs"), mt.getExtensions());
     }
 
+    
+    @Test
+    public void testMSAccessByName() {
+        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
+        MediaType result = mimeTypes.getMimeType("testfile1.accdb").getType();
+        assertEquals("application/x-msaccess", result.toString());
+    }  
+    
     @Test
     public void testGetAliasForJavaScript() throws Exception {
         MimeType mt = this.mimeTypes.forName("text/javascript");

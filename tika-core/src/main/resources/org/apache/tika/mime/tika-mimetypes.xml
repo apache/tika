@@ -4643,6 +4643,7 @@
     <glob pattern="*.xbap"/>
   </mime-type>
   <mime-type type="application/x-msaccess">
+    <glob pattern="*.accdb"/>
     <glob pattern="*.mdb"/>
     <magic priority="60">
       <match value="0x000100005374616e" type="string" offset="0"/>
