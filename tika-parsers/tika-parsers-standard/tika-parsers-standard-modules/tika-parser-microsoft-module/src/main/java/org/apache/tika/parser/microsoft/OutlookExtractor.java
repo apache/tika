@@ -122,10 +122,15 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             Property tikaProp = Property.internalDate(name);
             LITERAL_TIME_PROPERTIES.put(property, tikaProp);
         }
+        loadMessageClasses();
+    }
 
+
+
+    private static void loadMessageClasses() {
         try (BufferedReader r = new BufferedReader(
                 new InputStreamReader(
-                        OutlookExtractor.class.getResourceAsStream("/mapi_message_classes.properties"), UTF_8))) {
+                        OutlookExtractor.class.getResourceAsStream("/org/apache/tika/parser/microsoft/msg/mapi_message_classes.properties"), UTF_8))) {
             String line = r.readLine();
             while (line != null) {
                 if (line.isBlank() || line.startsWith("#")) {
@@ -144,6 +149,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         } catch (IOException e) {
             throw new IllegalStateException("can't find mapi_message_classes.properties?!");
         }
+
     }
 
     //this according to the spec; in practice, it is probably more likely
