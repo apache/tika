@@ -1161,12 +1161,6 @@
         <version>3.2.0</version>
         <configuration>
           <excludeCoordinates>
-            <!-- json-smart 2.5.2 to be released soon https://github.com/netplex/json-smart-v2 -->
-            <coordinate>
-              <groupId>net.minidev</groupId>
-              <artifactId>json-smart</artifactId>
-              <version>2.5.1</version>
-            </coordinate>
             <!-- solr emitter -->
             <coordinate>
               <groupId>org.eclipse.jetty</groupId>
@@ -1187,12 +1181,6 @@
               <groupId>org.apache.uima</groupId>
               <artifactId>uimaj-core</artifactId>
               <version>3.4.1</version>
-            </coordinate>
-            <!-- until CVE-2025-24970 is fixed -->
-            <coordinate>
-              <groupId>io.netty</groupId>
-              <artifactId>netty-handler</artifactId>
-              <version>4.1.117.Final</version>
             </coordinate>
             <!-- provided dependency brought in by org.deeplearning4j:deeplearning4j-utility-iterators -->
             <coordinate>
