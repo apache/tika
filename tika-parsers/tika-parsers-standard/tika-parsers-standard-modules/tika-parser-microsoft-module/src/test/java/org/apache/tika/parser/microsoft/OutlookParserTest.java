@@ -130,6 +130,7 @@ public class OutlookParserTest extends TikaTest {
         assertEquals("tika-dev@lucene.apache.org", metadata.get(Message.MESSAGE_TO_EMAIL));
         assertEquals("tika-dev@lucene.apache.org", metadata.get(Message.MESSAGE_TO_DISPLAY_NAME));
         assertEquals("", metadata.get(Message.MESSAGE_TO_NAME));
+
     }
 
     /**
@@ -311,9 +312,11 @@ public class OutlookParserTest extends TikaTest {
     public void testAppointment() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testMSG_Appointment.msg");
         Metadata m = metadataList.get(0);
-        //debug(m);
-        //assertTrue(m.get(MAPI.APPT_START_TIME).contains("2017-02-28T18"));
-       // assertTrue(m.get(MAPI.APPT_END_TIME).contains("2017-02-28T19"));
+        //for some reason, the normal start/end time properties do not appear to be stored
+        //in this msg file. There are quite a few unknown date properties...may be an older
+        //format ? Or may be how I generated the msg file originally ???
+        assertTrue(m.get(MAPI.REMINDER_TIME).contains("2017-02-28T18"));
+        assertTrue(m.get(MAPI.REMINDER_SIGNAL_TIME).contains("2017-02-28T19"));
     }
 
     @Test

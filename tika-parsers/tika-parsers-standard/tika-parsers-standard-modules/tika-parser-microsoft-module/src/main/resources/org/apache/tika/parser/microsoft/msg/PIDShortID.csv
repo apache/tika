@@ -17,6 +17,7 @@
 # This file derives directly from
 # https://github.com/rjohnsondev/java-libpst/blob/develop/src/main/resources/PIDShortID.csv
 # under the ASL 2.0 license option
+# These ids are not unique. Some of them are differentiated by data type and some by context (note, appt, etc)
 #
 #"ID";"Property";"Description:";"Data type";"Area";"Defining reference";"Alternate names"
 "0x0001";"PidTagTemplateData";"Describes the controls used in the template that is used to retrieve address book information.";"PtypBinary, 0x0102";"Address Book";"[MS-OXOABKT] section 2.2.2";"PR_EMS_TEMPLATE_BLOB"

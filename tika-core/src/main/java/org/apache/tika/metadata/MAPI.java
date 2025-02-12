@@ -27,20 +27,20 @@ public interface MAPI {
     String PREFIX_MAPI_META = "mapi" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PREFIX_MAPI_ATTACH_META = "mapi:attach" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PREFIX_MAPI_APPT_META = "mapi:appt" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String PREFIX_MAPI_REMINDER_META = "mapi:reminder" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String PREFIX_MAPI_RAW_META = PREFIX_MAPI_META + "raw" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     /**
      * MAPI message class.  What type of .msg/MAPI file is it?
      * This is normalized via "mapi_message_classes.properties
      */
-    Property MESSAGE_CLASS =
-            Property.internalText(PREFIX_MAPI_META + "message-class");
+    Property MESSAGE_CLASS = Property.internalText(PREFIX_MAPI_META + "message-class");
 
     /**
      * MAPI message class.  What type of .msg/MAPI file is it?
      * This is the raw value that is retrieved from the underlying chunk
      */
-    Property MESSAGE_CLASS_RAW =
-            Property.internalText(PREFIX_MAPI_META + "message-class-raw");
+    Property MESSAGE_CLASS_RAW = Property.internalText(PREFIX_MAPI_META + "message-class-raw");
 
     Property SENT_BY_SERVER_TYPE = Property.internalText(PREFIX_MAPI_META + "sent-by-server-type");
 
@@ -79,5 +79,13 @@ public interface MAPI {
 
     Property APPT_START_TIME = Property.internalDate(PREFIX_MAPI_APPT_META + "start-time");
     Property APPT_END_TIME = Property.internalDate(PREFIX_MAPI_APPT_META + "end-time");
-    Property APPT_END_REPEAT_TIME = Property.internalDate(PREFIX_MAPI_APPT_META + "end-repeat-time");
+    Property APPT_PROPOSED_START_TIME = Property.internalDate(PREFIX_MAPI_APPT_META + "proposed-start-time");
+    Property APPT_PROPOSED_END_TIME = Property.internalDate(PREFIX_MAPI_APPT_META + "proposed-end-time");
+    Property APPT_LOCATION = Property.internalText(PREFIX_MAPI_APPT_META + "location");
+
+    Property REMINDER_TIME = Property.internalDate(PREFIX_MAPI_REMINDER_META + "time");
+    //PidLidReminderSignalTime -- when a reminder transitions from pending to overdue
+    Property REMINDER_SIGNAL_TIME = Property.internalDate(PREFIX_MAPI_REMINDER_META + "signal-time");
+
 }
+
