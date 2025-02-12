@@ -295,6 +295,15 @@ public class MimeTypesReaderTest {
         assertEquals("application/x-msaccess", result.toString());
     }  
     
+    
+    @Test
+    public void testZipXFiles() {
+        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
+        MediaType result = mimeTypes.getMimeType("testfile1.zipx").getType();
+        assertEquals("application/zip", result.toString());
+    }
+    
+    
     @Test
     public void testGetAliasForJavaScript() throws Exception {
         MimeType mt = this.mimeTypes.forName("text/javascript");
