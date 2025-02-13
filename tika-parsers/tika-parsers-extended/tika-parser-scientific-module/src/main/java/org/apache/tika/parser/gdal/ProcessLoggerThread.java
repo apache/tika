@@ -19,6 +19,8 @@ package org.apache.tika.parser.gdal;
 
 //JDK imports
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,7 +32,6 @@ import org.slf4j.LoggerFactory;
 class ProcessLoggerThread extends Thread {
 
     private static final Logger LOG = LoggerFactory.getLogger(ProcessLoggerThread.class);
-
     private final InputStream inputStream;
     private final StringBuilder stringBuilder;
 
@@ -71,7 +72,7 @@ class ProcessLoggerThread extends Thread {
     public void run() {
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new InputStreamReader(inputStream));
+            reader = new BufferedReader(new InputStreamReader(inputStream, UTF_8));
             String line;
             while ((line = reader.readLine()) != null) {
                 stringBuilder.append(line);
