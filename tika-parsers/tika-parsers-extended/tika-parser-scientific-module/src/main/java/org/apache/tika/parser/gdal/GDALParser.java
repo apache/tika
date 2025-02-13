@@ -300,7 +300,7 @@ public class GDALParser implements Parser {
             process = Runtime.getRuntime().exec(cmd);
         }
 
-        StringBuilder outputBuilder = ProcessLoggerThread.startFor(process)[0];
+        StringBuilder outputBuilder = ProcessLoggerThread.startFor(process).stdout();
 
         try {
             process.waitFor(60, TimeUnit.SECONDS);

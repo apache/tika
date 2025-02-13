@@ -24,10 +24,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 class ProcessLoggerThread extends Thread {
 
     private final InputStream inputStream;
     private final StringBuilder stringBuilder;
+
+    public interface ProcessLogger {
+        StringBuilder stdout();
+        StringBuilder stderr();
+    }
 
     private ProcessLoggerThread(InputStream inputStream, StringBuilder stringBuilder) {
         this.inputStream    = inputStream;
@@ -37,14 +44,24 @@ class ProcessLoggerThread extends Thread {
         this.setDaemon(true);
     }
 
-    public static StringBuilder[] startFor(Process process) {
+    public static ProcessLogger startFor(Process process) {
         var stdoutStringBuilder = new StringBuilder();
         new ProcessLoggerThread(process.getInputStream(), stdoutStringBuilder).start();
 
         var stderrStringBuilder = new StringBuilder();
         new ProcessLoggerThread(process.getErrorStream(), stderrStringBuilder).start();
 
-        return new StringBuilder[] { stdoutStringBuilder, stderrStringBuilder };
+        return new ProcessLogger() {
+            @Override
+            public StringBuilder stdout() {
+                return stdoutStringBuilder;
+            }
+
+            @Override
+            public StringBuilder stderr() {
+                return stderrStringBuilder;
+            }
+        };
     }
 
     @Override
