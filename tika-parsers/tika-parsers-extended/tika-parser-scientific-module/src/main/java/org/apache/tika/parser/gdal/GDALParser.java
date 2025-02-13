@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -293,42 +294,20 @@ public class GDALParser implements Parser {
     private String execCommand(String[] cmd) throws IOException {
         // Execute
         Process process;
-        String output = null;
         if (cmd.length == 1) {
             process = Runtime.getRuntime().exec(cmd[0]);
         } else {
             process = Runtime.getRuntime().exec(cmd);
         }
 
+        StringBuilder outputBuilder = ProcessLoggerThread.startFor(process)[0];
+
         try {
-            InputStream out = process.getInputStream();
-
-            try {
-                output = extractOutput(out);
-            } catch (Exception e) {
-                LOG.warn("Exception extracting output", e);
-                output = "";
-            }
-
-        } finally {
-            try {
-                process.waitFor();
-            } catch (InterruptedException ignore) {
-            }
+            process.waitFor(60, TimeUnit.SECONDS);
+        } catch (InterruptedException ignore) {
         }
-        return output;
 
-    }
-
-    private String extractOutput(InputStream stream) throws SAXException, IOException {
-        StringBuilder sb = new StringBuilder();
-        try (Reader reader = new InputStreamReader(stream, UTF_8)) {
-            char[] buffer = new char[1024];
-            for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-                sb.append(buffer, 0, n);
-            }
-        }
-        return sb.toString();
+        return outputBuilder.toString();
     }
 
     private void processOutput(ContentHandler handler, Metadata metadata, String output)
