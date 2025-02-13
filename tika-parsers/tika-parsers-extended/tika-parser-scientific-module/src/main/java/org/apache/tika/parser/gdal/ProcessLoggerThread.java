@@ -73,11 +73,13 @@ class ProcessLoggerThread extends Thread {
                 stringBuilder.append("\n");
             }
         } catch (IOException exception) {
-
+            exception.printStackTrace();
         } finally {
             try {
                 reader.close();
-            } catch (IOException e) {}
+            } catch (IOException exception) {
+                exception.printStackTrace();
+            }
         }
     }
 
