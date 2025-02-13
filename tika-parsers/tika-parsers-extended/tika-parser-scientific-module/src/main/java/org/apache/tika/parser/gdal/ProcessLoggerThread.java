@@ -24,7 +24,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class ProcessLoggerThread extends Thread {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ProcessLoggerThread.class);
 
     private final InputStream inputStream;
     private final StringBuilder stringBuilder;
@@ -73,12 +78,12 @@ class ProcessLoggerThread extends Thread {
                 stringBuilder.append("\n");
             }
         } catch (IOException exception) {
-            exception.printStackTrace();
+            LOG.error(exception.getMessage(), exception);
         } finally {
             try {
                 reader.close();
             } catch (IOException exception) {
-                exception.printStackTrace();
+                LOG.error(exception.getMessage(), exception);
             }
         }
     }
