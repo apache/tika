@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 class ProcessLoggerThread extends Thread {
 
     private final InputStream inputStream;
@@ -36,9 +34,9 @@ class ProcessLoggerThread extends Thread {
         StringBuilder stderr();
     }
 
-    private ProcessLoggerThread(InputStream inputStream, StringBuilder stringBuilder) {
-        this.inputStream    = inputStream;
-        this.stringBuilder  = stringBuilder;
+    private ProcessLoggerThread(InputStream inputStreamArg, StringBuilder stringBuilderArg) {
+        this.inputStream    = inputStreamArg;
+        this.stringBuilder  = stringBuilderArg;
 
         this.setName(this.getClass().getSimpleName());
         this.setDaemon(true);
@@ -82,4 +80,5 @@ class ProcessLoggerThread extends Thread {
             } catch (IOException e) {}
         }
     }
+
 }
