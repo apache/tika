@@ -309,15 +309,15 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.48.1</google.cloud.version>
-    <aws.version>1.12.780</aws.version>
+    <google.cloud.version>2.48.2</google.cloud.version>
+    <aws.version>1.12.781</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
     <asm.version>9.7.1</asm.version>
-    <azure.core.version>1.55.0</azure.core.version>
-    <azure.core.http.netty.version>1.15.8</azure.core.http.netty.version>
+    <azure.core.version>1.55.1</azure.core.version>
+    <azure.core.http.netty.version>1.15.9</azure.core.http.netty.version>
     <azure.storage.blob.version>12.29.0</azure.storage.blob.version>
     <azure.storage.common>12.28.0</azure.storage.common>
     <azure-identity.version>1.15.1</azure-identity.version>
@@ -401,7 +401,7 @@
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.0</lucene.version>
     <maven.plugin.annotations.version>3.15.1</maven.plugin.annotations.version>
-    <mchange.version>0.3.1</mchange.version>
+    <mchange.version>0.3.2</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.12</mime4j.version>
@@ -410,7 +410,7 @@
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
     <netty.version>4.1.118.Final</netty.version>
-    <oak.jackrabbit.version>1.74.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>1.76.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.3.0 requires jdk17 -->
     <opennlp.version>2.2.0</opennlp.version>
