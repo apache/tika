@@ -309,8 +309,8 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.48.1</google.cloud.version>
-    <aws.version>1.12.780</aws.version>
+    <google.cloud.version>2.48.2</google.cloud.version>
+    <aws.version>1.12.781</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -385,7 +385,7 @@
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
     <netty.version>4.1.118.Final</netty.version>
-    <oak.jackrabbit.version>1.74.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>1.76.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
     <opennlp.version>1.9.4</opennlp.version>
@@ -518,12 +518,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.55.0</version>
+        <version>1.55.1</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.15.8</version>
+        <version>1.15.9</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
@@ -553,7 +553,7 @@
       <dependency>
         <groupId>com.mchange</groupId>
         <artifactId>mchange-commons-java</artifactId>
-        <version>0.3.1</version>
+        <version>0.3.2</version>
       </dependency>
       <dependency>
         <groupId>com.beust</groupId>
