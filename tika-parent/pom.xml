@@ -328,7 +328,7 @@
     <bouncycastle.version>1.80</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <c3p0.version>0.10.2</c3p0.version>
+    <c3p0.version>0.11.0-pre1</c3p0.version>
     <commons.cli.version>1.9.0</commons.cli.version>
     <commons.codec.version>1.18.0</commons.codec.version>
     <!-- 4.5.0-M3 successfully tested -->
