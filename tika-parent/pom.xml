@@ -328,7 +328,7 @@
     <bouncycastle.version>1.80</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <c3p0.version>0.11.0-pre1</c3p0.version>
+    <c3p0.version>0.11.0-pre2</c3p0.version>
     <commons.cli.version>1.9.0</commons.cli.version>
     <commons.codec.version>1.18.0</commons.codec.version>
     <!-- 4.5.0-M3 successfully tested -->
@@ -412,8 +412,7 @@
     <mockito.version>5.15.2</mockito.version>
     <mockito-junit-jupiter.version>5.15.2</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <!-- 4.2.0.RC1 tested successfully -->
-    <netty.version>4.1.118.Final</netty.version>
+    <netty.version>4.2.0.RC3</netty.version>
     <oak.jackrabbit.version>1.76.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.3</opennlp.version>
