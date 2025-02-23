@@ -295,7 +295,7 @@
     <maven.assembly.version>3.7.1</maven.assembly.version>
     <!-- can't update to 6, needs jdk17 -->
     <maven.bundle.version>5.1.9</maven.bundle.version>
-    <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
+    <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
     <maven.failsafe.version>3.5.2</maven.failsafe.version>
     <maven.surefire.version>3.5.2</maven.surefire.version>
     <maven.javadoc.version>3.11.2</maven.javadoc.version>
@@ -316,8 +316,8 @@
         See TIKA-2992.
     -->
     <asm.version>9.7.1</asm.version>
-    <azure.core.version>1.55.1</azure.core.version>
-    <azure.core.http.netty.version>1.15.9</azure.core.http.netty.version>
+    <azure.core.version>1.55.2</azure.core.version>
+    <azure.core.http.netty.version>1.15.10</azure.core.http.netty.version>
     <azure.storage.blob.version>12.29.0</azure.storage.blob.version>
     <azure.storage.common>12.28.0</azure.storage.common>
     <azure-identity.version>1.15.2</azure-identity.version>
@@ -391,7 +391,7 @@
     <jsoup.version>1.18.3</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.11.4</junit5.version>
+    <junit5.version>5.12.0</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.31.1</jwarc.version>
