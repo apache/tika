@@ -294,7 +294,7 @@
     <maven.assembly.version>3.7.1</maven.assembly.version>
     <!-- can't update to 6, needs jdk17 -->
     <maven.bundle.version>5.1.9</maven.bundle.version>
-    <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
+    <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
     <maven.javadoc.version>3.11.2</maven.javadoc.version>
     <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
@@ -370,7 +370,7 @@
     <jna.version>5.16.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.11.4</junit5.version>
+    <junit5.version>5.12.0</junit5.version>
     <junrar.version>7.5.5</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.24.3</log4j2.version>
@@ -518,12 +518,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.55.1</version>
+        <version>1.55.2</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.15.9</version>
+        <version>1.15.10</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
