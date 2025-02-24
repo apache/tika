@@ -36,7 +36,7 @@
   <properties>
     <grpc.version>1.70.0</grpc.version>
     <asarkar-grpc-test.version>1.2.2</asarkar-grpc-test.version>
-    <awaitility.version>4.2.2</awaitility.version>
+    <awaitility.version>4.3.0</awaitility.version>
     <j2objc-annotations.version>3.0.0</j2objc-annotations.version>
     <!-- javadocs doesn't build for generated code in release:perform, but
          appears to work generally :/ -->
