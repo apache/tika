@@ -25,20 +25,20 @@ package org.apache.tika.metadata;
 public interface MAPI {
 
     String PREFIX_MAPI_META = "mapi" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String PREFIX_MAPI_ATTACH_META = "mapi:attach" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String PREFIX_MAPI_RAW_META = PREFIX_MAPI_META + "raw" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     /**
      * MAPI message class.  What type of .msg/MAPI file is it?
      * This is normalized via "mapi_message_classes.properties
      */
-    Property MESSAGE_CLASS =
-            Property.internalText(PREFIX_MAPI_META + "message-class");
+    Property MESSAGE_CLASS = Property.internalText(PREFIX_MAPI_META + "message-class");
 
     /**
      * MAPI message class.  What type of .msg/MAPI file is it?
      * This is the raw value that is retrieved from the underlying chunk
      */
-    Property MESSAGE_CLASS_RAW =
-            Property.internalText(PREFIX_MAPI_META + "message-class-raw");
+    Property MESSAGE_CLASS_RAW = Property.internalText(PREFIX_MAPI_META + "message-class-raw");
 
     Property SENT_BY_SERVER_TYPE = Property.internalText(PREFIX_MAPI_META + "sent-by-server-type");
 
@@ -64,4 +64,16 @@ public interface MAPI {
     Property IMPORTANCE = Property.internalInteger(PREFIX_MAPI_META + "importance");
     Property PRIORTY = Property.internalInteger(PREFIX_MAPI_META + "priority");
     Property IS_FLAGGED = Property.internalBoolean(PREFIX_MAPI_META + "is-flagged");
+
+    Property ATTACH_LONG_PATH_NAME = Property.internalText(PREFIX_MAPI_ATTACH_META + "long-path-name");
+    Property ATTACH_LONG_FILE_NAME = Property.internalText(PREFIX_MAPI_ATTACH_META + "long-file-name");
+    Property ATTACH_FILE_NAME = Property.internalText(PREFIX_MAPI_ATTACH_META + "file-name");
+    Property ATTACH_CONTENT_ID = Property.internalText(PREFIX_MAPI_ATTACH_META + "content-id");
+    Property ATTACH_CONTENT_LOCATION = Property.internalText(PREFIX_MAPI_ATTACH_META + "content-location");
+    Property ATTACH_DISPLAY_NAME = Property.internalText(PREFIX_MAPI_ATTACH_META + "display-name");
+    Property ATTACH_EXTENSION = Property.internalText(PREFIX_MAPI_ATTACH_META + "extension");
+    Property ATTACH_MIME = Property.internalText(PREFIX_MAPI_ATTACH_META + "mime");
+    Property ATTACH_LANGUAGE = Property.internalText(PREFIX_MAPI_ATTACH_META + "language");
+
 }
+

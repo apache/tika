@@ -130,6 +130,7 @@ public class OutlookParserTest extends TikaTest {
         assertEquals("tika-dev@lucene.apache.org", metadata.get(Message.MESSAGE_TO_EMAIL));
         assertEquals("tika-dev@lucene.apache.org", metadata.get(Message.MESSAGE_TO_DISPLAY_NAME));
         assertEquals("", metadata.get(Message.MESSAGE_TO_NAME));
+
     }
 
     /**
@@ -299,13 +300,40 @@ public class OutlookParserTest extends TikaTest {
         }
 
         testMsgClass("NOTE", getXML("test-outlook2003.msg").metadata);
-
     }
 
     private void testMsgClass(String expected, Metadata metadata) {
         assertTrue(expected.equalsIgnoreCase(
                                 metadata.get(MAPI.MESSAGE_CLASS).replaceAll("_", "")),
                 expected + ", but got: " + metadata.get(MAPI.MESSAGE_CLASS));
+    }
+
+    @Test
+    public void testAppointmentExtendedMetadata() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testMSG_Appointment.msg");
+        Metadata m = metadataList.get(0);
+        debug(m);
+        assertTrue(m.get("mapi:raw:PidLidAppointmentEndWhole").contains("2017-02-28T19"));
+        assertTrue(m.get("mapi:raw:PidLidAppointmentStartWhole").contains("2017-02-28T18"));
+        assertTrue(m.get("mapi:raw:PidLidClipStart").contains("2017-02-28T18"));
+        assertTrue(m.get("mapi:raw:PidLidClipEnd").contains("2017-02-28T19"));
+        assertTrue(m.get("mapi:raw:PidLidCommonStart").contains("2017-02-28T18"));
+        assertTrue(m.get("mapi:raw:PidLidCommonEnd").contains("2017-02-28T19"));
+        assertTrue(m.get("mapi:raw:PidLidReminderSignalTime").contains("4501-01-01T00"));
+        assertTrue(m.get("mapi:raw:PidLidReminderTime").contains("2017-02-28T18"));
+        assertTrue(m.get("mapi:raw:PidLidValidFlagStringProof").contains("2017-02-28T18:42"));
+        assertEquals("0", m.get("mapi:raw:PidLidAppointmentSequence"));
+        assertEquals("false", m.get("mapi:raw:PidLidRecurring"));
+    }
+
+    @Test
+    public void testTaskExtendedMetadata() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testMSG_Task.msg");
+        Metadata m = metadataList.get(0);
+        assertTrue(m.get("mapi:raw:PidLidToDoOrdinalDate").contains("2017-02-28T18:44"));
+        assertTrue(m.get("mapi:raw:PidLidValidFlagStringProof").contains("2017-02-28T18:44"));
+        assertEquals("0", m.get("mapi:raw:PidLidTaskActualEffort"));
+        assertEquals("false", m.get("mapi:raw:PidLidTeamTask"));
     }
 
     @Test
