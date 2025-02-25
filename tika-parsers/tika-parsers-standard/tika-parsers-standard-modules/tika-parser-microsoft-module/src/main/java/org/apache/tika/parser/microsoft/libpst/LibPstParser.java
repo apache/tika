@@ -166,7 +166,7 @@ public class LibPstParser implements Parser, Initializable {
             throw new TikaConfigException("path can't include null values");
         }
         String fullReadPstCommand = getFullReadPstCommand();
-        if (! Files.isRegularFile(Paths.get(fullReadPstCommand))) {
+        if (! StringUtils.isBlank(readPstPath) && ! Files.isRegularFile(Paths.get(fullReadPstCommand))) {
             throw new TikaConfigException("I regret I can't find the readpst executable: " + fullReadPstCommand);
         }
         try {
