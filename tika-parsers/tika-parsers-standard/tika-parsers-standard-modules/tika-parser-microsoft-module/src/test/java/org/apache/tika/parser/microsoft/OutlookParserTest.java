@@ -309,14 +309,31 @@ public class OutlookParserTest extends TikaTest {
     }
 
     @Test
-    public void testAppointment() throws Exception {
+    public void testAppointmentExtendedMetadata() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testMSG_Appointment.msg");
         Metadata m = metadataList.get(0);
-        //for some reason, the normal start/end time properties do not appear to be stored
-        //in this msg file. There are quite a few unknown date properties...may be an older
-        //format ? Or may be how I generated the msg file originally ???
-        assertTrue(m.get(MAPI.REMINDER_TIME).contains("2017-02-28T18"));
-        assertTrue(m.get(MAPI.REMINDER_SIGNAL_TIME).contains("2017-02-28T19"));
+        debug(m);
+        assertTrue(m.get("mapi:raw:PidLidAppointmentEndWhole").contains("2017-02-28T19"));
+        assertTrue(m.get("mapi:raw:PidLidAppointmentStartWhole").contains("2017-02-28T18"));
+        assertTrue(m.get("mapi:raw:PidLidClipStart").contains("2017-02-28T18"));
+        assertTrue(m.get("mapi:raw:PidLidClipEnd").contains("2017-02-28T19"));
+        assertTrue(m.get("mapi:raw:PidLidCommonStart").contains("2017-02-28T18"));
+        assertTrue(m.get("mapi:raw:PidLidCommonEnd").contains("2017-02-28T19"));
+        assertTrue(m.get("mapi:raw:PidLidReminderSignalTime").contains("4501-01-01T00"));
+        assertTrue(m.get("mapi:raw:PidLidReminderTime").contains("2017-02-28T18"));
+        assertTrue(m.get("mapi:raw:PidLidValidFlagStringProof").contains("2017-02-28T18:42"));
+        assertEquals("0", m.get("mapi:raw:PidLidAppointmentSequence"));
+        assertEquals("false", m.get("mapi:raw:PidLidRecurring"));
+    }
+
+    @Test
+    public void testTaskExtendedMetadata() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testMSG_Task.msg");
+        Metadata m = metadataList.get(0);
+        assertTrue(m.get("mapi:raw:PidLidToDoOrdinalDate").contains("2017-02-28T18:44"));
+        assertTrue(m.get("mapi:raw:PidLidValidFlagStringProof").contains("2017-02-28T18:44"));
+        assertEquals("0", m.get("mapi:raw:PidLidTaskActualEffort"));
+        assertEquals("false", m.get("mapi:raw:PidLidTeamTask"));
     }
 
     @Test

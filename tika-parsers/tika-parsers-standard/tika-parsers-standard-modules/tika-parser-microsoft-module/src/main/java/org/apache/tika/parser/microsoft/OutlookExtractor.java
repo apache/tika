@@ -57,6 +57,8 @@ import org.apache.poi.hsmf.datatypes.Types;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.util.CodePageUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
@@ -87,6 +89,7 @@ import org.apache.tika.utils.StringUtils;
  * Outlook Message Parser.
  */
 public class OutlookExtractor extends AbstractPOIFSExtractor {
+    static Logger LOGGER = LoggerFactory.getLogger(OutlookExtractor.class);
 
     private static final Metadata EMPTY_METADATA = new Metadata();
     private static final MAPIProperty[] LITERAL_TIME_MAPI_PROPERTIES = new MAPIProperty[] {
@@ -128,9 +131,10 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
 
     private static void loadMessageClasses() {
+        String fName = "/org/apache/tika/parser/microsoft/msg/mapi_message_classes.properties";
         try (BufferedReader r = new BufferedReader(
                 new InputStreamReader(
-                        OutlookExtractor.class.getResourceAsStream("/org/apache/tika/parser/microsoft/msg/mapi_message_classes.properties"), UTF_8))) {
+                        OutlookExtractor.class.getResourceAsStream(fName), UTF_8))) {
             String line = r.readLine();
             while (line != null) {
                 if (line.isBlank() || line.startsWith("#")) {

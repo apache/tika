@@ -26,8 +26,6 @@ public interface MAPI {
 
     String PREFIX_MAPI_META = "mapi" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PREFIX_MAPI_ATTACH_META = "mapi:attach" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    String PREFIX_MAPI_APPT_META = "mapi:appt" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    String PREFIX_MAPI_REMINDER_META = "mapi:reminder" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PREFIX_MAPI_RAW_META = PREFIX_MAPI_META + "raw" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     /**
@@ -76,16 +74,6 @@ public interface MAPI {
     Property ATTACH_EXTENSION = Property.internalText(PREFIX_MAPI_ATTACH_META + "extension");
     Property ATTACH_MIME = Property.internalText(PREFIX_MAPI_ATTACH_META + "mime");
     Property ATTACH_LANGUAGE = Property.internalText(PREFIX_MAPI_ATTACH_META + "language");
-
-    Property APPT_START_TIME = Property.internalDate(PREFIX_MAPI_APPT_META + "start-time");
-    Property APPT_END_TIME = Property.internalDate(PREFIX_MAPI_APPT_META + "end-time");
-    Property APPT_PROPOSED_START_TIME = Property.internalDate(PREFIX_MAPI_APPT_META + "proposed-start-time");
-    Property APPT_PROPOSED_END_TIME = Property.internalDate(PREFIX_MAPI_APPT_META + "proposed-end-time");
-    Property APPT_LOCATION = Property.internalText(PREFIX_MAPI_APPT_META + "location");
-
-    Property REMINDER_TIME = Property.internalDate(PREFIX_MAPI_REMINDER_META + "time");
-    //PidLidReminderSignalTime -- when a reminder transitions from pending to overdue
-    Property REMINDER_SIGNAL_TIME = Property.internalDate(PREFIX_MAPI_REMINDER_META + "signal-time");
 
 }
 
