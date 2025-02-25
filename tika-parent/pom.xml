@@ -294,7 +294,7 @@
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.7.1</maven.assembly.version>
     <maven.bundle.version>6.0.0</maven.bundle.version>
-    <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
+    <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
     <maven.failsafe.version>3.5.2</maven.failsafe.version>
     <maven.surefire.version>3.5.2</maven.surefire.version>
     <maven.javadoc.version>3.11.2</maven.javadoc.version>
@@ -308,18 +308,18 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.48.1</google.cloud.version>
-    <aws.version>1.12.780</aws.version>
+    <google.cloud.version>2.48.2</google.cloud.version>
+    <aws.version>1.12.782</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
     <asm.version>9.7.1</asm.version>
-    <azure.core.version>1.55.0</azure.core.version>
-    <azure.core.http.netty.version>1.15.8</azure.core.http.netty.version>
+    <azure.core.version>1.55.2</azure.core.version>
+    <azure.core.http.netty.version>1.15.10</azure.core.http.netty.version>
     <azure.storage.blob.version>12.29.0</azure.storage.blob.version>
     <azure.storage.common>12.28.0</azure.storage.common>
-    <azure-identity.version>1.15.1</azure-identity.version>
+    <azure-identity.version>1.15.3</azure-identity.version>
     <azure.json.version>1.4.0</azure.json.version>
     <azure.xml.version>1.2.0</azure.xml.version>
     <biz.aqute.version>7.1.0</biz.aqute.version>
@@ -328,7 +328,7 @@
     <bouncycastle.version>1.80</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <c3p0.version>0.10.2</c3p0.version>
+    <c3p0.version>0.11.0-pre2</c3p0.version>
     <commons.cli.version>1.9.0</commons.cli.version>
     <commons.codec.version>1.18.0</commons.codec.version>
     <!-- 4.5.0-M3 successfully tested -->
@@ -395,7 +395,7 @@
     <jsoup.version>1.18.3</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.12.0-RC1</junit5.version>
+    <junit5.version>5.12.0</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.31.1</jwarc.version>
@@ -405,16 +405,15 @@
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.0</lucene.version>
     <maven.plugin.annotations.version>3.15.1</maven.plugin.annotations.version>
-    <mchange.version>0.3.1</mchange.version>
+    <mchange.version>0.3.2</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.12</mime4j.version>
     <mockito.version>5.15.2</mockito.version>
     <mockito-junit-jupiter.version>5.15.2</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <!-- 4.2.0.RC1 tested successfully -->
-    <netty.version>4.1.118.Final</netty.version>
-    <oak.jackrabbit.version>1.74.0</oak.jackrabbit.version>
+    <netty.version>4.2.0.RC3</netty.version>
+    <oak.jackrabbit.version>1.76.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.3</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
@@ -437,9 +436,9 @@
     <snappy.version>1.1.10.7</snappy.version>
     <solrj.version>9.8.0</solrj.version>
     <spring.version>6.2.2</spring.version>
-    <sqlite.version>3.49.0.0</sqlite.version>
+    <sqlite.version>3.49.1.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
-    <testcontainers.version>1.20.4</testcontainers.version>
+    <testcontainers.version>1.20.5</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
@@ -451,7 +450,7 @@
     <woodstox.core.version>7.1.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.3</zookeeper.version>
-    <zstd.version>1.5.6-10</zstd.version>
+    <zstd.version>1.5.7-1</zstd.version>
     <nimbus-jose-jwt.version>10.0.1</nimbus-jose-jwt.version>
     <javacpp.version>1.5.11</javacpp.version>
   </properties>
@@ -1173,6 +1172,14 @@
         <version>3.2.0</version>
         <configuration>
           <excludeCoordinates>
+            <!-- TODO https://github.com/netplex/json-smart-v2/issues/232
+                      https://github.com/sonatype/ossindex-maven/issues/84
+            -->
+            <coordinate>
+              <groupId>net.minidev</groupId>
+              <artifactId>json-smart</artifactId>
+              <version>2.5.2</version>
+            </coordinate>
             <!-- solr emitter -->
             <coordinate>
               <groupId>org.eclipse.jetty</groupId>

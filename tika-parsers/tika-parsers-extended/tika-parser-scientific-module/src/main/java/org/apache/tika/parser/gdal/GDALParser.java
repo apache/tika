@@ -19,12 +19,10 @@ package org.apache.tika.parser.gdal;
 
 //JDK imports
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.tika.parser.external.ExternalParser.INPUT_FILE_TOKEN;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Arrays;
@@ -42,15 +40,20 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.ExternalProcess;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.FileProcessResult;
+import org.apache.tika.utils.ProcessUtils;
 
 //Tika imports
 //SAX imports
@@ -75,6 +78,8 @@ public class GDALParser implements Parser {
 
     private static final long serialVersionUID = -3869130527323941401L;
     private static final Logger LOG = LoggerFactory.getLogger(GDALParser.class);
+
+    public static final long DEFAULT_TIMEOUT_MS = 60000;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
             Arrays.asList(MediaType.application("x-netcdf"), MediaType.application("vrt"),
@@ -140,6 +145,12 @@ public class GDALParser implements Parser {
 
     private String command;
 
+    private int maxStdErr = 100000;
+
+    private int maxStdOut = 100000;
+
+    private long timeoutMs = DEFAULT_TIMEOUT_MS;
+
     public GDALParser() {
         setCommand("gdalinfo ${INPUT}");
     }
@@ -184,8 +195,23 @@ public class GDALParser implements Parser {
         TemporaryResources tmp = new TemporaryResources();
         TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
 
-        String runCommand = processCommand(tis);
-        String output = execCommand(new String[]{runCommand});
+        String[] runCommand = processCommand(tis).split("\\s+", -1);
+
+        long localTimeoutMillis = TikaTaskTimeout.getTimeoutMillis(context, timeoutMs);
+        FileProcessResult result = ProcessUtils.execute(new ProcessBuilder(runCommand),
+                localTimeoutMillis, maxStdOut, maxStdErr);
+
+        metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
+        metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
+        metadata.set(ExternalProcess.STD_OUT_LENGTH, result.getStdoutLength());
+        metadata.set(ExternalProcess.STD_OUT_IS_TRUNCATED, result.isStdoutTruncated());
+        metadata.set(ExternalProcess.STD_ERR_LENGTH, result.getStderrLength());
+        metadata.set(ExternalProcess.STD_ERR_IS_TRUNCATED, result.isStderrTruncated());
+
+        metadata.set(ExternalProcess.STD_OUT, result.getStdout());
+        metadata.set(ExternalProcess.STD_ERR, result.getStderr());
+
+        String output = result.getStdout();
 
         // now extract the actual metadata params
         // from the GDAL output in the content stream
@@ -290,47 +316,6 @@ public class GDALParser implements Parser {
         }
     }
 
-    private String execCommand(String[] cmd) throws IOException {
-        // Execute
-        Process process;
-        String output = null;
-        if (cmd.length == 1) {
-            process = Runtime.getRuntime().exec(cmd[0]);
-        } else {
-            process = Runtime.getRuntime().exec(cmd);
-        }
-
-        try {
-            InputStream out = process.getInputStream();
-
-            try {
-                output = extractOutput(out);
-            } catch (Exception e) {
-                LOG.warn("Exception extracting output", e);
-                output = "";
-            }
-
-        } finally {
-            try {
-                process.waitFor();
-            } catch (InterruptedException ignore) {
-            }
-        }
-        return output;
-
-    }
-
-    private String extractOutput(InputStream stream) throws SAXException, IOException {
-        StringBuilder sb = new StringBuilder();
-        try (Reader reader = new InputStreamReader(stream, UTF_8)) {
-            char[] buffer = new char[1024];
-            for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-                sb.append(buffer, 0, n);
-            }
-        }
-        return sb.toString();
-    }
-
     private void processOutput(ContentHandler handler, Metadata metadata, String output)
             throws SAXException, IOException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -347,6 +332,21 @@ public class GDALParser implements Parser {
             xhtml.endDocument();
         }
 
+    }
+
+    @Field
+    public void setTimeoutMs(long timeoutMs) {
+        this.timeoutMs = timeoutMs;
+    }
+
+    @Field
+    public void setMaxStdErr(int maxStdErr) {
+        this.maxStdErr = maxStdErr;
+    }
+
+    @Field
+    public void setMaxStdOut(int maxStdOut) {
+        this.maxStdOut = maxStdOut;
     }
 
 }
