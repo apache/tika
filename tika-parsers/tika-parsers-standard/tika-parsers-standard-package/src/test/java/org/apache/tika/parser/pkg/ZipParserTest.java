@@ -106,11 +106,6 @@ public class ZipParserTest extends AbstractPkgTest {
     }
 
     @Test
-    public void testZipX() throws Exception {
-        debug(getRecursiveMetadataFromFullPath("/home/tallison/Downloads/demozipxfile.zipx"));
-    }
-
-    @Test
     public void testDataDescriptorWithEmptyEntry() throws Exception {
 
         //test that an empty first entry does not cause problems
