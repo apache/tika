@@ -18,14 +18,18 @@ package org.apache.tika.parser.microsoft;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,6 +38,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.james.mime4j.codec.DecodeMonitor;
 import org.apache.james.mime4j.codec.DecoderUtil;
@@ -44,6 +49,7 @@ import org.apache.poi.hsmf.datatypes.ByteChunk;
 import org.apache.poi.hsmf.datatypes.Chunk;
 import org.apache.poi.hsmf.datatypes.Chunks;
 import org.apache.poi.hsmf.datatypes.MAPIProperty;
+import org.apache.poi.hsmf.datatypes.MessageSubmissionChunk;
 import org.apache.poi.hsmf.datatypes.PropertyValue;
 import org.apache.poi.hsmf.datatypes.RecipientChunks;
 import org.apache.poi.hsmf.datatypes.StringChunk;
@@ -51,14 +57,16 @@ import org.apache.poi.hsmf.datatypes.Types;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.util.CodePageUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -67,32 +75,100 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlEncodingDetector;
 import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.parser.mailcommons.MailDateParser;
+import org.apache.tika.parser.microsoft.msg.ExtendedMetadataExtractor;
 import org.apache.tika.parser.microsoft.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
+
 
 /**
  * Outlook Message Parser.
  */
 public class OutlookExtractor extends AbstractPOIFSExtractor {
+    static Logger LOGGER = LoggerFactory.getLogger(OutlookExtractor.class);
 
     private static final Metadata EMPTY_METADATA = new Metadata();
+    private static final MAPIProperty[] LITERAL_TIME_MAPI_PROPERTIES = new MAPIProperty[] {
+            MAPIProperty.CLIENT_SUBMIT_TIME,
+            MAPIProperty.CREATION_TIME,
+            MAPIProperty.DEFERRED_DELIVERY_TIME,
+            MAPIProperty.DELIVER_TIME,
+            //EXPAND BEGIN and EXPAND END?
+            MAPIProperty.EXPIRY_TIME,
+            MAPIProperty.LAST_MODIFICATION_TIME,
+            MAPIProperty.LATEST_DELIVERY_TIME,
+            MAPIProperty.MESSAGE_DELIVERY_TIME,
+            MAPIProperty.MESSAGE_DOWNLOAD_TIME,
+            MAPIProperty.ORIGINAL_DELIVERY_TIME,
+            MAPIProperty.ORIGINAL_SUBMIT_TIME,
+            MAPIProperty.PROVIDER_SUBMIT_TIME,
+            MAPIProperty.RECEIPT_TIME,
+            MAPIProperty.REPLY_TIME,
+            MAPIProperty.REPORT_TIME
 
-    private static Pattern HEADER_KEY_PAT =
-            Pattern.compile("\\A([\\x21-\\x39\\x3B-\\x7E]+):(.*?)\\Z");
+    };
 
-    private final MAPIMessage msg;
+    private static final Map<MAPIProperty, Property> LITERAL_TIME_PROPERTIES = new HashMap<>();
+
+    private static final Map<String, String> MESSAGE_CLASSES = new LinkedHashMap<>();
+
+    static {
+        for (MAPIProperty property : LITERAL_TIME_MAPI_PROPERTIES) {
+            String name = property.mapiProperty.toLowerCase(Locale.ROOT);
+            name = name.substring(3);
+            name = name.replace('_', '-');
+            name = MAPI.PREFIX_MAPI_META + name;
+            Property tikaProp = Property.internalDate(name);
+            LITERAL_TIME_PROPERTIES.put(property, tikaProp);
+        }
+        loadMessageClasses();
+    }
+
+
+
+    private static void loadMessageClasses() {
+        String fName = "/org/apache/tika/parser/microsoft/msg/mapi_message_classes.properties";
+        try (BufferedReader r = new BufferedReader(
+                new InputStreamReader(
+                        OutlookExtractor.class.getResourceAsStream(fName), UTF_8))) {
+            String line = r.readLine();
+            while (line != null) {
+                if (line.isBlank() || line.startsWith("#")) {
+                    line = r.readLine();
+                    continue;
+                }
+                String[] cols = line.split("\\s+");
+                String lcKey = cols[0].toLowerCase(Locale.ROOT);
+                String value = cols[1];
+                if (MESSAGE_CLASSES.containsKey(lcKey)) {
+                    throw new IllegalArgumentException("Can't have duplicate keys: " + lcKey);
+                }
+                MESSAGE_CLASSES.put(lcKey, value);
+                line = r.readLine();
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("can't find mapi_message_classes.properties?!");
+        }
+
+    }
+
     //this according to the spec; in practice, it is probably more likely
     //that a "split field" fails to start with a space character than
     //that a real header contains anything but [-_A-Za-z0-9].
     //e.g.
     //header: this header goes onto the next line
     //<mailto:xyz@cnn.com...
+    private static Pattern HEADER_KEY_PAT =
+            Pattern.compile("\\A([\\x21-\\x39\\x3B-\\x7E]+):(.*?)\\Z");
+
+    private final MAPIMessage msg;
     private final ParseContext parseContext;
     private final boolean extractAllAlternatives;
+    private final boolean extractExtendedMsgProperties;
     HtmlEncodingDetector detector = new HtmlEncodingDetector();
 
 
@@ -101,11 +177,13 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         this.parseContext = context;
         this.extractAllAlternatives =
                 context.get(OfficeParserConfig.class).isExtractAllAlternativesFromMSG();
+        this.extractExtendedMsgProperties = context.get(OfficeParserConfig.class).isExtractExtendedMsgProperties();
         try {
             this.msg = new MAPIMessage(root);
         } catch (IOException e) {
             throw new TikaException("Failed to parse Outlook message", e);
         }
+
     }
 
     //need to add empty string to ensure that parallel arrays are parallel
@@ -118,189 +196,252 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     }
 
     private static void setFirstChunk(List<Chunk> chunks, Property property, Metadata metadata) {
-        if (chunks == null || chunks.size() < 1 || chunks.get(0) == null) {
+        if (chunks == null || chunks.isEmpty() || chunks.get(0) == null) {
             return;
         }
         metadata.set(property, chunks.get(0).toString());
     }
 
-    private static void addFirstChunk(List<Chunk> chunks, Property property, Metadata metadata) {
-        if (chunks == null || chunks.size() < 1 || chunks.get(0) == null) {
-            return;
-        }
-        metadata.add(property, chunks.get(0).toString());
-    }
-
-    //Still needed by PSTParser
-    public static String getMessageClass(String messageClass) {
-        if (messageClass == null || messageClass.trim().length() == 0) {
+    public static String getNormalizedMessageClass(String messageClass) {
+        if (messageClass == null || messageClass.isBlank()) {
             return "UNSPECIFIED";
-        } else if (messageClass.equalsIgnoreCase("IPM.Note")) {
-            return "NOTE";
-        } else if (messageClass.equalsIgnoreCase("IPM.Contact")) {
-            return "CONTACT";
-        } else if (messageClass.equalsIgnoreCase("IPM.Appointment")) {
-            return "APPOINTMENT";
-        } else if (messageClass.equalsIgnoreCase("IPM.StickyNote")) {
-            return "STICKY_NOTE";
-        } else if (messageClass.equalsIgnoreCase("IPM.Task")) {
-            return "TASK";
-        } else if (messageClass.equalsIgnoreCase("IPM.Post")) {
-            return "POST";
-        } else {
-            return "UNKNOWN";
         }
+        String lc = messageClass.toLowerCase(Locale.ROOT);
+        if (MESSAGE_CLASSES.containsKey(lc)) {
+            return MESSAGE_CLASSES.get(lc);
+        }
+        return "UNKNOWN";
     }
 
-    public void parse(XHTMLContentHandler xhtml)
-            throws TikaException, SAXException, IOException {
+    public void parse(XHTMLContentHandler xhtml) throws TikaException, SAXException, IOException {
         try {
-            msg.setReturnNullOnMissingChunk(true);
-
-            try {
-                parentMetadata.set(Office.MAPI_MESSAGE_CLASS, msg.getMessageClassEnum().name());
-            } catch (ChunkNotFoundException e) {
-                //swallow
-            }
-
-            // If the message contains strings that aren't stored
-            //  as Unicode, try to sort out an encoding for them
-            if (msg.has7BitEncodingStrings()) {
-                guess7BitEncoding(msg);
-            }
-
-            // Start with the metadata
-            String subject = msg.getSubject();
-            Map<String, String[]> headers = normalizeHeaders(msg.getHeaders());
-            String from = msg.getDisplayFrom();
-
-            handleFromTo(headers, parentMetadata);
-
-            parentMetadata.set(TikaCoreProperties.TITLE, subject);
-            parentMetadata.set(TikaCoreProperties.SUBJECT, msg.getConversationTopic());
-            parentMetadata.set(TikaCoreProperties.DESCRIPTION, msg.getConversationTopic());
-
-            try {
-                for (String recipientAddress : msg.getRecipientEmailAddressList()) {
-                    if (recipientAddress != null) {
-                        parentMetadata.add(Metadata.MESSAGE_RECIPIENT_ADDRESS, recipientAddress);
-                    }
-                }
-            } catch (ChunkNotFoundException he) {
-                // Will be fixed in POI 3.7 Final
-            }
-
-            for (Map.Entry<String, String[]> e : headers.entrySet()) {
-                String headerKey = e.getKey();
-                for (String headerValue : e.getValue()) {
-                    parentMetadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + headerKey, headerValue);
-                }
-            }
-
-            // Date - try two ways to find it
-            // First try via the proper chunk
-            if (msg.getMessageDate() != null) {
-                parentMetadata.set(TikaCoreProperties.CREATED, msg.getMessageDate().getTime());
-                parentMetadata.set(TikaCoreProperties.MODIFIED, msg.getMessageDate().getTime());
-            } else {
-                if (headers != null && headers.size() > 0) {
-                    for (Map.Entry<String, String[]> header : headers.entrySet()) {
-                        String headerKey = header.getKey();
-                        if (headerKey.toLowerCase(Locale.ROOT).startsWith("date:")) {
-                            String date = headerKey.substring(headerKey.indexOf(':') + 1).trim();
-
-                            // See if we can parse it as a normal mail date
-                            try {
-                                Date d = MailDateParser.parseDateLenient(date);
-                                parentMetadata.set(TikaCoreProperties.CREATED, d);
-                                parentMetadata.set(TikaCoreProperties.MODIFIED, d);
-                            } catch (SecurityException e ) {
-                                throw e;
-                            } catch (Exception e) {
-                                // Store it as-is, and hope for the best...
-                                parentMetadata.set(TikaCoreProperties.CREATED, date);
-                                parentMetadata.set(TikaCoreProperties.MODIFIED, date);
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-
-            writeSelectHeadersInBody(subject, from, msg, xhtml);
-
-            // Get the message body. Preference order is: html, rtf, text
-            Chunk htmlChunk = null;
-            Chunk rtfChunk = null;
-            Chunk textChunk = null;
-            for (Chunk chunk : msg.getMainChunks().getChunks()) {
-                if (chunk.getChunkId() == MAPIProperty.BODY_HTML.id) {
-                    htmlChunk = chunk;
-                }
-                if (chunk.getChunkId() == MAPIProperty.RTF_COMPRESSED.id) {
-                    rtfChunk = chunk;
-                }
-                if (chunk.getChunkId() == MAPIProperty.BODY.id) {
-                    textChunk = chunk;
-                }
-            }
-            handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml);
-
-            // Process the attachments
-            for (AttachmentChunks attachment : msg.getAttachmentFiles()) {
-
-                String filename = null;
-                if (attachment.getAttachLongFileName() != null) {
-                    filename = attachment.getAttachLongFileName().getValue();
-                } else if (attachment.getAttachFileName() != null) {
-                    filename = attachment.getAttachFileName().getValue();
-                }
-
-                if (attachment.getAttachData() != null) {
-                    handleEmbeddedResource(
-                            TikaInputStream.get(attachment.getAttachData().getValue()), filename,
-                            null, null, xhtml, true);
-                }
-                if (attachment.getAttachmentDirectory() != null) {
-                    handleEmbeddedOfficeDoc(attachment.getAttachmentDirectory().getDirectory(), filename,
-                            xhtml, true);
-                }
-            }
+            _parse(xhtml);
         } catch (ChunkNotFoundException e) {
-            throw new TikaException("POI MAPIMessage broken - didn't return null on missing chunk",
-                    e);
-        } finally {
+            throw new TikaException("POI MAPIMessage broken - didn't return null on missing chunk", e);
+        } /*finally {
             //You'd think you'd want to call msg.close().
             //Don't do that.  That closes down the file system.
             //If an msg has multiple msg attachments, some of them
             //can reside in the same file system.  After the first
             //child is read, the fs is closed, and the other children
             //get a java.nio.channels.ClosedChannelException
+        }*/
+    }
+
+    private void _parse(XHTMLContentHandler xhtml) throws TikaException, SAXException, IOException, ChunkNotFoundException {
+        msg.setReturnNullOnMissingChunk(true);
+
+        // If the message contains strings that aren't stored
+        //  as Unicode, try to sort out an encoding for them
+        if (msg.has7BitEncodingStrings()) {
+            guess7BitEncoding(msg);
+        }
+
+        // Start with the metadata
+        Map<String, String[]> headers = normalizeHeaders(msg.getHeaders());
+
+        handleFromTo(headers, parentMetadata);
+        handleMessageInfo(msg, headers, parentMetadata);
+        if (extractExtendedMsgProperties) {
+            ExtendedMetadataExtractor.extract(msg, parentMetadata);
+        }
+
+        try {
+            for (String recipientAddress : msg.getRecipientEmailAddressList()) {
+                if (recipientAddress != null) {
+                    parentMetadata.add(Metadata.MESSAGE_RECIPIENT_ADDRESS, recipientAddress);
+                }
+            }
+        } catch (ChunkNotFoundException e) {
+            //you'd think we wouldn't need this. we do.
+        }
+
+        for (Map.Entry<String, String[]> e : headers.entrySet()) {
+            String headerKey = e.getKey();
+            for (String headerValue : e.getValue()) {
+                parentMetadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + headerKey, headerValue);
+            }
+        }
+
+        handleGeneralDates(msg, headers, parentMetadata);
+
+        // Get the message body. Preference order is: html, rtf, text
+        Chunk htmlChunk = null;
+        Chunk rtfChunk = null;
+        Chunk textChunk = null;
+        for (Chunk chunk : msg.getMainChunks().getChunks()) {
+            if (chunk.getChunkId() == MAPIProperty.BODY_HTML.id) {
+                htmlChunk = chunk;
+            }
+            if (chunk.getChunkId() == MAPIProperty.RTF_COMPRESSED.id) {
+                rtfChunk = chunk;
+            }
+            if (chunk.getChunkId() == MAPIProperty.BODY.id) {
+                textChunk = chunk;
+            }
+        }
+        handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml);
+
+        // Process the attachments
+        for (AttachmentChunks attachment : msg.getAttachmentFiles()) {
+            Metadata metadata = new Metadata();
+            updateAttachmentMetadata(attachment, metadata);
+            String filename = null;
+            if (!StringUtils.isBlank(metadata.get(MAPI.ATTACH_LONG_FILE_NAME))) {
+                filename = metadata.get(MAPI.ATTACH_LONG_FILE_NAME);
+            } else if (!StringUtils.isBlank(metadata.get(MAPI.ATTACH_DISPLAY_NAME))) {
+                filename = metadata.get(MAPI.ATTACH_DISPLAY_NAME);
+            } else if (!StringUtils.isBlank(metadata.get(MAPI.ATTACH_FILE_NAME))) {
+                filename = metadata.get(MAPI.ATTACH_FILE_NAME);
+            }
+            //this is allowed to be null;
+            String mimeType = metadata.get(MAPI.ATTACH_MIME);
+            if (attachment.getAttachData() != null) {
+                handleEmbeddedResource(TikaInputStream.get(attachment
+                        .getAttachData()
+                        .getValue()), metadata, filename, null, null, mimeType, xhtml, true);
+            }
+            if (attachment.getAttachmentDirectory() != null) {
+                handleEmbeddedOfficeDoc(attachment
+                        .getAttachmentDirectory()
+                        .getDirectory(), metadata, filename, xhtml, true);
+            }
+        }
+
+    }
+
+    private void updateAttachmentMetadata(AttachmentChunks attachment, Metadata metadata) {
+        addStringChunkToMetadata(MAPI.ATTACH_LONG_PATH_NAME, attachment.getAttachLongPathName(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_LONG_FILE_NAME, attachment.getAttachLongFileName(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_FILE_NAME, attachment.getAttachFileName(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_CONTENT_ID, attachment.getAttachContentId(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_CONTENT_LOCATION, attachment.getAttachContentLocation(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_DISPLAY_NAME, attachment.getAttachDisplayName(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_EXTENSION, attachment.getAttachExtension(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_MIME, attachment.getAttachMimeTag(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_LANGUAGE, attachment.getAttachLanguage(), metadata);
+    }
+
+    private void addStringChunkToMetadata(Property property, StringChunk stringChunk, Metadata metadata) {
+        if (stringChunk == null) {
+            return;
+        }
+        String v = stringChunk.getValue();
+        if (StringUtils.isBlank(v)) {
+            return;
+        }
+        metadata.set(property, v);
+    }
+
+    private void handleMessageInfo(MAPIMessage msg, Map<String, String[]> headers, Metadata metadata) throws ChunkNotFoundException {
+        //this is the literal subject including "re: "
+        metadata.set(TikaCoreProperties.TITLE, msg.getSubject());
+        //this is the original topic for the thread without the "re: "
+        String topic = msg.getConversationTopic();
+        metadata.set(TikaCoreProperties.SUBJECT, topic);
+        metadata.set(TikaCoreProperties.DESCRIPTION, topic);
+        metadata.set(MAPI.CONVERSATION_TOPIC, topic);
+        Chunks mainChunks = msg.getMainChunks();
+        if (mainChunks == null) {
+            return;
+        }
+        if (mainChunks.getMessageId() != null) {
+            metadata.set(MAPI.INTERNET_MESSAGE_ID, mainChunks
+                    .getMessageId()
+                    .getValue());
+        }
+
+        String mc = msg.getStringFromChunk(mainChunks.getMessageClass());
+        if (mc != null) {
+            metadata.set(MAPI.MESSAGE_CLASS_RAW, mc);
+        }
+        metadata.set(MAPI.MESSAGE_CLASS, getNormalizedMessageClass(mc));
+        List<Chunk> conversationIndex = mainChunks
+                .getAll()
+                .get(MAPIProperty.CONVERSATION_INDEX);
+        if (conversationIndex != null && !conversationIndex.isEmpty()) {
+            Chunk chunk = conversationIndex.get(0);
+            if (chunk instanceof ByteChunk) {
+                byte[] bytes = ((ByteChunk) chunk).getValue();
+                String hex = Hex.encodeHexString(bytes);
+                metadata.set(MAPI.CONVERSATION_INDEX, hex);
+            }
+        }
+
+        List<Chunk> internetReferences = mainChunks
+                .getAll()
+                .get(MAPIProperty.INTERNET_REFERENCES);
+        if (internetReferences != null) {
+            for (Chunk ref : internetReferences) {
+                if (ref instanceof StringChunk) {
+                    metadata.add(MAPI.INTERNET_REFERENCES, ((StringChunk) ref).getValue());
+                }
+            }
+        }
+        List<Chunk> inReplyToIds = mainChunks
+                .getAll()
+                .get(MAPIProperty.IN_REPLY_TO_ID);
+        if (inReplyToIds != null && !inReplyToIds.isEmpty()) {
+            metadata.add(MAPI.IN_REPLY_TO_ID, inReplyToIds
+                    .get(0)
+                    .toString());
+        }
+
+        for (Map.Entry<MAPIProperty, Property> e : LITERAL_TIME_PROPERTIES.entrySet()) {
+            List<PropertyValue> timeProp = mainChunks
+                    .getProperties()
+                    .get(e.getKey());
+            if (timeProp != null && !timeProp.isEmpty()) {
+                Calendar cal = ((PropertyValue.TimePropertyValue) timeProp.get(0)).getValue();
+                metadata.set(e.getValue(), cal);
+            }
+        }
+
+        MessageSubmissionChunk messageSubmissionChunk = mainChunks.getSubmissionChunk();
+        if (messageSubmissionChunk != null) {
+            String submissionId = messageSubmissionChunk.getSubmissionId();
+            metadata.set(MAPI.SUBMISSION_ID, submissionId);
+            metadata.set(MAPI.SUBMISSION_ACCEPTED_AT_TIME, messageSubmissionChunk.getAcceptedAtTime());
         }
     }
 
-    private void writeSelectHeadersInBody(String subject, String from, MAPIMessage msg, XHTMLContentHandler xhtml)
-            throws SAXException, ChunkNotFoundException {
-        if (! officeParserConfig.isWriteSelectHeadersInBody()) {
-            return;
-        }
-        xhtml.element("h1", subject);
 
-        // Output the from and to details in text, as you
-        //  often want them in text form for searching
-        xhtml.startElement("dl");
-        if (from != null) {
-            header(xhtml, "From", from);
+    private void handleGeneralDates(MAPIMessage msg, Map<String, String[]> headers, Metadata metadata) throws ChunkNotFoundException {
+        // Date - try two ways to find it
+        // First try via the proper chunk
+        if (msg.getMessageDate() != null) {
+            metadata.set(TikaCoreProperties.CREATED, msg.getMessageDate().getTime());
+            metadata.set(TikaCoreProperties.MODIFIED, msg.getMessageDate().getTime());
+        } else {
+            if (headers != null && headers.size() > 0) {
+                for (Map.Entry<String, String[]> header : headers.entrySet()) {
+                    String headerKey = header.getKey();
+                    if (headerKey.toLowerCase(Locale.ROOT).startsWith("date:")) {
+                        String date = headerKey.substring(headerKey.indexOf(':') + 1).trim();
+
+                        // See if we can parse it as a normal mail date
+                        try {
+                            Date d = MailDateParser.parseDateLenient(date);
+                            metadata.set(TikaCoreProperties.CREATED, d);
+                            metadata.set(TikaCoreProperties.MODIFIED, d);
+                        } catch (SecurityException e) {
+                            throw e;
+                        } catch (Exception e) {
+                            // Store it as-is, and hope for the best...
+                            metadata.set(TikaCoreProperties.CREATED, date);
+                            metadata.set(TikaCoreProperties.MODIFIED, date);
+                        }
+                        break;
+                    }
+                }
+            }
         }
-        header(xhtml, "To", msg.getDisplayTo());
-        header(xhtml, "Cc", msg.getDisplayCC());
-        header(xhtml, "Bcc", msg.getDisplayBCC());
-        try {
-            header(xhtml, "Recipients", msg.getRecipientEmailAddress());
-        } catch (ChunkNotFoundException e) {
-            //swallow
+        //try to overwrite the modified property if the actual LAST_MODIFICATION_TIME property exists.
+        List<PropertyValue> timeProp = msg.getMainChunks().getProperties().get(MAPIProperty.LAST_MODIFICATION_TIME);
+        if (timeProp != null && ! timeProp.isEmpty()) {
+            Calendar cal = ((PropertyValue.TimePropertyValue)timeProp.get(0)).getValue();
+            metadata.set(TikaCoreProperties.MODIFIED, cal);
         }
-        xhtml.endElement("dl");
 
     }
 
@@ -312,13 +453,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             extractAllAlternatives(htmlChunk, rtfChunk, textChunk, xhtml);
             return;
         }
-        if (officeParserConfig.isWriteSelectHeadersInBody()) {
-            xhtml.startElement("div", "class", "message-body");
-            _handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml);
-            xhtml.endElement("div");
-        } else {
-            _handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml);
-        }
+        _handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml);
+
     }
     private void _handleBodyChunks(Chunk htmlChunk, Chunk rtfChunk, Chunk textChunk,
                                   XHTMLContentHandler xhtml)
@@ -427,7 +563,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         Chunks chunks = msg.getMainChunks();
         StringChunk sentByServerType = chunks.getSentByServerType();
         if (sentByServerType != null) {
-            metadata.set(Office.MAPI_SENT_BY_SERVER_TYPE, sentByServerType.getValue());
+            metadata.set(MAPI.SENT_BY_SERVER_TYPE, sentByServerType.getValue());
         }
 
         Map<MAPIProperty, List<Chunk>> mainChunks = msg.getMainChunks().getAll();
@@ -440,15 +576,11 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
         //sometimes in SMTP .msg files there is an email in the sender name field.
 
-        setFirstChunk(mainChunks.get(MAPIProperty.SENDER_NAME), Message.MESSAGE_FROM_NAME,
-                metadata);
-        setFirstChunk(mainChunks.get(MAPIProperty.SENT_REPRESENTING_NAME),
-                Office.MAPI_FROM_REPRESENTING_NAME, metadata);
+        setFirstChunk(mainChunks.get(MAPIProperty.SENDER_NAME), Message.MESSAGE_FROM_NAME, metadata);
+        setFirstChunk(mainChunks.get(MAPIProperty.SENT_REPRESENTING_NAME), MAPI.FROM_REPRESENTING_NAME, metadata);
 
-        setFirstChunk(mainChunks.get(MAPIProperty.SENDER_EMAIL_ADDRESS), Message.MESSAGE_FROM_EMAIL,
-                metadata);
-        setFirstChunk(mainChunks.get(MAPIProperty.SENT_REPRESENTING_EMAIL_ADDRESS),
-                Office.MAPI_FROM_REPRESENTING_EMAIL, metadata);
+        setFirstChunk(mainChunks.get(MAPIProperty.SENDER_EMAIL_ADDRESS), Message.MESSAGE_FROM_EMAIL, metadata);
+        setFirstChunk(mainChunks.get(MAPIProperty.SENT_REPRESENTING_EMAIL_ADDRESS), MAPI.FROM_REPRESENTING_EMAIL, metadata);
 
         for (Recipient recipient : buildRecipients()) {
             switch (recipient.recipientType) {
@@ -464,8 +596,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                     break;
                 case BCC:
                     addEvenIfNull(Message.MESSAGE_BCC_NAME, recipient.name, metadata);
-                    addEvenIfNull(Message.MESSAGE_BCC_DISPLAY_NAME, recipient.displayName,
-                            metadata);
+                    addEvenIfNull(Message.MESSAGE_BCC_DISPLAY_NAME, recipient.displayName, metadata);
                     addEvenIfNull(Message.MESSAGE_BCC_EMAIL, recipient.emailAddress, metadata);
                     break;
                 default:
@@ -562,8 +693,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         Map<MAPIProperty, List<PropertyValue>> props = mainChunks.getProperties();
         if (props != null) {
             // First choice is a codepage property
-            for (MAPIProperty prop : new MAPIProperty[]{MAPIProperty.MESSAGE_CODEPAGE,
-                    MAPIProperty.INTERNET_CPID}) {
+            for (MAPIProperty prop : new MAPIProperty[]{MAPIProperty.MESSAGE_CODEPAGE, MAPIProperty.INTERNET_CPID}) {
                 List<PropertyValue> val = props.get(prop);
                 if (val != null && val.size() > 0) {
                     int codepage = ((PropertyValue.LongPropertyValue) val.get(0)).getValue();
@@ -585,8 +715,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             String[] headers = msg.getHeaders();
             if (headers != null && headers.length > 0) {
                 // Look for a content type with a charset
-                Pattern p = Pattern.compile("Content-Type:.*?charset=[\"']?([^;'\"]+)[\"']?",
-                        Pattern.CASE_INSENSITIVE);
+                Pattern p = Pattern.compile("Content-Type:.*?charset=[\"']?([^;'\"]+)[\"']?", Pattern.CASE_INSENSITIVE);
 
                 for (String header : headers) {
                     if (header.startsWith("Content-Type")) {

@@ -41,6 +41,8 @@ public class OfficeParserConfig implements Serializable {
     private String dateOverrideFormat = null;
     private int maxOverride = 0;//ignore
 
+    private boolean extractExtendedMsgProperties = false;
+
     /**
      * @return whether or not to extract macros
      */
@@ -291,6 +293,14 @@ public class OfficeParserConfig implements Serializable {
 
     public int getMaxOverride() {
         return this.maxOverride;
+    }
+
+    public boolean isExtractExtendedMsgProperties() {
+        return extractExtendedMsgProperties;
+    }
+
+    public void setExtractExtendedMsgProperties(boolean extractExtendedMsgProperties) {
+        this.extractExtendedMsgProperties = extractExtendedMsgProperties;
     }
 }
 

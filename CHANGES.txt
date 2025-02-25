@@ -1,3 +1,7 @@
+Release 3.2.0 - ???
+
+  * Improve extraction of properties from msg files (TIKA_4381).
+
 Release 3.1.0 - 01/28/25
 
    * Allow users to turn off the injection of some headers into the content stream of MSG
