@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.utils.StringUtils;
+
 public class FilenameUtilsTest {
 
     /**
@@ -99,6 +101,12 @@ public class FilenameUtilsTest {
         testFilenameEquality("quick", "C:////../the/D:/quick");
         testFilenameEquality("file.ppt", "path:to:file.ppt");
         testFilenameEquality("HW.txt", "_1457338542/HW.txt");
+    }
+
+    @Test
+    public void testExtension() throws Exception {
+        assertEquals(".pdf", FilenameUtils.getSuffixFromPath("blah/blah/or/something.pdf"));
+        assertEquals(StringUtils.EMPTY, FilenameUtils.getSuffixFromPath("blah \" blaoh .5\""));
     }
 
     private void testFilenameEquality(String expected, String path) {
