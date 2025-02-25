@@ -156,6 +156,14 @@ abstract class AbstractPOIFSExtractor {
     protected void handleEmbeddedOfficeDoc(DirectoryEntry dir, String resourceName,
                                            XHTMLContentHandler xhtml, boolean outputHtml)
             throws IOException, SAXException, TikaException {
+        handleEmbeddedOfficeDoc(dir, new Metadata(), resourceName, xhtml, outputHtml);
+    }
+    /**
+     * Handle an office document that's embedded at the POIFS level
+     */
+    protected void handleEmbeddedOfficeDoc(DirectoryEntry dir, Metadata metadata,
+                                           String resourceName, XHTMLContentHandler xhtml, boolean outputHtml)
+            throws IOException, SAXException, TikaException {
 
 
         // Is it an embedded OLE2 document, or an embedded OOXML document?
@@ -165,7 +173,6 @@ abstract class AbstractPOIFSExtractor {
 
         if (ooxml != null) {
             // It's OOXML (has a ZipFile):
-            Metadata metadata = new Metadata();
             metadata.set(Metadata.CONTENT_LENGTH,
                     Integer.toString(((DocumentEntry)ooxml).getSize()));
             try (TikaInputStream stream = TikaInputStream
@@ -191,7 +198,6 @@ abstract class AbstractPOIFSExtractor {
         // It's regular OLE2:
 
         // What kind of document is it?
-        Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, dir.getName());
         if (dir.getStorageClsid() != null) {
             metadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID,

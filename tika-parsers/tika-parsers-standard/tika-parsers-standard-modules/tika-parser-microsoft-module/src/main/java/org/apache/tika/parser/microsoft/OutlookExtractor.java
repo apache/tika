@@ -57,6 +57,8 @@ import org.apache.poi.hsmf.datatypes.Types;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.util.CodePageUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
@@ -73,17 +75,21 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlEncodingDetector;
 import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.parser.mailcommons.MailDateParser;
+import org.apache.tika.parser.microsoft.msg.ExtendedMetadataExtractor;
 import org.apache.tika.parser.microsoft.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
+
 
 /**
  * Outlook Message Parser.
  */
 public class OutlookExtractor extends AbstractPOIFSExtractor {
+    static Logger LOGGER = LoggerFactory.getLogger(OutlookExtractor.class);
 
     private static final Metadata EMPTY_METADATA = new Metadata();
     private static final MAPIProperty[] LITERAL_TIME_MAPI_PROPERTIES = new MAPIProperty[] {
@@ -119,10 +125,16 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             Property tikaProp = Property.internalDate(name);
             LITERAL_TIME_PROPERTIES.put(property, tikaProp);
         }
+        loadMessageClasses();
+    }
 
+
+
+    private static void loadMessageClasses() {
+        String fName = "/org/apache/tika/parser/microsoft/msg/mapi_message_classes.properties";
         try (BufferedReader r = new BufferedReader(
                 new InputStreamReader(
-                        OutlookExtractor.class.getResourceAsStream("/mapi_message_classes.properties"), UTF_8))) {
+                        OutlookExtractor.class.getResourceAsStream(fName), UTF_8))) {
             String line = r.readLine();
             while (line != null) {
                 if (line.isBlank() || line.startsWith("#")) {
@@ -141,6 +153,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         } catch (IOException e) {
             throw new IllegalStateException("can't find mapi_message_classes.properties?!");
         }
+
     }
 
     //this according to the spec; in practice, it is probably more likely
@@ -197,13 +210,11 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         return "UNKNOWN";
     }
 
-    public void parse(XHTMLContentHandler xhtml)
-            throws TikaException, SAXException, IOException {
+    public void parse(XHTMLContentHandler xhtml) throws TikaException, SAXException, IOException {
         try {
             _parse(xhtml);
         } catch (ChunkNotFoundException e) {
-            throw new TikaException("POI MAPIMessage broken - didn't return null on missing chunk",
-                    e);
+            throw new TikaException("POI MAPIMessage broken - didn't return null on missing chunk", e);
         } /*finally {
             //You'd think you'd want to call msg.close().
             //Don't do that.  That closes down the file system.
@@ -214,8 +225,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         }*/
     }
 
-    private void _parse(XHTMLContentHandler xhtml) throws TikaException, SAXException,
-            IOException, ChunkNotFoundException {
+    private void _parse(XHTMLContentHandler xhtml) throws TikaException, SAXException, IOException, ChunkNotFoundException {
         msg.setReturnNullOnMissingChunk(true);
 
         // If the message contains strings that aren't stored
@@ -229,6 +239,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
         handleFromTo(headers, parentMetadata);
         handleMessageInfo(msg, headers, parentMetadata);
+        ExtendedMetadataExtractor.extract(msg, parentMetadata);
 
         try {
             for (String recipientAddress : msg.getRecipientEmailAddressList()) {
@@ -268,26 +279,55 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
         // Process the attachments
         for (AttachmentChunks attachment : msg.getAttachmentFiles()) {
-
+            Metadata metadata = new Metadata();
+            updateAttachmentMetadata(attachment, metadata);
             String filename = null;
-            if (attachment.getAttachLongFileName() != null) {
-                filename = attachment.getAttachLongFileName().getValue();
-            } else if (attachment.getAttachFileName() != null) {
-                filename = attachment.getAttachFileName().getValue();
+            if (!StringUtils.isBlank(metadata.get(MAPI.ATTACH_LONG_FILE_NAME))) {
+                filename = metadata.get(MAPI.ATTACH_LONG_FILE_NAME);
+            } else if (!StringUtils.isBlank(metadata.get(MAPI.ATTACH_DISPLAY_NAME))) {
+                filename = metadata.get(MAPI.ATTACH_DISPLAY_NAME);
+            } else if (!StringUtils.isBlank(metadata.get(MAPI.ATTACH_FILE_NAME))) {
+                filename = metadata.get(MAPI.ATTACH_FILE_NAME);
             }
-
+            //this is allowed to be null;
+            String mimeType = metadata.get(MAPI.ATTACH_MIME);
             if (attachment.getAttachData() != null) {
-                handleEmbeddedResource(
-                        TikaInputStream.get(attachment.getAttachData().getValue()), filename,
-                        null, null, xhtml, true);
+                handleEmbeddedResource(TikaInputStream.get(attachment
+                        .getAttachData()
+                        .getValue()), metadata, filename, null, null, mimeType, xhtml, true);
             }
             if (attachment.getAttachmentDirectory() != null) {
-                handleEmbeddedOfficeDoc(attachment.getAttachmentDirectory().getDirectory(), filename,
-                        xhtml, true);
+                handleEmbeddedOfficeDoc(attachment
+                        .getAttachmentDirectory()
+                        .getDirectory(), metadata, filename, xhtml, true);
             }
         }
 
     }
+
+    private void updateAttachmentMetadata(AttachmentChunks attachment, Metadata metadata) {
+        addStringChunkToMetadata(MAPI.ATTACH_LONG_PATH_NAME, attachment.getAttachLongPathName(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_LONG_FILE_NAME, attachment.getAttachLongFileName(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_FILE_NAME, attachment.getAttachFileName(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_CONTENT_ID, attachment.getAttachContentId(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_CONTENT_LOCATION, attachment.getAttachContentLocation(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_DISPLAY_NAME, attachment.getAttachDisplayName(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_EXTENSION, attachment.getAttachExtension(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_MIME, attachment.getAttachMimeTag(), metadata);
+        addStringChunkToMetadata(MAPI.ATTACH_LANGUAGE, attachment.getAttachLanguage(), metadata);
+    }
+
+    private void addStringChunkToMetadata(Property property, StringChunk stringChunk, Metadata metadata) {
+        if (stringChunk == null) {
+            return;
+        }
+        String v = stringChunk.getValue();
+        if (StringUtils.isBlank(v)) {
+            return;
+        }
+        metadata.set(property, v);
+    }
+
     private void handleMessageInfo(MAPIMessage msg, Map<String, String[]> headers, Metadata metadata) throws ChunkNotFoundException {
         //this is the literal subject including "re: "
         metadata.set(TikaCoreProperties.TITLE, msg.getSubject());
@@ -379,7 +419,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                             Date d = MailDateParser.parseDateLenient(date);
                             metadata.set(TikaCoreProperties.CREATED, d);
                             metadata.set(TikaCoreProperties.MODIFIED, d);
-                        } catch (SecurityException e ) {
+                        } catch (SecurityException e) {
                             throw e;
                         } catch (Exception e) {
                             // Store it as-is, and hope for the best...
@@ -531,15 +571,11 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
         //sometimes in SMTP .msg files there is an email in the sender name field.
 
-        setFirstChunk(mainChunks.get(MAPIProperty.SENDER_NAME), Message.MESSAGE_FROM_NAME,
-                metadata);
-        setFirstChunk(mainChunks.get(MAPIProperty.SENT_REPRESENTING_NAME),
-                MAPI.FROM_REPRESENTING_NAME, metadata);
+        setFirstChunk(mainChunks.get(MAPIProperty.SENDER_NAME), Message.MESSAGE_FROM_NAME, metadata);
+        setFirstChunk(mainChunks.get(MAPIProperty.SENT_REPRESENTING_NAME), MAPI.FROM_REPRESENTING_NAME, metadata);
 
-        setFirstChunk(mainChunks.get(MAPIProperty.SENDER_EMAIL_ADDRESS), Message.MESSAGE_FROM_EMAIL,
-                metadata);
-        setFirstChunk(mainChunks.get(MAPIProperty.SENT_REPRESENTING_EMAIL_ADDRESS),
-                MAPI.FROM_REPRESENTING_EMAIL, metadata);
+        setFirstChunk(mainChunks.get(MAPIProperty.SENDER_EMAIL_ADDRESS), Message.MESSAGE_FROM_EMAIL, metadata);
+        setFirstChunk(mainChunks.get(MAPIProperty.SENT_REPRESENTING_EMAIL_ADDRESS), MAPI.FROM_REPRESENTING_EMAIL, metadata);
 
         for (Recipient recipient : buildRecipients()) {
             switch (recipient.recipientType) {
@@ -555,8 +591,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                     break;
                 case BCC:
                     addEvenIfNull(Message.MESSAGE_BCC_NAME, recipient.name, metadata);
-                    addEvenIfNull(Message.MESSAGE_BCC_DISPLAY_NAME, recipient.displayName,
-                            metadata);
+                    addEvenIfNull(Message.MESSAGE_BCC_DISPLAY_NAME, recipient.displayName, metadata);
                     addEvenIfNull(Message.MESSAGE_BCC_EMAIL, recipient.emailAddress, metadata);
                     break;
                 default:
@@ -653,8 +688,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         Map<MAPIProperty, List<PropertyValue>> props = mainChunks.getProperties();
         if (props != null) {
             // First choice is a codepage property
-            for (MAPIProperty prop : new MAPIProperty[]{MAPIProperty.MESSAGE_CODEPAGE,
-                    MAPIProperty.INTERNET_CPID}) {
+            for (MAPIProperty prop : new MAPIProperty[]{MAPIProperty.MESSAGE_CODEPAGE, MAPIProperty.INTERNET_CPID}) {
                 List<PropertyValue> val = props.get(prop);
                 if (val != null && val.size() > 0) {
                     int codepage = ((PropertyValue.LongPropertyValue) val.get(0)).getValue();
@@ -676,8 +710,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             String[] headers = msg.getHeaders();
             if (headers != null && headers.length > 0) {
                 // Look for a content type with a charset
-                Pattern p = Pattern.compile("Content-Type:.*?charset=[\"']?([^;'\"]+)[\"']?",
-                        Pattern.CASE_INSENSITIVE);
+                Pattern p = Pattern.compile("Content-Type:.*?charset=[\"']?([^;'\"]+)[\"']?", Pattern.CASE_INSENSITIVE);
 
                 for (String header : headers) {
                     if (header.startsWith("Content-Type")) {
