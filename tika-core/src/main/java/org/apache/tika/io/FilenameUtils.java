@@ -18,6 +18,7 @@ package org.apache.tika.io;
 
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import org.apache.tika.utils.StringUtils;
 
@@ -42,6 +43,7 @@ public class FilenameUtils {
         }
     }
 
+    private final static Pattern ASCII_NUMERIC = Pattern.compile("\\A\\.(?i)[a-z0-9]{1,5}\\Z");
 
     /**
      * Scans the given file name for reserved characters on different OSs and
@@ -110,7 +112,9 @@ public class FilenameUtils {
     }
 
     /**
-     * This includes the period, e.g. ".pdf"
+     * This includes the period, e.g. ".pdf".
+     * This requires that an extension contain only ascii alphanumerics
+     * and it requires that an extension length be 5 or less.
      * @param path
      * @return the suffix or an empty string if one could not be found
      */
@@ -119,7 +123,10 @@ public class FilenameUtils {
         int i = n.lastIndexOf(".");
         //arbitrarily sets max extension length
         if (i > -1 && n.length() - i < 6) {
-            return n.substring(i);
+            String suffix = n.substring(i);
+            if (ASCII_NUMERIC.matcher(suffix).matches()) {
+                return suffix;
+            }
         }
         return StringUtils.EMPTY;
     }
