@@ -93,7 +93,7 @@ public class TikaConfig {
     public static String MAX_JSON_STRING_FIELD_LENGTH_ELEMENT_NAME = "maxJsonStringFieldLength";
 
     //use this to look for unneeded instantiations of TikaConfig
-    protected static final AtomicInteger TIMES_INSTANTIATED = new AtomicInteger();
+    public static final AtomicInteger TIMES_INSTANTIATED = new AtomicInteger();
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaConfig.class);
 

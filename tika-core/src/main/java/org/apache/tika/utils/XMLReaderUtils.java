@@ -652,7 +652,7 @@ public class XMLReaderUtils implements Serializable {
                 .readLock()
                 .lock();
         try {
-            parser = SAX_PARSERS.poll();
+            parser = SAX_PARSERS.poll();//100, TimeUnit.MILLISECONDS);
         } finally {
             SAX_POOL_LOCK
                     .readLock()

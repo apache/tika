@@ -1,6 +1,7 @@
 package org.apache.tika.mime;
 
 import java.io.File;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
@@ -9,10 +10,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -57,7 +60,7 @@ public class TestMimeTypesMultithreaded {
         }
         long elapsed = System.currentTimeMillis() - start;
         System.out.println("total files=" + processed + ", elapsed=" + elapsed + "ms");
-
+        System.out.println("TikaConfig instantiated: " + TikaConfig.TIMES_INSTANTIATED);
     }
 
     private ArrayBlockingQueue<File> loadQueue(File dir) {
@@ -70,7 +73,9 @@ public class TestMimeTypesMultithreaded {
         return queue;
     }
 
-    private class MyWorker implements Callable<Integer> {
+    private static class MyWorker implements Callable<Integer> {
+        static final AtomicInteger COUNTER = new AtomicInteger();
+        static final long STARTED = System.currentTimeMillis();
         private final ArrayBlockingQueue<File> files;
         private final MimeTypes mimeTypes;// = TikaConfig.getDefaultConfig().getMimeRepository();
         private final Parser parser;// = new AutoDetectParser();
@@ -83,19 +88,35 @@ public class TestMimeTypesMultithreaded {
         @Override
         public Integer call() throws Exception {
             int counter = 0;
+            Detector detector = TikaConfig.getDefaultConfig()
+                                          .getDetector();
             while (true) {
                 File f = files.poll(1, TimeUnit.SECONDS);
                 if (f == STOP_NOW) {
                     files.offer(STOP_NOW);
                     return counter;
                 }
-                MimeType mimeType = mimeTypes.getMimeType(f);
-                if ("text/html".equals(mimeType.toString())) {
+
+                //pick your detection method
+                String mimeString = "";
+//                mimeString = mimeTypes.getMimeType(f).toString();
+
+                try (InputStream tis = TikaInputStream.get(f)) {
+                    mimeString = mimeTypes.detect(tis, new Metadata()).toString();
+                }
+
+                if ("text/html".equals(mimeString)) {
                     StringWriter stringWriter = new StringWriter();
                     try (TikaInputStream tis = TikaInputStream.get(f)) {
                         parser.parse(tis, new ToTextContentHandler(stringWriter), new Metadata(), new ParseContext());
                     } catch (ZeroByteFileException e) {
                         //swallow
+                    }
+                    int cnt = COUNTER.incrementAndGet();
+                    if (cnt % 100 == 0) {
+                        long elapsed = System.currentTimeMillis() - STARTED;
+                        double perMillis = (double)cnt/(double)elapsed;
+                        System.out.println("processed " + cnt + " files in " + elapsed + "ms, " + perMillis + " per ms");
                     }
                 }
                 //System.out.println(mimeType);
