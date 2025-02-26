@@ -18,6 +18,7 @@
 package org.apache.tika.parser.microsoft.msg;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -132,10 +133,11 @@ public final class TikaNameIdChunks implements ChunkGroup {
         loadTags();
     }
 
+    //does not return null
     public List<MAPITag> getTags(int storageId) {
         List<MAPITag> tags = mapiTagMap.get(storageId);
         if (tags == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
         return tags;
     }
@@ -235,7 +237,7 @@ public final class TikaNameIdChunks implements ChunkGroup {
             return 0;
         }
         for (Chunk chunk : chunks) {
-            if (chunk.getType() != Types.BINARY || chunk.getChunkId() != streamID) {
+            if (chunk == null || chunk.getType() != Types.BINARY || chunk.getChunkId() != streamID) {
                 continue;
             }
             byte[] matchChunkBytes = ((ByteChunk) chunk).getValue();

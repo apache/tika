@@ -26,7 +26,7 @@ public interface MAPI {
 
     String PREFIX_MAPI_META = "mapi" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PREFIX_MAPI_ATTACH_META = "mapi:attach" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    String PREFIX_MAPI_RAW_META = PREFIX_MAPI_META + "raw" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String PREFIX_MAPI_PROPERTY = PREFIX_MAPI_META + "property" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     /**
      * MAPI message class.  What type of .msg/MAPI file is it?
