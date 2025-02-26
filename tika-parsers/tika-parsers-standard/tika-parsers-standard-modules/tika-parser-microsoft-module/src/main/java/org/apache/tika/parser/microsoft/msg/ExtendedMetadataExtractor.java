@@ -42,7 +42,6 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.microsoft.OutlookExtractor;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -59,54 +58,14 @@ public class ExtendedMetadataExtractor {
         loadProperties();
     }
 
-
-    private static List<Types.MAPIType> parseDataTypes(String[] arr) {
-        if (arr.length == 1) {
-            Types.MAPIType type = parseDataType(arr[0]);
-            if (type != null) {
-                return List.of(type);
-            }
-            return Collections.EMPTY_LIST;
-        }
-        List<Types.MAPIType> types = new ArrayList<>();
-        for (String s : arr) {
-            Types.MAPIType type = parseDataType(s);
-            if (type != null) {
-                types.add(type);
-            }
-        }
-        return types;
-    }
-
-    private static Types.MAPIType parseDataType(String s) {
-        if (StringUtils.isBlank(s)) {
-            return null;
-        }
-        String[] parts = s.split(", ");
-        if (parts.length != 2) {
-            throw new IllegalArgumentException("expected two parts: " + s);
-        }
-        String num = parts[1];
-        if (num.startsWith("0x")) {
-            num = num.substring(2);
-        }
-        int id = Integer.parseInt(num, 16);
-        Types.MAPIType type = Types.getById(id);
-        if (type == null) {
-            //TODO:
-            /*
-                PtypRestriction, 0x00FD
-                PtypRuleAction, 0x00FE
-                PtypServerId, 0x00FB
-             */
-            return Types.createCustom(id);
-        }
-        return type;
-    }
-
-
     public static void extract(MAPIMessage msg, Metadata metadata) {
-        //prep our custom nameIdchunk handler
+        if (msg.getNameIdChunks() == null) {
+            return;
+        }
+        if (msg.getMainChunks() == null || msg.getMainChunks().getRawProperties() == null) {
+            return;
+        }
+        //prep our custom nameIdChunk handler
         TikaNameIdChunks tikaNameIdChunks = new TikaNameIdChunks();
         //short-circuit for files that have an empty nameIdChunk
         long len = 0;
@@ -124,7 +83,11 @@ public class ExtendedMetadataExtractor {
         if (len == 0) {
             return;
         }
-        tikaNameIdChunks.chunksComplete();
+        try {
+            tikaNameIdChunks.chunksComplete();
+        } catch (IllegalStateException e) {
+            LOGGER.warn("bad namechunks stream", e);
+        }
         for (Map.Entry<MAPIProperty, PropertyValue> e : msg
                 .getMainChunks()
                 .getRawProperties()
@@ -132,6 +95,9 @@ public class ExtendedMetadataExtractor {
             //the mapiproperties from POI are the literal storage id for that particular file.
             //Those storage ids must be mapped via the name chunk ids into a known id
             PropertyValue v = e.getValue();
+            if (v == null) {
+                continue;
+            }
             List<MAPITag> mapiTags = tikaNameIdChunks.getTags(e.getKey().id);
             MAPITagPair pair = null;
             for (MAPITag mapiTag : mapiTags) {
@@ -146,7 +112,6 @@ public class ExtendedMetadataExtractor {
             }
             updateMetadata(pair, v, metadata);
         }
-
     }
 
 
@@ -180,7 +145,7 @@ public class ExtendedMetadataExtractor {
         if (!includeType(propertyValue)) {
             return;
         }
-        String key = MAPI.PREFIX_MAPI_RAW_META + pair.tikaMapiProperty.name;
+        String key = MAPI.PREFIX_MAPI_PROPERTY + pair.tikaMapiProperty.name;
         Types.MAPIType type = propertyValue.getActualType();
         if (type == Types.TIME || type == Types.MV_TIME || type == Types.APP_TIME || type == Types.MV_APP_TIME) {
             Calendar calendar = (Calendar) propertyValue.getValue();
@@ -190,8 +155,12 @@ public class ExtendedMetadataExtractor {
                     .toString();
             metadata.add(key, calendarString);
         } else if (type == Types.BOOLEAN) {
-            metadata.add(key, Boolean.toString((boolean) propertyValue.getValue()));
-        } else {
+            Boolean val = (Boolean)propertyValue.getValue();
+            if (val == null) {
+                return;
+            }
+            metadata.add(key, Boolean.toString(val));
+        } else if (! StringUtils.isBlank(propertyValue.toString())) {
             metadata.add(key, propertyValue.toString());
         }
 
@@ -203,11 +172,6 @@ public class ExtendedMetadataExtractor {
             return false;
         }
         return true;
-    }
-
-    private static boolean isString(PropertyValue propertyValue) {
-        Types.MAPIType mapiType = propertyValue.getActualType();
-        return mapiType == Types.ASCII_STRING || mapiType == Types.MV_ASCII_STRING || mapiType == Types.MV_UNICODE_STRING || mapiType == Types.UNICODE_STRING;
     }
 
     private static class TikaMapiProperty {
@@ -237,7 +201,7 @@ public class ExtendedMetadataExtractor {
                     .toUUIDString(), setType.getClassID());
         }
         try (BufferedReader r = new BufferedReader(
-                new InputStreamReader(OutlookExtractor.class.getResourceAsStream("/org/apache/tika/parser/microsoft/msg/props_table.txt"), UTF_8))) {
+                new InputStreamReader(ExtendedMetadataExtractor.class.getResourceAsStream("/org/apache/tika/parser/microsoft/msg/props_table.txt"), UTF_8))) {
             String line = r.readLine();
             while (line != null) {
                 if (line.isBlank() || line.startsWith("#")) {
@@ -309,4 +273,50 @@ public class ExtendedMetadataExtractor {
             this.tikaMapiProperty = tikaMapiProperty;
         }
     }
+
+
+    private static List<Types.MAPIType> parseDataTypes(String[] arr) {
+        if (arr.length == 1) {
+            Types.MAPIType type = parseDataType(arr[0]);
+            if (type != null) {
+                return List.of(type);
+            }
+            return Collections.EMPTY_LIST;
+        }
+        List<Types.MAPIType> types = new ArrayList<>();
+        for (String s : arr) {
+            Types.MAPIType type = parseDataType(s);
+            if (type != null) {
+                types.add(type);
+            }
+        }
+        return types;
+    }
+
+    private static Types.MAPIType parseDataType(String s) {
+        if (StringUtils.isBlank(s)) {
+            return null;
+        }
+        String[] parts = s.split(", ");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("expected two parts: " + s);
+        }
+        String num = parts[1];
+        if (num.startsWith("0x")) {
+            num = num.substring(2);
+        }
+        int id = Integer.parseInt(num, 16);
+        Types.MAPIType type = Types.getById(id);
+        if (type == null) {
+            //TODO:
+            /*
+                PtypRestriction, 0x00FD
+                PtypRuleAction, 0x00FE
+                PtypServerId, 0x00FB
+             */
+            return Types.createCustom(id);
+        }
+        return type;
+    }
+
 }
