@@ -346,7 +346,12 @@ public class OutlookParserTest extends TikaTest {
 
     @Test
     public void testContactExtendedMetadata() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testMSG_Contact.msg");
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractExtendedMsgProperties(true);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+
+        List<Metadata> metadataList = getRecursiveMetadata("testMSG_Contact.msg", parseContext);
         Metadata m = metadataList.get(0);
         assertEquals("2017-02-28T18:41:37Z", m.get("mapi:property:PidLidValidFlagStringProof"));
     }
@@ -354,7 +359,12 @@ public class OutlookParserTest extends TikaTest {
 
     @Test
     public void testPostExtendedMetadata() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testMSG_Post.msg");
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractExtendedMsgProperties(true);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+
+        List<Metadata> metadataList = getRecursiveMetadata("testMSG_Post.msg", parseContext);
         Metadata m = metadataList.get(0);
         assertEquals("2017-02-28T18:47:11Z", m.get("mapi:property:PidLidValidFlagStringProof"));
     }
