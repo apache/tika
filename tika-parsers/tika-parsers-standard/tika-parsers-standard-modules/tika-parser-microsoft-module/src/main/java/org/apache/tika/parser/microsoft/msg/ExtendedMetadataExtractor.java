@@ -72,6 +72,9 @@ public class ExtendedMetadataExtractor {
         for (Chunk chunk : msg
                 .getNameIdChunks()
                 .getAll()) {
+            if (chunk == null) {
+                continue;
+            }
             tikaNameIdChunks.record(chunk);
             if (chunk instanceof ByteChunk) {
                 byte[] value = ((ByteChunk)chunk).getValue();
