@@ -303,13 +303,13 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.0</maven.shade.version>
     <maven.project.info.reports.version>3.8.0</maven.project.info.reports.version>
-    <puppycrawl.version>10.21.2</puppycrawl.version>
+    <puppycrawl.version>10.21.3</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
     <scm.version>2.1.0</scm.version>
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.48.2</google.cloud.version>
+    <google.cloud.version>2.49.0</google.cloud.version>
     <aws.version>1.12.782</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
@@ -453,7 +453,7 @@
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.4</zookeeper.version>
     <zstd.version>1.5.7-1</zstd.version>
-    <nimbus-jose-jwt.version>10.0.1</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
     <logback.version>1.5.16</logback.version>
     <javacpp.version>1.5.11</javacpp.version>
     <maven.site.version>3.8.0</maven.site.version>
