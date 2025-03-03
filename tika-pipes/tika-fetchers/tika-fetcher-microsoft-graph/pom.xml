@@ -29,7 +29,7 @@
   <name>Apache Tika Microsoft Graph Pipes Fetcher</name>
 
   <properties>
-    <microsoft-graph.version>6.30.0</microsoft-graph.version>
+    <microsoft-graph.version>6.30.1</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
     <!-- TODO when updating msal4j >1.18.0, check whether json-smart is still needed below -->
     <msal4j.version>1.19.0</msal4j.version>
