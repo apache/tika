@@ -31,7 +31,7 @@ import io.grpc.Server;
 import io.grpc.ServerCredentials;
 import io.grpc.TlsServerCredentials;
 import io.grpc.protobuf.services.HealthStatusManager;
-import io.grpc.protobuf.services.ProtoReflectionService;
+import io.grpc.protobuf.services.ProtoReflectionServiceV1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,7 +101,7 @@ public class TikaGrpcServer {
                 .newServerBuilderForPort(port, creds)
                 .addService(new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath()))
                 .addService(healthStatusManager.getHealthService())
-                .addService(ProtoReflectionService.newInstance())
+                .addService(ProtoReflectionServiceV1.newInstance())
                 .build()
                 .start();
         LOGGER.info("Server started, listening on " + port);
