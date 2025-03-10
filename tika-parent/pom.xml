@@ -412,7 +412,7 @@
     <spring.version>5.3.39</spring.version>
     <sqlite.version>3.49.1.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
-    <test.containers.version>1.20.6</test.containers.version>
+    <testcontainers.version>1.20.6</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
@@ -484,7 +484,7 @@
       <dependency>
         <groupId>org.testcontainers</groupId>
         <artifactId>testcontainers-bom</artifactId>
-        <version>${test.containers.version}</version>
+        <version>${testcontainers.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -503,12 +503,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.29.0</version>
+        <version>12.29.1</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-common</artifactId>
-        <version>12.28.0</version>
+        <version>12.28.1</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
