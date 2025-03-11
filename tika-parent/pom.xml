@@ -316,8 +316,8 @@
         See TIKA-2992.
     -->
     <asm.version>9.7.1</asm.version>
-    <azure.core.version>1.55.2</azure.core.version>
-    <azure.core.http.netty.version>1.15.10</azure.core.http.netty.version>
+    <azure.core.version>1.55.3</azure.core.version>
+    <azure.core.http.netty.version>1.15.11</azure.core.http.netty.version>
     <azure.storage.blob.version>12.29.1</azure.storage.blob.version>
     <azure.storage.common>12.28.1</azure.storage.common>
     <azure-identity.version>1.15.3</azure-identity.version>
@@ -406,7 +406,7 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.12</mime4j.version>
     <mockito.version>5.16.0</mockito.version>
-    <mockito-junit-jupiter.version>5.15.2</mockito-junit-jupiter.version>
+    <mockito-junit-jupiter.version>5.16.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
     <netty.version>4.1.118.Final</netty.version>
