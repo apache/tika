@@ -343,9 +343,7 @@
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.11.1</commons.net.version>
     <ctakes.version>6.0.0</ctakes.version>
-    <!-- can't use 4.1.0, fails in tika server core because it uses jetty 12, which we can't
-         use due to the problems explained there -->
-    <cxf.version>4.0.6</cxf.version>
+    <cxf.version>4.1.1</cxf.version>
     <ddplist.version>1.28</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
@@ -381,13 +379,7 @@
     <jcommander.version>1.82</jcommander.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
-    <!-- can't update to jetty 12 because of problem in solr integration tests
-	 due to Http2SolrClient (solrj 9.7.0) 
-         expecting org.eclipse.jetty.client.util.InputStreamResponseListener
-         but this class is now in org.eclipse.jetty.client, see also 
-         https://jetty.org/docs/jetty/12/programming-guide/migration/11-to-12.html 
-         when updating, see also TODO in PipesBiDirectionalStreamingIntegrationTest -->
-    <jetty.version>11.0.24</jetty.version>
+    <jetty.version>12.0.16</jetty.version>
     <jetty.http2.version>11.0.24</jetty.http2.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.16.0</jna.version>
