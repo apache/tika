@@ -302,7 +302,7 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.0</maven.shade.version>
     <maven.project.info.reports.version>3.9.0</maven.project.info.reports.version>
-    <puppycrawl.version>10.21.2</puppycrawl.version>
+    <puppycrawl.version>10.21.4</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
     <scm.version>2.1.0</scm.version>
 
@@ -315,8 +315,8 @@
         See TIKA-2992.
     -->
     <asm.version>9.7.1</asm.version>
-    <azure.core.version>1.55.2</azure.core.version>
-    <azure.core.http.netty.version>1.15.10</azure.core.http.netty.version>
+    <azure.core.version>1.55.3</azure.core.version>
+    <azure.core.http.netty.version>1.15.11</azure.core.http.netty.version>
     <azure.storage.blob.version>12.29.1</azure.storage.blob.version>
     <azure.storage.common>12.28.1</azure.storage.common>
     <azure-identity.version>1.15.3</azure-identity.version>
@@ -409,7 +409,7 @@
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.12</mime4j.version>
-    <mockito.version>5.15.2</mockito.version>
+    <mockito.version>5.16.0</mockito.version>
     <mockito-junit-jupiter.version>5.16.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.0.RC4</netty.version>
