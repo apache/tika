@@ -513,12 +513,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.55.2</version>
+        <version>1.55.3</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.15.10</version>
+        <version>1.15.11</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
