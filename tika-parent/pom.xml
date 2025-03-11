@@ -383,7 +383,7 @@
     <jempbox.version>1.8.17</jempbox.version>
     <!-- can't update to jetty 12 because of problem in solr integration tests
 	 due to Http2SolrClient (solrj 9.7.0)
-         (only on the CI, not on local Windows with Docker)     
+         (only on the CI, not on local Windows with Docker, see comment in TIKA-4327 on 14.12.2024)
          expecting org.eclipse.jetty.client.util.InputStreamResponseListener
          but this class is now in org.eclipse.jetty.client, see also 
          https://jetty.org/docs/jetty/12/programming-guide/migration/11-to-12.html 
