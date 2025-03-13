@@ -240,7 +240,8 @@ public class TikaToXMPTest {
         final int numIterations = 100;
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
         try {
-            ExecutorCompletionService<Integer> executorCompletionService = new ExecutorCompletionService<>(executorService);
+            ExecutorCompletionService<Integer> executorCompletionService =
+                    new ExecutorCompletionService<>(executorService);
             for (int i = 0; i < numThreads; i++) {
                 executorCompletionService.submit(new Callable<Integer>() {
                     @Override
