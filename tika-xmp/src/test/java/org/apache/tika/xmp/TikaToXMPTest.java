@@ -23,6 +23,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import com.adobe.internal.xmp.XMPConst;
 import com.adobe.internal.xmp.XMPException;
 import com.adobe.internal.xmp.XMPIterator;
@@ -224,5 +232,41 @@ public class TikaToXMPTest {
         assertThrows(IllegalArgumentException.class, () -> {
             TikaToXMP.getConverter(null);
         });
+    }
+
+    @Test
+    public void testMultithreaded() throws Exception {
+        int numThreads = 10;
+        final int numIterations = 100;
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+        try {
+            ExecutorCompletionService<Integer> executorCompletionService = new ExecutorCompletionService<>(executorService);
+            for (int i = 0; i < numThreads; i++) {
+                executorCompletionService.submit(new Callable<Integer>() {
+                    @Override
+                    public Integer call() throws Exception {
+                        for (int j = 0; j < numIterations; j++) {
+                            Metadata m = new Metadata();
+                            setupOOXMLMetadata(m);
+                            m.set(Metadata.CONTENT_TYPE, OOXML_MIMETYPE);
+                            XMPMeta xmp = TikaToXMP.convert(m);
+                            checkOOXMLMetadata(xmp);
+                        }
+                        return 1;
+                    }
+                });
+            }
+            int finished = 0;
+            while (finished < numThreads) {
+                Future<Integer> future = executorCompletionService.poll(1, TimeUnit.MINUTES);
+                if (future == null) {
+                    throw new TimeoutException();
+                }
+                future.get();
+                finished++;
+            }
+        } finally {
+            executorService.shutdownNow();
+        }
     }
 }

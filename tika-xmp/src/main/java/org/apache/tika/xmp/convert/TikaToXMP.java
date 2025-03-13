@@ -36,10 +36,13 @@ import org.apache.tika.parser.odf.OpenDocumentParser;
 
 public class TikaToXMP {
     /**
-     * Map from mimetype to converter class Must only be accessed through
-     * <code>getConverterMap</code>
+     * Map from mimetype to converter class
      */
-    private static Map<MediaType, Class<? extends ITikaToXMPConverter>> converterMap;
+    private static final Map<MediaType, Class<? extends ITikaToXMPConverter>> CONVERTER_MAP = new HashMap<>();
+
+    static {
+        initialize();
+    }
 
     // --- public API implementation---
 
@@ -114,7 +117,7 @@ public class TikaToXMP {
         MediaType type = MediaType.parse(mimetype);
 
         if (type != null) {
-            return (getConverterMap().get(type) != null);
+            return (CONVERTER_MAP.get(type) != null);
         }
 
         return false;
@@ -137,7 +140,7 @@ public class TikaToXMP {
         MediaType type = MediaType.parse(mimetype);
 
         if (type != null) {
-            Class<? extends ITikaToXMPConverter> clazz = getConverterMap().get(type);
+            Class<? extends ITikaToXMPConverter> clazz = CONVERTER_MAP.get(type);
             if (clazz != null) {
                 try {
                     converter = clazz.getDeclaredConstructor().newInstance();
@@ -154,13 +157,6 @@ public class TikaToXMP {
 
     // --- Private methods ---
 
-    private static Map<MediaType, Class<? extends ITikaToXMPConverter>> getConverterMap() {
-        if (converterMap == null) {
-            converterMap = new HashMap<>();
-            initialize();
-        }
-        return converterMap;
-    }
 
     /**
      * Initializes the map with supported converters.
@@ -187,7 +183,7 @@ public class TikaToXMP {
     private static void addConverter(Set<MediaType> supportedTypes,
                                      Class<? extends ITikaToXMPConverter> converter) {
         for (MediaType type : supportedTypes) {
-            getConverterMap().put(type, converter);
+            CONVERTER_MAP.put(type, converter);
         }
     }
 }
