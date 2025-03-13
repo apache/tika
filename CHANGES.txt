@@ -4,6 +4,10 @@ Release 4.0.0-BETA1 - ???
    * Headers are no longer injected into the body/content of MSG files (TIKA-4345). Please open
      a ticket if you need this behavior across email formats.
 
+  OTHER CHANGES
+
+   * Fix concurrency bug in TikaToXMP (TIKA-4393)
+
 
 Release 3.1.0 - ??
 
