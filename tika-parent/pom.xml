@@ -317,8 +317,8 @@
     <asm.version>9.7.1</asm.version>
     <azure.core.version>1.55.3</azure.core.version>
     <azure.core.http.netty.version>1.15.11</azure.core.http.netty.version>
-    <azure.storage.blob.version>12.29.1</azure.storage.blob.version>
-    <azure.storage.common>12.28.1</azure.storage.common>
+    <azure.storage.blob.version>12.30.0</azure.storage.blob.version>
+    <azure.storage.common>12.29.0</azure.storage.common>
     <azure-identity.version>1.15.3</azure-identity.version>
     <azure.json.version>1.5.0</azure.json.version>
     <azure.xml.version>1.2.0</azure.xml.version>
@@ -360,7 +360,8 @@
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
     <!-- can't update to 76: "Header authentication failed, please check if you have a valid ICU data file; data format 4e726d32, format version 4.0.0.0"
-         possibly related to using an "old" lucene version: https://github.com/eXist-db/exist/issues/1744
+         in Apache Tika eval core, possibly related to using an "old" lucene version:
+         https://github.com/eXist-db/exist/issues/1744
     -->
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
@@ -404,7 +405,7 @@
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.24.3</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
-    <lucene.version>9.12.0</lucene.version>
+    <lucene.version>9.12.1</lucene.version>
     <maven.plugin.annotations.version>3.15.1</maven.plugin.annotations.version>
     <mchange.version>0.3.2</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
@@ -428,8 +429,8 @@
     <poi.version>5.4.0</poi.version>
     <protobuf.version>3.25.6</protobuf.version>
     <quartz.version>2.5.0</quartz.version>
-    <reactor.core.version>3.7.3</reactor.core.version>
-    <reactor.netty.version>1.2.3</reactor.netty.version>
+    <reactor.core.version>3.8.0-M1</reactor.core.version>
+    <reactor.netty.version>1.3.0-M1</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
     <slf4j.version>2.0.17</slf4j.version>
