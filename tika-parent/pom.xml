@@ -503,12 +503,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.29.1</version>
+        <version>12.30.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-common</artifactId>
-        <version>12.28.1</version>
+        <version>12.29.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
