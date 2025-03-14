@@ -318,8 +318,8 @@
     <asm.version>9.7.1</asm.version>
     <azure.core.version>1.55.3</azure.core.version>
     <azure.core.http.netty.version>1.15.11</azure.core.http.netty.version>
-    <azure.storage.blob.version>12.29.1</azure.storage.blob.version>
-    <azure.storage.common>12.28.1</azure.storage.common>
+    <azure.storage.blob.version>12.30.0</azure.storage.blob.version>
+    <azure.storage.common>12.29.0</azure.storage.common>
     <azure-identity.version>1.15.3</azure-identity.version>
     <azure.json.version>1.5.0</azure.json.version>
     <azure.xml.version>1.2.0</azure.xml.version>
@@ -399,7 +399,7 @@
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.24.3</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
-    <lucene.version>9.12.0</lucene.version>
+    <lucene.version>9.12.1</lucene.version>
     <maven.plugin.annotations.version>3.15.1</maven.plugin.annotations.version>
     <mchange.version>0.3.2</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
