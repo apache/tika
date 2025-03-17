@@ -363,7 +363,7 @@
          in Apache Tika eval core, possibly related to using an "old" lucene version:
          https://github.com/eXist-db/exist/issues/1744
     -->
-    <icu4j.version>75.1</icu4j.version>
+    <icu4j.version>77.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.22.0</jackrabbit.version>
     <jackson.version>2.18.3</jackson.version>
