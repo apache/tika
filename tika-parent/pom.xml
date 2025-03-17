@@ -392,7 +392,7 @@
     <jetty.version>11.0.24</jetty.version>
     <jetty.http2.version>11.0.24</jetty.http2.version>
     <jhighlight.version>1.1.0</jhighlight.version>
-    <jna.version>5.16.0</jna.version>
+    <jna.version>5.17.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <jsoup.version>1.19.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
