@@ -452,7 +452,7 @@
     <woodstox.core.version>7.1.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.3</zookeeper.version>
-    <zstd.version>1.5.7-1</zstd.version>
+    <zstd.version>1.5.7-2</zstd.version>
     <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
     <javacpp.version>1.5.11</javacpp.version>
   </properties>
