@@ -1186,7 +1186,7 @@
             <coordinate>
               <groupId>org.eclipse.jetty</groupId>
               <artifactId>jetty-http</artifactId>
-              <version>11.0.24</version>
+              <version>11.0.25</version>
             </coordinate>
             <!-- used only in tests and in tika-eval, and this problem requires the use of the console.
                  https://github.com/h2database/h2database/issues/1294 -->
