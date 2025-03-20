@@ -401,7 +401,7 @@
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.31.1</jwarc.version>
-    <kafka.version>3.9.0</kafka.version>
+    <kafka.version>4.0.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.24.3</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
@@ -436,7 +436,7 @@
     <slf4j.version>2.0.17</slf4j.version>
     <sis.version>1.4</sis.version>
     <snappy.version>1.1.10.7</snappy.version>
-    <solrj.version>9.8.0</solrj.version>
+    <solrj.version>9.8.1</solrj.version>
     <spring.version>6.2.4</spring.version>
     <sqlite.version>3.49.1.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
