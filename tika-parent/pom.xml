@@ -334,7 +334,7 @@
     <!-- 4.5.0-M3 successfully tested -->
     <commons.collections4.version>4.4</commons.collections4.version>
     <commons.compress.version>1.27.1</commons.compress.version>
-    <commons.csv.version>1.13.0</commons.csv.version>
+    <commons.csv.version>1.14.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <commons.io.version>2.18.0</commons.io.version>
@@ -354,7 +354,7 @@
     <freemarker.version>2.3.34</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.12.1</gson.version>
-    <guava.version>33.4.0-jre</guava.version>
+    <guava.version>33.4.5-jre</guava.version>
     <h2.version>2.3.232</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
