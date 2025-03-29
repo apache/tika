@@ -260,65 +260,76 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes)
             throws SAXException {
-        if (type == null) {
-            if (MIME_TYPE_TAG.equals(qName)) {
-                String name = attributes.getValue(MIME_TYPE_TYPE_ATTR);
-                String interpretedAttr = attributes.getValue(INTERPRETED_ATTR);
-                boolean interpreted = "true".equals(interpretedAttr);
-                try {
-                    type = types.forName(name);
-                    type.setInterpreted(interpreted);
-                } catch (MimeTypeException e) {
-                    handleMimeError(name, e, qName, attributes);
-                }
+        try {
+            switch (qName) {
+                case MIME_TYPE_TAG -> handleMimeTypeTag(attributes);
+                case ALIAS_TAG -> handleAliasTag(attributes);
+                case SUB_CLASS_OF_TAG -> handleSubClassOfTag(attributes);
+                case ACRONYM_TAG, COMMENT_TAG, TIKA_LINK_TAG, TIKA_UTI_TAG -> characters = new StringBuilder();
+                case GLOB_TAG -> handleGlobTag(attributes);
+                case ROOT_XML_TAG -> handleRootXMLTag(attributes);
+                case MATCH_TAG -> handleMatchTag(attributes);
+                case MAGIC_TAG -> handleMagicTag(attributes);
             }
-        } else if (ALIAS_TAG.equals(qName)) {
-            String alias = attributes.getValue(ALIAS_TYPE_ATTR);
-            types.addAlias(type, MediaType.parse(alias));
-        } else if (SUB_CLASS_OF_TAG.equals(qName)) {
-            String parent = attributes.getValue(SUB_CLASS_TYPE_ATTR);
-            types.setSuperType(type, MediaType.parse(parent));
-        } else if (ACRONYM_TAG.equals(qName) || COMMENT_TAG.equals(qName) ||
-                TIKA_LINK_TAG.equals(qName) || TIKA_UTI_TAG.equals(qName)) {
-            characters = new StringBuilder();
-        } else if (GLOB_TAG.equals(qName)) {
-            String pattern = attributes.getValue(PATTERN_ATTR);
-            String isRegex = attributes.getValue(ISREGEX_ATTR);
-            if (pattern != null) {
-                try {
-                    types.addPattern(type, pattern, Boolean.parseBoolean(isRegex));
-                } catch (MimeTypeException e) {
-                    handleGlobError(type, pattern, e, qName, attributes);
-                }
-            }
-        } else if (ROOT_XML_TAG.equals(qName)) {
-            String namespace = attributes.getValue(NS_URI_ATTR);
-            String name = attributes.getValue(LOCAL_NAME_ATTR);
-            type.addRootXML(namespace, name);
-        } else if (MATCH_TAG.equals(qName)) {
-            if (attributes.getValue(MATCH_MINSHOULDMATCH_ATTR) != null) {
-                current = new ClauseRecord(new MinShouldMatchVal(
-                        Integer.parseInt(attributes.getValue(MATCH_MINSHOULDMATCH_ATTR))));
-            } else {
-                String kind = attributes.getValue(MATCH_TYPE_ATTR);
-                String offset = attributes.getValue(MATCH_OFFSET_ATTR);
-                String value = attributes.getValue(MATCH_VALUE_ATTR);
-                String mask = attributes.getValue(MATCH_MASK_ATTR);
-                if (kind == null) {
-                    kind = "string";
-                }
-                current =
-                        new ClauseRecord(new MagicMatch(type.getType(), kind, offset, value, mask));
-            }
-        } else if (MAGIC_TAG.equals(qName)) {
-            String value = attributes.getValue(MAGIC_PRIORITY_ATTR);
-            if (value != null && value.length() > 0) {
-                priority = Integer.parseInt(value);
-            } else {
-                priority = 50;
-            }
-            current = new ClauseRecord(null);
+        } catch (MimeTypeException e) {
+            throw new SAXException("Error processing tag: " + qName, e);
         }
+    }
+
+    private void handleMimeTypeTag(Attributes attributes) throws MimeTypeException {
+        String name = attributes.getValue(MIME_TYPE_TYPE_ATTR);
+        String interpretedAttr = attributes.getValue(INTERPRETED_ATTR);
+        boolean interpreted = "true".equals(interpretedAttr);
+        type = types.forName(name);
+        type.setInterpreted(interpreted);
+    }
+
+    private void handleAliasTag(Attributes attributes) {
+        String alias = attributes.getValue(ALIAS_TYPE_ATTR);
+        types.addAlias(type, MediaType.parse(alias));
+    }
+
+    private void handleSubClassOfTag(Attributes attributes) {
+        String parent = attributes.getValue(SUB_CLASS_TYPE_ATTR);
+        types.setSuperType(type, MediaType.parse(parent));
+    }
+
+    private void handleGlobTag(Attributes attributes) throws MimeTypeException {
+        String pattern = attributes.getValue(PATTERN_ATTR);
+        String isRegex = attributes.getValue(ISREGEX_ATTR);
+        if (pattern != null) {
+            types.addPattern(type, pattern, Boolean.parseBoolean(isRegex));
+        }
+    }
+
+    private void handleRootXMLTag(Attributes attributes) {
+        String namespace = attributes.getValue(NS_URI_ATTR);
+        String name = attributes.getValue(LOCAL_NAME_ATTR);
+        type.addRootXML(namespace, name);
+    }
+
+    private void handleMatchTag(Attributes attributes) {
+        if (attributes.getValue(MATCH_MINSHOULDMATCH_ATTR) != null) {
+            current = new ClauseRecord(new MinShouldMatchVal(
+                    Integer.parseInt(attributes.getValue(MATCH_MINSHOULDMATCH_ATTR))));
+        } else {
+            String kind = attributes.getValue(MATCH_TYPE_ATTR);
+            String offset = attributes.getValue(MATCH_OFFSET_ATTR);
+            String value = attributes.getValue(MATCH_VALUE_ATTR);
+            String mask = attributes.getValue(MATCH_MASK_ATTR);
+            if (kind == null) kind = "string";
+            current = new ClauseRecord(new MagicMatch(type.getType(), kind, offset, value, mask));
+        }
+    }
+
+    private void handleMagicTag(Attributes attributes) {
+        String value = attributes.getValue(MAGIC_PRIORITY_ATTR);
+        if (value != null && value.length() > 0) {
+            priority = Integer.parseInt(value);
+        } else {
+            priority = 50;
+        }
+        current = new ClauseRecord(null);
     }
 
     @Override
