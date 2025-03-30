@@ -27,7 +27,7 @@ import org.apache.tika.utils.ServiceLoaderUtils;
 
 public class ServiceLoader {
     private static final Map<Object, RankedService> SERVICES = new HashMap<>();
-    private static volatile ClassLoader CONTEXT_CLASS_LOADER = null;
+    private static final ClassLoader CONTEXT_CLASS_LOADER = null;
     private final ClassLoader loader;
     private final LoadErrorHandler handler;
     private final InitializableProblemHandler initializableProblemHandler;
@@ -176,7 +176,7 @@ public class ServiceLoader {
         return names;
     }
 
-    public <T> List<T> loadStaticServiceProviders(Class<T> iface) {
+    public <T> List loadStaticServiceProviders(Class<T> iface) {
         return loadStaticServiceProviders(iface, Collections.EMPTY_SET);
     }
 

@@ -102,8 +102,7 @@ public class CompositeDetector implements Detector {
         }
         override = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
         if (!StringUtils.isBlank(override)) {
-            MediaType mt = MediaType.parse(override);
-            return mt;
+            return MediaType.parse(override);
         }
         return null;
     }
