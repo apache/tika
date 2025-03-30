@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
-import java.util.regex.Pattern;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.utils.ServiceLoaderUtils;
@@ -69,19 +68,15 @@ public class ServiceLoader {
         return loader;
     }
 
-    public static void setContextClassLoader(ClassLoader loader) {
-        CONTEXT_CLASS_LOADER = loader;
-    }
-
     static void addService(Object reference, Object service, int rank) {
         synchronized (SERVICES) {
             SERVICES.put(reference, new RankedService(service, rank));
         }
     }
 
-    static Object removeService(Object reference) {
+    static void removeService(Object reference) {
         synchronized (SERVICES) {
-            return SERVICES.remove(reference);
+            SERVICES.remove(reference);
         }
     }
 

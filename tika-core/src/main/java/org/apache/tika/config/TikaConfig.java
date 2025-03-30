@@ -240,14 +240,14 @@ public class TikaConfig {
             LOG.debug("loading tika config from system property 'tika.config'");
         }
 
-        if (config == null || config.trim().equals("")) {
+        if (config == null || config.trim().isEmpty()) {
             config = System.getenv("TIKA_CONFIG");
             if (!StringUtils.isBlank(config)) {
                 LOG.debug("loading tika config from environment variable 'TIKA_CONFIG'");
             }
         }
 
-        if (config == null || config.trim().equals("")) {
+        if (config == null || config.trim().isEmpty()) {
             LOG.debug("loading tika config from defaults; no config file specified");
             this.serviceLoader = new ServiceLoader();
             this.mimeTypes = getDefaultMimeTypes(getContextClassLoader());
@@ -439,8 +439,7 @@ public class TikaConfig {
             List<Element> elements = new ArrayList<>();
             for (int i = 0; i < nodes.getLength(); i++) {
                 Node node = nodes.item(i);
-                if (node instanceof Element) {
-                    Element nodeE = (Element) node;
+                if (node instanceof Element nodeE) {
                     if (childrenName.equals(nodeE.getTagName())) {
                         elements.add(nodeE);
                     }
@@ -464,16 +463,15 @@ public class TikaConfig {
     }
 
     private static Set<MediaType> mediaTypesListFromDomElement(Element node, String tag)
-            throws TikaException, IOException {
+            throws TikaException {
         Set<MediaType> types = null;
         NodeList children = node.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node cNode = children.item(i);
-            if (cNode instanceof Element) {
-                Element cElement = (Element) cNode;
+            if (cNode instanceof Element cElement) {
                 if (tag.equals(cElement.getTagName())) {
                     String mime = getText(cElement);
-                    MediaType type = MediaType.parse(mime);
+                      MediaType type = MediaType.parse(mime);
                     if (type != null) {
                         if (types == null) {
                             types = new HashSet<>();
@@ -503,7 +501,6 @@ public class TikaConfig {
             if (LoadErrorHandler.WARN.toString().equalsIgnoreCase(loadErrorHandleConfig)) {
                 loadErrorHandler = LoadErrorHandler.WARN;
             } else if (LoadErrorHandler.THROW.toString().equalsIgnoreCase(loadErrorHandleConfig)) {
-                loadErrorHandler = LoadErrorHandler.THROW;
             } else if (LoadErrorHandler.IGNORE.toString().equalsIgnoreCase(loadErrorHandleConfig)) {
                 loadErrorHandler = LoadErrorHandler.IGNORE;
             }
@@ -526,7 +523,7 @@ public class TikaConfig {
 
     private static InitializableProblemHandler getInitializableProblemHandler(
             String initializableProblemHandler) throws TikaConfigException {
-        if (initializableProblemHandler == null || initializableProblemHandler.length() == 0) {
+        if (initializableProblemHandler == null || initializableProblemHandler.isEmpty()) {
             return InitializableProblemHandler.DEFAULT;
         }
 
@@ -550,7 +547,7 @@ public class TikaConfig {
 
     public static void mustNotBeEmpty(String paramName, String paramValue)
             throws TikaConfigException {
-        if (paramValue == null || paramValue.trim().equals("")) {
+        if (paramValue == null || paramValue.trim().isEmpty()) {
             throw new IllegalArgumentException(
                     "parameter '" + paramName + "' must be set in the config file");
         }
@@ -704,15 +701,9 @@ public class TikaConfig {
                 }
             } else if (!supportsComposite()) {
                 // No composite support, just return the first one
-                if (loaded.size() == 1) {
-                    return (CT) loaded.get(0);
-                } else if (loaded.size() > 1) {
-                    throw new TikaConfigException(
-                            "Composite not supported for " + getParentTagName() +
-                                    ". Must specify only one child!");
-                } else {
-                    //throw exception if empty?
-                }
+                throw new TikaConfigException(
+                        "Composite not supported for " + getParentTagName() +
+                                ". Must specify only one child!");
             }
             // Wrap the defined parsers/detectors up in a Composite
             return createComposite(loaded, mimeTypes, loader);
@@ -721,18 +712,15 @@ public class TikaConfig {
         T loadOne(Element element, MimeTypes mimeTypes, ServiceLoader loader)
                 throws TikaException, IOException {
             String name = element.getAttribute("class");
-            if (name == null) {
-                throw new TikaConfigException("class attribute must not be null: " + element);
-            }
             String initProbHandler = element.getAttribute("initializableProblemHandler");
             InitializableProblemHandler initializableProblemHandler;
-            if (initProbHandler == null || initProbHandler.length() == 0) {
+            if (initProbHandler.isEmpty()) {
                 initializableProblemHandler = loader.getInitializableProblemHandler();
             } else {
                 initializableProblemHandler = getInitializableProblemHandler(initProbHandler);
             }
 
-            T loaded = null;
+            T loaded;
 
             try {
                 Class<? extends T> loadedClass = loader.getServiceClass(getLoaderClass(), name);
@@ -941,18 +929,16 @@ public class TikaConfig {
                                Map<String, Param> params, MimeTypes mimeTypes, ServiceLoader loader)
                 throws InvocationTargetException, IllegalAccessException, InstantiationException {
             Parser parser = null;
-            Constructor<? extends Parser> c = null;
+            Constructor<? extends Parser> c;
             MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
 
             // Try the possible default and composite parser constructors
-            if (parser == null) {
-                try {
-                    c = parserClass.getConstructor(MediaTypeRegistry.class, ServiceLoader.class,
-                            Collection.class, EncodingDetector.class, Renderer.class);
-                    parser = c.newInstance(registry, loader, excludeParsers, encodingDetector, renderer);
-                } catch (NoSuchMethodException me) {
-                    //swallow
-                }
+            try {
+                c = parserClass.getConstructor(MediaTypeRegistry.class, ServiceLoader.class,
+                        Collection.class, EncodingDetector.class, Renderer.class);
+                parser = c.newInstance(registry, loader, excludeParsers, encodingDetector, renderer);
+            } catch (NoSuchMethodException me) {
+                //swallow
             }
             if (parser == null) {
                 try {
@@ -1002,8 +988,8 @@ public class TikaConfig {
             // Create as a Parser Decorator
             if (parser == null && ParserDecorator.class.isAssignableFrom(parserClass)) {
                 try {
-                    CompositeParser cp = null;
-                    if (childParsers.size() == 1 && excludeParsers.size() == 0 &&
+                    CompositeParser cp;
+                    if (childParsers.size() == 1 && excludeParsers.isEmpty() &&
                             childParsers.get(0) instanceof CompositeParser) {
                         cp = (CompositeParser) childParsers.get(0);
                     } else {
@@ -1022,10 +1008,10 @@ public class TikaConfig {
         Parser newInstance(Class<? extends Parser> loadedClass)
                 throws IllegalAccessException, InstantiationException, NoSuchMethodException,
                 InvocationTargetException {
-            Parser parser = null;
+            Parser parser;
             if (AbstractEncodingDetectorParser.class.isAssignableFrom(loadedClass)) {
-                Constructor ctor = loadedClass.getConstructor(EncodingDetector.class);
-                parser = (Parser) ctor.newInstance(encodingDetector);
+                Constructor<? extends Parser> ctor = loadedClass.getConstructor(EncodingDetector.class);
+                parser = ctor.newInstance(encodingDetector);
             } else {
                 parser = loadedClass.getDeclaredConstructor().newInstance();
             }
@@ -1037,7 +1023,7 @@ public class TikaConfig {
         }
 
         @Override
-        Parser decorate(Parser created, Element element) throws IOException, TikaException {
+        Parser decorate(Parser created, Element element) throws TikaException {
             Parser parser = created;
 
             // Is there an explicit list of mime types for this to handle?
@@ -1077,7 +1063,7 @@ public class TikaConfig {
 
         @Override
         Detector preLoadOne(Class<? extends Detector> loadedClass, String classname,
-                            MimeTypes mimeTypes) throws TikaException {
+                            MimeTypes mimeTypes) {
             // If they asked for the mime types as a detector, give
             //  them the one we've already created. TIKA-1708
             if (MimeTypes.class.equals(loadedClass)) {
@@ -1121,14 +1107,12 @@ public class TikaConfig {
             MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
 
             // Try the possible default and composite detector constructors
-            if (detector == null) {
-                try {
-                    c = detectorClass
-                            .getConstructor(MimeTypes.class, ServiceLoader.class, Collection.class);
-                    detector = c.newInstance(mimeTypes, loader, excludeDetectors);
-                } catch (NoSuchMethodException me) {
-                    //swallow
-                }
+            try {
+                c = detectorClass
+                        .getConstructor(MimeTypes.class, ServiceLoader.class, Collection.class);
+                detector = c.newInstance(mimeTypes, loader, excludeDetectors);
+            } catch (NoSuchMethodException me) {
+                //swallow
             }
             if (detector == null) {
                 try {
@@ -1185,7 +1169,7 @@ public class TikaConfig {
 
         @Override
         Translator preLoadOne(Class<? extends Translator> loadedClass, String classname,
-                              MimeTypes mimeTypes) throws TikaException {
+                              MimeTypes mimeTypes) {
             // Continue with normal loading
             return null;
         }
@@ -1217,7 +1201,7 @@ public class TikaConfig {
                                    Set<Class<? extends Translator>> excludeChildren,
                                    Map<String, Param> params, MimeTypes mimeTypes,
                                    ServiceLoader loader)
-                throws InvocationTargetException, IllegalAccessException, InstantiationException {
+                throws InstantiationException {
             throw new InstantiationException("Only one translator supported");
         }
 
@@ -1235,7 +1219,7 @@ public class TikaConfig {
                 List<ConfigurableThreadPoolExecutor> children,
                 Set<Class<? extends ConfigurableThreadPoolExecutor>> excludeChildren,
                 Map<String, Param> params, MimeTypes mimeTypes, ServiceLoader loader)
-                throws InvocationTargetException, IllegalAccessException, InstantiationException {
+                throws InstantiationException {
             throw new InstantiationException("Only one executor service supported");
         }
 
@@ -1252,7 +1236,7 @@ public class TikaConfig {
 
         @Override
         ConfigurableThreadPoolExecutor decorate(ConfigurableThreadPoolExecutor created,
-                                                Element element) throws IOException, TikaException {
+                                                Element element){
 
             Element maxThreadElement = getChild(element, "max-threads");
             if (maxThreadElement != null) {
@@ -1306,7 +1290,7 @@ public class TikaConfig {
         @Override
         ConfigurableThreadPoolExecutor preLoadOne(
                 Class<? extends ConfigurableThreadPoolExecutor> loadedClass, String classname,
-                MimeTypes mimeTypes) throws TikaException {
+                MimeTypes mimeTypes) {
             return null;
         }
     }
@@ -1344,7 +1328,7 @@ public class TikaConfig {
 
         @Override
         EncodingDetector preLoadOne(Class<? extends EncodingDetector> loadedClass, String classname,
-                                    MimeTypes mimeTypes) throws TikaException {
+                                    MimeTypes mimeTypes) {
             // Check for classes which can't be set in config
             // Continue with normal loading
             return null;
@@ -1372,14 +1356,12 @@ public class TikaConfig {
             Constructor<? extends EncodingDetector> c;
 
             // Try the possible default and composite detector constructors
-            if (encodingDetector == null) {
-                try {
-                    c = encodingDetectorClass.getConstructor(ServiceLoader.class, Collection.class);
-                    encodingDetector = c.newInstance(loader, excludeDetectors);
-                } catch (NoSuchMethodException me) {
-                    LOG.debug("couldn't find constructor for service loader + collection for {}",
-                            encodingDetectorClass);
-                }
+            try {
+                c = encodingDetectorClass.getConstructor(ServiceLoader.class, Collection.class);
+                encodingDetector = c.newInstance(loader, excludeDetectors);
+            } catch (NoSuchMethodException me) {
+                LOG.debug("couldn't find constructor for service loader + collection for {}",
+                        encodingDetectorClass);
             }
             if (encodingDetector == null) {
                 try {
@@ -1433,7 +1415,7 @@ public class TikaConfig {
 
         @Override
         Renderer preLoadOne(Class<? extends Renderer> loadedClass, String classname,
-                                    MimeTypes mimeTypes) throws TikaException {
+                                    MimeTypes mimeTypes) {
             // Check for classes which can't be set in config
             // Continue with normal loading
             return null;
@@ -1460,24 +1442,12 @@ public class TikaConfig {
             Renderer renderer = null;
             Constructor<? extends Renderer> c;
 
-            // Try the possible default and composite detector constructors
-            if (renderer == null) {
-                try {
-                    c = rendererClass.getConstructor(ServiceLoader.class, Collection.class);
-                    renderer = c.newInstance(loader, excludeRenderers);
-                } catch (NoSuchMethodException me) {
-                    LOG.debug("couldn't find constructor for service loader + collection for {}",
-                            renderer);
-                }
-            }
-            if (renderer == null) {
-                try {
-                    c = rendererClass.getConstructor(List.class);
-                    renderer = c.newInstance(childRenderers);
-                } catch (NoSuchMethodException me) {
-                    LOG.debug("couldn't find constructor for Renderer(List) for {}",
-                            rendererClass);
-                }
+            try {
+                c = rendererClass.getConstructor(List.class);
+                renderer = c.newInstance(childRenderers);
+            } catch (NoSuchMethodException me) {
+                LOG.debug("couldn't find constructor for Renderer(List) for {}",
+                        rendererClass);
             }
             return renderer;
         }

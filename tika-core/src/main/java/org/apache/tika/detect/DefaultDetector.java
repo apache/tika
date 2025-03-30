@@ -16,6 +16,7 @@
  */
 package org.apache.tika.detect;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,7 @@ import org.apache.tika.utils.ServiceLoaderUtils;
  */
 public class DefaultDetector extends CompositeDetector {
 
+    @Serial
     private static final long serialVersionUID = -8170114575326908027L;
 
     private transient final ServiceLoader loader;

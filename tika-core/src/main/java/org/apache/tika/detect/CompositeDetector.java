@@ -18,6 +18,7 @@ package org.apache.tika.detect;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,6 +39,7 @@ public class CompositeDetector implements Detector {
     /**
      * Serial version UID
      */
+    @Serial
     private static final long serialVersionUID = 5980683158436430252L;
 
     protected final MediaTypeRegistry registry;
@@ -101,9 +103,7 @@ public class CompositeDetector implements Detector {
         override = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
         if (!StringUtils.isBlank(override)) {
             MediaType mt = MediaType.parse(override);
-            if (mt != null) {
-                return mt;
-            }
+            return mt;
         }
         return null;
     }
