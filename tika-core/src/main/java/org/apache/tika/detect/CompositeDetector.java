@@ -3,8 +3,8 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * (the "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -40,9 +40,8 @@ public class CompositeDetector implements Detector {
      */
     private static final long serialVersionUID = 5980683158436430252L;
 
-    private final MediaTypeRegistry registry;
-
-    private final List<Detector> detectors;
+    protected final MediaTypeRegistry registry;
+    protected final List<Detector> detectors;
 
     public CompositeDetector(MediaTypeRegistry registry, List<Detector> detectors,
                              Collection<Class<? extends Detector>> excludeDetectors) {
@@ -78,8 +77,6 @@ public class CompositeDetector implements Detector {
         }
         MediaType type = MediaType.OCTET_STREAM;
 
-        //we have to iterate through all detectors because the override detector may
-        //be within a CompositeDetector
         for (Detector detector : getDetectors()) {
             MediaType detected = detector.detect(input, metadata);
             if (registry.isSpecializationOf(detected, type)) {
@@ -90,11 +87,10 @@ public class CompositeDetector implements Detector {
     }
 
     /**
-     *
-     * @param metadata
+     * @param metadata Metadata object
      * @return mediaType if a parseable mediatype was sent in via user or parser overrides
      */
-    private static MediaType detectOverrides(Metadata metadata) {
+    protected static MediaType detectOverrides(Metadata metadata) {
         String override = metadata.get(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE);
         if (!StringUtils.isBlank(override)) {
             MediaType mt = MediaType.parse(override);
@@ -111,6 +107,7 @@ public class CompositeDetector implements Detector {
         }
         return null;
     }
+
     /**
      * Returns the component detectors.
      */
@@ -118,13 +115,13 @@ public class CompositeDetector implements Detector {
         return Collections.unmodifiableList(detectors);
     }
 
-    private boolean isExcluded(Collection<Class<? extends Detector>> excludeDetectors,
-                               Class<? extends Detector> d) {
+    protected boolean isExcluded(Collection<Class<? extends Detector>> excludeDetectors,
+                                 Class<? extends Detector> d) {
         return excludeDetectors.contains(d) || assignableFrom(excludeDetectors, d);
     }
 
-    private boolean assignableFrom(Collection<Class<? extends Detector>> excludeDetectors,
-                                   Class<? extends Detector> d) {
+    protected boolean assignableFrom(Collection<Class<? extends Detector>> excludeDetectors,
+                                     Class<? extends Detector> d) {
         for (Class<? extends Detector> e : excludeDetectors) {
             if (e.isAssignableFrom(d)) {
                 return true;

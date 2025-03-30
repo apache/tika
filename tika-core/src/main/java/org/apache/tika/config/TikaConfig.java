@@ -84,6 +84,8 @@ import org.apache.tika.utils.AnnotationUtils;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
+import java.util.function.Function;
+
 /**
  * Parse xml config file.
  */
@@ -527,19 +529,20 @@ public class TikaConfig {
         if (initializableProblemHandler == null || initializableProblemHandler.length() == 0) {
             return InitializableProblemHandler.DEFAULT;
         }
-        if (InitializableProblemHandler.IGNORE.toString()
-                .equalsIgnoreCase(initializableProblemHandler)) {
-            return InitializableProblemHandler.IGNORE;
-        } else if (InitializableProblemHandler.INFO.toString()
-                .equalsIgnoreCase(initializableProblemHandler)) {
-            return InitializableProblemHandler.INFO;
-        } else if (InitializableProblemHandler.WARN.toString()
-                .equalsIgnoreCase(initializableProblemHandler)) {
-            return InitializableProblemHandler.WARN;
-        } else if (InitializableProblemHandler.THROW.toString()
-                .equalsIgnoreCase(initializableProblemHandler)) {
-            return InitializableProblemHandler.THROW;
+
+        Map<String, Function<Void, InitializableProblemHandler>> strategyMap = new HashMap<>();
+        strategyMap.put("ignore", v -> InitializableProblemHandler.IGNORE);
+        strategyMap.put("info", v -> InitializableProblemHandler.INFO);
+        strategyMap.put("warn", v -> InitializableProblemHandler.WARN);
+        strategyMap.put("throw", v -> InitializableProblemHandler.THROW);
+
+        Function<Void, InitializableProblemHandler> strategy =
+                strategyMap.get(initializableProblemHandler.toLowerCase(Locale.US));
+
+        if (strategy != null) {
+            return strategy.apply(null);
         }
+
         throw new TikaConfigException(String.format(Locale.US,
                 "Couldn't parse non-null '%s'. Must be one of 'ignore', 'info', 'warn' or 'throw'",
                 initializableProblemHandler));
