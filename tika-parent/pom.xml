@@ -296,8 +296,8 @@
     <!-- can't update to 6, needs jdk17 -->
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
-    <maven.failsafe.version>3.5.2</maven.failsafe.version>
-    <maven.surefire.version>3.5.2</maven.surefire.version>
+    <maven.failsafe.version>3.5.3</maven.failsafe.version>
+    <maven.surefire.version>3.5.3</maven.surefire.version>
     <maven.javadoc.version>3.11.2</maven.javadoc.version>
     <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
@@ -315,7 +315,7 @@
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
-    <asm.version>9.7.1</asm.version>
+    <asm.version>9.8</asm.version>
     <azure.core.version>1.55.3</azure.core.version>
     <azure.core.http.netty.version>1.15.11</azure.core.http.netty.version>
     <azure.storage.blob.version>12.30.0</azure.storage.blob.version>
@@ -355,7 +355,7 @@
     <freemarker.version>2.3.34</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.12.1</gson.version>
-    <guava.version>33.4.5-jre</guava.version>
+    <guava.version>33.4.6-jre</guava.version>
     <h2.version>2.3.232</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
@@ -785,7 +785,7 @@
       <dependency>
         <groupId>joda-time</groupId>
         <artifactId>joda-time</artifactId>
-        <version>2.13.1</version>
+        <version>2.14.0</version>
       </dependency>
       <dependency>
         <groupId>junit</groupId>
