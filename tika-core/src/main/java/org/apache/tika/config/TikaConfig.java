@@ -238,14 +238,14 @@ public class TikaConfig {
             LOG.debug("loading tika config from system property 'tika.config'");
         }
 
-        if (config == null || config.trim().equals("")) {
+        if (StringUtils.isBlank(config)) {
             config = System.getenv("TIKA_CONFIG");
             if (!StringUtils.isBlank(config)) {
                 LOG.debug("loading tika config from environment variable 'TIKA_CONFIG'");
             }
         }
 
-        if (config == null || config.trim().equals("")) {
+        if (StringUtils.isBlank(config)) {
             LOG.debug("loading tika config from defaults; no config file specified");
             this.serviceLoader = new ServiceLoader();
             this.mimeTypes = getDefaultMimeTypes(getContextClassLoader());
@@ -371,17 +371,18 @@ public class TikaConfig {
     }
 
     private static String getText(Node node) {
-        if (node.getNodeType() == Node.TEXT_NODE) {
-            return node.getNodeValue();
-        } else if (node.getNodeType() == Node.ELEMENT_NODE) {
-            StringBuilder builder = new StringBuilder();
-            NodeList list = node.getChildNodes();
-            for (int i = 0; i < list.getLength(); i++) {
-                builder.append(getText(list.item(i)));
-            }
-            return builder.toString();
-        } else {
-            return "";
+        switch (node.getNodeType()) {
+            case Node.TEXT_NODE:
+                return node.getNodeValue();
+            case Node.ELEMENT_NODE:
+                StringBuilder builder = new StringBuilder();
+                NodeList list = node.getChildNodes();
+                for (int i = 0; i < list.getLength(); i++) {
+                    builder.append(getText(list.item(i)));
+                }
+                return builder.toString();
+            default:
+                return "";
         }
     }
 
@@ -524,7 +525,7 @@ public class TikaConfig {
 
     private static InitializableProblemHandler getInitializableProblemHandler(
             String initializableProblemHandler) throws TikaConfigException {
-        if (initializableProblemHandler == null || initializableProblemHandler.length() == 0) {
+        if (initializableProblemHandler.isEmpty()) {
             return InitializableProblemHandler.DEFAULT;
         }
         if (InitializableProblemHandler.IGNORE.toString()
@@ -547,7 +548,7 @@ public class TikaConfig {
 
     public static void mustNotBeEmpty(String paramName, String paramValue)
             throws TikaConfigException {
-        if (paramValue == null || paramValue.trim().equals("")) {
+        if (StringUtils.isBlank(paramValue)) {
             throw new IllegalArgumentException(
                     "parameter '" + paramName + "' must be set in the config file");
         }
@@ -718,12 +719,12 @@ public class TikaConfig {
         T loadOne(Element element, MimeTypes mimeTypes, ServiceLoader loader)
                 throws TikaException, IOException {
             String name = element.getAttribute("class");
-            if (name == null) {
-                throw new TikaConfigException("class attribute must not be null: " + element);
+            if (name.isBlank()) {
+                throw new TikaConfigException("class attribute must not be empty: " + element);
             }
             String initProbHandler = element.getAttribute("initializableProblemHandler");
             InitializableProblemHandler initializableProblemHandler;
-            if (initProbHandler == null || initProbHandler.length() == 0) {
+            if (initProbHandler.isBlank()) {
                 initializableProblemHandler = loader.getInitializableProblemHandler();
             } else {
                 initializableProblemHandler = getInitializableProblemHandler(initProbHandler);
@@ -1000,7 +1001,7 @@ public class TikaConfig {
             if (parser == null && ParserDecorator.class.isAssignableFrom(parserClass)) {
                 try {
                     CompositeParser cp = null;
-                    if (childParsers.size() == 1 && excludeParsers.size() == 0 &&
+                    if (childParsers.size() == 1 && excludeParsers.isEmpty() &&
                             childParsers.get(0) instanceof CompositeParser) {
                         cp = (CompositeParser) childParsers.get(0);
                     } else {
