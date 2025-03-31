@@ -183,25 +183,31 @@ public class MediaTypeRegistry implements Serializable {
      * @since Apache Tika 0.8
      */
     public MediaType getSupertype(MediaType type) {
-        if (type == null) {
-            return null;
-        } else if (inheritance.containsKey(type)) {
-            return inheritance.get(type);
-        } else if (type.hasParameters()) {
-            return type.getBaseType();
-        } else if (type.getSubtype().endsWith("+xml")) {
-            return MediaType.APPLICATION_XML;
-        } else if (type.getSubtype().endsWith("+zip")) {
-            return MediaType.APPLICATION_ZIP;
-        } else if ("text".equals(type.getType()) && !MediaType.TEXT_PLAIN.equals(type)) {
-            return MediaType.TEXT_PLAIN;
-        } else if (type.getType().contains("empty") && !MediaType.EMPTY.equals(type)) {
-            return MediaType.EMPTY;
-        } else if (!MediaType.OCTET_STREAM.equals(type)) {
-            return MediaType.OCTET_STREAM;
-        } else {
-            return null;
-        }
+        if (type == null) return null;
+        if (inheritance.containsKey(type)) return inheritance.get(type);
+        if (type.hasParameters()) return type.getBaseType();
+        if (isXmlSubtype(type)) return MediaType.APPLICATION_XML;
+        if (isZipSubtype(type)) return MediaType.APPLICATION_ZIP;
+        if (isTextType(type)) return MediaType.TEXT_PLAIN;
+        if (isEmptyType(type)) return MediaType.EMPTY;
+        if (!MediaType.OCTET_STREAM.equals(type)) return MediaType.OCTET_STREAM;
+        return null;
+    }
+
+    private boolean isXmlSubtype(MediaType type) {
+        return type.getSubtype().endsWith("+xml");
+    }
+
+    private boolean isZipSubtype(MediaType type) {
+        return type.getSubtype().endsWith("+zip");
+    }
+
+    private boolean isTextType(MediaType type) {
+        return "text".equals(type.getType()) && !MediaType.TEXT_PLAIN.equals(type);
+    }
+
+    private boolean isEmptyType(MediaType type) {
+        return type.getType().contains("empty") && !MediaType.EMPTY.equals(type);
     }
 
 }

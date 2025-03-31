@@ -23,14 +23,25 @@ package org.apache.tika.detect;
  */
 public class TextStatistics {
 
-    private final int[] counts = new int[256];
+    private static final int ASCII_CONTROL_END = 0x20;
+    private static final int ASCII_PRINTABLE_START = 0x20;
+    private static final int ASCII_PRINTABLE_END = 0x80;
+    private static final int UTF8_CONTINUATION_START = 0x80;
+    private static final int UTF8_CONTINUATION_END = 0xc0;
+    private static final int UTF8_2BYTE_START = 0xc0;
+    private static final int UTF8_2BYTE_END = 0xe0;
+    private static final int UTF8_3BYTE_END = 0xf0;
+    private static final int UTF8_4BYTE_END = 0xf8;
+    private static final int INVALID_UTF8_START = 0xf8;
+    private static final int INVALID_UTF8_END = 0x100;
 
-    private int total = 0;
+    private final int[] byteFrequencies = new int[256];
+    private int totalBytes = 0;
 
     public void addData(byte[] buffer, int offset, int length) {
         for (int i = 0; i < length; i++) {
-            counts[buffer[offset + i] & 0xff]++;
-            total++;
+            byteFrequencies[buffer[offset + i] & 0xff]++;
+            totalBytes++;
         }
     }
 
@@ -44,10 +55,12 @@ public class TextStatistics {
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-688">TIKA-688</a>
      */
     public boolean isMostlyAscii() {
-        int control = count(0, 0x20);
-        int ascii = count(0x20, 128);
-        int safe = countSafeControl();
-        return total > 0 && (control - safe) * 100 < total * 2 && (ascii + safe) * 100 > total * 90;
+        int controlCount = countRange(0, ASCII_CONTROL_END);
+        int asciiPrintableCount = countRange(ASCII_PRINTABLE_START, ASCII_PRINTABLE_END);
+        int safeControlCount = countSafeControl();
+        return totalBytes > 0 &&
+                (controlCount - safeControlCount) * 100 < totalBytes * 2 &&
+                (asciiPrintableCount + safeControlCount) * 100 > totalBytes * 90;
     }
 
     /**
@@ -58,21 +71,29 @@ public class TextStatistics {
      * @since Apache Tika 1.3
      */
     public boolean looksLikeUTF8() {
-        int control = count(0, 0x20);
-        int utf8 = count(0x20, 0x80);
-        int safe = countSafeControl();
+        int controlCount = countRange(0, ASCII_CONTROL_END);
+        int asciiUtf8Count = countRange(ASCII_PRINTABLE_START, ASCII_PRINTABLE_END);
+        int safeControlCount = countSafeControl();
 
         int expectedContinuation = 0;
-        int[] leading = new int[]{count(0xc0, 0xe0), count(0xe0, 0xf0), count(0xf0, 0xf8)};
-        for (int i = 0; i < leading.length; i++) {
-            utf8 += leading[i];
-            expectedContinuation += (i + 1) * leading[i];
+        int[] leadingBytes = new int[]{
+                countRange(UTF8_2BYTE_START, UTF8_2BYTE_END),
+                countRange(UTF8_2BYTE_END, UTF8_3BYTE_END),
+                countRange(UTF8_3BYTE_END, UTF8_4BYTE_END)
+        };
+
+        for (int i = 0; i < leadingBytes.length; i++) {
+            asciiUtf8Count += leadingBytes[i];
+            expectedContinuation += (i + 1) * leadingBytes[i];
         }
 
-        int continuation = count(0x80, 0xc0);
-        return utf8 > 0 && continuation <= expectedContinuation &&
-                continuation >= expectedContinuation - 3 && count(0xf8, 0x100) == 0 &&
-                (control - safe) * 100 < utf8 * 2;
+        int continuationCount = countRange(UTF8_CONTINUATION_START, UTF8_CONTINUATION_END);
+
+        return asciiUtf8Count > 0 &&
+                continuationCount <= expectedContinuation &&
+                continuationCount >= expectedContinuation - 3 &&
+                countRange(INVALID_UTF8_START, INVALID_UTF8_END) == 0 &&
+                (controlCount - safeControlCount) * 100 < asciiUtf8Count * 2;
     }
 
     /**
@@ -81,7 +102,7 @@ public class TextStatistics {
      * @return count of all bytes
      */
     public int count() {
-        return total;
+        return totalBytes;
     }
 
     /**
@@ -91,7 +112,7 @@ public class TextStatistics {
      * @return count of the given byte
      */
     public int count(int b) {
-        return counts[b & 0xff];
+        return byteFrequencies[b & 0xff];
     }
 
     /**
@@ -117,7 +138,7 @@ public class TextStatistics {
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-154">TIKA-154</a>
      */
     public int countControl() {
-        return count(0, 0x20) - countSafeControl();
+        return countRange(0, ASCII_CONTROL_END) - countSafeControl();
     }
 
     /**
@@ -127,7 +148,7 @@ public class TextStatistics {
      * @see #countControl()
      */
     public int countSafeAscii() {
-        return count(0x20, 128) + countSafeControl();
+        return countRange(ASCII_PRINTABLE_START, ASCII_PRINTABLE_END) + countSafeControl();
     }
 
     /**
@@ -136,21 +157,20 @@ public class TextStatistics {
      * @return count of eight bit characters
      */
     public int countEightBit() {
-        return count(128, 256);
+        return countRange(128, 256);
     }
 
-    private int count(int from, int to) {
-        assert 0 <= from && to <= counts.length;
-        int count = 0;
+    private int countRange(int from, int to) {
+        assert 0 <= from && to <= byteFrequencies.length;
+        int sum = 0;
         for (int i = from; i < to; i++) {
-            count += counts[i];
+            sum += byteFrequencies[i];
         }
-        return count;
+        return sum;
     }
 
     private int countSafeControl() {
         return count('\t') + count('\n') + count('\r') // tab, LF, CR
                 + count(0x0c) + count(0x1b);           // new page, escape
     }
-
 }
