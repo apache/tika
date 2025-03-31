@@ -725,7 +725,7 @@ public class TikaConfig {
                 initializableProblemHandler = getInitializableProblemHandler(initProbHandler);
             }
 
-            T loaded = null;
+            T loaded;
 
             try {
                 Class<? extends T> loadedClass = loader.getServiceClass(getLoaderClass(), name);
@@ -934,18 +934,16 @@ public class TikaConfig {
                                Map<String, Param> params, MimeTypes mimeTypes, ServiceLoader loader)
                 throws InvocationTargetException, IllegalAccessException, InstantiationException {
             Parser parser = null;
-            Constructor<? extends Parser> c = null;
+            Constructor<? extends Parser> c;
             MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
 
             // Try the possible default and composite parser constructors
-            if (parser == null) {
-                try {
-                    c = parserClass.getConstructor(MediaTypeRegistry.class, ServiceLoader.class,
-                            Collection.class, EncodingDetector.class, Renderer.class);
-                    parser = c.newInstance(registry, loader, excludeParsers, encodingDetector, renderer);
-                } catch (NoSuchMethodException me) {
-                    //swallow
-                }
+            try {
+                c = parserClass.getConstructor(MediaTypeRegistry.class, ServiceLoader.class,
+                        Collection.class, EncodingDetector.class, Renderer.class);
+                parser = c.newInstance(registry, loader, excludeParsers, encodingDetector, renderer);
+            } catch (NoSuchMethodException me) {
+                //swallow
             }
             if (parser == null) {
                 try {
@@ -995,7 +993,7 @@ public class TikaConfig {
             // Create as a Parser Decorator
             if (parser == null && ParserDecorator.class.isAssignableFrom(parserClass)) {
                 try {
-                    CompositeParser cp = null;
+                    CompositeParser cp;
                     if (childParsers.size() == 1 && excludeParsers.isEmpty() &&
                             childParsers.get(0) instanceof CompositeParser) {
                         cp = (CompositeParser) childParsers.get(0);
@@ -1015,7 +1013,7 @@ public class TikaConfig {
         Parser newInstance(Class<? extends Parser> loadedClass)
                 throws IllegalAccessException, InstantiationException, NoSuchMethodException,
                 InvocationTargetException {
-            Parser parser = null;
+            Parser parser;
             if (AbstractEncodingDetectorParser.class.isAssignableFrom(loadedClass)) {
                 Constructor ctor = loadedClass.getConstructor(EncodingDetector.class);
                 parser = (Parser) ctor.newInstance(encodingDetector);
