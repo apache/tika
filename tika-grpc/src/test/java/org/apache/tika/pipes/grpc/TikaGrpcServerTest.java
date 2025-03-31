@@ -48,6 +48,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -81,6 +82,11 @@ public class TikaGrpcServerTest {
     @BeforeAll
     static void init() throws Exception {
         FileUtils.copyFile(tikaConfigXmlTemplate, tikaConfigXml);
+    }
+
+    @AfterAll
+    static void clean() {
+        FileUtils.deleteQuietly(tikaConfigXml);
     }
 
     static final int NUM_FETCHERS_TO_CREATE = 10;

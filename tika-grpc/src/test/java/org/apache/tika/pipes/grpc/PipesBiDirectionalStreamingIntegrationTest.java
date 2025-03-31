@@ -152,6 +152,11 @@ class PipesBiDirectionalStreamingIntegrationTest {
         }
     }
 
+    @AfterAll
+    static void cleanConfig() throws Exception {
+        FileUtils.deleteQuietly(tikaConfigXml);
+    }
+
     @BeforeEach
     void createHttpFetcher() throws Exception {
         SaveFetcherRequest saveFetcherRequest = SaveFetcherRequest
