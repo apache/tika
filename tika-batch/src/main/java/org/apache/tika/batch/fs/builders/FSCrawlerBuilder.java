@@ -111,9 +111,7 @@ public class FSCrawlerBuilder implements ICrawlerBuilder {
     }
 
     private FSDirectoryCrawler.CRAWL_ORDER getCrawlOrder(String s) {
-        if (s == null || s
-                .trim()
-                .length() == 0 || s.equals("os")) {
+        if (s == null || s.isBlank() || s.equals("os")) {
             return FSDirectoryCrawler.CRAWL_ORDER.OS_ORDER;
         } else if (s
                 .toLowerCase(Locale.ROOT)
