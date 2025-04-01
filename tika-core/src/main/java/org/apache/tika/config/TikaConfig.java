@@ -465,7 +465,7 @@ public class TikaConfig {
     }
 
     private static Set<MediaType> mediaTypesListFromDomElement(Element node, String tag)
-            throws TikaException, IOException {
+            throws TikaException {
         Set<MediaType> types = null;
         NodeList children = node.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
@@ -1028,7 +1028,7 @@ public class TikaConfig {
         }
 
         @Override
-        Parser decorate(Parser created, Element element) throws IOException, TikaException {
+        Parser decorate(Parser created, Element element) throws TikaException {
             Parser parser = created;
 
             // Is there an explicit list of mime types for this to handle?
@@ -1068,7 +1068,7 @@ public class TikaConfig {
 
         @Override
         Detector preLoadOne(Class<? extends Detector> loadedClass, String classname,
-                            MimeTypes mimeTypes) throws TikaException {
+                            MimeTypes mimeTypes) {
             // If they asked for the mime types as a detector, give
             //  them the one we've already created. TIKA-1708
             if (MimeTypes.class.equals(loadedClass)) {
@@ -1176,7 +1176,7 @@ public class TikaConfig {
 
         @Override
         Translator preLoadOne(Class<? extends Translator> loadedClass, String classname,
-                              MimeTypes mimeTypes) throws TikaException {
+                              MimeTypes mimeTypes) {
             // Continue with normal loading
             return null;
         }
@@ -1208,7 +1208,7 @@ public class TikaConfig {
                                    Set<Class<? extends Translator>> excludeChildren,
                                    Map<String, Param> params, MimeTypes mimeTypes,
                                    ServiceLoader loader)
-                throws InvocationTargetException, IllegalAccessException, InstantiationException {
+                throws InstantiationException {
             throw new InstantiationException("Only one translator supported");
         }
 
@@ -1226,7 +1226,7 @@ public class TikaConfig {
                 List<ConfigurableThreadPoolExecutor> children,
                 Set<Class<? extends ConfigurableThreadPoolExecutor>> excludeChildren,
                 Map<String, Param> params, MimeTypes mimeTypes, ServiceLoader loader)
-                throws InvocationTargetException, IllegalAccessException, InstantiationException {
+                throws InstantiationException {
             throw new InstantiationException("Only one executor service supported");
         }
 
@@ -1243,7 +1243,7 @@ public class TikaConfig {
 
         @Override
         ConfigurableThreadPoolExecutor decorate(ConfigurableThreadPoolExecutor created,
-                                                Element element) throws IOException, TikaException {
+                                                Element element) {
 
             Element maxThreadElement = getChild(element, "max-threads");
             if (maxThreadElement != null) {
@@ -1297,7 +1297,7 @@ public class TikaConfig {
         @Override
         ConfigurableThreadPoolExecutor preLoadOne(
                 Class<? extends ConfigurableThreadPoolExecutor> loadedClass, String classname,
-                MimeTypes mimeTypes) throws TikaException {
+                MimeTypes mimeTypes) {
             return null;
         }
     }
@@ -1335,7 +1335,7 @@ public class TikaConfig {
 
         @Override
         EncodingDetector preLoadOne(Class<? extends EncodingDetector> loadedClass, String classname,
-                                    MimeTypes mimeTypes) throws TikaException {
+                                    MimeTypes mimeTypes) {
             // Check for classes which can't be set in config
             // Continue with normal loading
             return null;
@@ -1424,7 +1424,7 @@ public class TikaConfig {
 
         @Override
         Renderer preLoadOne(Class<? extends Renderer> loadedClass, String classname,
-                                    MimeTypes mimeTypes) throws TikaException {
+                                    MimeTypes mimeTypes) {
             // Check for classes which can't be set in config
             // Continue with normal loading
             return null;
