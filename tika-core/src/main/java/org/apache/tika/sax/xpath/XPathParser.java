@@ -71,7 +71,7 @@ public class XPathParser {
                     new ChildMatcher(new SubtreeMatcher(NodeMatcher.INSTANCE)));
         } else if (xpath.equals("/@*")) {
             return AttributeMatcher.INSTANCE;
-        } else if (xpath.length() == 0) {
+        } else if (xpath.isEmpty()) {
             return ElementMatcher.INSTANCE;
         } else if (xpath.startsWith("/@")) {
             String name = xpath.substring(2);

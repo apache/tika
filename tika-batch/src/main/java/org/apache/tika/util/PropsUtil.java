@@ -34,7 +34,7 @@ public class PropsUtil {
      * @return parsed value
      */
     public static Boolean getBoolean(String v, Boolean defaultMissing) {
-        if (v == null || v.length() == 0) {
+        if (v == null || v.isEmpty()) {
             return defaultMissing;
         }
         if (v
@@ -58,7 +58,7 @@ public class PropsUtil {
      * @return parsed value
      */
     public static Integer getInt(String v, Integer defaultMissing) {
-        if (v == null || v.length() == 0) {
+        if (v == null || v.isEmpty()) {
             return defaultMissing;
         }
         try {
@@ -77,7 +77,7 @@ public class PropsUtil {
      * @return parsed value
      */
     public static Long getLong(String v, Long defaultMissing) {
-        if (v == null || v.length() == 0) {
+        if (v == null || v.isEmpty()) {
             return defaultMissing;
         }
         try {
@@ -111,7 +111,7 @@ public class PropsUtil {
      * @see #getPath(String, Path)
      */
     public static Path getPath(String v, Path defaultMissing) {
-        if (v == null || v.length() == 0) {
+        if (v == null || v.isEmpty()) {
             return defaultMissing;
         }
         //trim initial and final " if they exist

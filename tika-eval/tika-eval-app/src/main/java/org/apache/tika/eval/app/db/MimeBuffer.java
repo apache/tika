@@ -50,7 +50,7 @@ public class MimeBuffer extends AbstractDBBuffer {
             st.setString(2, value);
             try {
                 String ext = MimeUtil.getExtension(value, config);
-                if (ext == null || ext.length() == 0) {
+                if (ext == null || ext.isEmpty()) {
                     st.setNull(3, Types.VARCHAR);
                 } else {
                     st.setString(3, ext);
@@ -110,7 +110,7 @@ public class MimeBuffer extends AbstractDBBuffer {
             }
 
             //special handling for text/html/xml
-            if (ext.length() == 0) {
+            if (ext.isEmpty()) {
                 ext = tryTextyTypes(mime.getType());
             }
             return ext;

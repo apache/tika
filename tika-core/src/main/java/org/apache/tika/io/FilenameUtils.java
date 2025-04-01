@@ -96,7 +96,7 @@ public class FilenameUtils {
      */
     public static String getName(final String path) {
 
-        if (path == null || path.length() == 0) {
+        if (path == null || path.isEmpty()) {
             return StringUtils.EMPTY;
         }
         int unix = path.lastIndexOf("/");

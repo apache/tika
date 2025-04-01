@@ -49,7 +49,7 @@ public class JDBCUtil {
     public JDBCUtil(String connectionString, String driverClass) {
         this.connectionString = connectionString;
         this.driverClass = driverClass;
-        if (driverClass == null || driverClass.length() == 0) {
+        if (driverClass == null || driverClass.isEmpty()) {
             if (System.getProperty("jdbc.drivers") != null) {
                 //user has specified it on the command line
                 //stop now

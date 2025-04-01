@@ -251,7 +251,7 @@ public class DWGParser extends AbstractDWGParser {
 
     private void handleHeader(int headerNumber, String value, Metadata metadata, XHTMLContentHandler xhtml)
             throws SAXException {
-        if (value == null || value.length() == 0) {
+        if (value == null || value.isEmpty()) {
             return;
         }
 

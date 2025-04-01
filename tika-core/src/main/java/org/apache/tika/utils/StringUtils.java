@@ -37,11 +37,11 @@ public class StringUtils {
     static int PAD_LIMIT = 10000;
 
     public static boolean isEmpty(final CharSequence cs) {
-        return cs == null || cs.length() == 0;
+        return cs == null || cs.isEmpty();
     }
 
     public static boolean isBlank(final String s) {
-        return s == null || s.trim().length() == 0;
+        return s == null || s.isBlank();
     }
 
     /**

@@ -220,7 +220,7 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
         LOG.trace("adding {}={}", name, value);
         if (targetProperty != null && targetProperty.isMultiValuePermitted()) {
             if ((value != null && value.length() > 0) || allowEmptyValues) {
-                if (value == null || value.length() == 0 && allowEmptyValues) {
+                if (value == null || value.isEmpty() && allowEmptyValues) {
                     value = "";
                 }
                 String[] previous = metadata.getValues(name);

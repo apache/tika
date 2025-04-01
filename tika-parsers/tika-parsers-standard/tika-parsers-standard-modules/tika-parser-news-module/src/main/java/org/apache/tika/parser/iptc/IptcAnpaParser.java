@@ -424,7 +424,7 @@ public class IptcAnpaParser implements Parser {
             // pull apart the envelope, getting the date and time
             while (read < value.length) {
                 byte val_next = value[read++];
-                if (hdr_date.length() == 0) {
+                if (hdr_date.isEmpty()) {
                     while (((val_next >= (byte) 0x30) && (val_next <= (byte) 0x39))
                             // consume all numerics and hyphens
                             || (val_next == HY)) {

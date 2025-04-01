@@ -117,7 +117,7 @@ public class DIFContentHandler extends DefaultHandler {
             Stack<String> tempStack = (Stack<String>) this.treeStack.clone();
             StringBuilder key = new StringBuilder();
             while (!tempStack.isEmpty()) {
-                if (key.length() == 0) {
+                if (key.isEmpty()) {
                     key = new StringBuilder(tempStack.pop());
                 } else {
                     key.insert(0, tempStack.pop() + "-");

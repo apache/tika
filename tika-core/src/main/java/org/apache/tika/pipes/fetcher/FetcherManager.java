@@ -48,7 +48,7 @@ public class FetcherManager extends ConfigBase {
     public FetcherManager(List<Fetcher> fetchers) throws TikaConfigException {
         for (Fetcher fetcher : fetchers) {
             String name = fetcher.getName();
-            if (name == null || name.trim().length() == 0) {
+            if (name == null || name.trim().isEmpty()) {
                 throw new TikaConfigException("fetcher name must not be blank");
             }
             if (fetcherMap.containsKey(fetcher.getName())) {
