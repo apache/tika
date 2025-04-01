@@ -57,7 +57,7 @@ public class DataURISchemeUtil {
         //strip out back slashes as you might have in css
         dataString = (dataString != null) ? dataString.replaceAll("\\\\", " ") : dataString;
 
-        if (dataString == null || dataString.length() == 0) {
+        if (dataString == null || dataString.isEmpty()) {
             data = new byte[0];
         } else if (isBase64 != null) {
             data = base64.decode(dataString);

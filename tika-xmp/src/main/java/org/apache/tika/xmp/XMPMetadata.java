@@ -606,7 +606,7 @@ public class XMPMetadata extends Metadata {
      * @return true if the key is valid otherwise false
      */
     private void checkKey(String key) throws PropertyTypeException {
-        if (key == null || key.length() == 0) {
+        if (key == null || key.isEmpty()) {
             throw new PropertyTypeException("Key must not be null");
         }
 

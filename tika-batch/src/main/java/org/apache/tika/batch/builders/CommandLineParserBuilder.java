@@ -90,9 +90,9 @@ public class CommandLineParserBuilder {
         boolean hasArg = getBoolean(map, "hasArg", false);
         if (opt
                 .trim()
-                .length() == 0 || description
+                .isEmpty() || description
                 .trim()
-                .length() == 0) {
+                .isEmpty()) {
             throw new IllegalArgumentException("Must specify at least option and description");
         }
         Option option = new Option(opt, description);

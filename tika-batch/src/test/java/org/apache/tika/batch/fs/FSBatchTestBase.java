@@ -176,7 +176,7 @@ public abstract class FSBatchTestBase extends TikaTest {
     }
 
     public Path getInputRoot(String subdir) throws Exception {
-        String path = (subdir == null || subdir.length() == 0) ? "/test-input" : "/test-input/" + subdir;
+        String path = (subdir == null || subdir.isEmpty()) ? "/test-input" : "/test-input/" + subdir;
         return Paths.get(getResourceAsUri(path));
     }
 

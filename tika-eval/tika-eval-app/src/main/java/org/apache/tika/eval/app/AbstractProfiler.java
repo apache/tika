@@ -266,7 +266,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
 
     private static ContentTags parseContentAndTags(EvalFilePaths evalFilePaths, Metadata metadata) {
         String s = metadata.get(TikaCoreProperties.TIKA_CONTENT);
-        if (s == null || s.length() == 0) {
+        if (s == null || s.isEmpty()) {
             return ContentTags.EMPTY_CONTENT_TAGS;
         }
 
@@ -430,7 +430,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         String content = contentTags.getContent();
         if (content == null || content
                 .trim()
-                .length() == 0) {
+                .isEmpty()) {
             data.put(Cols.HAS_CONTENT, FALSE);
         } else {
             data.put(Cols.HAS_CONTENT, TRUE);
@@ -466,7 +466,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         String content = truncateContent(contentTags, maxContentLength, data);
         if (content == null || content
                 .trim()
-                .length() == 0) {
+                .isEmpty()) {
             content = "";
         }
         return compositeTextStatsCalculator.calculate(content);

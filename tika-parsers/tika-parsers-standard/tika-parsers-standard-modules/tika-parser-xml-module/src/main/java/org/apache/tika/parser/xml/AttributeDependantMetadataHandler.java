@@ -44,7 +44,7 @@ public class AttributeDependantMetadataHandler extends DefaultHandler {
     }
 
     public void addMetadata(String value) {
-        if (name == null || name.length() == 0) {
+        if (name == null || name.isEmpty()) {
             // We didn't find the attribute which holds the name
             return;
         }

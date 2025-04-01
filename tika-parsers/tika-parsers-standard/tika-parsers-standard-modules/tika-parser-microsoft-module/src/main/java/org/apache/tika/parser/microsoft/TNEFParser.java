@@ -90,10 +90,10 @@ public class TNEFParser implements Parser {
         // Recurse into each attachment in turn
         for (Attachment attachment : msg.getAttachments()) {
             String name = attachment.getLongFilename();
-            if (name == null || name.length() == 0) {
+            if (name == null || name.isEmpty()) {
                 name = attachment.getFilename();
             }
-            if (name == null || name.length() == 0) {
+            if (name == null || name.isEmpty()) {
                 String ext = attachment.getExtension();
                 if (ext != null) {
                     name = "unknown" + ext;
