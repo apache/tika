@@ -180,7 +180,7 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
             //returns e.g. "org.xml.sax.helpers.DefaultHandler@6c8b1edd"
         } else {
             String content = handler.toString();
-            if (content != null && content.trim().length() > 0) {
+            if (content != null && !content.isBlank()) {
                 metadata.add(TikaCoreProperties.TIKA_CONTENT, content);
                 metadata.add(TikaCoreProperties.TIKA_CONTENT_HANDLER,
                         handler.getClass().getSimpleName());

@@ -458,7 +458,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     if (officeParserConfig.isConcatenatePhoneticRuns()) {
                         String phonetic = (unicode != null && unicode.getExtendedRst() != null &&
                                 unicode.getExtendedRst().getPhoneticText() != null &&
-                                unicode.getExtendedRst().getPhoneticText().trim().length() > 0) ?
+                                !unicode.getExtendedRst().getPhoneticText().isBlank()) ?
                                 unicode.getExtendedRst().getPhoneticText() : "";
                         cellString = unicode.getString() + " " + phonetic;
                     } else {
