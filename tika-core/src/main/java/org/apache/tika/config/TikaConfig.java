@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -345,8 +347,8 @@ public class TikaConfig {
             throws TikaException, IOException {
         InputStream stream = null;
         try {
-            stream = new URL(config).openStream();
-        } catch (IOException ignore) {
+            stream = new URI(config).toURL().openStream();
+        } catch (IOException | URISyntaxException ignore) {
         }
         if (stream == null) {
             stream = serviceLoader.getResourceAsStream(config);
