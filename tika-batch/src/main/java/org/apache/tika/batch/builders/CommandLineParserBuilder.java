@@ -88,7 +88,7 @@ public class CommandLineParserBuilder {
         String longOpt = getString(map, "longOpt", "");
         boolean isRequired = getBoolean(map, "required", false);
         boolean hasArg = getBoolean(map, "hasArg", false);
-        if (opt.trim().length() == 0 || description.trim().length() == 0) {
+        if (opt.trim().isEmpty() || description.trim().isEmpty()) {
             throw new IllegalArgumentException("Must specify at least option and description");
         }
         Option option = new Option(opt, description);

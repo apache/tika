@@ -417,7 +417,7 @@ class XPSPageContentHandler extends DefaultHandler {
     private static void sortRow(List<GlyphRun> row) {
         boolean allRTL = true;
         for (GlyphRun run : row)  {
-            if (run.unicodeString.trim().length() == 0) {
+            if (run.unicodeString.trim().isEmpty()) {
                 // ignore whitespace for all RTL check
                 continue;
             }

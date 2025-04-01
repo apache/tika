@@ -165,7 +165,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
     //Still needed by PSTParser
     public static String getMessageClass(String messageClass) {
-        if (messageClass == null || messageClass.trim().length() == 0) {
+        if (messageClass == null || messageClass.trim().isEmpty()) {
             return "UNSPECIFIED";
         } else if (messageClass.equalsIgnoreCase("IPM.Note")) {
             return "NOTE";

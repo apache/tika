@@ -393,7 +393,7 @@ class HtmlHandler extends TextContentHandler {
     private void writeScript() throws SAXException {
         //don't write an attached macro if there is no content
         //we may want to revisit this behavior
-        if (script.toString().trim().length() == 0) {
+        if (script.toString().trim().isEmpty()) {
             return;
         }
         //do anything with attrs?

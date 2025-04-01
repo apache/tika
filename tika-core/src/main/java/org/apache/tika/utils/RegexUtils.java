@@ -49,7 +49,7 @@ public class RegexUtils {
      * @return List of urls within found in the plain text
      */
     public static List<String> extractLinks(String content) {
-        if (content == null || content.length() == 0) {
+        if (content == null || content.isEmpty()) {
             return Collections.emptyList();
         }
 

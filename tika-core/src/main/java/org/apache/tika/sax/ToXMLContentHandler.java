@@ -250,7 +250,7 @@ public class ToXMLContentHandler extends ToTextContentHandler {
                 return prefix;
             } else if (parent != null) {
                 return parent.getPrefix(uri);
-            } else if (uri == null || uri.length() == 0) {
+            } else if (uri == null || uri.isEmpty()) {
                 return "";
             } else {
                 throw new SAXException("Namespace " + uri + " not declared");

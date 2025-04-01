@@ -294,7 +294,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     }
 
     private static Map<String, String> parseParameters(String string) {
-        if (string.length() == 0) {
+        if (string.isEmpty()) {
             return Collections.emptyMap();
         }
 

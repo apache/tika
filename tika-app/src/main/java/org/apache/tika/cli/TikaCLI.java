@@ -446,7 +446,7 @@ public class TikaCLI {
             String dirPath = arg.substring("--extract-dir=".length());
             //if the user accidentally doesn't include
             //a directory, set the directory to the cwd
-            if (dirPath.length() == 0) {
+            if (dirPath.isEmpty()) {
                 dirPath = ".";
             }
             extractDir = new File(dirPath);
