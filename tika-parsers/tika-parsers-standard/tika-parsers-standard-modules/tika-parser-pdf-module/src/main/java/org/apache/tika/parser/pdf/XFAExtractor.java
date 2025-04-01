@@ -179,7 +179,7 @@ class XFAExtractor {
             }
         }
         String remainder = buffer.toString();
-        if (remainder.trim().length() > 0) {
+        if (!remainder.isBlank()) {
             xhtml.element("p", remainder);
         }
     }

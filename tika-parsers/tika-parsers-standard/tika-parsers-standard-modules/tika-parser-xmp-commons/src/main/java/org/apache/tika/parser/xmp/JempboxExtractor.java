@@ -173,7 +173,7 @@ public class JempboxExtractor {
                     } catch (NullPointerException | IOException e) {
                         //swallow
                     }
-                    if (instanceId != null && instanceId.trim().length() > 0) {
+                    if (instanceId != null && !instanceId.isBlank()) {
                         //for absent data elements, pass in empty strings so
                         //that parallel arrays will have matching offsets
                         //for absent data

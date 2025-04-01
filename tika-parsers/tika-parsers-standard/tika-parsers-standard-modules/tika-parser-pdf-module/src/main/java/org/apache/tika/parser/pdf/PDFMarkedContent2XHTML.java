@@ -321,7 +321,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                     ignoreTag = true;
                 }
                 if (!ignoreTag) {
-                    if (tag.clazz != null && tag.clazz.trim().length() > 0) {
+                    if (tag.clazz != null && !tag.clazz.isBlank()) {
                         xhtml.startElement(tag.tag, "class", tag.clazz);
                     } else {
                         xhtml.startElement(tag.tag);
@@ -380,7 +380,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         //This is only for uris, obv.
         //If we want to catch within doc references (GOTO, we need to cache those in state.
         //See testPDF_childAttachments.pdf for examples
-        if (state.uri != null && state.uri.trim().length() > 0) {
+        if (state.uri != null && !state.uri.isBlank()) {
             xhtml.startElement("a", "href", state.uri);
             xhtml.characters(state.hrefAnchorBuilder.toString());
             xhtml.endElement("a");

@@ -313,7 +313,7 @@ public class PDMetadataExtractor {
     }
 
     private static void setNotNull(Property property, String value, Metadata metadata) {
-        if (metadata.get(property) == null && value != null && value.trim().length() > 0) {
+        if (metadata.get(property) == null && value != null && !value.isBlank()) {
             metadata.set(property, decode(value));
         }
     }
