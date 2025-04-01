@@ -86,6 +86,7 @@ public class TikaGrpcServerTest {
 
     @AfterAll
     static void clean() {
+        tikaConfigXml.setWritable(true);
         FileUtils.deleteQuietly(tikaConfigXml);
     }
 
