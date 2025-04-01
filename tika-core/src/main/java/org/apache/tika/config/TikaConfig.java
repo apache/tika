@@ -703,16 +703,9 @@ public class TikaConfig {
                     return (CT) single;
                 }
             } else if (!supportsComposite()) {
-                // No composite support, just return the first one
-                if (loaded.size() == 1) {
-                    return (CT) loaded.get(0);
-                } else if (loaded.size() > 1) {
-                    throw new TikaConfigException(
-                            "Composite not supported for " + getParentTagName() +
-                                    ". Must specify only one child!");
-                } else {
-                    //throw exception if empty?
-                }
+                throw new TikaConfigException(
+                        "Composite not supported for " + getParentTagName() +
+                                ". Must specify only one child!");
             }
             // Wrap the defined parsers/detectors up in a Composite
             return createComposite(loaded, mimeTypes, loader);
