@@ -155,7 +155,7 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
-        if (basePath == null || basePath.toString().trim().isEmpty()) {
+        if (basePath == null || basePath.toString().isBlank()) {
             LOG.warn("'basePath' has not been set. " +
                     "This means that client code or clients can read from any file that this " +
                     "process has permissions to read. If you are running tika-server, make " +

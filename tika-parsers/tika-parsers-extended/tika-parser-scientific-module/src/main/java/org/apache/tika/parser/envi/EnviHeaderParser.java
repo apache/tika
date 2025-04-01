@@ -157,7 +157,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
         double pixelEasting = Double.parseDouble(mapInfoValues[3].trim());
         double pixelNorthing = Double.parseDouble(mapInfoValues[4].trim());
         int zone = 0;
-        if (!mapInfoValues[7].trim().isEmpty()) {
+        if (!mapInfoValues[7].isBlank()) {
             zone = Integer.parseInt(mapInfoValues[7].trim());
         }
 
