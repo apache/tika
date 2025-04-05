@@ -289,7 +289,7 @@
     <project.build.outputTimestamp>1729074250</project.build.outputTimestamp>
     <!-- plugin versions -->
     <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
-    <forbiddenapis.version>3.8</forbiddenapis.version>
+    <forbiddenapis.version>3.9</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.7.1</maven.assembly.version>
@@ -411,8 +411,8 @@
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.12</mime4j.version>
-    <mockito.version>5.16.1</mockito.version>
-    <mockito-junit-jupiter.version>5.16.1</mockito-junit-jupiter.version>
+    <mockito.version>5.17.0</mockito.version>
+    <mockito-junit-jupiter.version>5.17.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.0.RC4</netty.version>
     <oak.jackrabbit.version>1.76.0</oak.jackrabbit.version>
@@ -453,7 +453,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.3</zookeeper.version>
     <zstd.version>1.5.7-2</zstd.version>
-    <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>10.1</nimbus-jose-jwt.version>
     <javacpp.version>1.5.11</javacpp.version>
   </properties>
 
