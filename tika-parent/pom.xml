@@ -289,7 +289,7 @@
     <project.build.outputTimestamp>1738090967</project.build.outputTimestamp>
     <!-- plugin versions -->
     <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
-    <forbiddenapis.version>3.8</forbiddenapis.version>
+    <forbiddenapis.version>3.9</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.7.1</maven.assembly.version>
@@ -405,8 +405,8 @@
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.12</mime4j.version>
-    <mockito.version>5.16.1</mockito.version>
-    <mockito-junit-jupiter.version>5.16.1</mockito-junit-jupiter.version>
+    <mockito.version>5.17.0</mockito.version>
+    <mockito-junit-jupiter.version>5.17.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <!-- 4.2.0.Alpha4 tested successfully -->
     <netty.version>4.1.118.Final</netty.version>
@@ -453,7 +453,7 @@
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.4</zookeeper.version>
     <zstd.version>1.5.7-2</zstd.version>
-    <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>10.1</nimbus-jose-jwt.version>
     <logback.version>1.5.17</logback.version>
     <javacpp.version>1.5.11</javacpp.version>
     <maven.site.version>3.21.0</maven.site.version>
