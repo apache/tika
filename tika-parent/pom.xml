@@ -383,8 +383,7 @@
     <!-- mockito >= 5 requires jdk11 -->
     <mockito.version>4.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <!-- 4.2.0.Alpha4 tested successfully -->
-    <netty.version>4.1.118.Final</netty.version>
+    <netty.version>4.2.0.Final</netty.version>
     <oak.jackrabbit.version>1.76.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
@@ -397,7 +396,7 @@
     <!-- 4.14.0 needs jdk11 -->
     <pax.exam.version>4.13.5</pax.exam.version>
     <pdfbox.version>2.0.33</pdfbox.version>
-    <poi.version>5.4.0</poi.version>
+    <poi.version>5.4.1</poi.version>
     <!-- 2.5.0 needs jakarta.xml.bind 4.0.2 in tika-parser-scientific-module -->
     <quartz.version>2.3.2</quartz.version>
     <reactor.core.version>3.7.3</reactor.core.version>
@@ -905,13 +904,13 @@
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-classworlds</artifactId>
-        <version>2.8.0</version>
+        <artifactId>plexus-utils</artifactId>
+        <version>4.0.2</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-utils</artifactId>
-        <version>4.0.2</version>
+        <artifactId>plexus-classworlds</artifactId>
+        <version>2.9.0</version>
       </dependency>
       <dependency>
         <groupId>org.freemarker</groupId>
