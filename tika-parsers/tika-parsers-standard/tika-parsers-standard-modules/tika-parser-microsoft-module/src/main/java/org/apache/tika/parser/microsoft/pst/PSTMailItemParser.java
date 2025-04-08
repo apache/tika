@@ -27,7 +27,6 @@ import com.pff.PSTAttachment;
 import com.pff.PSTException;
 import com.pff.PSTMessage;
 import com.pff.PSTRecipient;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -115,8 +114,9 @@ public class PSTMailItemParser implements Parser {
                         metadata, context);
             } else {
                 byte[] data = htmlChunk.getBytes(StandardCharsets.UTF_8);
-                htmlParser.parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get(),
-                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)), new Metadata(), context);
+                try (TikaInputStream tis = TikaInputStream.get(data)) {
+                    htmlParser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)), new Metadata(), context);
+                }
             }
             return;
         }

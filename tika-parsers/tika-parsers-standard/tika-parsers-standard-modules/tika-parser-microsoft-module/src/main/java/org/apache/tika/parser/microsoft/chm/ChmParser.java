@@ -23,12 +23,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -94,12 +94,11 @@ public class ChmParser implements Parser {
 
     private void parsePage(byte[] byteObject, Parser htmlParser, ContentHandler xhtml,
                            ParseContext context) throws TikaException, IOException, SAXException { // throws IOException
-        InputStream stream = null;
         Metadata metadata = new Metadata();
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
-        stream = UnsynchronizedByteArrayInputStream.builder().setByteArray(byteObject).get();
-        htmlParser.parse(stream, handler, metadata, context);
-
+        try (TikaInputStream tis = TikaInputStream.get(byteObject)) {
+            htmlParser.parse(tis, handler, metadata, context);
+        }
     }
 
 }

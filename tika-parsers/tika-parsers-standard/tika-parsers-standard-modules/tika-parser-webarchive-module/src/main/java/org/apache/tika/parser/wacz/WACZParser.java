@@ -116,9 +116,9 @@ public class WACZParser implements Parser {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(zae.getSize()));
-        try (InputStream inputStream = getMaybeGzipInputStream(TikaInputStream.get(zais))) {
+        try (TikaInputStream tis = TikaInputStream.get(getMaybeGzipInputStream(TikaInputStream.get(zais)))) {
             if (ex.shouldParseEmbedded(metadata)) {
-                ex.parseEmbedded(inputStream, xhtml, metadata, true);
+                ex.parseEmbedded(tis, xhtml, metadata, true);
             }
         }
     }

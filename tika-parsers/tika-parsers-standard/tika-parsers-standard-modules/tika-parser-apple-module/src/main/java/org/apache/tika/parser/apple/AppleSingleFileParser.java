@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -35,6 +34,8 @@ import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.EndianUtils;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -99,8 +100,19 @@ public class AppleSingleFileParser implements Parser {
                 // TODO: we should probably add a readlimiting wrapper around this
                 // stream to ensure that not more than contentFieldInfo.length bytes
                 // are read
-                ex.parseEmbedded(CloseShieldInputStream.wrap(stream), xhtml, embeddedMetadata,
-                        true);
+                TikaInputStream tis = TikaInputStream.cast(stream);
+                TemporaryResources tmp = null;
+                if (tis == null) {
+                    tmp = new TemporaryResources();
+                    tis = TikaInputStream.get(stream, tmp, embeddedMetadata);
+                }
+                try {
+                    ex.parseEmbedded(tis, xhtml, embeddedMetadata, true);
+                } finally {
+                    if (tmp != null) {
+                        tmp.close();
+                    }
+                }
             }
         }
         xhtml.endDocument();

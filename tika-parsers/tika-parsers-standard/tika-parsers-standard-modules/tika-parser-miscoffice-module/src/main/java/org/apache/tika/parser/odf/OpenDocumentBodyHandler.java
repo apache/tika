@@ -19,7 +19,6 @@ package org.apache.tika.parser.odf;
 import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -529,8 +528,8 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         }
         Metadata embeddedMetadata = new Metadata();
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
-            try (InputStream is = TikaInputStream.get(bytes)) {
-                embeddedDocumentExtractor.parseEmbedded(is, handler, embeddedMetadata, true);
+            try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+                embeddedDocumentExtractor.parseEmbedded(tis, handler, embeddedMetadata, true);
             }
         }
     }

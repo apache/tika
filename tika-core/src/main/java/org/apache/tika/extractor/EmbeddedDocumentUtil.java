@@ -18,7 +18,6 @@ package org.apache.tika.extractor;
 
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 
 import org.xml.sax.ContentHandler;
@@ -219,9 +218,9 @@ public class EmbeddedDocumentUtil implements Serializable {
         return embeddedDocumentExtractor;
     }
 
-    public void parseEmbedded(InputStream inputStream, ContentHandler handler, Metadata metadata,
+    public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                               boolean outputHtml) throws IOException, SAXException {
-        embeddedDocumentExtractor.parseEmbedded(inputStream, handler, metadata, outputHtml);
+        embeddedDocumentExtractor.parseEmbedded(tis, handler, metadata, outputHtml);
     }
 
     /**

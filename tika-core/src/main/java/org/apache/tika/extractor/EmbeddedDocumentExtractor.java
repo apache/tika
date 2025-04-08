@@ -18,11 +18,11 @@
 package org.apache.tika.extractor;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
 public interface EmbeddedDocumentExtractor {
@@ -39,6 +39,6 @@ public interface EmbeddedDocumentExtractor {
      * @throws java.io.IOException
      */
     void parseEmbedded(
-            InputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml)
+            TikaInputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml)
             throws SAXException, IOException;
 }

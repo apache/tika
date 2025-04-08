@@ -36,13 +36,13 @@ import com.dd.plist.PropertyListParser;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -128,9 +128,11 @@ public class IWork13PackageParser implements Parser {
             if (type == null) {
                 type = IWork13DocumentType.detectIfPossible(entry);
             }
-            processZipEntry(entry, CloseShieldInputStream.wrap(zipStream), metadata, xhtml,
-                    parseContext,
-                    embeddedDocumentExtractor);
+
+            try (TemporaryResources tmp = new TemporaryResources()) {
+                TikaInputStream tis = TikaInputStream.get(zipStream, tmp, new Metadata());
+                processZipEntry(entry, tis, metadata, xhtml, parseContext, embeddedDocumentExtractor);
+            }
             entry = zipStream.getNextEntry();
         }
         if (type == null) {
@@ -153,8 +155,8 @@ public class IWork13PackageParser implements Parser {
             if (type == null) {
                 type = IWork13DocumentType.detectIfPossible(entry);
             }
-            try (InputStream is = zipFile.getInputStream(entry)) {
-                processZipEntry(entry, is, metadata, xhtml, parseContext, embeddedDocumentExtractor);
+            try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(entry))) {
+                processZipEntry(entry, tis, metadata, xhtml, parseContext, embeddedDocumentExtractor);
             } catch (SecurityException e) {
                 throw e;
             } catch (Exception e) {
@@ -171,7 +173,7 @@ public class IWork13PackageParser implements Parser {
     }
 
     private void processZipEntry(ZipEntry entry,
-                                 InputStream inputStream,
+                                 TikaInputStream tis,
                                  Metadata metadata, XHTMLContentHandler xhtml,
                                  ParseContext parseContext,
                                  EmbeddedDocumentExtractor embeddedDocumentExtractor)
@@ -181,18 +183,18 @@ public class IWork13PackageParser implements Parser {
             return;
         }
         if ("Metadata/Properties.plist".equals(streamName)) {
-            extractProperties(inputStream, metadata);
+            extractProperties(tis, metadata);
         } else if ("Metadata/BuildVersionHistory.plist".equals(streamName)) {
-            extractVersionHistory(inputStream, metadata);
+            extractVersionHistory(tis, metadata);
         } else if ("Metadata/DocumentIdentifier".equals(streamName)) {
-            extractDocumentIdentifier(inputStream, metadata);
+            extractDocumentIdentifier(tis, metadata);
         } else if ("preview.jpg".equals(streamName)) {
             //process thumbnail
             Metadata embeddedMetadata = new Metadata();
             embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
             embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, streamName);
-            handleEmbedded(inputStream, embeddedMetadata, xhtml, embeddedDocumentExtractor);
+            handleEmbedded(tis, embeddedMetadata, xhtml, embeddedDocumentExtractor);
         } else if (streamName.equals("preview-micro.jpg") ||
                 streamName.equals("preview-web.jpg")
                 || streamName.endsWith(".iwa")) {
@@ -200,18 +202,18 @@ public class IWork13PackageParser implements Parser {
         } else {
             Metadata embeddedMetadata = new Metadata();
             embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, streamName);
-            handleEmbedded(inputStream, embeddedMetadata, xhtml, embeddedDocumentExtractor);
+            handleEmbedded(tis, embeddedMetadata, xhtml, embeddedDocumentExtractor);
         }
     }
 
 
 
-    private void handleEmbedded(InputStream inputStream, Metadata embeddedMetadata,
+    private void handleEmbedded(TikaInputStream tis, Metadata embeddedMetadata,
                                 XHTMLContentHandler xhtml,
                                 EmbeddedDocumentExtractor embeddedDocumentExtractor)
             throws IOException, SAXException {
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
-            embeddedDocumentExtractor.parseEmbedded(inputStream, xhtml, embeddedMetadata, true);
+            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, embeddedMetadata, true);
         }
     }
 

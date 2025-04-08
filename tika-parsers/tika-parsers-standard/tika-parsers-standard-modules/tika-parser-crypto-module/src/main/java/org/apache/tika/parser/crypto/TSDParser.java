@@ -171,8 +171,8 @@ public class TSDParser implements Parser {
             try {
                 cmsTimeStampedDataParser = new CMSTimeStampedDataParser(stream);
 
-                try (InputStream is = TikaInputStream.get(cmsTimeStampedDataParser.getContent())) {
-                    edx.parseEmbedded(is, handler, metadata, true);
+                try (TikaInputStream tis = TikaInputStream.get(cmsTimeStampedDataParser.getContent())) {
+                    edx.parseEmbedded(tis, handler, metadata, true);
                 }
 
             } catch (SecurityException e) {

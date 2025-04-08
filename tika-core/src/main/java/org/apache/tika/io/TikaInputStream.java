@@ -119,6 +119,11 @@ public class TikaInputStream extends TaggedInputStream {
     private int consecutiveEOFs = 0;
     private byte[] skipBuffer;
 
+    /**
+     * If the stream should be shielded from closing
+     */
+    private int closeShieldDepth = 0;
+
     //suffix of the file if known. This is used to create temp files
     //with the right suffixes. This should include the initial . as in ".doc"
     private String suffix = null;
@@ -264,6 +269,32 @@ public class TikaInputStream extends TaggedInputStream {
      */
     public static TikaInputStream get(InputStream stream) {
         return get(stream, new TemporaryResources(), null);
+    }
+
+    /**
+     * Casts or wraps the given stream to a TikaInputStream instance.
+     * This method can be used to access the functionality of this class
+     * even when given just a normal input stream instance.
+     * <p>
+     * Use this method instead of the
+     * {@link #get(InputStream, TemporaryResources, Metadata)} alternative when you
+     * <em>do</em> explicitly close the returned stream. The recommended
+     * access pattern is:
+     * <pre>
+     * try (TikaInputStream stream = TikaInputStream.get(...)) {
+     *     // process stream
+     * }
+     * </pre>
+     * <p>
+     * The given stream instance will be closed along with any other resources
+     * associated with the returned TikaInputStream instance when the
+     * {@link #close()} method is called by the try-with-resources statement.
+     *
+     * @param stream normal input stream
+     * @return a TikaInputStream instance
+     */
+    public static TikaInputStream get(InputStream stream, Metadata metadata) {
+        return get(stream, new TemporaryResources(), metadata);
     }
 
     /**
@@ -827,6 +858,9 @@ public class TikaInputStream extends TaggedInputStream {
 
     @Override
     public void close() throws IOException {
+        if (closeShieldDepth > 0) {
+            return;
+        }
         path = null;
         mark = -1;
 
@@ -853,6 +887,17 @@ public class TikaInputStream extends TaggedInputStream {
         }
     }
 
+    public void setCloseShield() {
+        this.closeShieldDepth++;
+    }
+
+    public void removeCloseShield() {
+        this.closeShieldDepth--;
+    }
+
+    public boolean isCloseShield() {
+        return closeShieldDepth > 0;
+    }
     @Override
     public String toString() {
         String str = "TikaInputStream of ";

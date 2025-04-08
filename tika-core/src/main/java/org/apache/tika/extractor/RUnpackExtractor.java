@@ -35,7 +35,6 @@ import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.BoundedInputStream;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -68,7 +67,7 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
     @Override
     public void parseEmbedded(
-            InputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml)
+            TikaInputStream tis, ContentHandler handler, Metadata metadata, boolean outputHtml)
             throws SAXException, IOException {
         if (outputHtml) {
             AttributesImpl attributes = new AttributesImpl();
@@ -85,20 +84,13 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         }
 
         // Use the delegate parser to parse this entry
-        try (TemporaryResources tmp = new TemporaryResources()) {
-            final TikaInputStream newStream =
-                    TikaInputStream.get(CloseShieldInputStream.wrap(stream), tmp, metadata);
-            if (stream instanceof TikaInputStream) {
-                final Object container = ((TikaInputStream) stream).getOpenContainer();
-                if (container != null) {
-                    newStream.setOpenContainer(container);
-                }
-            }
+        try {
             EmbeddedDocumentBytesHandler bytesHandler = context.get(EmbeddedDocumentBytesHandler.class);
+            tis.setCloseShield();
             if (bytesHandler != null) {
-                parseWithBytes(newStream, handler, metadata);
+                parseWithBytes(tis, handler, metadata);
             } else {
-                parse(newStream, handler, metadata);
+                parse(tis, handler, metadata);
             }
         } catch (EncryptedDocumentException ede) {
             recordException(ede, context);
@@ -108,6 +100,8 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
             throw new IOException(e);
         } catch (TikaException e) {
             recordException(e, context);
+        } finally {
+            tis.removeCloseShield();
         }
 
         if (outputHtml) {

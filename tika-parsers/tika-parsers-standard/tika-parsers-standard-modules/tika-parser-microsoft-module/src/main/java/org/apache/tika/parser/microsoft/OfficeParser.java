@@ -32,7 +32,6 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
 import org.apache.poi.poifs.crypt.Decryptor;
@@ -118,7 +117,7 @@ public class OfficeParser extends AbstractOfficeParser {
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 embeddedDocumentExtractor.parseEmbedded(
                         //pass in space character so that we don't trigger a zero-byte exception
-                        UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[]{'\u0020'}).get(), xhtml, m, true);
+                        TikaInputStream.get(new byte[]{'\u0020'}), xhtml, m, true);
             }
             return;
         }
@@ -131,9 +130,9 @@ public class OfficeParser extends AbstractOfficeParser {
                 m.set(TikaCoreProperties.RESOURCE_NAME_KEY, e.getKey());
             }
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
-                embeddedDocumentExtractor.parseEmbedded(
-                        UnsynchronizedByteArrayInputStream.builder().setByteArray(e.getValue().getBytes(StandardCharsets.UTF_8)).get(),
-                        xhtml, m, true);
+                try (TikaInputStream tis = TikaInputStream.get(e.getValue().getBytes(StandardCharsets.UTF_8))) {
+                    embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true);
+                }
             }
         }
     }

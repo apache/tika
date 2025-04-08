@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -134,7 +135,7 @@ public class ZipParserTest extends AbstractPkgTest {
             return false;
         }
 
-        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler,
+        public void parseEmbedded(TikaInputStream inputStream, ContentHandler contentHandler,
                                   Metadata metadata, boolean outputHtml) {
             throw new UnsupportedOperationException("should never be called");
         }

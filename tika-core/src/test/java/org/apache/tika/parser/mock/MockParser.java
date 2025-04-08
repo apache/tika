@@ -19,7 +19,6 @@ package org.apache.tika.parser.mock;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -56,6 +55,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -267,7 +267,7 @@ public class MockParser implements Parser {
         if (!"".equals(contentType)) {
             m.set(Metadata.CONTENT_TYPE, contentType);
         }
-        try (InputStream is = new ByteArrayInputStream(embeddedText.getBytes(UTF_8))) {
+        try (TikaInputStream is = TikaInputStream.get(embeddedText.getBytes(UTF_8))) {
             extractor.parseEmbedded(is, new EmbeddedContentHandler(handler), m, true);
         }
     }

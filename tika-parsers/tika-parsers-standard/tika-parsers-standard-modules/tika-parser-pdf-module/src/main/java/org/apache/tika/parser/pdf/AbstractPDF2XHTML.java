@@ -263,9 +263,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (supportedTypes.contains(XMP_MEDIA_TYPE)) {
             //try the main metadata
             if (pdfDocument.getDocumentCatalog().getMetadata() != null) {
-                try (InputStream is = pdfDocument.getDocumentCatalog().getMetadata()
-                        .exportXMPMetadata()) {
-                    extractXMPAsEmbeddedFile(is, XMP_DOCUMENT_CATALOG_LOCATION);
+                try (TikaInputStream tis = TikaInputStream.get(
+                        pdfDocument.getDocumentCatalog().getMetadata().exportXMPMetadata())) {
+                    extractXMPAsEmbeddedFile(tis, XMP_DOCUMENT_CATALOG_LOCATION);
                 } catch (IOException e) {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                 }
@@ -274,8 +274,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             int pageNumber = 1;
             for (PDPage page : pdfDocument.getPages()) {
                 if (page.getMetadata() != null) {
-                    try (InputStream is = page.getMetadata().exportXMPMetadata()) {
-                        extractXMPAsEmbeddedFile(is, XMP_PAGE_LOCATION_PREFIX + pageNumber);
+                    try (TikaInputStream tis = TikaInputStream.get(page.getMetadata().exportXMPMetadata())) {
+                        extractXMPAsEmbeddedFile(tis, XMP_PAGE_LOCATION_PREFIX + pageNumber);
                     } catch (IOException e) {
                         EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                     }
@@ -301,17 +301,17 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                 }
                 if (bytes != null) {
-                    try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
-                        parseMetadata(is, xfaMetadata);
+                    try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+                        parseMetadata(tis, xfaMetadata);
                     }
                 }
             }
         }
     }
 
-    private void extractXMPAsEmbeddedFile(InputStream is, String location)
+    private void extractXMPAsEmbeddedFile(TikaInputStream tis, String location)
             throws IOException, SAXException {
-        if (is == null) {
+        if (tis == null) {
             return;
         }
         Metadata xmpMetadata = new Metadata();
@@ -320,19 +320,15 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
         xmpMetadata.set(PDF.XMP_LOCATION, location);
         if (embeddedDocumentExtractor.shouldParseEmbedded(xmpMetadata)) {
-            try {
-                parseMetadata(is, xmpMetadata);
-            } finally {
-                IOUtils.closeQuietly(is);
-            }
+            parseMetadata(tis, xmpMetadata);
         }
 
     }
 
-    private void parseMetadata(InputStream stream, Metadata embeddedMetadata)
+    private void parseMetadata(TikaInputStream tis, Metadata embeddedMetadata)
             throws IOException, SAXException {
         try {
-            embeddedDocumentExtractor.parseEmbedded(stream, new EmbeddedContentHandler(xhtml),
+            embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
                     embeddedMetadata, true);
         } catch (IOException e) {
             handleCatchableIOE(e);
@@ -557,10 +553,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         try (TemporaryResources tmp = new TemporaryResources()) {
             try (RenderResult renderResult = renderCurrentPage(pdPage, context, tmp)) {
                 Metadata renderMetadata = renderResult.getMetadata();
-                try (InputStream is = renderResult.getInputStream()) {
+                try (TikaInputStream tis = renderResult.getInputStream()) {
                     renderMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
                             ocrImageMediaType.toString());
-                    ocrParser.parse(is, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                    ocrParser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
                             renderMetadata, context);
                 }
             }
@@ -966,8 +962,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             String js = jsAction.getAction();
             js = (js == null) ? "" : js;
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
-                try (InputStream is = TikaInputStream.get(js.getBytes(StandardCharsets.UTF_8))) {
-                    embeddedDocumentExtractor.parseEmbedded(is, xhtml, m, true);
+                try (TikaInputStream tis = TikaInputStream.get(js.getBytes(StandardCharsets.UTF_8))) {
+                    embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true);
                 }
             }
             addNonNullAttribute("class", "javascript", attributes);
@@ -1105,7 +1101,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             updateMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.VERSION.toString());
             if (embeddedDocumentExtractor.shouldParseEmbedded(updateMetadata)) {
-                try (InputStream tis = TikaInputStream.get(update)) {
+                try (TikaInputStream tis = TikaInputStream.get(update)) {
                     context.set(IsIncrementalUpdate.class, IsIncrementalUpdate.IS_INCREMENTAL_UPDATE);
                     embeddedDocumentExtractor.parseEmbedded(tis, xhtml, updateMetadata, false);
                 }

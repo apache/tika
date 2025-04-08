@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.libpst;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Path;
@@ -78,9 +77,9 @@ public class EmailVisitor implements FileVisitor<Path> {
                 .relativize(file.getParent())
                 .toString();
         emailMetadata.set(PST.PST_FOLDER_PATH, pstPath);
-        try (InputStream is = TikaInputStream.get(file)) {
+        try (TikaInputStream tis = TikaInputStream.get(file)) {
             try {
-                embeddedDocumentExtractor.parseEmbedded(is, xhtml, emailMetadata, true);
+                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, emailMetadata, true);
             } catch (SAXException e) {
                 throw new IOException(e);
             }

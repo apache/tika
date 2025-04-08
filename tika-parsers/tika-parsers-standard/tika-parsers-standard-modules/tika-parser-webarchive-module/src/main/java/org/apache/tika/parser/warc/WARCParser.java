@@ -146,7 +146,7 @@ public class WARCParser implements Parser {
         if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
             //TODO check Content-Encoding on the warcResponse.http.headers and wrap the stream.
             //May need to sniff first few bytes to confirm accuracy, e.g. gzip compression ?
-            try (InputStream tis = TikaInputStream.get(payload.body().stream())) {
+            try (TikaInputStream tis = TikaInputStream.get(payload.body().stream())) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, metadata, true);
             }
         }

@@ -58,6 +58,7 @@ import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.io.BoundedInputStream;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MimeTypeException;
@@ -186,12 +187,13 @@ public class UnpackerResource {
             return true;
         }
 
-        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean b) throws SAXException, IOException {
+        @Override
+        public void parseEmbedded(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata, boolean b) throws SAXException, IOException {
             UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
                     .builder()
                     .get();
 
-            BoundedInputStream bis = new BoundedInputStream(unpackMaxBytes, inputStream);
+            BoundedInputStream bis = new BoundedInputStream(unpackMaxBytes, tis);
             IOUtils.copy(bis, bos);
             if (bis.hasHitBound()) {
                 throw new IOException(new TikaMemoryLimitException(
@@ -222,7 +224,7 @@ public class UnpackerResource {
                     LOG.warn("Unexpected MimeTypeException", e);
                 }
             }
-            try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get()) {
+            try (TikaInputStream is = TikaInputStream.get(data)) {
                 if (embeddedStreamTranslator.shouldTranslate(is, metadata)) {
                     InputStream translated = embeddedStreamTranslator.translate(UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get(), metadata);
                     UnsynchronizedByteArrayOutputStream bos2 = UnsynchronizedByteArrayOutputStream

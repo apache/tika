@@ -115,14 +115,13 @@ public class PDFRenderingTest extends TikaTest {
             super(context);
         }
 
-        public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
+        @Override
+        public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                                   boolean outputHtml) throws SAXException, IOException {
-            TikaInputStream tstream = TikaInputStream.get(stream);
-            byte[] bytes = Files.readAllBytes(tstream.getPath());
+
+            byte[] bytes = Files.readAllBytes(tis.getPath());
             embedded.put(count++, bytes);
-            try (InputStream is = Files.newInputStream(tstream.getPath())) {
-                super.parseEmbedded(is, handler, metadata, outputHtml);
-            }
+            super.parseEmbedded(tis, handler, metadata, outputHtml);
         }
 
         public Map<Integer, byte[]> getEmbedded() {

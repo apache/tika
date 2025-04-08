@@ -41,7 +41,6 @@ import com.healthmarketscience.jackcess.Table;
 import com.healthmarketscience.jackcess.query.Query;
 import com.healthmarketscience.jackcess.util.OleBlob;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.xml.sax.SAXException;
 
@@ -220,9 +219,8 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 BodyContentHandler h = new BodyContentHandler();
                 Metadata m = new Metadata();
                 m.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
-                try {
-                    htmlParser
-                            .parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(v.getBytes(UTF_8)).get(), h, m, parseContext);
+                try (TikaInputStream tis = TikaInputStream.get(v.getBytes(UTF_8))) {
+                    htmlParser.parse(tis, h, m, parseContext);
                     handler.characters(h.toString());
                 } catch (SAXException e) {
                     WriteLimitReachedException.throwIfWriteLimitReached(e);

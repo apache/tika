@@ -272,7 +272,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
                     preParseHandler.throwOnWriteLimitReached, context);
 
             try {
-                super.parse(stream, secureContentHandler, metadata, context);
+                tis.setCloseShield();
+                super.parse(tis, secureContentHandler, metadata, context);
             } catch (SAXException e) {
                 if (WriteLimitReachedException.isWriteLimitReached(e)) {
                     metadata.add(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
@@ -299,6 +300,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
                     throw e;
                 }
             } finally {
+                tis.removeCloseShield();
                 context.set(Parser.class, preContextParser);
                 context.set(RecursivelySecureContentHandler.class, preParseHandler);
                 context.set(ParentContentHandler.class, preParseParentHandler);

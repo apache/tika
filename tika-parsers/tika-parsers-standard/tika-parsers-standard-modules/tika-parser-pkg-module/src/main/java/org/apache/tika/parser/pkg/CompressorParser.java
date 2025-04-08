@@ -65,6 +65,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -228,7 +229,9 @@ public class CompressorParser implements Parser {
             EmbeddedDocumentExtractor extractor =
                     EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
             if (extractor.shouldParseEmbedded(entrydata)) {
-                extractor.parseEmbedded(cis, xhtml, entrydata, true);
+                try (TikaInputStream tis = TikaInputStream.get(cis)) {
+                    extractor.parseEmbedded(tis, xhtml, entrydata, true);
+                }
             }
         } finally {
             cis.close();
