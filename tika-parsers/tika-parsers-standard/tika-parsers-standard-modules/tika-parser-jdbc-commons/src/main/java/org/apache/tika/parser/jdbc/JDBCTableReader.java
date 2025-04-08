@@ -32,7 +32,6 @@ import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -200,8 +199,9 @@ public class JDBCTableReader {
         //is there a more efficient way to go from a Reader to an InputStream?
         String s = clob.getSubString(0, readSize);
         if (embeddedDocumentUtil.shouldParseEmbedded(m)) {
-            embeddedDocumentUtil
-                    .parseEmbedded(UnsynchronizedByteArrayInputStream.builder().setByteArray(s.getBytes(UTF_8)).get(), handler, m, true);
+            try (TikaInputStream tis = TikaInputStream.get(s.getBytes(UTF_8))) {
+                embeddedDocumentUtil.parseEmbedded(tis, handler, m, true);
+            }
         }
     }
 

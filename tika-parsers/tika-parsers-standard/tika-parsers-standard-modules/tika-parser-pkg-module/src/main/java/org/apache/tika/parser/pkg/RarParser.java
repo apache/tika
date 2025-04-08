@@ -86,9 +86,9 @@ public class RarParser implements Parser {
                     Metadata entrydata = PackageParser.handleEntryMetadata(header.getFileName(),
                             header.getCTime(), header.getMTime(), header.getFullUnpackSize(),
                             xhtml);
-                    try (InputStream subFile = rar.getInputStream(header)) {
+                    try (TikaInputStream rarTis = TikaInputStream.get(rar.getInputStream(header))) {
                         if (extractor.shouldParseEmbedded(entrydata)) {
-                            extractor.parseEmbedded(subFile, handler, entrydata, true);
+                            extractor.parseEmbedded(rarTis, handler, entrydata, true);
                         }
                     }
                 }

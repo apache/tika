@@ -21,9 +21,7 @@ import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -31,7 +29,6 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -82,7 +79,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
     @Override
     public void parseEmbedded(
-            InputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml)
+            TikaInputStream tis, ContentHandler handler, Metadata metadata, boolean outputHtml)
             throws SAXException, IOException {
         if (outputHtml) {
             AttributesImpl attributes = new AttributesImpl();
@@ -99,16 +96,9 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         }
 
         // Use the delegate parser to parse this entry
-        try (TemporaryResources tmp = new TemporaryResources()) {
-            final TikaInputStream newStream =
-                    TikaInputStream.get(CloseShieldInputStream.wrap(stream), tmp, metadata);
-            if (stream instanceof TikaInputStream) {
-                final Object container = ((TikaInputStream) stream).getOpenContainer();
-                if (container != null) {
-                    newStream.setOpenContainer(container);
-                }
-            }
-            DELEGATING_PARSER.parse(newStream, new EmbeddedContentHandler(new BodyContentHandler(handler)),
+        try {
+            tis.setCloseShield();
+            DELEGATING_PARSER.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(handler)),
                     metadata, context);
         } catch (EncryptedDocumentException ede) {
             recordException(ede, context);
@@ -118,6 +108,8 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             throw new IOException(e);
         } catch (TikaException e) {
             recordException(e, context);
+        } finally {
+            tis.removeCloseShield();
         }
 
         if (outputHtml) {

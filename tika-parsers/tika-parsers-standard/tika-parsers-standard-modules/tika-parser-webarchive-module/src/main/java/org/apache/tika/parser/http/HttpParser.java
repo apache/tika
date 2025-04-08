@@ -35,6 +35,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -79,8 +80,8 @@ public class HttpParser implements Parser {
             if (contentLength > 0) {
                 MessageBody messageBody = LengthedBody.create(channel, buffer, contentLength);
                 Metadata payloadMetadata = new Metadata();
-                try (InputStream messageStream = messageBody.stream()) {
-                    parsePayload(messageStream, xhtml, payloadMetadata, context);
+                try (TikaInputStream tis = TikaInputStream.get(messageBody.stream())) {
+                    parsePayload(tis, xhtml, payloadMetadata, context);
                 }
             }
         } finally {
@@ -88,11 +89,11 @@ public class HttpParser implements Parser {
         }
     }
 
-    private void parsePayload(InputStream stream, ContentHandler handler, Metadata metadata,
-                        ParseContext context) throws IOException, SAXException {
+    private void parsePayload(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) throws IOException, SAXException {
         EmbeddedDocumentExtractor ex = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (ex.shouldParseEmbedded(metadata)) {
-            ex.parseEmbedded(stream, handler, metadata, true);
+            ex.parseEmbedded(tis, handler, metadata, true);
         }
     }
 

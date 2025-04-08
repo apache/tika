@@ -17,12 +17,10 @@
 package org.apache.tika.parser.xml;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -30,6 +28,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -86,10 +85,9 @@ public class FictionBookParser extends XMLParser {
         @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
             if (binaryMode) {
-                try (InputStream stream =
-                             UnsynchronizedByteArrayInputStream.builder().setByteArray(Base64.decodeBase64(binaryData.toString())).get()) {
+                try (TikaInputStream tis = TikaInputStream.get(Base64.decodeBase64(binaryData.toString()))) {
                     partExtractor.parseEmbedded(
-                            stream, handler, metadata, true);
+                            tis, handler, metadata, true);
                 } catch (IOException e) {
                     throw new SAXException("IOException in parseEmbedded", e);
                 }

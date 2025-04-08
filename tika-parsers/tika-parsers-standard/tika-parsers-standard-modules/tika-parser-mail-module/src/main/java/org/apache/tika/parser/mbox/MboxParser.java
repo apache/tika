@@ -40,6 +40,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -130,11 +131,11 @@ public class MboxParser implements Parser {
                         saveHeaderInMetadata(mailMetadata, item);
                     }
 
-                    InputStream messageStream = message.toInputStream();
+                    TikaInputStream msgStream = TikaInputStream.get(message.toInputStream());
                     message = null;
 
                     if (extractor.shouldParseEmbedded(mailMetadata)) {
-                        extractor.parseEmbedded(messageStream, xhtml, mailMetadata, true);
+                        extractor.parseEmbedded(msgStream, xhtml, mailMetadata, true);
                     }
 
                     if (tracking) {

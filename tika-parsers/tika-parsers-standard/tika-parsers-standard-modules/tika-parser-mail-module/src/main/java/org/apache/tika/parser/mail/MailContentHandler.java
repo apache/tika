@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 import java.util.Stack;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.codec.DecodeMonitor;
@@ -546,9 +545,10 @@ class MailContentHandler implements ContentHandler {
                     inlineMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
                             MediaType.TEXT_PLAIN.toString());
                 }
-                parser.parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(part.bytes).get(),
-                        new EmbeddedContentHandler(new BodyContentHandler(handler)), inlineMetadata,
-                        parseContext);
+                try (TikaInputStream tis = TikaInputStream.get(part.bytes)) {
+                    parser.parse(tis,
+                            new EmbeddedContentHandler(new BodyContentHandler(handler)), inlineMetadata, parseContext);
+                }
             } catch (SAXException | TikaException e) {
                 throw new MimeException(e);
             }

@@ -468,9 +468,9 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 if (htmlParser == null) {
                     htmlParser = new JSoupParser();
                 }
-                htmlParser.parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get(),
-                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)), new Metadata(),
-                        parseContext);
+                try (TikaInputStream tis = TikaInputStream.get(data)) {
+                    htmlParser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)), new Metadata(), parseContext);
+                }
                 doneBody = true;
             }
         }
@@ -488,8 +488,9 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 if (rtfParser == null) {
                     rtfParser = new RTFParser();
                 }
-                rtfParser.parseInline(UnsynchronizedByteArrayInputStream.builder().setByteArray(rtf.getData()).get(),
-                        xhtml, new Metadata(), parseContext);
+                try (TikaInputStream tis = TikaInputStream.get(rtf.getData())) {
+                    rtfParser.parseInline(tis, xhtml, new Metadata(), parseContext);
+                }
                 doneBody = true;
             }
         }

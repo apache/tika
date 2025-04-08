@@ -1086,12 +1086,10 @@ public class TikaCLI {
             return true;
         }
 
-        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean outputHtml) throws SAXException, IOException {
+        @Override
+        public void parseEmbedded(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata, boolean outputHtml) throws SAXException, IOException {
 
-            if (!inputStream.markSupported()) {
-                inputStream = TikaInputStream.get(inputStream);
-            }
-            MediaType contentType = detector.detect(inputStream, metadata);
+            MediaType contentType = detector.detect(tis, metadata);
 
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             File outputFile = null;
@@ -1110,12 +1108,12 @@ public class TikaCLI {
             System.out.println("Extracting '" + name + "' (" + contentType + ") to " + outputFile);
 
             try (FileOutputStream os = new FileOutputStream(outputFile)) {
-                if (embeddedStreamTranslator.shouldTranslate(inputStream, metadata)) {
-                    try (InputStream translated = embeddedStreamTranslator.translate(inputStream, metadata)) {
+                if (embeddedStreamTranslator.shouldTranslate(tis, metadata)) {
+                    try (InputStream translated = embeddedStreamTranslator.translate(tis, metadata)) {
                         IOUtils.copy(translated, os);
                     }
                 } else {
-                    IOUtils.copy(inputStream, os);
+                    IOUtils.copy(tis, os);
                 }
             } catch (Exception e) {
                 //

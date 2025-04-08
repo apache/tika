@@ -17,7 +17,6 @@
 package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -175,9 +174,9 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                 if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
                     if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata())) {
 
-                        try (InputStream is = result.getInputStream()) {
+                        try (TikaInputStream resultInputStream = result.getInputStream()) {
                             //TODO: add markup here?
-                            embeddedDocumentExtractor.parseEmbedded(is, xhtml,
+                            embeddedDocumentExtractor.parseEmbedded(resultInputStream, xhtml,
                                     result.getMetadata(), true);
                         }
                     }

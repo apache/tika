@@ -32,6 +32,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -73,7 +74,7 @@ public class ExtractEmbeddedFiles {
         }
 
         @Override
-        public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml) throws SAXException, IOException {
+        public void parseEmbedded(TikaInputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml) throws SAXException, IOException {
 
             //try to get the name of the embedded file from the metadata
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);

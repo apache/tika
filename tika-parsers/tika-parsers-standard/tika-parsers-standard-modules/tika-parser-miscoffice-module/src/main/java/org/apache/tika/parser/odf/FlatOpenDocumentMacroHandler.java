@@ -17,7 +17,6 @@
 package org.apache.tika.parser.odf;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.lang3.StringUtils;
@@ -108,9 +107,9 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
-            try (InputStream is = TikaInputStream.get(bytes)) {
+            try (TikaInputStream tis = TikaInputStream.get(bytes)) {
                 embeddedDocumentExtractor
-                        .parseEmbedded(is, contentHandler, embeddedMetadata, true);
+                        .parseEmbedded(tis, contentHandler, embeddedMetadata, true);
             }
         }
     }

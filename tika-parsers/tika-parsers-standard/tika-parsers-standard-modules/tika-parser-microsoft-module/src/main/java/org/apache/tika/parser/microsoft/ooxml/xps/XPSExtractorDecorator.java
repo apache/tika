@@ -41,6 +41,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.AbstractOOXMLExtractor;
@@ -69,7 +70,7 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private static InputStream getZipStream(String zipPath, ZipPackage zipPackage)
+    private static TikaInputStream getZipStream(String zipPath, ZipPackage zipPackage)
             throws IOException, TikaException {
         String targPath =
                 (zipPath.length() > 1 && zipPath.startsWith("/") ? zipPath.substring(1) : zipPath);
@@ -86,7 +87,7 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
         if (zipEntry == null) {
             throw new TikaException("Couldn't find required zip entry: " + zipPath);
         }
-        return zipEntrySource.getInputStream(zipEntry);
+        return TikaInputStream.get(zipEntrySource.getInputStream(zipEntry));
     }
 
     @Override
@@ -130,9 +131,9 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
     private void handleEmbeddedImage(String zipPath, Metadata metadata,
                                      EmbeddedDocumentUtil embeddedDocumentUtil,
                                      XHTMLContentHandler xhtml) throws SAXException, IOException {
-        InputStream stream = null;
+        TikaInputStream tis = null;
         try {
-            stream = getZipStream(zipPath, pkg);
+            tis = getZipStream(zipPath, pkg);
         } catch (IOException | TikaException e) {
             //store this exception in the parent's metadata
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
@@ -140,9 +141,9 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         try {
-            embeddedDocumentUtil.parseEmbedded(stream, xhtml, metadata, true);
+            embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, true);
         } finally {
-            IOUtils.closeQuietly(stream);
+            IOUtils.closeQuietly(tis);
         }
     }
 

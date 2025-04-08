@@ -18,7 +18,6 @@ package org.apache.tika.renderer;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -62,7 +61,7 @@ public class RenderResult implements Closeable {
         }
     }
 
-    public InputStream getInputStream() throws IOException {
+    public TikaInputStream getInputStream() throws IOException {
         if (result instanceof Path) {
             return TikaInputStream.get((Path)result, metadata);
         } else {

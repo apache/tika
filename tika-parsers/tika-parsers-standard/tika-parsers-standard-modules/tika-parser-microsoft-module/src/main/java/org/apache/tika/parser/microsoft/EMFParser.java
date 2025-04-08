@@ -69,11 +69,11 @@ public class EMFParser implements Parser {
     private static void handleEmbedded(byte[] data,
                                        EmbeddedDocumentExtractor embeddedDocumentExtractor,
                                        ContentHandler handler) throws TikaException, SAXException {
-        try (InputStream is = TikaInputStream.get(data)) {
+        try (TikaInputStream tis = TikaInputStream.get(data)) {
             Metadata embeddedMetadata = new Metadata();
             if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
                 embeddedDocumentExtractor
-                        .parseEmbedded(is, new EmbeddedContentHandler(handler), embeddedMetadata,
+                        .parseEmbedded(tis, new EmbeddedContentHandler(handler), embeddedMetadata,
                                 true);
             }
         } catch (IOException e) {
@@ -204,9 +204,9 @@ public class EMFParser implements Parser {
         Metadata embeddedMetadata = new Metadata();
         embeddedMetadata.set(Metadata.CONTENT_TYPE, WMF_MEDIA_TYPE.toString());
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
-            try (InputStream is = TikaInputStream.get(bytes)) {
+            try (TikaInputStream tis = TikaInputStream.get(bytes)) {
                 embeddedDocumentExtractor
-                        .parseEmbedded(is, new EmbeddedContentHandler(contentHandler),
+                        .parseEmbedded(tis, new EmbeddedContentHandler(contentHandler),
                                 embeddedMetadata, true);
 
             }
