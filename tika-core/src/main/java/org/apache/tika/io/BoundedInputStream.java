@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.apache.commons.io.IOUtils;
+
 /**
  * Very slight modification of Commons' BoundedInputStream
  * so that we can figure out if this hit the bound or not.
@@ -145,7 +147,7 @@ public class BoundedInputStream extends InputStream {
 
     @Override
     public long transferTo(OutputStream out) throws IOException {
-        return in.transferTo(out);
+        return IOUtils.copy(this, out);
     }
 
     public long getPos() {
