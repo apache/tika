@@ -18,8 +18,11 @@ package org.apache.tika.detect.zip;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -43,5 +46,20 @@ public class ZipParserTest extends TikaTest {
     public void testJARDetection() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testJAR.jar");
         assertEquals("application/java-archive", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testStreaming() throws Exception {
+        long len = getLength("testJAR.jar");
+        System.out.println(len);
+        DefaultZipContainerDetector detector = new DefaultZipContainerDetector();
+        //detector.setMarkLimit(100);
+        try (InputStream is = ZipParserTest.class.getResourceAsStream("/test-documents/testJAR.jar")) {
+            System.out.println(detector.detect(is, new Metadata()));
+        }
+    }
+
+    private long getLength(String fileName) throws IOException {
+        return IOUtils.toByteArray(ZipParserTest.class.getResourceAsStream("/test-documents/" + fileName)).length;
     }
 }

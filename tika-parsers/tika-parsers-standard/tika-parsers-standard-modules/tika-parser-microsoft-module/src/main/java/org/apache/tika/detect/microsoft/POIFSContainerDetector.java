@@ -248,7 +248,7 @@ public class POIFSContainerDetector implements Detector {
     private static final Pattern mppDataMatch = Pattern.compile("\\s\\s\\s\\d+");
 
     @Field
-    private int markLimit = 128 * 1024 * 1024;
+    private int markLimit = -1;
 
     /**
      * Internal detection of the specific kind of OLE2 document, based on the

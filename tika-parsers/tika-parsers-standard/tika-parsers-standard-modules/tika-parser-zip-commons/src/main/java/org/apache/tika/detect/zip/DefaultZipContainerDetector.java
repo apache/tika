@@ -21,6 +21,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +44,7 @@ import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.BoundedInputStream;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -71,7 +73,7 @@ public class DefaultZipContainerDetector implements Detector {
     //this has to be > 100,000 to handle some of the iworks files
     //in our unit tests
     @Field
-    int markLimit = 16 * 1024 * 1024;
+    int markLimit = -1;//16 * 1024 * 1024;
 
     private transient ServiceLoader loader;
 
@@ -181,14 +183,18 @@ public class DefaultZipContainerDetector implements Detector {
 
             if (TikaInputStream.isTikaInputStream(input)) {
                 TikaInputStream tis = TikaInputStream.cast(input);
-                if (markLimit < 0) {
-                    tis.getFile();
-                }
-                if (tis.hasFile()) {
-                    return detectZipFormatOnFile(tis, metadata);
+                return detectZipFormatOnFile(tis, metadata);
+            } else {
+                if (markLimit >= 0) {
+                    return detectStreaming(input, metadata);
+                } else {
+                    try (TemporaryResources tmp = new TemporaryResources()) {
+                        try (TikaInputStream tis = TikaInputStream.get(input, tmp, new Metadata())) {
+                            return detectZipFormatOnFile(tis, metadata);
+                        }
+                    }
                 }
             }
-            return detectStreaming(input, metadata);
         } else if (!type.equals(MediaType.OCTET_STREAM)) {
             return type;
         } else {
@@ -207,7 +213,7 @@ public class DefaultZipContainerDetector implements Detector {
     private MediaType detectZipFormatOnFile(TikaInputStream tis, Metadata metadata) {
         ZipFile zip = null;
         try {
-            zip = ZipFile.builder().setFile(tis.getFile()).get(); // TODO: hasFile()?
+            zip = ZipFile.builder().setFile(tis.getFile()).get();
 
             for (ZipContainerDetector zipDetector : getDetectors()) {
                 MediaType type = zipDetector.detect(zip, tis);
