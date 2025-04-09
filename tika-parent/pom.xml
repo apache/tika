@@ -455,6 +455,14 @@
     <zstd.version>1.5.7-2</zstd.version>
     <nimbus-jose-jwt.version>10.1</nimbus-jose-jwt.version>
     <javacpp.version>1.5.11</javacpp.version>
+
+    <!-- needs to exist even if empty due to problems with jacoco-maven-plugin -->
+    <addmod />
+    <!-- This is a default value to avoid problems when running single tests
+          see also https://stackoverflow.com/a/28695766/535646
+          https://maven.apache.org/surefire/maven-surefire-plugin/faq.html#late-property-evaluation
+    -->
+    <surefireArgLine />
   </properties>
 
   <dependencyManagement>
@@ -1141,6 +1149,31 @@
       </plugins>
     </pluginManagement>
     <plugins>
+        <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>0.8.13</version>
+            <configuration>
+                <skip>${skipTests}</skip>
+            </configuration>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>prepare-agent</goal>
+                    </goals>
+                    <configuration>
+                        <propertyName>surefireArgLine</propertyName>
+                    </configuration>
+                </execution>
+                <execution>
+                    <id>report</id>
+                    <phase>test</phase>
+                    <goals>
+                        <goal>report</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -1271,7 +1304,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven.surefire.version}</version>
         <configuration>
-          <argLine>-Xmx4g -Djava.awt.headless=true</argLine>
+          <argLine>-Xmx4g -Djava.awt.headless=true @{surefireArgLine}</argLine>
         </configuration>
       </plugin>
       <plugin>
