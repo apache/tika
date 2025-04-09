@@ -38,6 +38,8 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.DocumentNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.Detector;
@@ -247,6 +249,9 @@ public class POIFSContainerDetector implements Detector {
      */
     private static final Pattern mppDataMatch = Pattern.compile("\\s\\s\\s\\d+");
 
+    private static final Logger LOG = LoggerFactory.getLogger(POIFSContainerDetector.class);
+
+
     @Field
     private int markLimit = -1;
 
@@ -267,7 +272,7 @@ public class POIFSContainerDetector implements Detector {
      * @return
      */
     public static MediaType detect(Set<String> anyCaseNames, DirectoryEntry root) {
-        if (anyCaseNames == null || anyCaseNames.size() == 0) {
+        if (anyCaseNames == null || anyCaseNames.isEmpty()) {
             return OLE;
         }
 
@@ -567,6 +572,8 @@ public class POIFSContainerDetector implements Detector {
 
         //if the stream was longer than markLimit, don't detect
         if (file == null) {
+            LOG.warn("File length exceeds marklimit. Skipping detection on this file. " +
+                    "If you need precise detection, consider increasing the marklimit or setting it to -1");
             return Collections.emptySet();
         }
 
@@ -581,6 +588,8 @@ public class POIFSContainerDetector implements Detector {
         } catch (IOException e) {
             // Parse error in POI, so we don't know the file type
             return Collections.emptySet();
+        } catch (SecurityException e) {
+            throw e;
         } catch (RuntimeException e) {
             // Another problem in POI
             return Collections.emptySet();
@@ -593,6 +602,46 @@ public class POIFSContainerDetector implements Detector {
             return MediaType.OCTET_STREAM;
         }
 
+        if (! isOleHeader(input)) {
+            return MediaType.OCTET_STREAM;
+        }
+
+        TikaInputStream tis = TikaInputStream.cast(input);
+        if (tis == null) {
+            LOG.warn("POIFSContainerDetector requires a TikaInputStream for precise detection.");
+            return OLE;
+        }
+
+        Set<String> names = tryOpenContainerOnTikaInputStream(tis, metadata);
+
+        // We can only detect the exact type when given a TikaInputStream
+        if (names == null) {
+            // spool to disk and try detection
+            names = getTopLevelNames(tis);
+        }
+
+        // Detect based on the names (as available)
+        if (tis.getOpenContainer() != null &&
+                tis.getOpenContainer() instanceof POIFSFileSystem) {
+            return detect(names, ((POIFSFileSystem) tis.getOpenContainer()).getRoot());
+        } else {
+            //can we actually get here?
+            return detect(names, null);
+        }
+    }
+
+    private boolean isOleHeader(InputStream input) throws IOException {
+        input.mark(8);
+        try {
+            return (input.read() == 0xd0 && input.read() == 0xcf && input.read() == 0x11 && input.read() == 0xe0 && input.read() == 0xa1 && input.read() == 0xb1 &&
+                    input.read() == 0x1a && input.read() == 0xe1);
+        } finally {
+            input.reset();
+        }
+    }
+
+
+    public static Set<String> tryOpenContainerOnTikaInputStream(InputStream input, Metadata metadata) {
         // If this is a TikaInputStream wrapping an already
         // parsed NPOIFileSystem/DirectoryNode, just get the
         // names from the root:
@@ -601,40 +650,13 @@ public class POIFSContainerDetector implements Detector {
         if (tis != null) {
             Object container = tis.getOpenContainer();
             if (container instanceof POIFSFileSystem) {
-                names = getTopLevelNames(((POIFSFileSystem) container).getRoot());
+                return getTopLevelNames(((POIFSFileSystem) container).getRoot());
             } else if (container instanceof DirectoryNode) {
-                names = getTopLevelNames((DirectoryNode) container);
+                return getTopLevelNames((DirectoryNode) container);
             }
         }
-
-        if (names == null) {
-            // Check if the document starts with the OLE header
-            input.mark(8);
-            try {
-                if (input.read() != 0xd0 || input.read() != 0xcf || input.read() != 0x11 ||
-                        input.read() != 0xe0 || input.read() != 0xa1 || input.read() != 0xb1 ||
-                        input.read() != 0x1a || input.read() != 0xe1) {
-                    return MediaType.OCTET_STREAM;
-                }
-            } catch (IOException e) {
-                return MediaType.OCTET_STREAM;
-            } finally {
-                input.reset();
-            }
-        }
-
-        // We can only detect the exact type when given a TikaInputStream
-        if (names == null && tis != null) {
-            // Look for known top level entry names to detect the document type
-            names = getTopLevelNames(tis);
-        }
-
-        // Detect based on the names (as available)
-        if (tis != null && tis.getOpenContainer() != null &&
-                tis.getOpenContainer() instanceof POIFSFileSystem) {
-            return detect(names, ((POIFSFileSystem) tis.getOpenContainer()).getRoot());
-        } else {
-            return detect(names, null);
-        }
+        return null;
     }
+
+
 }
