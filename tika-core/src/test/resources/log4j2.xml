@@ -17,7 +17,7 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<Configuration status="INFO">
+<Configuration>
   <Appenders>
     <Console name="console" target="SYSTEM_ERR">
       <PatternLayout
