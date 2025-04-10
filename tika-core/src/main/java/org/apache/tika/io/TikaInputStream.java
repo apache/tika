@@ -723,52 +723,55 @@ public class TikaInputStream extends TaggedInputStream {
      * @throws IOException
      */
     public Path getPath(int maxBytes) throws IOException {
-        if (path == null) {
-            if (position > 0) {
-                throw new IOException("Stream is already being read");
-            } else {
-                Path tmpFile = tmp.createTempFile(suffix);
-                if (maxBytes > -1) {
-                    this.mark(maxBytes);
-                    try (BoundedInputStream boundedInputStream =
-                                 new BoundedInputStream(maxBytes, this)) {
+        if (path != null) {
+            return path;
+        }
+        if (position > 0) {
+            throw new IOException("Stream is already being read");
+        } else {
+            Path tmpFile = tmp.createTempFile(suffix);
+            if (maxBytes > -1) {
+                try (BoundedInputStream boundedInputStream = new BoundedInputStream(maxBytes, this)) {
+                    boundedInputStream.mark(maxBytes);
+                    try {
                         Files.copy(boundedInputStream, tmpFile, REPLACE_EXISTING);
                         if (boundedInputStream.hasHitBound()) {
                             //tmpFile will be cleaned up when this TikaInputStream is closed
                             return null;
                         }
                     } finally {
-                        this.reset();
+                        boundedInputStream.reset();
                     }
-                } else {
-                    // Spool the entire stream into a temporary file
-                    Files.copy(this, tmpFile, REPLACE_EXISTING);
                 }
-                //successful so far, set tis' path to tmpFile
-                path = tmpFile;
-
-                // Create a new input stream and make sure it'll get closed
-                InputStream newStream = Files.newInputStream(path);
-                tmp.addResource(newStream);
-
-                // Replace the spooled stream with the new stream in a way
-                // that still ends up closing the old stream if or when the
-                // close() method is called. The closing of the new stream
-                // is already being handled as noted above.
-                final InputStream oldStream = in;
-                in = new BufferedInputStream(newStream) {
-                    @Override
-                    public void close() throws IOException {
-                        oldStream.close();
-                    }
-                };
-
-                // Update length to file size. Update position, mark
-                length = Files.size(path);
-                position = 0;
-                mark = -1;
+            } else {
+                // Spool the entire stream into a temporary file
+                Files.copy(this, tmpFile, REPLACE_EXISTING);
             }
+            //successful so far, set tis' path to tmpFile
+            path = tmpFile;
+
+            // Create a new input stream and make sure it'll get closed
+            InputStream newStream = Files.newInputStream(path);
+            tmp.addResource(newStream);
+
+            // Replace the spooled stream with the new stream in a way
+            // that still ends up closing the old stream if or when the
+            // close() method is called. The closing of the new stream
+            // is already being handled as noted above.
+            final InputStream oldStream = in;
+            in = new BufferedInputStream(newStream) {
+                @Override
+                public void close() throws IOException {
+                    oldStream.close();
+                }
+            };
+
+            // Update length to file size. Update position, mark
+            length = Files.size(path);
+            position = 0;
+            mark = -1;
         }
+
         return path;
     }
 

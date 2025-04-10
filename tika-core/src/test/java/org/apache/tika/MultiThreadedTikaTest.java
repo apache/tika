@@ -109,7 +109,6 @@ public class MultiThreadedTikaTest extends TikaTest {
                 baseline.put(f, new Extract(metadataList));
 
             } catch (Exception e) {
-                e.printStackTrace();
                 //swallow
             }
         }
