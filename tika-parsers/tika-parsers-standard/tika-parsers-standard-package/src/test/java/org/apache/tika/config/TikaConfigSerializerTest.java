@@ -46,7 +46,7 @@ public class TikaConfigSerializerTest {
         assertContains(encodingNeedle, xml);
 
         String detectorNeedle = "<detector class=\"org.apache.tika.detect.zip.DefaultZipContainerDetector\">" +
-                " <params> <param name=\"markLimit\" type=\"int\">16777216</param> </params>";
+                " <params> <param name=\"markLimit\" type=\"int\">-1</param> </params>";
         assertContains(detectorNeedle, xml);
 
         String parserNeedle = "<parser class=\"org.apache.tika.parser.pdf.PDFParser\">" +

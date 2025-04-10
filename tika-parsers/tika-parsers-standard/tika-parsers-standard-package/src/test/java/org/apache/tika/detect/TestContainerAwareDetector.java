@@ -65,6 +65,10 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     private final StreamingZipContainerDetector streamingZipDetector =
             new StreamingZipContainerDetector();
 
+    TestContainerAwareDetector() {
+        streamingZipDetector.setMarkLimit(128 * 1024 * 1024);
+    }
+
     @AfterEach
     public void tearDown() throws TikaException {
         //make sure to reset pool size because it is being randomly resized during the tests

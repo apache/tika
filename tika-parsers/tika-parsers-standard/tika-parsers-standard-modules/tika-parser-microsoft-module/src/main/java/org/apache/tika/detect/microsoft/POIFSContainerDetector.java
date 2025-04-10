@@ -16,6 +16,7 @@
  */
 package org.apache.tika.detect.microsoft;
 
+import static org.apache.tika.mime.MediaType.OCTET_STREAM;
 import static org.apache.tika.mime.MediaType.application;
 import static org.apache.tika.mime.MediaType.image;
 
@@ -602,19 +603,26 @@ public class POIFSContainerDetector implements Detector {
             return MediaType.OCTET_STREAM;
         }
 
-        if (! isOleHeader(input)) {
-            return MediaType.OCTET_STREAM;
-        }
-
         TikaInputStream tis = TikaInputStream.cast(input);
-        if (tis == null) {
-            LOG.warn("POIFSContainerDetector requires a TikaInputStream for precise detection.");
+        if (tis != null) {
+            return handleTikaStream(tis, metadata);
+        }
+        if (isOleHeader(input)) {
             return OLE;
         }
+        return MediaType.OCTET_STREAM;
+    }
 
+    private MediaType handleTikaStream(TikaInputStream tis, Metadata metadata) throws IOException {
+        //try for an open container
         Set<String> names = tryOpenContainerOnTikaInputStream(tis, metadata);
 
-        // We can only detect the exact type when given a TikaInputStream
+        //if that didn't work, confirm the bytes are OLE
+        if (names == null && ! isOleHeader(tis)) {
+            return OCTET_STREAM;
+        }
+
+        // If OLE, spool to disk
         if (names == null) {
             // spool to disk and try detection
             names = getTopLevelNames(tis);
@@ -625,7 +633,6 @@ public class POIFSContainerDetector implements Detector {
                 tis.getOpenContainer() instanceof POIFSFileSystem) {
             return detect(names, ((POIFSFileSystem) tis.getOpenContainer()).getRoot());
         } else {
-            //can we actually get here?
             return detect(names, null);
         }
     }

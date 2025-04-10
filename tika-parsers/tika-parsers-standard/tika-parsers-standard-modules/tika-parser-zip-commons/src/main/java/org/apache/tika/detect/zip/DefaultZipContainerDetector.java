@@ -262,9 +262,9 @@ public class DefaultZipContainerDetector implements Detector {
         }
         //problem opening zip file (truncated?)
         try (InputStream is = new BufferedInputStream(Files.newInputStream(tis.getPath()))) {
-            return detectStreaming(is, metadata);
+            return detectStreaming(is, metadata, false);
         } catch (IOException e) {
-                //swallow
+            //swallow
         }
         return MediaType.APPLICATION_ZIP;
 
