@@ -36,5 +36,8 @@
     <Logger name="org.apache.poi" level="ERROR" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
+    <Logger name="org.apache.tika.detect.microsoft.POIFSContainerDetector" level="ERROR" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
   </Loggers>
 </Configuration>
