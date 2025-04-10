@@ -51,7 +51,7 @@ public class CustomTikaXMPTest extends TikaTest {
         Metadata metadata = extract("testPDFX.xmp");
         assertEquals("PDF/X-1:2001", metadata.get(PDF.PDFXID_VERSION));
         assertEquals("PDF/X-1:2001", metadata.get(PDF.PDFX_VERSION));
-        assertEquals("PDF/X-1:2001", metadata.get(PDF.PDFX_CONFORMANCE));
+        assertEquals("PDF/X-1a:2001", metadata.get(PDF.PDFX_CONFORMANCE));
     }
 
     @Test
