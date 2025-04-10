@@ -171,8 +171,8 @@ public class PDMetadataExtractor {
                     metadata.set(PDF.PDFX_VERSION, version);
                 }
                 String conformance = XMPSchemaPDFX.getPDFXConformance();
-                if (!StringUtils.isBlank(version)) {
-                    metadata.set(PDF.PDFX_CONFORMANCE, version);
+                if (!StringUtils.isBlank(conformance)) {
+                    metadata.set(PDF.PDFX_CONFORMANCE, conformance);
                 }
             }
         } catch (IOException e) {
