@@ -307,7 +307,11 @@ public class PDMetadataExtractor {
             }
         }
         setNotNull(XMP.NICKNAME, basic.getNickname(), metadata);
-        setNotNull(XMP.RATING, basic.getRating(), metadata);
+        try {
+            setNotNull(XMP.RATING, basic.getRating(), metadata);
+        } catch (NumberFormatException e) {
+            //swallow TIKA-4401
+        }
         //TODO: find an example where basic.getThumbNail is not null
         //and figure out how to add that info
     }
