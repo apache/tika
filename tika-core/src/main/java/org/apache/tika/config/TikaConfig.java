@@ -110,6 +110,15 @@ public class TikaConfig {
     private final MetadataFilter metadataFilter;
     private final MetadataListFilter metadataListFilter;
     private final AutoDetectParserConfig autoDetectParserConfig;
+    private static final Map<String, InitializableProblemHandler> strategyMap = new HashMap<>();
+
+    static {
+        strategyMap.put("", InitializableProblemHandler.DEFAULT);
+        strategyMap.put(InitializableProblemHandler.IGNORE.toString(), InitializableProblemHandler.IGNORE);
+        strategyMap.put(InitializableProblemHandler.INFO.toString(), InitializableProblemHandler.INFO);
+        strategyMap.put(InitializableProblemHandler.WARN.toString(), InitializableProblemHandler.WARN);
+        strategyMap.put(InitializableProblemHandler.THROW.toString(), InitializableProblemHandler.THROW);
+    }
 
     private static int MAX_JSON_STRING_FIELD_LENGTH = DEFAULT_MAX_JSON_STRING_FIELD_LENGTH;
 
@@ -525,23 +534,18 @@ public class TikaConfig {
         return serviceLoader;
     }
 
+    /**
+     * Return an InitializableProblemHandler by name.
+     *
+     * @param initializableProblemHandler can be empty, 'ignore', 'info', 'warn' or 'throw', but never null.
+     * @return an InitializableProblemHandler
+     * @throws TikaConfigException if invalid name
+     */
     private static InitializableProblemHandler getInitializableProblemHandler(
             String initializableProblemHandler) throws TikaConfigException {
-        if (initializableProblemHandler.isEmpty()) {
-            return InitializableProblemHandler.DEFAULT;
-        }
-        if (InitializableProblemHandler.IGNORE.toString()
-                .equalsIgnoreCase(initializableProblemHandler)) {
-            return InitializableProblemHandler.IGNORE;
-        } else if (InitializableProblemHandler.INFO.toString()
-                .equalsIgnoreCase(initializableProblemHandler)) {
-            return InitializableProblemHandler.INFO;
-        } else if (InitializableProblemHandler.WARN.toString()
-                .equalsIgnoreCase(initializableProblemHandler)) {
-            return InitializableProblemHandler.WARN;
-        } else if (InitializableProblemHandler.THROW.toString()
-                .equalsIgnoreCase(initializableProblemHandler)) {
-            return InitializableProblemHandler.THROW;
+        InitializableProblemHandler handler = strategyMap.get(initializableProblemHandler.toUpperCase(Locale.US));
+        if (handler != null) {
+            return handler;
         }
         throw new TikaConfigException(String.format(Locale.US,
                 "Couldn't parse non-null '%s'. Must be one of 'ignore', 'info', 'warn' or 'throw'",
