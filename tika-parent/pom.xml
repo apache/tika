@@ -648,6 +648,11 @@
         <version>${guava.version}</version>
       </dependency>
       <dependency>
+        <groupId>com.google.errorprone</groupId>
+        <artifactId>error_prone_annotations</artifactId>
+        <version>2.37.0</version>
+      </dependency>
+      <dependency>
         <groupId>com.googlecode.json-simple</groupId>
         <artifactId>json-simple</artifactId>
         <version>${json.simple.version}</version>
