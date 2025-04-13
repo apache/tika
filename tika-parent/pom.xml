@@ -366,7 +366,7 @@
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.22.0</jackrabbit.version>
-    <jackson.version>2.18.3</jackson.version>
+    <jackson.version>2.19.0-rc2</jackson.version>
     <jackcess.version>4.0.8</jackcess.version>
     <jackcess.encrypt.version>4.0.3</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
