@@ -323,8 +323,7 @@
     <brotli.version>0.1.2</brotli.version>
     <commons.cli.version>1.9.0</commons.cli.version>
     <commons.codec.version>1.18.0</commons.codec.version>
-    <!-- 4.5.0-M2 successfully tested -->
-    <commons.collections4.version>4.4</commons.collections4.version>
+    <commons.collections4.version>4.5.0</commons.collections4.version>
     <commons.compress.version>1.27.1</commons.compress.version>
     <commons.csv.version>1.14.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
@@ -336,7 +335,7 @@
     <commons.fileupload.version>1.5</commons.fileupload.version>
     <ctakes.version>5.1.0</ctakes.version>
     <!-- can't update to 3.6.0, needs jdk11 -->
-    <cxf.version>3.5.10</cxf.version>
+    <cxf.version>3.5.11</cxf.version>
     <ddplist.version>1.28</ddplist.version>
     <!-- can't update to 1.0.0-M2.1, needs jdk11 -->
     <dl4j.version>1.0.0-M2</dl4j.version>
@@ -351,7 +350,7 @@
     <imageio.version>1.4.0</imageio.version>
     <!-- jackrabbit 2.21.23 requires java 11 -->
     <jackrabbit.version>2.21.22</jackrabbit.version>
-    <jackson.version>2.18.3</jackson.version>
+    <jackson.version>2.19.0</jackson.version>
     <jackcess.version>4.0.8</jackcess.version>
     <jackcess.encrypt.version>4.0.3</jackcess.encrypt.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
@@ -370,7 +369,7 @@
     <jna.version>5.17.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.12.1</junit5.version>
+    <junit5.version>5.12.2</junit5.version>
     <junrar.version>7.5.5</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.24.3</log4j2.version>
@@ -411,7 +410,7 @@
     <spring.version>5.3.39</spring.version>
     <sqlite.version>3.49.1.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
-    <testcontainers.version>1.20.6</testcontainers.version>
+    <testcontainers.version>1.21.0</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
