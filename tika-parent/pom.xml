@@ -308,7 +308,7 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.50.0</google.cloud.version>
+    <google.cloud.version>2.51.0</google.cloud.version>
     <aws.version>1.12.782</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
@@ -331,8 +331,7 @@
     <c3p0.version>0.11.0-pre2</c3p0.version>
     <commons.cli.version>1.9.0</commons.cli.version>
     <commons.codec.version>1.18.0</commons.codec.version>
-    <!-- 4.5.0-M3 successfully tested -->
-    <commons.collections4.version>4.4</commons.collections4.version>
+    <commons.collections4.version>4.5.0</commons.collections4.version>
     <commons.compress.version>1.27.1</commons.compress.version>
     <commons.csv.version>1.14.0</commons.csv.version>
     <commons.exec.version>1.4.0</commons.exec.version>
@@ -353,7 +352,7 @@
     <felix.scr.version>1.12.0</felix.scr.version>
     <freemarker.version>2.3.34</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
-    <gson.version>2.13.0</gson.version>
+    <gson.version>2.13.1</gson.version>
     <guava.version>33.4.8-jre</guava.version>
     <h2.version>2.3.232</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
@@ -366,7 +365,7 @@
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.23.1-beta</jackrabbit.version>
-    <jackson.version>2.19.0-rc2</jackson.version>
+    <jackson.version>2.19.0</jackson.version>
     <jackcess.version>4.0.8</jackcess.version>
     <jackcess.encrypt.version>4.0.3</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
@@ -440,7 +439,7 @@
     <spring.version>6.2.4</spring.version>
     <sqlite.version>3.49.1.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
-    <testcontainers.version>1.20.6</testcontainers.version>
+    <testcontainers.version>1.21.0</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
