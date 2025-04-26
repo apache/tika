@@ -309,7 +309,7 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.50.0</google.cloud.version>
+    <google.cloud.version>2.51.0</google.cloud.version>
     <aws.version>1.12.782</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
@@ -588,7 +588,7 @@
       <dependency>
         <groupId>com.google.code.gson</groupId>
         <artifactId>gson</artifactId>
-        <version>2.13.0</version>
+        <version>2.13.1</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
