@@ -1,6 +1,9 @@
-Release 2.9.4 - ???
+Release 2.9.4 - 4/29/2025
+   * Dependency upgrades.
 
    * Fix concurrency bug in TikaToXMP (TIKA-4393)
+
+   * THIS IS THE FINAL 2.x RELEASE. 2.x is now at EOL.
 
 Release 2.9.3 - 2/1/2025
 
