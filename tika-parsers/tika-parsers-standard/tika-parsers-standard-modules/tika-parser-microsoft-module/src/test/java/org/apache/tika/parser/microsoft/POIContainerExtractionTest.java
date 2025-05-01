@@ -31,6 +31,7 @@ import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 
@@ -136,13 +137,13 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         List<Metadata> list = getRecursiveMetadata("testWORD_embeded.doc");
         //.docx
         assertEquals("{F4754C9B-64F5-4B40-8AF4-679732AC0607}",
-                list.get(10).get(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID));
+                list.get(10).get(Office.EMBEDDED_STORAGE_CLASS_ID));
         //_1345471035.ppt
         assertEquals("{64818D10-4F9B-11CF-86EA-00AA00B929E8}",
-                list.get(14).get(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID));
+                list.get(14).get(Office.EMBEDDED_STORAGE_CLASS_ID));
         //_1345470949.xls
         assertEquals("{00020820-0000-0000-C000-000000000046}",
-                list.get(16).get(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID));
+                list.get(16).get(Office.EMBEDDED_STORAGE_CLASS_ID));
 
     }
 

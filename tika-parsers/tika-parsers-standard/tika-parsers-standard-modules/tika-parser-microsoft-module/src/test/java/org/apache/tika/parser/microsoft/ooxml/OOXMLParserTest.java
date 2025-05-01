@@ -116,7 +116,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertNotContained("9.0", content);
         assertContains("196", content);
         assertNotContained("196.0", content);
-        assertEquals("false", metadata.get(TikaCoreProperties.PROTECTED));
+        assertEquals("false", metadata.get(Office.PROTECTED_WORKSHEET));
 
     }
 
@@ -206,7 +206,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertNotContained("10.0", content);
         assertContains("cb=sum", content);
         assertNotContained("13.0", content);
-        assertEquals("false", metadata.get(TikaCoreProperties.PROTECTED));
+        assertEquals("false", metadata.get(Office.PROTECTED_WORKSHEET));
 
     }
 
@@ -482,7 +482,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 metadata.get(Metadata.CONTENT_TYPE));
 
-        assertEquals("true", metadata.get(TikaCoreProperties.PROTECTED));
+        assertEquals("true", metadata.get(Office.PROTECTED_WORKSHEET));
 
     }
 
@@ -497,7 +497,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
 
-        assertEquals("true", xmlResult.metadata.get(TikaCoreProperties.PROTECTED));
+        assertEquals("true", xmlResult.metadata.get(Office.PROTECTED_WORKSHEET));
 
         assertContains("Office", xmlResult.xml);
     }

@@ -81,7 +81,7 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
         ALWAYS_SET_FIELDS.add(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE.getName());
         ALWAYS_SET_FIELDS.add(TikaCoreProperties.CONTENT_TYPE_HINT.getName());
         ALWAYS_SET_FIELDS.add(TikaCoreProperties.TIKA_CONTENT.getName());
-        ALWAYS_SET_FIELDS.add(TikaCoreProperties.RESOURCE_NAME_KEY);
+        ALWAYS_SET_FIELDS.add(TikaCoreProperties.RESOURCE_NAME_KEY.getName());
         ALWAYS_SET_FIELDS.add(AccessPermissions.EXTRACT_CONTENT.getName());
         ALWAYS_SET_FIELDS.add(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY.getName());
         ALWAYS_SET_FIELDS.add(Metadata.CONTENT_DISPOSITION);
