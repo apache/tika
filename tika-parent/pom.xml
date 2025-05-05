@@ -309,8 +309,8 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.51.0</google.cloud.version>
-    <aws.version>1.12.782</aws.version>
+    <google.cloud.version>2.52.1</google.cloud.version>
+    <aws.version>1.12.783</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -388,7 +388,7 @@
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.17.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
-    <jsoup.version>1.19.1</jsoup.version>
+    <jsoup.version>1.20.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.12.2</junit5.version>
@@ -420,7 +420,7 @@
     <osgi.util.version>1.2.0</osgi.util.version>
     <parso.version>2.0.14</parso.version>
     <pax.exam.version>4.14.0</pax.exam.version>
-    <pdfbox.version>3.0.4</pdfbox.version>
+    <pdfbox.version>3.0.5</pdfbox.version>
     <poi.version>5.4.1</poi.version>
     <protobuf.version>3.25.7</protobuf.version>
     <quartz.version>2.5.0</quartz.version>
@@ -451,7 +451,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.4</zookeeper.version>
-    <zstd.version>1.5.7-2</zstd.version>
+    <zstd.version>1.5.7-3</zstd.version>
     <nimbus-jose-jwt.version>10.2</nimbus-jose-jwt.version>
     <logback.version>1.5.17</logback.version>
     <javacpp.version>1.5.11</javacpp.version>
