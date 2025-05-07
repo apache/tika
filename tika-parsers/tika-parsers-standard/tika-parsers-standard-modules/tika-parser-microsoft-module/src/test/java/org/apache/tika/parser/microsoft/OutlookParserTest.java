@@ -39,6 +39,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -240,6 +241,8 @@ public class OutlookParserTest extends TikaTest {
                 metadata.get(MAPI.INTERNET_REFERENCES));
         assertEquals("<C8508767C15DBF40A21693142739EA8D564D18FDA1@EXVMBX018-1.exch018.msoutlookonline.net>",
                 metadata.get(MAPI.IN_REPLY_TO_ID));
+
+        assertEquals("true", metadata.get(RTFMetadata.CONTAINS_ENCAPSULATED_HTML));
     }
 
     @Test
@@ -247,6 +250,7 @@ public class OutlookParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testMSG_att_msg.msg");
         assertEquals("/Test Attachment.msg", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
         assertEquals("/smbprn.00009008.KdcPjl.pdf", metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("true", metadataList.get(0).get(RTFMetadata.CONTAINS_ENCAPSULATED_HTML));
     }
 
     @Test
@@ -289,6 +293,8 @@ public class OutlookParserTest extends TikaTest {
         // Make sure we don't have nested html docs
         assertEquals(2, content.split("<body>").length);
         assertEquals(2, content.split("<\\/body>").length);
+
+        assertEquals("true", metadata.get(RTFMetadata.CONTAINS_ENCAPSULATED_HTML));
     }
 
     @Test
@@ -323,6 +329,8 @@ public class OutlookParserTest extends TikaTest {
         assertTrue(m.get("mapi:property:PidLidValidFlagStringProof").contains("2017-02-28T18:42"));
         assertEquals("0", m.get("mapi:property:PidLidAppointmentSequence"));
         assertEquals("false", m.get("mapi:property:PidLidRecurring"));
+        assertEquals("true", m.get(RTFMetadata.CONTAINS_ENCAPSULATED_HTML));
+
     }
 
     @Test
