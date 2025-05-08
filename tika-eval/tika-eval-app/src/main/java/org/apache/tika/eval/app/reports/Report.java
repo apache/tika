@@ -29,6 +29,7 @@ import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.compress.archivers.zip.Zip64Mode;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
@@ -70,6 +71,7 @@ public class Report {
 
             SXSSFWorkbook wb = new SXSSFWorkbook(new XSSFWorkbook(), 100, true, true);
             wb.setCompressTempFiles(true);
+            wb.setZip64Mode(Zip64Mode.AlwaysWithCompatibility);
             defaultIntegerFormatter.reset(wb.getXSSFWorkbook());
             defaultDoubleFormatter.reset(wb.getXSSFWorkbook());
             sqlCellStyle = wb.createCellStyle();
