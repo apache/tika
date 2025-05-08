@@ -50,6 +50,7 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.CharsetUtils;
 
@@ -899,6 +900,8 @@ final class TextExtractor {
                 hour = param;
             } else if (equals("min")) {
                 minute = param;
+            } else if (equals("fromhtml") && param == 1) {
+                metadata.set(RTFMetadata.CONTAINS_ENCAPSULATED_HTML, true);
             }
 
             if (fontTableState == 1) {

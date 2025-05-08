@@ -44,4 +44,7 @@ public interface RTFMetadata {
     Property EMB_ITEM = Property.internalText(
             PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "emb_item");
 
+    Property CONTAINS_ENCAPSULATED_HTML = Property.internalBoolean(
+            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "contains_encapsulated_html");
+
 }
