@@ -35,6 +35,8 @@ public class OfficeParserConfig implements Serializable {
     private boolean useSAXDocxExtractor = false;
     private boolean useSAXPptxExtractor = false;
 
+    private boolean writeSelectHeadersInBody = false;
+
     private boolean extractAllAlternativesFromMSG = false;
     private String dateOverrideFormat = null;
     private int maxOverride = 0;//ignore
@@ -275,6 +277,14 @@ public class OfficeParserConfig implements Serializable {
 
     public int getMaxOverride() {
         return this.maxOverride;
+    }
+
+    public boolean isWriteSelectHeadersInBody() {
+        return writeSelectHeadersInBody;
+    }
+
+    public void setWriteSelectHeadersInBody(boolean writeSelectHeadersInBody) {
+        this.writeSelectHeadersInBody = writeSelectHeadersInBody;
     }
 }
 
