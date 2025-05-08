@@ -401,9 +401,9 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             data.put(Cols.EMBEDDED_DEPTH, "0");
         } else {
             data.put(Cols.IS_EMBEDDED, TRUE);
-            String embeddedFilePath = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
+            String embeddedFilePath = m.get(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH);
             if (!StringUtils.isBlank(embeddedFilePath)) {
-                data.put(Cols.FILE_NAME, getFileName(m.get(embeddedFilePath)));
+                data.put(Cols.FILE_NAME, getFileName(embeddedFilePath));
                 data.put(Cols.EMBEDDED_FILE_PATH, embeddedFilePath);
             }
             if (!StringUtils.isBlank(m.get(TikaCoreProperties.EMBEDDED_DEPTH))) {

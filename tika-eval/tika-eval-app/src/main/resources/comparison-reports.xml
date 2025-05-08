@@ -454,9 +454,18 @@
     <sql>
       select concat(ma.mime_string, ' -&gt; ', mb.mime_string) as
       MIME_A_TO_MIME_B,
-      file_path, a.file_name,
-      c.length as CONTAINER_LENGTH,
-      a.file_name
+      file_path,
+      case
+        when a.embedded_depth > 0
+        then a.embedded_file_path
+        else a.file_name
+      end as FILE_NAME_A,
+      case
+        when b.embedded_depth > 0
+        then b.embedded_file_path
+        else b.file_name
+        end as FILE_NAME_B,
+      c.length as CONTAINER_LENGTH
       from profiles_a a
       join profiles_b b on a.id=b.id
       join mimes ma on ma.mime_id=a.mime_id
@@ -576,7 +585,11 @@
 
     <sql>
       select file_path as FILE_PATH,
-      pa.file_name as FILE_NAME_A,
+      case
+        when pa.embedded_depth > 0
+        then pa.embedded_file_path
+        else pa.file_name
+      end as FILE_NAME_A,
       c.length as CONTAINER_LENGTH,
       ca.NUM_TOKENS as NUM_TOKENS_A,
       cb.NUM_TOKENS as NUM_TOKENS_B,
@@ -630,12 +643,20 @@
     <sql>
       select
       file_path,
-      pa.file_name as FILE_NAME_A,
-      pb.file_name as FILE_NAME_B,
+      case
+      when pa.embedded_depth > 0
+        then pa.embedded_file_path
+        else pa.file_name
+      end as FILE_NAME_A,
+      case
+      when pb.embedded_depth > 0
+        then pb.embedded_file_path
+        else pb.file_name
+      end as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_TYPE_A,
       mb.mime_string as MIME_TYPE_B,
-      pa.file_name, pa.is_embedded
+      pa.is_embedded
       from exceptions_a ea
       left join exceptions_b eb on ea.id = eb.id
       join profiles_a pa on pa.id=ea.id
@@ -655,8 +676,16 @@
 
     <sql>
       select file_path,
-      pa.file_name as FILE_NAME_A,
-      pb.file_name as FILE_NAME_B,
+      case
+        when pa.embedded_depth > 0
+        then pa.embedded_file_path
+        else pa.file_name
+      end as FILE_NAME_A,
+      case
+        when pb.embedded_depth > 0
+        then pb.embedded_file_path
+        else pb.file_name
+      end as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_TYPE_A,
       mb.mime_string as MIME_TYPE_B,
@@ -728,8 +757,16 @@
 
     <sql>
       select file_path,
-      pa.file_name as FILE_NAME_A,
-      pb.file_name as FILE_NAME_B,
+      case
+       when pa.embedded_depth > 0
+       then pa.embedded_file_path
+       else pa.file_name
+      end as FILE_NAME_A,
+      case
+        when pb.embedded_depth > 0
+        then pb.embedded_file_path
+        else pb.file_name
+      end as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_TYPE_A,
       mb.mime_string as MIME_TYPE_B,
@@ -771,7 +808,11 @@
 
     <sql>
       select file_path,
-      p.file_name as FILE_NAME_A,
+      case
+        when p.embedded_depth > 0
+        then p.embedded_file_path
+        else p.file_name
+      end as FILE_NAME_A,
       c.length as CONTAINER_LENGTH,
       mime_string as MIME_TYPE,
       orig_stack_trace, sort_stack_trace
@@ -791,7 +832,11 @@
 
     <sql>
       select file_path,
-      p.file_name as FILE_NAME_B,
+      case
+        when p.embedded_depth > 0
+        then p.embedded_file_path
+        else p.file_name
+      end as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       mime_string as MIME_TYPE,
       orig_stack_trace, sort_stack_trace
@@ -949,8 +994,16 @@
 
     <sql>
       select file_path,
-      pa.file_name as FILE_NAME_A,
-      pb.file_name as FILE_NAME_B,
+      case
+        when pa.embedded_depth > 0
+        then pa.embedded_file_path
+        else pa.file_name
+      end as FILE_NAME_A,
+      case
+        when pb.embedded_depth > 0
+        then pb.embedded_file_path
+        else pb.file_name
+      end as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -1001,8 +1054,16 @@
 
     <sql>
       select file_path,
-      pa.file_name as FILE_NAME_A,
-      pb.file_name as FILE_NAME_B,
+      case
+        when pa.embedded_depth > 0
+        then pa.embedded_file_path
+        else pa.file_name
+      end as FILE_NAME_A,
+      case
+        when pb.embedded_depth > 0
+        then pb.embedded_file_path
+        else pb.file_name
+      end as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -1065,8 +1126,16 @@
 
     <sql>
       select file_path,
-      pa.file_name as FILE_NAME_A,
-      pb.file_name as FILE_NAME_B,
+      case
+        when pa.embedded_depth > 0
+        then pa.embedded_file_path
+        else pa.file_name
+      end as FILE_NAME_A,
+      case
+        when pb.embedded_depth > 0
+        then pb.embedded_file_path
+        else pb.file_name
+      end as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -1170,8 +1239,16 @@
 
     <sql>
       select file_path,
-      pa.file_name as FILE_NAME_A,
-      pb.file_name as FILE_NAME_B,
+      case
+        when pa.embedded_depth > 0
+        then pa.embedded_file_path
+        else pa.file_name
+      end as FILE_NAME_A,
+      case
+        when pb.embedded_depth > 0
+        then pb.embedded_file_path
+        else pb.file_name
+      end as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -1201,8 +1278,16 @@
 
     <sql>
       select file_path,
-      pa.file_name as FILE_NAME_A,
-      pb.file_name as FILE_NAME_B,
+      case
+        when pa.embedded_depth > 0
+        then pa.embedded_file_path
+        else pa.file_name
+      end as FILE_NAME_A,
+      case
+        when pb.embedded_depth > 0
+        then pb.embedded_file_path
+        else pb.file_name
+      end as FILE_NAME_B,
       c.length as CONTAINER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
@@ -1325,8 +1410,16 @@
 
     <sql>
       select file_path,
-      pa.file_name as FILE_NAME_A,
-      pb.file_name as FILE_NAME_B,
+      case
+        when pa.embedded_depth > 0
+        then pa.embedded_file_path
+        else pa.file_name
+      end as FILE_NAME_A,
+      case
+        when pb.embedded_depth > 0
+        then pb.embedded_file_path
+        else pb.file_name
+      end as FILE_NAME_B,
       ma.mime_string as mime_string_a,
       mb.mime_string as mime_string_b,
       pa.num_metadata_values as num_metadata_values_a,
@@ -1371,8 +1464,16 @@
           includeSql="true">
     <sql>
       select file_path,
-      pa.file_name as FILE_NAME_A,
-      pb.file_name as FILE_NAME_B,
+      case
+        when pa.embedded_depth > 0
+        then pa.embedded_file_path
+        else pa.file_name
+      end as FILE_NAME_A,
+      case
+        when pb.embedded_depth > 0
+        then pb.embedded_file_path
+        else pb.file_name
+      end as FILE_NAME_B,
       c.length as CONTAINTER_LENGTH,
       ma.mime_string as MIME_STRING_A,
       mb.mime_string as MIME_STRING_B,
