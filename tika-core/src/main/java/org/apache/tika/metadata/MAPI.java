@@ -65,6 +65,8 @@ public interface MAPI {
     Property PRIORTY = Property.internalInteger(PREFIX_MAPI_META + "priority");
     Property IS_FLAGGED = Property.internalBoolean(PREFIX_MAPI_META + "is-flagged");
 
+    Property BODY_TYPES_PROCESSED = Property.internalTextBag(PREFIX_MAPI_META + "body-types-processed");
+
     Property ATTACH_LONG_PATH_NAME = Property.internalText(PREFIX_MAPI_ATTACH_META + "long-path-name");
     Property ATTACH_LONG_FILE_NAME = Property.internalText(PREFIX_MAPI_ATTACH_META + "long-file-name");
     Property ATTACH_FILE_NAME = Property.internalText(PREFIX_MAPI_ATTACH_META + "file-name");
