@@ -117,7 +117,13 @@
           includeSql="true">
     <!-- 0.50 is a complete heuristic -->
     <sql>
-      select file_path, file_name, is_embedded,
+      select file_path,
+      case
+        when p.embedded_depth > 0
+        then p.embedded_file_path
+        else p.file_name
+      end as FILE_NAME,
+      is_embedded,
       mime_string, lang_id_1, common_tokens_lang,
       num_tokens, num_alphabetic_tokens, num_common_tokens,
       case
@@ -247,7 +253,12 @@
 
     <sql>
       select file_path,
-      file_name, is_embedded,
+      case
+        when p.embedded_depth > 0
+        then p.embedded_file_path
+        else p.file_name
+      end as FILE_NAME,
+      is_embedded,
       c.length as CONTAINER_LENGTH,
       mime_string as MIME_TYPE,
       orig_stack_trace, sort_stack_trace
