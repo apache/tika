@@ -85,9 +85,9 @@ public class OutlookParserTest extends TikaTest {
         assertEquals("2007-04-05T16:26:06Z", metadata.get(TikaCoreProperties.CREATED));
 
         String content = handler.toString();
-        assertNotContained("Microsoft Outlook Express 6", content);
-        assertNotContained("L'\u00C9quipe Microsoft Outlook Express", content);
-        assertNotContained("Nouvel utilisateur de Outlook Express", content);
+        assertContains("Microsoft Outlook Express 6", content);
+        assertContains("L'\u00C9quipe Microsoft Outlook Express", content);
+        assertContains("Nouvel utilisateur de Outlook Express", content);
         assertContains("Messagerie et groupes de discussion", content);
     }
 
@@ -110,7 +110,7 @@ public class OutlookParserTest extends TikaTest {
         String content = handler.toString();
         Pattern pattern = Pattern.compile("From");
         Matcher matcher = pattern.matcher(content);
-        assertFalse(matcher.find());
+        assertTrue(matcher.find());
 
         //test that last header is added
         assertContains("29 Jan 2009 19:17:10.0163 (UTC) FILETIME=[2ED25E30:01C98246]",
@@ -186,7 +186,7 @@ public class OutlookParserTest extends TikaTest {
         // As the HTML version should have been processed, ensure
         //  we got some of the links
         String content = sw.toString();
-        assertNotContained("<dd>tests.chang@fengttt.com</dd>", content);
+        assertContains("<dd>tests.chang@fengttt.com</dd>", content);
         assertContains("<p>Alfresco MSG format testing", content);
         assertContains("<li>1", content);
         assertContains("<li>2", content);
@@ -258,7 +258,7 @@ public class OutlookParserTest extends TikaTest {
 
         //test default behavior
         List<Metadata> metadataList = getRecursiveMetadata("test-outlook2003.msg");
-        assertNotContained("<dd>New Outlook User</dd>", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("<dd>New Outlook User</dd>", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         //test legacy behavior with the configuration set
         Metadata metadata = new Metadata();
@@ -278,7 +278,7 @@ public class OutlookParserTest extends TikaTest {
         // As the HTML version should have been processed, ensure
         //  we got some of the links
         String content = sw.toString().replaceAll("[\\r\\n\\t]+", " ").replaceAll(" +", " ");
-        assertNotContained("<dd>New Outlook User</dd>", content);
+        assertContains("<dd>New Outlook User</dd>", content);
         assertContains("designed <i>to help you", content);
         assertContains(
                 "<p> <a href=\"http://r.office.microsoft.com/r/rlidOutlookWelcomeMail10?clid=1033\">Cached Exchange Mode</a>",
@@ -422,14 +422,14 @@ public class OutlookParserTest extends TikaTest {
 
     @Test
     public void testHeadersInBody() throws Exception {
-        //test default behavior -- no headers
+        //test default behavior -- headers
         ParseContext parseContext = new ParseContext();
         String xml = getText("testMSG.msg", new Metadata(), parseContext);
         xml = xml.replaceAll("\\s+", " ");
         assertTrue(xml.startsWith("MIME registry use cases"));
         assertContains("From Jukka Zitting", xml);
 
-        //test configurable behavior (legacy behavior up to Tika 4.x)
+        //test configurable behavior
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setWriteSelectHeadersInBody(false);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
