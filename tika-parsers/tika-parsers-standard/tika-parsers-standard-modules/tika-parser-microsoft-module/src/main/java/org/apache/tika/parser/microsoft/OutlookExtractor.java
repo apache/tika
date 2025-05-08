@@ -272,6 +272,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         }
 
         handleGeneralDates(msg, headers, parentMetadata);
+        writeSelectHeadersInBody(parentMetadata, msg, xhtml);
 
         // Get the message body. Preference order is: html, rtf, text
         Chunk htmlChunk = null;
@@ -862,6 +863,33 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             //swallow
         }
         return false;
+    }
+
+    private void writeSelectHeadersInBody(Metadata metadata, MAPIMessage msg, XHTMLContentHandler xhtml)
+            throws SAXException, ChunkNotFoundException {
+        if (! officeParserConfig.isWriteSelectHeadersInBody()) {
+            return;
+        }
+        String subject = metadata.get(TikaCoreProperties.SUBJECT);
+        subject = (subject == null) ? "" : subject;
+        xhtml.element("h1", subject);
+
+        // Output the from and to details in text, as you
+        //  often want them in text form for searching
+        xhtml.startElement("dl");
+        String from = metadata.get(Message.MESSAGE_FROM);
+        if (from != null) {
+            header(xhtml, "From", from);
+        }
+        header(xhtml, "To", msg.getDisplayTo());
+        header(xhtml, "Cc", msg.getDisplayCC());
+        header(xhtml, "Bcc", msg.getDisplayBCC());
+        try {
+            header(xhtml, "Recipients", msg.getRecipientEmailAddress());
+        } catch (ChunkNotFoundException e) {
+            //swallow
+        }
+        xhtml.endElement("dl");
     }
 
     private List<Recipient> buildRecipients() {

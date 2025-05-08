@@ -420,4 +420,21 @@ public class OutlookParserTest extends TikaTest {
         assertContains("annuaires\t \n" + " Synchronisation", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
+    @Test
+    public void testHeadersInBody() throws Exception {
+        //test default behavior -- no headers
+        ParseContext parseContext = new ParseContext();
+        String xml = getText("testMSG.msg", new Metadata(), parseContext);
+        xml = xml.replaceAll("\\s+", " ");
+        assertTrue(xml.startsWith("MIME registry use cases"));
+        assertContains("From Jukka Zitting", xml);
+
+        //test configurable behavior (legacy behavior up to Tika 4.x)
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setWriteSelectHeadersInBody(false);
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+        xml = getText("testMSG.msg", new Metadata(), parseContext);
+        assertTrue(xml.startsWith("Hi,"));
+    }
+
 }
