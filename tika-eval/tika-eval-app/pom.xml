@@ -92,23 +92,6 @@
                 false
               </createDependencyReducedPom>
               <artifactSet>
-                <excludes>
-                  <exclude>org.apache.tika:tika-serialization:jar:</exclude>
-                  <exclude>org.apache.tika:tika-langdetect-opennlp:jar:</exclude>
-                  <exclude>commons-codec:commons-codec:jar:</exclude>
-                  <exclude>org.apache.commons:commons-lang3:jar:</exclude>
-                  <exclude>org.apache.commons:commons-math3:jar:</exclude>
-                  <exclude>org.apache.lucene:lucene-core:jar:</exclude>
-                  <exclude>org.apache.lucene:lucene-analysis-common:jar:</exclude>
-                  <exclude>org.apache.lucene:lucene-analysis-icu:jar:</exclude>
-                  <exclude>org.jsoup:jsoup:jar:</exclude>
-                  <exclude>com.ibm.icu:icu4j:jar:</exclude>
-                  <exclude>com.fasterxml.jackson.core:jackson-core:jar:</exclude>
-                  <exclude>com.fasterxml.jackson.core:jackson-databind:jar:</exclude>
-                  <exclude>com.fasterxml.jackson.core:jackson-annotations:jar:</exclude>
-                  <exclude>org.apache.opennlp:opennlp-tools:jar:</exclude>
-                  <exclude>org.slf4j:slf4j-api:jar:</exclude>
-                </excludes>
               </artifactSet>
               <filters>
                 <filter>
