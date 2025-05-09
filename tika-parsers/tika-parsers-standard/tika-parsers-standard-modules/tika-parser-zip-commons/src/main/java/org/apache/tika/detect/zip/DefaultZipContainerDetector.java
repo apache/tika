@@ -16,11 +16,11 @@
  */
 package org.apache.tika.detect.zip;
 
-import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -261,8 +261,8 @@ public class DefaultZipContainerDetector implements Detector {
             LOG.debug("zip file failed to open; attempting streaming detect. Results may be imprecise");
         }
         //problem opening zip file (truncated?)
-        try (InputStream is = new BufferedInputStream(Files.newInputStream(tis.getPath()))) {
-            return detectStreaming(is, metadata, false);
+        try {
+            return detectStreamingFromPath(tis.getPath(), metadata, false);
         } catch (IOException e) {
             //swallow
         }
@@ -310,6 +310,34 @@ public class DefaultZipContainerDetector implements Detector {
         return finalDetect(detectContext);
     }
 
+    MediaType detectStreamingFromPath(Path p, Metadata metadata, boolean allowStoredEntries)
+            throws IOException {
+        StreamingDetectContext detectContext = new StreamingDetectContext();
+        try (ZipArchiveInputStream zis = new ZipArchiveInputStream(
+                Files.newInputStream(p), "UTF8", false, allowStoredEntries)) {
+            ZipArchiveEntry zae = zis.getNextEntry();
+            while (zae != null) {
+                MediaType mt = detect(zae, zis, detectContext);
+                if (mt != null) {
+                    return mt;
+                }
+                zae = zis.getNextEntry();
+            }
+        } catch (UnsupportedZipFeatureException zfe) {
+            if (allowStoredEntries == false &&
+                    zfe.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+                return detectStreamingFromPath(p, metadata, true);
+            }
+        } catch (SecurityException e) {
+            throw e;
+        } catch (EOFException e) {
+            //truncated zip -- swallow
+        } catch (IOException e) {
+            //another option for a truncated zip
+        }
+
+        return finalDetect(detectContext);
+    }
 
     private MediaType detect(ZipArchiveEntry zae, ZipArchiveInputStream zis,
                              StreamingDetectContext detectContext) throws IOException {
