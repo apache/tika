@@ -37,6 +37,7 @@
     <module>tika-fetcher-gcs</module>
     <module>tika-fetcher-az-blob</module>
     <module>tika-fetcher-microsoft-graph</module>
+    <module>tika-fetcher-google</module>
   </modules>
 
   <dependencies>
