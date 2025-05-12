@@ -320,7 +320,7 @@
     <azure.core.http.netty.version>1.15.11</azure.core.http.netty.version>
     <azure.storage.blob.version>12.30.0</azure.storage.blob.version>
     <azure.storage.common>12.29.0</azure.storage.common>
-    <azure-identity.version>1.15.4</azure-identity.version>
+    <azure-identity.version>1.16.0</azure-identity.version>
     <azure.json.version>1.5.0</azure.json.version>
     <azure.xml.version>1.2.0</azure.xml.version>
     <!-- 7.0.0 needs java 17 -->
@@ -452,7 +452,7 @@
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.4</zookeeper.version>
     <zstd.version>1.5.7-3</zstd.version>
-    <nimbus-jose-jwt.version>10.2</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>10.3</nimbus-jose-jwt.version>
     <logback.version>1.5.17</logback.version>
     <javacpp.version>1.5.11</javacpp.version>
     <maven.site.version>3.21.0</maven.site.version>
@@ -1219,6 +1219,12 @@
                 <groupId>org.bytedeco</groupId>
                 <artifactId>hdf5-platform</artifactId>
                 <version>1.14.3-1.5.10</version>
+            </coordinate>
+            <!-- [CVE-2025-1948], used in the Solr emitter. No apparent upgrade available yet. -->
+            <coordinate>
+                <groupId>org.eclipse.jetty.http2</groupId>
+                <artifactId>http2-common</artifactId>
+                <version>11.0.25</version>
             </coordinate>
             <coordinate>
               <groupId>org.springframework</groupId>
