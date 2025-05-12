@@ -71,7 +71,7 @@ public class Report {
 
             SXSSFWorkbook wb = new SXSSFWorkbook(new XSSFWorkbook(), 100, true, true);
             wb.setCompressTempFiles(true);
-            wb.setZip64Mode(Zip64Mode.AlwaysWithCompatibility);
+            wb.setZip64Mode(Zip64Mode.Never);
             defaultIntegerFormatter.reset(wb.getXSSFWorkbook());
             defaultDoubleFormatter.reset(wb.getXSSFWorkbook());
             sqlCellStyle = wb.createCellStyle();
