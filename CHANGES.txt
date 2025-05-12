@@ -1,8 +1,18 @@
-Release 3.2.0 - ???
+Release 3.2.0 - 05/12/2025
 
-  * Fix concurrency bug in TikaToXMP (TIKA-4393)
+  * Detect inline images in MSG files (TIKA_4391).
 
-  * Improve extraction of properties from msg files (TIKA_4381).
+  * Improve extraction of metadata in MSG files (TIKA-4381).
+
+  * Fix concurrency bug in TikaToXMP (TIKA-4393).
+
+  * Fix potential GDAL deadlock (TIKA-4385).
+
+  * Improve extraction of properties from msg files (TIKA-4381).
+
+  * Include internal attachment path in tika-eval reports (TIKA-4374).
+
+  * Upgrade dependencies (TIKA-4379).
 
 Release 3.1.0 - 01/28/25
 
