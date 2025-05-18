@@ -1182,7 +1182,12 @@
             <coordinate>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-http</artifactId>
-                <version>9.4.57.v20241219</version>
+                <version>${jetty.version}</version>
+            </coordinate>
+            <coordinate>
+                <groupId>org.eclipse.jetty.http2</groupId>
+                <artifactId>http2-common</artifactId>
+                <version>${jetty.version}</version>
             </coordinate>
             <coordinate>
               <groupId>org.springframework</groupId>
