@@ -686,8 +686,12 @@
           <!-- to avoid maven-enforcer convergence error,
             let's make this explicit -->
           <exclusion>
+            <groupId>com.healthmarketscience.jackcess</groupId>
+            <artifactId>jackcess</artifactId>
+          </exclusion>
+          <exclusion>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
+            <artifactId>bcprov-jdk18on</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
