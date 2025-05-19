@@ -55,7 +55,6 @@ public class OutlookParserTest extends TikaTest {
     @Test
     public void testOutlookParsing() throws Exception {
 
-
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
@@ -88,7 +87,15 @@ public class OutlookParserTest extends TikaTest {
         assertNotContained("Microsoft Outlook Express 6", content);
         assertNotContained("L'\u00C9quipe Microsoft Outlook Express", content);
         assertNotContained("Nouvel utilisateur de Outlook Express", content);
-        assertContains("Messagerie et groupes de discussion", content);
+
+
+        //now try with inlining select headers
+        ParseContext parseContext = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setWriteSelectHeadersInBody(true);
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+        content = getText("test-outlook.msg", new Metadata(), parseContext);
+        assertTrue(content.startsWith("Microsoft Outlook Express 6"));
     }
 
     /**
