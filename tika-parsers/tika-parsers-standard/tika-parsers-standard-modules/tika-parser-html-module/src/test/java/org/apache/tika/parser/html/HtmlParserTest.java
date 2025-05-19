@@ -53,6 +53,7 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.Attributes;
@@ -1288,5 +1289,14 @@ public class HtmlParserTest extends TikaTest {
             }
             return DONE;
         }
+    }
+
+    @Test
+    public void testJsoupScriptTagRegression() throws Exception {
+        //https://github.com/jhy/jsoup/issues/2329
+        String html = "<html><head><script src=\"blah\"/></head><body>this is content</body></html";
+        String xml = getXML(UnsynchronizedByteArrayInputStream.builder().setByteArray(html.getBytes(UTF_8)).get(),
+                TikaTest.AUTO_DETECT_PARSER, new Metadata()).xml;
+        assertContains("this is content", xml);
     }
 }
