@@ -870,7 +870,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         if (! officeParserConfig.isWriteSelectHeadersInBody()) {
             return;
         }
-        String subject = metadata.get(TikaCoreProperties.SUBJECT);
+        String subject = metadata.get(TikaCoreProperties.TITLE);
         subject = (subject == null) ? "" : subject;
         xhtml.element("h1", subject);
 

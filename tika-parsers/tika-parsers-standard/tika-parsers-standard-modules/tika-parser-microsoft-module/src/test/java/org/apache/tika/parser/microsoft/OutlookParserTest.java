@@ -54,7 +54,6 @@ public class OutlookParserTest extends TikaTest {
     @Test
     public void testOutlookParsing() throws Exception {
 
-
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
@@ -84,7 +83,7 @@ public class OutlookParserTest extends TikaTest {
         assertEquals("2007-04-05T16:26:06Z", metadata.get(TikaCoreProperties.CREATED));
 
         String content = handler.toString();
-        assertContains("Microsoft Outlook Express 6", content);
+        assertTrue(content.startsWith("Microsoft Outlook Express 6"));
         assertContains("L'\u00C9quipe Microsoft Outlook Express", content);
         assertContains("Nouvel utilisateur de Outlook Express", content);
         assertContains("Messagerie et groupes de discussion", content);
