@@ -16,8 +16,10 @@
  */
 package org.apache.tika.parser.html;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -34,6 +36,9 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.Tag;
+import org.jsoup.parser.TagSet;
 import org.jsoup.select.NodeFilter;
 import org.jsoup.select.NodeTraversor;
 import org.xml.sax.ContentHandler;
@@ -69,6 +74,26 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<MediaType>(Arrays.asList(MediaType.text("html"), XHTML, WAP_XHTML, X_ASP)));
+
+    private static final TagSet SELF_CLOSEABLE_TAGS = TagSet.Html();
+
+    static {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                JSoupParser.class.getResourceAsStream("self-closeable-tags.txt"), StandardCharsets.UTF_8))) {
+            String line = reader.readLine();
+            while (line != null) {
+                if (line.startsWith("#") || line.trim().isEmpty()) {
+                    line = reader.readLine();
+                    continue;
+                }
+                Tag t = SELF_CLOSEABLE_TAGS.valueOf(line.trim(), Parser.NamespaceHtml);
+                t.set(Tag.SelfClose);
+                line = reader.readLine();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Can't find self-closeable-tags.txt");
+        }
+    }
 
     @Field
     private boolean extractScripts = false;
@@ -128,7 +153,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         HtmlMapper mapper = context.get(HtmlMapper.class, new DefaultHtmlMapper());
 
         //do better with baseUri?
-        Document document = Jsoup.parse(CloseShieldInputStream.wrap(stream), charset.name(), "");
+        Document document = Jsoup.parse(CloseShieldInputStream.wrap(stream), charset.name(), "", Parser.htmlParser().tagSet(SELF_CLOSEABLE_TAGS));
         document.quirksMode(Document.QuirksMode.quirks);
         ContentHandler xhtml = new XHTMLDowngradeHandler(
                 new HtmlHandler(mapper, handler, metadata, context, extractScripts));
@@ -147,7 +172,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         HtmlMapper mapper = context.get(HtmlMapper.class, new DefaultHtmlMapper());
 
         //do better with baseUri?
-        Document document = Jsoup.parse(html);
+        Document document = Jsoup.parse(html, Parser.htmlParser().tagSet(SELF_CLOSEABLE_TAGS));
         document.quirksMode(Document.QuirksMode.quirks);
         ContentHandler xhtml = new XHTMLDowngradeHandler(
                 new HtmlHandler(mapper, handler, metadata, context, extractScripts));
