@@ -1,4 +1,4 @@
-Release 3.2.0 - 05/12/2025
+Release 3.2.0 - 05/21/2025
 
   * Detect inline images in MSG files (TIKA_4391).
 
@@ -11,6 +11,8 @@ Release 3.2.0 - 05/12/2025
   * Improve extraction of properties from msg files (TIKA-4381).
 
   * Include internal attachment path in tika-eval reports (TIKA-4374).
+
+  * Upgrade jsoup to 1.20.1 with workaround for change in self-closing tag behavior (TIKA-4419).
 
   * Upgrade dependencies (TIKA-4379).
 
