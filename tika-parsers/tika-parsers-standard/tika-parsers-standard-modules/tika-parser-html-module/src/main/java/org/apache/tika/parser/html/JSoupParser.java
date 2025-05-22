@@ -152,8 +152,17 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         // Get the HTML mapper from the parse context
         HtmlMapper mapper = context.get(HtmlMapper.class, new DefaultHtmlMapper());
 
+        TagSet tagSet = new TagSet(SELF_CLOSEABLE_TAGS);
+        /* TODO -- when we upgrade jsoup to 1.21.1
+                .onNewTag(tag -> {
+            if (!tag.isKnownTag())
+                tag.set(Tag.SelfClose);
+        });
+        */
+
         //do better with baseUri?
-        Document document = Jsoup.parse(CloseShieldInputStream.wrap(stream), charset.name(), "", Parser.htmlParser().tagSet(SELF_CLOSEABLE_TAGS));
+        Document document = Jsoup.parse(CloseShieldInputStream.wrap(stream), charset.name(), "",
+                Parser.htmlParser().tagSet(tagSet));
         document.quirksMode(Document.QuirksMode.quirks);
         ContentHandler xhtml = new XHTMLDowngradeHandler(
                 new HtmlHandler(mapper, handler, metadata, context, extractScripts));

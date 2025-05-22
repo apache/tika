@@ -1289,11 +1289,18 @@ public class HtmlParserTest extends TikaTest {
     }
 
     @Test
-    public void testJsoupScriptTagRegression() throws Exception {
+    public void testJsoupKnownSelfCloseableTags() throws Exception {
         //https://github.com/jhy/jsoup/issues/2329
         String html = "<html><head><script src=\"blah\"/></head><body>this is content</body></html";
         String xml = getXML(UnsynchronizedByteArrayInputStream.builder().setByteArray(html.getBytes(UTF_8)).get(),
                 TikaTest.AUTO_DETECT_PARSER, new Metadata()).xml;
         assertContains("this is content", xml);
+    }
+
+
+    @Test
+    @Disabled("until we upgrade jsoup to >= 1.21.1 ")
+    public void testJsoupUnknownSelfCloseableTags() throws Exception {
+        //TODO -- figure out how to test this.
     }
 }
