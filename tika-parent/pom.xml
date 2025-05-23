@@ -288,6 +288,8 @@
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <project.build.outputTimestamp>1729074250</project.build.outputTimestamp>
     <!-- plugin versions -->
+    <!-- updates may not be detected by the maven versions plugin:
+         https://github.com/mojohaus/versions/issues/1070 -->
     <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
     <forbiddenapis.version>3.9</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
