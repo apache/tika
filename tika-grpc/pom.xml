@@ -256,9 +256,7 @@
         <version>${maven.javadoc.version}</version>
         <configuration>
           <doclint>none</doclint>
-          <sourcepath>src/main/java</sourcepath>
-          <sourcepath>${project.build.directory}/generated-sources/protobuf/grpc-java</sourcepath>
-          <sourcepath>${project.build.directory}/generated-sources/protobuf/java</sourcepath>
+          <sourcepath>src/main/java;${project.build.directory}/generated-sources/protobuf/grpc-java:${project.build.directory}/generated-sources/protobuf/java</sourcepath>
         </configuration>
       </plugin>
       <plugin>
