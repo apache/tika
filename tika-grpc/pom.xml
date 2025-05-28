@@ -38,9 +38,6 @@
     <asarkar-grpc-test.version>2.0.0</asarkar-grpc-test.version>
     <awaitility.version>4.3.0</awaitility.version>
     <j2objc-annotations.version>3.0.0</j2objc-annotations.version>
-    <!-- javadocs doesn't build for generated code in release:perform, but
-         appears to work generally :/ -->
-    <maven.javadoc.skip>true</maven.javadoc.skip>
   </properties>
 
   <dependencyManagement>
@@ -253,6 +250,17 @@
       </extension>
     </extensions>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven.javadoc.version}</version>
+        <configuration>
+          <doclint>none</doclint>
+          <sourcepath>src/main/java</sourcepath>
+          <sourcepath>${project.build.directory}/generated-sources/protobuf/grpc-java</sourcepath>
+          <sourcepath>${project.build.directory}/generated-sources/protobuf/java</sourcepath>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.xolstice.maven.plugins</groupId>
         <artifactId>protobuf-maven-plugin</artifactId>
