@@ -16,7 +16,6 @@
  */
 package org.apache.tika.eval.app;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Types;
@@ -25,11 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
-import org.apache.tika.batch.FileResource;
+import org.apache.tika.eval.app.batch.FileResource;
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
@@ -40,7 +37,7 @@ import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
-public class ExtractProfiler extends AbstractProfiler {
+public class ExtractProfiler extends ProfilerBase {
 
     private final static String FIELD = "f";
     public static TableInfo EXTRACT_EXCEPTION_TABLE =
@@ -81,19 +78,15 @@ public class ExtractProfiler extends AbstractProfiler {
     private final Path extracts;
     private final ExtractReader extractReader;
 
-    public static ExtractProfiler build(ArrayBlockingQueue<FileResource> queue, Path inputDir, Path extracts, ExtractReader extractReader, IDBWriter dbWriter) {
-        return new ExtractProfiler(queue, inputDir, extracts, extractReader, dbWriter);
-    }
 
-    ExtractProfiler(ArrayBlockingQueue<FileResource> queue, Path inputDir, Path extracts, ExtractReader extractReader, IDBWriter dbWriter) {
-        super(queue, dbWriter);
+    ExtractProfiler(Path inputDir, Path extracts, ExtractReader extractReader, IDBWriter dbWriter) {
+        super(dbWriter);
         this.inputDir = inputDir;
         this.extracts = extracts;
         this.extractReader = extractReader;
     }
 
 
-    @Override
     public boolean processFileResource(FileResource fileResource) {
         Metadata metadata = fileResource.getMetadata();
         EvalFilePaths fps = null;

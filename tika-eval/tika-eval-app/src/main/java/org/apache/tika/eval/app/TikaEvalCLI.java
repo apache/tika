@@ -154,7 +154,7 @@ public class TikaEvalCLI {
     }
 
     private void handleProfile(String[] subsetArgs) throws Exception {
-        FileProfileRunner.main(subsetArgs);
+        ExctractProfileRunner.main(subsetArgs);
     }
 
     private void handleCompare(String[] subsetArgs) throws Exception {
