@@ -77,12 +77,14 @@ import org.apache.tika.utils.XMLReaderUtils;
  * As of 2.8.0 the library supports webp.
  */
 public class ImageMetadataExtractor {
+
     //TODO: add this to the signatures from the actual parse
     private static final ParseContext EMPTY_PARSE_CONTEXT = new ParseContext();
     private static final String GEO_DECIMAL_FORMAT_STRING = "#.######";
             // 6 dp seems to be reasonable
 
-    private static final String ICC_NS = "ICC" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static final String UNKNOWN_IMG_NS = "img" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static final String ICC_NS = "ICC" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     private final Metadata metadata;
     private DirectoryHandler[] handlers;
@@ -292,11 +294,11 @@ public class ImageMetadataExtractor {
                             value = Boolean.FALSE.toString();
                         }
                         if (directory instanceof ExifDirectoryBase) {
-                            metadata.set(directory.getName() + ":" + name, value);
+                            metadata.set(UNKNOWN_IMG_NS + directory.getName() + ":" + name, value);
                         } else if (directory instanceof IccDirectory) {
                             metadata.set(ICC_NS + name, value);
                         } else {
-                            metadata.set(name, value);
+                            metadata.set(UNKNOWN_IMG_NS + name, value);
                         }
                     }
                 }

@@ -42,14 +42,14 @@ public class ImageParserTest extends TikaTest {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
-        assertEquals("75", metadata.get("height"));
-        assertEquals("100", metadata.get("width"));
-        assertEquals("8 8 8", metadata.get("Data BitsPerSample"));
-        assertEquals("1.0", metadata.get("Dimension PixelAspectRatio"));
+        assertEquals("75", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height"));
+        assertEquals("100", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "width"));
+        assertEquals("8 8 8", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data BitsPerSample"));
+        assertEquals("1.0", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Dimension PixelAspectRatio"));
         //TODO: figure out why we're getting 0.35273367 in Ubuntu, but not Windows
         //assertEquals("0", metadata.get("Dimension VerticalPhysicalPixelSpacing"));
         //assertEquals("0", metadata.get("Dimension HorizontalPhysicalPixelSpacing"));
-        assertEquals("BI_RGB", metadata.get("Compression CompressionTypeName"));
+        assertEquals("BI_RGB", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Compression CompressionTypeName"));
         assertEquals("image/bmp", metadata.get("Content-Type"));
 
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
@@ -66,31 +66,31 @@ public class ImageParserTest extends TikaTest {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
-        assertEquals("75", metadata.get("height"));
-        assertEquals("100", metadata.get("width"));
-        assertEquals("true", metadata.get("Compression Lossless"));
-        assertEquals("Normal", metadata.get("Dimension ImageOrientation"));
-        assertEquals("lzw", metadata.get("Compression CompressionTypeName"));
-        assertEquals("0", metadata.get("Dimension HorizontalPixelOffset"));
+        assertEquals("75", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height"));
+        assertEquals("100", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "width"));
+        assertEquals("true", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Compression Lossless"));
+        assertEquals("Normal", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Dimension ImageOrientation"));
+        assertEquals("lzw", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Compression CompressionTypeName"));
+        assertEquals("0", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Dimension HorizontalPixelOffset"));
         assertEquals("imageLeftPosition=0, imageTopPosition=0, imageWidth=100, " +
-                "imageHeight=75, interlaceFlag=false", metadata.get("ImageDescriptor"));
-        assertEquals("Index", metadata.get("Data SampleFormat"));
-        assertEquals("3", metadata.get("Chroma NumChannels"));
-        assertEquals("1", metadata.get("Compression NumProgressiveScans"));
-        assertEquals("RGB", metadata.get("Chroma ColorSpaceType"));
+                "imageHeight=75, interlaceFlag=false", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "ImageDescriptor"));
+        assertEquals("Index", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data SampleFormat"));
+        assertEquals("3", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Chroma NumChannels"));
+        assertEquals("1", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Compression NumProgressiveScans"));
+        assertEquals("RGB", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Chroma ColorSpaceType"));
         assertEquals("Licensed to the Apache Software Foundation (ASF) under " +
                 "one or more contributor license agreements.  See the NOTICE file " +
                 "distributed with this work for additional information regarding " +
-                "copyright ownership.", metadata.get("CommentExtensions CommentExtension"));
+                "copyright ownership.", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "CommentExtensions CommentExtension"));
         assertEquals("value=Licensed to the Apache Software Foundation (ASF) under one " +
                         "or more contributor license agreements.  See the NOTICE file " +
                         "distributed with this work for additional information regarding " +
                         "copyright ownership., encoding=ISO-8859-1, compression=none",
-                metadata.get("Text TextEntry"));
-        assertEquals("true", metadata.get("Chroma BlackIsZero"));
+                metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Text TextEntry"));
+        assertEquals("true", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Chroma BlackIsZero"));
         assertEquals("disposalMethod=none, userInputFlag=false, transparentColorFlag=false, " +
-                "delayTime=0, transparentColorIndex=0", metadata.get("GraphicControlExtension"));
-        assertEquals("0", metadata.get("Dimension VerticalPixelOffset"));
+                "delayTime=0, transparentColorIndex=0", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "GraphicControlExtension"));
+        assertEquals("0", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Dimension VerticalPixelOffset"));
         assertEquals("image/gif", metadata.get("Content-Type"));
 
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
@@ -110,40 +110,40 @@ public class ImageParserTest extends TikaTest {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
-        assertEquals("75", metadata.get("height"));
-        assertEquals("100", metadata.get("width"));
-        assertEquals("0.35277778", metadata.get("Dimension VerticalPixelSize"));
-        assertEquals("false", metadata.get("Compression Lossless"));
-        assertEquals("class=0, htableId=0", metadata.get("markerSequence dht dhtable"));
+        assertEquals("75", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height"));
+        assertEquals("100", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "width"));
+        assertEquals("0.35277778", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Dimension VerticalPixelSize"));
+        assertEquals("false", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Compression Lossless"));
+        assertEquals("class=0, htableId=0", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "markerSequence dht dhtable"));
         assertEquals("majorVersion=1, minorVersion=1, resUnits=1, Xdensity=72, " +
-                "Ydensity=72, thumbWidth=0, thumbHeight=0", metadata.get("JPEGvariety app0JFIF"));
-        assertEquals("225", metadata.get("markerSequence unknown"));
+                "Ydensity=72, thumbWidth=0, thumbHeight=0", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "JPEGvariety app0JFIF"));
+        assertEquals("225", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "markerSequence unknown"));
         assertEquals("componentSelector=1, dcHuffTable=0, acHuffTable=0",
-                metadata.get("markerSequence sos scanComponentSpec"));
-        assertEquals("normal", metadata.get("Dimension ImageOrientation"));
-        assertEquals("1.0", metadata.get("Dimension PixelAspectRatio"));
-        assertEquals("elementPrecision=0, qtableId=0", metadata.get("markerSequence dqt dqtable"));
+                metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "markerSequence sos scanComponentSpec"));
+        assertEquals("normal", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Dimension ImageOrientation"));
+        assertEquals("1.0", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Dimension PixelAspectRatio"));
+        assertEquals("elementPrecision=0, qtableId=0", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "markerSequence dqt dqtable"));
         assertEquals("numScanComponents=3, startSpectralSelection=0, " +
                         "endSpectralSelection=63, approxHigh=0, approxLow=0",
-                metadata.get("markerSequence sos"));
+                metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "markerSequence sos"));
         assertEquals("componentId=1, HsamplingFactor=1, " + "VsamplingFactor=1, QtableSelector=0",
-                metadata.get("markerSequence sof componentSpec"));
-        assertEquals("JPEG", metadata.get("Compression CompressionTypeName"));
-        assertEquals("0.35277778", metadata.get("Dimension HorizontalPixelSize"));
+                metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "markerSequence sof componentSpec"));
+        assertEquals("JPEG", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Compression CompressionTypeName"));
+        assertEquals("0.35277778", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Dimension HorizontalPixelSize"));
         assertEquals("Licensed to the Apache Software Foundation (ASF) under one or " +
                 "more contributor license agreements.  See the NOTICE file " +
                 "distributed with this work for additional information " +
-                "regarding copyright ownership.", metadata.get("markerSequence com"));
-        assertEquals("3", metadata.get("Chroma NumChannels"));
-        assertEquals("1", metadata.get("Compression NumProgressiveScans"));
-        assertEquals("YCbCr", metadata.get("Chroma ColorSpaceType"));
+                "regarding copyright ownership.", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "markerSequence com"));
+        assertEquals("3", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Chroma NumChannels"));
+        assertEquals("1", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Compression NumProgressiveScans"));
+        assertEquals("YCbCr", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Chroma ColorSpaceType"));
         assertEquals("keyword=comment, value=Licensed to the Apache Software Foundation " +
                 "(ASF) under one or more contributor license agreements.  See the NOTICE" +
                 " file distributed with this work for additional information regarding " +
-                "copyright ownership.", metadata.get("Text TextEntry"));
+                "copyright ownership.", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Text TextEntry"));
         assertEquals("image/jpeg", metadata.get("Content-Type"));
         assertEquals("process=0, samplePrecision=8, numLines=75, samplesPerLine=100, " +
-                "numFrameComponents=3", metadata.get("markerSequence sof"));
+                "numFrameComponents=3", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "markerSequence sof"));
 
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
@@ -162,41 +162,41 @@ public class ImageParserTest extends TikaTest {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
-        assertEquals("75", metadata.get("height"));
-        assertEquals("100", metadata.get("width"));
-        assertEquals("0.35273367", metadata.get("Dimension VerticalPixelSize"));
-        assertEquals("8 8 8", metadata.get("Data BitsPerSample"));
-        assertEquals("Perceptual", metadata.get("sRGB"));
-        assertEquals("true", metadata.get("Compression Lossless"));
+        assertEquals("75", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height"));
+        assertEquals("100", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "width"));
+        assertEquals("0.35273367", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Dimension VerticalPixelSize"));
+        assertEquals("8 8 8", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data BitsPerSample"));
+        assertEquals("Perceptual", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "sRGB"));
+        assertEquals("true", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Compression Lossless"));
         assertEquals("year=2008, month=5, day=6, hour=6, minute=18, second=47",
-                metadata.get("tIME"));
-        assertEquals("Normal", metadata.get("Dimension ImageOrientation"));
-        assertEquals("1.0", metadata.get("Dimension PixelAspectRatio"));
+                metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "tIME"));
+        assertEquals("Normal", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Dimension ImageOrientation"));
+        assertEquals("1.0", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Dimension PixelAspectRatio"));
         assertEquals("keyword=Comment, value=Licensed to the Apache Software Foundation " +
                 "(ASF) under one or more contributor license agreements.  See the " +
                 "NOTICE file distributed with this work for additional information " +
-                "regarding copyright ownership.", metadata.get("tEXt tEXtEntry"));
-        assertEquals("deflate", metadata.get("Compression CompressionTypeName"));
-        assertEquals("UnsignedIntegral", metadata.get("Data SampleFormat"));
-        assertEquals("0.35273367", metadata.get("Dimension HorizontalPixelSize"));
-        assertEquals("none", metadata.get("Transparency Alpha"));
+                "regarding copyright ownership.", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "tEXt tEXtEntry"));
+        assertEquals("deflate", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Compression CompressionTypeName"));
+        assertEquals("UnsignedIntegral", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data SampleFormat"));
+        assertEquals("0.35273367", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Dimension HorizontalPixelSize"));
+        assertEquals("none", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Transparency Alpha"));
         assertEquals("pixelsPerUnitXAxis=2835, pixelsPerUnitYAxis=2835, unitSpecifier=meter",
-                metadata.get("pHYs"));
-        assertEquals("3", metadata.get("Chroma NumChannels"));
-        assertEquals("1", metadata.get("Compression NumProgressiveScans"));
-        assertEquals("RGB", metadata.get("Chroma ColorSpaceType"));
+                metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "pHYs"));
+        assertEquals("3", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Chroma NumChannels"));
+        assertEquals("1", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Compression NumProgressiveScans"));
+        assertEquals("RGB", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Chroma ColorSpaceType"));
         assertEquals("keyword=Comment, value=Licensed to the Apache Software Foundation " +
                         "(ASF) under one or more contributor license agreements.  See the " +
                         "NOTICE file distributed with this work for additional information " +
                         "regarding copyright ownership., encoding=ISO-8859-1, compression=none",
-                metadata.get("Text TextEntry"));
-        assertEquals("PixelInterleaved", metadata.get("Data PlanarConfiguration"));
+                metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Text TextEntry"));
+        assertEquals("PixelInterleaved", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data PlanarConfiguration"));
         assertEquals("width=100, height=75, bitDepth=8, colorType=RGB, " +
                         "compressionMethod=deflate, filterMethod=adaptive, interlaceMethod=none",
-                metadata.get("IHDR"));
-        assertEquals("true", metadata.get("Chroma BlackIsZero"));
+                metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "IHDR"));
+        assertEquals("true", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Chroma BlackIsZero"));
         assertEquals("year=2008, month=5, day=6, hour=6, minute=18, second=47",
-                metadata.get("Document ImageModificationTime"));
+                metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Document ImageModificationTime"));
         assertEquals("image/png", metadata.get("Content-Type"));
 
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
@@ -212,8 +212,8 @@ public class ImageParserTest extends TikaTest {
         try (InputStream stream = getResourceAsStream("/test-documents/testJBIG2.jb2")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
-        assertEquals("78", metadata.get("height"));
-        assertEquals("328", metadata.get("width"));
+        assertEquals("78", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height"));
+        assertEquals("328", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "width"));
         assertEquals("image/x-jbig2", metadata.get("Content-Type"));
         assertEquals(1, metadata.getInt(TikaCoreProperties.NUM_IMAGES));
     }

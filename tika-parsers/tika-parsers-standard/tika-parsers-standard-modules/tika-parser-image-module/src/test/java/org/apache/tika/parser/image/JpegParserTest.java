@@ -73,7 +73,7 @@ public class JpegParserTest {
         // Check that EXIF/TIFF tags come through with their raw values too
         // (This may be removed for Tika 1.0, as we support more of them
         //  with explicit Metadata entries)
-        assertEquals("Canon EOS 40D", metadata.get("Exif IFD0:Model"));
+        assertEquals("Canon EOS 40D", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Exif IFD0:Model"));
 
         // Common tags
         assertEquals("2009-10-02T23:02:49", metadata.get(TikaCoreProperties.MODIFIED));

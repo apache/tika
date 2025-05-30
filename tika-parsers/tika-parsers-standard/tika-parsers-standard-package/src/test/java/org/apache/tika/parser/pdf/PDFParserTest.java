@@ -49,6 +49,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.external.ExternalParser;
+import org.apache.tika.parser.image.ImageMetadataExtractor;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.parser.xml.XMLProfiler;
@@ -355,8 +356,8 @@ public class PDFParserTest extends TikaTest {
                 fail("Exception: " + metadatas.get(1).get(key));
             }
         }
-        assertEquals("91", metadatas.get(1).get("height"));
-        assertEquals("352", metadatas.get(1).get("width"));
+        assertEquals("91", metadatas.get(1).get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height"));
+        assertEquals("352", metadatas.get(1).get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "width"));
 
         assertNull(metadatas.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("image0.jb2", metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));

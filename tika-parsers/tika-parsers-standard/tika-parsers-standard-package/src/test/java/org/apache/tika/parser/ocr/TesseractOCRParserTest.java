@@ -37,6 +37,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.image.ImageMetadataExtractor;
 import org.apache.tika.parser.image.ImageParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -220,7 +221,7 @@ public class TesseractOCRParserTest extends TikaTest {
         //gif
         Metadata m = getXML("testGIF.gif").metadata;
         assertTrue(m.names().length > 20);
-        assertEquals("RGB", m.get("Chroma ColorSpaceType"));
+        assertEquals("RGB", m.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Chroma ColorSpaceType"));
 
         //jpg
         m = getXML("testOCR.jpg").metadata;
@@ -239,13 +240,13 @@ public class TesseractOCRParserTest extends TikaTest {
         m = getXML("testPNG.png").metadata;
         assertEquals("100", m.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", m.get(Metadata.IMAGE_LENGTH));
-        assertEquals("UnsignedIntegral", m.get("Data SampleFormat"));
+        assertEquals("UnsignedIntegral", m.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data SampleFormat"));
 
         //tiff
         m = getXML("testTIFF.tif").metadata;
         assertEquals("100", m.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", m.get(Metadata.IMAGE_LENGTH));
-        assertEquals("72 dots per inch", m.get("Exif IFD0:Y Resolution"));
+        assertEquals("72 dots per inch", m.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Exif IFD0:Y Resolution"));
     }
 
     @Test
