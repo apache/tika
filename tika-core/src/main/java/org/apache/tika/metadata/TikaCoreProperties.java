@@ -175,10 +175,9 @@ public interface TikaCoreProperties {
     Property TIKA_DETECTED_LANGUAGE_CONFIDENCE_RAW = Property.externalRealSeq(TIKA_META_PREFIX +
             "detected_language_confidence_raw");
 
-    String RESOURCE_NAME_KEY = "resourceName";
-    String PROTECTED = "protected";
-    String EMBEDDED_RELATIONSHIP_ID = "embeddedRelationshipId";
-    String EMBEDDED_STORAGE_CLASS_ID = "embeddedStorageClassId";
+    Property RESOURCE_NAME_KEY = Property.internalText(TIKA_META_PREFIX + "resourceName");
+    Property EMBEDDED_RELATIONSHIP_ID = Property.internalText(TIKA_META_PREFIX + "embeddedRelationshipId");
+
     String EMBEDDED_RESOURCE_TYPE_KEY = "embeddedResourceType";
     /**
      * Some file formats can store information about their original

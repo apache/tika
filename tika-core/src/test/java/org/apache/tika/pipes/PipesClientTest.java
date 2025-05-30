@@ -29,6 +29,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.MockUpperCaseFilter;
@@ -63,7 +64,7 @@ public class PipesClientTest {
         Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
         Assertions.assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
         Metadata metadata = pipesResult.getEmitData().getMetadataList().get(0);
-        Assertions.assertEquals("testOverlappingText.pdf", metadata.get("resourceName"));
+        Assertions.assertEquals("testOverlappingText.pdf", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     @Test
@@ -77,7 +78,7 @@ public class PipesClientTest {
         Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
         Assertions.assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
         Metadata metadata = pipesResult.getEmitData().getMetadataList().get(0);
-        Assertions.assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get("resourceName"));
+        Assertions.assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     @Test

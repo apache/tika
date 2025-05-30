@@ -126,7 +126,7 @@ abstract class AbstractPOIFSExtractor {
                 embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, relationshipID);
             }
             if (storageClassID != null) {
-                embeddedMetadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID,
+                embeddedMetadata.set(Office.EMBEDDED_STORAGE_CLASS_ID,
                         storageClassID.toString());
             }
             if (mediaType != null) {
@@ -200,7 +200,7 @@ abstract class AbstractPOIFSExtractor {
         // What kind of document is it?
         metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, dir.getName());
         if (dir.getStorageClsid() != null) {
-            metadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID,
+            metadata.set(Office.EMBEDDED_STORAGE_CLASS_ID,
                     dir.getStorageClsid().toString());
         }
         POIFSDocumentType type = POIFSDocumentType.detectType(dir);
@@ -383,7 +383,7 @@ abstract class AbstractPOIFSExtractor {
             return;
         }
         if (dir.getStorageClsid() != null) {
-            metadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID,
+            metadata.set(Office.EMBEDDED_STORAGE_CLASS_ID,
                     dir.getStorageClsid().toString());
         }
         embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, outputHtml);
@@ -398,7 +398,7 @@ abstract class AbstractPOIFSExtractor {
         try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
             tis.setOpenContainer(dir);
             if (dir.getStorageClsid() != null) {
-                metadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID,
+                metadata.set(Office.EMBEDDED_STORAGE_CLASS_ID,
                         dir.getStorageClsid().toString());
             }
             embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, outputHtml);

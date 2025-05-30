@@ -35,6 +35,7 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackagePartName;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
+import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
@@ -68,11 +69,13 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.TikaExcelDataFormatter;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
@@ -122,7 +125,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
         this.metadata = metadata;
         this.parseContext = context;
-        metadata.set(TikaCoreProperties.PROTECTED, "false");
+        metadata.set(Office.PROTECTED_WORKSHEET, "false");
 
         super.getXHTML(handler, metadata, context);
     }
@@ -148,7 +151,6 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         } catch (OpenXML4JException e) {
             throw new XmlException(e);
         }
-
         while (iter.hasNext()) {
             SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(config, xhtml);
             PackagePart sheetPart = null;
@@ -159,6 +161,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 sheetParts.add(sheetPart);
 
                 Comments comments = iter.getSheetComments();
+                if (comments != null && comments.getNumberOfComments() > 0) {
+                    metadata.set(Office.HAS_COMMENTS, true);
+                }
 
                 // Start, and output the sheet name
                 xhtml.startElement("div");
@@ -201,13 +206,44 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         //consider adding this back to POI
         try (InputStream wbData = xssfReader.getWorkbookData()) {
             XMLReaderUtils
-                    .parseSAX(wbData, new AbsPathExtractorHandler(),
+                    .parseSAX(wbData, new WorkbookMetadataHandler(),
                             parseContext);
         } catch (InvalidFormatException | TikaException e) {
             //swallow
         }
+        try {
+            getPersons(container, metadata);
+        } catch (InvalidFormatException | TikaException | IOException | SAXException e) {
+            //swallow
+        }
     }
 
+    private void getPersons(OPCPackage container, Metadata metadata) throws TikaException, InvalidFormatException,
+            IOException, SAXException {
+        PackageRelationship coreDocRelationship = container.getRelationshipsByType(
+                PackageRelationshipTypes.CORE_DOCUMENT).getRelationship(0);
+        if (coreDocRelationship == null) {
+            return;
+        }
+        // Get the part that holds the workbook
+        PackagePart workbookPart = container.getPart(coreDocRelationship);
+        if (workbookPart == null) {
+            return;
+        }
+        PackageRelationshipCollection coll = workbookPart.getRelationshipsByType(OPCPackageWrapper.PERSON_RELATION);
+        if (coll == null) {
+            return;
+        }
+        for (PackageRelationship rel : coll) {
+            PackagePart personsPart = workbookPart.getRelatedPart(rel);
+            if (personsPart == null) {
+                continue;
+            }
+            try (InputStream is = personsPart.getInputStream()) {
+                XMLReaderUtils.parseSAX(is, new CommentPersonHandler(metadata), parseContext);
+            }
+        }
+    }
 
     protected void addDrawingHyperLinks(PackagePart sheetPart) {
         try {
@@ -355,7 +391,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             sheetInputStream.close();
 
             if (handler.hasProtection) {
-                metadata.set(TikaCoreProperties.PROTECTED, "true");
+                metadata.set(Office.PROTECTED_WORKSHEET, true);
             }
         } catch (TikaException e) {
             throw new RuntimeException("SAX parser appears to be broken - " + e.getMessage());
@@ -590,7 +626,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private class AbsPathExtractorHandler extends DefaultHandler {
+    private class WorkbookMetadataHandler extends DefaultHandler {
         @Override
         public void startElement(String uri, String localName, String qName, Attributes atts)
                 throws SAXException {
@@ -604,7 +640,23 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                         return;
                     }
                 }
+            } else if ("sheet".equals(localName)) {
+                String n = XMLReaderUtils.getAttrValue("name", atts);
+                String state = XMLReaderUtils.getAttrValue("state", atts);
+                if ("hidden".equals(state)) {
+                    metadata.set(Office.HAS_HIDDEN_SHEETS, true);
+                    metadata.add(Office.HIDDEN_SHEET_NAMES, n);
+                } else if ("veryHidden".equals(state)) {
+                    metadata.set(Office.HAS_VERY_HIDDEN_SHEETS, true);
+                    metadata.set(Office.VERY_HIDDEN_SHEET_NAMES, n);
+                }
+            } else if ("workbookPr".equals(localName)) {
+                String codeName = XMLReaderUtils.getAttrValue("codeName", atts);
+                if (!StringUtils.isBlank(codeName)) {
+                    metadata.set(Office.WORKBOOK_CODENAME, codeName);
+                }
             }
+            // file version? <fileVersion appName="xl" lastEdited="7" lowestEdited="7" rupBuild="28526"/>
         }
     }
 }

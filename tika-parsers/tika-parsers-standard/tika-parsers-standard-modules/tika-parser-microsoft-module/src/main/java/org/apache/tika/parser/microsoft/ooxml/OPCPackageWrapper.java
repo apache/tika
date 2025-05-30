@@ -29,6 +29,7 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
  */
 public class OPCPackageWrapper implements Closeable {
 
+    public static final String PERSON_RELATION = "http://schemas.microsoft.com/office/2017/10/relationships/person";
     private final OPCPackage opcPackage;
 
     public OPCPackageWrapper(OPCPackage opcPackage) {

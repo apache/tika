@@ -152,4 +152,22 @@ public interface Office {
     Property PROG_ID = Property.internalText("msoffice:progID");
 
     Property OCX_NAME = Property.internalText("msoffice:ocxName");
+
+    Property EMBEDDED_STORAGE_CLASS_ID = Property.internalText("msoffice:embeddedStorageClassId");
+
+    Property HAS_HIDDEN_SHEETS = Property.internalBoolean("msoffice:excel:has-hidden-sheets");
+
+    Property HAS_VERY_HIDDEN_SHEETS = Property.internalBoolean("msoffice:excel:has-very-hidden-sheets");
+
+    Property HIDDEN_SHEET_NAMES = Property.internalTextBag("msoffice:excel:hidden-sheet-names");
+    Property VERY_HIDDEN_SHEET_NAMES = Property.internalTextBag("msoffice:excel:very-hidden-sheet-names");
+
+    Property PROTECTED_WORKSHEET = Property.internalBoolean("msoffice:excel:protected-worksheet");
+
+    Property WORKBOOK_CODENAME = Property.internalText("msoffice:excel:workbook-codename");
+
+    Property HAS_COMMENTS = Property.internalBoolean("msoffice:has-comments");
+
+    Property COMMENT_PERSONS = Property.internalTextBag("msoffice:comment-person-display-name");
+
 }
