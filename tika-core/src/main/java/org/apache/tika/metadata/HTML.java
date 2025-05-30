@@ -16,7 +16,7 @@ package org.apache.tika.metadata; /*
  */
 
 public interface HTML {
-    String PREFIX_HTML_META = "html_meta" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String PREFIX_HTML_META = "html" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
 
     /**
