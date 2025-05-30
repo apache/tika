@@ -28,6 +28,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 
 public class TruncatedOOXMLTest extends TikaTest {
@@ -53,7 +54,7 @@ public class TruncatedOOXMLTest extends TikaTest {
         metadataList.forEach(m -> {
             System.out.println("depth: " + m.get("X-TIKA:embedded_depth"));
             System.out.println("relid: " + m.get("embeddedRelationshipId"));
-            System.out.println("res:   " + m.get("resourceName"));
+            System.out.println("res:   " + m.get(TikaCoreProperties.RESOURCE_NAME_KEY));
             System.out.println("cont:  " + m.get("X-TIKA:content"));
         });
 
