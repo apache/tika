@@ -42,7 +42,6 @@ public class TikaDetectionTest {
      */
     @Test
     public void testHttpServerFileExtensions() {
-        System.out.println(TikaCoreProperties.RESOURCE_NAME_KEY.getName());
         assertEquals("application/andrew-inset", tika.detect("x.ez"));
         assertEquals("application/applixware", tika.detect("x.aw"));
         assertEquals("application/atom+xml", tika.detect("x.atom"));
