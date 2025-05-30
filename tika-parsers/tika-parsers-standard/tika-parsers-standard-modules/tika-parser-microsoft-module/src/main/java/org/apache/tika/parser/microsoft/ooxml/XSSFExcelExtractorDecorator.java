@@ -166,7 +166,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 }
 
                 // Start, and output the sheet name
-                xhtml.startElement("div");
+                xhtml.startElement("div", "class", "sheet");
                 xhtml.element("h1", iter.getSheetName());
 
                 // Extract the main sheet contents
@@ -174,9 +174,14 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 xhtml.startElement("tbody");
 
                 processSheet(sheetExtractor, comments, styles, strings, stream);
+                try {
+                    getThreadedComments(container, sheetPart, xhtml);
+                } catch (InvalidFormatException | TikaException | IOException e) {
+                    //swallow
+                }
+                xhtml.endElement("tbody");
+                xhtml.endElement("table");
             }
-            xhtml.endElement("tbody");
-            xhtml.endElement("table");
 
             // Output any headers and footers
             // (Need to process the sheet to get them, so we can't
@@ -215,6 +220,25 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             getPersons(container, metadata);
         } catch (InvalidFormatException | TikaException | IOException | SAXException e) {
             //swallow
+        }
+
+    }
+
+    private void getThreadedComments(OPCPackage container, PackagePart sheetPart, XHTMLContentHandler xhtml) throws TikaException,
+            InvalidFormatException, SAXException, IOException {
+        //consider caching the person id -> person names in getPersons and injecting that into the xhtml per comment?
+        PackageRelationshipCollection coll = sheetPart.getRelationshipsByType(OPCPackageWrapper.THREADED_COMMENT_RELATION);
+        if (coll == null || coll.isEmpty()) {
+            return;
+        }
+        for (PackageRelationship rel : coll) {
+            PackagePart threadedCommentPart = sheetPart.getRelatedPart(rel);
+            if (threadedCommentPart == null) {
+                continue;
+            }
+            try (InputStream is = threadedCommentPart.getInputStream()) {
+                XMLReaderUtils.parseSAX(is, new ThreadedCommentHandler(xhtml), parseContext);
+            }
         }
     }
 
@@ -392,6 +416,12 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
             if (handler.hasProtection) {
                 metadata.set(Office.PROTECTED_WORKSHEET, true);
+            }
+            if (handler.hasHiddenColumn) {
+                metadata.set(Office.HAS_HIDDEN_COLUMNS, true);
+            }
+            if (handler.hasHiddenRow) {
+                metadata.set(Office.HAS_HIDDEN_ROWS, true);
             }
         } catch (TikaException e) {
             throw new RuntimeException("SAX parser appears to be broken - " + e.getMessage());
@@ -572,6 +602,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     protected static class XSSFSheetInterestingPartsCapturer extends DefaultHandler {
         private ContentHandler delegate;
         private boolean hasProtection = false;
+        private boolean hasHiddenRow = false;
+        private boolean hasHiddenColumn = false;
 
         protected XSSFSheetInterestingPartsCapturer(ContentHandler delegate) {
             this.delegate = delegate;
@@ -581,6 +613,18 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 throws SAXException {
             if ("sheetProtection".equals(qName)) {
                 hasProtection = true;
+            }
+            if (! hasHiddenRow && "row".equals(localName)) {
+                String v = atts.getValue("hidden");
+                if ("true".equals(v) || "1".equals(v)) {
+                    hasHiddenRow = true;
+                }
+            }
+            if (! hasHiddenColumn && "col".equals(localName)) {
+                String v = atts.getValue("hidden");
+                if ("true".equals(v) || "1".equals(v)) {
+                    hasHiddenColumn = true;
+                }
             }
             delegate.startElement(uri, localName, qName, atts);
         }
@@ -657,6 +701,48 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 }
             }
             // file version? <fileVersion appName="xl" lastEdited="7" lowestEdited="7" rupBuild="28526"/>
+        }
+    }
+
+    private static class ThreadedCommentHandler extends DefaultHandler {
+        private final XHTMLContentHandler xhtml;
+        StringBuilder sb = new StringBuilder();
+        boolean inText = false;
+        public ThreadedCommentHandler(XHTMLContentHandler xhtml) {
+            this.xhtml = xhtml;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+            if ("text".equals(localName)) {
+                inText = true;
+            }
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String qName) throws SAXException {
+            if ("text".equals(localName)) {
+                xhtml.startElement("div", "class", "threaded-comment");
+                xhtml.startElement("p");
+                xhtml.characters(sb.toString());
+                xhtml.endElement("p");
+                xhtml.endElement("div");
+                sb.setLength(0);
+            }
+        }
+
+        @Override
+        public void characters(char[] ch, int start, int length) throws SAXException {
+            if (inText) {
+                sb.append(ch, start, length);
+            }
+        }
+
+        @Override
+        public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
+            if (inText) {
+                sb.append(ch, start, length);
+            }
         }
     }
 }

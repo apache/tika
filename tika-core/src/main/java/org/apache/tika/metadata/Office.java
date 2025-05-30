@@ -157,9 +157,14 @@ public interface Office {
 
     Property HAS_HIDDEN_SHEETS = Property.internalBoolean("msoffice:excel:has-hidden-sheets");
 
+    Property HAS_HIDDEN_COLUMNS = Property.internalBoolean("msoffice:excel:has-hidden-cols");
+
+    Property HAS_HIDDEN_ROWS = Property.internalBoolean("msoffice:excel:has-hidden-rows");
+
     Property HAS_VERY_HIDDEN_SHEETS = Property.internalBoolean("msoffice:excel:has-very-hidden-sheets");
 
     Property HIDDEN_SHEET_NAMES = Property.internalTextBag("msoffice:excel:hidden-sheet-names");
+
     Property VERY_HIDDEN_SHEET_NAMES = Property.internalTextBag("msoffice:excel:very-hidden-sheet-names");
 
     Property PROTECTED_WORKSHEET = Property.internalBoolean("msoffice:excel:protected-worksheet");
