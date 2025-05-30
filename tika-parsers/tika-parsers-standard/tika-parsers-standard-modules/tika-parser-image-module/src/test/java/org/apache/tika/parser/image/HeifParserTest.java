@@ -25,6 +25,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -51,6 +52,10 @@ public class HeifParserTest {
         assertEquals("512 pixels", metadata.get("Width"));
         assertEquals("512 pixels", metadata.get("Height"));
         assertEquals("image/heic", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("23.177917", metadata.get(Metadata.LATITUDE));
+        assertEquals("113.394317", metadata.get(Metadata.LONGITUDE));
+
+        assertEquals("2018-02-05T07:11:43Z", metadata.get(Geographic.TIMESTAMP));
 
         IOUtils.closeQuietly(stream);
     }

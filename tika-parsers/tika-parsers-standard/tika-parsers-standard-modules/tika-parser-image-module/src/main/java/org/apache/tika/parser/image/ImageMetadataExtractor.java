@@ -59,6 +59,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.IPTC;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -635,6 +636,10 @@ public class ImageMetadataExtractor {
                         geoDecimalFormat.format(geoLocation.getLatitude()));
                 metadata.set(TikaCoreProperties.LONGITUDE,
                         geoDecimalFormat.format(geoLocation.getLongitude()));
+            }
+            Date gpsDate = ((GpsDirectory)directory).getGpsDate();
+            if (gpsDate != null) {
+                metadata.set(Geographic.TIMESTAMP, gpsDate);
             }
         }
     }
