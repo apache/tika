@@ -21,8 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.metadata.TikaCoreProperties;
-
 public class TikaDetectionTest {
 
     private final Tika tika = new Tika();
