@@ -30,6 +30,8 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 public class OPCPackageWrapper implements Closeable {
 
     public static final String PERSON_RELATION = "http://schemas.microsoft.com/office/2017/10/relationships/person";
+    public static final String THREADED_COMMENT_RELATION = "http://schemas.microsoft.com/office/2017/10/relationships/threadedComment";
+
     private final OPCPackage opcPackage;
 
     public OPCPackageWrapper(OPCPackage opcPackage) {
