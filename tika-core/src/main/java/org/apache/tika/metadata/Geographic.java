@@ -42,4 +42,9 @@ public interface Geographic {
      */
     Property ALTITUDE = Property.internalReal("geo:alt");
 
+    /**
+     * This is the timestamp that derives from a gps record
+     */
+    Property TIMESTAMP = Property.internalDate("geo:timestamp");
+
 }

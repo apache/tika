@@ -29,6 +29,7 @@ import java.util.TimeZone;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -148,6 +149,8 @@ public class JpegParserTest {
         // Geo tags should be there with 5dp, and not rounded
         assertEquals("51.575762", metadata.get(Metadata.LATITUDE));
         assertEquals("-1.567886", metadata.get(Metadata.LONGITUDE));
+
+        assertEquals("2012-02-20T16:44:22Z", metadata.get(Geographic.TIMESTAMP));
     }
 
     @Test
