@@ -48,9 +48,9 @@ public class HeifParserTest {
 
         parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
-        assertEquals("heic", metadata.get("Major Brand"));
-        assertEquals("512 pixels", metadata.get("Width"));
-        assertEquals("512 pixels", metadata.get("Height"));
+        assertEquals("heic", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Major Brand"));
+        assertEquals("512 pixels", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Width"));
+        assertEquals("512 pixels", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Height"));
         assertEquals("image/heic", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("23.177917", metadata.get(Metadata.LATITUDE));
         assertEquals("113.394317", metadata.get(Metadata.LONGITUDE));

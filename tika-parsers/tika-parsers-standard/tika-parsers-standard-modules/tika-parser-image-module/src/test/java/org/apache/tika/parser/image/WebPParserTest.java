@@ -41,10 +41,10 @@ public class WebPParserTest extends TikaTest {
     public void testSimple() throws Exception {
         Metadata metadata = getXML("testWebp_Alpha_Lossy.webp").metadata;
 
-        assertEquals("301", metadata.get("Image Height"));
-        assertEquals("400", metadata.get("Image Width"));
-        assertEquals("true", metadata.get("Has Alpha"));
-        assertEquals("false", metadata.get("Is Animation"));
+        assertEquals("301", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Image Height"));
+        assertEquals("400", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Image Width"));
+        assertEquals("true", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Has Alpha"));
+        assertEquals("false", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Is Animation"));
         assertEquals("image/webp", metadata.get(Metadata.CONTENT_TYPE));
 
         metadata = getXML("testWebp_Alpha_Lossless.webp").metadata;

@@ -70,12 +70,6 @@ public class ImageParser extends AbstractImageParser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(TMP_SUPPORTED);
 
-    private static void setIfPresent(Metadata metadata, String imageIOkey, String tikaKey) {
-        if (metadata.get(imageIOkey) != null) {
-            metadata.set(tikaKey, metadata.get(imageIOkey));
-        }
-    }
-
     private static void setIfPresent(Metadata metadata, String imageIOkey, Property tikaProp) {
         if (metadata.get(imageIOkey) != null) {
             String v = metadata.get(imageIOkey);
@@ -112,7 +106,7 @@ public class ImageParser extends AbstractImageParser {
 
             int length = map.getLength();
             if (length == 1) {
-                metadata.add(parents, normalize(map.item(0).getNodeValue()));
+                metadata.add(ImageMetadataExtractor.UNKNOWN_IMG_NS + parents, normalize(map.item(0).getNodeValue()));
             } else if (length > 1) {
                 StringBuilder value = new StringBuilder();
                 for (int i = 0; i < length; i++) {
@@ -124,7 +118,7 @@ public class ImageParser extends AbstractImageParser {
                     value.append("=");
                     value.append(normalize(attr.getNodeValue()));
                 }
-                metadata.add(parents, value.toString());
+                metadata.add(ImageMetadataExtractor.UNKNOWN_IMG_NS + parents, value.toString());
             }
         }
 
@@ -181,8 +175,8 @@ public class ImageParser extends AbstractImageParser {
                         }
                         metadata.set(Metadata.IMAGE_WIDTH, Integer.toString(reader.getWidth(0)));
                         metadata.set(Metadata.IMAGE_LENGTH, Integer.toString(reader.getHeight(0)));
-                        metadata.set("height", Integer.toString(reader.getHeight(0)));
-                        metadata.set("width", Integer.toString(reader.getWidth(0)));
+                        metadata.set(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height", Integer.toString(reader.getHeight(0)));
+                        metadata.set(ImageMetadataExtractor.UNKNOWN_IMG_NS + "width", Integer.toString(reader.getWidth(0)));
 
                         loadMetadata(reader.getImageMetadata(0), metadata);
                     }
@@ -193,10 +187,10 @@ public class ImageParser extends AbstractImageParser {
 
             // Translate certain Metadata tags from the ImageIO
             //  specific namespace into the general Tika one
-            setIfPresent(metadata, "CommentExtensions CommentExtension",
+            setIfPresent(metadata, ImageMetadataExtractor.UNKNOWN_IMG_NS + "CommentExtensions CommentExtension",
                     TikaCoreProperties.COMMENTS);
-            setIfPresent(metadata, "markerSequence com", TikaCoreProperties.COMMENTS);
-            setIfPresent(metadata, "Data BitsPerSample", Metadata.BITS_PER_SAMPLE);
+            setIfPresent(metadata, ImageMetadataExtractor.UNKNOWN_IMG_NS + "markerSequence com", TikaCoreProperties.COMMENTS);
+            setIfPresent(metadata, ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data BitsPerSample", Metadata.BITS_PER_SAMPLE);
         } catch (IIOException e) {
             // TIKA-619: There is a known bug in the Sun API when dealing with GIF images
             //  which Tika will just ignore.

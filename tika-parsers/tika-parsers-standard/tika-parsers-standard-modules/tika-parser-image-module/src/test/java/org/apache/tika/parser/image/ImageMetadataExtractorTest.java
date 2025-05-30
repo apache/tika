@@ -129,7 +129,7 @@ public class ImageMetadataExtractorTest {
         Mockito.when(d.getTags()).thenReturn(tags);
         Metadata metadata = new Metadata();
         new ImageMetadataExtractor.CopyUnknownFieldsHandler().handle(d, metadata);
-        assertEquals("t1", metadata.get("Image Description"));
+        assertEquals("t1", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Image Description"));
         assertNull(metadata.get(TikaCoreProperties.SUBJECT),
                 "keywords should be excluded from bulk copy because it is a defined field");
         assertNull(metadata.get(TikaCoreProperties.DESCRIPTION));
