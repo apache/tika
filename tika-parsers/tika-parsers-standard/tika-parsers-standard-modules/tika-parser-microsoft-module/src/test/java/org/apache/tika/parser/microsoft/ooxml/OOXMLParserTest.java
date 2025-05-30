@@ -1393,11 +1393,13 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     public void testMacroinXlsm() throws Exception {
 
         //test default is "don't extract macros"
-        for (Metadata metadata : getRecursiveMetadata("testEXCEL_macro.xlsm")) {
+        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_macro.xlsm");
+        for (Metadata metadata : metadataList) {
             if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
                 fail("Shouldn't have extracted macros as default");
             }
         }
+        assertEquals("ThisWorkbook", metadataList.get(0).get(Office.WORKBOOK_CODENAME));
 
         //now test that they were extracted
         ParseContext context = new ParseContext();

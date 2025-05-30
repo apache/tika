@@ -243,7 +243,6 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 XMLReaderUtils.parseSAX(is, new CommentPersonHandler(metadata), parseContext);
             }
         }
-
     }
 
     protected void addDrawingHyperLinks(PackagePart sheetPart) {
