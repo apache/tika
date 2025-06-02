@@ -73,6 +73,7 @@ public class XMLReaderUtils implements Serializable {
      */
     public static final int DEFAULT_POOL_SIZE = 10;
     public static final int DEFAULT_MAX_ENTITY_EXPANSIONS = 20;
+    public static final int DEFAULT_NUM_REUSES = 100;
     /**
      * Serial version UID
      */
@@ -128,6 +129,7 @@ public class XMLReaderUtils implements Serializable {
      * Parser pool size
      */
     private static int POOL_SIZE = DEFAULT_POOL_SIZE;
+    private static int MAX_NUM_REUSES = DEFAULT_NUM_REUSES;
     private static long LAST_LOG = -1;
     private static volatile int MAX_ENTITY_EXPANSIONS = determineMaxEntityExpansions();
     private static ArrayBlockingQueue<PoolSAXParser> SAX_PARSERS =
@@ -400,11 +402,15 @@ public class XMLReaderUtils implements Serializable {
         DocumentBuilder builder = context.get(DocumentBuilder.class);
         PoolDOMBuilder poolBuilder = null;
         if (builder == null) {
-            poolBuilder = acquireDOMBuilder();
-            if (poolBuilder != null) {
-                builder = poolBuilder.getDocumentBuilder();
-            } else {
+            if (POOL_SIZE == 0) {
                 builder = getDocumentBuilder();
+            } else {
+                poolBuilder = acquireDOMBuilder();
+                if (poolBuilder != null) {
+                    builder = poolBuilder.getDocumentBuilder();
+                } else {
+                    builder = getDocumentBuilder();
+                }
             }
         }
 
@@ -522,11 +528,15 @@ public class XMLReaderUtils implements Serializable {
         SAXParser saxParser = context.get(SAXParser.class);
         PoolSAXParser poolSAXParser = null;
         if (saxParser == null) {
-            poolSAXParser = acquireSAXParser();
-            if (poolSAXParser != null) {
-                saxParser = poolSAXParser.getSAXParser();
-            } else {
+            if (POOL_SIZE == 0) {
                 saxParser = getSAXParser();
+            } else {
+                poolSAXParser = acquireSAXParser();
+                if (poolSAXParser != null) {
+                    saxParser = poolSAXParser.getSAXParser();
+                } else {
+                    saxParser = getSAXParser();
+                }
             }
         }
         try {
@@ -619,6 +629,14 @@ public class XMLReaderUtils implements Serializable {
         }
         DOM_POOL_LOCK
                 .readLock().lock();
+        if (builder.numUses > MAX_NUM_REUSES) {
+            try {
+                builder = new PoolDOMBuilder(builder.getPoolGeneration(), getDocumentBuilderFactory().newDocumentBuilder());
+            } catch (ParserConfigurationException e) {
+                LOG.warn("Exception trying to configure a new dom builder?!", e);
+                return;
+            }
+        }
         try {
             //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
             // this parser will not be added and will then be gc'd
@@ -684,6 +702,15 @@ public class XMLReaderUtils implements Serializable {
         SAX_POOL_LOCK
                 .readLock().lock();
         try {
+            parser.incrementUses();
+            if (parser.numUses >= MAX_NUM_REUSES) {
+                try {
+                    parser = buildPoolParser(parser.getGeneration(), getSAXParserFactory().newSAXParser());
+                } catch (SAXException | ParserConfigurationException e) {
+                    LOG.warn("Couldn't build new SAXParser after hitting max reuses", e);
+                    return;
+                }
+            }
             //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
             // this parser will not be added and will then be gc'd
             boolean success = SAX_PARSERS.offer(parser);
@@ -804,6 +831,19 @@ public class XMLReaderUtils implements Serializable {
         }
     }
 
+    /**
+     * Get the maximum number of times a SAXParser or DOMBuilder may be reused.
+     *
+     * @return
+     */
+    public static int getMaxNumReuses() {
+        return MAX_NUM_REUSES;
+    }
+
+    public static void setMaxNumReuses(int maxNumReuses) {
+        MAX_NUM_REUSES = maxNumReuses;
+    }
+
     public static int getPoolSize() {
         return POOL_SIZE;
     }
@@ -812,6 +852,9 @@ public class XMLReaderUtils implements Serializable {
      * Set the pool size for cached XML parsers.  This has a side
      * effect of locking the pool, and rebuilding the pool from
      * scratch with the most recent settings, such as {@link #MAX_ENTITY_EXPANSIONS}
+     *
+     * As of Tika 3.2.1, if a value of <code>0</code> is passed in, no SAXParsers or DOMBuilders
+     * will be pooled, and a new parser/builder will be built for each parse.
      *
      * @param poolSize
      * @since Apache Tika 1.19
@@ -831,14 +874,15 @@ public class XMLReaderUtils implements Serializable {
                 parser.reset();
             }
             SAX_PARSERS.clear();
-            SAX_PARSERS = new ArrayBlockingQueue<>(poolSize);
-            int generation = POOL_GENERATION.incrementAndGet();
-            for (int i = 0; i < poolSize; i++) {
-                try {
-                    SAX_PARSERS.offer(buildPoolParser(generation,
-                            getSAXParserFactory().newSAXParser()));
-                } catch (SAXException | ParserConfigurationException e) {
-                    throw new TikaException("problem creating sax parser", e);
+            if (poolSize > 0) {
+                SAX_PARSERS = new ArrayBlockingQueue<>(poolSize);
+                int generation = POOL_GENERATION.incrementAndGet();
+                for (int i = 0; i < poolSize; i++) {
+                    try {
+                        SAX_PARSERS.offer(buildPoolParser(generation, getSAXParserFactory().newSAXParser()));
+                    } catch (SAXException | ParserConfigurationException e) {
+                        throw new TikaException("problem creating sax parser", e);
+                    }
                 }
             }
         } finally {
@@ -850,9 +894,11 @@ public class XMLReaderUtils implements Serializable {
                 .writeLock().lock();
         try {
             DOM_BUILDERS.clear();
-            DOM_BUILDERS = new ArrayBlockingQueue<>(poolSize);
-            for (int i = 0; i < poolSize; i++) {
-                DOM_BUILDERS.offer(new PoolDOMBuilder(POOL_GENERATION.get(), getDocumentBuilder()));
+            if (poolSize > 0) {
+                DOM_BUILDERS = new ArrayBlockingQueue<>(poolSize);
+                for (int i = 0; i < poolSize; i++) {
+                    DOM_BUILDERS.offer(new PoolDOMBuilder(POOL_GENERATION.get(), getDocumentBuilder()));
+                }
             }
         } finally {
             DOM_POOL_LOCK
@@ -973,6 +1019,7 @@ public class XMLReaderUtils implements Serializable {
     private static class PoolDOMBuilder {
         private final int poolGeneration;
         private final DocumentBuilder documentBuilder;
+        int numUses = 0;
 
         PoolDOMBuilder(int poolGeneration, DocumentBuilder documentBuilder) {
             this.poolGeneration = poolGeneration;
@@ -992,12 +1039,16 @@ public class XMLReaderUtils implements Serializable {
             documentBuilder.setEntityResolver(IGNORING_SAX_ENTITY_RESOLVER);
             documentBuilder.setErrorHandler(null);
         }
+
+        void incrementUses() {
+            numUses = 0;
+        }
     }
 
     private abstract static class PoolSAXParser {
         final int poolGeneration;
         final SAXParser saxParser;
-
+        int numUses = 0;
         PoolSAXParser(int poolGeneration, SAXParser saxParser) {
             this.poolGeneration = poolGeneration;
             this.saxParser = saxParser;
@@ -1012,6 +1063,11 @@ public class XMLReaderUtils implements Serializable {
         public SAXParser getSAXParser() {
             return saxParser;
         }
+
+        void incrementUses() {
+            numUses++;
+        }
+
     }
 
     private static class XercesPoolSAXParser extends PoolSAXParser {
