@@ -417,9 +417,7 @@ public class XMLReaderUtils implements Serializable {
         try {
             return builder.parse(is);
         } finally {
-            if (poolBuilder != null) {
-                releaseDOMBuilder(poolBuilder);
-            }
+            releaseDOMBuilder(poolBuilder);
         }
     }
 
@@ -440,16 +438,22 @@ public class XMLReaderUtils implements Serializable {
         DocumentBuilder builder = context.get(DocumentBuilder.class);
         PoolDOMBuilder poolBuilder = null;
         if (builder == null) {
-            poolBuilder = acquireDOMBuilder();
-            builder = poolBuilder.getDocumentBuilder();
+            if (POOL_SIZE == 0) {
+                builder = getDocumentBuilder();
+            } else {
+                poolBuilder = acquireDOMBuilder();
+                if (poolBuilder != null) {
+                    builder = poolBuilder.getDocumentBuilder();
+                } else {
+                    builder = getDocumentBuilder();
+                }
+            }
         }
 
         try {
             return builder.parse(new InputSource(reader));
         } finally {
-            if (poolBuilder != null) {
-                releaseDOMBuilder(poolBuilder);
-            }
+            releaseDOMBuilder(poolBuilder);
         }
     }
 
@@ -481,11 +485,23 @@ public class XMLReaderUtils implements Serializable {
      */
     public static Document buildDOM(String uriString)
             throws TikaException, IOException, SAXException {
-        PoolDOMBuilder builder = acquireDOMBuilder();
+        PoolDOMBuilder poolBuilder = null;
+        DocumentBuilder builder = null;
+        if (POOL_SIZE == 0) {
+            builder = getDocumentBuilder();
+        } else {
+            poolBuilder = acquireDOMBuilder();
+            if (poolBuilder != null) {
+                builder = poolBuilder.getDocumentBuilder();
+            } else {
+                builder = getDocumentBuilder();
+            }
+        }
+
         try {
-            return builder.getDocumentBuilder().parse(uriString);
+            return builder.parse(uriString);
         } finally {
-            releaseDOMBuilder(builder);
+            releaseDOMBuilder(poolBuilder);
         }
     }
 
@@ -500,11 +516,23 @@ public class XMLReaderUtils implements Serializable {
      */
     public static Document buildDOM(InputStream is)
             throws TikaException, IOException, SAXException {
-        PoolDOMBuilder builder = acquireDOMBuilder();
+        PoolDOMBuilder poolBuilder = null;
+        DocumentBuilder builder = null;
+        if (POOL_SIZE == 0) {
+            builder = getDocumentBuilder();
+        } else {
+            poolBuilder = acquireDOMBuilder();
+            if (poolBuilder != null) {
+                builder = poolBuilder.getDocumentBuilder();
+            } else {
+                builder = getDocumentBuilder();
+            }
+        }
+
         try {
-            return builder.getDocumentBuilder().parse(is);
+            return builder.parse(is);
         } finally {
-            releaseDOMBuilder(builder);
+            releaseDOMBuilder(poolBuilder);
         }
     }
 
@@ -542,9 +570,7 @@ public class XMLReaderUtils implements Serializable {
         try {
             saxParser.parse(is, new OfflineContentHandler(contentHandler));
         } finally {
-            if (poolSAXParser != null) {
-                releaseParser(poolSAXParser);
-            }
+            releaseParser(poolSAXParser);
         }
     }
 
@@ -568,19 +594,21 @@ public class XMLReaderUtils implements Serializable {
         SAXParser saxParser = context.get(SAXParser.class);
         PoolSAXParser poolSAXParser = null;
         if (saxParser == null) {
-            poolSAXParser = acquireSAXParser();
-            if (poolSAXParser != null) {
-                saxParser = poolSAXParser.getSAXParser();
-            } else {
+            if (POOL_SIZE == 0) {
                 saxParser = getSAXParser();
+            } else {
+                poolSAXParser = acquireSAXParser();
+                if (poolSAXParser != null) {
+                    saxParser = poolSAXParser.getSAXParser();
+                } else {
+                    saxParser = getSAXParser();
+                }
             }
         }
         try {
             saxParser.parse(new InputSource(reader), new OfflineContentHandler(contentHandler));
         } finally {
-            if (poolSAXParser != null) {
-                releaseParser(poolSAXParser);
-            }
+            releaseParser(poolSAXParser);
         }
     }
 
@@ -619,6 +647,9 @@ public class XMLReaderUtils implements Serializable {
      * @param builder builder to return
      */
     private static void releaseDOMBuilder(PoolDOMBuilder builder) {
+        if (builder == null) {
+            return;
+        }
         if (builder.getPoolGeneration() != POOL_GENERATION.get()) {
             return;
         }
@@ -629,7 +660,8 @@ public class XMLReaderUtils implements Serializable {
         }
         DOM_POOL_LOCK
                 .readLock().lock();
-        if (builder.numUses > MAX_NUM_REUSES) {
+        builder.incrementUses();
+        if (builder.numUses >= MAX_NUM_REUSES) {
             try {
                 builder = new PoolDOMBuilder(builder.getPoolGeneration(), getDocumentBuilderFactory().newDocumentBuilder());
             } catch (ParserConfigurationException e) {
@@ -689,6 +721,9 @@ public class XMLReaderUtils implements Serializable {
      * @param parser parser to return
      */
     private static void releaseParser(PoolSAXParser parser) {
+        if (parser == null) {
+            return;
+        }
         try {
             parser.reset();
         } catch (UnsupportedOperationException e) {
@@ -860,6 +895,9 @@ public class XMLReaderUtils implements Serializable {
      * @since Apache Tika 1.19
      */
     public static void setPoolSize(int poolSize) throws TikaException {
+        if (poolSize < 0) {
+            throw new IllegalArgumentException("PoolSize must be >= 0");
+        }
         //stop the world with a write lock.
         //parsers that are currently in use will be offered later (once the lock is released),
         //but not accepted and will be gc'd.  We have to do this locking and

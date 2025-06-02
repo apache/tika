@@ -52,4 +52,18 @@ public class XMLReaderUtilsTest {
             fail("Parser tried to access the external DTD:" + e);
         }
     }
+
+    @Test
+    public void testExternalEntityLocal() throws Exception {
+        String xml =
+                "<!DOCTYPE foo [" +
+                "<!ENTITY % local_dtd SYSTEM \"file:///usr/local/app/schema.dtd\">" +
+                "%local_dtd;]><foo/>";
+        try {
+            XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
+                    new ToTextContentHandler(), new ParseContext());
+        } catch (ConnectException e) {
+            fail("Parser tried to access the external DTD:" + e);
+        }
+    }
 }
