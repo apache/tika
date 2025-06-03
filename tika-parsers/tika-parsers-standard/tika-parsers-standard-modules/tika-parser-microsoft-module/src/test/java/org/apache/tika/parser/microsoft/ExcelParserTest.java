@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 import java.text.DecimalFormatSymbols;
+import java.util.List;
 import java.util.Locale;
 
 import org.apache.poi.util.LocaleUtil;
@@ -576,5 +577,19 @@ public class ExcelParserTest extends TikaTest {
             assertContains("2018-09-20", xml);
             assertContains("1996-08-10", xml);
         }
+    }
+
+    @Test
+    public void testExtraMetadata() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_extra_metadata.xls");
+        Metadata m = metadataList.get(0);
+        assertEquals("Unknown Author", m.getValues(Office.COMMENT_PERSONS)[0]);
+        assertEquals("true", m.get(Office.HAS_HIDDEN_COLUMNS));
+        assertEquals("true", m.get(Office.HAS_HIDDEN_ROWS));
+        assertEquals("true", m.get(Office.PROTECTED_WORKSHEET));
+        assertEquals("hidden-sheet", m.getValues(Office.HIDDEN_SHEET_NAMES)[0]);
+        assertEquals("very-hidden-sheet", m.getValues(Office.VERY_HIDDEN_SHEET_NAMES)[0]);
+        assertEquals("true", m.get(Office.HAS_COMMENTS));
+        assertEquals("true", m.get(Office.HAS_HIDDEN_COLUMNS));
     }
 }

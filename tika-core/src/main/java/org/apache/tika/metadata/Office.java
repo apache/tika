@@ -184,4 +184,25 @@ public interface Office {
             TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "mapi-importance");
     Property MAPI_IS_FLAGGED = Property.internalBoolean(PREFIX_DOC_META +
             TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "mapi-is-flagged");
+
+    Property HAS_HIDDEN_SHEETS = Property.internalBoolean("msoffice:excel:has-hidden-sheets");
+
+    Property HAS_HIDDEN_COLUMNS = Property.internalBoolean("msoffice:excel:has-hidden-cols");
+
+    Property HAS_HIDDEN_ROWS = Property.internalBoolean("msoffice:excel:has-hidden-rows");
+
+    Property HAS_VERY_HIDDEN_SHEETS = Property.internalBoolean("msoffice:excel:has-very-hidden-sheets");
+
+    Property HIDDEN_SHEET_NAMES = Property.internalTextBag("msoffice:excel:hidden-sheet-names");
+
+    Property VERY_HIDDEN_SHEET_NAMES = Property.internalTextBag("msoffice:excel:very-hidden-sheet-names");
+
+    Property PROTECTED_WORKSHEET = Property.internalBoolean("msoffice:excel:protected-worksheet");
+
+    Property WORKBOOK_CODENAME = Property.internalText("msoffice:excel:workbook-codename");
+
+    Property HAS_COMMENTS = Property.internalBoolean("msoffice:has-comments");
+
+    Property COMMENT_PERSONS = Property.internalTextBag("msoffice:comment-person-display-name");
+
 }
