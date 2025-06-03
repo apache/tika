@@ -579,6 +579,9 @@ public class TikaConfig {
             XMLReaderUtils.setMaxEntityExpansions(Integer.parseInt(child.getAttribute("maxEntityExpansions")));
         }
 
+        if (child.hasAttribute("maxNumReuses")) {
+            XMLReaderUtils.setMaxNumReuses(Integer.parseInt(child.getAttribute("maxNumReuses")));
+        }
         // make sure to call this after set entity expansions
         if (child.hasAttribute("poolSize")) {
             XMLReaderUtils.setPoolSize(Integer.parseInt(child.getAttribute("poolSize")));
