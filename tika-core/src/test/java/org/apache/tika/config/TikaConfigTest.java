@@ -348,6 +348,59 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         }
     }
 
+    @Test
+    public void testXMLReaderUtilsReuse() throws Exception {
+        //this just tests that there's no exception thrown
+        try {
+            XMLReaderUtils.setPoolSize(10);
+            TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+            for (int i = 0; i < 500; i++) {
+                assertEquals("application/rdf+xml", detect("test-difficult-rdf1.xml", tikaConfig).toString());
+            }
+        } finally {
+            XMLReaderUtils.setMaxEntityExpansions(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS);
+            XMLReaderUtils.setPoolSize(XMLReaderUtils.DEFAULT_POOL_SIZE);
+        }
+    }
+
+    @Test
+    public void testXMLReaderUtilsConfigReuse() throws Exception {
+        TikaConfig tikaConfig = getConfig("TIKA-4427-max-num-reuses.xml");
+        try {
+            assertEquals(11, XMLReaderUtils.getPoolSize());
+            assertEquals(5000, XMLReaderUtils.getMaxEntityExpansions());
+            assertEquals(10000, XMLReaderUtils.getMaxNumReuses());
+            //make sure that there's actually a change in behavior
+            assertEquals("application/rdf+xml", detect("test-difficult-rdf1.xml", tikaConfig).toString());
+        } finally {
+            XMLReaderUtils.setMaxEntityExpansions(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS);
+            XMLReaderUtils.setPoolSize(XMLReaderUtils.DEFAULT_POOL_SIZE);
+        }
+    }
+
+    @Test
+    public void testXMLReaderUtilsNoPool() throws Exception {
+        //pool size may have been reset already by an
+        //earlier test.  Can't test for default here.
+        assertEquals(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS,
+                XMLReaderUtils.getMaxEntityExpansions());
+        //make sure that detection on this file actually works with
+        //default expansions
+        assertEquals("application/rdf+xml",
+                detect("test-difficult-rdf1.xml", TikaConfig.getDefaultConfig()).toString());
+
+        TikaConfig tikaConfig = getConfig("TIKA-4427-no-sax-pool.xml");
+        try {
+            assertEquals(0, XMLReaderUtils.getPoolSize());
+            assertEquals(5, XMLReaderUtils.getMaxEntityExpansions());
+            //make sure that there's actually a change in behavior
+            assertEquals("text/plain", detect("test-difficult-rdf1.xml", tikaConfig).toString());
+        } finally {
+            XMLReaderUtils.setMaxEntityExpansions(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS);
+            XMLReaderUtils.setPoolSize(XMLReaderUtils.DEFAULT_POOL_SIZE);
+        }
+    }
+
     private MediaType detect(String testFileName, TikaConfig tikaConfig) throws Exception {
         try (InputStream is = MimeDetectionTest.class.getResourceAsStream(testFileName)) {
             return tikaConfig.getDetector().detect(is, new Metadata());
