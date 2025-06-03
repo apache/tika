@@ -24,8 +24,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.apache.poi.ddf.EscherBSERecord;
 import org.apache.poi.ddf.EscherBlipRecord;
@@ -39,6 +41,7 @@ import org.apache.poi.hssf.model.InternalWorkbook;
 import org.apache.poi.hssf.record.BOFRecord;
 import org.apache.poi.hssf.record.BoundSheetRecord;
 import org.apache.poi.hssf.record.CellValueRecordInterface;
+import org.apache.poi.hssf.record.ColumnInfoRecord;
 import org.apache.poi.hssf.record.CountryRecord;
 import org.apache.poi.hssf.record.DateWindow1904Record;
 import org.apache.poi.hssf.record.DrawingGroupRecord;
@@ -51,9 +54,12 @@ import org.apache.poi.hssf.record.HeaderRecord;
 import org.apache.poi.hssf.record.HyperlinkRecord;
 import org.apache.poi.hssf.record.LabelRecord;
 import org.apache.poi.hssf.record.LabelSSTRecord;
+import org.apache.poi.hssf.record.NoteRecord;
 import org.apache.poi.hssf.record.NumberRecord;
+import org.apache.poi.hssf.record.ProtectRecord;
 import org.apache.poi.hssf.record.RKRecord;
 import org.apache.poi.hssf.record.Record;
+import org.apache.poi.hssf.record.RowRecord;
 import org.apache.poi.hssf.record.SSTRecord;
 import org.apache.poi.hssf.record.StringRecord;
 import org.apache.poi.hssf.record.TextObjectRecord;
@@ -73,8 +79,10 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Excel parser implementation which uses POI's Event API
@@ -188,6 +196,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 new TikaHSSFListener(workbookEntryName, xhtml, locale, this, officeParserConfig);
         listener.processFile(root, isListenForAllRecords());
         listener.throwStoredException();
+        updateMetadata(listener);
 
         for (Entry entry : root) {
             if (entry.getName().startsWith("MBD") && entry instanceof DirectoryEntry) {
@@ -197,6 +206,36 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     // ignore parse errors from embedded documents
                 }
             }
+        }
+    }
+
+    private void updateMetadata(TikaHSSFListener listener) {
+        if (listener.hasProtectedSheet) {
+            parentMetadata.set(Office.PROTECTED_WORKSHEET, true);
+        }
+        if (listener.hasHiddenColumn) {
+            parentMetadata.set(Office.HAS_HIDDEN_COLUMNS, true);
+        }
+        if (listener.hasHiddenRow) {
+            parentMetadata.set(Office.HAS_HIDDEN_ROWS, true);
+        }
+        if (! listener.commentAuthors.isEmpty()) {
+            for (String author : listener.commentAuthors) {
+                parentMetadata.add(Office.COMMENT_PERSONS, author);
+            }
+            parentMetadata.set(Office.HAS_COMMENTS, true);
+        }
+        if (! listener.hiddenSheets.isEmpty()) {
+            for (String sheetName : listener.hiddenSheets) {
+                parentMetadata.add(Office.HIDDEN_SHEET_NAMES, sheetName);
+            }
+            parentMetadata.set(Office.HAS_HIDDEN_SHEETS, true);
+        }
+        if (! listener.veryHiddenSheets.isEmpty()) {
+            for (String sheetName : listener.veryHiddenSheets) {
+                parentMetadata.add(Office.VERY_HIDDEN_SHEET_NAMES, sheetName);
+            }
+            parentMetadata.set(Office.HAS_VERY_HIDDEN_SHEETS, true);
         }
     }
 
@@ -266,7 +305,14 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * depend on continue records that aren't always
          * contiguous. Collect them for later processing.
          */
-        private List<DrawingGroupRecord> drawingGroups = new ArrayList<>();
+        private final List<DrawingGroupRecord> drawingGroups = new ArrayList<>();
+
+        private final List<String> hiddenSheets = new ArrayList<>();
+        private final List<String> veryHiddenSheets = new ArrayList<>();
+        private final Set<String> commentAuthors = new TreeSet<>();
+        private boolean hasHiddenColumn = false;
+        private boolean hasHiddenRow = false;
+        private boolean hasProtectedSheet = false;
 
         /**
          * Construct a new listener instance outputting parsed data to
@@ -328,6 +374,10 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 hssfRequest.addListener(formatListener, FormatRecord.sid);
                 hssfRequest.addListener(formatListener, ExtendedFormatRecord.sid);
                 hssfRequest.addListener(formatListener, DrawingGroupRecord.sid);
+                hssfRequest.addListener(formatListener, ProtectRecord.sid);
+                hssfRequest.addListener(formatListener, ColumnInfoRecord.sid);
+                hssfRequest.addListener(formatListener, RowRecord.sid);
+                hssfRequest.addListener(formatListener, NoteRecord.sid);
                 if (extractor.officeParserConfig.isIncludeHeadersAndFooters()) {
                     hssfRequest.addListener(formatListener, HeaderRecord.sid);
                     hssfRequest.addListener(formatListener, FooterRecord.sid);
@@ -419,6 +469,12 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
                 case BoundSheetRecord.sid: // Worksheet index record
                     BoundSheetRecord boundSheetRecord = (BoundSheetRecord) record;
+                    if (boundSheetRecord.isHidden()) {
+                        hiddenSheets.add(boundSheetRecord.getSheetname());
+                    }
+                    if (boundSheetRecord.isVeryHidden()) {
+                        veryHiddenSheets.add(boundSheetRecord.getSheetname());
+                    }
                     sheetNames.add(boundSheetRecord.getSheetname());
                     break;
 
@@ -522,6 +578,28 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     if (extractor.officeParserConfig.isIncludeHeadersAndFooters()) {
                         FooterRecord footerRecord = (FooterRecord) record;
                         addTextCell(record, footerRecord.getText());
+                    }
+                    break;
+                case ProtectRecord.sid:
+                    if (((ProtectRecord)record).getProtect()) {
+                        //TODO -- associate this worksheet name
+                        hasProtectedSheet = true;
+                    }
+                    break;
+                case ColumnInfoRecord.sid:
+                    if (((ColumnInfoRecord)record).getHidden()) {
+                        hasHiddenColumn = true;
+                    }
+                    break;
+                case NoteRecord.sid:
+                    String author = ((NoteRecord)record).getAuthor();
+                    if (!StringUtils.isBlank(author)) {
+                        commentAuthors.add(author);
+                    }
+                    break;
+                case RowRecord.sid:
+                    if (((RowRecord)record).getZeroHeight()) {
+                        hasHiddenRow = true;
                     }
                     break;
             }
@@ -680,7 +758,6 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
             @Override
             public void processRecord(Record record) {
-//                System.out.println(record.getClass() + " : "+record.toString());
                 super.processRecord(record);
             }
 
