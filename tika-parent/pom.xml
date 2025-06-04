@@ -330,7 +330,7 @@
     <bouncycastle.version>1.80</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <c3p0.version>0.10.2</c3p0.version>
+    <c3p0.version>0.11.1</c3p0.version>
     <commons.cli.version>1.9.0</commons.cli.version>
     <commons.codec.version>1.18.0</commons.codec.version>
     <commons.collections4.version>4.5.0</commons.collections4.version>
@@ -391,7 +391,7 @@
     <jsoup.version>1.20.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.12.2</junit5.version>
+    <junit5.version>5.13.0</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.31.1</jwarc.version>
@@ -422,7 +422,7 @@
     <pax.exam.version>4.14.0</pax.exam.version>
     <pdfbox.version>3.0.5</pdfbox.version>
     <poi.version>5.4.1</poi.version>
-    <protobuf.version>3.25.7</protobuf.version>
+    <protobuf.version>3.25.8</protobuf.version>
     <quartz.version>2.5.0</quartz.version>
     <reactor.core.version>3.7.3</reactor.core.version>
     <reactor.netty.version>1.2.3</reactor.netty.version>
@@ -437,7 +437,7 @@
     <spring.version>5.3.39</spring.version>
     <sqlite.version>3.49.1.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
-    <testcontainers.version>1.21.0</testcontainers.version>
+    <testcontainers.version>1.21.1</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
@@ -447,7 +447,7 @@
     <uimaj.cpe.version>3.6.0</uimaj.cpe.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
-    <woodstox.core.version>7.1.0</woodstox.core.version>
+    <woodstox.core.version>7.1.1</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.4</zookeeper.version>
@@ -456,7 +456,7 @@
     <logback.version>1.5.17</logback.version>
     <javacpp.version>1.5.11</javacpp.version>
     <maven.site.version>3.21.0</maven.site.version>
-    <maven.exec.version>3.5.0</maven.exec.version>
+    <maven.exec.version>3.5.1</maven.exec.version>
   </properties>
 
   <dependencyManagement>
