@@ -124,6 +124,9 @@ public class EMFParser implements Parser {
                     }
                     String txt = extTextOutW.getText();
                     buffer.append(txt);
+                    if (!txt.endsWith(" ")) {
+                        buffer.append(" ");
+                    }
                     parseState.lastY = extTextOutW.getReference().getY();
                     parseState.lastX = extTextOutW.getReference().getX();
                 }
