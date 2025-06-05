@@ -173,6 +173,11 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
 
     @Override
     public void set(String field, String value, Map<String, String[]> data) {
+        //legacy behavior is that setting(null) removes the key
+        if (value == null) {
+            data.remove(field);
+            return;
+        }
         if (! include(field, value)) {
             return;
         }
@@ -435,6 +440,9 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
     }
 
     private boolean includeField(String name) {
+        if (name == null) {
+            throw new NullPointerException("property name must not be null");
+        }
         if (ALWAYS_SET_FIELDS.contains(name)) {
             return true;
         }
@@ -445,6 +453,9 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
     }
 
     private static int estimateSize(String s) {
+        if (s == null) {
+            return 0;
+        }
         return 2 * s.length();
     }
 

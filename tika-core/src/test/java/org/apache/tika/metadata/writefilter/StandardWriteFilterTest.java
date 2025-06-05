@@ -16,8 +16,10 @@
  */
 package org.apache.tika.metadata.writefilter;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +34,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
@@ -200,6 +203,77 @@ public class StandardWriteFilterTest extends TikaTest {
             metadata.add(TikaCoreProperties.SUBJECT, "ab");
         }
         assertEquals(3, metadata.getValues(TikaCoreProperties.SUBJECT).length);
+    }
+
+    @Test
+    public void testAddOrder() throws Exception {
+        StandardWriteFilter standardWriteFilter = new StandardWriteFilter(100, 1000, 100000, 10, Set.of(), Set.of(), true);
+        Metadata m = new Metadata();
+        m.setMetadataWriteFilter(standardWriteFilter);
+        m.add("test", "foo");
+        m.add("test", "bar");
+        m.add("test", "baz");
+
+        assertArrayEquals(new String[]{"foo", "bar", "baz"}, m.getValues("test"));
+    }
+
+    @Test
+    public void testNullValues() throws Exception {
+        StandardWriteFilter standardWriteFilter = new StandardWriteFilter(100, 1000, 100000, 10, Set.of(), Set.of(), true);
+        Metadata m = new Metadata();
+        m.set("test", "foo");
+        m.setMetadataWriteFilter(standardWriteFilter);
+        m.set("test", null);
+
+        assertEquals(0, m.names().length);
+        assertNull(m.get("test"));
+
+        //now test adding
+        m = new Metadata();
+        m.add("test", "foo");
+        m.add("test", null);
+        //Not sure this is the behavior we want, but it is what we're currently doing.
+        assertArrayEquals(new String[]{"foo"}, m.getValues("test"));
+
+        //now check when empty not allowed
+        standardWriteFilter = new StandardWriteFilter(100, 1000, 100000, 10, Set.of(), Set.of(), false);
+        m = new Metadata();
+        m.set("test", "foo");
+        m.setMetadataWriteFilter(standardWriteFilter);
+        assertEquals(1, m.names().length);
+        assertEquals("foo", m.get("test"));
+
+        m.set("test", null);
+        assertEquals(0, m.names().length);
+        assertNull(m.get("test"));
+
+        m.add("test", "foo");
+        m.add("test", null);
+
+        assertEquals(1, m.names().length);
+        assertEquals(1, m.getValues("test").length);
+    }
+
+    @Test
+    public void testNullKeys() {
+        StandardWriteFilter standardWriteFilter = new StandardWriteFilter(100, 1000, 100000, 10, Set.of(), Set.of(), true);
+        Metadata m = new Metadata();
+        m.setMetadataWriteFilter(standardWriteFilter);
+        Exception ex = assertThrows(NullPointerException.class, () -> {
+            m.set((String) null, "foo");
+        });
+        ex = assertThrows(NullPointerException.class, () -> {
+            m.set((Property) null, "foo");
+        });
+
+        ex = assertThrows(NullPointerException.class, () -> {
+            m.add((Property) null, "foo");
+        });
+
+        ex = assertThrows(NullPointerException.class, () -> {
+            m.add((Property) null, "foo");
+        });
+
     }
 
     @Test
