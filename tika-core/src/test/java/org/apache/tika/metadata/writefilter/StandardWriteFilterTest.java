@@ -276,7 +276,7 @@ public class StandardWriteFilterTest extends TikaTest {
 
     }
 
-        @Test
+    @Test
     public void testExclude() throws Exception {
         TikaConfig tikaConfig =
                 new TikaConfig(TikaConfigTest.class.getResourceAsStream("TIKA-3695-exclude.xml"));
