@@ -19,7 +19,10 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.namespace.QName;
 
 import org.apache.poi.common.usermodel.Hyperlink;
@@ -55,7 +58,10 @@ import org.apache.poi.xslf.usermodel.XSLFTextRun;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
+import org.openxmlformats.schemas.presentationml.x2006.main.CTCommentAuthor;
+import org.openxmlformats.schemas.presentationml.x2006.main.CTCommentAuthorList;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTPicture;
+import org.openxmlformats.schemas.presentationml.x2006.main.CTSlide;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTSlideIdList;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTSlideIdListEntry;
 import org.xml.sax.SAXException;
@@ -63,8 +69,10 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
@@ -85,92 +93,130 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
      */
     protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException, IOException {
         XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();
-        XSLFCommentAuthors commentAuthors = slideShow.getCommentAuthors();
+        handleCommentAuthors(slideShow);
 
         List<XSLFSlide> slides = slideShow.getSlides();
+        AtomicInteger hiddenSlideCounter = new AtomicInteger(0);
         for (XSLFSlide slide : slides) {
-            String slideDesc;
-            if (slide.getPackagePart() != null && slide.getPackagePart().getPartName() != null) {
-                slideDesc = getJustFileName(slide.getPackagePart().getPartName().toString());
-                slideDesc += "_";
-            } else {
-                slideDesc = null;
-            }
+            handleSlide(slide, xhtml, hiddenSlideCounter);
+        }
+        if (hiddenSlideCounter.get() > 0) {
+            metadata.set(Office.HAS_HIDDEN_SLIDES, true);
+            metadata.set(Office.NUM_HIDDEN_SLIDES, hiddenSlideCounter.get());
+        }
+    }
 
-            // slide content
-            xhtml.startElement("div", "class", "slide-content");
-            extractContent(slide.getShapes(), false, xhtml, slideDesc);
+    private void handleSlide(XSLFSlide slide, XHTMLContentHandler xhtml, AtomicInteger hiddenSlideCounter) throws SAXException {
+        String slideDesc;
+        if (slide.getPackagePart() != null && slide.getPackagePart().getPartName() != null) {
+            slideDesc = getJustFileName(slide.getPackagePart().getPartName().toString());
+            slideDesc += "_";
+        } else {
+            slideDesc = null;
+        }
+
+        if (slide.isHidden()) {
+            hiddenSlideCounter.incrementAndGet();
+        }
+
+        // slide content
+        xhtml.startElement("div", "class", "slide-content");
+        extractContent(slide.getShapes(), false, xhtml, slideDesc);
+        xhtml.endElement("div");
+
+        if (config.isIncludeSlideMasterContent()) {
+            // slide layout which is the master sheet for this slide
+            xhtml.startElement("div", "class", "slide-master-content");
+            XSLFSlideLayout slideLayout = slide.getMasterSheet();
+            extractContent(slideLayout.getShapes(), true, xhtml, null);
             xhtml.endElement("div");
 
-            if (config.isIncludeSlideMasterContent()) {
-                // slide layout which is the master sheet for this slide
-                xhtml.startElement("div", "class", "slide-master-content");
-                XSLFSlideLayout slideLayout = slide.getMasterSheet();
-                extractContent(slideLayout.getShapes(), true, xhtml, null);
+            // slide master which is the master sheet for all text layouts
+            XSLFSheet slideMaster = slideLayout.getMasterSheet();
+            extractContent(slideMaster.getShapes(), true, xhtml, null);
+        }
+        if (config.isIncludeSlideNotes()) {
+            // notes (if present)
+            XSLFNotes slideNotes = slide.getNotes();
+            if (slideNotes != null) {
+                xhtml.startElement("div", "class", "slide-notes");
+
+                extractContent(slideNotes.getShapes(), false, xhtml, slideDesc);
+
+                // master sheet for this notes
+                XSLFNotesMaster notesMaster = slideNotes.getMasterSheet();
+                if (notesMaster != null) {
+                    extractContent(notesMaster.getShapes(), true, xhtml, null);
+                }
                 xhtml.endElement("div");
-
-                // slide master which is the master sheet for all text layouts
-                XSLFSheet slideMaster = slideLayout.getMasterSheet();
-                extractContent(slideMaster.getShapes(), true, xhtml, null);
             }
-            if (config.isIncludeSlideNotes()) {
-                // notes (if present)
-                XSLFNotes slideNotes = slide.getNotes();
-                if (slideNotes != null) {
-                    xhtml.startElement("div", "class", "slide-notes");
+        }
 
-                    extractContent(slideNotes.getShapes(), false, xhtml, slideDesc);
-
-                    // master sheet for this notes
-                    XSLFNotesMaster notesMaster = slideNotes.getMasterSheet();
-                    if (notesMaster != null) {
-                        extractContent(notesMaster.getShapes(), true, xhtml, null);
-                    }
-                    xhtml.endElement("div");
+        // comments (if present)
+        List<XSLFComment> comments = slide.getComments();
+        if (comments != null) {
+            StringBuilder authorStringBuilder = new StringBuilder();
+            for (XSLFComment comment : comments) {
+                authorStringBuilder.setLength(0);
+                xhtml.startElement("p", "class", "slide-comment");
+                if (comment.getAuthor() != null) {
+                    authorStringBuilder.append(comment.getAuthor());
                 }
-            }
-
-            // comments (if present)
-            List<XSLFComment> comments = slide.getComments();
-            if (comments != null) {
-                StringBuilder authorStringBuilder = new StringBuilder();
-                for (XSLFComment comment : comments) {
-                    authorStringBuilder.setLength(0);
-                    xhtml.startElement("p", "class", "slide-comment");
-                    if (comment.getAuthor() != null) {
-                        authorStringBuilder.append(comment.getAuthor());
-                    }
-                    if (comment.getAuthorInitials() != null) {
-                        if (authorStringBuilder.length() > 0) {
-                            authorStringBuilder.append(" ");
-                        }
-                        authorStringBuilder.append("(").append(comment.getAuthorInitials()).append(")");
-                    }
-                    if (comment.getText() != null && authorStringBuilder.length() > 0) {
-                        authorStringBuilder.append(" - ");
-                    }
+                if (comment.getAuthorInitials() != null) {
                     if (authorStringBuilder.length() > 0) {
-                        xhtml.startElement("b");
-                        xhtml.characters(authorStringBuilder.toString());
-                        xhtml.endElement("b");
+                        authorStringBuilder.append(" ");
                     }
+                    authorStringBuilder.append("(").append(comment.getAuthorInitials()).append(")");
+                }
+                if (comment.getText() != null && authorStringBuilder.length() > 0) {
+                    authorStringBuilder.append(" - ");
+                }
+                if (authorStringBuilder.length() > 0) {
+                    xhtml.startElement("b");
+                    xhtml.characters(authorStringBuilder.toString());
+                    xhtml.endElement("b");
+                }
 
-                    xhtml.characters(comment.getText());
-                    xhtml.endElement("p");
+                xhtml.characters(comment.getText());
+                xhtml.endElement("p");
+            }
+        }
+        //now dump diagram data
+        handleGeneralTextContainingPart(RELATION_DIAGRAM_DATA, "diagram-data",
+                slide.getPackagePart(), metadata,
+                new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
+                        new HashMap<>()//empty
+                ));
+        //now dump chart data
+        handleGeneralTextContainingPart(XSLFRelation.CHART.getRelation(), "chart",
+                slide.getPackagePart(), metadata,
+                new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
+                        new HashMap<>()//empty
+                ));
+
+        CTSlide ctSlide = slide.getXmlObject();
+        if (ctSlide.isSetTiming()) {
+            //perhaps require more, like: ctSlide.getTiming()?.getTnLst()?.getParArray()?.length
+            metadata.set(Office.HAS_ANIMATIONS, true);
+        }
+    }
+
+    private void handleCommentAuthors(XMLSlideShow slideShow) {
+        XSLFCommentAuthors commentAuthors = slideShow.getCommentAuthors();
+        if (commentAuthors != null) {
+            CTCommentAuthorList ctAuthorList = commentAuthors.getCTCommentAuthorsList();
+            CTCommentAuthor[] ctAuthorArray = ctAuthorList.getCmAuthorArray();
+            if (ctAuthorArray != null) {
+                Set<String> names = new HashSet<>();
+                for (CTCommentAuthor ctCommentAuthor : ctAuthorArray) {
+                    String n = ctCommentAuthor.getName();
+                    if (StringUtils.isBlank(n) || names.contains(n)) {
+                        continue;
+                    }
+                    metadata.add(Office.COMMENT_PERSONS, n);
+                    names.add(n);
                 }
             }
-            //now dump diagram data
-            handleGeneralTextContainingPart(RELATION_DIAGRAM_DATA, "diagram-data",
-                    slide.getPackagePart(), metadata,
-                    new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                            new HashMap<>()//empty
-                    ));
-            //now dump chart data
-            handleGeneralTextContainingPart(XSLFRelation.CHART.getRelation(), "chart",
-                    slide.getPackagePart(), metadata,
-                    new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                            new HashMap<>()//empty
-                    ));
         }
     }
 

@@ -28,6 +28,8 @@ import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.hslf.exceptions.EncryptedPowerPointFileException;
 import org.apache.poi.hslf.model.HeadersFooters;
 import org.apache.poi.hslf.record.DocInfoListContainer;
+import org.apache.poi.hslf.record.Record;
+import org.apache.poi.hslf.record.RecordContainer;
 import org.apache.poi.hslf.record.RecordTypes;
 import org.apache.poi.hslf.record.VBAInfoAtom;
 import org.apache.poi.hslf.record.VBAInfoContainer;
@@ -59,12 +61,22 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 
 public class HSLFExtractor extends AbstractPOIFSExtractor {
+
+    //This is from Andreas: https://stackoverflow.com/a/45664920
+    private static final int[] TIMING_RECORD_PATH = {
+            RecordTypes.ProgTags.typeID,
+            RecordTypes.ProgBinaryTag.typeID,
+            RecordTypes.BinaryTagData.typeID
+    };
+
+    private static final int EXT_TIME_NODE_CONTAINER = 0xf144;
 
     public HSLFExtractor(ParseContext context, Metadata metadata) {
         super(context, metadata);
@@ -93,6 +105,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             xhtml.startElement("div", "class", "slideShow");
 
             /* Iterate over slides and extract text */
+            int hiddenSlides = 0;
             for (HSLFSlide slide : _slides) {
                 xhtml.startElement("div", "class", "slide");
                 HeadersFooters slideHeaderFooters =
@@ -152,8 +165,15 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
                 // Slide complete
                 xhtml.endElement("div");
+                if (slide.isHidden()) {
+                    hiddenSlides++;
+                }
+                findAnimations(slide);
             }
-
+            if (hiddenSlides > 0) {
+                parentMetadata.set(Office.NUM_HIDDEN_SLIDES, hiddenSlides);
+                parentMetadata.set(Office.HAS_HIDDEN_SLIDES, true);
+            }
             handleSlideEmbeddedPictures(ss, xhtml);
             handleShowEmbeddedResources(ss, xhtml, true);
 
@@ -165,6 +185,19 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         }
         // All slides done
         xhtml.endElement("div");
+    }
+
+    private void findAnimations(HSLFSlide slide) {
+        if (parentMetadata.get(Office.HAS_ANIMATIONS) != null) {
+            return;
+        }
+        RecordContainer lastRecord = slide.getSheetContainer();
+        for (int ri : TIMING_RECORD_PATH) {
+            lastRecord = (RecordContainer) lastRecord.findFirstOfType(ri);
+        }
+        if (lastRecord.findFirstOfType(EXT_TIME_NODE_CONTAINER) != null) {
+            parentMetadata.set(Office.HAS_ANIMATIONS, true);
+        }
     }
 
     /**

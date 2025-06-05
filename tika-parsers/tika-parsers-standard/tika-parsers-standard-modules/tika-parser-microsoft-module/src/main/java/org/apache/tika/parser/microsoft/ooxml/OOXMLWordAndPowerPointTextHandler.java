@@ -85,6 +85,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String RUBY = "ruby"; //phonetic section
     private final static String RT = "rt"; //phonetic run
     private static final String VAL = "val";
+    private static final String SLIDE = "sld";
+    private static final String SHOW = "show";
     private final static String MC_NS =
             "http://schemas.openxmlformats.org/markup-compatibility/2006";
     private final static String O_NS = "urn:schemas-microsoft-com:office:office";
@@ -147,6 +149,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private OOXMLWordAndPowerPointTextHandler.EditType editType =
             OOXMLWordAndPowerPointTextHandler.EditType.NONE;
     private DateUtils dateUtils = new DateUtils();
+
+    private boolean hiddenSlide = false;
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
                                              Map<String, String> hyperlinks) {
@@ -333,6 +337,11 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             inV = true;
         } else if (RT.equals(localName)) {
             inRt = true;
+        } else if (SLIDE.equals(localName)) {
+            String val = atts.getValue("show");
+            if ("0".equals(val) || "false".equals(val)) {
+                hiddenSlide = true;
+            }
         }
 
     }
@@ -570,5 +579,9 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         void startBookmark(String id, String name) throws SAXException;
 
         void endBookmark(String id) throws SAXException;
+    }
+
+    public boolean isHiddenSlide() {
+        return hiddenSlide;
     }
 }
