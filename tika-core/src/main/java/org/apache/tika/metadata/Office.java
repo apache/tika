@@ -175,4 +175,9 @@ public interface Office {
 
     Property COMMENT_PERSONS = Property.internalTextBag("msoffice:comment-person-display-name");
 
+    Property HAS_HIDDEN_SLIDES = Property.internalBoolean("msoffice:ppt:has-hidden-slides");
+
+    Property NUM_HIDDEN_SLIDES = Property.internalInteger("msoffice:ppt:num-hidden-slides");
+
+    Property HAS_ANIMATIONS = Property.internalBoolean("msoffice:ppt:has-animations");
 }

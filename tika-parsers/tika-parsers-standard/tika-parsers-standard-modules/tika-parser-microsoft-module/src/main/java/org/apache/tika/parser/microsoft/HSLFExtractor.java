@@ -28,6 +28,7 @@ import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.hslf.exceptions.EncryptedPowerPointFileException;
 import org.apache.poi.hslf.model.HeadersFooters;
 import org.apache.poi.hslf.record.DocInfoListContainer;
+import org.apache.poi.hslf.record.RecordContainer;
 import org.apache.poi.hslf.record.RecordTypes;
 import org.apache.poi.hslf.record.VBAInfoAtom;
 import org.apache.poi.hslf.record.VBAInfoContainer;
@@ -59,12 +60,22 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 
 public class HSLFExtractor extends AbstractPOIFSExtractor {
+
+    //This is from Andreas: https://stackoverflow.com/a/45664920
+    private static final int[] TIMING_RECORD_PATH = {
+            RecordTypes.ProgTags.typeID,
+            RecordTypes.ProgBinaryTag.typeID,
+            RecordTypes.BinaryTagData.typeID
+    };
+
+    private static final int EXT_TIME_NODE_CONTAINER = 0xf144;
 
     public HSLFExtractor(ParseContext context, Metadata metadata) {
         super(context, metadata);
@@ -93,6 +104,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             xhtml.startElement("div", "class", "slideShow");
 
             /* Iterate over slides and extract text */
+            int hiddenSlides = 0;
+            Set<String> commentAuthors = new HashSet<>();
             for (HSLFSlide slide : _slides) {
                 xhtml.startElement("div", "class", "slide");
                 HeadersFooters slideHeaderFooters =
@@ -144,7 +157,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         xhtml.endElement("p");
                     }
                 }
-                handleComments(slide, xhtml);
+                handleComments(slide, xhtml, commentAuthors);
                 handleNotes(slide, notesHeadersFooters, xhtml);
 
                 // Now any embedded resources
@@ -152,8 +165,15 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
                 // Slide complete
                 xhtml.endElement("div");
+                if (slide.isHidden()) {
+                    hiddenSlides++;
+                }
+                findAnimations(slide);
             }
-
+            if (hiddenSlides > 0) {
+                parentMetadata.set(Office.NUM_HIDDEN_SLIDES, hiddenSlides);
+                parentMetadata.set(Office.HAS_HIDDEN_SLIDES, true);
+            }
             handleSlideEmbeddedPictures(ss, xhtml);
             handleShowEmbeddedResources(ss, xhtml, true);
 
@@ -165,6 +185,24 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         }
         // All slides done
         xhtml.endElement("div");
+    }
+
+    private void findAnimations(HSLFSlide slide) {
+        if (parentMetadata.get(Office.HAS_ANIMATIONS) != null) {
+            return;
+        }
+        RecordContainer lastRecord = slide.getSheetContainer();
+        for (int ri : TIMING_RECORD_PATH) {
+            if (lastRecord == null) {
+                return;
+            }
+            lastRecord = (RecordContainer) lastRecord.findFirstOfType(ri);
+
+        }
+
+        if (lastRecord != null && lastRecord.findFirstOfType(EXT_TIME_NODE_CONTAINER) != null) {
+            parentMetadata.set(Office.HAS_ANIMATIONS, true);
+        }
     }
 
     /**
@@ -216,10 +254,11 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         }
     }
 
-    private void handleComments(HSLFSlide slide, XHTMLContentHandler xhtml) throws SAXException {
-        if (slide.getComments() == null || slide.getComments().size() == 0) {
+    private void handleComments(HSLFSlide slide, XHTMLContentHandler xhtml, Set<String> commentAuthors) throws SAXException {
+        if (slide.getComments() == null || slide.getComments().isEmpty()) {
             return;
         }
+
         xhtml.startElement("div", "class", "slide-comments");
 
         // Comments, if present
@@ -228,16 +267,21 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             authorStringBuilder.setLength(0);
             xhtml.startElement("p", "class", "slide-comment");
 
-            if (comment.getAuthor() != null) {
-                authorStringBuilder.append(comment.getAuthor());
+            if (! StringUtils.isBlank(comment.getAuthor())) {
+                String author = comment.getAuthor();
+                authorStringBuilder.append(author);
+                if (! commentAuthors.contains(author)) {
+                    parentMetadata.add(Office.COMMENT_PERSONS, comment.getAuthor());
+                    commentAuthors.add(author);
+                }
             }
             if (comment.getAuthorInitials() != null) {
-                if (authorStringBuilder.length() > 0) {
+                if (! authorStringBuilder.isEmpty()) {
                     authorStringBuilder.append(" ");
                 }
                 authorStringBuilder.append("(").append(comment.getAuthorInitials()).append(")");
             }
-            if (authorStringBuilder.length() > 0) {
+            if (! authorStringBuilder.isEmpty()) {
                 if (comment.getText() != null) {
                     authorStringBuilder.append(" - ");
                 }
