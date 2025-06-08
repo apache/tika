@@ -99,8 +99,7 @@ public class AmazonTranscribe implements Parser, Initializable {
     private AmazonS3 amazonS3;
     private String bucketName;
     private String region;
-    private boolean isAvailable; // Flag for whether or not transcription is
-    // available.
+    private boolean isAvailable; // Flag for whether or not transcription is available.
     private String clientId;
     private String clientSecret; // Keys used for the API calls.
     private AWSStaticCredentialsProvider credsProvider;
@@ -139,6 +138,10 @@ public class AmazonTranscribe implements Parser, Initializable {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         if (!isAvailable) {
+            return;
+        }
+        // isAvailable does not check this
+        if (amazonS3 == null) {
             return;
         }
         String jobName = getJobKey();
@@ -222,7 +225,7 @@ public class AmazonTranscribe implements Parser, Initializable {
      * @return if the service is available
      */
     private boolean checkAvailable() {
-        return amazonS3 != null && clientId != null && clientSecret != null && bucketName != null;
+        return clientId != null && clientSecret != null && bucketName != null;
     }
 
     /**
