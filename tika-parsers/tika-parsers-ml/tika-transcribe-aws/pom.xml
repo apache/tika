@@ -38,22 +38,18 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>transcribe</artifactId>
-      <version>${aws2.version}</version>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
-      <version>${aws2.version}</version>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>sts</artifactId>
-      <version>${aws2.version}</version>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>swf</artifactId>
-      <version>${aws2.version}</version>
     </dependency>
     <dependency>
       <groupId>com.googlecode.json-simple</groupId>
