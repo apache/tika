@@ -33,26 +33,27 @@
   <name>Apache Tika transcribe aws</name>
   <url>http://tika.apache.org/</url>
 
-  <dependencyManagement>
-      <dependencies>
-          <dependency>
-              <groupId>com.amazonaws</groupId>
-              <artifactId>aws-java-sdk-swf-libraries</artifactId>
-              <version>2.0.0</version>
-          </dependency>
-      </dependencies>
-  </dependencyManagement>
-
   <!--TODO use latest aws version or the one defined in the tika-parent-->
   <dependencies>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-transcribe</artifactId>
-      <version>${aws.version}</version>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>transcribe</artifactId>
+      <version>${aws2.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-s3</artifactId>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+      <version>${aws2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sts</artifactId>
+      <version>${aws2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>swf</artifactId>
+      <version>${aws2.version}</version>
     </dependency>
     <dependency>
       <groupId>com.googlecode.json-simple</groupId>
@@ -62,16 +63,6 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk</artifactId>
-      <version>${aws.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-simpleworkflow</artifactId>
-      <version>${aws.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>

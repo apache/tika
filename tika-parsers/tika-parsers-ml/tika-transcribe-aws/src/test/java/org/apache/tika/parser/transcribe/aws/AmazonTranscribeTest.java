@@ -18,10 +18,10 @@ package org.apache.tika.parser.transcribe.aws;
 
 import java.io.InputStream;
 
-import com.amazonaws.services.transcribe.model.LanguageCode;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.transcribe.model.LanguageCode;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -64,7 +64,7 @@ public class AmazonTranscribeTest extends TikaTest {
     @Test
     public void testAmazonTranscribeAudio_enUS() throws Exception {
         ParseContext context = new ParseContext();
-        context.set(LanguageCode.class, LanguageCode.EnUS);
+        context.set(LanguageCode.class, LanguageCode.EN_US);
         String xml = getXML("en-US_(A_Little_Bottle_Of_Water).mp3", PARSER, context).xml;
         String expected = "A little bottle of water";
         assertContains(expected, xml);
@@ -89,7 +89,7 @@ public class AmazonTranscribeTest extends TikaTest {
     public void testAmazonTranscribeVideo_enUS() throws Exception {
         String expected = "Hi";
         ParseContext context = new ParseContext();
-        context.set(LanguageCode.class, LanguageCode.EnUS);
+        context.set(LanguageCode.class, LanguageCode.EN_US);
         String xml = getXML("en-US_(Hi).mp4", PARSER, context).xml;
         assertContains(expected, xml);
     }
@@ -114,7 +114,7 @@ public class AmazonTranscribeTest extends TikaTest {
         String file = "en-GB_(A_Little_Bottle_Of_Water).mp3";
         String expected = "A little bottle of water";
         ParseContext context = new ParseContext();
-        context.set(LanguageCode.class, LanguageCode.EnGB);
+        context.set(LanguageCode.class, LanguageCode.EN_GB);
         String xml = getXML(file, PARSER, context).xml;
         assertContains(expected, xml);
     }
@@ -140,7 +140,7 @@ public class AmazonTranscribeTest extends TikaTest {
         String file = "en-AU_(A_Little_Bottle_Of_Water).mp3";
         String expected = "A little bottle of water";
         ParseContext context = new ParseContext();
-        context.set(LanguageCode.class, LanguageCode.EnAU);
+        context.set(LanguageCode.class, LanguageCode.EN_AU);
         String xml = getXML(file, PARSER, context).xml;
         assertContains(expected, xml);
     }
@@ -166,7 +166,7 @@ public class AmazonTranscribeTest extends TikaTest {
         String file = "de-DE_(We_Are_At_School_x2).mp3";
         String expected = "Wir sind in der Schule. Wir sind in der Schule.";
         ParseContext context = new ParseContext();
-        context.set(LanguageCode.class, LanguageCode.DeDE);
+        context.set(LanguageCode.class, LanguageCode.DE_DE);
         String xml = getXML(file, PARSER, context).xml;
         assertContains(expected, xml);
     }
@@ -192,7 +192,7 @@ public class AmazonTranscribeTest extends TikaTest {
         String file = "it-IT_(We_Are_Having_Class_x2).mp3";
         String expected = "stiamo facendo lezione. stiamo facendo lezione.";
         ParseContext context = new ParseContext();
-        context.set(LanguageCode.class, LanguageCode.ItIT);
+        context.set(LanguageCode.class, LanguageCode.IT_IT);
         String xml = getXML(file, PARSER, context).xml;
         assertContains(expected, xml);
     }
@@ -218,7 +218,7 @@ public class AmazonTranscribeTest extends TikaTest {
         String file = "ja-JP_(We_Are_At_School).mp3";
         String expected = "私達は学校にいます"; //TODO or Watashitachi wa gakkō ni imasu
         ParseContext context = new ParseContext();
-        context.set(LanguageCode.class, LanguageCode.JaJP);
+        context.set(LanguageCode.class, LanguageCode.JA_JP);
         String xml = getXML(file, PARSER, context).xml;
         assertContains(expected, xml);
 
@@ -245,7 +245,7 @@ public class AmazonTranscribeTest extends TikaTest {
         String file = "ko-KR_(We_Are_Having_Class_x2).mp3";
         String expected = "우리는 수업을하고있다"; //TODO or ulineun sueob-eulhagoissda
         ParseContext context = new ParseContext();
-        context.set(LanguageCode.class, LanguageCode.KoKR);
+        context.set(LanguageCode.class, LanguageCode.KO_KR);
         String xml = getXML(file, PARSER, context).xml;
         assertContains(expected, xml);
     }
@@ -272,7 +272,7 @@ public class AmazonTranscribeTest extends TikaTest {
         //TODO: Check whether output is Annyeonghaseyo or 안녕하세요
         String expected = "Annyeonghaseyo";
         ParseContext context = new ParseContext();
-        context.set(LanguageCode.class, LanguageCode.KoKR);
+        context.set(LanguageCode.class, LanguageCode.KO_KR);
         String xml = getXML(file, PARSER, context).xml;
         assertContains(expected, xml);
     }
@@ -299,7 +299,7 @@ public class AmazonTranscribeTest extends TikaTest {
         String file = "pt-BR_(We_Are_At_School).mp3";
         String expected = "nós estamos na escola.";
         ParseContext context = new ParseContext();
-        context.set(LanguageCode.class, LanguageCode.PtBR);
+        context.set(LanguageCode.class, LanguageCode.PT_BR);
         String xml = getXML(file, PARSER, context).xml;
         assertContains(expected, xml);
     }
