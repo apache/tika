@@ -23,6 +23,7 @@
         <param name="bucket" type="string">bucket</param>
         <param name="clientId" type="string">clientId</param>
         <param name="clientSecret" type="string">clientSecret</param>
+        <param name="region" type="string">us-east-1</param>
       </params>
     </parser>
   </parsers>
