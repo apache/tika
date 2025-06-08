@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
@@ -43,8 +44,8 @@ public class AmazonTranscribeTest extends TikaTest {
     @BeforeAll
     public static void setUp() throws Exception {
         try (InputStream is = AmazonTranscribeTest.class
-                .getResourceAsStream("tika-config-aws-transcribe.xml")) {
-            PARSER = new TikaConfig(is).getParser();
+                .getResourceAsStream("/tika-config-aws-transcribe.xml")) {
+            PARSER = new AutoDetectParser(new TikaConfig(is));
         }
     }
 
