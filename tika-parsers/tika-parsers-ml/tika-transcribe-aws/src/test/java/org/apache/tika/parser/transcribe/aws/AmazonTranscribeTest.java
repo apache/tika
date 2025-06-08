@@ -35,8 +35,16 @@ import org.apache.tika.parser.Parser;
  * Tests tika-trancribe by creating an AmazonTranscribe() object.
  * 1) Tests that transcribe functions properly when it is given just a filepath.
  * 2) Both audio (mp3) and video (mp4) files are used in these tests.
+ * 
+ * How to get this to work:
+ * 1) remove "@Disabled"
+ * 2) Get an amazon aws account (preferably the free tier)
+ * 3) include access key (clientid), secret and bucket name
+ * in "tika-config-aws-transcribe.xml" (do not commit this file!). The bucket name must be unique worldwide.
+ * 4) Make sure you have the needed permissions policies, AmazonS3FullAccess and AmazonTranscribeFullAccess.
+ * 5) Be aware that as of 6/2025, you can get only 60 min / month free transscripts.
  */
-@Disabled("Ignore until finalize AmazonTrancsribe Interface & build Tika")
+@Disabled("Ignore until finalize AmazonTranscribe Interface & build Tika")
 public class AmazonTranscribeTest extends TikaTest {
 
     static Parser PARSER;
@@ -58,7 +66,7 @@ public class AmazonTranscribeTest extends TikaTest {
         ParseContext context = new ParseContext();
         context.set(LanguageCode.class, LanguageCode.EnUS);
         String xml = getXML("en-US_(A_Little_Bottle_Of_Water).mp3", PARSER, context).xml;
-        String expected = "a little bottle of water.";
+        String expected = "A little bottle of water";
         assertContains(expected, xml);
     }
 
@@ -69,7 +77,7 @@ public class AmazonTranscribeTest extends TikaTest {
     @Test
     public void testAmazonTranscribeUnknownAudio_enUS() throws Exception {
         String xml = getXML("en-US_(A_Little_Bottle_Of_Water).mp3", PARSER).xml;
-        String expected = "a little bottle of water.";
+        String expected = "A little bottle of water";
         assertContains(expected, xml);
     }
 
@@ -104,7 +112,7 @@ public class AmazonTranscribeTest extends TikaTest {
     @Test
     public void testAmazonTranscribeAudio_enGB() throws Exception {
         String file = "en-GB_(A_Little_Bottle_Of_Water).mp3";
-        String expected = "a little bottle of water.";
+        String expected = "A little bottle of water";
         ParseContext context = new ParseContext();
         context.set(LanguageCode.class, LanguageCode.EnGB);
         String xml = getXML(file, PARSER, context).xml;
@@ -118,7 +126,7 @@ public class AmazonTranscribeTest extends TikaTest {
     @Test
     public void testAmazonTranscribeUnknownAudio_enGB() throws Exception {
         String file = "en-GB_(A_Little_Bottle_Of_Water).mp3";
-        String expected = "a little bottle of water.";
+        String expected = "A little bottle of water";
         String xml = getXML(file, PARSER).xml;
         assertContains(expected, xml);
     }
@@ -130,7 +138,7 @@ public class AmazonTranscribeTest extends TikaTest {
     @Test
     public void testAmazonTranscribeAudio_enAU() throws Exception {
         String file = "en-AU_(A_Little_Bottle_Of_Water).mp3";
-        String expected = "a little bottle of water.";
+        String expected = "A little bottle of water";
         ParseContext context = new ParseContext();
         context.set(LanguageCode.class, LanguageCode.EnAU);
         String xml = getXML(file, PARSER, context).xml;
@@ -144,7 +152,7 @@ public class AmazonTranscribeTest extends TikaTest {
     @Test
     public void testAmazonTranscribeUnknownAudio_enAU() throws Exception {
         String file = "en-AU_(A_Little_Bottle_Of_Water).mp3";
-        String expected = "a little bottle of water.";
+        String expected = "A little bottle of water";
         String xml = getXML(file, PARSER).xml;
         assertContains(expected, xml);
     }
