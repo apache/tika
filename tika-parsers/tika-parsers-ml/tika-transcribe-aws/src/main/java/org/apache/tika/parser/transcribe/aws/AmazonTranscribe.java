@@ -17,19 +17,14 @@
 
 package org.apache.tika.parser.transcribe.aws;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
@@ -38,19 +33,15 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.CompressionType;
-import com.amazonaws.services.s3.model.ExpressionType;
-import com.amazonaws.services.s3.model.InputSerialization;
-import com.amazonaws.services.s3.model.JSONInput;
-import com.amazonaws.services.s3.model.JSONOutput;
-import com.amazonaws.services.s3.model.JSONType;
-import com.amazonaws.services.s3.model.OutputSerialization;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.SelectObjectContentEvent;
-import com.amazonaws.services.s3.model.SelectObjectContentEventVisitor;
-import com.amazonaws.services.s3.model.SelectObjectContentRequest;
-import com.amazonaws.services.s3.model.SelectObjectContentResult;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
+import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
 import com.amazonaws.services.transcribe.AmazonTranscribeAsync;
 import com.amazonaws.services.transcribe.AmazonTranscribeAsyncClientBuilder;
 import com.amazonaws.services.transcribe.model.GetTranscriptionJobRequest;
@@ -60,9 +51,8 @@ import com.amazonaws.services.transcribe.model.Media;
 import com.amazonaws.services.transcribe.model.StartTranscriptionJobRequest;
 import com.amazonaws.services.transcribe.model.TranscriptionJob;
 import com.amazonaws.services.transcribe.model.TranscriptionJobStatus;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -100,7 +90,7 @@ public class AmazonTranscribe implements Parser, Initializable {
     private String bucketName;
     private String region;
     private boolean isAvailable; // Flag for whether or not transcription is available.
-    private String clientId;
+    private String clientId; // Access key
     private String clientSecret; // Keys used for the API calls.
     private AWSStaticCredentialsProvider credsProvider;
 
@@ -168,6 +158,7 @@ public class AmazonTranscribe implements Parser, Initializable {
         xhtml.endElement("p");
         xhtml.endDocument();
 
+        deleteFilesFromBucket(jobName);
     }
 
 
@@ -252,7 +243,16 @@ public class AmazonTranscribe implements Parser, Initializable {
         try {
             @SuppressWarnings("unused") PutObjectResult response = amazonS3.putObject(request);
         } catch (SdkClientException e) {
-            throw (new TikaException("File Upload to AWS Failed"));
+            throw new TikaException("File upload to AWS failed: " + e.getMessage(), e);
+        }
+    }
+
+    private void deleteFilesFromBucket(String jobName) throws TikaException {
+        try {
+            amazonS3.deleteObject(bucketName, jobName);
+            amazonS3.deleteObject(bucketName, jobName + ".json");
+        } catch (SdkClientException e) {
+            LOG.error("Failed to delete {} and/or {} from {}", jobName, jobName + ".json", bucketName, e);
         }
     }
 
@@ -272,69 +272,24 @@ public class AmazonTranscribe implements Parser, Initializable {
     private String getTranscriptText(String fileNameS3)
             throws AmazonServiceException, SdkClientException, IOException {
         TranscriptionJob transcriptionJob = retrieveObjectWhenJobCompleted(fileNameS3);
-        String text = null;
+        String text = "";
         if (transcriptionJob != null && !TranscriptionJobStatus.FAILED.name()
                 .equals(transcriptionJob.getTranscriptionJobStatus())) {
-            InputSerialization inputSerialization =
-                    new InputSerialization().withJson(new JSONInput().withType(JSONType.DOCUMENT))
-                            .withCompressionType(CompressionType.NONE);
-            OutputSerialization outputSerialization =
-                    new OutputSerialization().withJson(new JSONOutput());
-            SelectObjectContentRequest request =
-                    new SelectObjectContentRequest().withBucketName(this.bucketName)
-                            .withKey(fileNameS3 + ".json").withExpression(
-                            "Select s.results.transcripts[0].transcript from S3Object s")
-                            //WHERE transcript IS NOT MISSING
-                            .withExpressionType(ExpressionType.SQL)
-                            .withRequestCredentialsProvider(credsProvider);
-            request.setInputSerialization(inputSerialization);
-            request.setOutputSerialization(outputSerialization);
-
-            final AtomicBoolean isResultComplete = new AtomicBoolean(false);
-
-            try (SelectObjectContentResult result = amazonS3.selectObjectContent(request)) {
-                InputStream resultInputStream = result.getPayload()
-                        .getRecordsInputStream(new SelectObjectContentEventVisitor() {
-                            @Override
-                            public void visit(SelectObjectContentEvent.StatsEvent event) {
-                                LOG.debug("Received Stats, Bytes Scanned: " +
-                                        event.getDetails().getBytesScanned() +
-                                        " Bytes Processed: " +
-                                        event.getDetails().getBytesProcessed());
-                            }
-
-                            /*
-                             * An End Event informs that the request has
-                             * finished successfully.
-                             */
-                            @Override
-                            public void visit(SelectObjectContentEvent.EndEvent event) {
-                                isResultComplete.set(true);
-                                LOG.debug("Received End Event. Result is complete.");
-                            }
-                        });
-                text = new BufferedReader(
-                        new InputStreamReader(resultInputStream, StandardCharsets.UTF_8)).lines()
-                        .collect(Collectors.joining("\n"));
-            }
-            /*
-             * The End Event indicates all matching records have been
-             * transmitted. If the End Event is not received, the results
-             * may be incomplete.
-             */
-            if (!isResultComplete.get()) {
-                throw new IOException(
-                        "S3 Select request was incomplete as End Event was not received.");
+            S3Object s3Object = amazonS3.getObject(new GetObjectRequest(bucketName, fileNameS3 + ".json"));
+            try (S3ObjectInputStream objectContent = s3Object.getObjectContent()) {
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode root = mapper.readTree(objectContent);
+                text = root
+                        .path("results")
+                        .path("transcripts")
+                        .get(0)
+                        .path("transcript")
+                        .asText();
+                // could also be done with json.simple:
+                // ((JSONObject)((JSONArray)((JSONObject) obj.get("results")).get("transcripts")).get(0)).get("transcript")
             }
         }
-        JSONParser parser = new JSONParser();
-        JSONObject obj = null;
-        try {
-            obj = (JSONObject) parser.parse(text);
-        } catch (ParseException e) {
-            throw new IOException(e.getMessage(), e);
-        }
-        return obj.get("transcript").toString();
+        return text;
     }
 
     /**
@@ -375,7 +330,15 @@ public class AmazonTranscribe implements Parser, Initializable {
                         AmazonS3ClientBuilder.standard().withCredentials(credsProvider).build();
                 this.region = amazonS3.getRegionName(); // not sure if this works at all
             }
-            if (!this.amazonS3.doesBucketExistV2(this.bucketName)) {
+
+            // for debugging
+            AWSSecurityTokenService stsClient = AWSSecurityTokenServiceClientBuilder.standard()
+                    .withCredentials(credsProvider).withRegion(region)
+                    .build();
+            GetCallerIdentityResult identity = stsClient.getCallerIdentity(new GetCallerIdentityRequest());
+            LOG.debug("Authenticated as: {}", identity.getArn());
+
+            if (!this.amazonS3.doesBucketExistV2(this.bucketName)) { // returns true if no access
                 try {
                     amazonS3.createBucket(this.bucketName);
                 } catch (AmazonS3Exception e) {
