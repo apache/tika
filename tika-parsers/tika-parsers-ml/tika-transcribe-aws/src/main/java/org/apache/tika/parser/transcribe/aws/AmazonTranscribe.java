@@ -222,7 +222,7 @@ public class AmazonTranscribe implements Parser, Initializable {
      * @return if the service is available
      */
     private boolean checkAvailable() {
-        return clientId != null && clientSecret != null && bucketName != null;
+        return amazonS3 != null && clientId != null && clientSecret != null && bucketName != null;
     }
 
     /**
@@ -370,7 +370,7 @@ public class AmazonTranscribe implements Parser, Initializable {
             } else {
                 this.amazonS3 =
                         AmazonS3ClientBuilder.standard().withCredentials(credsProvider).build();
-
+                this.region = amazonS3.getRegionName(); // not sure if this works at all
             }
             if (!this.amazonS3.doesBucketExistV2(this.bucketName)) {
                 try {
