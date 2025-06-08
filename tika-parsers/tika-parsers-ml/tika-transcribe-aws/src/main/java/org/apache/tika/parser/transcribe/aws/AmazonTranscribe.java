@@ -25,38 +25,43 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
-import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
-import com.amazonaws.services.transcribe.AmazonTranscribeAsync;
-import com.amazonaws.services.transcribe.AmazonTranscribeAsyncClientBuilder;
-import com.amazonaws.services.transcribe.model.GetTranscriptionJobRequest;
-import com.amazonaws.services.transcribe.model.GetTranscriptionJobResult;
-import com.amazonaws.services.transcribe.model.LanguageCode;
-import com.amazonaws.services.transcribe.model.Media;
-import com.amazonaws.services.transcribe.model.StartTranscriptionJobRequest;
-import com.amazonaws.services.transcribe.model.TranscriptionJob;
-import com.amazonaws.services.transcribe.model.TranscriptionJobStatus;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.GetUrlRequest;
+import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.model.GetCallerIdentityRequest;
+import software.amazon.awssdk.services.sts.model.GetCallerIdentityResponse;
+import software.amazon.awssdk.services.transcribe.TranscribeAsyncClient;
+import software.amazon.awssdk.services.transcribe.model.GetTranscriptionJobRequest;
+import software.amazon.awssdk.services.transcribe.model.GetTranscriptionJobResponse;
+import software.amazon.awssdk.services.transcribe.model.LanguageCode;
+import software.amazon.awssdk.services.transcribe.model.Media;
+import software.amazon.awssdk.services.transcribe.model.StartTranscriptionJobRequest;
+import software.amazon.awssdk.services.transcribe.model.TranscriptionJob;
+import software.amazon.awssdk.services.transcribe.model.TranscriptionJobStatus;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -85,14 +90,14 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 public class AmazonTranscribe implements Parser, Initializable {
     private static final Logger LOG = LoggerFactory.getLogger(AmazonTranscribe.class);
-    private AmazonTranscribeAsync amazonTranscribeAsync;
-    private AmazonS3 amazonS3;
+    private TranscribeAsyncClient amazonTranscribeAsync;
+    private S3Client amazonS3;
     private String bucketName;
     private String region;
     private boolean isAvailable; // Flag for whether or not transcription is available.
     private String clientId; // Access key
     private String clientSecret; // Keys used for the API calls.
-    private AWSStaticCredentialsProvider credsProvider;
+    private StaticCredentialsProvider credsProvider;
 
     //https://docs.aws.amazon.com/transcribe/latest/dg/input.html
     protected static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
@@ -138,16 +143,16 @@ public class AmazonTranscribe implements Parser, Initializable {
         LanguageCode languageCode = context.get(LanguageCode.class);
         uploadFileToBucket(stream, jobName);
         StartTranscriptionJobRequest startTranscriptionJobRequest =
-                new StartTranscriptionJobRequest();
-        Media media = new Media();
-        media.setMediaFileUri(amazonS3.getUrl(bucketName, jobName).toString());
-        startTranscriptionJobRequest.withMedia(media).withOutputBucketName(this.bucketName)
-                .withTranscriptionJobName(jobName).setRequestCredentialsProvider(credsProvider);
+                StartTranscriptionJobRequest.builder()
+                        .build();
+        Media media = Media.builder().mediaFileUri(amazonS3.utilities().getUrl(GetUrlRequest.builder().bucket(bucketName).key(jobName).build()).toString()).build();
+        startTranscriptionJobRequest = startTranscriptionJobRequest.toBuilder().media(media).outputBucketName(bucketName)
+                .transcriptionJobName(jobName).build();
 
         if (languageCode != null) {
-            startTranscriptionJobRequest.withLanguageCode(languageCode);
+            startTranscriptionJobRequest = startTranscriptionJobRequest.toBuilder().languageCode(languageCode).build();
         } else {
-            startTranscriptionJobRequest.withIdentifyLanguage(true);
+            startTranscriptionJobRequest = startTranscriptionJobRequest.toBuilder().identifyLanguage(true).build();
         }
         amazonTranscribeAsync.startTranscriptionJob(startTranscriptionJobRequest);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -238,19 +243,21 @@ public class AmazonTranscribe implements Parser, Initializable {
      * @param jobName      The unique job name for each job(UUID).
      */
     private void uploadFileToBucket(InputStream inputStream, String jobName) throws TikaException {
-        PutObjectRequest request =
-                new PutObjectRequest(this.bucketName, jobName, inputStream, null);
+        PutObjectRequest request = PutObjectRequest.builder().bucket(bucketName).key(jobName).build();
         try {
-            @SuppressWarnings("unused") PutObjectResult response = amazonS3.putObject(request);
-        } catch (SdkClientException e) {
+            @SuppressWarnings("unused")
+            PutObjectResponse response = amazonS3.putObject(request, RequestBody.fromInputStream(inputStream, inputStream.available()));
+        } catch (SdkClientException | IOException e) {
             throw new TikaException("File upload to AWS failed: " + e.getMessage(), e);
         }
     }
 
     private void deleteFilesFromBucket(String jobName) throws TikaException {
         try {
-            amazonS3.deleteObject(bucketName, jobName);
-            amazonS3.deleteObject(bucketName, jobName + ".json");
+            amazonS3.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(jobName)
+                    .build());
+            amazonS3.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(jobName + ".json")
+                    .build());
         } catch (SdkClientException e) {
             LOG.error("Failed to delete {} and/or {} from {}", jobName, jobName + ".json", bucketName, e);
         }
@@ -266,19 +273,20 @@ public class AmazonTranscribe implements Parser, Initializable {
      *                                whilst processing JSON from the AWS S3 SelectObjectContentResult operation.
      * @throws SdkClientException     a AWS-specific exception related to SelectObjectContentResult
      *                                operation.
-     * @throws AmazonServiceException possibly thrown if there is an issue selecting object content
+     * @throws AwsServiceException possibly thrown if there is an issue selecting object content
      *                                from AWS S3 objects.
      */
     private String getTranscriptText(String fileNameS3)
-            throws AmazonServiceException, SdkClientException, IOException {
+            throws AwsServiceException, SdkClientException, IOException {
         TranscriptionJob transcriptionJob = retrieveObjectWhenJobCompleted(fileNameS3);
         String text = "";
-        if (transcriptionJob != null && !TranscriptionJobStatus.FAILED.name()
-                .equals(transcriptionJob.getTranscriptionJobStatus())) {
-            S3Object s3Object = amazonS3.getObject(new GetObjectRequest(bucketName, fileNameS3 + ".json"));
-            try (S3ObjectInputStream objectContent = s3Object.getObjectContent()) {
+        if (transcriptionJob != null && !TranscriptionJobStatus.FAILED
+                .equals(transcriptionJob.transcriptionJobStatus())) {
+            ResponseInputStream<GetObjectResponse> s3Object = amazonS3.getObject(GetObjectRequest.builder().bucket(bucketName).key(fileNameS3 + ".json")
+                    .build());
+            try (s3Object) {
                 ObjectMapper mapper = new ObjectMapper();
-                JsonNode root = mapper.readTree(objectContent);
+                JsonNode root = mapper.readTree(s3Object);
                 text = root
                         .path("results")
                         .path("transcripts")
@@ -299,16 +307,22 @@ public class AmazonTranscribe implements Parser, Initializable {
      * @return TranscriptionJob object
      */
     private TranscriptionJob retrieveObjectWhenJobCompleted(String jobName) {
-        GetTranscriptionJobRequest getTranscriptionJobRequest = new GetTranscriptionJobRequest();
-        getTranscriptionJobRequest.withRequestCredentialsProvider(credsProvider);
-        getTranscriptionJobRequest.setTranscriptionJobName(jobName);
+        GetTranscriptionJobRequest transcriptionJobRequest = GetTranscriptionJobRequest.builder().transcriptionJobName(jobName).build();
         while (true) {
-            GetTranscriptionJobResult innerResult =
-                    amazonTranscribeAsync.getTranscriptionJob(getTranscriptionJobRequest);
-            String status = innerResult.getTranscriptionJob().getTranscriptionJobStatus();
-            if (TranscriptionJobStatus.COMPLETED.name().equals(status) ||
-                    TranscriptionJobStatus.FAILED.name().equals(status)) {
-                return innerResult.getTranscriptionJob();
+            CompletableFuture<GetTranscriptionJobResponse> transcriptionJob = amazonTranscribeAsync.getTranscriptionJob(transcriptionJobRequest);
+            GetTranscriptionJobResponse transcriptionJobResponse = transcriptionJob.join();
+            TranscriptionJobStatus status = transcriptionJobResponse.transcriptionJob().transcriptionJobStatus();
+            if (TranscriptionJobStatus.COMPLETED.equals(status) ||
+                    TranscriptionJobStatus.FAILED.equals(status)) {
+                return transcriptionJobResponse.transcriptionJob();
+            }
+            try
+            {
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException ex)
+            {
+                LOG.warn("interrupted");
             }
         }
     }
@@ -320,34 +334,36 @@ public class AmazonTranscribe implements Parser, Initializable {
         }
 
         try {
-            BasicAWSCredentials creds = new BasicAWSCredentials(this.clientId, this.clientSecret);
-            this.credsProvider = new AWSStaticCredentialsProvider(creds);
+            AwsBasicCredentials creds = AwsBasicCredentials.create(this.clientId, this.clientSecret);
+            this.credsProvider = StaticCredentialsProvider.create(creds);
             if (region != null) {
-                this.amazonS3 = AmazonS3ClientBuilder.standard().withCredentials(credsProvider)
-                        .withRegion(this.region).build();
+                this.amazonS3 = S3Client.builder().credentialsProvider(credsProvider)
+                        .region(Region.of(this.region)).build();
             } else {
                 this.amazonS3 =
-                        AmazonS3ClientBuilder.standard().withCredentials(credsProvider).build();
-                this.region = amazonS3.getRegionName(); // not sure if this works at all
+                        S3Client.builder().credentialsProvider(credsProvider).build();
+                this.region = amazonS3.serviceClientConfiguration().region().id(); // not sure if this works at all
             }
 
             // for debugging
-            AWSSecurityTokenService stsClient = AWSSecurityTokenServiceClientBuilder.standard()
-                    .withCredentials(credsProvider).withRegion(region)
+            StsClient stsClient = StsClient.builder()
+                    .credentialsProvider(credsProvider).region(Region.of(region))
                     .build();
-            GetCallerIdentityResult identity = stsClient.getCallerIdentity(new GetCallerIdentityRequest());
-            LOG.debug("Authenticated as: {}", identity.getArn());
+            GetCallerIdentityResponse identity = stsClient.getCallerIdentity(GetCallerIdentityRequest.builder()
+                    .build());
+            LOG.debug("Authenticated as: {}", identity.arn());
 
-            if (!this.amazonS3.doesBucketExistV2(this.bucketName)) { // returns true if no access
+            if (!doesBucketExistV2(amazonS3, bucketName)) { // returns true if no access
                 try {
-                    amazonS3.createBucket(this.bucketName);
-                } catch (AmazonS3Exception e) {
+                    amazonS3.createBucket(CreateBucketRequest.builder().bucket(this.bucketName)
+                            .build());
+                } catch (S3Exception e) {
                     throw new TikaConfigException("couldn't create bucket", e);
                 }
             }
             this.amazonTranscribeAsync =
-                    AmazonTranscribeAsyncClientBuilder.standard().withCredentials(credsProvider)
-                            .withRegion(this.region).build();
+                    TranscribeAsyncClient.builder().credentialsProvider(credsProvider)
+                            .region(Region.of(this.region)).build();
         } catch (Exception e) {
             LOG.warn("Exception reading config file", e);
             isAvailable = false;
@@ -360,5 +376,21 @@ public class AmazonTranscribe implements Parser, Initializable {
             throws TikaConfigException {
         //TODO alert user if they've gotten 1 or 2 out of three?
         this.isAvailable = checkAvailable();
+    }
+    
+    // Thanks, ChatGPT
+    private boolean doesBucketExistV2(S3Client s3, String bucketName) {
+        try {
+            s3.headBucket(HeadBucketRequest.builder().bucket(bucketName).build());
+            return true; // Bucket exists
+        } catch (NoSuchBucketException e) {
+            return false; // Bucket doesn't exist
+        } catch (S3Exception e) {
+            // Could be 403 Forbidden (bucket exists but no access), or other error
+            if (e.statusCode() == 403) {
+                return true; // Bucket exists but you don't have access
+            }
+            throw e; // Re-throw unexpected exception
+        }
     }
 }
