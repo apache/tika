@@ -18,7 +18,7 @@ Pre-built binaries of Apache Tika standalone applications are available
 from https://tika.apache.org/download.html . Pre-built binaries of all the
 Tika jars can be fetched from Maven Central or your favourite Maven mirror.
 
-**Tika 2.X and support for Java 8 is planned to reach End of Life (EOL) in April, 2025. 
+**Tika 2.X and support for Java 8 reached End of Life (EOL) in April, 2025. 
 See [Tika Roadmap 2.x, 3.x and beyond](https://cwiki.apache.org/confluence/display/TIKA/Tika+Roadmap+--+2.x%2C+3.x+and+Beyond).** 
 
 Tika is based on **Java 17** and uses the [Maven 3](https://maven.apache.org) build system. 
