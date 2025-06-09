@@ -310,8 +310,8 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.53.0</google.cloud.version>
-    <aws.version>1.12.783</aws.version> <!-- convergence problems with 785, wait -->
-    <aws2.version>2.31.56</aws2.version>
+    <aws.version>1.12.785</aws.version>
+    <aws2.version>2.31.59</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -392,7 +392,7 @@
     <jsoup.version>1.20.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.13.0</junit5.version>
+    <junit5.version>5.13.1</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.31.1</jwarc.version>
@@ -436,7 +436,7 @@
     <!-- NOTE: Spring 6 requires jdk17  -->
     <!-- remove from ossindex when bumping from 5.3.39 -->
     <spring.version>5.3.39</spring.version>
-    <sqlite.version>3.49.1.0</sqlite.version>
+    <sqlite.version>3.50.1.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>1.21.1</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
@@ -556,11 +556,6 @@
         <artifactId>biz.aQute.bndlib</artifactId>
         <!-- can't update to 7.0.0: "class file has wrong version 61.0, should be 55.0" -->
         <version>${biz.aqute.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-s3</artifactId>
-        <version>${aws.version}</version>
       </dependency>
       <dependency>
         <groupId>com.amazonaws</groupId>
