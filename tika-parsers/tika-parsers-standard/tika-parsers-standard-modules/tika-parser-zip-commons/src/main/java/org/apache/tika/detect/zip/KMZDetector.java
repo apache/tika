@@ -21,6 +21,7 @@ import static org.apache.tika.detect.zip.PackageConstants.KMZ;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
+import java.util.Locale;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
@@ -28,29 +29,36 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
+/**
+ * This looks for a single file with a name ending in ".kml" at the root level of the zip file.
+ * <p>
+ * As of Tika 3.2.1, we allow other files at the root level.
+ * <p>
+ * We could make this more robust by requiring xml root detection on the *.kml file.
+ */
 public class KMZDetector implements ZipContainerDetector {
+
+
     @Override
     public MediaType detect(ZipFile zip, TikaInputStream tis) throws IOException {
-        boolean kmlFound = false;
-
         Enumeration<ZipArchiveEntry> entries = zip.getEntries();
+        int kmlCount = 0;
         while (entries.hasMoreElements()) {
             ZipArchiveEntry entry = entries.nextElement();
             String name = entry.getName();
             if (!entry.isDirectory() && name.indexOf('/') == -1 && name.indexOf('\\') == -1) {
-                if (name.endsWith(".kml") && !kmlFound) {
-                    kmlFound = true;
-                } else {
+                if (name.toLowerCase(Locale.ROOT).endsWith(".kml")) {
+                    kmlCount++;
+                }
+                if (kmlCount > 1) {
                     return null;
                 }
             }
         }
-
-        if (kmlFound) {
-            return MediaType.application("vnd.google-earth.kmz");
-        } else {
-            return null;
+        if (kmlCount == 1) {
+            return KMZ;
         }
+        return null;
     }
 
     @Override
@@ -61,7 +69,7 @@ public class KMZDetector implements ZipContainerDetector {
         if (name.indexOf('/') != -1 || name.indexOf('\\') != -1) {
             return null;
         }
-        if (name.endsWith(".kml")) {
+        if (name.toLowerCase(Locale.ROOT).endsWith(".kml")) {
             KMLCounter counter = detectContext.get(KMLCounter.class);
             if (counter == null) {
                 counter = new KMLCounter();

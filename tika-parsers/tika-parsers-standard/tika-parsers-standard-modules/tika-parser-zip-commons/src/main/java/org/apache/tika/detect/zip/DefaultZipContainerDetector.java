@@ -71,7 +71,7 @@ public class DefaultZipContainerDetector implements Detector {
     //this has to be > 100,000 to handle some of the iworks files
     //in our unit tests
     @Field
-    int markLimit = -1;//16 * 1024 * 1024;
+    int markLimit = 16 * 1024 * 1024;
 
     private transient ServiceLoader loader;
 
@@ -141,10 +141,16 @@ public class DefaultZipContainerDetector implements Detector {
     }
 
     /**
-     * If this is less than 0, the file will be spooled to disk,
+     * If this is less than 0 and a TikaInputStream is used, the file will be spooled to disk,
      * and detection will run on the full file.
-     * If this is greater than 0, the {@link DeprecatedStreamingZipContainerDetector}
-     * will be called only up to the markLimit.
+     * <p>
+     * If this is greater than 0 and a TikaInputStream is used, this will try detection
+     * on the stream up to the markLimit, and if that is greater than the length of the file,
+     * the streaming result will be returned. If the BoundedInputStream hits its bound during detection,
+     * the file will be spooled to disk, and detection will be run on the full file.
+     * <p>
+     * If a non-TikaInputStream is used, detection will only work up to the <code>markLimit</code>,
+     * potentially leading to lack of precision in zip-based file detection.
      *
      * @param markLimit mark limit for streaming detection
      */
@@ -184,7 +190,7 @@ public class DefaultZipContainerDetector implements Detector {
                 if (markLimit < 1 || tis.hasFile()) {
                     return detectZipFormatOnFile(tis, metadata);
                 } else {
-                    return tryStreaming(tis, metadata);
+                    return tryStreamingOnTikaInputStream(tis, metadata);
                 }
             } else {
                 LOG.warn("Applying streaming detection in DefaultZipContainerDetector. " +
@@ -198,7 +204,7 @@ public class DefaultZipContainerDetector implements Detector {
         }
     }
 
-    private MediaType tryStreaming(TikaInputStream tis, Metadata metadata) throws IOException {
+    private MediaType tryStreamingOnTikaInputStream(TikaInputStream tis, Metadata metadata) throws IOException {
         BoundedInputStream boundedInputStream = new BoundedInputStream(markLimit, tis);
         boundedInputStream.mark(markLimit);
         MediaType mt = null;
