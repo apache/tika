@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<properties>
+    <detectors>
+        <!-- All detectors except built-in container ones -->
+        <detector class="org.apache.tika.detect.DefaultDetector">
+            <!-- DefaultZipContainerDetector will identify *.zip files with KML content as "kmz" files, this is correct behaviour -->
+            <detector-exclude class="org.apache.tika.detect.zip.DefaultZipContainerDetector"/>
+        </detector>
+    </detectors>
+</properties>
