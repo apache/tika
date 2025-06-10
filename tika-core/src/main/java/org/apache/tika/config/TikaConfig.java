@@ -512,8 +512,6 @@ public class TikaConfig {
             String loadErrorHandleConfig = serviceLoaderElement.getAttribute("loadErrorHandler");
             if (LoadErrorHandler.WARN.toString().equalsIgnoreCase(loadErrorHandleConfig)) {
                 loadErrorHandler = LoadErrorHandler.WARN;
-            } else if (LoadErrorHandler.THROW.toString().equalsIgnoreCase(loadErrorHandleConfig)) {
-                loadErrorHandler = LoadErrorHandler.THROW;
             } else if (LoadErrorHandler.IGNORE.toString().equalsIgnoreCase(loadErrorHandleConfig)) {
                 loadErrorHandler = LoadErrorHandler.IGNORE;
             }
