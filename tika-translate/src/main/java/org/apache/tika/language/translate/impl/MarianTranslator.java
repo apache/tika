@@ -152,11 +152,11 @@ public class MarianTranslator extends AbstractTranslator {
             String postProcessScript = config.getProperty("translator.marian.postprocess");
             executeScript(postProcessScript, tmpTranslatedFile);
 
-            BufferedReader fileReader = new BufferedReader(
+            try (BufferedReader fileReader = new BufferedReader(
                     new InputStreamReader(new FileInputStream(tmpTranslatedFile),
-                            Charset.defaultCharset()));
-            fileReader.lines().forEach(translation::append);
-            fileReader.close();
+                            Charset.defaultCharset()))) {
+                fileReader.lines().forEach(translation::append);
+            }
 
         } catch (InterruptedException e) {
             throw new TikaException("Failed perform translation", e);
@@ -188,10 +188,10 @@ public class MarianTranslator extends AbstractTranslator {
         builder.redirectErrorStream(true);
         Process process = builder.start();
 
-        BufferedReader stdOutReader = new BufferedReader(
-                new InputStreamReader(process.getInputStream(), Charset.defaultCharset()));
-        stdOutReader.lines().forEach(LOG::debug);
-        stdOutReader.close();
+        try (BufferedReader stdOutReader = new BufferedReader(
+                new InputStreamReader(process.getInputStream(), Charset.defaultCharset()))) {
+            stdOutReader.lines().forEach(LOG::debug);
+        }
 
         process.waitFor();
     }

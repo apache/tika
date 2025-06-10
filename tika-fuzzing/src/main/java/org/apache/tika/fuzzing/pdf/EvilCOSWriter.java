@@ -924,11 +924,11 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
 
         if (signatureInterface != null) {
             // data to be signed
-            final InputStream dataToSign = getDataToSign();
-
-            // sign the bytes
-            byte[] signatureBytes = signatureInterface.sign(dataToSign);
-            writeExternalSignature(signatureBytes);
+            try (InputStream dataToSign = getDataToSign()) {
+                // sign the bytes
+                byte[] signatureBytes = signatureInterface.sign(dataToSign);
+                writeExternalSignature(signatureBytes);
+            }
         }
         // else signature should created externally and set via writeSignature()
     }
