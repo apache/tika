@@ -59,7 +59,9 @@ public class JournalParser implements Parser {
         GrobidRESTParser grobidParser = new GrobidRESTParser();
         grobidParser.parse(tmpFile.getAbsolutePath(), handler, metadata, context);
 
-        PDFParser parser = new PDFParser();
-        parser.parse(new FileInputStream(tmpFile), handler, metadata, context);
+        try (InputStream pdfStream = new FileInputStream(tmpFile)) {
+            PDFParser parser = new PDFParser();
+            parser.parse(pdfStream, handler, metadata, context);
+        }
     }
 }

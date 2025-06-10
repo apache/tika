@@ -871,17 +871,17 @@ public class TikaCLI {
         Set<String> fileMimes = new HashSet<>();
         for (File mf : dir.listFiles()) {
             if (mf.isFile()) {
-                BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(mf), UTF_8));
-                String line;
-                while ((line = r.readLine()) != null) {
-                    if (line.startsWith("!:mime") || line.startsWith("#!:mime")) {
-                        String mime = line
-                                .substring(7)
-                                .trim();
-                        fileMimes.add(mime);
+                try (BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(mf), UTF_8))) {
+                    String line;
+                    while ((line = r.readLine()) != null) {
+                        if (line.startsWith("!:mime") || line.startsWith("#!:mime")) {
+                            String mime = line
+                                    .substring(7)
+                                    .trim();
+                            fileMimes.add(mime);
+                        }
                     }
                 }
-                r.close();
             }
         }
 
