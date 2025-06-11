@@ -311,8 +311,8 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.53.0</google.cloud.version>
-    <aws.version>1.12.785</aws.version>
-    <aws2.version>2.31.60</aws2.version>
+    <aws.version>1.12.786</aws.version>
+    <aws2.version>2.31.61</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -432,7 +432,7 @@
     <protobuf.version>3.25.8</protobuf.version>
     <quartz.version>2.5.0</quartz.version>
     <reactor.core.version>3.8.0-M4</reactor.core.version>
-    <reactor.netty.version>1.3.0-M3</reactor.netty.version>
+    <reactor.netty.version>1.3.0-M4</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
     <slf4j.version>2.0.17</slf4j.version>
