@@ -17,10 +17,14 @@
 
 package org.apache.tika.parser.microsoft;
 
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.apache.poi.hemf.record.emf.HemfComment;
 import org.apache.poi.hemf.record.emf.HemfRecord;
@@ -50,9 +54,13 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * is text stored in the EMF.
  * <p/>
  * To improve text extraction, we'd have to implement
- * quite a bit more at the POI level.  We'd want to track changes
+ * quite a bit more at the POI level. We'd want to track changes
  * in font and use that information for identifying character sets,
  * inserting spaces and new lines.
+ * <p/>
+ * We're also relying on storage order for text order, which isn't great.
+ * We'd have to do something like what PDFBox or XPS do to sort the
+ * runs and then put the cow back together from the hamburger...lol...
  */
 public class EMFParser implements Parser {
 
@@ -96,37 +104,26 @@ public class EMFParser implements Parser {
         try {
             HemfPicture ex = new HemfPicture(stream);
             ParseState parseState = new ParseState();
-            long fudgeFactorX = 1000;//derive this from the font or frame/bounds information
+            long fudgeFactorX = 10;//derive this from the font or frame/bounds information
             StringBuilder buffer = new StringBuilder();
             //iterate through the records.  if you hit IconOnly in a comment
             //and it is the first IconOnly, grab the string in the next comment record
             //and that'll be the full name of the file.
+
+            //NOTE that we're just scraping the text out in storage order. The proper way to do this
+            //is to sort the text records by x,y like we do for PDFs and xps
             for (HemfRecord record : ex) {
                 parseState.isIconOnly = false;
                 if (record.getEmfRecordType() == HemfRecordType.comment) {
                     handleCommentData(
                             ((HemfComment.EmfComment) record).getCommentData(), parseState, xhtml, context);
                 } else if (record.getEmfRecordType().equals(HemfRecordType.extTextOutW)) {
-                    HemfText.EmfExtTextOutW extTextOutW = (HemfText.EmfExtTextOutW) record;
-                    //change equality to delta diff;
-
-                    if (parseState.lastY > -1 &&
-                            parseState.lastY != extTextOutW.getReference().getY()) {
-                        xhtml.startElement("p");
-                        xhtml.characters(buffer.toString());
-                        xhtml.endElement("p");
-                        buffer.setLength(0);
-                        parseState.lastX = -1;
-                    }
-                    if (parseState.lastX > -1 && extTextOutW.getReference().getX() -
-                            parseState.lastX > fudgeFactorX) {
-                        buffer.append(" ");
-                    }
-                    String txt = extTextOutW.getText();
-                    buffer.append(txt);
-                    parseState.lastY = extTextOutW.getReference().getY();
-                    parseState.lastX = extTextOutW.getReference().getX();
+                    handleExtTextOut((HemfText.EmfExtTextOutW) record, parseState, buffer, xhtml, fudgeFactorX, StandardCharsets.UTF_16LE);
+                } else if (record.getEmfRecordType().equals(HemfRecordType.extTextOutA)) {
+                    //do something better than assigning utf8.
+                    handleExtTextOut((HemfText.EmfExtTextOutA) record, parseState, buffer, xhtml, fudgeFactorX, StandardCharsets.UTF_8);
                 }
+
                 if (parseState.isIconOnly) {
                     parseState.lastWasIconOnly = true;
                 } else {
@@ -137,11 +134,12 @@ public class EMFParser implements Parser {
                 metadata.set(EMF_ICON_ONLY, true);
                 metadata.set(EMF_ICON_STRING, parseState.iconOnlyString);
             }
-            if (buffer.length() > 0) {
+            if (! buffer.isEmpty()) {
                 xhtml.startElement("p");
                 xhtml.characters(buffer.toString());
                 xhtml.endElement("p");
             }
+
         } catch (RecordFormatException e) { //POI's hemfparser can throw these for "parse
             // exceptions"
             throw new TikaException(e.getMessage(), e);
@@ -149,6 +147,59 @@ public class EMFParser implements Parser {
             throw new TikaException(e.getMessage(), e);
         }
         xhtml.endDocument();
+    }
+
+    private void handleExtTextOut(HemfText.EmfExtTextOutA record, ParseState parseState,
+                                  StringBuilder buffer, XHTMLContentHandler xhtml, double fudgeFactorX,
+                                  Charset charset) throws IOException, SAXException {
+        Rectangle2D currRectangle = getCurrentRectangle(record);
+        if (parseState.lastRectangle.getY() > -1 &&
+                deltaGreaterThan(parseState.lastRectangle.getMinY(), currRectangle.getMinY(), 0.0001)) {
+            xhtml.startElement("p");
+            xhtml.characters(buffer.toString());
+            xhtml.endElement("p");
+            buffer.setLength(0);
+        } else if (parseState.lastRectangle.getX() > -1 &&
+                deltaGreaterThan(currRectangle.getMinX(),
+                        parseState.lastRectangle.getMaxX(), fudgeFactorX)) {
+            buffer.append(" ");
+        }
+        //do something better than this
+        String txt = record.getText(charset);
+        buffer.append(txt);
+        parseState.lastRectangle = currRectangle;
+
+    }
+
+    private boolean deltaGreaterThan(double a, double b, double delta) {
+        return (Math.abs(a - b) > delta);
+    }
+
+    private Rectangle2D getCurrentRectangle(HemfText.EmfExtTextOutA extTextOutA) {
+        //This gets the current rectangle out of the emfextTextOutA record.
+        //via TIKA-4432, if the rectangle is 0,0,0,0 then back-off to the bounds ignored, if those exist
+
+        //TODO: maybe use modifyWorldTransform and calculate font width etc...
+        Rectangle2D bounds = extTextOutA.getBounds();
+        double smidge = 0.000000001;
+        if (deltaGreaterThan(bounds.getX(), 0.0d, smidge) ||
+                deltaGreaterThan(bounds.getY(), 0.0d, smidge) ||
+                deltaGreaterThan(bounds.getWidth(), 0.0d, smidge) ||
+                deltaGreaterThan(bounds.getHeight(), 0.0d, smidge)) {
+            return bounds;
+        }
+        Supplier<?> boundsIgnored = extTextOutA.getGenericProperties().get("boundsIgnored");
+        if (boundsIgnored == null) {
+            return bounds;
+        }
+        Object maybeBounds = boundsIgnored.get();
+        if (maybeBounds == null) {
+            return bounds;
+        }
+        if (! (maybeBounds instanceof Rectangle2D)) {
+            return bounds;
+        }
+        return (Rectangle2D) maybeBounds;
     }
 
     private void handleCommentData(
@@ -227,8 +278,7 @@ public class EMFParser implements Parser {
     }
 
     private static class ParseState {
-        double lastY = -1;
-        double lastX = -1;
+        Rectangle2D lastRectangle = new Rectangle2D.Double(-1.0, -1.0, 0.0, 0.0);
         boolean hitIconOnly = false;
         boolean lastWasIconOnly = false;
         boolean isIconOnly = false;
