@@ -134,7 +134,7 @@ public class EMFParser implements Parser {
                 metadata.set(EMF_ICON_ONLY, true);
                 metadata.set(EMF_ICON_STRING, parseState.iconOnlyString);
             }
-            if (! buffer.isEmpty()) {
+            if (buffer.length() > 0) {
                 xhtml.startElement("p");
                 xhtml.characters(buffer.toString());
                 xhtml.endElement("p");
