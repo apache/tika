@@ -398,7 +398,7 @@
     <jwarc.version>0.31.1</jwarc.version>
     <kafka.version>4.0.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.24.3</log4j2.version>
+    <log4j2.version>2.25.0</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.1</lucene.version>
     <maven.plugin.annotations.version>3.15.1</maven.plugin.annotations.version>
