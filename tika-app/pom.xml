@@ -74,6 +74,11 @@
       <artifactId>tika-async-cli</artifactId>
       <version>${project.version}</version>
     </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parser-ntfs-module</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
     <!-- logging -->
     <dependency>

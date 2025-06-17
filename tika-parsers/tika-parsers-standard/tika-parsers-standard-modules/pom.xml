@@ -78,6 +78,7 @@
     <module>tika-parser-news-module</module>
     <module>tika-parser-crypto-module</module>
     <module>tika-parser-webarchive-module</module>
+    <module>tika-parser-ntfs-module</module>
   </modules>
   <build>
     <pluginManagement>
