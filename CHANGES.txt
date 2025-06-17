@@ -9,7 +9,33 @@ Release 4.0.0-BETA1 - ???
    * Fix concurrency bug in TikaToXMP (TIKA-4393)
 
 
-Release 3.1.0 - ??
+Release 3.2.1 - ???
+
+  * Important bug fix for zip-based detection on a non-TikaInputStream (TIKA-4424).
+
+  * Improve text extraction from EMF (TIKA-4432).
+
+  * Dependency updates (TIKA-4421).
+
+Release 3.2.0 - 05/21/2025
+
+  * Detect inline images in MSG files (TIKA-4391).
+
+  * Improve extraction of metadata in MSG files (TIKA-4381).
+
+  * Fix concurrency bug in TikaToXMP (TIKA-4393).
+
+  * Fix potential GDAL deadlock (TIKA-4385).
+
+  * Improve extraction of properties from msg files (TIKA-4381).
+
+  * Include internal attachment path in tika-eval reports (TIKA-4374).
+
+  * Upgrade jsoup to 1.20.1 with workaround for change in self-closing tag behavior (TIKA-4419).
+
+  * Upgrade dependencies (TIKA-4379).
+
+Release 3.1.0 - 01/28/25
 
    * Allow users to turn off the injection of some headers into the content stream of MSG
      files (TIKA-4345).
