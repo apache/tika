@@ -53,6 +53,17 @@ public class EMFParserTest extends TikaTest {
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
+    @Test
+    public void testMissingCoords() throws Exception {
+        //TIKA-4432
+        List<Metadata> metadataList = getRecursiveMetadata("testEMF_zero_coords.emf");
+        String txt = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
+        assertNotContained("title13At", txt);
+        assertContains("Presentation title 13", txt);
+        assertContains("<p>At Contoso", txt);
+        assertContains("next-generation", txt);//this is stored in three records -- test that no spaces are interpolated
+    }
+
 
 }
 
