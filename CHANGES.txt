@@ -1,6 +1,14 @@
+Release 3.2.1 - ???
+
+  * Important bug fix for zip-based detection on a non-TikaInputStream (TIKA-4424).
+
+  * Improve text extraction from EMF (TIKA-4432).
+
+  * Dependency updates (TIKA-4421).
+
 Release 3.2.0 - 05/21/2025
 
-  * Detect inline images in MSG files (TIKA_4391).
+  * Detect inline images in MSG files (TIKA-4391).
 
   * Improve extraction of metadata in MSG files (TIKA-4381).
 
