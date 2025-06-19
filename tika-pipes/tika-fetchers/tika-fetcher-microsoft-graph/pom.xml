@@ -29,12 +29,52 @@
   <name>Apache Tika Microsoft Graph Pipes Fetcher</name>
 
   <properties>
-    <microsoft-graph.version>6.41.0</microsoft-graph.version>
+    <microsoft-graph.version>6.42.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
     <msal4j.version>1.20.1</msal4j.version>
     <kotlin-stdlib.version>2.1.21</kotlin-stdlib.version>
-    <microsoft-kiota.version>1.8.4</microsoft-kiota.version>
+    <microsoft-kiota.version>1.8.5</microsoft-kiota.version>
   </properties>
+  
+  <dependencyManagement>
+      <dependencies>
+          <dependency>
+              <groupId>com.microsoft.kiota</groupId>
+              <artifactId>microsoft-kiota-serialization-json</artifactId>
+              <version>${microsoft-kiota.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.microsoft.kiota</groupId>
+              <artifactId>microsoft-kiota-serialization-form</artifactId>
+              <version>${microsoft-kiota.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.microsoft.kiota</groupId>
+              <artifactId>microsoft-kiota-authentication-azure</artifactId>
+              <version>${microsoft-kiota.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.microsoft.kiota</groupId>
+              <artifactId>microsoft-kiota-http-okHttp</artifactId>
+              <version>${microsoft-kiota.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.microsoft.kiota</groupId>
+              <artifactId>microsoft-kiota-abstractions</artifactId>
+              <version>${microsoft-kiota.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.microsoft.kiota</groupId>
+              <artifactId>microsoft-kiota-serialization-text</artifactId>
+              <version>${microsoft-kiota.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.microsoft.kiota</groupId>
+              <artifactId>microsoft-kiota-serialization-multipart</artifactId>
+              <version>${microsoft-kiota.version}</version>
+          </dependency>
+      </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>

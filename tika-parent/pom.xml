@@ -309,9 +309,9 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.53.0</google.cloud.version>
+    <google.cloud.version>2.53.1</google.cloud.version>
     <aws.version>1.12.787</aws.version>
-    <aws2.version>2.31.65</aws2.version>
+    <aws2.version>2.31.66</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -438,7 +438,7 @@
     <spring.version>5.3.39</spring.version>
     <sqlite.version>3.50.1.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
-    <testcontainers.version>1.21.1</testcontainers.version>
+    <testcontainers.version>1.21.2</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
