@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import org.apache.poi.hemf.record.emf.HemfComment;
-import org.apache.poi.hemf.record.emf.HemfMisc;
 import org.apache.poi.hemf.record.emf.HemfRecord;
 import org.apache.poi.hemf.record.emf.HemfRecordType;
 import org.apache.poi.hemf.record.emf.HemfText;
@@ -113,24 +112,16 @@ public class EMFParser implements Parser {
 
             //NOTE that we're just scraping the text out in storage order. The proper way to do this
             //is to sort the text records by x,y like we do for PDFs and xps
-
-            HemfMisc.EmfModifyWorldTransform lastModifyWorldTransform = null;
             for (HemfRecord record : ex) {
                 parseState.isIconOnly = false;
                 if (record.getEmfRecordType() == HemfRecordType.comment) {
                     handleCommentData(
                             ((HemfComment.EmfComment) record).getCommentData(), parseState, xhtml, context);
                 } else if (record.getEmfRecordType().equals(HemfRecordType.extTextOutW)) {
-                    handleExtTextOut((HemfText.EmfExtTextOutW) record, lastModifyWorldTransform,
-                            parseState, buffer, xhtml, fudgeFactorX, StandardCharsets.UTF_16LE);
-                    lastModifyWorldTransform = null;
+                    handleExtTextOut((HemfText.EmfExtTextOutW) record, parseState, buffer, xhtml, fudgeFactorX, StandardCharsets.UTF_16LE);
                 } else if (record.getEmfRecordType().equals(HemfRecordType.extTextOutA)) {
                     //do something better than assigning utf8.
-                    handleExtTextOut((HemfText.EmfExtTextOutA) record, lastModifyWorldTransform,
-                            parseState, buffer, xhtml, fudgeFactorX, StandardCharsets.UTF_8);
-                    lastModifyWorldTransform = null;
-                } else if (record.getEmfRecordType().equals(HemfRecordType.modifyWorldTransform)) {
-                    lastModifyWorldTransform = (HemfMisc.EmfModifyWorldTransform) record;
+                    handleExtTextOut((HemfText.EmfExtTextOutA) record, parseState, buffer, xhtml, fudgeFactorX, StandardCharsets.UTF_8);
                 }
 
                 if (parseState.isIconOnly) {
@@ -158,55 +149,45 @@ public class EMFParser implements Parser {
         xhtml.endDocument();
     }
 
-    private void handleExtTextOut(HemfText.EmfExtTextOutA textRecord, HemfMisc.EmfModifyWorldTransform lastModifyWorldTransform,
-                                  ParseState parseState,
+    private void handleExtTextOut(HemfText.EmfExtTextOutA record, ParseState parseState,
                                   StringBuilder buffer, XHTMLContentHandler xhtml, double fudgeFactorX,
                                   Charset charset) throws IOException, SAXException {
-        Rectangle2D currRectangle = getCurrentRectangle(textRecord, lastModifyWorldTransform);
-        double yFudge = getYFudge(parseState.lastRectangle, currRectangle);
-        //if the currRectangle is vaguely reasonable, do the math
-        if (gteZero(currRectangle) && notZero(currRectangle, 0.00001)) {
-            if (parseState.lastRectangle.getY() > -1 && deltaGreaterThan(parseState.lastRectangle.getMinY(), currRectangle.getMinY(), yFudge)) {
-                xhtml.startElement("p");
-                xhtml.characters(buffer.toString());
-                xhtml.endElement("p");
-                buffer.setLength(0);
-            } else if (parseState.lastRectangle.getX() > -1 && deltaGreaterThan(currRectangle.getMinX(), parseState.lastRectangle.getMaxX(), fudgeFactorX)) {
-                buffer.append(" ");
-            }
-        } else {
-            //currRectangle was not vaguely reasonable, interpolate a space and hope for the best
+        Rectangle2D currRectangle = getCurrentRectangle(record);
+        if (parseState.lastRectangle.getY() > -1 &&
+                deltaGreaterThan(parseState.lastRectangle.getMinY(), currRectangle.getMinY(), 0.0001)) {
+            xhtml.startElement("p");
+            xhtml.characters(buffer.toString());
+            xhtml.endElement("p");
+            buffer.setLength(0);
+        } else if (parseState.lastRectangle.getX() > -1 &&
+                deltaGreaterThan(currRectangle.getMinX(),
+                        parseState.lastRectangle.getMaxX(), fudgeFactorX)) {
             buffer.append(" ");
         }
         //do something better than this
-        String txt = textRecord.getText(charset);
+        String txt = record.getText(charset);
         buffer.append(txt);
         parseState.lastRectangle = currRectangle;
 
-    }
-
-    private double getYFudge(Rectangle2D lastRectangle, Rectangle2D currRectangle) {
-        if (lastRectangle.getHeight() >= 1 && currRectangle.getHeight() >= 1.0) {
-            return 0.1 * Math.max(lastRectangle.getHeight(), currRectangle.getHeight());
-        }
-        return 0.1;
     }
 
     private boolean deltaGreaterThan(double a, double b, double delta) {
         return (Math.abs(a - b) > delta);
     }
 
-    private Rectangle2D getCurrentRectangle(HemfText.EmfExtTextOutA extTextOutA,
-                                            HemfMisc.EmfModifyWorldTransform lastModifyWorldTransform) {
+    private Rectangle2D getCurrentRectangle(HemfText.EmfExtTextOutA extTextOutA) {
         //This gets the current rectangle out of the emfextTextOutA record.
         //via TIKA-4432, if the rectangle is 0,0,0,0 then back-off to the bounds ignored, if those exist
 
+        //TODO: maybe use modifyWorldTransform and calculate font width etc...
         Rectangle2D bounds = extTextOutA.getBounds();
-        double smidge = 0.00001;
-        if (notZero(bounds, smidge) && gteZero(bounds)) {
+        double smidge = 0.000000001;
+        if (deltaGreaterThan(bounds.getX(), 0.0d, smidge) ||
+                deltaGreaterThan(bounds.getY(), 0.0d, smidge) ||
+                deltaGreaterThan(bounds.getWidth(), 0.0d, smidge) ||
+                deltaGreaterThan(bounds.getHeight(), 0.0d, smidge)) {
             return bounds;
         }
-        //if that didn't work, fall back to boundsIgnored
         Supplier<?> boundsIgnored = extTextOutA.getGenericProperties().get("boundsIgnored");
         if (boundsIgnored == null) {
             return bounds;
@@ -218,35 +199,7 @@ public class EMFParser implements Parser {
         if (! (maybeBounds instanceof Rectangle2D)) {
             return bounds;
         }
-        Rectangle2D ret = (Rectangle2D) maybeBounds;
-        if (notZero(ret, smidge) && gteZero(ret)) {
-            return ret;
-        }
-        //if that didn't work fall back to the lastModifyWorldTransform if it is not null
-        if (lastModifyWorldTransform == null) {
-            return bounds;
-        }
-
-        if (lastModifyWorldTransform.getXForm().getTranslateX() > 0.0 &&
-                lastModifyWorldTransform.getXForm().getTranslateY() > 0.0) {
-            return new Rectangle2D.Double(lastModifyWorldTransform.getXForm().getTranslateX(),
-                    lastModifyWorldTransform.getXForm().getTranslateY(), 10, 10);
-        }
-        return bounds;
-    }
-
-    private boolean notZero(Rectangle2D bounds, double smidge) {
-        //require that at least one value is > 0
-        return deltaGreaterThan(bounds.getMinX(), 0.0d, smidge)
-                || deltaGreaterThan(bounds.getMaxX(), 0.0, smidge)
-                || deltaGreaterThan(bounds.getMinY(), 0.0, smidge)
-                || deltaGreaterThan(bounds.getMaxY(), 0.0, smidge);
-    }
-
-    private boolean gteZero(Rectangle2D bounds) {
-        //require that there be no negative coordinates
-        return bounds.getMinX() >= 0.0 && bounds.getMaxX() >= 0.0 &&
-                bounds.getMinY() >= 0.0 && bounds.getMaxY() >= 0.0;
+        return (Rectangle2D) maybeBounds;
     }
 
     private void handleCommentData(
