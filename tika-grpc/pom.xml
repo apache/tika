@@ -289,7 +289,11 @@
             </goals>
             <configuration>
               <rules>
-                <requireUpperBoundDeps />
+                <requireUpperBoundDeps>
+                  <excludes>
+                    <exclude>com.zaxxer:SparseBitSet</exclude>
+                  </excludes>
+                </requireUpperBoundDeps>
               </rules>
             </configuration>
           </execution>
