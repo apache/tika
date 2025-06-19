@@ -220,7 +220,7 @@ public class NTFSParser  implements Parser {
             byte[] data = fileInputStream.readAllBytes();
 
             try (TikaInputStream fileTis = TikaInputStream.get(data, entrydata)) {
-                if (extractor.shouldParseEmbedded(entrydata) && fileOrDir.getName().equals("test_file.txt")) {
+                if (extractor.shouldParseEmbedded(entrydata)) {
                     extractor.parseEmbedded(fileTis, handler, entrydata, true);
                 }
             }
