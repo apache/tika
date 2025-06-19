@@ -42,7 +42,7 @@ public class NTFSDetectorTest {
     public void testDetectNTFS() throws Exception {
         // Load the dummy NTFS image created earlier
         // This stream represents a file starting with "AAA NTFS..."
-        try (InputStream stream = getClass().getResourceAsStream("test-ntfs.img")) {
+        try (InputStream stream = getClass().getResourceAsStream("ntfs_test.img")) {
             Metadata metadata = new Metadata();
             MediaType mediaType = detector.detect(stream, metadata);
             assertEquals(MediaType.application("x-ntfs-image"), mediaType,

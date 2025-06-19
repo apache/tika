@@ -65,14 +65,8 @@
         <dependency>
             <groupId>org.sleuthkit</groupId>
             <artifactId>sleuthkit</artifactId>
-            <version>4.10.1</version> <!-- Check for the latest stable version -->
+            <version>4.10.1</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.sleuthkit.autopsy</groupId>-->
-<!--            <artifactId>core</artifactId>-->
-<!--            <version>4.10.0</version> &lt;!&ndash; Check for the latest stable version &ndash;&gt;-->
-<!--        </dependency>-->
-        <!-- Add other necessary dependencies, e.g., for testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

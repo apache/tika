@@ -16,25 +16,9 @@
  */
 package org.apache.tika.parser.ntfs;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.io.InputStream;
-
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
 
 
 public class NTFSParserTest extends TikaTest {
@@ -45,6 +29,19 @@ public class NTFSParserTest extends TikaTest {
     // A more comprehensive test would require a real, small NTFS image
     // containing known files and directories.
 
+    // protected ParseContext recursingContext;
+    // private Parser autoDetectParser;
+    // private TypeDetector typeDetector;
+
+
+    // @BeforeEach
+    // public void setUp() throws Exception {
+    //     typeDetector = new TypeDetector();
+    //     autoDetectParser = new AutoDetectParser(typeDetector);
+    //     recursingContext = new ParseContext();
+    //     recursingContext.set(Parser.class, autoDetectParser);
+    // }
+
 
     @Test
     public void testNTFSSimple() throws Exception {
@@ -52,5 +49,17 @@ public class NTFSParserTest extends TikaTest {
         XMLResult xml = getXML("raw_ntfs_image.img");
         System.out.println(xml.xml);
         assert xml.xml.contains("NTFSParser");
+
+        // ContentHandler handler = new BodyContentHandler();
+        // Metadata metadata = new Metadata();
+
+        // try (InputStream stream = getResourceAsStream("/test-documents/raw_ntfs_image.img")) {
+        //     AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
+        // }
+
+        // String content = handler.toString();
+        // System.out.println(content);
+        // assertContains("testWORD.doc", content);
+
     }
 }

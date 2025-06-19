@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.ntfs;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -36,15 +35,14 @@ import org.sleuthkit.datamodel.ReadContentInputStream;
 import org.sleuthkit.datamodel.SleuthkitCase;
 import org.sleuthkit.datamodel.SleuthkitJNI.CaseDbHandle.AddImageProcess;
 import org.sleuthkit.datamodel.TskCoreException;
-import org.sleuthkit.datamodel.TskData;
 import org.sleuthkit.datamodel.TskDataException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -70,7 +68,7 @@ public class NTFSParser  implements Parser {
             // OR if using -Djava.library.path as JVM arg, you don't need this line.
             // This is more of a safety check.
         } catch (UnsatisfiedLinkError e) {
-
+            // Do nothing
         }
     }
 
@@ -211,10 +209,7 @@ public class NTFSParser  implements Parser {
             }
 
         } else if (fileOrDir.isFile()) {
-            Metadata entrydata = NTFSParser.handleEntryMetadata(
-                fileOrDir.getName(), new Date(fileOrDir.getCrtime()), new Date(fileOrDir.getMtime()), 
-                fileOrDir.getSize(), xhtml
-                );
+            Metadata entrydata = NTFSParser.handleEntryMetadata(fileOrDir.getName(), new Date(fileOrDir.getCrtime()), new Date(fileOrDir.getMtime()), fileOrDir.getSize(), xhtml);
 
             ReadContentInputStream fileInputStream = new ReadContentInputStream(fileOrDir);
             byte[] data = fileInputStream.readAllBytes();

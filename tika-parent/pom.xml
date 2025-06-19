@@ -1290,6 +1290,11 @@
                 <artifactId>guava</artifactId>
                 <version>19.0</version>
             </coordinate>
+            <coordinate>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>SparseBitSet</artifactId>
+                <version>1.1</version>
+            </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
         </configuration>
@@ -1388,7 +1393,11 @@
             <id>enforce-maven</id>
             <configuration>
               <rules>
-                <dependencyConvergence />
+                <dependencyConvergence>
+                  <excludes>
+                    <exclude>com.zaxxer:SparseBitSet</exclude>
+                  </excludes>
+                </dependencyConvergence>
                 <requireMavenVersion>
                   <version>3.5</version>
                 </requireMavenVersion>
