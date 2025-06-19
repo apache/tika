@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.parser.ntfs;
 
 import java.io.IOException;
@@ -6,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import org.apache.tika.detect.Detector;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -27,26 +42,11 @@ public class NTFSDetector implements Detector {
             return MediaType.OCTET_STREAM;
         }
 
-        TikaInputStream tis = TikaInputStream.cast(input);
-        if (tis != null) {
-            tis.mark(BUFFER_SIZE);
-            try {
-                return detectFromStream(tis);
-            } finally {
-                tis.reset();
-            }
-        } else {
-            // If it's not a TikaInputStream, we can't mark/reset.
-            // For robust detection, we might need to read into a temporary buffer
-            // or decide if detection is possible without mark/reset.
-            // For now, let's assume Tika provides a mark-supported stream.
-            // If not, this path might consume the stream prefix.
-            // A simple detector might not be able to work with a non-mark/reset stream
-            // without consuming its beginning.
-            // Consider logging a warning or throwing an exception if robust detection
-            // without mark/reset is critical.
-            // For this initial implementation, we'll proceed, but this is a known limitation.
+        input.mark(BUFFER_SIZE);
+        try {
             return detectFromStream(input);
+        } finally {
+            input.reset();
         }
     }
 

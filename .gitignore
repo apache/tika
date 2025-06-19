@@ -26,3 +26,6 @@ tika-deployment/tika-snap-server/prime/
 tika-deployment/tika-snap-server/snap/
 tika-deployment/tika-snap-server/stage/
 
+.vscode/java-formatter.xml
+.vscode/launch.json
+.vscode/settings.json

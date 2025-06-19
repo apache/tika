@@ -1280,6 +1280,16 @@
                 <artifactId>http2-common</artifactId>
                 <version>11.0.25</version>
             </coordinate>
+            <coordinate>
+                <groupId>org.xerial</groupId>
+                <artifactId>sqlite-jdbc</artifactId>
+                <version>3.25.2</version>
+            </coordinate>
+            <coordinate>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>19.0</version>
+            </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
         </configuration>

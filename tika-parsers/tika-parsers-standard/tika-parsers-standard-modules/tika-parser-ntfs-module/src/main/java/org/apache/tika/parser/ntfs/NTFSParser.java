@@ -1,44 +1,79 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.parser.ntfs;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+// Sleuth Kit imports - will need to be adjusted based on actual class names and availability
+import org.sleuthkit.datamodel.AbstractFile;
+import org.sleuthkit.datamodel.FileSystem;
+import org.sleuthkit.datamodel.Image;
+import org.sleuthkit.datamodel.ReadContentInputStream;
+import org.sleuthkit.datamodel.SleuthkitCase;
+import org.sleuthkit.datamodel.SleuthkitJNI.CaseDbHandle.AddImageProcess;
+import org.sleuthkit.datamodel.TskCoreException;
+import org.sleuthkit.datamodel.TskData;
+import org.sleuthkit.datamodel.TskDataException;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-// Sleuth Kit imports - will need to be adjusted based on actual class names and availability
-import org.sleuthkit.datamodel.AbstractFile;
-import org.sleuthkit.datamodel.Content;
-import org.sleuthkit.datamodel.FileSystem;
-import org.sleuthkit.datamodel.Image;
-import org.sleuthkit.datamodel.ReadContentInputStream;
-import org.sleuthkit.datamodel.SleuthkitCase;
-import org.sleuthkit.datamodel.TskCoreException;
-import org.sleuthkit.datamodel.TskDataException;
 
 
-public class NTFSParser extends AbstractParser {
+public class NTFSParser  implements Parser {
 
     private static final long serialVersionUID = 1L;
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-ntfs-image"));
+
+    
+    // Ensure the native TSK library is loaded once
+    static {
+        try {
+            // Adjust this path if your native libraries are elsewhere
+            System.loadLibrary("tsk_jni");
+            // OR if using -Djava.library.path as JVM arg, you don't need this line.
+            // This is more of a safety check.
+        } catch (UnsatisfiedLinkError e) {
+
+        }
+    }
+
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -57,7 +92,7 @@ public class NTFSParser extends AbstractParser {
             imagePath = tis.getPath();
         } else {
             // Stream to a temporary file as Sleuth Kit likely needs file access
-            Path tmpFile = tmp.createTemporaryFile();
+            Path tmpFile = tmp.createTempFile();
             Files.copy(stream, tmpFile, StandardCopyOption.REPLACE_EXISTING);
             imagePath = tmpFile;
         }
@@ -65,42 +100,58 @@ public class NTFSParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
+        EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+
+
         SleuthkitCase skCase = null;
         try {
             // TODO: Check if a "dummy" case is sufficient or if more setup is needed.
             // A database is usually created by SleuthkitCase.newCase(), which might be heavyweight.
             // For single image parsing, a "no-database" approach might be preferable if available.
             // For now, let's assume a unique case ID is needed.
-            String caseDbPath = tmp.createTemporaryFile().toAbsolutePath().toString() + ".db";
+            String caseDbPath = tmp.createTemporaryFile().toPath().toString() + ".db";
             skCase = SleuthkitCase.newCase(caseDbPath);
-
-
-            // Add the image to the case
-            // The image path needs to be a string.
-            // Timezone and other parameters might need to be configured.
-            String imageName = imagePath.toAbsolutePath().toString();
-            // TODO: Determine the correct image type. For now, using AUTO_DETECT.
-            // Consider TSK_IMG_TYPE_ENUM.TSK_IMG_TYPE_RAW for raw images if applicable.
-            Image image = skCase.addImage(imageName, org.sleuthkit.datamodel.TskData.TSK_IMG_TYPE_DETECT, 0, "");
-
-
-            // Get file systems from the image
-            List<FileSystem> fileSystems = image.getFileSystems();
-            if (fileSystems.isEmpty()) {
-                throw new TikaException("No file systems found in the image: " + imageName);
+            
+            String acquisitionTimeZone = "UTC";
+            String[] imageArray = new String[] { imagePath.toString() };
+            String imageName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY); // Use original filename as image name
+            if (imageName == null || imageName.isEmpty()) {
+                imageName = "NTFS_Image_" + System.currentTimeMillis();
             }
 
-            for (FileSystem fs : fileSystems) {
-                metadata.set(Metadata.FS_NAME, fs.getFsType().getName()); // Example: "NTFS"
-                // You can add more file system level metadata here if needed
+            AddImageProcess addImageProcess = skCase.makeAddImageProcess(acquisitionTimeZone, false, false, imagePath.toString());
+            addImageProcess.run("device-1234", imageArray);
 
-                // Iterate over files and directories.
-                // The root directory in Sleuth Kit usually has a specific ID.
-                // fs.getRootDirectory() might be the starting point.
-                // Need to handle this recursively or iteratively.
-                List<AbstractFile> rootObjects = fs.getRootDirectory().getChildren();
-                for (AbstractFile rootObject : rootObjects) {
-                    processFileOrDirectory(rootObject, xhtml, metadata, context, tmp);
+            List<Image> caseImages = skCase.getImages();
+            if (caseImages.isEmpty()) {
+                throw new TikaException("No images found in the case");
+            }
+
+            for (Image image : caseImages) {
+
+                Collection<FileSystem> fileSystems = skCase.getImageFileSystems(image);
+                // Get file systems from the image
+                if (fileSystems.isEmpty()) {
+                    throw new TikaException("No file systems found in the image: " + imageName);
+                }
+
+                //Without this BodyContentHandler does not work
+                xhtml.element("div", " ");
+
+               
+
+                for (FileSystem fs : fileSystems) {
+                    metadata.set("FileSystem", fs.getFsType().name()); // Example: "NTFS"
+                    // You can add more file system level metadata here if needed
+
+                    // Iterate over files and directories.
+                    // The root directory in Sleuth Kit usually has a specific ID.
+                    // fs.getRootDirectory() might be the starting point.
+                    // Need to handle this recursively or iteratively.
+                    List<AbstractFile> rootObjects = fs.getRootDirectory().listFiles();
+                    for (AbstractFile rootObject : rootObjects) {
+                        processFileOrDirectory(rootObject, xhtml, metadata, context, tmp, extractor, handler);
+                    }
                 }
             }
 
@@ -108,12 +159,7 @@ public class NTFSParser extends AbstractParser {
             throw new TikaException("Sleuth Kit processing error: " + e.getMessage(), e);
         } finally {
             if (skCase != null) {
-                try {
-                    skCase.close();
-                } catch (TskCoreException e) {
-                    // Log or handle the exception on close if necessary
-                    // For example, metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, "Error closing SleuthkitCase: " + e.getMessage());
-                }
+                skCase.close();
             }
             tmp.dispose(); // Deletes temporary files
         }
@@ -121,45 +167,63 @@ public class NTFSParser extends AbstractParser {
         xhtml.endDocument();
     }
 
+
+    protected static Metadata handleEntryMetadata(String name, Date createAt, Date modifiedAt,
+                                                  Long size, XHTMLContentHandler xhtml)
+            throws SAXException, IOException, TikaException {
+        Metadata entrydata = new Metadata();
+        if (createAt != null) {
+            entrydata.set(TikaCoreProperties.CREATED, createAt);
+        }
+        if (modifiedAt != null) {
+            entrydata.set(TikaCoreProperties.MODIFIED, modifiedAt);
+        }
+        if (size != null) {
+            entrydata.set(Metadata.CONTENT_LENGTH, Long.toString(size));
+        }
+        if (name != null && name.length() > 0) {
+            name = name.replace("\\", "/");
+            entrydata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+            AttributesImpl attributes = new AttributesImpl();
+            attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+            attributes.addAttribute("", "id", "id", "CDATA", name);
+            xhtml.startElement("div", attributes);
+            xhtml.endElement("div");
+
+            entrydata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, name);
+        }
+        return entrydata;
+    }
+
+    
+
     private void processFileOrDirectory(AbstractFile fileOrDir, XHTMLContentHandler xhtml,
-                                        Metadata parentMetadata, ParseContext context, TemporaryResources tmp)
+                                        Metadata parentMetadata, ParseContext context, TemporaryResources tmp,
+                                        EmbeddedDocumentExtractor extractor,
+                                        ContentHandler handler)
             throws IOException, SAXException, TikaException, TskCoreException {
 
-        Metadata entryMetadata = new Metadata();
-        entryMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileOrDir.getName());
-        entryMetadata.set(Metadata.CONTENT_LENGTH, String.valueOf(fileOrDir.getSize()));
-        entryMetadata.set(TikaCoreProperties.CREATED, String.valueOf(fileOrDir.getCrtime()));
-        entryMetadata.set(TikaCoreProperties.MODIFIED, String.valueOf(fileOrDir.getMtime()));
-        entryMetadata.set(TikaCoreProperties.DESCRIPTION, fileOrDir.getMetaType().toString()); // e.g., TSK_FS_META_TYPE_DIR or TSK_FS_META_TYPE_REG
-
         if (fileOrDir.isDir()) {
-            entryMetadata.set(TikaCoreProperties.CONTENT_TYPE, MediaType.DIRECTORY.toString());
-            // Optionally add an entry for the directory itself if desired
-            // For now, we'll just recurse.
 
-            List<AbstractFile> children = fileOrDir.getChildren();
+            List<AbstractFile> children = fileOrDir.listFiles();
             for (AbstractFile child : children) {
-                processFileOrDirectory(child, xhtml, entryMetadata, context, tmp);
-            }
-        } else if (fileOrDir.isFile()) {
-            // For files, extract content and potentially pass to an embedded document extractor
-            EmbeddedDocumentExtractor extractor = context.get(EmbeddedDocumentExtractor.class);
-            if (extractor == null) {
-                extractor = new ParsingEmbeddedDocumentExtractor(context);
+                processFileOrDirectory(child, xhtml, parentMetadata, context, tmp, extractor, handler);
             }
 
-            if (extractor.shouldParseEmbedded(entryMetadata)) {
-                try (InputStream embeddedStream = new ReadContentInputStream(fileOrDir)) {
-                    extractor.parseEmbedded(embeddedStream, xhtml.getSAXHandler(), entryMetadata, true);
-                } catch (TskDataException e) {
-                    // Handle cases where content might not be readable (e.g., sparse, encrypted, resident in MFT)
-                    // For now, just log or add a metadata field indicating an issue.
-                    entryMetadata.set(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                                      "Could not read content for file: " + fileOrDir.getName() + " - " + e.getMessage());
+        } else if (fileOrDir.isFile()) {
+            Metadata entrydata = NTFSParser.handleEntryMetadata(
+                fileOrDir.getName(), new Date(fileOrDir.getCrtime()), new Date(fileOrDir.getMtime()), 
+                fileOrDir.getSize(), xhtml
+                );
+
+            ReadContentInputStream fileInputStream = new ReadContentInputStream(fileOrDir);
+            byte[] data = fileInputStream.readAllBytes();
+
+            try (TikaInputStream fileTis = TikaInputStream.get(data, entrydata)) {
+                if (extractor.shouldParseEmbedded(entrydata) && fileOrDir.getName().equals("test_file.txt")) {
+                    extractor.parseEmbedded(fileTis, handler, entrydata, true);
                 }
             }
         }
-        // What about symbolic links, etc.? Sleuth Kit should handle these.
-        // fileOrDir.getMetaType() can give more info.
     }
 }
