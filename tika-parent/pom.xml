@@ -303,7 +303,7 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.0</maven.shade.version>
     <maven.project.info.reports.version>3.9.0</maven.project.info.reports.version>
-    <puppycrawl.version>10.25.0</puppycrawl.version>
+    <puppycrawl.version>10.25.1</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
     <scm.version>2.1.0</scm.version>
 
@@ -311,7 +311,7 @@
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.53.1</google.cloud.version>
     <aws.version>1.12.787</aws.version>
-    <aws2.version>2.31.67</aws2.version>
+    <aws2.version>2.31.68</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -351,7 +351,7 @@
     <ddplist.version>1.28</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
-    <fastutil.version>8.5.15</fastutil.version>
+    <fastutil.version>8.5.16</fastutil.version>
     <felix.scr.version>1.12.0</felix.scr.version>
     <freemarker.version>2.3.34</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
@@ -389,7 +389,7 @@
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.17.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
-    <jsoup.version>1.20.1</jsoup.version>
+    <jsoup.version>1.21.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.13.1</junit5.version>
