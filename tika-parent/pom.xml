@@ -311,7 +311,7 @@
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.53.1</google.cloud.version>
     <aws.version>1.12.787</aws.version>
-    <aws2.version>2.31.68</aws2.version>
+    <aws2.version>2.31.69</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -331,7 +331,7 @@
     <bouncycastle.version>1.81</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <c3p0.version>0.11.1</c3p0.version>
+    <c3p0.version>0.11.2</c3p0.version>
     <commons.cli.version>1.9.0</commons.cli.version>
     <commons.codec.version>1.18.0</commons.codec.version>
     <commons.collections4.version>4.5.0</commons.collections4.version>
