@@ -59,6 +59,9 @@ public class CustomTikaXMPTest extends TikaTest {
     public void testPDFUA() throws Exception {
         Metadata metadata = extract("testPDFUA.xmp");
         assertEquals(1, metadata.getInt(PDF.PDFUAID_PART));
+        String[] subjects = metadata.getValues(TikaCoreProperties.SUBJECT);
+        assertEquals("keywords", subjects[0]);
+        assertEquals("subject", subjects[1]);
     }
 
     @Test
@@ -83,6 +86,12 @@ public class CustomTikaXMPTest extends TikaTest {
         assertEquals("International Union of Thinkology", metadata.get(TikaCoreProperties.PUBLISHER));
         assertEquals("Relation", metadata.get(TikaCoreProperties.RELATION));
         assertEquals("Journal of Thinkology", metadata.get(TikaCoreProperties.SOURCE));
+        String[] subjects = metadata.getValues(TikaCoreProperties.SUBJECT);
+        assertEquals("THOUGHTS", subjects[0]);
+        assertEquals("HAPPINESS", subjects[1]);
+        assertEquals("FEAR", subjects[2]);
+        assertEquals("ANGER", subjects[3]);
+        assertEquals("DESPAIR", subjects[4]);
     }
 
     private Metadata extract(String xmpFileName) throws IOException, TikaException, SAXException {
