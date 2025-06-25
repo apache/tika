@@ -585,8 +585,7 @@ public class PipesServer implements Runnable {
                     new EmittingEmbeddedDocumentBytesHandler(fetchEmitTuple, emitterManager));
         } else {
             parseContext.set(EmbeddedDocumentBytesHandler.class,
-                    new BasicEmbeddedDocumentBytesHandler(
-                    embeddedDocumentBytesConfig));
+                    new BasicEmbeddedDocumentBytesHandler(embeddedDocumentBytesConfig));
         }
         return parseContext;
     }
