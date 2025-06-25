@@ -30,6 +30,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -66,6 +67,22 @@ public class CustomTikaXMPTest extends TikaTest {
         assertEquals("PDF/VT-1", metadata.get(PDF.PDFVT_VERSION));
         assertEquals("2018-08-06T11:53:12Z",
                 metadata.getDate(PDF.PDFVT_MODIFIED).toInstant().toString());
+    }
+
+    /**
+     * TIKA-4442: Test unusual dublin core properties.
+     * 
+     * @throws Exception 
+     */
+    @Test
+    public void testDublinCore() throws Exception {
+        Metadata metadata = extract("TIKA-4442.xmp"); // test file based on file 188032
+        assertEquals("research papers", metadata.get(TikaCoreProperties.TYPE));
+        assertEquals("doi:1234/S56789", metadata.get(TikaCoreProperties.IDENTIFIER));
+        assertEquals("en", metadata.get(TikaCoreProperties.LANGUAGE));
+        assertEquals("International Union of Thinkology", metadata.get(TikaCoreProperties.PUBLISHER));
+        assertEquals("Relation", metadata.get(TikaCoreProperties.RELATION));
+        assertEquals("Journal of Thinkology", metadata.get(TikaCoreProperties.SOURCE));
     }
 
     private Metadata extract(String xmpFileName) throws IOException, TikaException, SAXException {
