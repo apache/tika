@@ -124,6 +124,7 @@ public class PDMetadataExtractor {
             extractDublinCoreListItems(metadata, TikaCoreProperties.PUBLISHER, dcSchema);
             extractDublinCoreListItems(metadata, TikaCoreProperties.RELATION, dcSchema);
             extractDublinCoreSimpleItem(metadata, TikaCoreProperties.SOURCE, dcSchema);
+            extractDublinCoreListItems(metadata, TikaCoreProperties.SUBJECT, dcSchema);
         }
     }
 
