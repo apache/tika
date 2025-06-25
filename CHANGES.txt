@@ -11,6 +11,9 @@ Release 4.0.0-BETA1 - ???
 
 Release 3.2.1 - ???
 
+  * Fix POIFSContainerDetector regression when wrapping an InputStream in
+    a TikaInputStream (TIKA-4441).
+
   * Important bug fix for zip-based detection on a non-TikaInputStream (TIKA-4424).
 
   * Improve text extraction from EMF (TIKA-4432).

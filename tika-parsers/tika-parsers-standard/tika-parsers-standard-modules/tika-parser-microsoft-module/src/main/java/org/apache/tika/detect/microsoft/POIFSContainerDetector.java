@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.hssf.model.InternalWorkbook;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
@@ -44,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -608,9 +610,40 @@ public class POIFSContainerDetector implements Detector {
             return handleTikaStream(tis, metadata);
         }
         if (isOleHeader(input)) {
-            return OLE;
+            if (markLimit < 0) {
+                return OLE;
+            }
+            return handleInputStream(input, metadata);
         }
         return MediaType.OCTET_STREAM;
+    }
+
+    private MediaType handleInputStream(InputStream input, Metadata metadata) throws IOException {
+        if (markLimit < 0) {
+            return OLE;
+        }
+        BoundedInputStream bis = null;
+        try {
+            bis = new BoundedInputStream(markLimit, CloseShieldInputStream.wrap(input));
+            bis.mark(markLimit);
+            try (POIFSFileSystem poifs = new POIFSFileSystem(CloseShieldInputStream.wrap(bis))) {
+                if (bis.hasHitBound()) {
+                    return OLE;
+                }
+                Set<String> names = getTopLevelNames(poifs.getRoot());
+                return detect(names, poifs.getRoot());
+            } catch (SecurityException e) {
+                throw e;
+            } catch (IOException | RuntimeException e) {
+                //swallow
+                return OLE;
+            }
+        } finally {
+            if (bis != null) {
+                bis.reset();
+                bis.close();
+            }
+        }
     }
 
     private MediaType handleTikaStream(TikaInputStream tis, Metadata metadata) throws IOException {

@@ -30,10 +30,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
@@ -605,5 +609,82 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertTypeByData("testMemgraph.memgraph", "application/x-bplist-memgraph");
         assertTypeByData("testWEBARCHIVE.webarchive", "application/x-bplist-webarchive");
         assertTypeByData("testBPList.bplist", "application/x-bplist-itunes");
+    }
+
+    @Test
+    public void testPOIFSContainerDetector() throws Exception {
+        UnsynchronizedByteArrayOutputStream baos = UnsynchronizedByteArrayOutputStream.builder().get();
+        try (InputStream is = getResourceAsStream("/test-documents/testWORD.doc")) {
+            IOUtils.copy(is, baos);
+        }
+        byte[] bytes = baos.toByteArray();
+        long len = bytes.length;
+
+        //test default
+        Detector detector = TikaConfig.getDefaultConfig().getDetector();
+        try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
+            assertEquals("application/x-tika-msoffice",
+                    detector.detect(is, new Metadata()).toString());
+            assertEquals(len, countBytes(is));
+        }
+
+        detector = loadDetector("tika-4441-neg1.xml");
+        try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
+            assertEquals("application/x-tika-msoffice",
+                    detector.detect(is, new Metadata()).toString());
+            assertEquals(len, countBytes(is));
+        }
+
+        detector = loadDetector("tika-4441-120.xml");
+        try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
+            assertEquals("application/x-tika-msoffice",
+                    detector.detect(is, new Metadata()).toString());
+            assertEquals(len, countBytes(is));
+        }
+
+        detector = loadDetector("tika-4441-12000000.xml");
+        try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
+            assertEquals("application/msword",
+                    detector.detect(is, new Metadata()).toString());
+            assertEquals(len, countBytes(is));
+        }
+
+        //now try wrapping in a TikaInputStream
+        detector = loadDetector("tika-4441-neg1.xml");
+        try (InputStream is = TikaInputStream.get(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
+            assertEquals("application/msword",
+                    detector.detect(is, new Metadata()).toString());
+            assertEquals(len, countBytes(is));
+        }
+
+        detector = loadDetector("tika-4441-120.xml");
+        try (InputStream is = TikaInputStream.get(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
+            assertEquals("application/x-tika-msoffice",
+                    detector.detect(is, new Metadata()).toString());
+            assertEquals(len, countBytes(is));
+        }
+
+        detector = loadDetector("tika-4441-12000000.xml");
+        try (InputStream is = TikaInputStream.get(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
+            assertEquals("application/msword",
+                    detector.detect(is, new Metadata()).toString());
+            assertEquals(len, countBytes(is));
+        }
+    }
+
+    private long countBytes(InputStream is) throws IOException {
+        int b = is.read();
+        long len = 0;
+        while (b > -1) {
+            len++;
+            b = is.read();
+        }
+        return len;
+    }
+
+    private Detector loadDetector(String tikaConfigName) throws IOException, TikaException, SAXException {
+        try (InputStream is = TestContainerAwareDetector.class.getResourceAsStream("/configs/" + tikaConfigName)) {
+            return new TikaConfig(is).getDetector();
+        }
     }
 }
