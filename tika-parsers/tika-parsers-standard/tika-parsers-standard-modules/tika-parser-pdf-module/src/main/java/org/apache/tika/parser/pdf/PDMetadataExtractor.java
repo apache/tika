@@ -118,6 +118,12 @@ public class PDMetadataExtractor {
             extractDublinCoreListItems(metadata, TikaCoreProperties.CONTRIBUTOR, dcSchema);
             extractDublinCoreListItems(metadata, TikaCoreProperties.CREATOR, dcSchema);
             extractMultilingualItems(metadata, TikaCoreProperties.TITLE, null, dcSchema);
+            extractDublinCoreListItems(metadata, TikaCoreProperties.TYPE, dcSchema); // finds only the first one?!
+            extractDublinCoreSimpleItem(metadata, TikaCoreProperties.IDENTIFIER, dcSchema);
+            extractDublinCoreListItems(metadata, TikaCoreProperties.LANGUAGE, dcSchema);
+            extractDublinCoreListItems(metadata, TikaCoreProperties.PUBLISHER, dcSchema);
+            extractDublinCoreListItems(metadata, TikaCoreProperties.RELATION, dcSchema);
+            extractDublinCoreSimpleItem(metadata, TikaCoreProperties.SOURCE, dcSchema);
         }
     }
 
@@ -437,6 +443,23 @@ public class PDMetadataExtractor {
         }
     }
 
+     /**
+     * This tries to read a string from a particular property in XMPSchemaDublinCore.
+     * <p/>
+     * This relies on the property having a DublinCore compliant getName()
+     *
+     * @param property
+     * @param dc
+     * @param metadata
+     */
+    private static void extractDublinCoreSimpleItem(Metadata metadata, Property property,
+                                                   XMPSchemaDublinCore dc) {
+        if (dc == null) {
+            return;
+        }
+        String textProperty = dc.getTextProperty(property.getName());
+        addMetadata(metadata, property, textProperty);
+    }
 
     static void addMetadata(Metadata metadata, Property property, String value) {
         if (value != null) {
