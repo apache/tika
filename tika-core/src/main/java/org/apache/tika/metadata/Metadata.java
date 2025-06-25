@@ -157,8 +157,8 @@ public class Metadata
     }
 
     /**
-     * Get the value associated to a metadata name. If many values are assiociated
-     * to the specified name, then the first one is returned.
+     * Get the value associated to a metadata name. If many values are associated to the specified
+     * name, then the first one is returned.
      *
      * @param name of the metadata.
      * @return the value associated to the specified metadata name.
@@ -190,7 +190,8 @@ public class Metadata
     }
 
     /**
-     * Returns the value (if any) of the identified metadata property.
+     * Returns the value (if any) of the identified metadata property. If many values are associated
+     * to the specified property, then the first one is returned.
      *
      * @param property property definition
      * @return property value, or <code>null</code> if the property is not set
@@ -201,7 +202,8 @@ public class Metadata
     }
 
     /**
-     * Returns the value of the identified Integer based metadata property.
+     * Returns the value of the identified Integer based metadata property. If many values are
+     * associated to the specified property, then the first one is returned.
      *
      * @param property simple integer property definition
      * @return property value as a Integer, or <code>null</code> if the property is not set, or
@@ -228,7 +230,8 @@ public class Metadata
     }
 
     /**
-     * Returns the value of the identified Date based metadata property.
+     * Returns the value of the identified Date based metadata property. If many values are
+     * associated to the specified property, then the first one is returned.
      *
      * @param property simple date property definition
      * @return property value as a Date, or <code>null</code> if the property is not set, or not
