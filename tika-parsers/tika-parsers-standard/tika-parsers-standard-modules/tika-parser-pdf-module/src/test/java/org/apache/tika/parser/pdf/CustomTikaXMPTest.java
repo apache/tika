@@ -31,6 +31,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.XMP;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -62,6 +63,8 @@ public class CustomTikaXMPTest extends TikaTest {
         String[] subjects = metadata.getValues(TikaCoreProperties.SUBJECT);
         assertEquals("keywords", subjects[0]);
         assertEquals("subject", subjects[1]);
+        assertEquals("1234567890", metadata.get(XMP.IDENTIFIER));
+        assertEquals("Advisory", metadata.get(XMP.ADVISORY));
     }
 
     @Test
@@ -73,7 +76,7 @@ public class CustomTikaXMPTest extends TikaTest {
     }
 
     /**
-     * TIKA-4442: Test unusual dublin core properties.
+     * Test dublin core properties.
      * 
      * @throws Exception 
      */
@@ -86,12 +89,21 @@ public class CustomTikaXMPTest extends TikaTest {
         assertEquals("International Union of Thinkology", metadata.get(TikaCoreProperties.PUBLISHER));
         assertEquals("Relation", metadata.get(TikaCoreProperties.RELATION));
         assertEquals("Journal of Thinkology", metadata.get(TikaCoreProperties.SOURCE));
+        assertEquals("Thinking: is it needed?", metadata.get(TikaCoreProperties.DESCRIPTION));
         String[] subjects = metadata.getValues(TikaCoreProperties.SUBJECT);
+        assertEquals(5, subjects.length);
         assertEquals("THOUGHTS", subjects[0]);
         assertEquals("HAPPINESS", subjects[1]);
         assertEquals("FEAR", subjects[2]);
         assertEquals("ANGER", subjects[3]);
         assertEquals("DESPAIR", subjects[4]);
+        String[] creators = metadata.getValues(TikaCoreProperties.CREATOR);
+        assertEquals(5, creators.length);
+        assertEquals("Dorothy", creators[0]);
+        assertEquals("Toto", creators[1]);
+        assertEquals("Scarecrow", creators[2]);
+        assertEquals("Tin Man", creators[3]);
+        assertEquals("Cowardly Lion", creators[4]);
     }
 
     private Metadata extract(String xmpFileName) throws IOException, TikaException, SAXException {
