@@ -162,6 +162,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             return;
         }
 
+        boolean hasComments = false;
         extractSavedByMetadata(document);
 
         org.apache.poi.hwpf.extractor.WordExtractor wordExtractor =
@@ -199,8 +200,10 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         for (String paragraph : wordExtractor.getFootnoteText()) {
             xhtml.element("p", paragraph);
         }
+
         for (String paragraph : wordExtractor.getCommentsText()) {
             xhtml.element("p", paragraph);
+            hasComments = true;
         }
 
         for (String paragraph : wordExtractor.getEndnoteText()) {
@@ -231,6 +234,9 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
         } catch (FileNotFoundException e) {
             //swallow
+        }
+        if (hasComments) {
+            parentMetadata.set(Office.HAS_COMMENTS, true);
         }
         extractFeatures(document, parentMetadata);
     }
