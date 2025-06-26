@@ -78,7 +78,7 @@ public class PDMetadataExtractor {
     public static void extract(XMPMetadata xmp, Metadata metadata, ParseContext context) {
         extractBasic(xmp, metadata);
         extractPDF(xmp, metadata);
-        extractDublin(xmp, metadata);
+        extractDublinCore(xmp, metadata);
         JempboxExtractor.extractXMPMM(xmp, metadata);
         extractPDFA(xmp, metadata);
         extractPDFX(xmp, metadata);
@@ -106,7 +106,7 @@ public class PDMetadataExtractor {
         }
     }
 
-    private static void extractDublin(XMPMetadata xmp, Metadata metadata) {
+    private static void extractDublinCore(XMPMetadata xmp, Metadata metadata) {
         XMPSchemaDublinCore dcSchema = null;
         try {
             dcSchema = xmp.getDublinCoreSchema();
@@ -125,6 +125,7 @@ public class PDMetadataExtractor {
             extractDublinCoreListItems(metadata, TikaCoreProperties.RELATION, dcSchema);
             extractDublinCoreSimpleItem(metadata, TikaCoreProperties.SOURCE, dcSchema);
             extractDublinCoreListItems(metadata, TikaCoreProperties.SUBJECT, dcSchema);
+            extractMultilingualItems(metadata, TikaCoreProperties.RIGHTS, null, dcSchema);
         }
     }
 
