@@ -1,4 +1,4 @@
-Release 3.2.1 - 6/25/2025
+Release 3.2.1 - 6/26/2025
 
   * Fix POIFSContainerDetector regression when wrapping an InputStream in
     a TikaInputStream (TIKA-4441).
