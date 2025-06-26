@@ -35,6 +35,16 @@
       <xmp:ModifyDate>2016-09-14T15:37:53+02:00</xmp:ModifyDate>
       <xmp:MetadataDate>2016-09-14T15:37:53+02:00</xmp:MetadataDate>
       <xmp:CreatorTool>Adobe InDesign CS6 (Macintosh)</xmp:CreatorTool>
+      <xmp:Identifier>
+        <rdf:Bag>
+          <rdf:li>1234567890</rdf:li>
+        </rdf:Bag>
+      </xmp:Identifier>
+      <xmp:Advisory>
+        <rdf:Bag>
+          <rdf:li>Advisory</rdf:li>
+        </rdf:Bag>
+      </xmp:Advisory>
       <dc:format>application/pdf</dc:format>
       <dc:title>
         <rdf:Alt>
