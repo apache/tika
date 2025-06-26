@@ -89,6 +89,7 @@ public class CustomTikaXMPTest extends TikaTest {
         assertEquals("International Union of Thinkology", metadata.get(TikaCoreProperties.PUBLISHER));
         assertEquals("Relation", metadata.get(TikaCoreProperties.RELATION));
         assertEquals("Journal of Thinkology", metadata.get(TikaCoreProperties.SOURCE));
+        assertEquals("Copyright (c) 1939 International Union of Thinkology", metadata.get(TikaCoreProperties.RIGHTS));
         assertEquals("Thinking: is it needed?", metadata.get(TikaCoreProperties.DESCRIPTION));
         String[] subjects = metadata.getValues(TikaCoreProperties.SUBJECT);
         assertEquals(5, subjects.length);
