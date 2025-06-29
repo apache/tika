@@ -73,6 +73,7 @@ import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.FormattingUtils;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.WordExtractor.TagAndStyle;
+import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFFeatureExtractor;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
@@ -125,6 +126,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
         // process text in the order that it occurs in
         extractIBodyText(document, listManager, xhtml);
+        extractFeatures(document, metadata);
 
         //handle the diagram data
         handleGeneralTextContainingPart(RELATION_DIAGRAM_DATA, "diagram-data",
@@ -143,6 +145,11 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         if (hfPolicy != null && config.isIncludeHeadersAndFooters()) {
             extractFooters(xhtml, hfPolicy, listManager);
         }
+    }
+
+    private void extractFeatures(XWPFDocument document, Metadata metadata) {
+        XWPFFeatureExtractor ex = new XWPFFeatureExtractor();
+        ex.process(document, metadata, getParseContext());
     }
 
     @Override

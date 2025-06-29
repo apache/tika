@@ -676,4 +676,14 @@ public class WordParserTest extends TikaTest {
             getRecursiveMetadata("testWORD_protected_drm.doc");
         });
     }
+
+    @Test
+    public void testFeatureExtraction() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testWORD_features.doc");
+        Metadata m = metadataList.get(0);
+        assertContains("Kyle Reese", Arrays.asList(m.getValues(Office.COMMENT_PERSONS)));
+        assertEquals("true", m.get(Office.HAS_HIDDEN_TEXT));
+        assertEquals("true", m.get(Office.HAS_TRACK_CHANGES));
+        assertEquals("true", m.get(Office.HAS_COMMENTS));
+    }
 }

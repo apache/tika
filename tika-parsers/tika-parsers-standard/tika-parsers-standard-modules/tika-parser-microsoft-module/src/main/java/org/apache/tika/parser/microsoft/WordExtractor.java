@@ -36,6 +36,7 @@ import org.apache.poi.hwpf.OldWordFileFormatException;
 import org.apache.poi.hwpf.extractor.Word6Extractor;
 import org.apache.poi.hwpf.model.FieldsDocumentPart;
 import org.apache.poi.hwpf.model.PicturesTable;
+import org.apache.poi.hwpf.model.RevisionMarkAuthorTable;
 import org.apache.poi.hwpf.model.SavedByEntry;
 import org.apache.poi.hwpf.model.SavedByTable;
 import org.apache.poi.hwpf.model.StyleDescription;
@@ -61,6 +62,7 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -160,6 +162,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             return;
         }
 
+        boolean hasComments = false;
         extractSavedByMetadata(document);
 
         org.apache.poi.hwpf.extractor.WordExtractor wordExtractor =
@@ -200,6 +203,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
         for (String paragraph : wordExtractor.getCommentsText()) {
             xhtml.element("p", paragraph);
+            hasComments = true;
         }
 
         for (String paragraph : wordExtractor.getEndnoteText()) {
@@ -230,6 +234,44 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
         } catch (FileNotFoundException e) {
             //swallow
+        }
+        if (hasComments) {
+            parentMetadata.set(Office.HAS_COMMENTS, true);
+        }
+        extractFeatures(document, parentMetadata);
+    }
+
+    private void extractFeatures(HWPFDocument document, Metadata parentMetadata) {
+        RevisionMarkAuthorTable revisionMarkAuthorTable = document.getRevisionMarkAuthorTable();
+        if (revisionMarkAuthorTable != null) {
+            Set<String> authors = new HashSet<>(revisionMarkAuthorTable.getEntries());
+            if (! authors.isEmpty()) {
+                for (String author : authors) {
+                    parentMetadata.add(Office.COMMENT_PERSONS, author);
+                }
+            }
+        }
+        Range documentRange = document.getRange();
+        int numRuns = documentRange.numCharacterRuns();
+        boolean hasHidden = false;
+        boolean hasTrackChanges = false;
+        for (int i = 0; i < numRuns; i++) {
+            CharacterRun run = documentRange.getCharacterRun(i);
+            if (run.isVanished() || run.isFldVanished()) {
+                hasHidden = true;
+            }
+            if (run.isMarkedDeleted()) {
+                hasTrackChanges = true;
+            }
+            if (run.isMarkedInserted()) {
+                hasTrackChanges = true;
+            }
+        }
+        if (hasHidden) {
+            parentMetadata.set(Office.HAS_HIDDEN_TEXT, true);
+        }
+        if (hasTrackChanges) {
+            parentMetadata.set(Office.HAS_TRACK_CHANGES, true);
         }
     }
 
