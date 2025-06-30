@@ -23,7 +23,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,9 +62,7 @@ public class TikaJsonDeserializer {
         if (!root.isObject()) {
             throw new IllegalArgumentException("must be object");
         }
-        Iterator<Map.Entry<String, JsonNode>> fields = root.fields();
-        while (fields.hasNext()) {
-            Map.Entry<String, JsonNode> e = fields.next();
+        for (Map.Entry<String, JsonNode> e : root.properties()) {
             String name = e.getKey();
             JsonNode child = e.getValue();
             if (TikaJsonSerializer.INSTANTIATED_CLASS_KEY.equals(name)) {
@@ -99,7 +96,7 @@ public class TikaJsonDeserializer {
 
     private static void setValue(String name, JsonNode node, Object obj, Map<String, List<Method>> setters) throws ReflectiveOperationException {
         List<Method> mySetters = setters.get(name);
-        if (mySetters == null || mySetters.size() == 0) {
+        if (mySetters == null || mySetters.isEmpty()) {
             throw new IllegalArgumentException("can't find any setter for " + name);
         }
         if (node.isNull()) {
@@ -214,9 +211,7 @@ public class TikaJsonDeserializer {
         //TODO this should try to match the map setters with the data types
         //for now, we're just doing <String,String>
         Map<String, String> val = new HashMap<>();
-        Iterator<Map.Entry<String, JsonNode>> it = node.fields();
-        while (it.hasNext()) {
-            Map.Entry<String, JsonNode> e = it.next();
+        for (Map.Entry<String, JsonNode> e : node.properties()) {
             val.put(e.getKey(), e
                     .getValue()
                     .textValue());

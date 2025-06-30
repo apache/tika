@@ -31,7 +31,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
+import org.apache.solr.client.solrj.impl.Http2SolrClient;
 import org.apache.solr.common.SolrInputDocument;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -143,8 +143,7 @@ public abstract class TikaPipesSolrTestBase {
 
         solr.execInContainer("/opt/solr/bin/solr", "create_collection", "-c", collection);
 
-        try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
-                .build()) {
+        try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
 
             addBasicSchemaFields(solrEndpoint + "/" + collection);
             addSchemaFieldsForNestedDocs(solrEndpoint + "/" + collection);
@@ -214,8 +213,7 @@ public abstract class TikaPipesSolrTestBase {
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
         TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
 
-        try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
-                .build()) {
+        try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
             solrClient.commit(collection, true, true);
             assertEquals(numDocs, solrClient.query(collection,
                             new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\"")).getResults()
@@ -249,8 +247,7 @@ public abstract class TikaPipesSolrTestBase {
 
         TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
 
-        try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
-                .build()) {
+        try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
             solrClient.commit(collection, true, true);
             assertEquals(numDocs, solrClient.query(collection,
                             new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\"")).getResults()
