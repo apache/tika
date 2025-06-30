@@ -168,10 +168,16 @@ public abstract class TikaPipesSolrTestBase {
             HttpPost postAddRoot = new HttpPost(solrUrl + "/schema");
             postAddRoot.setHeader("Content-Type", "application/json");
             postAddRoot.setEntity(new StringEntity(
-                    "{\n" + "  \"add-field\":{\n" + "     \"name\":\"path\",\n" +
-                            "     \"type\":\"string\",\n" + "     \"indexed\":true,\n" +
-                            "     \"stored\":true, \n" + "     \"docValues\":false \n" + "  }\n" +
-                            "}"));
+                    """
+                    {
+                      "add-field":{
+                         "name":"path",
+                         "type":"string",
+                         "indexed":true,
+                         "stored":true, 
+                         "docValues":false 
+                      }
+                    }"""));
             CloseableHttpResponse resp = client.execute(postAddRoot);
             assertEquals(200, resp.getStatusLine().getStatusCode());
         }
@@ -182,10 +188,16 @@ public abstract class TikaPipesSolrTestBase {
             HttpPost postAddRoot = new HttpPost(solrUrl + "/schema");
             postAddRoot.setHeader("Content-Type", "application/json");
             postAddRoot.setEntity(new StringEntity(
-                    "{\n" + "  \"replace-field\":{\n" + "     \"name\":\"_root_\",\n" +
-                            "     \"type\":\"string\",\n" + "     \"indexed\":true,\n" +
-                            "     \"stored\":true, \n" + "     \"docValues\":false \n" + "  }\n" +
-                            "}"));
+                    """
+                    {
+                      "replace-field":{
+                         "name":"_root_",
+                         "type":"string",
+                         "indexed":true,
+                         "stored":true, 
+                         "docValues":false 
+                      }
+                    }"""));
             CloseableHttpResponse resp = client.execute(postAddRoot);
             assertEquals(200, resp.getStatusLine().getStatusCode());
         }
