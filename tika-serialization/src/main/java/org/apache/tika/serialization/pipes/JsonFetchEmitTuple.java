@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 
@@ -97,15 +96,11 @@ public class JsonFetchEmitTuple {
             return new Metadata();
         }
         Metadata metadata = new Metadata();
-        Iterator<Map.Entry<String, JsonNode>> it = metadataNode.fields();
-        while (it.hasNext()) {
-            Map.Entry<String, JsonNode> e = it.next();
+        for (Map.Entry<String, JsonNode> e : metadataNode.properties()) {
             JsonNode vals = e.getValue();
             String k = e.getKey();
             if (vals.isArray()) {
-                Iterator<JsonNode> arrIt = vals.iterator();
-                while (arrIt.hasNext()) {
-                    JsonNode arrVal = arrIt.next();
+                for (JsonNode arrVal : vals) {
                     metadata.add(k, arrVal.textValue());
                 }
             } else {

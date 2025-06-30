@@ -19,7 +19,6 @@ package org.apache.tika.serialization;
 import static org.apache.tika.serialization.ParseContextSerializer.PARSE_CONTEXT;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JacksonException;
@@ -48,9 +47,7 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             contextNode = jsonNode;
         }
         ParseContext parseContext = new ParseContext();
-        Iterator<Map.Entry<String, JsonNode>> it = contextNode.fields();
-        while (it.hasNext()) {
-            Map.Entry<String, JsonNode> e = it.next();
+        for (Map.Entry<String, JsonNode> e : contextNode.properties()) {
             String superClassName = e.getKey();
             JsonNode obj = e.getValue();
             String className = readVal(TikaJsonSerializer.INSTANTIATED_CLASS_KEY, obj, null, true);
