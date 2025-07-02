@@ -427,7 +427,7 @@ public class ExternalEmbedder implements Embedder {
                 } catch (InterruptedException ignore) {
                 }
                 // The command is finished, read the output file into the given output stream
-                InputStream tempOutputFileInputStream = TikaInputStream.get(tempOutputFile);
+                InputStream tempOutputFileInputStream = TikaInputStream.get(tempOutputFile.toPath());
                 IOUtils.copy(tempOutputFileInputStream, outputStream);
             }
         } finally {
