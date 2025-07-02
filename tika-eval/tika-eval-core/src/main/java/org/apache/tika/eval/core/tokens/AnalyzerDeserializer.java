@@ -21,15 +21,11 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.TokenFilterFactory;
 import org.apache.lucene.analysis.custom.CustomAnalyzer;
 import org.apache.lucene.util.ClasspathResourceLoader;
 
@@ -53,9 +49,7 @@ class AnalyzerDeserializer {
             throw new IllegalArgumentException(
                     "root object must be object with an 'analyzers' element");
         }
-        for (Iterator<Map.Entry<String, JsonNode>> it = root.get(ANALYZERS).fields();
-                it.hasNext(); ) {
-            Map.Entry<String, JsonNode> e = it.next();
+        for (Map.Entry<String, JsonNode> e : root.get(ANALYZERS).properties()) {
             String analyzerName = e.getKey();
             Analyzer analyzer = buildAnalyzer(analyzerName, e.getValue(), maxTokens);
             analyzers.put(analyzerName, analyzer);
@@ -72,8 +66,7 @@ class AnalyzerDeserializer {
 
         CustomAnalyzer.Builder builder =
                 CustomAnalyzer.builder(new ClasspathResourceLoader(AnalyzerDeserializer.class));
-        for (Iterator<Map.Entry<String, JsonNode>> it = node.fields(); it.hasNext(); ) {
-            Map.Entry<String, JsonNode> e = it.next();
+        for (Map.Entry<String, JsonNode> e : node.properties()) {
             String k = e.getKey();
             if (k.equals(CHAR_FILTERS)) {
                 buildCharFilters(e.getValue(), analyzerName, builder);
@@ -123,8 +116,7 @@ class AnalyzerDeserializer {
                             analyzerName);
         }
 
-        for (Iterator<JsonNode> it = el.elements(); it.hasNext(); ) {
-            JsonNode filterMap = it.next();
+        for (JsonNode filterMap : el) {
             if (!filterMap.isObject()) {
                 throw new IllegalArgumentException(
                         "Expecting a map with \"factory\" string and \"params\" map in char filter factory;" +
@@ -157,9 +149,7 @@ class AnalyzerDeserializer {
                             analyzerName);
         }
 
-        List<TokenFilterFactory> ret = new LinkedList<>();
-        for (Iterator<JsonNode> it = el.elements(); it.hasNext(); ) {
-            JsonNode filterMap = it.next();
+        for (JsonNode filterMap : el) {
             if (!filterMap.isObject()) {
                 throw new IllegalArgumentException(
                         "Expecting a map with \"factory\" string and \"params\" map in token filter factory;" +
@@ -194,8 +184,7 @@ class AnalyzerDeserializer {
             throw new IllegalArgumentException("Expecting map, not: " + paramsEl.toString());
         }
         Map<String, String> params = new HashMap<>();
-        for (Iterator<Map.Entry<String, JsonNode>> it = paramsEl.fields(); it.hasNext(); ) {
-            Map.Entry<String, JsonNode> e = it.next();
+        for (Map.Entry<String, JsonNode> e : paramsEl.properties()) {
             JsonNode value = e.getValue();
             if (value.isObject() || value.isArray() || value.isNull()) {
                 throw new IllegalArgumentException(
