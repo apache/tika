@@ -312,14 +312,14 @@
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.53.2</google.cloud.version>
     <aws.version>1.12.787</aws.version>
-    <aws2.version>2.31.73</aws2.version>
+    <aws2.version>2.31.75</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
     <asm.version>9.8</asm.version>
-    <azure.core.version>1.55.4</azure.core.version>
-    <azure.core.http.netty.version>1.15.12</azure.core.http.netty.version>
+    <azure.core.version>1.55.5</azure.core.version>
+    <azure.core.http.netty.version>1.15.13</azure.core.http.netty.version>
     <azure.storage.blob.version>12.31.0-beta.1</azure.storage.blob.version>
     <azure.storage.common>12.30.0-beta.1</azure.storage.common>
     <azure-identity.version>1.16.2</azure-identity.version>
@@ -455,7 +455,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.3</zookeeper.version>
     <zstd.version>1.5.7-3</zstd.version>
-    <nimbus-jose-jwt.version>10.3</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>10.3.1</nimbus-jose-jwt.version>
     <javacpp.version>1.5.11</javacpp.version>
 
     <!-- needs to exist even if empty due to problems with jacoco-maven-plugin -->
