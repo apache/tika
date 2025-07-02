@@ -180,4 +180,9 @@ public interface Office {
     Property NUM_HIDDEN_SLIDES = Property.internalInteger("msoffice:ppt:num-hidden-slides");
 
     Property HAS_ANIMATIONS = Property.internalBoolean("msoffice:ppt:has-animations");
+
+    //w:vanish or isVanish or isFldVanish
+    Property HAS_HIDDEN_TEXT = Property.internalBoolean("msoffice:doc:has-hidden-text");
+
+    Property HAS_TRACK_CHANGES = Property.internalBoolean("msoffice:has-track-changes");
 }

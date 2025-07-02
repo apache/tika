@@ -130,6 +130,9 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         return new MetadataExtractor(extractor);
     }
 
+    ParseContext getParseContext() {
+        return context;
+    }
     /**
      * @see
      * org.apache.tika.parser.microsoft.ooxml.OOXMLExtractor#getXHTML(ContentHandler, Metadata,
