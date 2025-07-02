@@ -55,10 +55,13 @@ import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
+import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.metadata.XMP;
+import org.apache.tika.metadata.XMPDC;
 import org.apache.tika.metadata.XMPMM;
+import org.apache.tika.metadata.XMPPDF;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
@@ -1471,6 +1474,59 @@ public class PDFParserTest extends TikaTest {
     /**
      * TODO -- need to test signature extraction
      */
+
+    @Test
+    public void testSubjectKeywords() throws Exception {
+        //TIKA-4444
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF-TIKA-4444.pdf");
+        Metadata m = metadataList.get(0);
+
+        assertEquals("xmp-dc-contributor", m.get(TikaCoreProperties.CONTRIBUTOR));
+        assertEquals("xmp-dc-creator", m.get(TikaCoreProperties.CREATOR));
+        assertEquals("xmp-dc-description", m.get(TikaCoreProperties.DESCRIPTION));
+        assertEquals("application/pdf; version=1.3", m.get(TikaCoreProperties.FORMAT));
+        assertEquals("xmp-dc-identifier", m.get(TikaCoreProperties.IDENTIFIER));
+        assertEquals("xmp-dc-language", m.get(TikaCoreProperties.LANGUAGE));
+        assertEquals("xmp-dc-publisher", m.get(TikaCoreProperties.PUBLISHER));
+        assertEquals("xmp-dc-relation", m.get(TikaCoreProperties.RELATION));
+        assertEquals("xmp-dc-rights", m.get(TikaCoreProperties.RIGHTS));
+        assertEquals("xmp-dc-source", m.get(TikaCoreProperties.SOURCE));
+        assertEquals("xmp-dc-title", m.get(TikaCoreProperties.TITLE));
+        assertEquals("xmp-dc-type", m.get(TikaCoreProperties.TYPE));
+        assertEquals("pdf-author", m.get(PDF.DOC_INFO_CREATOR));
+        assertEquals("pdf-creator", m.get(PDF.DOC_INFO_CREATOR_TOOL));
+        assertEquals("pdf-keywords", m.get(PDF.DOC_INFO_KEY_WORDS));
+        assertEquals("2025-06-24T10:27:36Z", m.get(PDF.DOC_INFO_MODIFICATION_DATE));
+        assertEquals("pypdf-5.6.1", m.get(PDF.DOC_INFO_PRODUCER));
+        assertEquals("pdf-subject", m.get(PDF.DOC_INFO_SUBJECT));
+        assertEquals("pdf-title", m.get(PDF.DOC_INFO_TITLE));
+        assertEquals("2025-02-16T17:03:17Z", m.get(XMP.CREATE_DATE));
+        assertEquals("xmp-xmp-creator-tool", m.get(XMP.CREATOR_TOOL));
+        assertEquals("2025-02-16T17:03:17Z", m.get(XMP.METADATA_DATE));
+        assertEquals("2025-02-16T17:03:17Z", m.get(XMP.MODIFY_DATE));
+        assertEquals("xmp-dc-contributor", m.get(XMPDC.CONTRIBUTOR));
+        assertEquals("xmp-dc-creator", m.get(XMPDC.CREATOR));
+        assertEquals("xmp-dc-description", m.get(XMPDC.DESCRIPTION));
+        assertEquals("xmp-dc-identifier", m.get(XMPDC.IDENTIFIER));
+        assertEquals("xmp-dc-language", m.get(XMPDC.LANGUAGE));
+        assertEquals("xmp-dc-publisher", m.get(XMPDC.PUBLISHER));
+        assertEquals("xmp-dc-relation", m.get(XMPDC.RELATION));
+        assertEquals("xmp-dc-rights", m.get(XMPDC.RIGHTS));
+        assertEquals("xmp-dc-source", m.get(XMPDC.SOURCE));
+        assertEquals("xmp-dc-subject", m.get(XMPDC.SUBJECT));
+        assertEquals("xmp-dc-title", m.get(XMPDC.TITLE));
+        assertEquals("xmp-dc-type", m.get(XMPDC.TYPE));
+        assertEquals("xmp-pdf-keywords", m.get(XMPPDF.KEY_WORDS));
+        assertEquals("xmp-pdf-version", m.get(XMPPDF.PDF_VERSION));
+        assertEquals("xmp-pdf-producer", m.get(XMPPDF.PRODUCER));
+        assertEquals("xmp-xmpmm-documentid", m.get(XMPMM.DOCUMENTID));
+        assertEquals("13", m.get(PagedText.N_PAGES));
+
+        String[] expectedSubjectVals = new String[]{
+                "xmp-pdf-keywords", "xmp-dc-subject", "pdf-keywords", "pdf-subject"
+        };
+        assertArrayEquals(expectedSubjectVals, m.getValues(TikaCoreProperties.SUBJECT));
+    }
 
     /**
     @Test
