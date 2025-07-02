@@ -146,6 +146,7 @@ public class ExternalEmbedder implements Embedder {
         }
     }
 
+    @Override
     public Set<MediaType> getSupportedEmbedTypes(ParseContext context) {
         return getSupportedEmbedTypes();
     }
@@ -330,6 +331,7 @@ public class ExternalEmbedder implements Embedder {
      * Metadata is only extracted if {@link #setMetadataCommandArguments(Map)}
      * has been called to set arguments.
      */
+    @Override
     public void embed(final Metadata metadata, final InputStream inputStream,
                       final OutputStream outputStream, final ParseContext context)
             throws IOException, TikaException {
@@ -399,9 +401,9 @@ public class ExternalEmbedder implements Embedder {
         // Execute
         Process process;
         if (cmd.toArray().length == 1) {
-            process = Runtime.getRuntime().exec(cmd.toArray(new String[]{})[0]);
+            process = Runtime.getRuntime().exec(cmd.toArray(String[]::new)[0]);
         } else {
-            process = Runtime.getRuntime().exec(cmd.toArray(new String[]{}));
+            process = Runtime.getRuntime().exec(cmd.toArray(String[]::new));
         }
 
         UnsynchronizedByteArrayOutputStream stdErrOutputStream = UnsynchronizedByteArrayOutputStream.builder().get();

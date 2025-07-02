@@ -55,6 +55,7 @@ import org.apache.tika.sax.ContentHandlerFactory;
  *
  * @deprecated Currently not suitable for real use, more a demo / prototype!
  */
+@Deprecated
 public class PickBestTextEncodingParser extends AbstractMultipleParser {
     /**
      * Serial version UID.

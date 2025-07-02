@@ -69,11 +69,13 @@ public class ParserContainerExtractor implements ContainerExtractor {
         this.detector = detector;
     }
 
+    @Override
     public boolean isSupported(TikaInputStream input) throws IOException {
         MediaType type = detector.detect(input, new Metadata());
         return parser.getSupportedTypes(new ParseContext()).contains(type);
     }
 
+    @Override
     public void extract(
             TikaInputStream stream, ContainerExtractor recurseExtractor,
             EmbeddedResourceHandler handler)
@@ -101,10 +103,12 @@ public class ParserContainerExtractor implements ContainerExtractor {
             this.handler = handler;
         }
 
+        @Override
         public Set<MediaType> getSupportedTypes(ParseContext context) {
             return parser.getSupportedTypes(context);
         }
 
+        @Override
         public void parse(
                 InputStream stream, ContentHandler ignored,
                 Metadata metadata, ParseContext context)
@@ -125,7 +129,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
                     File file = tis.getFile();
 
                     // Let the handler process the embedded resource
-                    try (InputStream input = TikaInputStream.get(file)) {
+                    try (InputStream input = TikaInputStream.get(file.toPath())) {
                         handler.handle(filename, type, input);
                     }
 
