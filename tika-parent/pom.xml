@@ -1168,6 +1168,11 @@
         <artifactId>maven-deploy-plugin</artifactId>
         <version>3.1.4</version>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.6.0</version>
+      </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -1374,7 +1379,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.6.0</version>
         <executions>
           <execution>
             <id>enforce-maven</id>
