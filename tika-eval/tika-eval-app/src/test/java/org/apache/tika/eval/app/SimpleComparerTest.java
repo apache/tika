@@ -344,6 +344,47 @@ public class SimpleComparerTest extends TikaTest {
         }
     }
 
+
+    @Test
+    public void testDigestMatching() throws Exception {
+        Path p1 = Paths.get(getResourceAsFile("/extracts/TIKA-4446-a.json").toURI());
+        Path p2 = Paths.get(getResourceAsFile("/extracts/TIKA-4446-b.json").toURI());
+
+        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file1.pdf.json"), p1);
+        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file2.pdf.json"), p2);
+        comparer.compareFiles(fpsA, fpsB);
+        Map<Integer, String> mA = new HashMap<>();
+        Map<Integer, String> mB = new HashMap<>();
+        loadEmbeddedNames(ExtractComparer.PROFILES_A, mA);
+        loadEmbeddedNames(ExtractComparer.PROFILES_B, mB);
+        for (int i : mA.keySet()) {
+            String nA = mA.get(i);
+            String nB = mB.get(i);
+            assertEquals(nA, nB);
+        }
+        for (int i : mB.keySet()) {
+            String nA = mA.get(i);
+            String nB = mB.get(i);
+            assertEquals(nA, nB);
+        }
+    }
+
+    private void loadEmbeddedNames(TableInfo t, Map<Integer, String> m) {
+        for (Map<Cols, String> row : WRITER.getTable(t)) {
+            SortedSet<Cols> keys = new TreeSet<>(row.keySet());
+            int id = -1;
+            String embeddedName = "";
+            for (Cols key : keys) {
+                if (key.name().equals("ID")) {
+                    id = Integer.parseInt(row.get(key));
+                } else if (key.name().equals("EMBEDDED_FILE_PATH")) {
+                    embeddedName = row.get(key);
+                }
+            }
+            m.put(id, embeddedName);
+        }
+    }
+
     @Test
     @Disabled("useful for testing 2 files not in test set")
     public void oneOff() throws Exception {
