@@ -312,7 +312,7 @@
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.53.2</google.cloud.version>
     <aws.version>1.12.787</aws.version>
-    <aws2.version>2.31.75</aws2.version>
+    <aws2.version>2.31.76</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -417,7 +417,7 @@
     <mockito-junit-jupiter.version>5.18.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.2.Final</netty.version>
-    <oak.jackrabbit.version>1.80</oak.jackrabbit.version>
+    <oak.jackrabbit.version>1.82.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.4</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
@@ -1374,7 +1374,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.5.0</version>
+        <version>3.6.0</version>
         <executions>
           <execution>
             <id>enforce-maven</id>
