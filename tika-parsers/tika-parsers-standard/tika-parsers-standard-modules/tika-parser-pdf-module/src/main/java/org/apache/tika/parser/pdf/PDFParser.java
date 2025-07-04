@@ -368,21 +368,16 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
             if (signature == null) {
                 continue;
             }
-            PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_NAME, signature.getName(),
-                    metadata);
+            PDMetadataExtractor.addNotNull(signature.getName(), metadata, TikaCoreProperties.SIGNATURE_NAME);
 
             Calendar date = signature.getSignDate();
             if (date != null) {
                 metadata.add(TikaCoreProperties.SIGNATURE_DATE, date);
             }
-            PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_CONTACT_INFO,
-                    signature.getContactInfo(), metadata);
-            PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_FILTER,
-                    signature.getFilter(), metadata);
-            PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_LOCATION,
-                    signature.getLocation(), metadata);
-            PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_REASON,
-                    signature.getReason(), metadata);
+            PDMetadataExtractor.addNotNull(signature.getContactInfo(), metadata, TikaCoreProperties.SIGNATURE_CONTACT_INFO);
+            PDMetadataExtractor.addNotNull(signature.getFilter(), metadata, TikaCoreProperties.SIGNATURE_FILTER);
+            PDMetadataExtractor.addNotNull(signature.getLocation(), metadata, TikaCoreProperties.SIGNATURE_LOCATION);
+            PDMetadataExtractor.addNotNull(signature.getReason(), metadata, TikaCoreProperties.SIGNATURE_REASON);
             hasSignature = true;
 
         }

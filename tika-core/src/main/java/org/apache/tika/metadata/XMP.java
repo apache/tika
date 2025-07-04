@@ -16,6 +16,9 @@
  */
 package org.apache.tika.metadata;
 
+/**
+ * Metadata keys for the XMP Basic Schema
+ */
 public interface XMP {
 
     String NAMESPACE_URI = "http://ns.adobe.com/xap/1.0/";
@@ -86,4 +89,9 @@ public interface XMP {
      */
     Property RATING = Property.externalInteger(PREFIX_ + "Rating");
 
+    /**
+     * This doesn't belong to the XMP Basic schema. However, because it is part of
+     * JempBox's XMPBasicSchema, we include this here.
+     */
+    Property TITLE = Property.externalText(PREFIX_ + "Title");
 }
