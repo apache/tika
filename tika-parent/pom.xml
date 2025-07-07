@@ -455,7 +455,7 @@
     <zstd.version>1.5.7-4</zstd.version>
     <nimbus-jose-jwt.version>10.3.1</nimbus-jose-jwt.version>
     <logback.version>1.5.18</logback.version>
-    <javacpp.version>1.5.11</javacpp.version>
+    <javacpp.version>1.5.12</javacpp.version>
     <maven.site.version>3.21.0</maven.site.version>
     <maven.exec.version>3.5.1</maven.exec.version>
   </properties>
