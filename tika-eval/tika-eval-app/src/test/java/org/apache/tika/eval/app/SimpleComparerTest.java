@@ -56,7 +56,7 @@ public class SimpleComparerTest extends TikaTest {
     @BeforeAll
     public static void staticSetUp() throws Exception {
         WRITER = new MockDBWriter();
-        AbstractProfiler.loadCommonTokens(Paths.get(SimpleComparerTest.class
+        ProfilerBase.loadCommonTokens(Paths.get(SimpleComparerTest.class
                 .getResource("/common_tokens")
                 .toURI()), "en");
     }
@@ -64,7 +64,7 @@ public class SimpleComparerTest extends TikaTest {
     @BeforeEach
     public void setUp() throws Exception {
         WRITER.clear();
-        comparer = new ExtractComparer(null, null, Paths.get("extractsA"), Paths.get("extractsB"),
+        comparer = new ExtractComparer(null, Paths.get("extractsA"), Paths.get("extractsB"),
                 new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS, IGNORE_LENGTH, IGNORE_LENGTH), WRITER);
     }
 
