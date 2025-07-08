@@ -34,7 +34,7 @@ import org.apache.tika.batch.fs.FSBatchProcessCLI;
 import org.apache.tika.eval.app.reports.ResultsReporter;
 
 public class TikaEvalCLI {
-    static final String[] tools = {"Profile", "FileProfile", "Compare", "Report", "StartDB"};
+    static final String[] tools = {"Profile", "Compare", "Report", "StartDB"};
 
     private static String specifyTools() {
         StringBuilder sb = new StringBuilder();
@@ -74,69 +74,10 @@ public class TikaEvalCLI {
             case "StartDB":
                 handleStartDB(subsetArgs);
                 break;
-            case "FileProfile":
-                handleProfileFiles(subsetArgs);
-                break;
+
             default:
                 System.out.println(specifyTools());
                 break;
-        }
-    }
-
-    private void handleProfileFiles(String[] subsetArgs) throws Exception {
-        List<String> argList = new ArrayList<>(Arrays.asList(subsetArgs));
-
-        boolean containsBC = false;
-        String inputDir = null;
-        //confirm there's a batch-config file
-        for (String arg : argList) {
-            if (arg.equals("-bc")) {
-                containsBC = true;
-                break;
-            }
-        }
-
-        Path tmpBCConfig = null;
-        try {
-            tmpBCConfig = Files.createTempFile("tika-eval-profiler", ".xml");
-            if (!containsBC) {
-                try (InputStream is = this
-                        .getClass()
-                        .getResourceAsStream("/tika-eval-file-profiler-config.xml")) {
-                    Files.copy(is, tmpBCConfig, StandardCopyOption.REPLACE_EXISTING);
-                }
-                argList.add("-bc");
-                argList.add(tmpBCConfig
-                        .toAbsolutePath()
-                        .toString());
-            }
-
-            String[] updatedArgs = argList.toArray(new String[0]);
-            DefaultParser defaultCLIParser = new DefaultParser();
-            try {
-                CommandLine commandLine = defaultCLIParser.parse(FileProfiler.OPTIONS, updatedArgs);
-                if (commandLine.hasOption("db") && commandLine.hasOption("jdbc")) {
-                    System.out.println("Please specify either the default -db or the full -jdbc, not both");
-                    FileProfiler.USAGE();
-                    return;
-                }
-            } catch (ParseException e) {
-                System.out.println(e.getMessage() + "\n");
-                FileProfiler.USAGE();
-                return;
-            }
-
-            // lazy delete because main() calls System.exit()
-            if (tmpBCConfig != null && Files.isRegularFile(tmpBCConfig)) {
-                tmpBCConfig
-                        .toFile()
-                        .deleteOnExit();
-            }
-            FSBatchProcessCLI.main(updatedArgs);
-        } finally {
-            if (tmpBCConfig != null && Files.isRegularFile(tmpBCConfig)) {
-                Files.delete(tmpBCConfig);
-            }
         }
     }
 
