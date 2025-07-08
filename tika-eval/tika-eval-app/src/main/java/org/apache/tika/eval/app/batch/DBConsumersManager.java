@@ -26,7 +26,6 @@ import java.util.List;
 import org.apache.tika.batch.ConsumersManager;
 import org.apache.tika.batch.FileResourceConsumer;
 import org.apache.tika.eval.app.AbstractProfiler;
-import org.apache.tika.eval.app.XMLErrorLogUpdater;
 import org.apache.tika.eval.app.db.JDBCUtil;
 import org.apache.tika.eval.app.db.MimeBuffer;
 import org.apache.tika.eval.app.db.TableInfo;
@@ -62,17 +61,6 @@ public class DBConsumersManager extends ConsumersManager {
             mimeBuffer.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }
-
-        //MUST HAPPEN AFTER consumers have closed and
-        //committed container information!!!
-        XMLErrorLogUpdater up = new XMLErrorLogUpdater();
-        for (LogTablePair p : errorLogs) {
-            try {
-                up.update(conn, p.tableInfo, p.log);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
         }
 
 
