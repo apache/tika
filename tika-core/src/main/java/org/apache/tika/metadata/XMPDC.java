@@ -17,26 +17,17 @@
 package org.apache.tika.metadata;
 
 /**
- * A collection of Dublin Core metadata names.
- *
- * @see <a href="http://dublincore.org">dublincore.org</a>
- *
+ * Metadata keys for the XMP DublinCore schema. This differs from {@link DublinCore} in
+ * that this data must derive strictly from XMP. Tika applies logic to normalize
+ * metadata keys and values into {@link DublinCore}. This process can make it difficult to determine
+ * if the underlying metadata derived from a literal XMP component or from another source within the file.
  * <p>
- * These keys are intended to be a unifying normalization of information
- * within a file. For some formats, like PDF, where there may be conflicting
- * information in different parts of the file (xmp vs. docinfo) for the
- * same metadata key, we do what we can, and these keys represent a
- * normalization of metadata values within a file.
- * <p>
- * For Dublin Core information that derives specifically and only from
- * XMP, see {@link XMPDC}.
+ * See <a href="https://issues.apache.org/jira/browse/TIKA-4444">TIKA-4444</a>.
  */
-public interface DublinCore {
+public interface XMPDC {
 
-    String NAMESPACE_URI_DC = "http://purl.org/dc/elements/1.1/";
-    String NAMESPACE_URI_DC_TERMS = "http://purl.org/dc/terms/";
-    String PREFIX_DC = "dc";
-    String PREFIX_DC_TERMS = "dcterms";
+    String PREFIX_DC = "xmp" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "dc";
+    String PREFIX_DC_TERMS = "xmp" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "dcterms";
 
     /**
      * Typically, Format may include the media-type or dimensions of the
