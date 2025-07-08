@@ -86,6 +86,7 @@ public class ExtractProfiler extends ProfilerBase {
     }
 
 
+    @Override
     public boolean processFileResource(FileResource fileResource) {
         Metadata metadata = fileResource.getMetadata();
         EvalFilePaths fps = null;

@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.batch.fs.FSProperties;
+import org.apache.tika.eval.app.batch.FileResource;
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
@@ -795,6 +796,8 @@ public abstract class ProfilerBase {
         }
         return NON_EXISTENT_FILE_LENGTH;
     }
+
+    public abstract boolean processFileResource(FileResource fileResource);
 
     public enum EXCEPTION_TYPE {
         RUNTIME, ENCRYPTION, ACCESS_PERMISSION, UNSUPPORTED_VERSION,

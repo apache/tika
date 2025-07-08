@@ -24,15 +24,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.io.FilenameUtils;
 
-import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.fs.FSProperties;
+import org.apache.tika.eval.app.batch.FileResource;
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
@@ -48,7 +46,7 @@ import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
-public class ExtractComparer extends AbstractProfiler {
+public class ExtractComparer extends ProfilerBase {
 
     private static final String DIGEST_KEY_PREFIX = TikaCoreProperties.TIKA_META_PREFIX + "digest" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     private final static String FIELD_A = "fa";
@@ -76,40 +74,8 @@ public class ExtractComparer extends AbstractProfiler {
     public static TableInfo EXTRACT_EXCEPTION_TABLE_B = new TableInfo("extract_exceptions_b", ExtractProfiler.EXTRACT_EXCEPTION_TABLE.getColInfos());
     static Options OPTIONS;
 
-    static {
-        Option extractsA = new Option("extractsA", true, "directory for extractsA files");
-        extractsA.setRequired(true);
-
-        Option extractsB = new Option("extractsB", true, "directory for extractsB files");
-        extractsB.setRequired(true);
-
-        Option inputDir = new Option("inputDir", true,
-                "optional: directory of original binary input files if it exists " + "or can be the same as -extractsA or -extractsB. If not specified, -inputDir=-extractsA");
 
 
-        OPTIONS = new Options()
-                .addOption(extractsA)
-                .addOption(extractsB)
-                .addOption(inputDir)
-                .addOption("bc", "optional: tika-batch config file")
-                .addOption("numConsumers", true, "optional: number of consumer threads")
-                .addOption(new Option("alterExtract", true,
-                        "for json-formatted extract files, " + "process full metadata list ('as_is'=default), " + "take just the first/container document ('first_only'), " +
-                                "concatenate all content into the first metadata item ('concatenate_content')"))
-                .addOption("minExtractLength", true, "minimum extract length to process (in bytes)")
-                .addOption("maxExtractLength", true, "maximum extract length to process (in bytes)")
-                .addOption("db", true, "db file to which to write results")
-                .addOption("jdbc", true, "EXPERT: full jdbc connection string. Must specify this or -db <h2db>")
-                .addOption("jdbcDriver", true, "EXPERT: jdbc driver, or specify via -Djdbc.driver")
-                .addOption("tablePrefixA", true, "EXPERT: optional prefix for table names for A")
-                .addOption("tablePrefixB", true, "EXPERT: optional prefix for table names for B")
-                .addOption("drop", false, "drop tables if they exist")
-                .addOption("maxFilesToAdd", true, "maximum number of files to add to the crawler")
-                .addOption("maxTokens", true, "maximum tokens to process, default=200000")
-                .addOption("maxContentLength", true, "truncate content beyond this length for calculating 'contents' stats, default=1000000")
-                .addOption("maxContentLengthForLangId", true, "truncate content beyond this length for language id, default=50000")
-                .addOption("defaultLangCode", true, "which language to use for common words if no 'common words' " + "file exists for the langid result");
-    }
 
     //need to parameterize?
     private final Path inputDir;
@@ -118,8 +84,8 @@ public class ExtractComparer extends AbstractProfiler {
     private final TokenContraster tokenContraster = new TokenContraster();
     private final ExtractReader extractReader;
 
-    public ExtractComparer(ArrayBlockingQueue<FileResource> queue, Path inputDir, Path extractsA, Path extractsB, ExtractReader extractReader, IDBWriter writer) {
-        super(queue, writer);
+    public ExtractComparer(Path inputDir, Path extractsA, Path extractsB, ExtractReader extractReader, IDBWriter writer) {
+        super(writer);
         this.inputDir = inputDir;
         this.extractsA = extractsA;
         this.extractsB = extractsB;
