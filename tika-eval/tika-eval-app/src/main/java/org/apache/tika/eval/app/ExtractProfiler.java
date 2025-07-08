@@ -22,13 +22,10 @@ import java.sql.Types;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
-import org.apache.tika.batch.FileResource;
+import org.apache.tika.eval.app.batch.FileResource;
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
@@ -39,7 +36,7 @@ import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
-public class ExtractProfiler extends AbstractProfiler {
+public class ExtractProfiler extends ProfilerBase {
 
     private final static String FIELD = "f";
     public static TableInfo EXTRACT_EXCEPTION_TABLE =
@@ -76,56 +73,19 @@ public class ExtractProfiler extends AbstractProfiler {
                     new ColInfo(Cols.TAGS_PARSE_EXCEPTION, Types.BOOLEAN));
     static Options OPTIONS;
 
-    static {
-        //By the time this commandline is parsed, there should be both an extracts and an inputDir
-        Option extracts = new Option("extracts", true, "directory for extract files");
-        extracts.setRequired(true);
-
-        Option inputDir = new Option("inputDir", true, "optional: directory for original binary input documents." + " If not specified, -extracts is crawled as is.");
-
-        OPTIONS = new Options()
-                .addOption(extracts)
-                .addOption(inputDir)
-                .addOption("bc", "optional: tika-batch config file")
-                .addOption("numConsumers", true, "optional: number of consumer threads")
-                .addOption(new Option("alterExtract", true,
-                        "for json-formatted extract files, " + "process full metadata list ('as_is'=default), " + "take just the first/container document ('first_only'), " +
-                                "concatenate all content into the first metadata item ('concatenate_content')"))
-                .addOption("minExtractLength", true, "minimum extract length to process (in bytes)")
-                .addOption("maxExtractLength", true, "maximum extract length to process (in bytes)")
-                .addOption("db", true, "db file to which to write results")
-                .addOption("jdbc", true, "EXPERT: full jdbc connection string. Must specify this or -db <h2db>")
-                .addOption("jdbcDriver", true, "EXPERT: jdbc driver, or specify via -Djdbc.driver")
-                .addOption("tablePrefix", true, "EXPERT: optional prefix for table names")
-                .addOption("drop", false, "drop tables if they exist")
-                .addOption("maxFilesToAdd", true, "maximum number of files to add to the crawler")
-                .addOption("maxTokens", true, "maximum tokens to process, default=200000")
-                .addOption("maxContentLength", true, "truncate content beyond this length for calculating 'contents' stats, default=1000000")
-                .addOption("maxContentLengthForLangId", true, "truncate content beyond this length for language id, default=50000")
-                .addOption("defaultLangCode", true, "which language to use for common words if no 'common words' file exists for the langid result")
-
-        ;
-
-    }
-
     private final Path inputDir;
     private final Path extracts;
     private final ExtractReader extractReader;
 
-    public ExtractProfiler(ArrayBlockingQueue<FileResource> queue, Path inputDir, Path extracts, ExtractReader extractReader, IDBWriter dbWriter) {
-        super(queue, dbWriter);
+
+    ExtractProfiler(Path inputDir, Path extracts, ExtractReader extractReader, IDBWriter dbWriter) {
+        super(dbWriter);
         this.inputDir = inputDir;
         this.extracts = extracts;
         this.extractReader = extractReader;
     }
 
-    public static void USAGE() {
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp(80, "java -jar tika-eval-x.y.jar Profile -extracts extracts -db mydb [-inputDir input]", "Tool: Profile", ExtractProfiler.OPTIONS,
-                "Note: for the default h2 db, do not include the .mv.db at the end of the db name.");
-    }
 
-    @Override
     public boolean processFileResource(FileResource fileResource) {
         Metadata metadata = fileResource.getMetadata();
         EvalFilePaths fps = null;

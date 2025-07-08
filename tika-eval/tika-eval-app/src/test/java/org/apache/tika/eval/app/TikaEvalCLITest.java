@@ -98,20 +98,13 @@ public class TikaEvalCLITest extends TikaTest {
     private static void profile() throws IOException {
         List<String> args = new ArrayList<>();
         args.add("Profile");
-        args.add("-extracts");
+        args.add("-e");
         args.add(ProcessUtils.escapeCommandLine(extractsDir
                 .resolve("extractsA")
                 .toAbsolutePath()
                 .toString()));
-        //add these just to confirm this info doesn't cause problems w cli
-        args.add("-maxTokens");
-        args.add("10000000");
-        args.add("-maxContentLength");
-        args.add("100000000");
-        args.add("-maxContentLengthForLangId");
-        args.add("100000");
 
-        args.add("-db");
+        args.add("-d");
         args.add(ProcessUtils.escapeCommandLine(profileDBDir
                 .toAbsolutePath()
                 .toString() + "/" + dbName));

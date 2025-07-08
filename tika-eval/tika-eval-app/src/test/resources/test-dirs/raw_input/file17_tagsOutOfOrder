@@ -1,0 +1,41 @@
+[
+  {
+    "Content-Length": "34824",
+    "Content-Type": "application/pdf",
+    "Last-Modified": "2007-09-15T09:02:31Z",
+    "X-Parsed-By": [
+      "org.apache.tika.parser.DefaultParser",
+      "org.apache.tika.parser.pdf.PDFParser"
+    ],
+    "X-TIKA:content_handler": "ToXMLContentHandler",
+    "X-TIKA:content": "\u003chtml xmlns\u003d\"http://www.w3.org/1999/xhtml\"\u003e\n\u003chead\u003e\n\u003cmeta name\u003d\"pdf:PDFVersion\" content\u003d\"1.3\" /\u003e\n\u003cmeta name\u003d\"pdf:docinfo:title\" content\u003d\"Apache Tika - Apache Tika\" /\u003e\n\u003cmeta name\u003d\"xmp:CreatorTool\" content\u003d\"Firefox\" /\u003e\n\u003cmeta name\u003d\"access_permission:modify_annotations\" content\u003d\"true\" /\u003e\n\u003cmeta name\u003d\"access_permission:can_print_degraded\" content\u003d\"true\" /\u003e\n\u003cmeta name\u003d\"dc:creator\" content\u003d\"Bertrand DelacrΘtaz\" /\u003e\n\u003cmeta name\u003d\"dcterms:created\" content\u003d\"2007-09-15T09:02:31Z\" /\u003e\n\u003cmeta name\u003d\"dcterms:modified\" content\u003d\"2007-09-15T09:02:31Z\" /\u003e\n\u003cmeta name\u003d\"Last-Modified\" content\u003d\"2007-09-15T09:02:31Z\" /\u003e\n\u003cmeta name\u003d\"dc:format\" content\u003d\"application/pdf; version\u003d1.3\" /\u003e\n\u003cmeta name\u003d\"pdf:docinfo:creator_tool\" content\u003d\"Firefox\" /\u003e\n\u003cmeta name\u003d\"access_permission:fill_in_form\" content\u003d\"true\" /\u003e\n\u003cmeta name\u003d\"pdf:docinfo:modified\" content\u003d\"2007-09-15T09:02:31Z\" /\u003e\n\u003cmeta name\u003d\"meta:save-date\" content\u003d\"2007-09-15T09:02:31Z\" /\u003e\n\u003cmeta name\u003d\"pdf:encrypted\" content\u003d\"false\" /\u003e\n\u003cmeta name\u003d\"dc:title\" content\u003d\"Apache Tika - Apache Tika\" /\u003e\n\u003cmeta name\u003d\"Content-Length\" content\u003d\"34824\" /\u003e\n\u003cmeta name\u003d\"Content-Type\" content\u003d\"application/pdf\" /\u003e\n\u003cmeta name\u003d\"pdf:docinfo:creator\" content\u003d\"Bertrand DelacrΘtaz\" /\u003e\n\u003cmeta name\u003d\"X-Parsed-By\" content\u003d\"org.apache.tika.parser.DefaultParser\" /\u003e\n\u003cmeta name\u003d\"X-Parsed-By\" content\u003d\"org.apache.tika.parser.pdf.PDFParser\" /\u003e\n\u003cmeta name\u003d\"meta:author\" content\u003d\"Bertrand DelacrΘtaz\" /\u003e\n\u003cmeta name\u003d\"meta:creation-date\" content\u003d\"2007-09-15T09:02:31Z\" /\u003e\n\u003cmeta name\u003d\"access_permission:extract_for_accessibility\" content\u003d\"true\" /\u003e\n\u003cmeta name\u003d\"access_permission:assemble_document\" content\u003d\"true\" /\u003e\n\u003cmeta name\u003d\"xmpTPg:NPages\" content\u003d\"1\" /\u003e\n\u003cmeta name\u003d\"resourceName\" content\u003d\"testPDF.pdf\" /\u003e\n\u003cmeta name\u003d\"access_permission:extract_content\" content\u003d\"true\" /\u003e\n\u003cmeta name\u003d\"access_permission:can_print\" content\u003d\"true\" /\u003e\n\u003cmeta name\u003d\"access_permission:can_modify\" content\u003d\"true\" /\u003e\n\u003cmeta name\u003d\"pdf:docinfo:producer\" content\u003d\"Mac OS X 10.4.10 Quartz PDFContext\" /\u003e\n\u003cmeta name\u003d\"pdf:docinfo:created\" content\u003d\"2007-09-15T09:02:31Z\" /\u003e\n\u003ctitle\u003eApache Tika - Apache Tika\u003c/title\u003e\n\u003c/head\u003e\n\u003cbody\u003e\u003cdiv class\u003d\"page\"\u003e\u003cp /\u003e\n\u003cp\u003eApache Tika - Apache Tika http://incubator.apache.org/tika/\n\u003c/p\u003e\n\u003cp\u003e1 of 1 15.9.2007 11:02\n\u003c/p\u003e\n\u003cp\u003eTika - Content Analysis Toolkit\n\u003c/p\u003e\n\u003cp\u003eApache Tika is a toolkit for detecting and extracting metadata and structured text content \n\u003c/p\u003e\n\u003cp\u003efrom various documents using existing parser libraries. \n\u003c/p\u003e\n\u003cp\u003eApache Tika is an effort undergoing incubation at The Apache Software Foundation (ASF), \n\u003c/p\u003e\n\u003cp\u003esponsored by the Apache Lucene PMC. Incubation is required of all newly accepted projects \n\u003c/p\u003e\n\u003cp\u003euntil a further review indicates that the infrastructure, communications, and decision making \n\u003c/p\u003e\n\u003cp\u003eprocess have stabilized in a manner consistent with other successful ASF projects. While \n\u003c/p\u003e\n\u003cp\u003eincubation \u003cb\u003e\u003ci\u003estatus \u003c/b\u003e\u003c/i\u003eis not necessarily a reflection of the completeness or stability of the code, it \n\u003c/p\u003e\n\u003cp\u003edoes indicate that the project has yet to be fully endorsed by the ASF.\n\u003c/p\u003e\n\u003cp\u003eSee the Apache Tika Incubation Status page for the current incubation status.\n\u003c/p\u003e\n\u003cp\u003eLatest News\n\u003c/p\u003e\n\u003cp\u003eMarch 22nd, 2007: Apache Tika project started\n\u003c/p\u003e\n\u003cp\u003eThe Apache Tika project was formally started when the Tika proposal was accepted by the Apache \n\u003c/p\u003e\n\u003cp\u003eIncubator PMC. \u003c/p\u003e\n\u003cp /\u003e\n\u003c/div\u003e\n\u003c/body\u003e\u003c/html\u003e",
+    "X-TIKA:parse_time_millis": "500",
+    "access_permission:assemble_document": "true",
+    "access_permission:can_modify": "true",
+    "access_permission:can_print": "true",
+    "access_permission:can_print_degraded": "true",
+    "access_permission:extract_content": "true",
+    "access_permission:extract_for_accessibility": "true",
+    "access_permission:fill_in_form": "true",
+    "access_permission:modify_annotations": "true",
+    "dc:creator": "Bertrand DelacrΘtaz",
+    "dc:format": "application/pdf; version\u003d1.3",
+    "dc:title": "Apache Tika - Apache Tika",
+    "dcterms:created": "2007-09-15T09:02:31Z",
+    "dcterms:modified": "2007-09-15T09:02:31Z",
+    "meta:author": "Bertrand DelacrΘtaz",
+    "meta:creation-date": "2007-09-15T09:02:31Z",
+    "meta:save-date": "2007-09-15T09:02:31Z",
+    "pdf:PDFVersion": "1.3",
+    "pdf:docinfo:created": "2007-09-15T09:02:31Z",
+    "pdf:docinfo:creator": "Bertrand DelacrΘtaz",
+    "pdf:docinfo:creator_tool": "Firefox",
+    "pdf:docinfo:modified": "2007-09-15T09:02:31Z",
+    "pdf:docinfo:producer": "Mac OS X 10.4.10 Quartz PDFContext",
+    "pdf:docinfo:title": "Apache Tika - Apache Tika",
+    "pdf:encrypted": "false",
+    "resourceName": "testPDF.pdf",
+    "xmp:CreatorTool": "Firefox",
+    "xmpTPg:NPages": "1"
+  }
+]

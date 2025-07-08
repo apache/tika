@@ -117,7 +117,7 @@ public class TikaEvalCLI {
                 CommandLine commandLine = defaultCLIParser.parse(FileProfiler.OPTIONS, updatedArgs);
                 if (commandLine.hasOption("db") && commandLine.hasOption("jdbc")) {
                     System.out.println("Please specify either the default -db or the full -jdbc, not both");
-                    ExtractProfiler.USAGE();
+                    FileProfiler.USAGE();
                     return;
                 }
             } catch (ParseException e) {
@@ -154,109 +154,7 @@ public class TikaEvalCLI {
     }
 
     private void handleProfile(String[] subsetArgs) throws Exception {
-        List<String> argList = new ArrayList(Arrays.asList(subsetArgs));
-
-        boolean containsBC = false;
-        String inputDir = null;
-        String extracts = null;
-        String alterExtract = null;
-        //confirm there's a batch-config file
-        for (int i = 0; i < argList.size(); i++) {
-            String arg = argList.get(i);
-            switch (arg) {
-                case "-bc":
-                    containsBC = true;
-                    break;
-                case "-inputDir":
-                    if (i + 1 >= argList.size()) {
-                        System.err.println("Must specify directory after -inputDir");
-                        ExtractProfiler.USAGE();
-                        return;
-                    }
-                    inputDir = argList.get(i + 1);
-                    i++;
-                    break;
-                case "-extracts":
-                    if (i + 1 >= argList.size()) {
-                        System.err.println("Must specify directory after -extracts");
-                        ExtractProfiler.USAGE();
-                        return;
-                    }
-                    extracts = argList.get(i + 1);
-                    i++;
-                    break;
-                case "-alterExtract":
-                    if (i + 1 >= argList.size()) {
-                        System.err.println("Must specify type 'as_is', 'first_only' or " + "'concatenate_content' after -alterExtract");
-                        ExtractComparer.USAGE();
-                        return;
-                    }
-                    alterExtract = argList.get(i + 1);
-                    i++;
-                    break;
-            }
-        }
-
-        if (alterExtract != null && !alterExtract.equals("as_is") && !alterExtract.equals("concatenate_content") && !alterExtract.equals("first_only")) {
-            System.out.println("Sorry, I don't understand:" + alterExtract + ". The values must be one of: as_is, first_only, concatenate_content");
-            ExtractProfiler.USAGE();
-            return;
-        }
-
-        //need to specify each in this commandline
-        //if only extracts is passed to tika-batch,
-        //the crawler will see no inputDir and start crawling "input".
-        //this allows the user to specify either extracts or inputDir
-        if (extracts == null && inputDir != null) {
-            argList.add("-extracts");
-            argList.add(inputDir);
-        } else if (inputDir == null && extracts != null) {
-            argList.add("-inputDir");
-            argList.add(extracts);
-        }
-
-        Path tmpBCConfig = null;
-        try {
-            tmpBCConfig = Files.createTempFile("tika-eval-profiler", ".xml");
-            if (!containsBC) {
-                try (InputStream is = this
-                        .getClass()
-                        .getResourceAsStream("/tika-eval-profiler-config.xml")) {
-                    Files.copy(is, tmpBCConfig, StandardCopyOption.REPLACE_EXISTING);
-                }
-                argList.add("-bc");
-                argList.add(tmpBCConfig
-                        .toAbsolutePath()
-                        .toString());
-            }
-
-            String[] updatedArgs = argList.toArray(new String[0]);
-            DefaultParser defaultCLIParser = new DefaultParser();
-            try {
-                CommandLine commandLine = defaultCLIParser.parse(ExtractProfiler.OPTIONS, updatedArgs);
-                if (commandLine.hasOption("db") && commandLine.hasOption("jdbc")) {
-                    System.out.println("Please specify either the default -db or the full -jdbc, not both");
-                    ExtractProfiler.USAGE();
-                    return;
-                }
-            } catch (ParseException e) {
-                System.out.println(e.getMessage() + "\n");
-                ExtractProfiler.USAGE();
-                return;
-            }
-
-            // lazy delete because main() calls System.exit()
-            if (tmpBCConfig != null && Files.isRegularFile(tmpBCConfig)) {
-                tmpBCConfig
-                        .toFile()
-                        .deleteOnExit();
-            }
-            FSBatchProcessCLI.main(updatedArgs);
-        } finally {
-            if (tmpBCConfig != null && Files.isRegularFile(tmpBCConfig)) {
-                Files.delete(tmpBCConfig);
-            }
-        }
+        ExtractProfileRunner.main(subsetArgs);
     }
 
     private void handleCompare(String[] subsetArgs) throws Exception {
