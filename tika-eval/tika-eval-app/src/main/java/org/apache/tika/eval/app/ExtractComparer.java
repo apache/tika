@@ -404,7 +404,6 @@ public class ExtractComparer extends AbstractProfiler {
 
         if (sharedDigestKey != null) {
             //first try to find matching digests
-            //this does not elegantly handle multiple matching digests
             return findMatchingDigests(sharedDigestKey, handledB, metadataListA.get(aIndex), metadataListB);
         }
 
@@ -435,7 +434,7 @@ public class ExtractComparer extends AbstractProfiler {
         if (digestA == null) {
             return -1;
         }
-        String resourceName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        String resourceName = metadata.get(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH);
 
         int cand = -1;
         for (int i = 0; i < metadataListB.size(); i++) {
@@ -446,7 +445,7 @@ public class ExtractComparer extends AbstractProfiler {
             String digestB = mB.get(sharedDigestKey);
             if (digestA.equalsIgnoreCase(digestB)) {
                 cand = i;
-                if (resourceName != null && resourceName.equals(mB.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
+                if (resourceName != null && resourceName.equals(mB.get(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH))) {
                     return i;
                 }
             }

@@ -312,7 +312,7 @@
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.53.2</google.cloud.version>
     <aws.version>1.12.787</aws.version>
-    <aws2.version>2.31.75</aws2.version>
+    <aws2.version>2.31.77</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -399,7 +399,7 @@
     <jsoup.version>1.21.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.13.3</junit5.version>
+    <junit5.version>5.13.2</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.31.1</jwarc.version>
@@ -417,7 +417,7 @@
     <mockito-junit-jupiter.version>5.18.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.2.Final</netty.version>
-    <oak.jackrabbit.version>1.80</oak.jackrabbit.version>
+    <oak.jackrabbit.version>1.82.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.4</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
@@ -454,9 +454,9 @@
     <woodstox.core.version>7.1.1</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.3</zookeeper.version>
-    <zstd.version>1.5.7-3</zstd.version>
+    <zstd.version>1.5.7-4</zstd.version>
     <nimbus-jose-jwt.version>10.3.1</nimbus-jose-jwt.version>
-    <javacpp.version>1.5.11</javacpp.version>
+    <javacpp.version>1.5.12</javacpp.version>
 
     <!-- needs to exist even if empty due to problems with jacoco-maven-plugin -->
     <addmod />
@@ -1168,6 +1168,11 @@
         <artifactId>maven-deploy-plugin</artifactId>
         <version>3.1.4</version>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.6.0</version>
+      </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -1374,7 +1379,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.5.0</version>
         <executions>
           <execution>
             <id>enforce-maven</id>
