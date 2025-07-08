@@ -22,7 +22,6 @@ import java.sql.Types;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.commons.cli.Options;
 

@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,8 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.batch.FileResource;
-import org.apache.tika.batch.FileResourceConsumer;
 import org.apache.tika.batch.fs.FSProperties;
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;

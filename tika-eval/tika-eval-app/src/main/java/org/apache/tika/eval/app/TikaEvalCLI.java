@@ -117,7 +117,7 @@ public class TikaEvalCLI {
                 CommandLine commandLine = defaultCLIParser.parse(FileProfiler.OPTIONS, updatedArgs);
                 if (commandLine.hasOption("db") && commandLine.hasOption("jdbc")) {
                     System.out.println("Please specify either the default -db or the full -jdbc, not both");
-                    ExtractProfiler.USAGE();
+                    FileProfiler.USAGE();
                     return;
                 }
             } catch (ParseException e) {
@@ -154,7 +154,7 @@ public class TikaEvalCLI {
     }
 
     private void handleProfile(String[] subsetArgs) throws Exception {
-        ExctractProfileRunner.main(subsetArgs);
+        ExtractProfileRunner.main(subsetArgs);
     }
 
     private void handleCompare(String[] subsetArgs) throws Exception {

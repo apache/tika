@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,79 +29,75 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.junit.jupiter.api.AfterAll;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.H2Util;
 import org.apache.tika.eval.app.db.TableInfo;
-import org.apache.tika.eval.app.io.ExtractReaderException;
 
-@Disabled
 public class ProfilerBatchTest {
 
-    public final static String COMPARER_PROCESS_CLASS = "org.apache.tika.batch.fs.FSBatchProcessCLI";
-    private final static String profileTable = ExtractProfiler.PROFILE_TABLE.getName();
-    private final static String exTable = ExtractProfiler.EXCEPTION_TABLE.getName();
-    private final static String fpCol = Cols.FILE_PATH.name();
-    private static Path dbDir;
-    private static Connection conn;
+    private static Connection CONN;
+    private static Path DB_DIR;
+    private static Path DB;
 
     @BeforeAll
     public static void setUp() throws Exception {
-
-        Path inputRoot = Paths.get(ComparerBatchTest.class
+        DB_DIR = Files.createTempDirectory("profiler-test");
+        Path extractsRoot = Paths.get(ComparerBatchTest.class
                 .getResource("/test-dirs/extractsA")
                 .toURI());
-        dbDir = Files.createTempDirectory(inputRoot, "tika-test-db-dir-");
-        Map<String, String> args = new HashMap<>();
-        Path db = dbDir.resolve("profiler_test");
-        args.put("-db", db.toString());
 
-        //for debugging, you can use this to select only one file pair to load
-        //args.put("-includeFilePat", "file8.*");
+        Path inputRoot = Paths.get(ComparerBatchTest.class
+                .getResource("/test-dirs/raw_input")
+                .toURI());
 
-       /* BatchProcessTestExecutor ex = new BatchProcessTestExecutor(COMPARER_PROCESS_CLASS, args,
-                "/single-file-profiler-crawl-input-config.xml");
-        StreamStrings streamStrings = ex.execute();
-        System.out.println(streamStrings.getErrString());
-        System.out.println(streamStrings.getOutString());*/
-        H2Util dbUtil = new H2Util(db);
-        conn = dbUtil.getConnection();
+        DB = DB_DIR.resolve("mydb");
+        String[] args = new String[]{
+            "-i", inputRoot.toAbsolutePath().toString(),
+            "-e", extractsRoot.toAbsolutePath().toString(),
+                "-d", "jdbc:h2:file:" + DB.toAbsolutePath().toString()
+        };
+
+        ExtractProfileRunner.main(args);
     }
 
-    @AfterAll
-    public static void tearDown() throws IOException {
-
+    @AfterEach
+    public void tearDown() throws IOException {
         try {
-            conn.close();
+            CONN.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        //TODO: if/when we turn this back on, use @TempDir instead of this
+        FileUtils.deleteDirectory(DB_DIR.toFile());
 
-        DirectoryStream<Path> dStream = Files.newDirectoryStream(dbDir);
-        for (Path p : dStream) {
-            Files.delete(p);
-        }
-        dStream.close();
-        Files.delete(dbDir);
+    }
+
+    @BeforeEach
+    public void setUpEach() throws SQLException {
+        H2Util dbUtil = new H2Util(DB);
+        CONN = dbUtil.getConnection();
+    }
+
+    @AfterEach
+    public void tearDownEach() throws SQLException {
+        CONN.close();
     }
 
     @Test
     public void testSimpleDBWriteAndRead() throws Exception {
-
         Statement st = null;
         List<String> fNameList = new ArrayList<>();
         try {
             String sql = "select * from " + ExtractProfiler.CONTAINER_TABLE.getName();
-            st = conn.createStatement();
+            st = CONN.createStatement();
             ResultSet rs = st.executeQuery(sql);
             while (rs.next()) {
                 String fileName = rs.getString(Cols.FILE_PATH.name());
@@ -113,17 +108,19 @@ public class ProfilerBatchTest {
                 st.close();
             }
         }
+        /*
         debugTable(ExtractProfiler.CONTAINER_TABLE);
         debugTable(ExtractProfiler.PROFILE_TABLE);
         debugTable(ExtractProfiler.CONTENTS_TABLE);
         debugTable(ExtractProfiler.EXCEPTION_TABLE);
-        debugTable(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
-        assertEquals(10, fNameList.size());
+        debugTable(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);*/
+        assertEquals(17, fNameList.size());
         assertTrue(fNameList.contains("file1.pdf"), "file1.pdf");
         assertTrue(fNameList.contains("file2_attachANotB.doc"), "file2_attachANotB.doc");
         assertTrue(fNameList.contains("file3_attachBNotA.doc"), "file3_attachBNotA.doc");
         assertTrue(fNameList.contains("file4_emptyB.pdf"), "file4_emptyB.pdf");
         assertTrue(fNameList.contains("file7_badJson.pdf"), "file4_emptyB.pdf");
+        assertTrue(fNameList.contains("file9_noextract.txt"), "file9_noextract.txt");
     }
 
     @Test
@@ -131,43 +128,29 @@ public class ProfilerBatchTest {
         String sql =
                 "select EXTRACT_EXCEPTION_ID from extract_exceptions e" + " join containers c on c.container_id = e.container_id " + " where c.file_path='file9_noextract.txt'";
 
-        assertEquals("missing extract: file9_noextract.txt", "0", getSingleResult(sql));
-        debugTable(ExtractProfiler.CONTAINER_TABLE);
+        /*debugTable(ExtractProfiler.CONTAINER_TABLE);
         debugTable(ExtractProfiler.PROFILE_TABLE);
         debugTable(ExtractProfiler.CONTENTS_TABLE);
         debugTable(ExtractProfiler.EXCEPTION_TABLE);
-        debugTable(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
+        debugTable(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);*/
+        assertEquals("0", getSingleResult(sql), "missing extract: file9_noextract.txt");
 
-        sql = "select EXTRACT_EXCEPTION_ID from errors e" + " join containers c on c.container_id = e.container_id " + " where c.file_path='file5_emptyA.pdf'";
-        assertEquals("empty extract: file5_emptyA.pdf", "1", getSingleResult(sql));
+        sql = "select EXTRACT_EXCEPTION_ID from extract_exceptions e" + " join containers c on c.container_id = e.container_id " + " where c.file_path='file5_emptyA.pdf'";
+        assertEquals("1", getSingleResult(sql), "empty extract: file5_emptyA.pdf");
 
-        sql = "select EXTRACT_EXCEPTION_ID from errors e" + " join containers c on c.container_id = e.container_id " + " where c.file_path='file7_badJson.pdf'";
-        assertEquals("extract error:file7_badJson.pdf", "2", getSingleResult(sql));
-
+        sql = "select EXTRACT_EXCEPTION_ID from extract_exceptions e" + " join containers c on c.container_id = e.container_id " + " where c.file_path='file7_badJson.pdf'";
+        assertEquals("2", getSingleResult(sql), "extract error:file7_badJson.pdf");
     }
 
     @Test
-    public void testParseErrors() throws Exception {
-        debugTable(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
-        String sql = "select file_path from errors where container_id is null";
-        assertEquals("file10_permahang.txt", getSingleResult(sql));
-
-        sql = "select extract_error_id from extract_exceptions " + "where file_path='file11_oom.txt'";
-        assertEquals(Integer.toString(ExtractReaderException.TYPE.ZERO_BYTE_EXTRACT_FILE.ordinal()), getSingleResult(sql));
-
-        sql = "select parse_error_id from extract_exceptions where file_path='file11_oom.txt'";
-        assertEquals(Integer.toString(AbstractProfiler.PARSE_ERROR_TYPE.OOM.ordinal()), getSingleResult(sql));
-
-    }
-
-    @Test
+    @Disabled("create actual unit test")
     public void testParseExceptions() throws Exception {
         debugTable(ExtractProfiler.EXCEPTION_TABLE);
     }
 
     private String getSingleResult(String sql) throws Exception {
         Statement st = null;
-        st = conn.createStatement();
+        st = CONN.createStatement();
         ResultSet rs = st.executeQuery(sql);
         int hits = 0;
         String val = "";
@@ -188,7 +171,7 @@ public class ProfilerBatchTest {
         Statement st = null;
         try {
             String sql = "select * from " + table.getName();
-            st = conn.createStatement();
+            st = CONN.createStatement();
             ResultSet rs = st.executeQuery(sql);
             int colCount = rs
                     .getMetaData()

@@ -73,7 +73,26 @@ public class FileProfiler extends AbstractProfiler {
     public static TableInfo FILE_MIME_TABLE =
             new TableInfo("file_mimes", new ColInfo(Cols.MIME_ID, Types.INTEGER, "PRIMARY KEY"), new ColInfo(Cols.MIME_STRING, Types.VARCHAR, 256),
                     new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12));
+    static Options OPTIONS;
 
+    static {
+
+        Option inputDir = new Option("inputDir", true, "optional: directory for original binary input documents." + " If not specified, -extracts is crawled as is.");
+
+        OPTIONS = new Options()
+                .addOption(inputDir)
+                .addOption("bc", "optional: tika-batch config file")
+                .addOption("numConsumers", true, "optional: number of consumer threads")
+                .addOption("db", true, "db file to which to write results")
+                .addOption("jdbc", true, "EXPERT: full jdbc connection string. Must specify this or -db <h2db>")
+                .addOption("jdbcDriver", true, "EXPERT: jdbc driver, or specify via -Djdbc.driver")
+                .addOption("tablePrefix", true, "EXPERT: optional prefix for table names")
+                .addOption("drop", false, "drop tables if they exist")
+                .addOption("maxFilesToAdd", true, "maximum number of files to add to the crawler")
+
+        ;
+
+    }
 
     private final Path inputDir;
 
