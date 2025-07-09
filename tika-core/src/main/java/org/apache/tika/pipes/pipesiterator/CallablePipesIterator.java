@@ -20,6 +20,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.tika.pipes.FetchEmitTuple;
 
@@ -35,6 +36,8 @@ public class CallablePipesIterator implements Callable<Long> {
     private final long timeoutMillis;
 
     private final int numConsumers;
+
+    private final AtomicLong enqueued = new AtomicLong(0);
 
     /**
      * This sets timeoutMillis to -1, meaning that
@@ -87,14 +90,13 @@ public class CallablePipesIterator implements Callable<Long> {
 
     @Override
     public Long call() throws Exception {
-        long added = 0;
         if (timeoutMillis > 0) {
             for (FetchEmitTuple t : pipesIterator) {
                 boolean offered = queue.offer(t, timeoutMillis, TimeUnit.MILLISECONDS);
                 if (! offered) {
                     throw new TimeoutException("timed out trying to offer tuple");
                 }
-                added++;
+                enqueued.incrementAndGet();
             }
             for (int i = 0; i < numConsumers; i++) {
                 boolean offered = queue.offer(PipesIterator.COMPLETED_SEMAPHORE, timeoutMillis,
@@ -108,12 +110,16 @@ public class CallablePipesIterator implements Callable<Long> {
             //blocking!
             for (FetchEmitTuple t : pipesIterator) {
                 queue.put(t);
-                added++;
+                enqueued.incrementAndGet();
             }
             for (int i = 0; i < numConsumers; i++) {
                 queue.put(PipesIterator.COMPLETED_SEMAPHORE);
             }
         }
-        return added;
+        return enqueued.get();
+    }
+
+    public long getEnqueued() {
+        return enqueued.get();
     }
 }

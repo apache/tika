@@ -41,8 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.batch.fs.FSProperties;
-import org.apache.tika.eval.app.batch.FileResource;
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
@@ -73,6 +71,7 @@ import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 
@@ -699,12 +698,12 @@ public abstract class ProfilerBase {
     }
 
     /**
-     * @param metadata
+     * @param fetchKey
      * @param extracts
      * @return evalfilepaths for files if crawling an extract directory
      */
-    protected EvalFilePaths getPathsFromExtractCrawl(Metadata metadata, Path extracts) {
-        String relExtractFilePath = metadata.get(FSProperties.FS_REL_PATH);
+    protected EvalFilePaths getPathsFromExtractCrawl(FetchKey fetchKey, Path extracts) {
+        String relExtractFilePath = fetchKey.getFetchKey();
         Matcher m = FILE_NAME_CLEANER.matcher(relExtractFilePath);
         Path relativeSourceFilePath = Paths.get(m.replaceAll(""));
         //just try slapping the relextractfilepath on the extractdir
@@ -719,8 +718,8 @@ public abstract class ProfilerBase {
     }
 
     //call this if the crawler is crawling through the src directory
-    protected EvalFilePaths getPathsFromSrcCrawl(Metadata metadata, Path srcDir, Path extracts) {
-        Path relativeSourceFilePath = Paths.get(metadata.get(FSProperties.FS_REL_PATH));
+    protected EvalFilePaths getPathsFromSrcCrawl(FetchKey fetchKey, Path srcDir, Path extracts) {
+        Path relativeSourceFilePath = Paths.get(fetchKey.getFetchKey());
         Path extractFile = findFile(extracts, relativeSourceFilePath);
         Path inputFile = srcDir.resolve(relativeSourceFilePath);
         long srcLen = -1l;
@@ -797,7 +796,7 @@ public abstract class ProfilerBase {
         return NON_EXISTENT_FILE_LENGTH;
     }
 
-    public abstract boolean processFileResource(FileResource fileResource);
+    public abstract boolean processFileResource(FetchKey fetchKey);
 
     public enum EXCEPTION_TYPE {
         RUNTIME, ENCRYPTION, ACCESS_PERMISSION, UNSUPPORTED_VERSION,

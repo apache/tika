@@ -25,7 +25,6 @@ import java.util.Map;
 
 import org.apache.commons.cli.Options;
 
-import org.apache.tika.eval.app.batch.FileResource;
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
@@ -35,6 +34,7 @@ import org.apache.tika.eval.app.io.IDBWriter;
 import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.pipes.fetcher.FetchKey;
 
 public class ExtractProfiler extends ProfilerBase {
 
@@ -87,15 +87,14 @@ public class ExtractProfiler extends ProfilerBase {
 
 
     @Override
-    public boolean processFileResource(FileResource fileResource) {
-        Metadata metadata = fileResource.getMetadata();
+    public boolean processFileResource(FetchKey fetchKey) {
         EvalFilePaths fps = null;
 
         if (inputDir != null && inputDir.equals(extracts)) {
             //crawling an extract dir
-            fps = getPathsFromExtractCrawl(metadata, extracts);
+            fps = getPathsFromExtractCrawl(fetchKey, extracts);
         } else {
-            fps = getPathsFromSrcCrawl(metadata, inputDir, extracts);
+            fps = getPathsFromSrcCrawl(fetchKey, inputDir, extracts);
         }
         int containerId = ID.incrementAndGet();
         String containerIdString = Integer.toString(containerId);

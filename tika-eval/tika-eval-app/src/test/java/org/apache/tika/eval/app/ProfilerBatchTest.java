@@ -51,11 +51,11 @@ public class ProfilerBatchTest {
     @BeforeAll
     public static void setUp() throws Exception {
         DB_DIR = Files.createTempDirectory("profiler-test");
-        Path extractsRoot = Paths.get(ComparerBatchTest.class
+        Path extractsRoot = Paths.get(ProfilerBatchTest.class
                 .getResource("/test-dirs/extractsA")
                 .toURI());
 
-        Path inputRoot = Paths.get(ComparerBatchTest.class
+        Path inputRoot = Paths.get(ProfilerBatchTest.class
                 .getResource("/test-dirs/raw_input")
                 .toURI());
 

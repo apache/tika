@@ -17,12 +17,8 @@
 package org.apache.tika.eval.app;
 
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -51,9 +47,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.eval.app.batch.DBConsumersManager;
-import org.apache.tika.eval.app.batch.FileResource;
-import org.apache.tika.eval.app.batch.PathResource;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.JDBCUtil;
 import org.apache.tika.eval.app.db.MimeBuffer;
@@ -62,13 +55,16 @@ import org.apache.tika.eval.app.io.DBWriter;
 import org.apache.tika.eval.app.io.ExtractReader;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.pipesiterator.CallablePipesIterator;
+import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator;
 
 public class ExtractProfileRunner {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExtractProfileRunner.class);
-    private static final PathResource SEMAPHORE = new PathResource(Paths.get("/"), "STOP");
-    private static final int DIR_WALKER_COMPLETED_VALUE = 2;
-    private static final int PROFILE_WORKER_COMPLETED_VALUE = 1;
+    private static final long DIR_WALKER_COMPLETED_VALUE = 2;
+    private static final long PROFILE_WORKER_COMPLETED_VALUE = 1;
 
     static Options OPTIONS;
 
@@ -117,22 +113,20 @@ public class ExtractProfileRunner {
         MimeBuffer mimeBuffer = initTables(jdbcUtil, builder, dbPath, evalConfig);
         builder.populateRefTables(jdbcUtil, mimeBuffer);
 
-        AtomicInteger enqueued = new AtomicInteger(0);
         AtomicInteger processed = new AtomicInteger(0);
         AtomicInteger activeWorkers = new AtomicInteger(evalConfig.getNumWorkers());
         AtomicBoolean crawlerActive = new AtomicBoolean(true);
 
 
-
-        ArrayBlockingQueue<FileResource> queue = new ArrayBlockingQueue<>(1000);
+        ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
+        CallablePipesIterator pipesIterator = new CallablePipesIterator(createIterator(inputDir), queue);
         ExecutorService executorService = Executors.newFixedThreadPool(evalConfig.getNumWorkers() + 2);
-        ExecutorCompletionService<Integer> executorCompletionService = new ExecutorCompletionService<>(executorService);
+        ExecutorCompletionService<Long> executorCompletionService = new ExecutorCompletionService<>(executorService);
 
-        StatusReporter statusReporter = new StatusReporter(enqueued, processed, activeWorkers, crawlerActive);
+        StatusReporter statusReporter = new StatusReporter(pipesIterator, processed, activeWorkers, crawlerActive);
         executorCompletionService.submit(statusReporter);
 
-        DirectoryWalker directoryWalker = new DirectoryWalker(inputDir, queue, enqueued);
-        executorCompletionService.submit(directoryWalker);
+        executorCompletionService.submit(pipesIterator);
         for (int i = 0; i < evalConfig.getNumWorkers(); i++) {
             ExtractReader extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS, evalConfig.getMinExtractLength(), evalConfig.getMaxExtractLength());
             ExtractProfiler extractProfiler = new ExtractProfiler(inputDir, extractsDir, extractReader, builder.getDBWriter(builder.tableInfos, jdbcUtil, mimeBuffer));
@@ -143,12 +137,12 @@ public class ExtractProfileRunner {
         try {
             while (finished < evalConfig.getNumWorkers() + 2) {
                 //blocking
-                Future<Integer> future = executorCompletionService.take();
-                Integer result = future.get();
+                Future<Long> future = executorCompletionService.take();
+                Long result = future.get();
                 if (result != null) {
                     //if the dir walker has finished
                     if (result == DIR_WALKER_COMPLETED_VALUE) {
-                        queue.put(SEMAPHORE);
+                        queue.put(PipesIterator.COMPLETED_SEMAPHORE);
                         crawlerActive.set(false);
                     } else if (result == PROFILE_WORKER_COMPLETED_VALUE) {
                         activeWorkers.decrementAndGet();
@@ -165,6 +159,13 @@ public class ExtractProfileRunner {
             executorService.shutdownNow();
         }
 
+    }
+
+    private static PipesIterator createIterator(Path inputDir) {
+        FileSystemPipesIterator fs = new FileSystemPipesIterator(inputDir);
+        fs.setFetcherName("");
+        fs.setEmitterName("");
+        return fs;
     }
 
     private static MimeBuffer initTables(JDBCUtil jdbcUtil, ExtractProfilerBuilder builder, String connectionString, EvalConfig evalConfig) throws SQLException, IOException {
@@ -188,84 +189,36 @@ public class ExtractProfileRunner {
         throw new IllegalArgumentException(msg);
     }
 
-    private static class ProfileWorker implements Callable<Integer> {
+    private static class ProfileWorker implements Callable<Long> {
 
-        private final ArrayBlockingQueue<FileResource> queue;
+        private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final ExtractProfiler extractProfiler;
         private final AtomicInteger processed;
 
-        ProfileWorker(ArrayBlockingQueue<FileResource> queue, ExtractProfiler extractProfiler, AtomicInteger processed) {
+        ProfileWorker(ArrayBlockingQueue<FetchEmitTuple> queue, ExtractProfiler extractProfiler, AtomicInteger processed) {
             this.queue = queue;
             this.extractProfiler = extractProfiler;
             this.processed = processed;
         }
 
         @Override
-        public Integer call() throws Exception {
+        public Long call() throws Exception {
             while (true) {
-                FileResource resource = queue.poll(1, TimeUnit.SECONDS);
-                if (resource == null) {
+                FetchEmitTuple t = queue.poll(1, TimeUnit.SECONDS);
+                if (t == null) {
                     LOG.info("ExtractProfileWorker waiting on queue");
                     continue;
                 }
-                if (resource == SEMAPHORE) {
+                if (t == PipesIterator.COMPLETED_SEMAPHORE) {
                     LOG.debug("worker hit semaphore and is stopping");
                     extractProfiler.closeWriter();
                     //hangs
-                    queue.put(resource);
+                    queue.put(PipesIterator.COMPLETED_SEMAPHORE);
                     return PROFILE_WORKER_COMPLETED_VALUE;
                 }
-                extractProfiler.processFileResource(resource);
+                extractProfiler.processFileResource(t.getFetchKey());
                 processed.incrementAndGet();
             }
-        }
-    }
-
-    private static class DirectoryWalker implements Callable<Integer> {
-        private final Path startDir;
-        private final ArrayBlockingQueue<FileResource> queue;
-        private final AtomicInteger enqueued;
-
-        public DirectoryWalker(Path startDir, ArrayBlockingQueue<FileResource> queue, AtomicInteger enqueued) {
-            this.startDir = startDir;
-            this.queue = queue;
-            this.enqueued = enqueued;
-        }
-
-        @Override
-        public Integer call() throws Exception {
-            Files.walkFileTree(startDir, new FileVisitor<Path>() {
-                @Override
-                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    if (Files.isDirectory(file)) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                    try {
-                        //blocking
-                        queue.put(new PathResource(file, startDir.relativize(file).toString()));
-                        enqueued.incrementAndGet();
-                    } catch (InterruptedException e) {
-                        return FileVisitResult.TERMINATE;
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-            return DIR_WALKER_COMPLETED_VALUE;
         }
     }
 
@@ -275,7 +228,7 @@ public class ExtractProfileRunner {
 
         public ExtractProfilerBuilder() {
             List<TableInfo> tableInfos = new ArrayList();
-            tableInfos.add(AbstractProfiler.MIME_TABLE);
+            tableInfos.add(ProfilerBase.MIME_TABLE);
             tableInfos.add(ExtractProfiler.CONTAINER_TABLE);
             tableInfos.add(ExtractProfiler.PROFILE_TABLE);
             tableInfos.add(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
@@ -286,9 +239,9 @@ public class ExtractProfileRunner {
             this.tableInfos = Collections.unmodifiableList(tableInfos);
 
             List<TableInfo> refTableInfos = new ArrayList<>();
-            refTableInfos.add(AbstractProfiler.REF_PARSE_ERROR_TYPES);
-            refTableInfos.add(AbstractProfiler.REF_PARSE_EXCEPTION_TYPES);
-            refTableInfos.add(AbstractProfiler.REF_EXTRACT_EXCEPTION_TYPES);
+            refTableInfos.add(ProfilerBase.REF_PARSE_ERROR_TYPES);
+            refTableInfos.add(ProfilerBase.REF_PARSE_EXCEPTION_TYPES);
+            refTableInfos.add(ProfilerBase.REF_EXTRACT_EXCEPTION_TYPES);
             this.refTableInfos = Collections.unmodifiableList(refTableInfos);
         }
 
@@ -302,7 +255,7 @@ public class ExtractProfileRunner {
         }
 
         protected TableInfo getMimeTable() {
-            return AbstractProfiler.MIME_TABLE;
+            return ProfilerBase.MIME_TABLE;
         }
 
         public void populateRefTables(JDBCUtil dbUtil, MimeBuffer mimeBuffer) throws IOException, SQLException {
@@ -334,25 +287,25 @@ public class ExtractProfileRunner {
 
             IDBWriter writer = getDBWriter(getRefTableInfos(), dbUtil, mimeBuffer);
             Map<Cols, String> m = new HashMap<>();
-            for (AbstractProfiler.PARSE_ERROR_TYPE t : AbstractProfiler.PARSE_ERROR_TYPE.values()) {
+            for (ProfilerBase.PARSE_ERROR_TYPE t : ProfilerBase.PARSE_ERROR_TYPE.values()) {
                 m.clear();
                 m.put(Cols.PARSE_ERROR_ID, Integer.toString(t.ordinal()));
                 m.put(Cols.PARSE_ERROR_DESCRIPTION, t.name());
-                writer.writeRow(AbstractProfiler.REF_PARSE_ERROR_TYPES, m);
+                writer.writeRow(ProfilerBase.REF_PARSE_ERROR_TYPES, m);
             }
 
-            for (AbstractProfiler.EXCEPTION_TYPE t : AbstractProfiler.EXCEPTION_TYPE.values()) {
+            for (ProfilerBase.EXCEPTION_TYPE t : ProfilerBase.EXCEPTION_TYPE.values()) {
                 m.clear();
                 m.put(Cols.PARSE_EXCEPTION_ID, Integer.toString(t.ordinal()));
                 m.put(Cols.PARSE_EXCEPTION_DESCRIPTION, t.name());
-                writer.writeRow(AbstractProfiler.REF_PARSE_EXCEPTION_TYPES, m);
+                writer.writeRow(ProfilerBase.REF_PARSE_EXCEPTION_TYPES, m);
             }
 
             for (ExtractReaderException.TYPE t : ExtractReaderException.TYPE.values()) {
                 m.clear();
                 m.put(Cols.EXTRACT_EXCEPTION_ID, Integer.toString(t.ordinal()));
                 m.put(Cols.EXTRACT_EXCEPTION_DESCRIPTION, t.name());
-                writer.writeRow(AbstractProfiler.REF_EXTRACT_EXCEPTION_TYPES, m);
+                writer.writeRow(ProfilerBase.REF_EXTRACT_EXCEPTION_TYPES, m);
             }
             writer.close();
         }
@@ -360,15 +313,6 @@ public class ExtractProfileRunner {
         protected IDBWriter getDBWriter(List<TableInfo> tableInfos, JDBCUtil dbUtil, MimeBuffer mimeBuffer) throws IOException, SQLException {
             Connection conn = dbUtil.getConnection();
             return new DBWriter(conn, tableInfos, dbUtil, mimeBuffer);
-        }
-
-
-        protected void addErrorLogTablePairs(DBConsumersManager manager, EvalConfig evalConfig) {
-            Path errorLog = evalConfig.getErrorLogFile();
-            if (errorLog == null) {
-                return;
-            }
-            manager.addErrorLogTablePair(errorLog, ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
         }
     }
 }

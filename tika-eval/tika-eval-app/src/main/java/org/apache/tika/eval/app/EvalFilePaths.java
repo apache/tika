@@ -17,7 +17,7 @@
 
 package org.apache.tika.eval.app;
 
-import static org.apache.tika.eval.app.AbstractProfiler.NON_EXISTENT_FILE_LENGTH;
+import static org.apache.tika.eval.app.ProfilerBase.NON_EXISTENT_FILE_LENGTH;
 
 import java.io.IOException;
 import java.nio.file.Files;

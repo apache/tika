@@ -164,21 +164,21 @@ public class SimpleComparerTest extends TikaTest {
     public void testGetContent() throws Exception {
         ContentTags contentTags = new ContentTags("0123456789");
         Map<Cols, String> data = new HashMap<>();
-        String content = AbstractProfiler.truncateContent(contentTags, 10, data);
+        String content = ProfilerBase.truncateContent(contentTags, 10, data);
         assertEquals(10, content.length());
         assertEquals("FALSE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
 
-        content = AbstractProfiler.truncateContent(contentTags, 4, data);
+        content = ProfilerBase.truncateContent(contentTags, 4, data);
         assertEquals(4, content.length());
         assertEquals("TRUE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
 
         //test Metadata with no content
-        content = AbstractProfiler.truncateContent(ContentTags.EMPTY_CONTENT_TAGS, 10, data);
+        content = ProfilerBase.truncateContent(ContentTags.EMPTY_CONTENT_TAGS, 10, data);
         assertEquals(0, content.length());
         assertEquals("FALSE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
 
         //test null Metadata
-        content = AbstractProfiler.truncateContent(null, 10, data);
+        content = ProfilerBase.truncateContent(null, 10, data);
         assertEquals(0, content.length());
         assertEquals("FALSE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
     }
@@ -192,7 +192,7 @@ public class SimpleComparerTest extends TikaTest {
             List<Map<Cols, String>> table = WRITER.getTable(t);
 
             Map<Cols, String> rowA = table.get(0);
-            assertEquals(Integer.toString(AbstractProfiler.EXCEPTION_TYPE.ACCESS_PERMISSION.ordinal()), rowA.get(Cols.PARSE_EXCEPTION_ID));
+            assertEquals(Integer.toString(ProfilerBase.EXCEPTION_TYPE.ACCESS_PERMISSION.ordinal()), rowA.get(Cols.PARSE_EXCEPTION_ID));
             assertNull(rowA.get(Cols.ORIG_STACK_TRACE));
             assertNull(rowA.get(Cols.SORT_STACK_TRACE));
         }
@@ -221,7 +221,7 @@ public class SimpleComparerTest extends TikaTest {
         m5.set(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, "/f1.docx/text3.txt");
         list.add(m5);
 
-        List<Integer> counts = AbstractProfiler.countAttachments(list);
+        List<Integer> counts = ProfilerBase.countAttachments(list);
 
         List<Integer> expected = new ArrayList<>();
         expected.add(5);
@@ -309,7 +309,7 @@ public class SimpleComparerTest extends TikaTest {
     @Disabled
     public void testDebug() throws Exception {
         Path commonTokens = Paths.get(getResourceAsFile("/common_tokens_short.txt").toURI());
-        AbstractProfiler.loadCommonTokens(commonTokens, "en");
+        ProfilerBase.loadCommonTokens(commonTokens, "en");
         EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file1.pdf.json"), getResourceAsFile("/test-dirs/extractsA/file1.pdf.json").toPath());
         EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file1.pdf.json"), getResourceAsFile("/test-dirs/extractsB/file1.pdf.json").toPath());
         comparer.compareFiles(fpsA, fpsB);

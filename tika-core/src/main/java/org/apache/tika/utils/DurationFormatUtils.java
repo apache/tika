@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.util;
+package org.apache.tika.utils;
 
 /**
  * Functionality and naming conventions (roughly) copied from org.apache.commons.lang3
