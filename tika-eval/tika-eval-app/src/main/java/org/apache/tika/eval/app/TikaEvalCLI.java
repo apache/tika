@@ -16,21 +16,12 @@
  */
 package org.apache.tika.eval.app;
 
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.ParseException;
 import org.h2.tools.Console;
 
-import org.apache.tika.batch.fs.FSBatchProcessCLI;
 import org.apache.tika.eval.app.reports.ResultsReporter;
 
 public class TikaEvalCLI {
