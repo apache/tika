@@ -29,8 +29,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.io.FilenameUtils;
 
-import org.apache.tika.batch.fs.FSProperties;
-import org.apache.tika.eval.app.batch.FileResource;
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
@@ -45,6 +43,7 @@ import org.apache.tika.eval.core.tokens.TokenIntPair;
 import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.pipes.fetcher.FetchKey;
 
 public class ExtractComparer extends ProfilerBase {
 
@@ -99,26 +98,25 @@ public class ExtractComparer extends ProfilerBase {
     }
 
     @Override
-    public boolean processFileResource(FileResource fileResource) {
-        Metadata metadata = fileResource.getMetadata();
+    public boolean processFileResource(FetchKey fetchKey) {
         EvalFilePaths fpsA = null;
         EvalFilePaths fpsB = null;
 
         if (inputDir != null && (inputDir.equals(extractsA) || inputDir.equals(extractsB))) {
             //crawling an extract dir
-            fpsA = getPathsFromExtractCrawl(metadata, extractsA);
-            fpsB = getPathsFromExtractCrawl(metadata, extractsB);
+            fpsA = getPathsFromExtractCrawl(fetchKey, extractsA);
+            fpsB = getPathsFromExtractCrawl(fetchKey, extractsB);
 
         } else {
-            fpsA = getPathsFromSrcCrawl(metadata, inputDir, extractsA);
-            fpsB = getPathsFromSrcCrawl(metadata, inputDir, extractsB);
+            fpsA = getPathsFromSrcCrawl(fetchKey, inputDir, extractsA);
+            fpsB = getPathsFromSrcCrawl(fetchKey, inputDir, extractsB);
         }
 
         try {
             compareFiles(fpsA, fpsB);
         } catch (Throwable e) {
             //this should be cataclysmic...
-            throw new RuntimeException("Exception while working on: " + metadata.get(FSProperties.FS_REL_PATH), e);
+            throw new RuntimeException("Exception while working on: " + fetchKey.getFetchKey(), e);
         }
         return true;
     }

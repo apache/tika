@@ -113,10 +113,6 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.tika</groupId>
-                    <artifactId>tika-batch</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.tika</groupId>
                     <artifactId>tika-translate</artifactId>
                 </exclusion>
                 <exclusion>

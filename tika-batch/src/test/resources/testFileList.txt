@@ -1,2 +1,0 @@
-test1.xml
-sub1a/sub2a/test3.xml

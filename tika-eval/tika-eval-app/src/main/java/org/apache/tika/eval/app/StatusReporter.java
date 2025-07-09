@@ -25,13 +25,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.util.DurationFormatUtils;
+import org.apache.tika.pipes.pipesiterator.CallablePipesIterator;
+import org.apache.tika.utils.DurationFormatUtils;
 
-public class StatusReporter implements Callable<Integer> {
+public class StatusReporter implements Callable<Long> {
 
-    public static final int COMPLETED_VAL = 3;
+    public static final long COMPLETED_VAL = 3;
     private static final Logger LOGGER = LoggerFactory.getLogger(StatusReporter.class);
-    private final AtomicInteger filesQueued;
+    private final CallablePipesIterator pipesIterator;
     private final AtomicInteger filesProcessed;
     private final AtomicInteger activeWorkers;
     private final AtomicBoolean crawlerIsActive;
@@ -39,8 +40,8 @@ public class StatusReporter implements Callable<Integer> {
     private final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.ROOT);
 
 
-    public StatusReporter(AtomicInteger filesQueued, AtomicInteger filesProcessed, AtomicInteger activeWorkers, AtomicBoolean crawlerIsActive) {
-        this.filesQueued = filesQueued;
+    public StatusReporter(CallablePipesIterator pipesIterator, AtomicInteger filesProcessed, AtomicInteger activeWorkers, AtomicBoolean crawlerIsActive) {
+        this.pipesIterator = pipesIterator;
         this.filesProcessed = filesProcessed;
         this.activeWorkers = activeWorkers;
         this.crawlerIsActive = crawlerIsActive;
@@ -48,7 +49,7 @@ public class StatusReporter implements Callable<Integer> {
     }
 
     @Override
-    public Integer call() throws Exception {
+    public Long call() throws Exception {
         while (true) {
 
             try {
@@ -85,12 +86,12 @@ public class StatusReporter implements Callable<Integer> {
         }
         LOGGER.info(msg);
 
-        int queued = filesQueued.get();
+        long enqueued = pipesIterator.getEnqueued();
 
-        if (queued == 1) {
+        if (enqueued == 1) {
             msg = "The crawler has enqueued 1 file.";
         } else {
-            msg = "The crawler has enqueued " + numberFormat.format(queued) + " files.";
+            msg = "The crawler has enqueued " + numberFormat.format(enqueued) + " files.";
         }
         LOGGER.info(msg);
 
