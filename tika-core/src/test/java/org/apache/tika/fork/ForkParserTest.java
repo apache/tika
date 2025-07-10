@@ -279,6 +279,35 @@ public class ForkParserTest extends TikaTest {
     }
 
     @Test
+    public void testRecursiveParserWrapperMassiveEmbedded() throws Exception {
+        Parser parser = new AutoDetectParser();
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                        20000));
+        try (ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
+                InputStream is = getResourceAsStream("/test-documents/massive_embedded.xml")) {
+            Metadata metadata = new Metadata();
+            ParseContext context = new ParseContext();
+            fork.parse(is, handler, metadata, context);
+        }
+        List<Metadata> metadataList = handler.getMetadataList();
+        assertEquals(111, metadataList.size());
+        Metadata m0 = metadataList.get(0);
+        assertEquals("Nikolai Lobachevsky", m0.get(TikaCoreProperties.CREATOR));
+        assertContains("main_content", m0.get(TikaCoreProperties.TIKA_CONTENT));
+
+        for (int i = 1; i <= 110; i++) {
+            assertContains("embed" + i + ".xml", m0.get(TikaCoreProperties.TIKA_CONTENT));
+
+            Metadata m1 = metadataList.get(i);
+            assertEquals("embeddedAuthor", m1.get(TikaCoreProperties.CREATOR));
+            assertContains("some_embedded_content", m1.get(TikaCoreProperties.TIKA_CONTENT));
+            assertEquals("/embed" + i + ".xml", m1.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        }
+    }
+
+    @Test
     public void testRPWWithEmbeddedNPE() throws Exception {
         Parser parser = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
