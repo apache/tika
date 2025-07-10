@@ -1,0 +1,798 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+<mock>
+
+    <metadata action="add" name="dc:creator">Nikolai Lobachevsky</metadata>
+    <write element="p">main_content</write>
+    <!-- auto detection wasn't working for some reason; add content-type as
+        is to trigger mock on the embedded -->
+    <embedded filename="embed1.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed2.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed3.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed4.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed5.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed6.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed7.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed8.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed9.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed10.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed11.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed12.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed13.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed14.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed15.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed16.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed17.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed18.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed19.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed20.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed21.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed22.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed23.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed24.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed25.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed26.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed27.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed28.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed29.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed30.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed31.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed32.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed33.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed34.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed35.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed36.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed37.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed38.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed39.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed40.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed41.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed42.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed43.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed44.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed45.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed46.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed47.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed48.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed49.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed50.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed51.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed52.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed53.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed54.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed55.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed56.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed57.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed58.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed59.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed60.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed61.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed62.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed63.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed64.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed65.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed66.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed67.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed68.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed69.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed70.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed71.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed72.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed73.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed74.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed75.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed76.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed77.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed78.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed79.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed80.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed81.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed82.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed83.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed84.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed85.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed86.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed87.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed88.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed89.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed90.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed91.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed92.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed93.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed94.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed95.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed96.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed97.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed98.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed99.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed100.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed101.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed102.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed103.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed104.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed105.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed106.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed107.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed108.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed109.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+    <embedded filename="embed110.xml" content-type="application/mock+xml">
+        &lt;mock&gt;
+            &lt;metadata action=&quot;add&quot; name=&quot;dc:creator&quot;&gt;embeddedAuthor&lt;/metadata&gt;
+            &lt;write element="p"&gt;some_embedded_content&lt;/write&gt;
+        &lt;/mock&gt;
+    </embedded>
+
+</mock>
