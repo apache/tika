@@ -72,6 +72,7 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
     public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata)
             throws SAXException {
         proxyBackToClient(EMBEDDED_DOCUMENT, contentHandler, metadata);
+        decrementEmbeddedDepth();
     }
 
     @Override

@@ -95,6 +95,14 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
     }
 
     /**
+     * This is called by RecursiveMetadataContentHandlerProxy as it
+     * cannot call endEmbeddedDocument().
+     */
+    protected void decrementEmbeddedDepth() {
+        embeddedDepth--;
+    }
+
+    /**
      * This is called after the full parse has completed.  Override this
      * for custom behavior.  Make sure to call this as <code>super.endDocument(...)</code>
      * in subclasses because this adds whether or not the embedded resource
