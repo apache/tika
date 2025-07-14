@@ -672,6 +672,31 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         }
     }
 
+    @Test
+    public void testPKCSAndFriends() throws Exception {
+        assertTypeByNameAndData("Test4.pdf.tsd", "application/timestamped-data");
+
+
+        assertTypeByNameAndData("testPKCS7_certs_only_def.p7c", "application/pkcs7-mime; smime-type=certs-only");
+        assertTypeByNameAndData("testPKCS7_certs_only_ind.p7c", "application/pkcs7-mime; smime-type=certs-only");
+        assertTypeByNameAndData("testPKCS7_compressed_def_long.p7z", "application/pkcs7-mime; smime-type=compressed-data");
+        assertTypeByNameAndData("testPKCS7_compressed_def_short.p7z", "application/pkcs7-mime; smime-type=compressed-data");
+        assertTypeByNameAndData("testPKCS7_compressed_ind.p7z", "application/pkcs7-mime; smime-type=compressed-data");
+        assertTypeByNameAndData("testPKCS7_signature_def.p7s", "application/pkcs7-signature");
+        assertTypeByNameAndData("testPKCS7_signature_ind.p7s", "application/pkcs7-signature");
+
+        assertTypeByNameAndData("testPKCS7_signed_data_def.p7m", "application/pkcs7-mime; smime-type=signed-data");
+        assertTypeByNameAndData("testPKCS7_signed_data_ind.p7m", "application/pkcs7-mime; smime-type=signed-data");
+        assertTypeByNameAndData("testPKCS7_enveloped_def.p7m", "application/pkcs7-mime; smime-type=enveloped-data");
+        assertTypeByNameAndData("testPKCS7_enveloped_ind.p7m", "application/pkcs7-mime; smime-type=enveloped-data");
+
+        assertTypeByNameAndData("test.xml.p7m", "application/pkcs7-mime; smime-type=signed-data");
+        assertTypeByNameAndData("Test4.pdf.tsd", "application/timestamped-data");
+        assertTypeByNameAndData("testDetached.p7s", "application/pkcs7-signature");
+
+        assertTypeByNameAndData("testRSAKEYandCERT.p12", "application/x-pkcs12");
+    }
+
     private long countBytes(InputStream is) throws IOException {
         int b = is.read();
         long len = 0;

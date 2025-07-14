@@ -875,13 +875,24 @@
     <glob pattern="*.p10"/>
   </mime-type>
 
-  <mime-type type="application/pkcs7-mime">
-    <glob pattern="*.p7m"/>
-    <glob pattern="*.p7c"/>
-  </mime-type>
-
   <mime-type type="application/pkcs7-signature">
     <glob pattern="*.p7s"/>
+    <sub-class-of type="application/pkcs7-mime"/>
+  </mime-type>
+
+  <mime-type type="application/pkcs7-mime; smime-type=certs-only">
+    <glob pattern="*.p7c"/>
+    <sub-class-of type="application/pkcs7-mime"/>
+  </mime-type>
+
+  <mime-type type="application/pkcs7-mime; smime-type=compressed-data">
+    <glob pattern="*.p7z"/>
+    <!-- has the same magic as application/timestamped-data -->
+    <sub-class-of type="application/x-tika-compressed-pkc7-base"/>
+  </mime-type>
+
+  <mime-type type="application/pkcs7-mime">
+    <glob pattern="*.p7m"/>
     <magic priority="50">
       <!-- PEM encoded -->
       <match value="-----BEGIN PKCS7" type="string" offset="0"/>
@@ -911,6 +922,15 @@
 
   <mime-type type="application/timestamped-data">
     <glob pattern="*.tsd"/>
+    <!-- magic conflicts with some p7z; for now leave this here
+    <magic priority="50">
+      <match value="0x3080060B2A864886F7" type="string" offset="0"/>
+    </magic> -->
+    <sub-class-of type="application/x-tika-compressed-pkc7-base"/>
+  </mime-type>
+
+  <mime-type type="application/x-tika-compressed-pkc7-base">
+    <!-- magic conflicts with some p7z; for now leave this here -->
     <magic priority="50">
       <match value="0x3080060B2A864886F7" type="string" offset="0"/>
     </magic>
@@ -4847,6 +4867,7 @@
   <mime-type type="application/x-pkcs12">
     <glob pattern="*.p12"/>
     <glob pattern="*.pfx"/>
+    <sub-class-of type="application/x-pkcs7"/>
   </mime-type>
   <mime-type type="application/x-pkcs7-certificates">
     <glob pattern="*.p7b"/>

@@ -63,6 +63,7 @@ public class Pkcs7Parser implements Parser {
         try {
             DigestCalculatorProvider digestCalculatorProvider =
                     new JcaDigestCalculatorProviderBuilder().setProvider("BC").build();
+
             CMSSignedDataParser parser = new CMSSignedDataParser(digestCalculatorProvider,
                     CloseShieldInputStream.wrap(stream));
             try {

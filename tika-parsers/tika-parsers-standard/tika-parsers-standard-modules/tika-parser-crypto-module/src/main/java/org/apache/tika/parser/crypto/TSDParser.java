@@ -24,7 +24,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -81,7 +80,7 @@ public class TSDParser implements Parser {
     private static final String TSD_TSA = "TSA";
     private static final String TSD_ALGORITHM = "Algorithm";
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("timestamped-data"));
+            Set.of(MediaType.application("timestamped-data"), MediaType.application("x-tika-compressed-pkc7-base"));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
