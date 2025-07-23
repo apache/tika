@@ -312,7 +312,7 @@
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.53.3</google.cloud.version>
     <aws.version>1.12.788</aws.version>
-    <aws2.version>2.32.5</aws2.version>
+    <aws2.version>2.32.6</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -333,7 +333,7 @@
     <brotli.version>0.1.2</brotli.version>
     <c3p0.version>0.11.2</c3p0.version>
     <commons.cli.version>1.9.0</commons.cli.version>
-    <commons.codec.version>1.18.0</commons.codec.version>
+    <commons.codec.version>1.19.0</commons.codec.version>
     <commons.collections4.version>4.5.0</commons.collections4.version>
     <commons.compress.version>1.27.1</commons.compress.version>
     <commons.csv.version>1.14.0</commons.csv.version>
@@ -419,7 +419,7 @@
     <netty.version>4.2.3.Final</netty.version>
     <oak.jackrabbit.version>1.82.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
-    <opennlp.version>2.5.4</opennlp.version>
+    <opennlp.version>2.5.5</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
