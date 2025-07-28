@@ -32,7 +32,7 @@
   <url>http://maven.apache.org</url>
 
   <properties>
-      <curator.version>5.8.0</curator.version>
+      <curator.version>5.9.0</curator.version>
       <hadoop.version>3.4.1</hadoop.version>
   </properties>
 
