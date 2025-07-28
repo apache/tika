@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.core.MultivaluedMap;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -54,7 +54,7 @@ public class PDFServerConfig implements ParseContextConfig {
         //upon server startup will be ignored.
         PDFParserConfig pdfParserConfig = null;
         for (Map.Entry<String, List<String>> kvp : httpHeaders.entrySet()) {
-            if (StringUtils.startsWithIgnoreCase(kvp.getKey(), X_TIKA_PDF_HEADER_PREFIX)) {
+            if (Strings.CI.startsWith(kvp.getKey(), X_TIKA_PDF_HEADER_PREFIX)) {
                 pdfParserConfig = (pdfParserConfig == null) ? new PDFParserConfig() : pdfParserConfig;
                 processHeaderConfig(pdfParserConfig, kvp.getKey(), kvp
                         .getValue()
