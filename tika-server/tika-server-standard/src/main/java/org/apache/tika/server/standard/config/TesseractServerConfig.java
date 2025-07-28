@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.core.MultivaluedMap;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -54,7 +54,7 @@ public class TesseractServerConfig implements ParseContextConfig {
         //upon server startup will be ignored.
         TesseractOCRConfig ocrConfig = null;
         for (Map.Entry<String, List<String>> kvp : httpHeaders.entrySet()) {
-            if (StringUtils.startsWithIgnoreCase(kvp.getKey(), X_TIKA_OCR_HEADER_PREFIX)) {
+            if (Strings.CI.startsWith(kvp.getKey(), X_TIKA_OCR_HEADER_PREFIX)) {
                 ocrConfig = (ocrConfig == null) ? new TesseractOCRConfig() : ocrConfig;
                 processHeaderConfig(ocrConfig, kvp.getKey(), kvp
                         .getValue()
