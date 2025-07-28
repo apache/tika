@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -121,8 +122,8 @@ public class MIFExtractor {
     private static void processTag(ContentHandler handler, Tag tag) throws SAXException {
         Attributes attrs = new AttributesImpl();
         handler.startElement(StringUtils.EMPTY, tag.getName(), tag.getName(), attrs);
-        String value = StringUtils.removeStart(tag.getValue(), START_TAG_VALUE);
-        value = StringUtils.removeEnd(value, END_TAG_VALUE);
+        String value = Strings.CS.removeStart(tag.getValue(), START_TAG_VALUE);
+        value = Strings.CS.removeEnd(value, END_TAG_VALUE);
         String content = StringEscapeUtils.escapeXml(value);
         handler.characters(content.toCharArray(), 0, content.length());
         handler.endElement(StringUtils.EMPTY, tag.getName(), tag.getName());

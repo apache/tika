@@ -53,6 +53,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import jakarta.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.cxf.attachment.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.impl.MetadataMap;
@@ -178,7 +179,7 @@ public class TikaResource {
      */
     public static void processHeaderConfig(Object object, String key, String val, String prefix) {
         try {
-            String property = StringUtils.removeStartIgnoreCase(key, prefix);
+            String property = Strings.CI.removeStart(key, prefix);
             Field field = null;
             try {
                 field = object
