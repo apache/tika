@@ -42,6 +42,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.sax.SAXTransformerFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -373,13 +374,51 @@ public class XMLReaderUtils implements Serializable {
      * @since Apache Tika 1.17
      */
     public static Transformer getTransformer() throws TikaException {
+        TransformerFactory transformerFactory = getTransformerFactory();
         try {
+            return transformerFactory.newTransformer();
+        } catch (TransformerConfigurationException e) {
+            throw new TikaException("Transformer not available", e);
+        }
+    }
+
+    /**
+     * Returns a TransformerFactory. The factory is configured with
+     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing} and other
+     * settings to prevent XXE.
+     *
+     * @return TransformerFactory
+     * @throws TikaException
+     */
+    public static TransformerFactory getTransformerFactory() throws TikaException {
+        try {
+
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_STYLESHEET,
-                    "");
-            return transformerFactory.newTransformer();
+            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+            return transformerFactory;
+        } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
+            throw new TikaException("Transformer not available", e);
+        }
+    }
+
+    /**
+     * Returns a SAXTransformerFactory. The factory is configured with
+     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing} and other
+     * settings to prevent XXE.
+     *
+     * @return TransformerFactory
+     * @throws TikaException
+     */
+    public static SAXTransformerFactory getSAXTransformerFactory() throws TikaException {
+        try {
+
+            SAXTransformerFactory transformerFactory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+            transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+            return transformerFactory;
         } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
             throw new TikaException("Transformer not available", e);
         }
