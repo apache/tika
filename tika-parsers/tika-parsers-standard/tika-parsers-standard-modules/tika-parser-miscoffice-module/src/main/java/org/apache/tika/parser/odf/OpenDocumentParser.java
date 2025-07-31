@@ -20,16 +20,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -40,7 +37,6 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -134,21 +130,21 @@ public class OpenDocumentParser implements Parser {
         // Open the Zip stream
         // Use a File if we can, and an already open zip is even better
         ZipFile zipFile = null;
-        ZipInputStream zipStream = null;
+        TikaInputStream tmpTis = null;
         if (stream instanceof TikaInputStream) {
             TikaInputStream tis = (TikaInputStream) stream;
             Object container = ((TikaInputStream) stream).getOpenContainer();
             if (container instanceof ZipFile) {
                 zipFile = (ZipFile) container;
-            } else if (tis.hasFile()) {
-                zipFile = new ZipFile(tis.getFile());
             } else {
-                zipStream = new ZipInputStream(stream);
+                zipFile = new ZipFile(tis.getFile());
+                tis.setOpenContainer(zipFile);
             }
         } else {
-            zipStream = new ZipInputStream(stream);
+            tmpTis = TikaInputStream.get(stream);
+            tmpTis.setOpenContainer(new ZipFile(tmpTis.getFile()));
+            zipFile = (ZipFile) tmpTis.getOpenContainer();
         }
-
         // Prepare to handle the content
         XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata);
         xhtml.startDocument();
@@ -157,19 +153,13 @@ public class OpenDocumentParser implements Parser {
         EndDocumentShieldingContentHandler handler = new EndDocumentShieldingContentHandler(xhtml);
 
         try {
-            if (zipFile != null) {
-                try {
-                    handleZipFile(zipFile, metadata, context, handler, embeddedDocumentUtil);
-                } finally {
-                    //Do we want to close silently == catch an exception here?
-                    zipFile.close();
-                }
-            } else {
-                try {
-                    handleZipStream(zipStream, metadata, context, handler, embeddedDocumentUtil);
-                } finally {
-                    //Do we want to close silently == catch an exception here?
-                    zipStream.close();
+            try {
+                handleZipFile(zipFile, metadata, context, handler, embeddedDocumentUtil);
+            } finally {
+                //Do we want to close silently == catch an exception here?
+                if (tmpTis != null) {
+                    //tmpTis handles closing of the open zip container
+                    tmpTis.close();
                 }
             }
         } catch (SAXException e) {
@@ -192,35 +182,6 @@ public class OpenDocumentParser implements Parser {
 
     public boolean isExtractMacros() {
         return extractMacros;
-    }
-
-    private void handleZipStream(ZipInputStream zipStream, Metadata metadata, ParseContext context,
-                                 EndDocumentShieldingContentHandler handler,
-                                 EmbeddedDocumentUtil embeddedDocumentUtil)
-            throws IOException, TikaException, SAXException {
-        ZipEntry entry = zipStream.getNextEntry();
-        if (entry == null) {
-            throw new IOException("No entries found in ZipInputStream");
-        }
-        List<SAXException> exceptions = new ArrayList<>();
-        do {
-            try {
-                handleZipEntry(entry, zipStream, metadata, context, handler,
-                        embeddedDocumentUtil);
-            } catch (SAXException e) {
-                WriteLimitReachedException.throwIfWriteLimitReached(e);
-                if (e.getCause() instanceof EncryptedDocumentException) {
-                    throw (EncryptedDocumentException)e.getCause();
-                } else {
-                    exceptions.add(e);
-                }
-            }
-            entry = zipStream.getNextEntry();
-        } while (entry != null);
-
-        if (exceptions.size() > 0) {
-            throw exceptions.get(0);
-        }
     }
 
     private void handleZipFile(ZipFile zipFile, Metadata metadata, ParseContext context,
