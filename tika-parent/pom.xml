@@ -309,7 +309,7 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.53.3</google.cloud.version>
+    <google.cloud.version>2.54.0</google.cloud.version>
     <aws.version>1.12.788</aws.version>
     <aws2.version>2.32.13</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
@@ -335,8 +335,8 @@
     <commons.cli.version>1.9.0</commons.cli.version>
     <commons.codec.version>1.19.0</commons.codec.version>
     <commons.collections4.version>4.5.0</commons.collections4.version>
-    <commons.compress.version>1.27.1</commons.compress.version>
-    <commons.csv.version>1.14.0</commons.csv.version>
+    <commons.compress.version>1.28.0</commons.compress.version>
+    <commons.csv.version>1.14.1</commons.csv.version>
     <commons.exec.version>1.5.0</commons.exec.version>
     <commons.fileupload.version>1.6.0</commons.fileupload.version>
     <commons.io.version>2.20.0</commons.io.version>
