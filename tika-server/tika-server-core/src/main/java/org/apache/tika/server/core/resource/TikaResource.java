@@ -87,6 +87,7 @@ import org.apache.tika.server.core.ServerStatus;
 import org.apache.tika.server.core.TikaServerConfig;
 import org.apache.tika.server.core.TikaServerParseException;
 import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.XMLReaderUtils;
 
 @Path("/tika")
 public class TikaResource {
@@ -635,7 +636,7 @@ public class TikaResource {
             ContentHandler content;
 
             try {
-                SAXTransformerFactory factory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+                SAXTransformerFactory factory = XMLReaderUtils.getSAXTransformerFactory();
                 TransformerHandler handler = factory.newTransformerHandler();
                 handler
                         .getTransformer()
@@ -651,7 +652,7 @@ public class TikaResource {
                         .setOutputProperty(OutputKeys.VERSION, "1.1");
                 handler.setResult(new StreamResult(writer));
                 content = new ExpandedTitleContentHandler(handler);
-            } catch (TransformerConfigurationException e) {
+            } catch (TransformerConfigurationException | TikaException e) {
                 throw new WebApplicationException(e);
             }
 
