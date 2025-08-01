@@ -199,7 +199,7 @@ public class CompressorParser implements Parser {
                 }
             }
         } catch (CompressorException e) {
-            if (e.getCause() != null && e.getCause() instanceof MemoryLimitException) {
+            if (e.getCause() instanceof MemoryLimitException) {
                 throw new TikaMemoryLimitException(e.getMessage());
             }
             throw new TikaException("Unable to uncompress document stream", e);

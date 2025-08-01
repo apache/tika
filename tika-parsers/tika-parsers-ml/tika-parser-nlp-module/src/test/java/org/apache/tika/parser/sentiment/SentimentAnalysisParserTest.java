@@ -82,7 +82,7 @@ public class SentimentAnalysisParserTest {
             return new Tika(config);
         } catch (TikaConfigException e) {
             //if can't connect to pull sentiment model...ignore test
-            if (e.getCause() != null && e.getCause() instanceof IOException) {
+            if (e.getCause() instanceof IOException) {
                 return null;
             }
             throw e;

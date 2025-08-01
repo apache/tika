@@ -217,7 +217,7 @@ public class FuzzOne {
                 parser.parse(is, new DefaultHandler(), new Metadata(), new ParseContext());
                 success = true;
             } catch (TikaException e) {
-                if (e.getCause() != null && e.getCause() instanceof RuntimeException) {
+                if (e.getCause() instanceof RuntimeException) {
                     //handleThrowable(target, e.getCause());
                     success = true;
                 } else {
