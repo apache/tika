@@ -75,6 +75,7 @@ import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.OfficeParserTest;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 
 public class OOXMLParserTest extends MultiThreadedTikaTest {
 
@@ -860,7 +861,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     public void testEmbeddedPDF() throws Exception {
         Metadata metadata = new Metadata();
         StringWriter sw = new StringWriter();
-        SAXTransformerFactory factory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+        SAXTransformerFactory factory = XMLReaderUtils.getSAXTransformerFactory();
         TransformerHandler handler = factory.newTransformerHandler();
         handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");

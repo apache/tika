@@ -107,6 +107,7 @@ import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
 import org.apache.tika.serialization.JsonMetadata;
 import org.apache.tika.serialization.JsonMetadataList;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.apache.tika.xmp.XMPMetadata;
 
 /**
@@ -302,9 +303,11 @@ public class TikaCLI {
      * @throws TransformerConfigurationException if the transformer can not be created
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-277">TIKA-277</a>
      */
-    private static TransformerHandler getTransformerHandler(OutputStream output, String method, String encoding, boolean prettyPrint) throws TransformerConfigurationException {
-        SAXTransformerFactory factory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+    private static TransformerHandler getTransformerHandler(OutputStream output, String method, String encoding, boolean prettyPrint)
+            throws TransformerConfigurationException, TikaException {
+        SAXTransformerFactory factory = XMLReaderUtils.getSAXTransformerFactory();
         TransformerHandler handler = factory.newTransformerHandler();
+
         handler
                 .getTransformer()
                 .setOutputProperty(OutputKeys.METHOD, method);

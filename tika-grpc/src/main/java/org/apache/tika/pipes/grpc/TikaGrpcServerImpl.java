@@ -67,6 +67,7 @@ import org.apache.tika.TikaGrpc;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.FetchEmitTuple;
@@ -78,6 +79,7 @@ import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 import org.apache.tika.pipes.fetcher.config.FetcherConfigContainer;
+import org.apache.tika.utils.XMLReaderUtils;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaGrpcServerImpl.class);
@@ -115,11 +117,14 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         expiringFetcherStore = new ExpiringFetcherStore(pipesConfig.getStaleFetcherTimeoutSeconds(),
                 pipesConfig.getStaleFetcherDelaySeconds());
         this.tikaConfigPath = tikaConfigPath;
-        updateTikaConfig();
+        try {
+            updateTikaConfig();
+        } catch (TikaException e) {
+            throw new TikaConfigException("Problem updating tikaConfig", e);
+        }
     }
 
-    private void updateTikaConfig()
-            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    private void updateTikaConfig() throws ParserConfigurationException, IOException, SAXException, TransformerException, TikaException {
         Document tikaConfigDoc =
                 DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(tikaConfigPath);
 
@@ -149,7 +154,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         FileWriter writer = new FileWriter(tikaConfigPath, StandardCharsets.UTF_8);
         StreamResult result = new StreamResult(writer);
 
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        TransformerFactory transformerFactory = XMLReaderUtils.getTransformerFactory();
         Transformer transformer = transformerFactory.newTransformer();
         transformer.transform(source, result);
     }
