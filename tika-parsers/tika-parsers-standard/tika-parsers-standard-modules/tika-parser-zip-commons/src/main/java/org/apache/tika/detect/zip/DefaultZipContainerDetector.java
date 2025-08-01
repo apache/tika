@@ -24,13 +24,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -124,7 +122,7 @@ public class DefaultZipContainerDetector implements Detector {
             String name = ArchiveStreamFactory.detect(
                     UnsynchronizedByteArrayInputStream.builder().setByteArray(prefix).setLength(length).get());
             return PackageConstants.getMediaType(name);
-        } catch (IOException | ArchiveException e) {
+        } catch (IOException e) {
             return MediaType.OCTET_STREAM;
         }
     }
@@ -135,7 +133,7 @@ public class DefaultZipContainerDetector implements Detector {
                     CompressorStreamFactory.detect(
                             UnsynchronizedByteArrayInputStream.builder().setByteArray(prefix).setLength(length).get());
             return CompressorConstants.getMediaType(type);
-        } catch (IOException | CompressorException e) {
+        } catch (IOException e) {
             return MediaType.OCTET_STREAM;
         }
     }
@@ -207,10 +205,9 @@ public class DefaultZipContainerDetector implements Detector {
     private MediaType tryStreamingOnTikaInputStream(TikaInputStream tis, Metadata metadata) throws IOException {
         BoundedInputStream boundedInputStream = new BoundedInputStream(markLimit, tis);
         boundedInputStream.mark(markLimit);
-        MediaType mt = null;
         //try streaming detect
         try {
-            mt = detectStreaming(boundedInputStream, metadata, false);
+            MediaType mt = detectStreaming(boundedInputStream, metadata, false);
             if (! boundedInputStream.hasHitBound()) {
                 return mt;
             }
