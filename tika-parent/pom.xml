@@ -1192,14 +1192,6 @@
               <artifactId>commons-lang</artifactId>
               <version>2.6</version>
             </coordinate>
-            <!-- TODO https://github.com/netplex/json-smart-v2/issues/232
-                      https://github.com/sonatype/ossindex-maven/issues/84
-            -->
-            <coordinate>
-              <groupId>net.minidev</groupId>
-              <artifactId>json-smart</artifactId>
-              <version>2.5.2</version>
-            </coordinate>
             <!-- solr emitter -->
             <coordinate>
               <groupId>org.eclipse.jetty</groupId>
