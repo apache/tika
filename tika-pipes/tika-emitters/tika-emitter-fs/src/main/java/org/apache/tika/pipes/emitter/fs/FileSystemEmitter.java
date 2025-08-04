@@ -76,20 +76,23 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
     @Override
     public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException, TikaEmitterException {
         Path output;
-        if (metadataList == null || metadataList.size() == 0) {
+        if (metadataList == null || metadataList.isEmpty()) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
         }
 
-        if (fileExtension != null && fileExtension.length() > 0) {
+        if (fileExtension != null && ! fileExtension.isEmpty()) {
             emitKey += "." + fileExtension;
         }
         if (basePath != null) {
             output = basePath.resolve(emitKey);
+            if (!output.toAbsolutePath().normalize().startsWith(basePath.toAbsolutePath().normalize())) {
+                throw new TikaEmitterException("path traversal?! " + output.toAbsolutePath());
+            }
         } else {
             output = Paths.get(emitKey);
         }
 
-        if (!Files.isDirectory(output.getParent())) {
+        if (output.getParent() != null && !Files.isDirectory(output.getParent())) {
             Files.createDirectories(output.getParent());
         }
         try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
