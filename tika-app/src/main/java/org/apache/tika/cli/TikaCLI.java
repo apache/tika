@@ -21,7 +21,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -124,7 +123,7 @@ public class TikaCLI {
             return new DefaultHandler();
         }
     };
-    private File extractDir = new File(".");
+    private Path extractDir = Paths.get(".");
     private ParseContext context;
     private Detector detector;
     private Parser parser;
@@ -339,7 +338,7 @@ public class TikaCLI {
             pdfParserConfig.setExtractIncrementalUpdateInfo(true);
             pdfParserConfig.setParseIncrementalUpdates(true);
             String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
-                    "inline images and incremental updates for the PDFParser (TIKA-2374, " +
+                    "inline images and parsing of incremental updates for the PDFParser (TIKA-2374, " +
                     "TIKA-4017 and TIKA-4354).\n" +
                     "This is not the default behavior in Tika generally or in tika-server.";
             LOG.info(warn);
@@ -441,7 +440,7 @@ public class TikaCLI {
             if (dirPath.isEmpty()) {
                 dirPath = ".";
             }
-            extractDir = new File(dirPath);
+            extractDir = Paths.get(dirPath);
         } else if (arg.equals("-z") || arg.equals("--extract")) {
             type = NO_OUTPUT;
             context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor());
@@ -1089,22 +1088,20 @@ public class TikaCLI {
             MediaType contentType = detector.detect(inputStream, metadata);
 
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-            File outputFile = null;
+            Path outputFile = null;
             if (name == null) {
-                name = "file" + count++;
+                name = "file_" + count++;
             }
             outputFile = getOutputFile(name, metadata, contentType);
 
 
-            File parent = outputFile.getParentFile();
-            if (!parent.exists()) {
-                if (!parent.mkdirs()) {
-                    throw new IOException("unable to create directory \"" + parent + "\"");
-                }
+            Path parent = outputFile.getParent();
+            if (parent != null && ! Files.isDirectory(parent)) {
+                Files.createDirectories(parent);
             }
             System.out.println("Extracting '" + name + "' (" + contentType + ") to " + outputFile);
 
-            try (FileOutputStream os = new FileOutputStream(outputFile)) {
+            try (OutputStream os = Files.newOutputStream(outputFile)) {
                 if (embeddedStreamTranslator.shouldTranslate(inputStream, metadata)) {
                     try (InputStream translated = embeddedStreamTranslator.translate(inputStream, metadata)) {
                         IOUtils.copy(translated, os);
@@ -1121,7 +1118,7 @@ public class TikaCLI {
             }
         }
 
-        private File getOutputFile(String name, Metadata metadata, MediaType contentType) {
+        private Path getOutputFile(String name, Metadata metadata, MediaType contentType) throws IOException {
             String ext = getExtension(contentType);
             if (name.indexOf('.') == -1 && contentType != null) {
                 name += ext;
@@ -1148,13 +1145,14 @@ public class TikaCLI {
             if (prefixLength > -1) {
                 normalizedName = normalizedName.substring(prefixLength);
             }
-            File outputFile = new File(extractDir, normalizedName);
+            Path outputFile = extractDir.resolve(normalizedName);
             //if file already exists, prepend uuid
-            if (outputFile.exists()) {
+            if (Files.exists(outputFile)) {
                 String fileName = FilenameUtils.getName(normalizedName);
-                outputFile = new File(extractDir, UUID
-                        .randomUUID()
-                        .toString() + "-" + fileName);
+                outputFile = extractDir.resolve( UUID.randomUUID() + "-" + fileName);
+            }
+            if (! outputFile.toAbsolutePath().normalize().startsWith(extractDir.toAbsolutePath().normalize())) {
+                throw new IOException("Path traversal?!: " + outputFile.toAbsolutePath());
             }
             return outputFile;
         }
@@ -1171,7 +1169,7 @@ public class TikaCLI {
                     return ext;
                 }
             } catch (MimeTypeException e) {
-                e.printStackTrace();
+                LOG.info("bad mime type?", e);
             }
             return ".bin";
 
