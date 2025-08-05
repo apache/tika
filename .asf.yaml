@@ -20,6 +20,8 @@ github:
     - tika
     - extraction
     - content
+  autolink_jira:
+    - TIKA
 
 notifications:
   commits:      commits@tika.apache.org
