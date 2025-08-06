@@ -1,3 +1,9 @@
+Release 3.2.2 - 8/6/2025
+
+  * Improve detection of encrypted ODT files (TIKA-4459)
+
+  * Dependency updates (TIKA-4455).
+
 Release 3.2.1 - 6/26/2025
 
   * Fix POIFSContainerDetector regression when wrapping an InputStream in
