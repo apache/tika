@@ -37,7 +37,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLResolver;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
@@ -124,8 +123,6 @@ public class XMLReaderUtils implements Serializable {
     private static final AtomicInteger POOL_GENERATION = new AtomicInteger();
     private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER =
             (publicId, systemId) -> new InputSource(new StringReader(""));
-    private static final XMLResolver IGNORING_STAX_ENTITY_RESOLVER =
-            (publicID, systemID, baseURI, namespace) -> "";
     /**
      * Parser pool size
      */
@@ -295,7 +292,7 @@ public class XMLReaderUtils implements Serializable {
      * If a factory is not explicitly specified, then a default factory
      * instance is created and returned. The default factory instance is
      * configured to be namespace-aware and to apply reasonable security
-     * using the {@link #IGNORING_STAX_ENTITY_RESOLVER}.
+     * precautions.
      *
      * @return StAX input factory
      * @since Apache Tika 1.13
@@ -305,13 +302,12 @@ public class XMLReaderUtils implements Serializable {
         if (LOG.isDebugEnabled()) {
             LOG.debug("XMLInputFactory class {}", factory.getClass());
         }
-
+        factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
         tryToSetStaxProperty(factory, XMLInputFactory.IS_NAMESPACE_AWARE, true);
         tryToSetStaxProperty(factory, XMLInputFactory.IS_VALIDATING, false);
         tryToSetStaxProperty(factory, XMLInputFactory.SUPPORT_DTD, false);
         tryToSetStaxProperty(factory, XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 
-        factory.setXMLResolver(IGNORING_STAX_ENTITY_RESOLVER);
         trySetStaxSecurityManager(factory);
         return factory;
     }
@@ -1255,7 +1251,7 @@ public class XMLReaderUtils implements Serializable {
      * If a factory is not explicitly specified, then a default factory
      * instance is created and returned. The default factory instance is
      * configured to be namespace-aware and to apply reasonable security
-     * using the {@link XMLReaderUtils#IGNORING_STAX_ENTITY_RESOLVER}.
+     * precautions.
      *
      * @return StAX input factory
      */
