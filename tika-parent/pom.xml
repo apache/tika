@@ -312,7 +312,7 @@
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.54.0</google.cloud.version>
     <aws.version>1.12.788</aws.version>
-    <aws2.version>2.32.14</aws2.version>
+    <aws2.version>2.32.16</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -368,7 +368,7 @@
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.23.2-beta</jackrabbit.version>
-    <jackson.version>2.19.2</jackson.version>
+    <jackson.version>2.20.0-rc1</jackson.version>
     <jackcess.version>4.0.8</jackcess.version>
     <jackcess.encrypt.version>4.0.3</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
@@ -455,7 +455,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.3</zookeeper.version>
     <zstd.version>1.5.7-4</zstd.version>
-    <nimbus-jose-jwt.version>10.4</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>10.4.1</nimbus-jose-jwt.version>
     <javacpp.version>1.5.12</javacpp.version>
 
     <!-- needs to exist even if empty due to problems with jacoco-maven-plugin -->
