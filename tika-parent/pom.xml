@@ -310,7 +310,7 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.54.0</google.cloud.version>
+    <google.cloud.version>2.55.0</google.cloud.version>
     <aws.version>1.12.788</aws.version>
     <aws2.version>2.32.16</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
