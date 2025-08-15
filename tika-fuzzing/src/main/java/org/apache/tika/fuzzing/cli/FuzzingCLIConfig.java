@@ -47,16 +47,16 @@ public class FuzzingCLIConfig {
                         .desc("tika config " +
                                 "file with " +
                                 "specs for pipes parser, pipes iterator, fetchers and emitters")
-                        .required(true).build())
+                        .required(true).get())
                 .addOption(Option.builder("p").longOpt("perFile")
                 .desc("number of iterations to run per seed file").hasArg(true).required(false)
-                .build())
+                .get())
                 .addOption(Option.builder("t").longOpt("maxTransformers")
                 .desc("maximum number of transformers to run per iteration").hasArg(true)
-                .required(false).build())
+                .required(false).get())
                 .addOption(Option.builder("r").longOpt("retries")
                 .desc("number of times to retry a seed file if there's a catastrophic failure")
-                .hasArg(true).required(false).build());
+                .hasArg(true).required(false).get());
 
     }
     //number of variants tried per file
