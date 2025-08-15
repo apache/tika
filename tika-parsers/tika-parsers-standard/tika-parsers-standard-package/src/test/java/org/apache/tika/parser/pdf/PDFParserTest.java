@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -563,5 +564,21 @@ public class PDFParserTest extends TikaTest {
             }
         }
         assertEquals(expected, jsNames);
+    }
+
+    @Test
+    @Disabled("until we can sort the license of the test file")
+    public void testJavascriptOnInstantiate() throws Exception {
+        // test file: https://pdfa.org/wp-content/uploads/2021/12/Make-Buy-BOM-to-EBOM-Alignment-Example.pdf
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractActions(true);
+        ParseContext pc = new ParseContext();
+        pc.set(PDFParserConfig.class, config);
+        List<Metadata> metadataList = getRecursiveMetadata("Make-Buy-BOM-to-EBOM-Alignment-Example.pdf", pc, true);
+        assertEquals(5, metadataList.size());
+        Metadata onInstantiate = metadataList.get(4);
+        assertContains("scene.cameras.getByIndex", onInstantiate.get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("MACRO", onInstantiate.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("3DD_ON_INSTANTIATE", onInstantiate.get(PDF.ACTION_TRIGGER));
     }
 }

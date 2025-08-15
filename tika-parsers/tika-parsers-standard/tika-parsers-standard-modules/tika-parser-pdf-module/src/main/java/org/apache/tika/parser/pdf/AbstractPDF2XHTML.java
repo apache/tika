@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,6 +53,7 @@ import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSObject;
+import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDJavascriptNameTreeNode;
@@ -148,7 +150,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     //These can be unbounded.  We need to limit the number we store.
     private final static int MAX_ANNOTATION_TYPES = 100;
     private static final String THREE_D = "3D";
-    private static final COSName THREE_DD = COSName.getPDFName("3DD");
+    private static final COSName ON_INSTANTIATE = COSName.getPDFName("OnInstantiate");
     private static final String NULL_STRING = "null";
     private static final MediaType XFA_MEDIA_TYPE = MediaType.application("vnd.adobe.xdp+xml");
     private static final MediaType XMP_MEDIA_TYPE = MediaType.application("rdf+xml");
@@ -780,9 +782,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             if (annotationSubtype == null) {
                 annotationSubtype = "unknown";
             } else if (annotationSubtype.equals(THREE_D) ||
-                    annotation.getCOSObject().containsKey(THREE_DD)) {
+                    annotation.getCOSObject().containsKey(COSName.THREE_DD)) {
                 //To make this stricter, we could get the 3DD stream object and see if the
                 //subtype is U3D or PRC or model/ (prefix for model mime type)
+                extractOnInstantiate(annotation);
                 metadata.set(PDF.HAS_3D, true);
                 num3DAnnotations++;
             }
@@ -838,6 +841,28 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 }
             }
         }
+    }
+
+    private void extractOnInstantiate(PDAnnotation annotation) throws IOException, SAXException {
+        COSDictionary threeDD = annotation.getCOSObject().getCOSDictionary(COSName.THREE_DD);
+        if (threeDD == null) {
+            return;
+        }
+        COSStream stream = threeDD.getCOSStream(ON_INSTANTIATE);
+        if (stream == null) {
+            return;
+        }
+        Metadata m = getJavascriptMetadata("3DD_ON_INSTANTIATE", null, null);
+        if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+            try (TikaInputStream tis = TikaInputStream.get(stream.createInputStream())) {
+                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true);
+            }
+        }
+        AttributesImpl attrs = new AttributesImpl();
+        addNonNullAttribute("class", "javascript", attrs);
+        addNonNullAttribute("type", "3dd_on_instantiate", attrs);
+        xhtml.startElement("div", attrs);
+        xhtml.endElement("div");
     }
 
     private List<COSDictionary> findFileSpecs(COSDictionary cosDict) {
@@ -1022,28 +1047,34 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     private void processJavaScriptAction(String trigger, String jsActionName, PDActionJavaScript jsAction, AttributesImpl attrs) throws IOException, SAXException {
-        Metadata m = new Metadata();
-        m.set(Metadata.CONTENT_TYPE, "application/javascript");
-        m.set(Metadata.CONTENT_ENCODING, StandardCharsets.UTF_8.toString());
-        m.set(PDF.ACTION_TRIGGER, trigger);
-        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.MACRO.name());
-        if (! StringUtils.isBlank(jsActionName)) {
-            m.set(PDF.JS_NAME, jsActionName);
-        }
+        Metadata m = getJavascriptMetadata(trigger, jsActionName, StandardCharsets.UTF_8);
         String js = jsAction.getAction();
         js = (js == null) ? "" : js;
         if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
             try (TikaInputStream tis = TikaInputStream.get(js.getBytes(StandardCharsets.UTF_8))) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true);
             }
-        }
-        ;
+        };
         addNonNullAttribute("class", "javascript", attrs);
         addNonNullAttribute("type", jsAction.getType(), attrs);
         addNonNullAttribute("subtype", jsAction.getSubType(), attrs);
         xhtml.startElement("div", attrs);
         xhtml.endElement("div");
+    }
+
+    private Metadata getJavascriptMetadata(String trigger, String jsActionName, Charset charset) {
+        Metadata m = new Metadata();
+        m.set(Metadata.CONTENT_TYPE, "application/javascript");
+        m.set(PDF.ACTION_TRIGGER, trigger);
+        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.MACRO.name());
+        if (! StringUtils.isBlank(jsActionName)) {
+            m.set(PDF.JS_NAME, jsActionName);
+        }
+        if (charset != null) {
+            m.set(Metadata.CONTENT_ENCODING, charset.toString());
+        }
+        return m;
     }
 
     @Override
