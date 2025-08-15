@@ -54,6 +54,7 @@ import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSObject;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
+import org.apache.pdfbox.pdmodel.PDJavascriptNameTreeNode;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageTree;
 import org.apache.pdfbox.pdmodel.common.COSObjectable;
@@ -700,92 +701,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
         try {
             for (PDAnnotation annotation : page.getAnnotations()) {
-                String annotationName = annotation.getAnnotationName();
-                if (annotationTypes.size() < MAX_ANNOTATION_TYPES) {
-                    if (annotationName != null) {
-                        annotationTypes.add(annotationName);
-                    } else {
-                        annotationTypes.add(NULL_STRING);
-                    }
-                }
-                String annotationSubtype = annotation.getSubtype();
-                if (annotationSubtypes.size() < MAX_ANNOTATION_TYPES) {
-                    if (annotationSubtype != null) {
-                        annotationSubtypes.add(annotationSubtype);
-                    } else {
-                        annotationSubtypes.add(NULL_STRING);
-                    }
-                }
-                if (annotation instanceof PDAnnotationFileAttachment) {
-                    PDAnnotationFileAttachment fann = (PDAnnotationFileAttachment) annotation;
-                    String subtype = "annotationFileAttachment";
-                    AttributesImpl attributes = new AttributesImpl();
-                    attributes.addAttribute("", "source", "source", "CDATA", subtype);
-                    processDocOnAction("", subtype, fann.getFile(), attributes);
-                } else if (annotation instanceof PDAnnotationWidget) {
-                    handleWidget((PDAnnotationWidget) annotation);
-                } else {
-                    if (annotationSubtype == null) {
-                        annotationSubtype = "unknown";
-                    } else if (annotationSubtype.equals(THREE_D) ||
-                            annotation.getCOSObject().containsKey(THREE_DD)) {
-                        //To make this stricter, we could get the 3DD stream object and see if the
-                        //subtype is U3D or PRC or model/ (prefix for model mime type)
-                        metadata.set(PDF.HAS_3D, true);
-                        num3DAnnotations++;
-                    }
-                    for (COSDictionary fileSpec : findFileSpecs(annotation.getCOSObject())) {
-                        AttributesImpl attributes = new AttributesImpl();
-                        attributes.addAttribute("", "source", "source", "CDATA", annotationSubtype);
-                        processDocOnAction("", annotationSubtype, createFileSpecification(fileSpec),
-                                attributes);
-                    }
-                }
-                // TODO: remove once PDFBOX-1143 is fixed:
-                if (config.isExtractAnnotationText()) {
-                    PDActionURI uri = getActionURI(annotation);
-                    if (uri != null) {
-                        String link = uri.getURI();
-                        if (link != null && !link.isBlank()) {
-                            xhtml.startElement("div", "class", "annotation");
-                            xhtml.startElement("a", "href", link);
-                            xhtml.characters(link);
-                            xhtml.endElement("a");
-                            xhtml.endElement("div");
-                        }
-                    }
-
-                    if (annotation instanceof PDAnnotationMarkup) {
-                        PDAnnotationMarkup annotationMarkup = (PDAnnotationMarkup) annotation;
-                        String title = annotationMarkup.getTitlePopup();
-                        String subject = annotationMarkup.getSubject();
-                        String contents = annotationMarkup.getContents();
-                        // TODO: maybe also annotationMarkup.getRichContents()?
-                        if (title != null || subject != null || contents != null) {
-                            xhtml.startElement("div", "class", "annotation");
-
-                            if (title != null) {
-                                xhtml.startElement("div", "class", "annotationTitle");
-                                xhtml.characters(title);
-                                xhtml.endElement("div");
-                            }
-
-                            if (subject != null) {
-                                xhtml.startElement("div", "class", "annotationSubject");
-                                xhtml.characters(subject);
-                                xhtml.endElement("div");
-                            }
-
-                            if (contents != null) {
-                                xhtml.startElement("div", "class", "annotationContents");
-                                xhtml.characters(contents);
-                                xhtml.endElement("div");
-                            }
-
-                            xhtml.endElement("div");
-                        }
-                    }
-                }
+                processPageAnnotation(annotation);
             }
             if (config.getOcrStrategy() == PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION) {
                 doOCROnCurrentPage(page, OCR_AND_TEXT_EXTRACTION);
@@ -830,6 +746,95 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     if (fontName != null) {
                         fontNames.add(fontName);
                     }
+                }
+            }
+        }
+    }
+
+    private void processPageAnnotation(PDAnnotation annotation) throws TikaException, IOException, SAXException {
+        String annotationName = annotation.getAnnotationName();
+        if (annotationTypes.size() < MAX_ANNOTATION_TYPES) {
+            if (annotationName != null) {
+                annotationTypes.add(annotationName);
+            } else {
+                annotationTypes.add(NULL_STRING);
+            }
+        }
+        String annotationSubtype = annotation.getSubtype();
+        if (annotationSubtypes.size() < MAX_ANNOTATION_TYPES) {
+            if (annotationSubtype != null) {
+                annotationSubtypes.add(annotationSubtype);
+            } else {
+                annotationSubtypes.add(NULL_STRING);
+            }
+        }
+        if (annotation instanceof PDAnnotationFileAttachment) {
+            PDAnnotationFileAttachment fann = (PDAnnotationFileAttachment) annotation;
+            String subtype = "annotationFileAttachment";
+            AttributesImpl attributes = new AttributesImpl();
+            attributes.addAttribute("", "source", "source", "CDATA", subtype);
+            processDocOnAction("", subtype, fann.getFile(), attributes);
+        } else if (annotation instanceof PDAnnotationWidget) {
+            handleWidget((PDAnnotationWidget) annotation);
+        } else {
+            if (annotationSubtype == null) {
+                annotationSubtype = "unknown";
+            } else if (annotationSubtype.equals(THREE_D) ||
+                    annotation.getCOSObject().containsKey(THREE_DD)) {
+                //To make this stricter, we could get the 3DD stream object and see if the
+                //subtype is U3D or PRC or model/ (prefix for model mime type)
+                metadata.set(PDF.HAS_3D, true);
+                num3DAnnotations++;
+            }
+            for (COSDictionary fileSpec : findFileSpecs(annotation.getCOSObject())) {
+                AttributesImpl attributes = new AttributesImpl();
+                attributes.addAttribute("", "source", "source", "CDATA", annotationSubtype);
+                processDocOnAction("", annotationSubtype, createFileSpecification(fileSpec),
+                        attributes);
+            }
+        }
+        // TODO: remove once PDFBOX-1143 is fixed:
+        if (config.isExtractAnnotationText()) {
+            PDActionURI uri = getActionURI(annotation);
+            if (uri != null) {
+                String link = uri.getURI();
+                if (link != null && !link.isBlank()) {
+                    xhtml.startElement("div", "class", "annotation");
+                    xhtml.startElement("a", "href", link);
+                    xhtml.characters(link);
+                    xhtml.endElement("a");
+                    xhtml.endElement("div");
+                }
+            }
+
+            if (annotation instanceof PDAnnotationMarkup) {
+                PDAnnotationMarkup annotationMarkup = (PDAnnotationMarkup) annotation;
+                String title = annotationMarkup.getTitlePopup();
+                String subject = annotationMarkup.getSubject();
+                String contents = annotationMarkup.getContents();
+                // TODO: maybe also annotationMarkup.getRichContents()?
+                if (title != null || subject != null || contents != null) {
+                    xhtml.startElement("div", "class", "annotation");
+
+                    if (title != null) {
+                        xhtml.startElement("div", "class", "annotationTitle");
+                        xhtml.characters(title);
+                        xhtml.endElement("div");
+                    }
+
+                    if (subject != null) {
+                        xhtml.startElement("div", "class", "annotationSubject");
+                        xhtml.characters(subject);
+                        xhtml.endElement("div");
+                    }
+
+                    if (contents != null) {
+                        xhtml.startElement("div", "class", "annotationContents");
+                        xhtml.characters(contents);
+                        xhtml.endElement("div");
+                    }
+
+                    xhtml.endElement("div");
                 }
             }
         }
@@ -906,6 +911,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     protected void startDocument(PDDocument pdf) throws IOException {
         try {
             xhtml.startDocument();
+            extractJavaScript(pdf);
             try {
                 handleDestinationOrAction(pdf.getDocumentCatalog().getOpenAction(),
                         ActionTrigger.DOCUMENT_OPEN);
@@ -916,6 +922,57 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         } catch (TikaException | SAXException e) {
             throw new IOException("Unable to start a document", e);
         }
+    }
+
+    private void extractJavaScript(PDDocument pdf) throws SAXException {
+        if (! config.isExtractActions()) {
+            return;
+        }
+        if (pdf.getDocumentCatalog() == null || pdf.getDocumentCatalog().getNames() == null
+                || pdf.getDocumentCatalog().getNames().getJavaScript() == null) {
+            return;
+        }
+        try {
+            PDJavascriptNameTreeNode pdjntn = pdf.getDocumentCatalog().getNames().getJavaScript();
+            addJavaScript(pdjntn.getNames());
+            int depth = 0;
+            processJavascriptNameTreeNodeKids(pdjntn.getKids(), depth + 1);
+        } catch (IOException e) {
+            //swallow
+        }
+    }
+
+    private void addJavaScript(Map<String, PDActionJavaScript> pdActionJavaScriptMap) throws IOException, SAXException {
+        for (Map.Entry<String, PDActionJavaScript> e : pdActionJavaScriptMap.entrySet()) {
+            String action = e.getValue().getAction();
+            if (StringUtils.isBlank(action)) {
+                return;
+            }
+            AttributesImpl attributes = new AttributesImpl();
+
+            addNonNullAttribute("trigger", "namesTree", attributes);
+            addNonNullAttribute("type", e.getValue().getClass().getSimpleName(), attributes);
+
+            processJavaScriptAction("NAMES_TREE", e.getKey(), e.getValue(), attributes);
+        }
+
+    }
+
+    private void processJavascriptNameTreeNodeKids(List<PDNameTreeNode<PDActionJavaScript>> kids, int depth) throws IOException, SAXException {
+
+        if (kids == null) {
+            return;
+        }
+
+        if (depth > MAX_RECURSION_DEPTH) {
+            //hit max recursion
+            //return silently
+            return;
+        }
+        for (PDNameTreeNode<PDActionJavaScript> pdntn: kids) {
+            addJavaScript(pdntn.getNames());
+            processJavascriptNameTreeNodeKids(pdntn.getKids(), depth + 1);
+        };
     }
 
     private void handleDestinationOrAction(PDDestinationOrAction action,
@@ -952,25 +1009,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             PDActionRemoteGoTo remoteGoTo = (PDActionRemoteGoTo) action;
             processDocOnAction("", "", remoteGoTo.getFile(), attributes);
         } else if (action instanceof PDActionJavaScript) {
-            PDActionJavaScript jsAction = (PDActionJavaScript) action;
-            Metadata m = new Metadata();
-            m.set(Metadata.CONTENT_TYPE, "application/javascript");
-            m.set(Metadata.CONTENT_ENCODING, StandardCharsets.UTF_8.toString());
-            m.set(PDF.ACTION_TRIGGER, actionTrigger.toString());
-            m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                    TikaCoreProperties.EmbeddedResourceType.MACRO.name());
-            String js = jsAction.getAction();
-            js = (js == null) ? "" : js;
-            if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
-                try (TikaInputStream tis = TikaInputStream.get(js.getBytes(StandardCharsets.UTF_8))) {
-                    embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true);
-                }
-            }
-            addNonNullAttribute("class", "javascript", attributes);
-            addNonNullAttribute("type", jsAction.getType(), attributes);
-            addNonNullAttribute("subtype", jsAction.getSubType(), attributes);
-            xhtml.startElement("div", attributes);
-            xhtml.endElement("div");
+            processJavaScriptAction(actionTrigger.name(), null, (PDActionJavaScript) action, attributes);
         /*} else if (action instanceof PDActionSubmitForm) {
             PDActionSubmitForm submitForm = (PDActionSubmitForm) action;
             //these are typically urls, not actual file specification
@@ -980,6 +1019,31 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
         }
+    }
+
+    private void processJavaScriptAction(String trigger, String jsActionName, PDActionJavaScript jsAction, AttributesImpl attrs) throws IOException, SAXException {
+        Metadata m = new Metadata();
+        m.set(Metadata.CONTENT_TYPE, "application/javascript");
+        m.set(Metadata.CONTENT_ENCODING, StandardCharsets.UTF_8.toString());
+        m.set(PDF.ACTION_TRIGGER, trigger);
+        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.MACRO.name());
+        if (! StringUtils.isBlank(jsActionName)) {
+            m.set(PDF.JS_NAME, jsActionName);
+        }
+        String js = jsAction.getAction();
+        js = (js == null) ? "" : js;
+        if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+            try (TikaInputStream tis = TikaInputStream.get(js.getBytes(StandardCharsets.UTF_8))) {
+                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true);
+            }
+        }
+        ;
+        addNonNullAttribute("class", "javascript", attrs);
+        addNonNullAttribute("type", jsAction.getType(), attrs);
+        addNonNullAttribute("subtype", jsAction.getSubType(), attrs);
+        xhtml.startElement("div", attrs);
+        xhtml.endElement("div");
     }
 
     @Override

@@ -215,4 +215,10 @@ public interface PDF {
      */
     Property OCR_PAGE_COUNT = Property.externalInteger(PDF_PREFIX + "ocrPageCount");
 
+    /**
+     * When javascript is stored in the names tree, there's a name associated with that script.
+     * This is that name. When javascript is stored in an action, there is no name, and this
+     * metadata will not be populated.
+     */
+    Property JS_NAME = Property.internalText(PDF_PREFIX + "jsName");
 }
