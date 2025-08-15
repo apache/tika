@@ -754,6 +754,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     private void processPageAnnotation(PDAnnotation annotation) throws TikaException, IOException, SAXException {
+
         String annotationName = annotation.getAnnotationName();
         if (annotationTypes.size() < MAX_ANNOTATION_TYPES) {
             if (annotationName != null) {
@@ -786,6 +787,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 //To make this stricter, we could get the 3DD stream object and see if the
                 //subtype is U3D or PRC or model/ (prefix for model mime type)
                 extractOnInstantiate(annotation);
+                COSDictionary additionalActions = annotation.getCOSObject().getCOSDictionary(COSName.AA);
+                if (additionalActions != null) {
+                    handlePDAnnotationAdditionalActions(new PDAnnotationAdditionalActions(additionalActions));
+                }
                 metadata.set(PDF.HAS_3D, true);
                 num3DAnnotations++;
             }
@@ -796,49 +801,50 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                         attributes);
             }
         }
+        if (! config.isExtractAnnotationText()) {
+            return;
+        }
         // TODO: remove once PDFBOX-1143 is fixed:
-        if (config.isExtractAnnotationText()) {
-            PDActionURI uri = getActionURI(annotation);
-            if (uri != null) {
-                String link = uri.getURI();
-                if (link != null && !link.isBlank()) {
-                    xhtml.startElement("div", "class", "annotation");
-                    xhtml.startElement("a", "href", link);
-                    xhtml.characters(link);
-                    xhtml.endElement("a");
-                    xhtml.endElement("div");
-                }
+        PDActionURI uri = getActionURI(annotation);
+        if (uri != null) {
+            String link = uri.getURI();
+            if (link != null && !link.isBlank()) {
+                xhtml.startElement("div", "class", "annotation");
+                xhtml.startElement("a", "href", link);
+                xhtml.characters(link);
+                xhtml.endElement("a");
+                xhtml.endElement("div");
             }
+        }
 
-            if (annotation instanceof PDAnnotationMarkup) {
-                PDAnnotationMarkup annotationMarkup = (PDAnnotationMarkup) annotation;
-                String title = annotationMarkup.getTitlePopup();
-                String subject = annotationMarkup.getSubject();
-                String contents = annotationMarkup.getContents();
-                // TODO: maybe also annotationMarkup.getRichContents()?
-                if (title != null || subject != null || contents != null) {
-                    xhtml.startElement("div", "class", "annotation");
+        if (annotation instanceof PDAnnotationMarkup) {
+            PDAnnotationMarkup annotationMarkup = (PDAnnotationMarkup) annotation;
+            String title = annotationMarkup.getTitlePopup();
+            String subject = annotationMarkup.getSubject();
+            String contents = annotationMarkup.getContents();
+            // TODO: maybe also annotationMarkup.getRichContents()?
+            if (title != null || subject != null || contents != null) {
+                xhtml.startElement("div", "class", "annotation");
 
-                    if (title != null) {
-                        xhtml.startElement("div", "class", "annotationTitle");
-                        xhtml.characters(title);
-                        xhtml.endElement("div");
-                    }
-
-                    if (subject != null) {
-                        xhtml.startElement("div", "class", "annotationSubject");
-                        xhtml.characters(subject);
-                        xhtml.endElement("div");
-                    }
-
-                    if (contents != null) {
-                        xhtml.startElement("div", "class", "annotationContents");
-                        xhtml.characters(contents);
-                        xhtml.endElement("div");
-                    }
-
+                if (title != null) {
+                    xhtml.startElement("div", "class", "annotationTitle");
+                    xhtml.characters(title);
                     xhtml.endElement("div");
                 }
+
+                if (subject != null) {
+                    xhtml.startElement("div", "class", "annotationSubject");
+                    xhtml.characters(subject);
+                    xhtml.endElement("div");
+                }
+
+                if (contents != null) {
+                    xhtml.startElement("div", "class", "annotationContents");
+                    xhtml.characters(contents);
+                    xhtml.endElement("div");
+                }
+
+                xhtml.endElement("div");
             }
         }
     }
@@ -906,30 +912,23 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return;
         }
         handleDestinationOrAction(widget.getAction(), ActionTrigger.ANNOTATION_WIDGET);
-        PDAnnotationAdditionalActions annotationActions = widget.getActions();
-        if (annotationActions != null) {
-            handleDestinationOrAction(annotationActions.getBl(),
-                    ActionTrigger.ANNOTATION_LOSE_INPUT_FOCUS);
-            handleDestinationOrAction(annotationActions.getD(),
-                    ActionTrigger.ANNOTATION_MOUSE_CLICK);
-            handleDestinationOrAction(annotationActions.getE(),
-                    ActionTrigger.ANNOTATION_CURSOR_ENTERS);
-            handleDestinationOrAction(annotationActions.getFo(),
-                    ActionTrigger.ANNOTATION_RECEIVES_FOCUS);
-            handleDestinationOrAction(annotationActions.getPC(),
-                    ActionTrigger.ANNOTATION_PAGE_CLOSED);
-            handleDestinationOrAction(annotationActions.getPI(),
-                    ActionTrigger.ANNOTATION_PAGE_NO_LONGER_VISIBLE);
-            handleDestinationOrAction(annotationActions.getPO(),
-                    ActionTrigger.ANNOTATION_PAGE_OPENED);
-            handleDestinationOrAction(annotationActions.getPV(),
-                    ActionTrigger.ANNOTATION_PAGE_VISIBLE);
-            handleDestinationOrAction(annotationActions.getU(),
-                    ActionTrigger.ANNOTATION_MOUSE_RELEASED);
-            handleDestinationOrAction(annotationActions.getX(),
-                    ActionTrigger.ANNOTATION_CURSOR_EXIT);
-        }
+        handlePDAnnotationAdditionalActions(widget.getActions());
+    }
 
+    private void handlePDAnnotationAdditionalActions(PDAnnotationAdditionalActions annotationActions) throws TikaException, IOException, SAXException {
+        if (annotationActions == null) {
+            return;
+        }
+        handleDestinationOrAction(annotationActions.getBl(), ActionTrigger.ANNOTATION_LOSE_INPUT_FOCUS);
+        handleDestinationOrAction(annotationActions.getD(), ActionTrigger.ANNOTATION_MOUSE_CLICK);
+        handleDestinationOrAction(annotationActions.getE(), ActionTrigger.ANNOTATION_CURSOR_ENTERS);
+        handleDestinationOrAction(annotationActions.getFo(), ActionTrigger.ANNOTATION_RECEIVES_FOCUS);
+        handleDestinationOrAction(annotationActions.getPC(), ActionTrigger.ANNOTATION_PAGE_CLOSED);
+        handleDestinationOrAction(annotationActions.getPI(), ActionTrigger.ANNOTATION_PAGE_NO_LONGER_VISIBLE);
+        handleDestinationOrAction(annotationActions.getPO(), ActionTrigger.ANNOTATION_PAGE_OPENED);
+        handleDestinationOrAction(annotationActions.getPV(), ActionTrigger.ANNOTATION_PAGE_VISIBLE);
+        handleDestinationOrAction(annotationActions.getU(), ActionTrigger.ANNOTATION_MOUSE_RELEASED);
+        handleDestinationOrAction(annotationActions.getX(), ActionTrigger.ANNOTATION_CURSOR_EXIT);
     }
 
     @Override

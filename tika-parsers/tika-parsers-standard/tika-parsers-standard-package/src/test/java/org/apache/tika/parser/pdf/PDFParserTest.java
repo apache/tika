@@ -575,10 +575,13 @@ public class PDFParserTest extends TikaTest {
         ParseContext pc = new ParseContext();
         pc.set(PDFParserConfig.class, config);
         List<Metadata> metadataList = getRecursiveMetadata("Make-Buy-BOM-to-EBOM-Alignment-Example.pdf", pc, true);
-        assertEquals(5, metadataList.size());
+        assertEquals(6, metadataList.size());
         Metadata onInstantiate = metadataList.get(4);
         assertContains("scene.cameras.getByIndex", onInstantiate.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("MACRO", onInstantiate.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("3DD_ON_INSTANTIATE", onInstantiate.get(PDF.ACTION_TRIGGER));
+
+        //test that the additional actions on the 3d object are processed
+        assertContains("this.notify3DAnnotPageOpen()", metadataList.get(5).get(TikaCoreProperties.TIKA_CONTENT));
     }
 }
