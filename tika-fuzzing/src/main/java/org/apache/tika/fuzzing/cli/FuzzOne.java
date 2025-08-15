@@ -68,19 +68,19 @@ public class FuzzOne {
 
         OPTIONS = new Options().addOption(
                 Option.builder("i").longOpt("inputFile").desc("input directory for seed files")
-                        .hasArg(true).required(true).build()).addOption(
+                        .hasArg(true).required(true).get()).addOption(
                 Option.builder("o").longOpt("outputFile").desc("output file base").hasArg(true)
-                        .required(true).build()).addOption(Option.builder("m").longOpt("timeoutMs")
+                        .required(true).get()).addOption(Option.builder("m").longOpt("timeoutMs")
                 .desc("timeout in ms -- max time allowed to parse a file").hasArg(true)
-                .required(true).build()).addOption(
+                .required(true).get()).addOption(
                 Option.builder("n").desc("thread id (thread number)").hasArg(true).required(true)
-                        .build()).addOption(Option.builder("p").longOpt("perFile")
+                        .get()).addOption(Option.builder("p").longOpt("perFile")
                 .desc("number of iterations to run per seed file").hasArg(true).required(true)
-                .build()).addOption(Option.builder("t").longOpt("maxTransformers")
+                .get()).addOption(Option.builder("t").longOpt("maxTransformers")
                 .desc("maximum number of transformers to run per iteration").hasArg(true)
-                .required(true).build()).addOption(
+                .required(true).get()).addOption(
                 Option.builder("r").longOpt("retryId").desc("which retry is this").hasArg(true)
-                        .required(true).build());
+                        .required(true).get());
     }
 
     Parser parser = new AutoDetectParser();
