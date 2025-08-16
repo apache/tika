@@ -93,12 +93,12 @@ public class TikaServerConfigTest {
                         .builder("p")
                         .longOpt("port")
                         .hasArg()
-                        .build())
+                        .get())
                 .addOption(Option
                         .builder("c")
                         .longOpt("config")
                         .hasArg()
-                        .build()), new String[]{"-p", "9994-9999", "-c", ProcessUtils.escapeCommandLine(path
+                        .get()), new String[]{"-p", "9994-9999", "-c", ProcessUtils.escapeCommandLine(path
                 .toAbsolutePath()
                 .toString())});
         TikaServerConfig config = TikaServerConfig.load(commandLine);
