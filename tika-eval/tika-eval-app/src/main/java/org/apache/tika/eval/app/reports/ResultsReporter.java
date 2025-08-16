@@ -36,9 +36,9 @@ import javax.xml.parsers.DocumentBuilder;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.help.HelpFormatter;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,11 +76,10 @@ public class ResultsReporter {
     List<String> after = new ArrayList<>();
     List<Report> reports = new ArrayList<>();
 
-    public static void USAGE() {
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp(80, "java -jar tika-eval-x.y.jar Report -db mydb [-rd myreports] [-rf myreports.xml]", "Tool: Report", ResultsReporter.OPTIONS,
-                "Note: for h2 db, do not include the .mv.db at the end of the db name.");
-
+    public static void USAGE() throws IOException {
+        HelpFormatter helpFormatter = HelpFormatter.builder().get();
+        helpFormatter.printHelp("java -jar tika-eval-x.y.jar Report -db mydb [-rd myreports] [-rf myreports.xml]", "Tool: Report", ResultsReporter.OPTIONS,
+                "Note: for h2 db, do not include the .mv.db at the end of the db name.", true);
     }
 
     public static ResultsReporter build(Path p) throws Exception {

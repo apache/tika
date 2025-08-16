@@ -26,9 +26,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.help.HelpFormatter;
 import org.apache.commons.io.FilenameUtils;
 
 import org.apache.tika.batch.FileResource;
@@ -126,10 +126,10 @@ public class ExtractComparer extends AbstractProfiler {
         this.extractReader = extractReader;
     }
 
-    public static void USAGE() {
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp(80, "java -jar tika-eval-x.y.jar Compare -extractsA extractsA -extractsB extractsB -db mydb", "Tool: Compare", ExtractComparer.OPTIONS,
-                "Note: for the default h2 db, do not include the .mv.db at the end of the db name.");
+    public static void USAGE() throws IOException {
+        HelpFormatter helpFormatter = HelpFormatter.builder().get();
+        helpFormatter.printHelp("java -jar tika-eval-x.y.jar Compare -extractsA extractsA -extractsB extractsB -db mydb", "Tool: Compare", ExtractComparer.OPTIONS, 
+                "Note: for the default h2 db, do not include the .mv.db at the end of the db name.", true);
     }
 
     @Override

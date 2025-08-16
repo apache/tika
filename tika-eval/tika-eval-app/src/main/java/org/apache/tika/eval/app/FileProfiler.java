@@ -25,9 +25,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.help.HelpFormatter;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -101,10 +101,10 @@ public class FileProfiler extends AbstractProfiler {
         this.inputDir = inputDir;
     }
 
-    public static void USAGE() {
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp(80, "java -jar tika-eval-x.y.jar FileProfiler -inputDir docs -db mydb [-inputDir input]", "Tool: Profile", FileProfiler.OPTIONS,
-                "Note: for the default h2 db, do not include the .mv.db at the end of the db name.");
+    public static void USAGE() throws IOException {
+        HelpFormatter helpFormatter = HelpFormatter.builder().get();
+        helpFormatter.printHelp("java -jar tika-eval-x.y.jar FileProfiler -inputDir docs -db mydb [-inputDir input]", "Tool: Profile", FileProfiler.OPTIONS, 
+                "Note: for the default h2 db, do not include the .mv.db at the end of the db name.", true);
     }
 
     @Override
