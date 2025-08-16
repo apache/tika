@@ -29,9 +29,9 @@ import java.util.concurrent.Future;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.help.HelpFormatter;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +55,9 @@ public class FSBatchProcessCLI {
             configIs = getConfigInputStream(args, true);
             CommandLineParserBuilder builder = new CommandLineParserBuilder();
             options = builder.build(configIs);
+            if (!options.hasOption("help")) {
+                options.addOption("?", "help", false, "this help message");
+            }
         } finally {
             IOUtils.closeQuietly(configIs);
         }
@@ -71,9 +74,9 @@ public class FSBatchProcessCLI {
         }
     }
 
-    public void usage() {
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp("tika filesystem batch", options);
+    public void usage() throws IOException {
+        HelpFormatter helpFormatter = HelpFormatter.builder().get();
+        helpFormatter.printHelp("tika filesystem batch", null, options, null, true);
     }
 
     private TikaInputStream getConfigInputStream(String[] args, boolean logDefault) throws IOException {
