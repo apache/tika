@@ -312,7 +312,7 @@
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.55.0</google.cloud.version>
     <aws.version>1.12.788</aws.version>
-    <aws2.version>2.32.23</aws2.version>
+    <aws2.version>2.32.24</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -391,8 +391,8 @@
          but this class is now in org.eclipse.jetty.client, see also 
          https://jetty.org/docs/jetty/12/programming-guide/migration/11-to-12.html 
          when updating, see also TODO in PipesBiDirectionalStreamingIntegrationTest -->
-    <jetty.version>11.0.25</jetty.version>
-    <jetty.http2.version>11.0.25</jetty.http2.version>
+    <jetty.version>11.0.26</jetty.version>
+    <jetty.http2.version>11.0.26</jetty.http2.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.17.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
@@ -1238,7 +1238,13 @@
             <coordinate>
               <groupId>org.eclipse.jetty</groupId>
               <artifactId>jetty-http</artifactId>
-              <version>11.0.25</version>
+              <version>11.0.26</version>
+            </coordinate>
+            <!-- [CVE-2025-1948], used in the Solr emitter. No apparent upgrade available yet. -->
+            <coordinate>
+                <groupId>org.eclipse.jetty.http2</groupId>
+                <artifactId>http2-common</artifactId>
+                <version>11.0.26</version>
             </coordinate>
             <!-- used only in tests and in tika-eval, and this problem requires the use of the console.
                  https://github.com/h2database/h2database/issues/1294 -->
@@ -1272,12 +1278,6 @@
                 <groupId>org.bytedeco</groupId>
                 <artifactId>hdf5-platform</artifactId>
                 <version>1.14.3-1.5.10</version>
-            </coordinate>
-            <!-- [CVE-2025-1948], used in the Solr emitter. No apparent upgrade available yet. -->
-            <coordinate>
-                <groupId>org.eclipse.jetty.http2</groupId>
-                <artifactId>http2-common</artifactId>
-                <version>11.0.25</version>
             </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
