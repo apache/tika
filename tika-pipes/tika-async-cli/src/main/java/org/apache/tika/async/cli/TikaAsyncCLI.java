@@ -16,6 +16,7 @@
  */
 package org.apache.tika.async.cli;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,7 +25,6 @@ import java.util.concurrent.TimeoutException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
@@ -81,7 +81,7 @@ public class TikaAsyncCLI {
     }
 
     //not private for testing purposes
-    static SimpleAsyncConfig parseCommandLine(String[] args) throws ParseException {
+    static SimpleAsyncConfig parseCommandLine(String[] args) throws ParseException, IOException {
         if (args.length == 2 && ! args[0].startsWith("-")) {
             return new SimpleAsyncConfig(args[0], args[1], null, null, null, null);
         }
@@ -148,12 +148,12 @@ public class TikaAsyncCLI {
         }
     }
 
-    private static void usage(Options options) {
+    private static void usage(Options options) throws IOException {
         System.out.println("Two primary options:");
         System.out.println("\t1. Specify a tika-config.xml on the commandline that includes the definitions for async");
         System.out.println("\t2. Commandline:");
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp("tikaAsynCli", options);
+        org.apache.commons.cli.help.HelpFormatter helpFormatter = org.apache.commons.cli.help.HelpFormatter.builder().get();
+        helpFormatter.printHelp("tikaAsynCli", null, options, null, true);
         System.exit(1);
     }
 }

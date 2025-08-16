@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.help.HelpFormatter;
 import org.apache.commons.io.FilenameUtils;
 
 import org.apache.tika.eval.app.db.ColInfo;
@@ -91,10 +91,11 @@ public class ExtractComparer extends ProfilerBase {
         this.extractReader = extractReader;
     }
 
-    public static void USAGE() {
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp(80, "java -jar tika-eval-x.y.jar Compare -extractsA extractsA -extractsB extractsB -db mydb", "Tool: Compare", ExtractComparer.OPTIONS,
-                "Note: for the default h2 db, do not include the .mv.db at the end of the db name.");
+    public static void USAGE() throws IOException {
+        HelpFormatter helpFormatter = HelpFormatter.builder().get();
+        helpFormatter.printHelp("java -jar tika-eval-x.y.jar Compare -extractsA extractsA -extractsB extractsB -db mydb", 
+                "Tool: Compare", ExtractComparer.OPTIONS, 
+                "Note: for the default h2 db, do not include the .mv.db at the end of the db name.", true);
     }
 
     @Override
@@ -281,11 +282,11 @@ public class ExtractComparer extends ProfilerBase {
      * @return
      */
     private String findSharedDigestKey(List<Metadata> metadataListA, List<Metadata> metadataListB) {
-        if (metadataListB == null || metadataListB.size() == 0) {
+        if (metadataListB == null || metadataListB.isEmpty()) {
             return null;
         }
         Set<String> digestA = new HashSet<>();
-        if (metadataListA != null && metadataListA.size() > 0) {
+        if (metadataListA != null && !metadataListA.isEmpty()) {
             for (String n : metadataListA
                     .get(0)
                     .names()) {

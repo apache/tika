@@ -40,9 +40,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.help.HelpFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,11 +71,11 @@ public class ExtractProfileRunner {
     static {
 
         OPTIONS = new Options()
-                .addOption(Option.builder("e").longOpt("extracts").hasArg().desc("required: directory of extracts").build())
+                .addOption(Option.builder("e").longOpt("extracts").hasArg().desc("required: directory of extracts").get())
                 .addOption(Option.builder("i").longOpt("inputDir").hasArg().desc("optional: directory for original binary input documents."
-                        + " If not specified, -extracts is crawled as is.").build())
-                .addOption(Option.builder("d").longOpt("db").hasArg().desc("optional: db path").build())
-                .addOption(Option.builder("c").longOpt("config").hasArg().desc("tika-eval json config file").build())
+                        + " If not specified, -extracts is crawled as is.").get())
+                .addOption(Option.builder("d").longOpt("db").hasArg().desc("optional: db path").get())
+                .addOption(Option.builder("c").longOpt("config").hasArg().desc("tika-eval json config file").get())
                 ;
     }
     public static void main(String[] args) throws Exception {
@@ -178,13 +178,13 @@ public class ExtractProfileRunner {
         return new MimeBuffer(jdbcUtil.getConnection(), builder.getMimeTable(), TikaConfig.getDefaultConfig());
     }
 
-    private static void USAGE() {
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp(80, "java -jar tika-eval-app-x.y.z.jar FileProfiler -e docs -d mydb [-i inputDir, -c config.json]",
-                "Tool: Profile", OPTIONS, "");
+    private static void USAGE() throws IOException {
+        HelpFormatter helpFormatter = HelpFormatter.builder().get();
+        helpFormatter.printHelp("java -jar tika-eval-app-x.y.z.jar FileProfiler -e docs -d mydb [-i inputDir, -c config.json]",
+                "Tool: Profile", OPTIONS, null, true);
     }
 
-    private static String USAGE_FAIL(String msg) {
+    private static String USAGE_FAIL(String msg) throws IOException {
         USAGE();
         throw new IllegalArgumentException(msg);
     }
