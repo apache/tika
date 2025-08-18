@@ -556,7 +556,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         try (TemporaryResources tmp = new TemporaryResources()) {
             try (RenderResult renderResult = renderCurrentPage(pdPage, context, tmp)) {
                 Metadata renderMetadata = renderResult.getMetadata();
-                try (TikaInputStream tis = renderResult.getInputStream()) {
+                try (TikaInputStream tis = TikaInputStream.get(renderResult.getInputStream())) {
                     renderMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
                             ocrImageMediaType.toString());
                     ocrParser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
