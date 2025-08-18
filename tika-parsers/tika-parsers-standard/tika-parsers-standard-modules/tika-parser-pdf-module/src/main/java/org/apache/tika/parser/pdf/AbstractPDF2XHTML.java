@@ -935,7 +935,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     protected void startDocument(PDDocument pdf) throws IOException {
         try {
             xhtml.startDocument();
-            extractJavaScript(pdf);
+            extractJavaScriptFromNameTreeNode(pdf);
             try {
                 handleDestinationOrAction(pdf.getDocumentCatalog().getOpenAction(),
                         ActionTrigger.DOCUMENT_OPEN);
@@ -948,7 +948,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    private void extractJavaScript(PDDocument pdf) throws SAXException {
+    private void extractJavaScriptFromNameTreeNode(PDDocument pdf) throws SAXException {
         if (! config.isExtractActions()) {
             return;
         }
@@ -990,7 +990,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
         if (depth > MAX_RECURSION_DEPTH) {
             //hit max recursion
-            //return silently
+            //return silently for now...maybe throw Exception?
             return;
         }
         for (PDNameTreeNode<PDActionJavaScript> pdntn: kids) {
