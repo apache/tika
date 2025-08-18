@@ -25,13 +25,18 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -54,6 +59,7 @@ import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.parser.xml.XMLProfiler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.utils.StringUtils;
 
 public class PDFParserTest extends TikaTest {
     public static final MediaType TYPE_TEXT = MediaType.TEXT_PLAIN;
@@ -250,7 +256,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testEmbeddedDocsWithOCROnly() throws Exception {
-        assumeTrue(canRunOCR(), "can run OCR");
+        assumeTrue(canRunOCR(), "can't run OCR");
         //test default is "auto"
         assertEquals(PDFParserConfig.OCR_STRATEGY.AUTO, new PDFParserConfig().getOcrStrategy());
         testStrategy(null);
@@ -366,7 +372,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testJBIG2OCROnly() throws Exception {
-        assumeTrue(canRunOCR(), "can run OCR");
+        assumeTrue(canRunOCR(), "can't run OCR");
         PDFParserConfig config = new PDFParserConfig();
         config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
         ParseContext context = new ParseContext();
@@ -378,7 +384,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testJPEG2000() throws Exception {
-        assumeTrue(canRunOCR(), "can run OCR");
+        assumeTrue(canRunOCR(), "can't run OCR");
         PDFParserConfig config = new PDFParserConfig();
         config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
         ParseContext context = new ParseContext();
@@ -390,7 +396,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testOCRAutoMode() throws Exception {
-        assumeTrue(canRunOCR(), "can run OCR");
+        assumeTrue(canRunOCR(), "can't run OCR");
 
         //default
         assertContains("Happy New Year", getXML("testOCR.pdf").xml);
@@ -409,7 +415,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testOCRNoText() throws Exception {
-        assumeTrue(canRunOCR(), "can run OCR");
+        assumeTrue(canRunOCR(), "can't run OCR");
         PDFParserConfig config = new PDFParserConfig();
         config.setOcrRenderingStrategy(PDFParserConfig.OCR_RENDERING_STRATEGY.ALL);
         config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
@@ -432,7 +438,7 @@ public class PDFParserTest extends TikaTest {
         //TIKA-2970 -- make sure that configurations set on the TesseractOCRParser
         //make it through to when the TesseractOCRParser is called via
         //the PDFParser
-        assumeTrue(canRunOCR(), "can run OCR");
+        assumeTrue(canRunOCR(), "can't run OCR");
 
         //via the config, tesseract should skip this file because it is too large
         try (InputStream is = getResourceAsStream(
@@ -457,8 +463,8 @@ public class PDFParserTest extends TikaTest {
     public void testMuPDFInOCR() throws Exception {
         //TODO -- need to add "rendered by" to confirm that mutool was actually called
         //and that there wasn't some backoff to PDFBox the PDFParser
-        assumeTrue(canRunOCR(), "can run OCR");
-        assumeTrue(hasMuPDF(), "has mupdf");
+        assumeTrue(canRunOCR(), "can't run OCR");
+        assumeTrue(hasMuPDF(), "does not have mupdf");
         try (InputStream is = getResourceAsStream(
                 "/configs/tika-rendering-mupdf-config.xml")) {
             assertNotNull(is);
@@ -506,5 +512,75 @@ public class PDFParserTest extends TikaTest {
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.VERSION.toString(),
                 metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    @Test
+    public void testJavascriptInNamesTreeOne() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractActions(true);
+        ParseContext pc = new ParseContext();
+        pc.set(PDFParserConfig.class, config);
+        List<Metadata> metadataList = getRecursiveMetadata("testPDFPackage.pdf", pc, true);
+        assertEquals(4, metadataList.size());
+        //look for markup in primary document
+        Metadata m = metadataList.get(0);
+        String xhtml = m.get(TikaCoreProperties.TIKA_CONTENT);
+        Matcher matcher = Pattern.compile("<div ([^>]{0,1000})>").matcher(xhtml);
+        boolean found = false;
+        while (matcher.find()) {
+            String div = matcher.group(1);
+            if (div.contains("trigger=\"namesTree\"")) {
+                assertContains("type=\"PDActionJavaScript\"", div);
+                assertContains("class=\"javascript\"", div);
+                assertContains("subtype=\"JavaScript\"", div);
+                found = true;
+            }
+        }
+        if (! found) {
+            fail("failed to find js div in main document");
+        }
+        //now test js extraction
+        Metadata js = metadataList.get(1);
+        assertEquals("MACRO", js.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("NAMES_TREE", js.get(PDF.ACTION_TRIGGER));
+        assertTrue(js.get(PDF.JS_NAME).startsWith("ADBE::FileAttachmentsCompatibility"));
+        assertContains("app.viewerVersion", js.get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testJavascriptInNamesTreeTwo() throws Exception {
+        Set<String> expected = Set.of("!ADBE::0200_VersChkCode_XFACheck", "!ADBE::0100_VersChkVars", "!ADBE::0100_VersChkStrings");
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractActions(true);
+        ParseContext pc = new ParseContext();
+        pc.set(PDFParserConfig.class, config);
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_XFA_govdocs1_258578.pdf", pc, true);
+        Set<String> jsNames = new HashSet<>();
+        for (Metadata m : metadataList) {
+            String n = m.get(PDF.JS_NAME);
+            if (!StringUtils.isBlank(n)) {
+                jsNames.add(n);
+            }
+        }
+        assertEquals(expected, jsNames);
+    }
+
+    @Test
+    @Disabled("until we can sort the license of the test file")
+    public void testJavascriptOnInstantiate() throws Exception {
+        // test file: https://pdfa.org/wp-content/uploads/2021/12/Make-Buy-BOM-to-EBOM-Alignment-Example.pdf
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractActions(true);
+        ParseContext pc = new ParseContext();
+        pc.set(PDFParserConfig.class, config);
+        List<Metadata> metadataList = getRecursiveMetadata("Make-Buy-BOM-to-EBOM-Alignment-Example.pdf", pc, true);
+        assertEquals(6, metadataList.size());
+        Metadata onInstantiate = metadataList.get(4);
+        assertContains("scene.cameras.getByIndex", onInstantiate.get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("MACRO", onInstantiate.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("3DD_ON_INSTANTIATE", onInstantiate.get(PDF.ACTION_TRIGGER));
+
+        //test that the additional actions on the 3d object are processed
+        assertContains("this.notify3DAnnotPageOpen()", metadataList.get(5).get(TikaCoreProperties.TIKA_CONTENT));
     }
 }
