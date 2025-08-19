@@ -60,6 +60,8 @@ import org.apache.tika.utils.XMLReaderUtils;
 
 public class PDMetadataExtractor {
 
+    private final static String X_DEFAULT = "x-default";
+
     public static void extract(PDMetadata pdMetadata, Metadata metadata, ParseContext context) {
         if (pdMetadata == null) {
             metadata.set(PDF.HAS_XMP, "false");
@@ -399,6 +401,9 @@ public class PDMetadataExtractor {
                 String value = schema.getLanguageProperty(dcName, lang);
                 if (value != null && ! value.isBlank()) {
                     addMetadata(metadata, property, value);
+                    if (! lang.equals(X_DEFAULT)) {
+                        addMetadata(metadata, property.getName() + ":" + lang, value);
+                    }
                 }
             }
         }
