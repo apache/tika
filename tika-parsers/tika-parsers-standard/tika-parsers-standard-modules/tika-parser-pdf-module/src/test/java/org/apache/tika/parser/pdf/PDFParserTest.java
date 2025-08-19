@@ -715,9 +715,9 @@ public class PDFParserTest extends TikaTest {
     public void testMultipleTitles() throws Exception {
         //TIKA-1295 and TIKA-4466
         XMLResult r = getXML("testPDFTripleLangTitle.pdf");
-        debug(r.metadata);
         String[] titles = new String[]{"Hello World", "Bonjour World", "你好世界"};
         assertArrayEquals(titles, r.metadata.getValues(TikaCoreProperties.TITLE));
+        assertEquals("Hello World", r.metadata.get(TikaCoreProperties.TITLE.getName() + ":x-default"));
         assertEquals("Bonjour World", r.metadata.get(TikaCoreProperties.TITLE.getName() + ":fr-ca"));
         assertEquals("你好世界", r.metadata.get(TikaCoreProperties.TITLE.getName() + ":zh-cn"));
     }
