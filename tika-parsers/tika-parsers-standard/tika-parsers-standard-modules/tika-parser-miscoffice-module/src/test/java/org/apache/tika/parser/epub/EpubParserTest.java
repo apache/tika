@@ -18,9 +18,13 @@ package org.apache.tika.parser.epub;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -29,6 +33,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Epub;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
@@ -130,5 +135,42 @@ public class EpubParserTest extends TikaTest {
 
         List<Metadata> metadataList = getRecursiveMetadata("cole-voyage-of-life.epub");
         assertEquals("pre-paginated", metadataList.get(0).get(Epub.RENDITION_LAYOUT));
+    }
+
+    @Test
+    public void testMultipleMetadataValues() throws Exception {
+        //TIKA_4466
+        List<Metadata> metadataList = getRecursiveMetadata("testEPUB_multi-metadata-vals.epub");
+        Set<String> publishers = Set.of("Standard Ebooks", "Guternberg");
+        Set<String> titles = Set.of("The Inheritors", "An Extravagant Story", "The Inheritors: An Extravagant Story");
+        Set<String> contributors = Set.of("The League of Moveable Type", "zikasak", "William Holyoake", "Clare Boothby",
+                "Graeme Mackreth", "Distributed Proofreaders", "Szymon Szott", "David Reimer");
+        Set<String> creators = Set.of("Joseph Conrad", "Ford Madox Ford");
+        Set<String> languages = Set.of("en-GB", "en-US");
+        Set<String> descriptions = Set.of("A young writer dabbling in journalism meets a strange, otherworldly woman with long-term political goals.",
+                "additional description");
+        Set<String> sources = Set.of("https://www.gutenberg.org/ebooks/14888", "https://archive.org/details/inheritorsanext01fordgoog/");
+        Set<String> identifiers = Set.of("https://standardebooks.org/ebooks/joseph-conrad_ford-madox-ford/the-inheritors",
+                "isbn:0571225470");
+        Set<String> subjects = Set.of("Science fiction");
+
+        Metadata m = metadataList.get(0);
+        assertEquals(publishers, set(m, TikaCoreProperties.PUBLISHER));
+        assertEquals(titles, set(m, TikaCoreProperties.TITLE));
+        assertEquals(contributors, set(m, TikaCoreProperties.CONTRIBUTOR));
+        assertEquals(creators, set(m, TikaCoreProperties.CREATOR));
+        assertEquals(languages, set(m, TikaCoreProperties.LANGUAGE));
+        assertEquals(descriptions, set(m, TikaCoreProperties.DESCRIPTION));
+        assertEquals(sources, set(m, TikaCoreProperties.SOURCE));
+        assertEquals(identifiers, set(m, TikaCoreProperties.IDENTIFIER));
+        assertEquals(subjects, set(m, TikaCoreProperties.SUBJECT));
+
+        assertEquals(2, m.getValues(TikaCoreProperties.RIGHTS).length);
+        assertTrue(m.get(TikaCoreProperties.RIGHTS).startsWith("The source text and artwork"));
+        assertEquals("test rights", m.getValues(TikaCoreProperties.RIGHTS)[1]);
+    }
+
+    private Set<String> set(Metadata m, Property property) {
+        return new HashSet<>(Arrays.asList(m.getValues(property)));
     }
 }

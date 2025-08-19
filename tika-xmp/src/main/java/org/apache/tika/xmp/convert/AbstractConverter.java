@@ -79,7 +79,7 @@ public abstract class AbstractConverter implements ITikaToXMPConverter {
                 registry.registerNamespace(namespace.uri, namespace.prefix);
             } catch (XMPException e) {
                 throw new TikaException(
-                        "Namespace needed by converter could not be registiered with XMPCore", e);
+                        "Namespace needed by converter could not be registered with XMPCore", e);
             }
         }
     }
