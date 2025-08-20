@@ -130,7 +130,7 @@ public class TikaToXMPTest {
 
         // general metadata is converted
         // check simple property
-        XMPProperty prop = xmp.getProperty(XMPConst.NS_DC, "language");
+        XMPProperty prop = xmp.getArrayItem(XMPConst.NS_DC, "language", 1);
         assertNotNull(prop);
         assertEquals("language", prop.getValue());
 
@@ -139,7 +139,7 @@ public class TikaToXMPTest {
         assertNotNull(prop);
         assertEquals("title", prop.getValue());
 
-        // OOXML one is not, the namespace has also not been registiered as the converter has not
+        // OOXML one is not, the namespace has also not been registered as the converter has not
         // been used
         XMPMetaFactory.getSchemaRegistry()
                 .registerNamespace(OfficeOpenXMLCore.NAMESPACE_URI, OfficeOpenXMLCore.PREFIX);

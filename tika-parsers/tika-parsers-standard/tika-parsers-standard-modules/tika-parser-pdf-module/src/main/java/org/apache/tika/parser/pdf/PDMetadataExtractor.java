@@ -118,21 +118,24 @@ public class PDMetadataExtractor {
         if (dcSchema == null) {
             return;
         }
-        extractDublinCoreSimpleItem(metadata, dcSchema, TikaCoreProperties.IDENTIFIER.getName(), TikaCoreProperties.IDENTIFIER, XMPDC.IDENTIFIER);
-        extractDublinCoreSimpleItem(metadata, dcSchema, TikaCoreProperties.SOURCE.getName(), TikaCoreProperties.SOURCE, XMPDC.SOURCE);
-
         extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.CONTRIBUTOR.getName(), TikaCoreProperties.CONTRIBUTOR, XMPDC.CONTRIBUTOR);
+        extractDublinCoreSimpleItem(metadata, dcSchema, TikaCoreProperties.COVERAGE.getName(), TikaCoreProperties.COVERAGE, XMPDC.COVERAGE);
         extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.CREATOR.getName(), TikaCoreProperties.CREATOR, XMPDC.CREATOR);
+
+        extractDublinCoreListItems(metadata, dcSchema, XMPDC.DATE.getName(), XMPDC.DATE);
+        extractMultilingualItems(metadata, dcSchema, TikaCoreProperties.DESCRIPTION.getName(), TikaCoreProperties.DESCRIPTION, XMPDC.DESCRIPTION);
+        extractDublinCoreListItems(metadata, dcSchema, XMPDC.FORMAT.getName(), XMPDC.FORMAT);
+        extractDublinCoreSimpleItem(metadata, dcSchema, TikaCoreProperties.IDENTIFIER.getName(), TikaCoreProperties.IDENTIFIER, XMPDC.IDENTIFIER);
         extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.LANGUAGE.getName(), TikaCoreProperties.LANGUAGE, XMPDC.LANGUAGE);
         extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.PUBLISHER.getName(), TikaCoreProperties.PUBLISHER, XMPDC.PUBLISHER);
         extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.RELATION.getName(), TikaCoreProperties.RELATION, XMPDC.RELATION);
+        extractMultilingualItems(metadata, dcSchema, TikaCoreProperties.RIGHTS.getName(), TikaCoreProperties.RIGHTS, XMPDC.RIGHTS);
+        extractDublinCoreSimpleItem(metadata, dcSchema, TikaCoreProperties.SOURCE.getName(), TikaCoreProperties.SOURCE, XMPDC.SOURCE);
         extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.SUBJECT.getName(), TikaCoreProperties.SUBJECT, XMPDC.SUBJECT);
+        extractMultilingualItems(metadata, dcSchema, TikaCoreProperties.TITLE.getName(), TikaCoreProperties.TITLE, XMPDC.TITLE);
         // finds only the first one?!
         extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.TYPE.getName(), TikaCoreProperties.TYPE, XMPDC.TYPE);
 
-        extractMultilingualItems(metadata, dcSchema, TikaCoreProperties.DESCRIPTION.getName(), TikaCoreProperties.DESCRIPTION, XMPDC.DESCRIPTION);
-        extractMultilingualItems(metadata, dcSchema, TikaCoreProperties.RIGHTS.getName(), TikaCoreProperties.RIGHTS, XMPDC.RIGHTS);
-        extractMultilingualItems(metadata, dcSchema, TikaCoreProperties.TITLE.getName(), TikaCoreProperties.TITLE, XMPDC.TITLE);
 
     }
 
@@ -399,6 +402,7 @@ public class PDMetadataExtractor {
                 String value = schema.getLanguageProperty(dcName, lang);
                 if (value != null && ! value.isBlank()) {
                     addMetadata(metadata, property, value);
+                    addMetadata(metadata, property.getName() + ":" + lang, value);
                 }
             }
         }
