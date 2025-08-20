@@ -10,6 +10,9 @@ Release 4.0.0-BETA1 - ???
 
    * Fix concurrency bug in TikaToXMP (TIKA-4393)
 
+Release 3.3.0 - ???
+
+  * Allow multiple values for many Dublin Core values (TIKA-4466).
 
 Release 3.2.1 - ???
 
