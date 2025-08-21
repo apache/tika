@@ -97,6 +97,12 @@
         </configuration>
         <executions>
           <execution>
+            <configuration>
+              <excludes>
+                <!-- TIKA-4470 -->
+                <exclude>test-output/**</exclude>
+              </excludes>
+            </configuration>
             <goals>
               <goal>test-jar</goal>
             </goals>
