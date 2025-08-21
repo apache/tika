@@ -194,10 +194,14 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
      * @throws Exception if an error occurs
      */
     public static void main(String[] args) throws Exception {
-        TikaConfig config = TikaConfig.getDefaultConfig();
+        TikaConfig config = null;
         if (args.length > 0) {
             File configFile = new File(args[0]);
             config = new TikaConfig(configFile);
+        } else {
+            try (InputStream is = TikaGUI.class.getResourceAsStream("/tika-config-default-single-file.xml")) {
+                config = new TikaConfig(is);
+            }
         }
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         final TikaConfig finalConfig = config;
