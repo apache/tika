@@ -232,7 +232,8 @@ public class TikaCLITest {
     public void testJsonMetadataPrettyPrintOutput() throws Exception {
         String json = getParamOutContent("--json", "-r", resourcePrefix + "testJsonMultipleInts.html");
 
-        assertTrue(json.contains("\"X-TIKA:Parsed-By\" : [ \"org.apache.tika.parser.DefaultParser\", " + "\"org.apache.tika.parser.html.JSoupParser\" ],"));
+        assertTrue(json.contains("\"X-TIKA:Parsed-By\" : [ \"org.apache.tika.parser.CompositeParser\", " +
+                "\"org.apache.tika.parser.DefaultParser\", \"org.apache.tika.parser.html.JSoupParser\" ],"));
         //test pretty-print alphabetic sort of keys
         int enc = json.indexOf("\"Content-Encoding\"");
         int fb = json.indexOf("fb:admins");
@@ -247,6 +248,21 @@ public class TikaCLITest {
                 resourcePrefix + "testPDF_incrementalUpdates.pdf");
         assertTrue(json.contains("pdf:incrementalUpdateCount\":\"2\""));
         assertTrue(json.contains("embeddedResourceType\":\"VERSION\""));
+    }
+
+    @Test
+    public void testExtractJavascript() throws Exception {
+        String json = getParamOutContent("-J", resourcePrefix + "testPDFPackage.pdf");
+        assertTrue(json.contains("type=\\\"PDActionJavaScript\\\""));
+        assertTrue(json.contains("MACRO"));
+        assertTrue(json.contains("NAMES_TREE"));
+    }
+
+    @Test
+    public void testMacros() throws Exception {
+        String json = getParamOutContent("-J", resourcePrefix + "testPPT_macros.ppt");
+        assertTrue(json.contains("MACRO"));
+        assertTrue(json.contains("Module1"));
     }
 
     /**

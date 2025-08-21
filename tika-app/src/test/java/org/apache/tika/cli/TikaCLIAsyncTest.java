@@ -68,7 +68,7 @@ public class TikaCLIAsyncTest extends TikaCLITest {
                 json++;
             }
         }
-        assertEquals(18, json);
+        assertEquals(20, json);
     }
 
     private void checkForPrettyPrint(File f) throws IOException {

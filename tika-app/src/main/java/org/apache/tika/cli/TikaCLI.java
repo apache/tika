@@ -96,7 +96,6 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.digestutils.CommonsDigester;
-import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -331,21 +330,6 @@ public class TikaCLI {
         return false;
     }
 
-    private void configurePDFExtractSettings() {
-        if (configFilePath == null && context.get(PDFParserConfig.class) == null) {
-            PDFParserConfig pdfParserConfig = new PDFParserConfig();
-            pdfParserConfig.setExtractInlineImages(true);
-            pdfParserConfig.setExtractIncrementalUpdateInfo(true);
-            pdfParserConfig.setParseIncrementalUpdates(true);
-            String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
-                    "inline images and parsing of incremental updates for the PDFParser (TIKA-2374, " +
-                    "TIKA-4017 and TIKA-4354).\n" +
-                    "This is not the default behavior in Tika generally or in tika-server.";
-            LOG.info(warn);
-            context.set(PDFParserConfig.class, pdfParserConfig);
-        }
-    }
-
     public void process(String arg) throws Exception {
         if (arg.equals("-?") || arg.equals("--help")) {
             pipeMode = false;
@@ -470,7 +454,6 @@ public class TikaCLI {
                 } else {
                     url = new URL(arg);
                 }
-                configurePDFExtractSettings();
                 if (recursiveJSON) {
                     handleRecursiveJson(url, System.out);
                 } else {
@@ -661,17 +644,21 @@ public class TikaCLI {
     }
 
     private void configure() throws TikaException, IOException, SAXException {
-
+        if (configFilePath != null) {
+            config = new TikaConfig(new File(configFilePath));
+        } else {
+            String warn = "As a convenience, TikaCLI has turned on several non-default features\n" +
+                    "as specified in tika-app/src/main/resources/tika-config-default-single-file.xml.\n" +
+                    "See: TIKA-2374, TIKA-4017, TIKA-4354 and TIKA-4472).\n" +
+                    "This is not the default behavior in Tika generally or in tika-server.";
+            LOG.info(warn);
+            try (InputStream is = getClass().getResourceAsStream("/tika-config-default-single-file.xml")) {
+                config = new TikaConfig(is);
+            }
+        }
         if (networkURI != null) {
             parser = new NetworkParser(networkURI);
-            config = TikaConfig.getDefaultConfig();
         } else {
-            if (configFilePath != null) {
-                config = new TikaConfig(new File(configFilePath));
-            } else {
-                config = TikaConfig.getDefaultConfig();
-            }
-
             parser = new AutoDetectParser(config);
             if (digester != null) {
                 parser = new DigestingParser(parser, digester, false);
@@ -1072,7 +1059,6 @@ public class TikaCLI {
 
     private class FileEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
 
-        private final TikaConfig config = TikaConfig.getDefaultConfig();
         private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
         private int count = 0;
 
