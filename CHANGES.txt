@@ -2,7 +2,7 @@ Release 3.3.0 - ???
 
   * Allow multiple values for many Dublin Core keys (TIKA-4466).
 
-  * Extract macros by default in tika-app (TIKA-4472).
+  * Extract macros by default in tika-app's commandline and gui (TIKA-4472).
 
   * Improve extraction of Javascript from PDFs (TIKA-4465).
 
