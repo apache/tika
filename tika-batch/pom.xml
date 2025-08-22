@@ -104,6 +104,7 @@
               </excludes>
             </configuration>
             <goals>
+              <!-- needed for tika-eval-app -->
               <goal>test-jar</goal>
             </goals>
           </execution>
