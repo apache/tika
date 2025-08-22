@@ -133,6 +133,7 @@ May the gods of dependency management fix this in the future.
         <executions>
           <execution>
             <goals>
+              <!-- needed for tika-parsers-extended-integration-tests -->
               <goal>test-jar</goal>
             </goals>
           </execution>
