@@ -295,7 +295,7 @@
     <!-- can't update to 6, needs jdk17 -->
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
-    <maven.javadoc.version>3.11.2</maven.javadoc.version>
+    <maven.javadoc.version>3.11.3</maven.javadoc.version>
     <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.failsafe.version>3.5.3</maven.failsafe.version>
@@ -321,13 +321,13 @@
     <bouncycastle.version>1.81</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <commons.cli.version>1.9.0</commons.cli.version>
+    <commons.cli.version>1.10.0</commons.cli.version>
     <commons.codec.version>1.19.0</commons.codec.version>
     <commons.collections4.version>4.5.0</commons.collections4.version>
     <commons.compress.version>1.28.0</commons.compress.version>
     <commons.csv.version>1.14.1</commons.csv.version>
     <commons.exec.version>1.5.0</commons.exec.version>
-    <commons.io.version>2.19.0</commons.io.version>
+    <commons.io.version>2.20.0</commons.io.version>
     <commons.lang3.version>3.18.0</commons.lang3.version>
     <commons.logging.version>1.3.5</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
@@ -378,12 +378,12 @@
     <lucene.version>8.11.4</lucene.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
-    <mime4j.version>0.8.12</mime4j.version>
+    <mime4j.version>0.8.13</mime4j.version>
     <!-- mockito >= 5 requires jdk11 -->
     <mockito.version>4.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.4.Final</netty.version>
-    <oak.jackrabbit.version>1.82.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>1.84.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
     <opennlp.version>1.9.4</opennlp.version>
@@ -408,7 +408,7 @@
     <!-- NOTE: Spring 6 requires jdk17  -->
     <!-- remove from ossindex when bumping from 5.3.39 -->
     <spring.version>5.3.39</spring.version>
-    <sqlite.version>3.49.1.0</sqlite.version>
+    <sqlite.version>3.50.3.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <testcontainers.version>1.21.3</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
@@ -422,13 +422,13 @@
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <zstd.version>1.5.7-2</zstd.version>
+    <zstd.version>1.5.7-4</zstd.version>
     <!-- 4.0.0 doesn't compile with jdk8 -->
     <kafka.version>3.9.1</kafka.version>
     <snappy.java.version>1.1.10.8</snappy.java.version>
     <!-- can't update to 1.4, these need jdk11 -->
     <logback.version>1.3.15</logback.version>
-    <javacpp.version>1.5.11</javacpp.version>
+    <javacpp.version>1.5.12</javacpp.version>
     <!-- h2 2.3 requires jdk11 -->
     <h2.version>2.2.224</h2.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
@@ -517,7 +517,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.15.11</version>
+        <version>1.16.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
@@ -537,12 +537,12 @@
       <dependency>
         <groupId>com.fasterxml.woodstox</groupId>
         <artifactId>woodstox-core</artifactId>
-        <version>7.1.0</version>
+        <version>7.1.1</version>
       </dependency>
       <dependency>
         <groupId>com.mchange</groupId>
         <artifactId>c3p0</artifactId>
-        <version>0.10.2</version>
+        <version>0.11.2</version>
       </dependency>
       <dependency>
         <groupId>com.mchange</groupId>
@@ -950,7 +950,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.31.1</version>
+        <version>0.32.0</version>
       </dependency>
       <dependency>
         <groupId>org.opengis</groupId>
@@ -1209,6 +1209,11 @@
             </coordinate>
             <coordinate>
               <groupId>org.springframework</groupId>
+              <artifactId>spring-core</artifactId>
+              <version>5.3.39</version>
+            </coordinate>
+            <coordinate>
+              <groupId>org.springframework</groupId>
               <artifactId>spring-context</artifactId>
               <version>5.3.39</version>
             </coordinate>
@@ -1305,7 +1310,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.5.0</version>
+        <version>3.6.1</version>
         <executions>
           <execution>
             <id>enforce-maven</id>
