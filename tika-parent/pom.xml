@@ -303,7 +303,7 @@
     <maven.shade.version>3.6.0</maven.shade.version>
     <maven.project.info.reports.version>3.9.0</maven.project.info.reports.version>
     <maven.site.version>3.21.0</maven.site.version>
-    <maven.exec.version>3.5.0</maven.exec.version>
+    <maven.exec.version>3.5.1</maven.exec.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.16.1</rat.version>
@@ -512,7 +512,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.55.3</version>
+        <version>1.56.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
