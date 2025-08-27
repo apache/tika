@@ -83,7 +83,9 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
 
     /**
      * This is called after parsing each embedded document.  Override this
-     * for custom behavior.  This is currently a no-op.
+     * for custom behavior.  This is currently a no-op aside from tracking embedded depth.
+     * <p>
+     * When overriding, make sure to call {@link #decrementEmbeddedDepth()}
      *
      * @param contentHandler content handler that was used on this embedded document
      * @param metadata       metadata for this embedded document
@@ -91,12 +93,13 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
      */
     public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata)
             throws SAXException {
-        embeddedDepth--;
+        decrementEmbeddedDepth();
     }
 
     /**
-     * This is called by RecursiveMetadataContentHandlerProxy as it
-     * cannot call endEmbeddedDocument().
+     * This is called by {@link #endEmbeddedDocument(ContentHandler, Metadata)}. Users
+     * overriding {@link #endEmbeddedDocument(ContentHandler, Metadata)} need to call this
+     * unless they are triggering it via <code>super.endEmbeddedDocument(contentHandler, metadata);</code>
      */
     protected void decrementEmbeddedDepth() {
         embeddedDepth--;
