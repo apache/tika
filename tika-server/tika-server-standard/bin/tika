@@ -513,7 +513,7 @@ function start_tika() {
       echo "Startup command"
       echo "$JAVA ${TIKA_START_OPTS[@]} $TIKA_ADDL_ARGS -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_FORKED_OPTS"
     fi
-    exec "$JAVA" "${TIKA_START_OPTS[@]}" $TIKA_ADDL_ARGS -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_TIKA_FORKED_OPTS
+    exec "$JAVA" "${TIKA_START_OPTS[@]}" $TIKA_ADDL_ARGS -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_FORKED_OPTS
   else
     # run Tika in the background
     if $verbose ; then
@@ -521,7 +521,7 @@ function start_tika() {
       echo "$JAVA ${TIKA_START_OPTS[@]} $TIKA_ADDL_ARGS -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_FORKED_OPTS $TIKA_LOGS_DIR/tika-$TIKA_PORT-console.log $TIKA_PID_DIR/tika-$TIKA_PORT.pid"
     fi
     nohup "$JAVA" "${TIKA_START_OPTS[@]}" $TIKA_ADDL_ARGS \
-	      -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_TIKA_FORKED_OPTS \
+	      -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_FORKED_OPTS \
 	1>"$TIKA_LOGS_DIR/tika-$TIKA_PORT-console.log" 2>&1 & echo $! > "$TIKA_PID_DIR/tika-$TIKA_PORT.pid"
 
     # no lsof on cygwin though
