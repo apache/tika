@@ -563,5 +563,5 @@ function start_tika() {
 
 if [[ "$SCRIPT_CMD" == "start" ]]; then
   start_tika "$FG" "$ADDITIONAL_CMD_OPTS"
-  exit 1
+  exit $?
 fi
