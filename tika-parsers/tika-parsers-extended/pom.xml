@@ -36,6 +36,7 @@
     <module>tika-parser-sqlite3-package</module>
     <module>tika-parser-scientific-package</module>
     <module>tika-parsers-extended-integration-tests</module>
+    <module>tika-parser-ntfs-module</module>
   </modules>
 
   <dependencies>
