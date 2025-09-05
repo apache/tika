@@ -311,8 +311,8 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.56.0</google.cloud.version>
-    <aws.version>1.12.789</aws.version>
-    <aws2.version>2.33.2</aws2.version>
+    <aws.version>1.12.790</aws.version>
+    <aws2.version>2.33.3</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -410,7 +410,7 @@
     <mockito.version>5.19.0</mockito.version>
     <mockito-junit-jupiter.version>5.19.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.2.4.Final</netty.version>
+    <netty.version>4.2.5.Final</netty.version>
     <oak.jackrabbit.version>1.84.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.3.0 requires jdk17 -->
@@ -454,7 +454,7 @@
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.4</zookeeper.version>
     <zstd.version>1.5.7-4</zstd.version>
-    <nimbus-jose-jwt.version>10.4.2</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>10.5</nimbus-jose-jwt.version>
     <logback.version>1.5.18</logback.version>
     <javacpp.version>1.5.12</javacpp.version>
     <maven.site.version>3.21.0</maven.site.version>
