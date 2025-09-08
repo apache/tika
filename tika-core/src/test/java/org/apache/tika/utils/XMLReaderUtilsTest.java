@@ -136,9 +136,7 @@ public class XMLReaderUtilsTest {
                 XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
                         new ToTextContentHandler(), new ParseContext());
             } catch (SAXException e) {
-                if (e.getMessage() != null && e
-                        .getMessage()
-                        .contains("entity expansions")) {
+                if (e.getMessage() != null && e.getMessage().contains("entity expansions")) {
                     //do nothing
                 } else {
                     throw e;
@@ -150,8 +148,22 @@ public class XMLReaderUtilsTest {
     @Test
     public void testDOMBillionLaughs() throws Exception {
         //confirm that ExpandEntityReferences has been set to false.
+
+        //some implementations ignore the expandEntityReferences=false, and we are still
+        //protected by the "The parser has encountered more than "20" entity expansions" SAXException.
+        //We need to check for either: empty content and no exception, or this SAXException
         for (String xml : BILLION_LAUGHS) {
-            Document doc = XMLReaderUtils.buildDOM(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)), new ParseContext());
+            Document doc = null;
+            try {
+                doc = XMLReaderUtils.buildDOM(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)), new ParseContext());
+            } catch (SAXException e) {
+                if (e.getMessage() != null && e.getMessage().contains("entity expansions")) {
+                    //do nothing
+                    continue;
+                } else {
+                    throw e;
+                }
+            }
             NodeList nodeList = doc.getChildNodes();
             StringBuilder sb = new StringBuilder();
             dumpChildren(nodeList, sb);
