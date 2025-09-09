@@ -28,7 +28,7 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -91,8 +91,8 @@ public class XMLReaderUtilsTest {
 
     private static Locale defaultLocale;
 
-    @BeforeEach
-    public void beforeEach() {
+    @BeforeAll
+    public static void startUp() {
         defaultLocale = Locale.getDefault();
         Locale.setDefault(Locale.US);
     }
