@@ -1268,6 +1268,8 @@
         <version>${maven.surefire.version}
         </version> <!-- versions greater than this don't like System.exit calls in tika-batch -->
         <configuration>
+          <!-- for manual testing of i18n, try for example: -Duser.language=zh -Duser.region=CN or
+            -Duser.language=de -Duser.country=DE -->
           <argLine>-Xmx3072m -Djava.awt.headless=true</argLine>
         </configuration>
       </plugin>

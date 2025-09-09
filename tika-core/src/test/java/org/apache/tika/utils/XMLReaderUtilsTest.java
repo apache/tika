@@ -28,7 +28,6 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -40,12 +39,17 @@ import org.apache.tika.sax.ToTextContentHandler;
 
 public class XMLReaderUtilsTest {
 
-    private static final String EXTERNAL_DTD_SIMPLE_FILE = 
-            "<?xml version=\"1.0\" standalone=\"no\"?><!DOCTYPE foo SYSTEM \"tutorials.dtd\"><foo/>";
-    private static final String EXTERNAL_DTD_SIMPLE_URL = 
-            "<?xml version=\"1.0\" standalone=\"no\"?><!DOCTYPE foo SYSTEM \"http://127.234.172.38:7845/bar\"><foo/>";
-    private static final String EXTERNAL_ENTITY = 
-            "<!DOCTYPE foo [" + " <!ENTITY bar SYSTEM \"http://127.234.172.38:7845/bar\">" +
+    private static final Locale defaultLocale = Locale.getDefault();
+    static {
+        //tests on content of Exception msgs require specifying locale.
+        //even this, though is not sufficient for the billion laughs tests ?!
+        Locale.setDefault(Locale.US);
+    }
+    private static final String EXTERNAL_DTD_SIMPLE_FILE = "<?xml version=\"1.0\" standalone=\"no\"?>" +
+            "<!DOCTYPE foo SYSTEM \"tutorials.dtd\"><foo/>";
+    private static final String EXTERNAL_DTD_SIMPLE_URL = "<?xml version=\"1.0\" standalone=\"no\"?>" +
+            "<!DOCTYPE foo SYSTEM \"http://127.234.172.38:7845/bar\"><foo/>";
+    private static final String EXTERNAL_ENTITY =  "<!DOCTYPE foo [" + " <!ENTITY bar SYSTEM \"http://127.234.172.38:7845/bar\">" +
             " ]><foo>&bar;</foo>";
     private static final String EXTERNAL_LOCAL_DTD = "<!DOCTYPE foo [" +
             "<!ENTITY % local_dtd SYSTEM \"file:///usr/local/app/schema.dtd\">" +
@@ -61,8 +65,8 @@ public class XMLReaderUtilsTest {
             " <!ENTITY lol6 \"&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;\">\n" +
             " <!ENTITY lol7 \"&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;\">\n" +
             " <!ENTITY lol8 \"&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;\">\n" +
-            " <!ENTITY lol9 \"&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;\">\n" +
-            "]>\n" + "<lolz>&lol9;</lolz>";
+            " <!ENTITY lol9 \"&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;\">\n" + "]>\n" +
+            "<lolz>&lol9;</lolz>";
 
     private static String BILLION_LAUGHS_VARIANT;
 
@@ -82,20 +86,11 @@ public class XMLReaderUtilsTest {
         BILLION_LAUGHS_VARIANT = xml.toString();
     }
 
-    private static final String[] EXTERNAL_ENTITY_XMLS = new String[]{ EXTERNAL_DTD_SIMPLE_FILE,
-            EXTERNAL_DTD_SIMPLE_URL,
+    private static final String[] EXTERNAL_ENTITY_XMLS = new String[]{
+            EXTERNAL_DTD_SIMPLE_FILE, EXTERNAL_DTD_SIMPLE_URL,
             EXTERNAL_ENTITY, EXTERNAL_LOCAL_DTD };
 
-    private static final String[] BILLION_LAUGHS = new String[]{ BILLION_LAUGHS_CLASSICAL,
-            BILLION_LAUGHS_VARIANT };
-
-    private static Locale defaultLocale;
-
-    @BeforeAll
-    public static void startUp() {
-        defaultLocale = Locale.getDefault();
-        Locale.setDefault(Locale.US);
-    }
+    private static final String[] BILLION_LAUGHS = new String[]{ BILLION_LAUGHS_CLASSICAL, BILLION_LAUGHS_VARIANT };
 
     @AfterAll
     public static void tearDown() {
@@ -162,11 +157,7 @@ public class XMLReaderUtilsTest {
                 XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
                         new ToTextContentHandler(), new ParseContext());
             } catch (SAXException e) {
-                if (e.getMessage() != null && e.getMessage().contains("entity expansions")) {
-                    //do nothing
-                } else {
-                    throw e;
-                }
+                limitCheck(e);
             }
         }
     }
@@ -184,12 +175,8 @@ public class XMLReaderUtilsTest {
                 doc = XMLReaderUtils.buildDOM(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
                         new ParseContext());
             } catch (SAXException e) {
-                if (e.getMessage() != null && e.getMessage().contains("entity expansions")) {
-                    //do nothing
-                    continue;
-                } else {
-                    throw e;
-                }
+                limitCheck(e);
+                continue;
             }
             NodeList nodeList = doc.getChildNodes();
             StringBuilder sb = new StringBuilder();
@@ -215,12 +202,12 @@ public class XMLReaderUtilsTest {
     public void testStaxBillionLaughs() throws Exception {
         /*
             Turning off dtd support of the XMLInputFactory in XMLReaderUtils turns off entity expansions and
-            causes a "NoSuchElementException" with the "'lol9' was referenced but not declared" message with this line:
+            causes a "NoSuchElementException" with the "'lol9' was referenced but not declared"
+            message with this line:
                     tryToSetStaxProperty(factory, XMLInputFactory.SUPPORT_DTD, false);
             If that line doesn't exist, then we get a
-            NoSuchElementException with:
-            "The parser has encountered more than "20" entity expansions in this document;
-            this is the limit imposed by the JDK."
+            NoSuchElementException with: "The parser has encountered more than "20" entity
+            expansions in this document; this is the limit imposed by the JDK."
          */
 
         for (String xml : BILLION_LAUGHS) {
@@ -244,5 +231,24 @@ public class XMLReaderUtilsTest {
                 }
             }
         }
+    }
+
+    private void limitCheck(SAXException e) throws SAXException {
+        String msg = e.getLocalizedMessage();
+        if (msg == null) {
+            throw e;
+        }
+
+        //depending on the flavor/version of the jdk, entity expansions may be triggered
+        // OR entitySizeLimit may be triggered
+        //See TIKA-4471
+        if (msg.contains("JAXP00010001") || //entity expansions
+                msg.contains("JAXP00010003") || //max entity size limit
+                msg.contains("JAXP00010004") || //TotalEntitySizeLimit
+                msg.contains("entity expansions") ||
+                e.getMessage().contains("maxGeneralEntitySizeLimit")) {
+            return;
+        }
+        throw e;
     }
 }
