@@ -22,10 +22,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayInputStream;
 import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -37,6 +39,12 @@ import org.apache.tika.sax.ToTextContentHandler;
 
 public class XMLReaderUtilsTest {
 
+    private static final Locale defaultLocale = Locale.getDefault();
+    static {
+        //tests on content of Exception msgs require specifying locale.
+        //even this, though is not sufficient for the billion laughs tests ?!
+        Locale.setDefault(Locale.US);
+    }
     private static final String EXTERNAL_DTD_SIMPLE_FILE = "<?xml version=\"1.0\" standalone=\"no\"?><!DOCTYPE foo SYSTEM \"tutorials.dtd\"><foo/>";
     private static final String EXTERNAL_DTD_SIMPLE_URL = "<?xml version=\"1.0\" standalone=\"no\"?><!DOCTYPE foo SYSTEM \"http://127.234.172.38:7845/bar\"><foo/>";
     private static final String EXTERNAL_ENTITY =  "<!DOCTYPE foo [" + " <!ENTITY bar SYSTEM \"http://127.234.172.38:7845/bar\">" +
@@ -77,6 +85,11 @@ public class XMLReaderUtilsTest {
             EXTERNAL_ENTITY, EXTERNAL_LOCAL_DTD };
 
     private static final String[] BILLION_LAUGHS = new String[]{ BILLION_LAUGHS_CLASSICAL, BILLION_LAUGHS_VARIANT };
+
+    @AfterAll
+    public static void tearDown() {
+        Locale.setDefault(defaultLocale);
+    }
 
     //make sure that parseSAX actually defends against external entities
     @Test
@@ -136,11 +149,7 @@ public class XMLReaderUtilsTest {
                 XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
                         new ToTextContentHandler(), new ParseContext());
             } catch (SAXException e) {
-                if (e.getMessage() != null && e.getMessage().contains("entity expansions")) {
-                    //do nothing
-                } else {
-                    throw e;
-                }
+                limitCheck(e);
             }
         }
     }
@@ -157,12 +166,8 @@ public class XMLReaderUtilsTest {
             try {
                 doc = XMLReaderUtils.buildDOM(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)), new ParseContext());
             } catch (SAXException e) {
-                if (e.getMessage() != null && e.getMessage().contains("entity expansions")) {
-                    //do nothing
-                    continue;
-                } else {
-                    throw e;
-                }
+                limitCheck(e);
+                continue;
             }
             NodeList nodeList = doc.getChildNodes();
             StringBuilder sb = new StringBuilder();
@@ -214,5 +219,24 @@ public class XMLReaderUtilsTest {
                 }
             }
         }
+    }
+
+    private void limitCheck(SAXException e) throws SAXException {
+        String msg = e.getLocalizedMessage();
+        if (msg == null) {
+            throw e;
+        }
+
+        //depending on the flavor/version of the jdk, entity expansions may be triggered
+        // OR entitySizeLimit may be triggered
+        //See TIKA-4471
+        if (msg.contains("JAXP00010001") || //entity expansions
+                msg.contains("JAXP00010003") || //max entity size limit
+                msg.contains("JAXP00010004") || //TotalEntitySizeLimit
+                msg.contains("entity expansions") ||
+                e.getMessage().contains("maxGeneralEntitySizeLimit")) {
+            return;
+        }
+        throw e;
     }
 }
