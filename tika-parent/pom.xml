@@ -1306,7 +1306,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven.surefire.version}</version>
         <configuration>
-          <argLine>-Xmx4g -Djava.awt.headless=true</argLine>
+          <!-- for manual testing of i18n, try for example: -Duser.language=zh -Duser.region=CN or
+          -Duser.language=de -Duser.country=DE -->
+          <argLine>-Xmx4g -Djava.awt.headless=true @{surefireArgLine}</argLine>
         </configuration>
       </plugin>
       <plugin>
