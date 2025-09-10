@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.utils;
+package org.apache.tika.woodstox;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
@@ -37,17 +38,13 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ToTextContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
- * Class to test that XMLReaderUtils defends against xxe and billion laughs.
- * <p>
- * Different versions and different implementations vary. This is not a fully comprehensive set of tests.
- * <p>
- * Please add more.
- * <p>
- * See also the tests with woodstox in tika-woodstox-tests.
+ * This confirms that XML parsing still works with woodstox on the classpath
  */
-public class XMLReaderUtilsTest {
+public class WoodstoxXMLReaderUtilsTest {
 
     private static final Locale defaultLocale = Locale.getDefault();
     static {
@@ -59,7 +56,8 @@ public class XMLReaderUtilsTest {
             "<!DOCTYPE foo SYSTEM \"tutorials.dtd\"><foo/>";
     private static final String EXTERNAL_DTD_SIMPLE_URL = "<?xml version=\"1.0\" standalone=\"no\"?>" +
             "<!DOCTYPE foo SYSTEM \"http://127.234.172.38:7845/bar\"><foo/>";
-    private static final String EXTERNAL_ENTITY =  "<!DOCTYPE foo [" + " <!ENTITY bar SYSTEM \"http://127.234.172.38:7845/bar\">" +
+    private static final String EXTERNAL_ENTITY =  "<!DOCTYPE foo [" +
+            " <!ENTITY bar SYSTEM \"http://127.234.172.38:7845/bar\">" +
             " ]><foo>&bar;</foo>";
     private static final String EXTERNAL_LOCAL_DTD = "<!DOCTYPE foo [" +
             "<!ENTITY % local_dtd SYSTEM \"file:///usr/local/app/schema.dtd\">" +
@@ -75,8 +73,8 @@ public class XMLReaderUtilsTest {
             " <!ENTITY lol6 \"&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;\">\n" +
             " <!ENTITY lol7 \"&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;\">\n" +
             " <!ENTITY lol8 \"&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;\">\n" +
-            " <!ENTITY lol9 \"&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;\">\n" + "]>\n" +
-            "<lolz>&lol9;</lolz>";
+            " <!ENTITY lol9 \"&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;\">\n" +
+            "]>\n" + "<lolz>&lol9;</lolz>";
 
     private static String BILLION_LAUGHS_VARIANT;
 
@@ -96,11 +94,12 @@ public class XMLReaderUtilsTest {
         BILLION_LAUGHS_VARIANT = xml.toString();
     }
 
-    private static final String[] EXTERNAL_ENTITY_XMLS = new String[]{
-            EXTERNAL_DTD_SIMPLE_FILE, EXTERNAL_DTD_SIMPLE_URL,
+    private static final String[] EXTERNAL_ENTITY_XMLS = new String[]{ EXTERNAL_DTD_SIMPLE_FILE,
+            EXTERNAL_DTD_SIMPLE_URL,
             EXTERNAL_ENTITY, EXTERNAL_LOCAL_DTD };
 
-    private static final String[] BILLION_LAUGHS = new String[]{ BILLION_LAUGHS_CLASSICAL, BILLION_LAUGHS_VARIANT };
+    private static final String[] BILLION_LAUGHS = new String[]{ BILLION_LAUGHS_CLASSICAL,
+            BILLION_LAUGHS_VARIANT };
 
     @AfterAll
     public static void tearDown() {
@@ -139,6 +138,7 @@ public class XMLReaderUtilsTest {
                 XMLInputFactory xmlInputFactory = XMLReaderUtils.getXMLInputFactory();
                 XMLEventReader reader = xmlInputFactory.createXMLEventReader(
                         new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+                assertTrue(reader.getClass().getName().contains("com.ctc.wstx"));
                 StringBuilder sb = new StringBuilder();
                 while (reader.hasNext()) {
                     sb.append(reader.next());
@@ -156,6 +156,13 @@ public class XMLReaderUtilsTest {
                         fail("Vulnerable to local file read via external entity/dtd: " + xml, e);
                     }
                 }
+            } catch (RuntimeException e) {
+                //woodstox
+                String fullStack = ExceptionUtils.getStackTrace(e);
+                if (fullStack.contains("Undeclared general entity")) {
+                    continue;
+                }
+                throw e;
             }
         }
     }
@@ -182,8 +189,8 @@ public class XMLReaderUtilsTest {
         for (String xml : BILLION_LAUGHS) {
             Document doc = null;
             try {
-                doc = XMLReaderUtils.buildDOM(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
-                        new ParseContext());
+                doc = XMLReaderUtils.buildDOM(new ByteArrayInputStream(
+                        xml.getBytes(StandardCharsets.UTF_8)), new ParseContext());
             } catch (SAXException e) {
                 limitCheck(e);
                 continue;
@@ -212,8 +219,7 @@ public class XMLReaderUtilsTest {
     public void testStaxBillionLaughs() throws Exception {
         /*
             Turning off dtd support of the XMLInputFactory in XMLReaderUtils turns off entity expansions and
-            causes a "NoSuchElementException" with the "'lol9' was referenced but not declared"
-            message with this line:
+            causes a "NoSuchElementException" with the "'lol9' was referenced but not declared" message with this line:
                     tryToSetStaxProperty(factory, XMLInputFactory.SUPPORT_DTD, false);
             If that line doesn't exist, then we get a
             NoSuchElementException with: "The parser has encountered more than "20" entity
@@ -221,26 +227,32 @@ public class XMLReaderUtilsTest {
          */
 
         for (String xml : BILLION_LAUGHS) {
-            javax.xml.stream.XMLInputFactory xmlInputFactory = XMLReaderUtils.getXMLInputFactory();
+            XMLInputFactory xmlInputFactory = XMLReaderUtils.getXMLInputFactory();
             XMLEventReader reader = xmlInputFactory.createXMLEventReader(
                     new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+            assertTrue(reader.getClass().getName().contains("com.ctc.wstx"));
             try {
                 while (reader.hasNext()) {
                     reader.next();
                 }
             } catch (NoSuchElementException e) {
-                //full message on temurin-17: The entity "lol9" was referenced, but not declared.
                 String msg = e.getLocalizedMessage();
-
+                //full message on temurin-17: The entity "lol9" was referenced, but not declared.
                 if (msg != null) {
-                    if (msg.contains("referenced") && msg.contains("not declared")) {
-                        continue;
-                    } else if (msg.contains("JAXP00010001")) {
+                    if (msg.contains("referenced") && msg.contains("not declared")) { //standard Java
                         continue;
                     }
                 }
                 throw e;
-
+            } catch (RuntimeException e) {
+                //woodstox
+                String fullTrace = ExceptionUtils.getStackTrace(e);
+                if (fullTrace.contains("Undeclared general entity")) {
+                    continue;
+                } else if (fullTrace.contains("Maximum entity expansion count")) {
+                    continue;
+                }
+                throw e;
             }
         }
     }
