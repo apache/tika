@@ -24,11 +24,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -133,9 +135,15 @@ public class DefaultZipContainerDetector implements Detector {
             return TIFF;
         }
         try {
-            String name = ArchiveStreamFactory.detect(
-                    UnsynchronizedByteArrayInputStream.builder().setByteArray(prefix).setLength(length).get());
+            String name = ArchiveStreamFactory.detect(UnsynchronizedByteArrayInputStream
+                    .builder()
+                    .setByteArray(prefix)
+                    .setLength(length)
+                    .get());
             return PackageConstants.getMediaType(name);
+        } catch (ArchiveException e) {
+            //compress versions before 1.28.0 need this
+            return MediaType.OCTET_STREAM;
         } catch (IOException e) {
             return MediaType.OCTET_STREAM;
         }
@@ -147,6 +155,9 @@ public class DefaultZipContainerDetector implements Detector {
                     CompressorStreamFactory.detect(
                             UnsynchronizedByteArrayInputStream.builder().setByteArray(prefix).setLength(length).get());
             return CompressorConstants.getMediaType(type);
+        } catch (CompressorException e) {
+            //compress versions before 1.28.0 need this
+            return MediaType.OCTET_STREAM;
         } catch (IOException e) {
             return MediaType.OCTET_STREAM;
         }
