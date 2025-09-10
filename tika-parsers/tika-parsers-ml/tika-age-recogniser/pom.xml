@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parsers-ml</artifactId>
-    <version>3.2.2</version>
+    <version>3.2.3-SNAPSHOT</version>
   </parent>
 
   <artifactId>tika-age-recogniser</artifactId>
@@ -33,7 +33,7 @@
 
   <properties>
       <curator.version>5.9.0</curator.version>
-      <hadoop.version>3.4.1</hadoop.version>
+      <hadoop.version>3.4.2</hadoop.version>
   </properties>
 
   <!-- we're not maintaining this module.
@@ -75,7 +75,7 @@
       <dependency>
         <groupId>net.bytebuddy</groupId>
         <artifactId>byte-buddy</artifactId>
-        <version>1.17.6</version>
+        <version>1.17.7</version>
       </dependency>
       <dependency>
         <groupId>commons-net</groupId>
@@ -179,7 +179,7 @@
       <dependency>
           <groupId>io.dropwizard.metrics</groupId>
           <artifactId>metrics-core</artifactId>
-          <version>4.2.33</version>
+          <version>4.2.36</version>
       </dependency>
       <dependency>
           <groupId>org.apache.commons</groupId>
@@ -214,7 +214,7 @@
       <dependency>
           <groupId>org.jline</groupId>
           <artifactId>jline</artifactId>
-          <version>3.30.4</version>
+          <version>3.30.5</version>
       </dependency>
       <dependency>
           <groupId>javax.activation</groupId>
@@ -234,7 +234,7 @@
       <dependency>
           <groupId>org.glassfish.jersey.core</groupId>
           <artifactId>jersey-common</artifactId>
-          <version>3.1.10</version>
+          <version>3.1.11</version>
       </dependency>
       <dependency>
           <groupId>org.glassfish.hk2</groupId>
@@ -371,6 +371,6 @@
   </build>
 
   <scm>
-    <tag>3.2.2-rc1</tag>
+    <tag>3.2.3-rc1</tag>
   </scm>
 </project>

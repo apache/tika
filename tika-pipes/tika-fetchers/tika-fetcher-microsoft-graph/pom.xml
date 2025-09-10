@@ -21,7 +21,7 @@
   <parent>
     <artifactId>tika-fetchers</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>3.2.2</version>
+    <version>3.2.3-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -29,11 +29,11 @@
   <name>Apache Tika Microsoft Graph Pipes Fetcher</name>
 
   <properties>
-    <microsoft-graph.version>6.49.0</microsoft-graph.version>
+    <microsoft-graph.version>6.51.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
     <msal4j.version>1.20.1</msal4j.version>
-    <kotlin-stdlib.version>2.2.0</kotlin-stdlib.version>
-    <microsoft-kiota.version>1.8.8</microsoft-kiota.version>
+    <kotlin-stdlib.version>2.2.10</kotlin-stdlib.version>
+    <microsoft-kiota.version>1.8.9</microsoft-kiota.version>
   </properties>
 
   <dependencyManagement>
@@ -202,6 +202,6 @@
   </build>
 
   <scm>
-    <tag>3.2.2-rc1</tag>
+    <tag>3.2.3-rc1</tag>
   </scm>
 </project>
