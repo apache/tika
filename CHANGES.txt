@@ -1,6 +1,16 @@
+Release 3.2.3 - ???
+
+  * Allow backwards compatibility with versions of commons-compress before 1.28.0 (TIKA-4469).
+
+  * Fix XFA parsing within PDFs when woodstox is on the classpath as in tika-server (TIKA-4482).
+
+  * Dependency updates.
+
 Release 3.2.2 - 8/6/2025
 
-  * Improve detection of encrypted ODT files (TIKA-4459)
+  * Fix for CVE-2025-54988.
+
+  * Improve detection of encrypted ODT files (TIKA-4459).
 
   * Dependency updates (TIKA-4455).
 
