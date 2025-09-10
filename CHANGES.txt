@@ -12,9 +12,31 @@ Release 4.0.0-BETA1 - ???
 
 Release 3.3.0 - ???
 
-  * Allow multiple values for many Dublin Core values (TIKA-4466).
+  * Add matroska detector (TIKA-1180).
 
-Release 3.2.1 - ???
+  * Allow multiple values for many Dublin Core keys (TIKA-4466).
+
+  * Extract macros by default in tika-app's commandline and gui (TIKA-4472).
+
+  * Improve extraction of Javascript from PDFs (TIKA-4465).
+
+Release 3.2.3 - ???
+
+  * Allow backwards compatibility with versions of commons-compress before 1.28.0 (TIKA-4469).
+
+  * Fix XFA parsing within PDFs when woodstox is on the classpath as in tika-server (TIKA-4482).
+
+  * Dependency updates.
+
+Release 3.2.2 - 8/6/2025
+
+  * Fix for CVE-2025-54988.
+
+  * Improve detection of encrypted ODT files (TIKA-4459).
+
+  * Dependency updates (TIKA-4455).
+
+Release 3.2.1 - 6/26/2025
 
   * Fix POIFSContainerDetector regression when wrapping an InputStream in
     a TikaInputStream (TIKA-4441).
