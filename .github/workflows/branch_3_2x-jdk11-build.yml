@@ -15,18 +15,20 @@
 # limitations under the License.
 #
 
-name: branch_3x jdk17 build
+name: branch_3_2x jdk11 build
 
 on:
+  pull_request:
+    branches: [ branch_3_2x ]
   push:
-    branches: [ branch_3x ]
+    branches: [ branch_3_2x ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '17' ]
+        java: [ '11' ]
 
     steps:
       - uses: actions/checkout@v4
