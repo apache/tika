@@ -19,7 +19,8 @@ package org.apache.tika.detect;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Objects;
+
+import org.apache.commons.io.IOUtils;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -51,12 +52,18 @@ public class MatroskaDetector implements Detector {
      */
     @Override
     public MediaType detect(InputStream input, Metadata metadata) throws IOException {
-        Objects.requireNonNull(input, "input stream must not be null");
+        if (input == null) {
+            return MediaType.OCTET_STREAM;
+        }
         input.mark(64);
 
         byte[] header = new byte[64];
-        int bytesRead = input.read(header);
-        input.reset();
+        int bytesRead = -1;
+        try {
+            bytesRead = IOUtils.read(input, header, 0, 64);
+        } finally {
+            input.reset();
+        }
 
         if (bytesRead < EBML_HEADER.length) {
             return MediaType.OCTET_STREAM;
