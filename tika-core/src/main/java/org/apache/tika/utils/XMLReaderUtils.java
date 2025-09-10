@@ -37,12 +37,14 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLResolver;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.sax.SAXTransformerFactory;
 
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -123,6 +125,11 @@ public class XMLReaderUtils implements Serializable {
     private static final AtomicInteger POOL_GENERATION = new AtomicInteger();
     private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER =
             (publicId, systemId) -> new InputSource(new StringReader(""));
+
+    //BE CAREFUL with the return type. Some parsers will silently ignore an unexpected return type: CVE-2025-54988
+    private static final XMLResolver IGNORING_STAX_ENTITY_RESOLVER =
+            (publicID, systemID, baseURI, namespace) ->
+                    UnsynchronizedByteArrayInputStream.nullInputStream();
     /**
      * Parser pool size
      */
@@ -302,12 +309,17 @@ public class XMLReaderUtils implements Serializable {
         if (LOG.isDebugEnabled()) {
             LOG.debug("XMLInputFactory class {}", factory.getClass());
         }
-        factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+
         tryToSetStaxProperty(factory, XMLInputFactory.IS_NAMESPACE_AWARE, true);
+
+        //try to configure secure processing
+        tryToSetStaxProperty(factory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
         tryToSetStaxProperty(factory, XMLInputFactory.IS_VALIDATING, false);
         tryToSetStaxProperty(factory, XMLInputFactory.SUPPORT_DTD, false);
         tryToSetStaxProperty(factory, XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 
+        //defense in depth
+        factory.setXMLResolver(IGNORING_STAX_ENTITY_RESOLVER);
         trySetStaxSecurityManager(factory);
         return factory;
     }
@@ -354,6 +366,14 @@ public class XMLReaderUtils implements Serializable {
     }
 
     private static void tryToSetStaxProperty(XMLInputFactory factory, String key, boolean value) {
+        try {
+            factory.setProperty(key, value);
+        } catch (IllegalArgumentException e) {
+            LOG.warn("StAX Feature unsupported: {}", key, e);
+        }
+    }
+
+    private static void tryToSetStaxProperty(XMLInputFactory factory, String key, String value) {
         try {
             factory.setProperty(key, value);
         } catch (IllegalArgumentException e) {

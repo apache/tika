@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.utils;
+package org.apache.tika.woodstox;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
@@ -37,17 +38,13 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ToTextContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
- * Class to test that XMLReaderUtils defends against xxe and billion laughs.
- * <p>
- * Different versions and different implementations vary. This is not a fully comprehensive set of tests.
- * <p>
- * Please add more.
- * <p>
- * See also the tests with woodstox in tika-woodstox-tests.
+ * This confirms that XML parsing still works with woodstox on the classpath
  */
-public class XMLReaderUtilsTest {
+public class WoodstoxXMLReaderUtilsTest {
 
     private static final Locale defaultLocale = Locale.getDefault();
     static {
@@ -131,6 +128,7 @@ public class XMLReaderUtilsTest {
             try {
                 XMLInputFactory xmlInputFactory = XMLReaderUtils.getXMLInputFactory(new ParseContext());
                 XMLEventReader reader = xmlInputFactory.createXMLEventReader(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+                assertTrue(reader.getClass().getName().contains("com.ctc.wstx"));
                 StringBuilder sb = new StringBuilder();
                 while (reader.hasNext()) {
                     sb.append(reader.next());
@@ -148,6 +146,13 @@ public class XMLReaderUtilsTest {
                         fail("Vulnerable to local file read via external entity/dtd: " + xml, e);
                     }
                 }
+            } catch (RuntimeException e) {
+                //woodstox
+                String fullStack = ExceptionUtils.getStackTrace(e);
+                if (fullStack.contains("Undeclared general entity")) {
+                    continue;
+                }
+                throw e;
             }
         }
     }
@@ -212,23 +217,29 @@ public class XMLReaderUtilsTest {
         for (String xml : BILLION_LAUGHS) {
             XMLInputFactory xmlInputFactory = XMLReaderUtils.getXMLInputFactory(new ParseContext());
             XMLEventReader reader = xmlInputFactory.createXMLEventReader(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+            assertTrue(reader.getClass().getName().contains("com.ctc.wstx"));
             try {
                 while (reader.hasNext()) {
                     reader.next();
                 }
             } catch (NoSuchElementException e) {
-                //full message on temurin-17: The entity "lol9" was referenced, but not declared.
                 String msg = e.getLocalizedMessage();
-
+                //full message on temurin-17: The entity "lol9" was referenced, but not declared.
                 if (msg != null) {
-                    if (msg.contains("referenced") && msg.contains("not declared")) {
-                        continue;
-                    } else if (msg.contains("JAXP00010001")) {
+                    if (msg.contains("referenced") && msg.contains("not declared")) { //standard Java
                         continue;
                     }
                 }
                 throw e;
-
+            } catch (RuntimeException e) {
+                //woodstox
+                String fullTrace = ExceptionUtils.getStackTrace(e);
+                if (fullTrace.contains("Undeclared general entity")) {
+                    continue;
+                } else if (fullTrace.contains("Maximum entity expansion count")) {
+                    continue;
+                }
+                throw e;
             }
         }
     }
