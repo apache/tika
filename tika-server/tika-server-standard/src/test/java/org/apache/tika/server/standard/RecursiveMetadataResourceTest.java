@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
+import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
@@ -495,6 +496,23 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         Metadata metadata = metadataList.get(0);
         assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
+    }
+
+    @Test
+    public void testXFA() throws Exception {
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(
+                        "test-documents/testPDF_XFA_govdocs1_258578.pdf"));
+
+        assertEquals(200, response.getStatus());
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(1, metadataList.size());
+        Metadata m = metadataList.get(0);
+        assertEquals("true", m.get(PDF.HAS_XFA));
+        assertTrue(m.get(TikaCoreProperties.TIKA_CONTENT).contains("Young Abraham Lincoln"));
     }
 
     @Test
