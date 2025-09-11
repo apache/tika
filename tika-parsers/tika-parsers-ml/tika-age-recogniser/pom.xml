@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parsers-ml</artifactId>
-    <version>3.2.3-SNAPSHOT</version>
+    <version>3.2.3</version>
   </parent>
 
   <artifactId>tika-age-recogniser</artifactId>
