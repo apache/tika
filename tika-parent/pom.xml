@@ -376,7 +376,7 @@
     <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
     <!-- can't update to 4.0.0, needs jdk17 -->
     <jakarta.ws.rs.version>3.1.0</jakarta.ws.rs.version>
-    <jakarta.xml.bind.version>4.0.2</jakarta.xml.bind.version>
+    <jakarta.xml.bind.version>4.0.4</jakarta.xml.bind.version>
     <jakarta.xml.soap.version>3.0.2</jakarta.xml.soap.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
