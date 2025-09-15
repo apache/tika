@@ -208,7 +208,7 @@
       <dependency>
           <groupId>org.jline</groupId>
           <artifactId>jline</artifactId>
-          <version>3.30.5</version>
+          <version>3.30.6</version>
       </dependency>
       <dependency>
           <groupId>javax.activation</groupId>
