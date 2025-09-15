@@ -298,9 +298,9 @@
     <maven.javadoc.version>3.11.3</maven.javadoc.version>
     <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
-    <maven.failsafe.version>3.5.3</maven.failsafe.version>
-    <maven.surefire.version>3.5.3</maven.surefire.version>
-    <maven.shade.version>3.6.0</maven.shade.version>
+    <maven.failsafe.version>3.5.4</maven.failsafe.version>
+    <maven.surefire.version>3.5.4</maven.surefire.version>
+    <maven.shade.version>3.6.1</maven.shade.version>
     <maven.project.info.reports.version>3.9.0</maven.project.info.reports.version>
     <maven.site.version>3.21.0</maven.site.version>
     <maven.exec.version>3.5.1</maven.exec.version>
@@ -512,12 +512,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.56.0</version>
+        <version>1.56.1</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core-http-netty</artifactId>
-        <version>1.16.0</version>
+        <version>1.16.1</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
