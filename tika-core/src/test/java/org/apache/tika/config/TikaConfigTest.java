@@ -177,6 +177,27 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
     }
 
     /**
+     * TIKA-4485: try a relative path with an empty constructor.
+     *
+     * @throws Exception 
+     */
+    @Test
+    void testEmptyConstructor() throws Exception {
+        // file that exists
+        System.setProperty("tika.config", "src/test/resources/org/apache/tika/config/TIKA-1445-default-except.xml");
+        TikaConfig tikaConfig = new TikaConfig();
+        // code from the TIKA-1445 test
+        CompositeParser cp = (CompositeParser) tikaConfig.getParser();
+        List<Parser> parsers = cp.getAllComponentParsers();
+        assertEquals(3, parsers.size());
+
+        // file that doesn't exist
+        System.setProperty("tika.config", "doesntexist.xml");
+        TikaException ex = assertThrows(TikaException.class, () -> new TikaConfig());
+        assertTrue(ex.getMessage().contains("Specified Tika configuration not found: doesntexist.xml"));        
+    }
+
+    /**
      * TIKA-1445 It should be possible to exclude DefaultParser from
      * certain types, so another parser explicitly listed will take them
      */
