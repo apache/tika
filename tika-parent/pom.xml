@@ -318,7 +318,7 @@
     <asm.version>9.8</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
-    <bouncycastle.version>1.81</bouncycastle.version>
+    <bouncycastle.version>1.82</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <commons.cli.version>1.10.0</commons.cli.version>
@@ -341,7 +341,7 @@
     <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions > 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
-    <guava.version>33.4.8-jre</guava.version>
+    <guava.version>33.5.0-jre</guava.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
@@ -360,7 +360,7 @@
           which can be helped by excluding old versions jakarta.xml.bind,
           but it turns out tika-parser-advancedmedia-module fails its tests,
           because we need bind 2.3.3 for xmpbox, which uses javax.xml.bind -->
-    <jaxb.version>2.3.6</jaxb.version>
+    <jaxb.version>2.3.9</jaxb.version>
     <jbig2.version>3.0.4</jbig2.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
@@ -502,12 +502,12 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
-        <version>12.30.0</version>
+        <version>12.31.2</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-common</artifactId>
-        <version>12.29.0</version>
+        <version>12.30.2</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
