@@ -322,7 +322,7 @@
     <azure.core.http.netty.version>1.16.1</azure.core.http.netty.version>
     <azure.storage.blob.version>12.31.2</azure.storage.blob.version>
     <azure.storage.common>12.30.2</azure.storage.common>
-    <azure-identity.version>1.17.0</azure-identity.version>
+    <azure-identity.version>1.18.0</azure-identity.version>
     <azure.json.version>1.5.0</azure.json.version>
     <azure.xml.version>1.2.0</azure.xml.version>
     <!-- 7.0.0 needs java 17 -->
