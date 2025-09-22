@@ -296,7 +296,7 @@
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.7.1</maven.assembly.version>
     <maven.bundle.version>6.0.0</maven.bundle.version>
-    <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
+    <maven.compiler.plugin.version>3.14.1</maven.compiler.plugin.version>
     <maven.failsafe.version>3.5.4</maven.failsafe.version>
     <maven.surefire.version>3.5.4</maven.surefire.version>
     <maven.javadoc.version>3.11.3</maven.javadoc.version>
