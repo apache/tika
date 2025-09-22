@@ -295,10 +295,10 @@
     <maven.assembly.version>3.7.1</maven.assembly.version>
     <!-- can't update to 6, needs jdk17 -->
     <maven.bundle.version>5.1.9</maven.bundle.version>
-    <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
+    <maven.compiler.plugin.version>3.14.1</maven.compiler.plugin.version>
     <maven.failsafe.version>3.5.4</maven.failsafe.version>
     <maven.surefire.version>3.5.4</maven.surefire.version>
-    <maven.javadoc.version>3.11.3</maven.javadoc.version>
+    <maven.javadoc.version>3.12.0</maven.javadoc.version>
     <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.1</maven.shade.version>
@@ -1174,7 +1174,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.19.0</version>
+        <version>2.19.1</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
