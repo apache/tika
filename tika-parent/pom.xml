@@ -417,7 +417,7 @@
     <mockito-junit-jupiter.version>5.20.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.6.Final</netty.version>
-    <oak.jackrabbit.version>1.84.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>1.86.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.5</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
