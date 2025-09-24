@@ -310,9 +310,9 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.57.0</google.cloud.version>
+    <google.cloud.version>2.58.0</google.cloud.version>
     <aws.version>1.12.791</aws.version>
-    <aws2.version>2.34.1</aws2.version>
+    <aws2.version>2.34.2</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -380,7 +380,7 @@
     <jakarta.xml.soap.version>3.0.2</jakarta.xml.soap.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
-    <jaxb.runtime.version>4.0.5</jaxb.runtime.version>
+    <jaxb.runtime.version>4.0.6</jaxb.runtime.version>
     <jbig2.version>3.0.4</jbig2.version>
     <jcommander.version>1.82</jcommander.version>
     <jdom2.version>2.0.6.1</jdom2.version>
@@ -484,6 +484,12 @@
         <version>${cxf.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <!-- because cxf 4.0.9 uses 2.0.2 and jaxb 4.0.6 uses 2.0.3 -->
+      <dependency>
+        <groupId>org.eclipse.angus</groupId>
+        <artifactId>angus-activation</artifactId>
+        <version>2.0.3</version>
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
