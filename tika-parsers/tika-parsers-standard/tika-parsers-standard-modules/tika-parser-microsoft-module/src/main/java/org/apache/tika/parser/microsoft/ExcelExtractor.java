@@ -508,6 +508,9 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     break;
 
                 case LabelSSTRecord.sid: // Ref. a string in the shared string table
+                    if (sstRecord == null) {
+                        throw new TikaException("sstRecord should have been initialized before a ref to the shared string table");
+                    }
                     LabelSSTRecord sst = (LabelSSTRecord) record;
                     UnicodeString unicode = sstRecord.getString(sst.getSSTIndex());
                     String cellString = null;
