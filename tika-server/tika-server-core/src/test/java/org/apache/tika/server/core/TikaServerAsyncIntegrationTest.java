@@ -46,11 +46,11 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.HandlerConfig;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.serialization.pipes.JsonFetchEmitTupleList;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.HandlerConfig;
+import org.apache.tika.pipes.core.emitter.EmitKey;
+import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
 import org.apache.tika.utils.ProcessUtils;
 
 @Disabled("useful for development...need to turn it into a real unit test")
@@ -98,7 +98,7 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         TIKA_CONFIG_XML =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" + "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" + "<name>" +
                         FETCHER_NAME + "</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
-                        "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>" + EMITTER_NAME + "</name>" + "<basePath>" +
+                        "<emitter class=\"org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter\">" + "<name>" + EMITTER_NAME + "</name>" + "<basePath>" +
                         TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</emitter>" + "</emitters>" + "<server><endpoints><endpoint>async</endpoint></endpoints>" +
                         "<enableUnsecureFeatures>true</enableUnsecureFeatures></server>" + "<async><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG
                         .toAbsolutePath()

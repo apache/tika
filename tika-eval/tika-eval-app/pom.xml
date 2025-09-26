@@ -32,7 +32,7 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-core</artifactId>
+      <artifactId>tika-pipes-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

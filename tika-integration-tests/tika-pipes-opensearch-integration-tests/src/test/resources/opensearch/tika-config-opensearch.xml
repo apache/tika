@@ -86,7 +86,7 @@
     </pipesReporter>
   </async>
   <fetchers>
-    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
+    <fetcher class="org.apache.tika.pipes.core.fetcher.fs.FileSystemFetcher">
       <name>fsf</name>
       <basePath>{PATH_TO_DOCS}</basePath>
     </fetcher>
@@ -105,7 +105,7 @@
       <password>{OPENSEARCH_PASSWORD}</password>
     </emitter>
   </emitters>
-  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
+  <pipesIterator class="org.apache.tika.pipes.core.pipesiterator.fs.FileSystemPipesIterator">
     <basePath>{PATH_TO_DOCS}</basePath>
     <fetcherName>fsf</fetcherName>
     <emitterName>ose</emitterName>

@@ -53,15 +53,15 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParserConfig;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.HandlerConfig;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
-import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.HandlerConfig;
+import org.apache.tika.pipes.core.emitter.EmitKey;
+import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
+import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.serialization.JsonMetadataList;
-import org.apache.tika.serialization.pipes.JsonFetchEmitTuple;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.FetcherStreamFactory;
 import org.apache.tika.server.core.InputStreamFactory;
@@ -106,14 +106,20 @@ public class TikaPipesTest extends CXFTestBase {
         Files.copy(TikaPipesTest.class.getResourceAsStream("/log4j2.xml"), TIKA_PIPES_LOG4j2_PATH, StandardCopyOption.REPLACE_EXISTING);
 
         //TODO: templatify this config
-        TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" + "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                "<params>" + "<name>fsf</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
-                "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<params>" + "<name>fse</name>" + "<basePath>" + TMP_OUTPUT_DIR.toAbsolutePath() +
-                "</basePath>" + "</params>" + "</emitter>" + "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<params>" + "<name>bytes</name>" +
-                "<basePath>" + TMP_BYTES_DIR.toAbsolutePath() + "</basePath>" + "</params>" + "</emitter>" + "</emitters>" + "<pipes><params><tikaConfig>" +
+        TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
+                "<fetcher class=\"org.apache.tika.pipes.core.fetcher.fs.FileSystemFetcher\">" +
+                "<params>" + "<name>fsf</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" +
+                "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
+                "<emitter class=\"org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter\">" + "<params>" + "<name>fse</name>" +
+                "<basePath>" + TMP_OUTPUT_DIR.toAbsolutePath() +
+                "</basePath>" + "</params>" + "</emitter>" + "<emitter class=\"org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter\">" +
+                "<params>" + "<name>bytes</name>" +
+                "<basePath>" + TMP_BYTES_DIR.toAbsolutePath() + "</basePath>" + "</params>" + "</emitter>" + "</emitters>" +
+                "<pipes><params><tikaConfig>" +
                 ProcessUtils.escapeCommandLine(TIKA_CONFIG_PATH
                         .toAbsolutePath()
-                        .toString()) + "</tikaConfig><numClients>10</numClients>" + "<forkedJvmArgs>" + "<arg>-Xmx256m</arg>" + "<arg>-Dlog4j.configurationFile=file:" +
+                        .toString()) + "</tikaConfig><numClients>10</numClients>" + "<forkedJvmArgs>" + "<arg>-Xmx256m</arg>" +
+                "<arg>-Dlog4j.configurationFile=file:" +
                 ProcessUtils.escapeCommandLine(TIKA_PIPES_LOG4j2_PATH
                         .toAbsolutePath()
                         .toString()) + "</arg>" + "</forkedJvmArgs>" + "</params></pipes>" + "</properties>";
@@ -161,7 +167,8 @@ public class TikaPipesTest extends CXFTestBase {
     @Test
     public void testBasic() throws Exception {
 
-        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey("fsf", "test_recursive_embedded.docx"), new EmitKey("fse", ""));
+        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey("fsf", "test_recursive_embedded.docx"),
+                new EmitKey("fse", ""));
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 

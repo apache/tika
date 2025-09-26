@@ -52,14 +52,14 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.HandlerConfig;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.HandlerConfig;
+import org.apache.tika.pipes.core.emitter.EmitKey;
+import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.serialization.JsonMetadataList;
-import org.apache.tika.serialization.pipes.JsonFetchEmitTuple;
 import org.apache.tika.server.core.resource.PipesResource;
 import org.apache.tika.server.core.writer.JSONObjWriter;
 import org.apache.tika.utils.ProcessUtils;
@@ -102,9 +102,12 @@ public class TikaPipesTest extends CXFTestBase {
         TIKA_CONFIG_PATH = Files.createTempFile(TMP_DIR, "tika-pipes-", ".xml");
         TIKA_PIPES_LOG4j2_PATH = Files.createTempFile(TMP_DIR, "log4j2-", ".xml");
         Files.copy(TikaPipesTest.class.getResourceAsStream("/log4j2.xml"), TIKA_PIPES_LOG4j2_PATH, StandardCopyOption.REPLACE_EXISTING);
-        TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" + "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                "<name>fsf</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
-                "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>fse</name>" + "<basePath>" + TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" +
+        TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" +
+                "<fetchers>" + "<fetcher class=\"org.apache.tika.pipes.core.fetcher.fs.FileSystemFetcher\">" +
+                "<name>fsf</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>"
+                + "</fetcher>" + "</fetchers>" + "<emitters>" +
+                "<emitter class=\"org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter\">" + "<name>fse</name>"
+                + "<basePath>" + TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" +
                 "</emitter>" + "</emitters>" + "<pipes><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG_PATH
                 .toAbsolutePath()
                 .toString()) + "</tikaConfig><numClients>10</numClients>" + "<forkedJvmArgs>" + "<arg>-Xmx256m</arg>" + "<arg>-Dlog4j.configurationFile=file:" +

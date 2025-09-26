@@ -106,7 +106,7 @@ class TikaConfigAsyncWriter {
     private void writeEmitters(Document document, Element properties) {
         Element emitters = createAndGetElement(document, properties, "emitters");
         Element emitter = createAndGetElement( document, emitters, "emitter",
-                "class", "org.apache.tika.pipes.emitter.fs.FileSystemEmitter");
+                "class", "org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter");
         appendTextElement(document, emitter, "name", EMITTER_NAME);
         appendTextElement(document, emitter, "basePath",
                 Paths.get(simpleAsyncConfig.getOutputDir()).toAbsolutePath().toString());

@@ -34,7 +34,7 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
+      <artifactId>tika-pipes-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
