@@ -43,14 +43,14 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.emitter.Emitter;
-import org.apache.tika.pipes.emitter.EmitterManager;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.emitter.Emitter;
+import org.apache.tika.pipes.core.emitter.EmitterManager;
+import org.apache.tika.pipes.core.fetcher.Fetcher;
+import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
+import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.emitter.s3.S3Emitter;
-import org.apache.tika.pipes.fetcher.Fetcher;
-import org.apache.tika.pipes.fetcher.FetcherManager;
-import org.apache.tika.pipes.pipesiterator.CallablePipesIterator;
-import org.apache.tika.pipes.pipesiterator.PipesIterator;
 
 @Disabled("turn these into actual tests with mock s3")
 public class PipeIntegrationTests {

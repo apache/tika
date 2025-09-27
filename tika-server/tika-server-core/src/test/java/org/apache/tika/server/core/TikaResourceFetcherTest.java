@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 

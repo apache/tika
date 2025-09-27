@@ -19,7 +19,7 @@ package org.apache.tika.pipes.fetchers.microsoftgraph.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
 
 public class MicrosoftGraphFetcherConfig extends AbstractConfig {
     private long[] throttleSeconds;

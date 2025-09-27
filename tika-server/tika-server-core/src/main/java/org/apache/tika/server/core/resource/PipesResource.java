@@ -37,12 +37,12 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.PipesConfig;
-import org.apache.tika.pipes.PipesException;
-import org.apache.tika.pipes.PipesParser;
-import org.apache.tika.pipes.PipesResult;
-import org.apache.tika.serialization.pipes.JsonFetchEmitTuple;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.PipesException;
+import org.apache.tika.pipes.core.PipesParser;
+import org.apache.tika.pipes.core.PipesResult;
+import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
 
 @Path("/pipes")
 public class PipesResource {

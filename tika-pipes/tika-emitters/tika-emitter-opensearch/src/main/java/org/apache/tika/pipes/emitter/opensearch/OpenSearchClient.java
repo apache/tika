@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.TikaClientException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.emitter.EmitData;
+import org.apache.tika.pipes.core.emitter.EmitData;
 import org.apache.tika.utils.StringUtils;
 
 public class OpenSearchClient {

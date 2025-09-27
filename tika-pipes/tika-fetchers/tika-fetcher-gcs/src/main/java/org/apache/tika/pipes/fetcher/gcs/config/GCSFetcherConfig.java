@@ -16,7 +16,7 @@
  */
 package org.apache.tika.pipes.fetcher.gcs.config;
 
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
 
 public class GCSFetcherConfig extends AbstractConfig {
     private boolean spoolToTemp;

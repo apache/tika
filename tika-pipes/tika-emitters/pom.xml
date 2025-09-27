@@ -32,7 +32,6 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>tika-emitter-fs</module>
     <module>tika-emitter-s3</module>
     <module>tika-emitter-kafka</module>
     <module>tika-emitter-solr</module>

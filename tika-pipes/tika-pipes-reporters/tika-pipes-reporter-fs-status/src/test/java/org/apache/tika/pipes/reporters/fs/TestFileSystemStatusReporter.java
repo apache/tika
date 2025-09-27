@@ -40,11 +40,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.pipes.PipesReporter;
-import org.apache.tika.pipes.PipesResult;
-import org.apache.tika.pipes.async.AsyncStatus;
-import org.apache.tika.pipes.pipesiterator.PipesIterator;
-import org.apache.tika.pipes.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.core.PipesReporter;
+import org.apache.tika.pipes.core.PipesResult;
+import org.apache.tika.pipes.core.async.AsyncStatus;
+import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
 
 public class TestFileSystemStatusReporter {
 

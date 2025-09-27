@@ -46,14 +46,14 @@ import org.apache.tika.fuzzing.general.ByteInjector;
 import org.apache.tika.fuzzing.general.GeneralTransformer;
 import org.apache.tika.fuzzing.general.SpanSwapper;
 import org.apache.tika.fuzzing.general.Truncator;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.PipesConfig;
-import org.apache.tika.pipes.PipesParser;
-import org.apache.tika.pipes.PipesResult;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetcher.FetcherManager;
-import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.PipesParser;
+import org.apache.tika.pipes.core.PipesResult;
+import org.apache.tika.pipes.core.emitter.EmitKey;
+import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 
 public class FuzzingCLI {
 
