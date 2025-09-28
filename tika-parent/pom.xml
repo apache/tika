@@ -439,6 +439,7 @@
     <snappy.version>1.1.10.8</snappy.version>
     <solrj.version>9.9.0</solrj.version>
     <spring.version>6.2.11</spring.version>
+    <spring.boot.version>3.4.1</spring.boot.version>
     <sqlite.version>3.50.3.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>1.21.3</testcontainers.version>
@@ -456,6 +457,8 @@
     <zstd.version>1.5.7-4</zstd.version>
     <nimbus-jose-jwt.version>10.5</nimbus-jose-jwt.version>
     <javacpp.version>1.5.12</javacpp.version>
+    <pf4j.version>3.12.0</pf4j.version>
+    <lombok.version>1.18.36</lombok.version>
 
     <!-- needs to exist even if empty due to problems with jacoco-maven-plugin -->
     <addmod />
@@ -479,6 +482,13 @@
         <version>2.9.0</version>
       </dependency>
       <!-- boms -->
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring.boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson</groupId>
         <artifactId>jackson-bom</artifactId>
@@ -1148,6 +1158,16 @@
         <groupId>com.nimbusds</groupId>
         <artifactId>nimbus-jose-jwt</artifactId>
         <version>${nimbus-jose-jwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.pf4j</groupId>
+        <artifactId>pf4j</artifactId>
+        <version>${pf4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>${lombok.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

@@ -1,0 +1,419 @@
+<!-- Title: Owl shift. Mon Jul  7, 2003 -->
+<!-- SciCo: Petar Maksimovic -->
+<!-- DAQAce: Jason Galyardt -->
+<!-- MonAce: Alberto Cruz -->
+<!-- CO: Miroslav Siket -->
+<!-- OpManager: Nathan Eddy -->
+<!-- Notes: -->
+<pre>Stack is 190... Shot in the near future likely.  (Keeping fingers 
+crossed!)</pre>
+
+
+<!-- Date: Mon Jul 7 00:18:40.661 2003 -->
+Problems with H- ion source.  Needs to be fixed before the 
+shot.  MCR says that the experts are on their way.  More beam 
+studies to follow.  Shot won't be before ~ 4 am, but may be 
+as late as noon (current guess).  
+<!-- Author: Petar -->
+
+
+<!-- Date: Mon Jul 7 00:28:13.642 2003 -->
+Big Brother:  b0dau30 has a TROUBLE indicator in the disk catagory.  Here are the details:<br><br> 
+ 
+/dev/dsk/dks1d2s6       efs  3801401  3602798   198603  95  /cdf/code-IRIX-5.3<br><br> 
+Some other partitions have close to 90% usage, but they are labeled "backup", so I don't think it's an issue.  
+<!-- Author: Jason -->
+<!-- Comment: Mon Jul  7 01;07;29 comment by...Jason -->
+Big Bro. is now green.
+<!-- Date: Mon Jul 7 00:32:28.243 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165803">165803</A>
+ACTIVATE: Cal QIE calib.
+<!-- Author: Jason*2080 -->
+
+
+
+<!-- Date: Mon Jul 7 00:33:23.564 2003 -->
+MCR guarantees at least half an hour of quiet time, so doing 
+the short version of calibrations (i.e. no laser and no Si).
+<!-- Author: petar -->
+
+<!-- Date: Mon Jul 7 00:35:02.263 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165804">165804</A>
+ACTIVATE: CLC QIE calib
+<!-- Author: Jason*2080 -->
+<!-- Comment: Mon Jul  7 03;20;07 comment by...Jason -->
+Reset CLC ADMEMS using VISIONdemo (b0clc00, b0clc01).
+<!-- Comment: Mon Jul  7 03;43;13 comment by...Jason -->
+VISIONdemo did not return the prompt after issuing a bus reset on b0clc01.  Hit Ctrl-C.  b0clc01 is green in VXWorks.
+<!-- Date: Mon Jul 7 00:36:16.634 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165805">165805</A>
+ACTIVATE: BSC QIE calib.
+<!-- Author: Jason*2080 -->
+
+
+<!-- Date: Mon Jul 7 00:38:22.392 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165806">165806</A>
+ACTIVATE: Roman Pot QIE calib.
+<!-- Author: Jason*2080 -->
+
+
+<!-- Date: Mon Jul 7 00:41:54.707 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165807">165807</A>
+ACTIVATE: TOF QIE Calib.
+<!-- Author: Jason*2080 -->
+
+
+<!-- Date: Mon Jul 7 00:48:18.414 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165808">165808</A>
+ACTIVATE: SMX QIE Calib.
+<!-- Author: Jason*2080 -->
+
+
+<!-- Date: Mon Jul 7 00:51:15.221 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165810">165810</A>
+ACTIVATE: CEM LED calib.
+<!-- Author: Jason*2080 -->
+
+
+<!-- Date: Mon Jul 7 00:59:26.346 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165811">165811</A>
+ACTIVATE: CAL QIE calib, take 2 as requested by the CO.
+<!-- Author: Jason*2080 -->
+
+
+<!-- Date: Mon Jul 7 00:59:27.641 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165813">165813</A>
+ACTIVATE: COT Calib.
+<!-- Author: Jason*2080 -->
+<!-- Comment: Mon Jul  7 01;29;14 comment by...mirsi -->
+ave start time for good channels is 305.608
+number of missing channels = 0
+number of good channels = 29760
+number of drifted good channels = 58
+ave drift = -0.0125306
+num drifted good channels, crate 0 is 10
+num drifted good channels, crate 1 is 1
+num drifted good channels, crate 2 is 1
+num drifted good channels, crate 3 is 0
+num drifted good channels, crate 4 is 0
+num drifted good channels, crate 5 is 3
+num drifted good channels, crate 6 is 0
+num drifted good channels, crate 7 is 0
+num drifted good channels, crate 8 is 0
+num drifted good channels, crate 9 is 0
+num drifted good channels, crate 10 is 34
+num drifted good channels, crate 11 is 1
+num drifted good channels, crate 12 is 3
+num drifted good channels, crate 13 is 1
+num drifted good channels, crate 14 is 1
+num drifted good channels, crate 15 is 0
+num drifted good channels, crate 16 is 2
+num drifted good channels, crate 17 is 0
+num drifted good channels, crate 18 is 0
+num drifted good channels, crate 19 is 1
+Calibration run is good, but has not changed sufficiently from last COMPLETE run
+ - no new COMPLETE run written
+no new calibration run written
+ave start time for good channels is 305.608
+numBad channels = 480
+
+<!-- Date: Mon Jul 7 01:02:48.568 2003 -->
+Icicle died.  Restarted it.
+<!-- Author: Jason -->
+
+<!-- Date: Mon Jul 7 01:07:00.645 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165815">165815</A>
+ACTIVATE: CEM XEF calib.
+<!-- Author: Jason*2080 -->
+
+
+
+<!-- Date: Mon Jul 7 01:15:50.077 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165817">165817</A>
+ACTIVATE: Muon Calib.  Crate MUON_SCINT_00 missing TDC_CSX_MT_02 in slot 10, TDC_CSX_MT_03 in slot 11.
+<!-- Author: Jason*2080 -->
+
+
+<!-- Date: Mon Jul 7 01:19:14.869 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165819">165819</A>
+ACTIVATE: TOF TAC Calib.
+<!-- Author: Jason*2080 -->
+
+
+
+<!-- Date: Mon Jul 7 01:38:52.220 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165820">165820</A>
+ Activated at 2003.07.07 01:37:29
+<!-- Author: RunControl -->
+
+
+<!-- Date: Mon Jul 7 01:38:53.132 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165820">165820</A>
+ACTIVATE: Rick's Run: no beam.
+<!-- Author: Jason*2080 -->
+<!-- Comment: Mon Jul  7 01;41;19 comment by...Jason -->
+L1A rate: spiked around 140 Hz, now around 106 Hz.
+
+<!-- Date: Mon Jul 7 01:42:44.570 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165820">165820</A>
+ Terminated at 2003.07.07 01:42:23
+<!-- Author: RunControl -->
+
+
+<!-- Date: Mon Jul 7 01:43:27.236 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165820">165820</A>
+TERMINATE: End Rick's Run?
+<!-- Author: Jason*2080 -->
+
+
+
+<!-- Date: Mon Jul 7 01:54:04.585 2003 -->
+Done with easy calibrations.  MCR has problems with humid air in 
+the annex, and say we'll have at least an hour (or two) of 
+extra quiet time. 
+ 
+<p> 
+==> Continuing with laser calibrations.
+<!-- Author: petar -->
+
+<!-- Date: Mon Jul 7 02:34:06.286 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165822">165822</A>
+ACTIVATE: Plug Laser Calib: BOTHPLUGS_NORMAL
+<!-- Author: Jason*2080 -->
+
+
+<!-- Date: Mon Jul 7 02:48:08.351 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165824">165824</A>
+ACTIVATE: Plug Laser Calib: BOTHPLUGS_MM_C
+<!-- Author: Jason*2080 -->
+
+
+<!-- Date: Mon Jul 7 02:48:10.089 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165826">165826</A>
+ACTIVATE: Plug Laser Calib: BOTHPLUGS_MM
+<!-- Author: Jason*2080 -->
+
+
+<!-- Date: Mon Jul 7 03:06:55.045 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165827">165827</A>
+ACTIVATE: Si D-mode calib: no beam, DPS on
+<!-- Author: Jason*2080 -->
+
+
+<!-- Date: Mon Jul 7 03:17:23.646 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165828">165828</A>
+ACTIVATE: Si D-mode calib: no beam, DPS OFF
+<!-- Author: Jason*2080 -->
+
+
+
+
+<!-- Date: Mon Jul 7 03:38:33.485 2003 -->
+Beam status from MCR: linac is still off + problems with keeping 
+the antiproton stack (they are trying to lower the unstacking 
+rate).  Bottom line: quiet time for the next couple of hours. 
+ 
+<p> 
+our plan: continue with the calibrations.  We took a silicon 
+calibration run before realizing that the Si has to be biased 
+for a while. (We're still learning.)  So we'll take cosmics 
+for ~ 2 hr with the silicon on, and then take the silicon 
+calibration.
+<!-- Author: petar -->
+
+<!-- Date: Mon Jul 7 03:40:40.706 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165829">165829</A>
+ Activated at 2003.07.07 03:40:25
+<!-- Author: RunControl -->
+
+
+<!-- Date: Mon Jul 7 03:41:43.876 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165829">165829</A>
+ACTIVATE: COSMICS_SILICON_TAPE
+<!-- Author: Jason*2080 -->
+<!-- Comment: Mon Jul  7 03;46;23 comment by...Jason -->
+The Si D-mode calibration just performed was done shortly after the Si HV was turned on.  The purpose of this run is to keep the Si operating for a while as per the Si calib. instructions.  MCR estimate of quiet time should be enough for cosmics run + 2 more Si calib's.
+<!-- Comment: Mon Jul  7 03;49;12 comment by...Jason -->
+TOF trigger inhibit disabled by default; also disabled CLC trigger inhibit, since CLC HV is off.
+<!-- Date: Mon Jul 7 03:43:45.553 2003 -->
+Error (5) >>  (MLE) b0wcal04:Messenger:3:40:37 AM->Event 1: Bunchcounters in slot 16 (BC=0) and slot 6 (BC=125) disagree (L2B=0)<br> 
+Done Timeout -- auto HRR recovered.
+<!-- Author: Jason :: (run <a href='/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165829' target=_top>165829</a>) -->
+
+
+
+
+<!-- Date: Mon Jul 7 04:14:25.876 2003 -->
+Checked SCRAMNet in Ace Controls for EVB & L3 farm, and the only thing that looks bad is this:<br> 
+b0l3c11: CSR1 0x0ae0:{Protocol err:BAD}{Carrier err:BAD}{Message err:BAD}{Tx retry:FISHY}<br><br> will send email to L3 people.
+<!-- Author: Jason :: (run <a href='/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165829' target=_top>165829</a>) -->
+
+<!-- Date: Mon Jul 7 04:30:35.965 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165829">165829</A>
+ Terminated at 2003.07.07 04:30:15
+<!-- Author: RunControl -->
+
+
+<!-- Date: Mon Jul 7 04:31:07.030 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165829">165829</A>
+TERMINATE: END so BD can inject beam.
+<!-- Author: Jason*2080 -->
+
+
+<!-- Date: Mon Jul 7 04:39:27.993 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165830">165830</A>
+ACTIVATE: Si D-mode Calib: no beam, DPS On
+<!-- Author: Jason*2080 -->
+
+
+<!-- Date: Mon Jul 7 04:46:35.051 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165831">165831</A>
+ACTIVATE: Si calib.: DPS off, no beam.
+<!-- Author: Jason*2080 -->
+<!-- Comment: Mon Jul  7 05;50;02 comment by...Jason -->
+FAILURE, according to automatically generated message (error in biasInfo file).
+<!-- Comment: Mon Jul  7 09;00;49 comment by...Jason Nielsen -->
+The calibration data are good.  The error from the calibration
+analysis framework has been debugged, and the calibration analysis has been restarted.
+<!-- Date: Mon Jul 7 05:00:34.656 2003 -->
+Done with another pass on Si calibrations.  (This time let's hope 
+they are good.)   
+ 
+<p> 
+Put everything to standby, called MCR, and they've just loaded 
+two bunches of protons. 
+<p> 
+There is a hope for a shot in about an hour from now.
+<!-- Author: petar -->
+
+<!-- Date: Mon Jul 7 05:03:34.349 2003 -->
+Run <A HREF="/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165832">165832</A>
+ACTIVATE: L2_TORTURE
+<!-- Author: Jason*2080 -->
+
+
+
+<!-- Date: Mon Jul 7 05:07:28.968 2003 -->
+Error (12) >>  (MLE) b0fcal01:Messenger:5:05:38 AM->Event 48948: Bunchcounters in slot 8 (BC=71) and slot 14 (BC=112) disagree (L2B=1)<br> 
+Done Timeout -- auto HRR recovered.
+<!-- Author: Jason :: (run <a href='/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165832' target=_top>165832</a>) -->
+<!-- Comment: Mon Jul  7 05;20;41 comment by...Jason -->
+Error (25) >>  (MLE) b0wcal05:Messenger:5:19:20 AM->Event 301269: Bunchcounters in slot 16 (BC=3) and slot 9 (BC=74) disagree (L2B=0)<br>
+Auto HRR recovered.
+<!-- Comment: Mon Jul  7 07;19;38 comment by...Alberto -->
+MLE) b0wcal03:Messenger:7:17:38 AM->Event 2499189: Bunchcounters in slot 5 (BC=9) and slot 20 (BC=83) disagree (L2B=0)
+<!-- Date: Mon Jul 7 05:20:27.559 2003 -->
+PSM alarm 1RR18D_1 was red for about 5 seconds.  Everything is green now.
+<!-- Author: Alberto :: (run <a href='/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165832' target=_top>165832</a>) -->
+
+
+
+<!-- Date: Mon Jul 7 05:37:49.119 2003 -->
+TOF alarm and shows a spike on the High voltage Summary page, but nothing on the Global Alarm page.  It went back to normal after 10 seconds.
+<!-- Author: Alberto :: (run <a href='/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165832' target=_top>165832</a>) -->
+<!-- Comment: Mon Jul  7 06;05;43 comment by...Jason -->
+TOF HV was OFF at the time!
+
+
+<!-- Date: Mon Jul 7 06:40:43.674 2003 -->
+Touched base with MCR: the coalescing is very bad, and they 
+have an expert looking into it.  (For the past hour they have 
+been injecting 2-4 bunches of protons and looking into the 
+orbits.)  If they are happy with the coalescing this time, 
+we may get a shot in half an hour.  But they said "do not 
+hold your breath"...
+<!-- Author: petar -->
+
+
+<!-- Date: Mon Jul 7 06:48:58.815 2003 -->
+Error (51) >>   SCPU b0eb16 (forwarded by FER crate PCAL_03).<br> 
+Error (42) >>  SCPU-P0-E-TracerEventId: Event 1907569, crate 36, channel 3 has either bad Tracer ID or bad markers around Tracer word.<br><br> 
+This error occurs for events 1907569 - 76, sequentially.  Auto HRR recovered.
+<!-- Author: Jason :: (run <a href='/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165832' target=_top>165832</a>) -->
+
+
+<!-- Date: Mon Jul 7 07:09:20.850 2003 -->
+(MLE) b0l3gate1.fnal.gov:main:7:03:40 AM->Host b0eb11.fnal.gov, task tRec_0<br> 
+SCPU-P0-E-VrbHeader: Dump of header words for event 2241318 from VRB in slot 12<br> 
+(MLE) b0l3gate1.fnal.gov:main:7:03:40 AM->Host b0eb11.fnal.gov, task tRec_0<br> 
+SCPU-P0-E-VrbHeader: Dump of header words for event 2241319 from VRB in slot 10<br><br> 
+SCPU_BAD_VRB_BYTE_COUNT Error in SCPU b0eb11; Auto HRR recovered.
+<!-- Author: Jason :: (run <a href='/java/cdfdb/servlet/RunSummary?RUN_NUMBER=165832' target=_top>165832</a>) -->
+<!-- Comment: Mon Jul  7 07;53;55 comment by...Paola -->
+<pre> b0l3gate1.fnal.gov:main:7:52:32 AM-&gt;Host b0eb11.fnal.gov, task tRec_0
+SCPU-P0-E-VrbHeader: Dump of header words for event 3149602 from VRB in slot 12:
+</pre>
+
+<!-- Comment: Mon Jul  7 07;55;39 comment by...Paola -->
+<pre> b0l3gate1.fnal.gov:main:7:53:36 AM-&gt;Host b0eb11.fnal.gov, task tRec_0
+SCPU-P0-E-VrbHeader: Dump of header words for event 3165467 from VRB in slot 10:
+0x00000056 0x7e1b0051 0x424d5544 0x00040001 0x00000000 0x00000017 0x00000003 0x0000000a
+</pre>
+<!-- Date: Mon Jul 7 07:55:38.968 2003 -->
+<TABLE BORDER=2 CELLSPACING=1 CELLPADDING=1 BGCOLOR=WHITE>
+<TR BGCOLOR=YELLOW><TH>Run Number</TH>
+<TH>Data Type</TH>
+<TH>Physics Table</TH>
+<TH>Begin Time</TH>
+<TH>End Time</TH>
+<TH>Live Time</TH>
+<TH>L1 Accepts</TH>
+<TH>L2 Accepts</TH>
+<TH>L3 Accepts</TH>
+<TH>Live Lumi, nb-1</TH>
+<TH>GR</TH>
+<TH>SC</TH>
+<TH>RC</TH></TR>
+
+<TR><TD>Totals</TD>                                                     
+<TD> </TD>                                                              
+<TD> </TD>                                                              
+<TD> </TD>                                                              
+<TD>07:55:01</TD>                                                       
+<TD ALIGN=CENTER>::</TD>                                                
+<TD ALIGN=RIGHT></TD>                                                   
+<TD ALIGN=RIGHT></TD>                                                   
+<TD ALIGN=RIGHT></TD>                                                   
+<TD ALIGN=RIGHT></TD>                                                   
+<TD> </TD>                                                              
+<TD> </TD>                                                              
+<TD> </TD></TR>                                                         
+                                                                        
+</TABLE>
+<!-- Author: End of Shift Report -->
+
+
+
+
+<!-- Date: Mon Jul 7 08:01:04.587 2003 -->
+<font color=red>Shift Summary: </font>Contrary to the evening shift (and the owl in previous nights), we have  
+had suprisingly little trouble: no silicon PS troubles, only a few DONE 
+timeouts... 
+ 
+<p> 
+Started with a stack of 190 and likely shot setup.  Linac was down for 
+a while.  Tevatron had lots of small problems, and now they don't like 
+the coalescing.  The shot in the near future is still likely.  There 
+were also instabilities in the PBar source and the stack went down to 
+~ 160 before they fixed it.  It's 172 now with the acc rate of +2 (which 
+is at least positive!). 
+ 
+<p> 
+While the linac was being fixed, we took all calibrations, including 
+laser.  We also took silicon calibrations twice: the first time 
+errorneously (not enough time with HV on), and the second time after 
+~1.5 hrs of cosmics (which should have been kosher).  However, the Si 
+calibration batch job complained both times, so I'll follow it up with 
+the Si calibration folks (Jason Nielsen et al.) later today.   
+<br><b>End of Shift Numbers</b>
+<table><tr><td width=60% align=left>
+<b>CDF Run II <p></b>                       
+<pre>
+Runs                   165803-165832 (calibs)
+Delivered Luminosity   0  
+Acquired Luminosity    0  
+Efficiency             NA
+   
+</td></tr></table></pre>
+<!-- Author: petar -->
+

@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: tika-pipes
+grpc:
+  server:
+    numThreads: 4
+    port: 9090
+    max-inbound-message-size: 1600777216 # 1600MB
+    max-outbound-message-size: 1600777216 # 1600MB
+    health:
+      enabled: false
+ignite:
+  workDir: 'ignite/work'
+  persistence:
+    enabled: true
+  memory:
+    default:
+      size: 1G
+  sql:
+    log: debug
+forkparser:
+  pool:
+    core-size: 5
+    max-size: 10
+    queue-capacity: 100

@@ -45,7 +45,7 @@
     <module>tika-xmp</module>
     <module>tika-langdetect</module>
     <module>tika-pipes</module>
-    <module>tika-grpc</module>
+    <module>tika-server-spring</module>
     <module>tika-app</module>
     <module>tika-server</module>
     <module>tika-integration-tests</module>

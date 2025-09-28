@@ -1,0 +1,440 @@
+syntax = "proto3";
+package tika;
+
+import "google/api/annotations.proto";
+
+option go_package = "apache.org/tika";
+option java_multiple_files = true;
+option java_package = "org.apache.tika";
+option java_outer_classname = "TikaProto";
+option objc_class_prefix = "HLW";
+
+// The Tika Grpc Service definition
+service Tika {
+  /*
+    Save a fetcher to the fetcher store.
+  */
+  rpc SaveFetcher(SaveFetcherRequest) returns (SaveFetcherReply) {
+    option (google.api.http) = {
+      post: "/v1/fetcher"
+      body: "*"
+    };
+  }
+  /*
+    Get a fetcher's data from the fetcher store.
+  */
+  rpc GetFetcher(GetFetcherRequest) returns (GetFetcherReply) {
+    option (google.api.http) = {
+      get: "/v1/fetcher/{fetcher_id}"
+    };
+  }
+  /*
+  List fetchers that are currently in the fetcher store.
+  */
+  rpc ListFetchers(ListFetchersRequest) returns (ListFetchersReply) {
+    option (google.api.http) = {
+      get: "/v1/fetchers"
+    };
+  }
+  /*
+    Delete a fetcher from the fetcher store.
+  */
+  rpc DeleteFetcher(DeleteFetcherRequest) returns (DeleteFetcherReply) {
+    option (google.api.http) = {
+      delete: "/v1/fetcher/{fetcher_id}"
+    };
+  }
+  /*
+  Using a Fetcher in the fetcher store, send a FetchAndParse request. This will fetch, parse, and return
+  the FetchParseTuple data output from Tika Pipes. This is a synchronous call that immediately returns 1 result.
+  */
+  rpc FetchAndParse(FetchAndParseRequest) returns (FetchAndParseReply) {
+    option (google.api.http) = {
+      post: "/v1/fetchAndParse"
+      body: "*"
+    };
+  }
+  /*
+    Using a Fetcher in the fetcher store, send a FetchAndParse request. This will fetch, parse, and return
+    the FetchParseTuple data output from Tika Pipes. This will stream the data from the server in response.
+  */
+  rpc FetchAndParseServerSideStreaming(FetchAndParseRequest) returns (stream FetchAndParseReply) {
+    option (google.api.http) = {
+      post: "/v1/fetchAndParseServerSideStreaming"
+      body: "*"
+    };
+  }
+  /*
+    Using a Fetcher in the fetcher store, send a FetchAndParse request. This will fetch, parse, and return
+    the FetchParseTuple data output from Tika Pipes. This serves a bi-directional stream of fetch inputs and
+    parsed outputs.
+  */
+  rpc FetchAndParseBiDirectionalStreaming(stream FetchAndParseRequest) returns (stream FetchAndParseReply) {
+  }
+  /*
+    Get the Fetcher Config schema for a given fetcher.
+  */
+  rpc GetFetcherConfigJsonSchema(GetFetcherConfigJsonSchemaRequest) returns (GetFetcherConfigJsonSchemaReply) {
+    option (google.api.http) = {
+      get: "/v1/fetcherConfigJsonSchema/{plugin_id}"
+    };
+  }
+
+  /*
+    Save an emitter to the emitter store.
+  */
+  rpc SaveEmitter(SaveEmitterRequest) returns (SaveEmitterReply) {
+    option (google.api.http) = {
+      post: "/v1/emitter"
+      body: "*"
+    };
+  }
+  /*
+    Get an emitter's data from the emitter store.
+  */
+  rpc GetEmitter(GetEmitterRequest) returns (GetEmitterReply) {
+    option (google.api.http) = {
+      get: "/v1/emitter/{emitter_id}"
+    };
+  }
+  /*
+    List emitters that are currently in the emitter store.
+  */
+  rpc ListEmitters(ListEmittersRequest) returns (ListEmittersReply) {
+    option (google.api.http) = {
+      get: "/v1/emitters"
+    };
+  }
+  /*
+    Delete an emitter from the emitter store.
+  */
+  rpc DeleteEmitter(DeleteEmitterRequest) returns (DeleteEmitterReply) {
+    option (google.api.http) = {
+      delete: "/v1/emitter/{emitter_id}"
+    };
+  }
+  /*
+    Get the emitter config json schema
+  */
+  rpc GetEmitterConfigJsonSchema(GetEmitterConfigJsonSchemaRequest) returns (GetEmitterConfigJsonSchemaReply) {
+    option (google.api.http) = {
+      get: "/v1/emitterConfigJsonSchema/{plugin_id}"
+    };
+  }
+
+  /*
+  Save a pipe iterator to the pipe iterator store.
+  */
+  rpc SavePipeIterator(SavePipeIteratorRequest) returns (SavePipeIteratorReply) {
+    option (google.api.http) = {
+      post: "/v1/pipeIterator"
+      body: "*"
+    };
+  }
+  /*
+    Get a pipe iterator's data from the pipe iterator store.
+  */
+  rpc GetPipeIterator(GetPipeIteratorRequest) returns (GetPipeIteratorReply) {
+    option (google.api.http) = {
+      get: "/v1/pipeIterator/{pipe_iterator_id}"
+    };
+  }
+  /*
+    List pipe iterators that are currently in the pipe iterator store.
+  */
+  rpc ListPipeIterators(ListPipeIteratorsRequest) returns (ListPipeIteratorsReply) {
+    option (google.api.http) = {
+      get: "/v1/pipeIterators"
+    };
+  }
+  /*
+      Delete a pipe iterator from the pipe iterator store.
+  */
+  rpc DeletePipeIterator(DeletePipeIteratorRequest) returns (DeletePipeIteratorReply) {
+    option (google.api.http) = {
+      delete: "/v1/pipeIterator/{pipe_iterator_id}"
+    };
+  }
+  /*
+    Get the Pipe Iterator Config schema for a given pipe iterator.
+  */
+  rpc GetPipeIteratorConfigJsonSchema(GetPipeIteratorConfigJsonSchemaRequest) returns (GetPipeIteratorConfigJsonSchemaReply) {
+    option (google.api.http) = {
+      get: "/v1/pipeIteratorConfigJsonSchema/{plugin_id}"
+    };
+  }
+
+  /*
+    Run a pipe job and return the job id.
+  */
+  rpc RunPipeJob(RunPipeJobRequest) returns (RunPipeJobReply) {
+    option (google.api.http) = {
+      post: "/v1/runPipeJob"
+      body: "*"
+    };
+  }
+  /*
+  Get a pipe job's state.
+  */
+  rpc GetPipeJob(GetPipeJobRequest) returns (GetPipeJobReply) {
+    option (google.api.http) = {
+      get: "/v1/pipeJob/{pipe_job_id}"
+    };
+  }
+}
+
+message SaveFetcherRequest {
+  // A unique identifier for each fetcher. If this already exists, operation will overwrite existing.
+  string fetcher_id = 1;
+  // The pf4j plugin ID of the fetcher.
+  string plugin_id = 2;
+  // JSON string of the FetcherConfig object.
+  string fetcher_config_json = 3;
+}
+
+message SaveFetcherReply {
+  // The fetcher_id that was saved.
+  string fetcher_id = 1;
+}
+
+message FetchAndParseRequest {
+  // The ID of the fetcher in the fetcher store (previously saved by SaveFetcher) to use for the fetch.
+  string fetcher_id = 1;
+  // The "Fetch Key" of the item that will be fetched.
+  string fetch_key = 2;
+  // Additional attributes needed to fetch items. such request headers, space IDs, tokens, that might need to be on the fetch request in order to get the item from the external service.
+  string fetch_metadata_json = 3;
+  // Metadata elements are added to each parsed document's output as additional metadata fields.
+  string added_metadata_json = 4;
+  // You can optionally customize the Tika parse context.
+  string parse_context_json = 5;
+}
+
+message Value {
+  oneof value {
+    string string_value = 1;
+    int64 int_value = 2;
+    bool bool_value = 3;
+    double double_value = 4;
+  }
+}
+
+message ValueList {
+  repeated Value values = 1;
+}
+
+message Metadata {
+  map<string, ValueList> fields = 1;
+}
+
+message FetchAndParseReply {
+  // Echoes the fetch_key that was sent in the request.
+  string fetch_key = 1;
+  // List of Metadata fields from the parse output.
+  repeated Metadata metadata = 2;
+  // The status from the message. See javadoc for org.apache.tika.pipes.PipesResultStatus. for the list of status.
+  string status = 3;
+  // If there was an error, this will contain the error message.
+  string error_message = 4;
+}
+
+message DeleteFetcherRequest {
+  // ID of the fetcher to delete.
+  string fetcher_id = 1;
+}
+
+message DeleteFetcherReply {
+  // Success if the fetcher was successfully removed from the fetch store.
+  bool success = 1;
+}
+
+message GetFetcherRequest {
+  // ID of the fetcher for which to return config.
+  string fetcher_id = 1;
+}
+
+message GetFetcherReply {
+  // Echoes the ID of the fetcher being returned.
+  string fetcher_id = 1;
+  // Plugin ID of the fetcher
+  string plugin_id = 2;
+  // The configuration parameters.
+  map<string, string> params = 3;
+}
+
+message ListFetchersRequest {
+  // List the fetchers starting at this page number
+  int32 page_number = 1;
+  // List this many fetchers per page.
+  int32 num_fetchers_per_page = 2;
+}
+
+message ListFetchersReply {
+  // List of fetcher configs returned by the Lists Fetchers service.
+  repeated GetFetcherReply get_fetcher_replies = 1;
+}
+
+message GetFetcherConfigJsonSchemaRequest {
+  // The plugin name of the fetcher for which to fetch json schema.
+  string plugin_id = 1;
+}
+
+message GetFetcherConfigJsonSchemaReply {
+  // The json schema that describes the fetcher config in string format.
+  string fetcher_config_json_schema = 1;
+}
+
+message SaveEmitterRequest {
+  // A unique identifier for each emitter. If this already exists, operation will overwrite existing.
+  string emitter_id = 1;
+  // The pf4j plugin ID of the emitter.
+  string plugin_id = 2;
+  // JSON string of the EmitterConfig object.
+  string emitter_config_json = 3;
+}
+
+message SaveEmitterReply {
+  // The emitter_id that was saved.
+  string emitter_id = 1;
+}
+
+message GetEmitterRequest {
+  // ID of the emitter for which to return config.
+  string emitter_id = 1;
+}
+
+message GetEmitterReply {
+  // Echoes the ID of the emitter being returned.
+  string emitter_id = 1;
+  // The pf4j plugin ID of the emitter.
+  string plugin_id = 2;
+  // The configuration parameters.
+  map<string, string> params = 3;
+}
+
+message ListEmittersRequest {
+  // List the emitters starting at this page number.
+  int32 page_number = 1;
+  // List this many emitters per page.
+  int32 num_emitters_per_page = 2;
+}
+
+message ListEmittersReply {
+  // List of emitter configs returned by the Lists Emitters service.
+  repeated GetEmitterReply get_emitter_replies = 1;
+}
+
+message DeleteEmitterRequest {
+  // ID of the emitter to delete.
+  string emitter_id = 1;
+}
+
+message DeleteEmitterReply {
+  // Success if the emitter was successfully removed from the emitter store.
+  bool success = 1;
+}
+
+message GetEmitterConfigJsonSchemaRequest {
+  // The PF4J plugin ID emitter config for which to fetch json schema.
+  string plugin_id = 1;
+}
+
+message GetEmitterConfigJsonSchemaReply {
+  // The json schema that describes the emitter config in string format.
+  string emitter_config_json_schema = 1;
+}
+
+message SavePipeIteratorRequest {
+  // A unique identifier for each pipe iterator. If this already exists, operation will overwrite existing.
+  string pipe_iterator_id = 1;
+  // The PF4j plugin ID of the pipe iterator.
+  string plugin_id = 2;
+  // JSON string of the PipeIteratorConfig object.
+  string pipe_iterator_config_json = 3;
+}
+
+message SavePipeIteratorReply {
+  // The pipe_iterator_id that was saved.
+  string pipe_iterator_id = 1;
+}
+
+message GetPipeIteratorRequest {
+  // ID of the pipe iterator for which to return config.
+  string pipe_iterator_id = 1;
+}
+
+message GetPipeIteratorReply {
+  // Echoes the ID of the pipe iterator being returned.
+  string pipe_iterator_id = 1;
+  // The PF4j plugin ID of the pipe iterator.
+  string plugin_id = 2;
+  // The configuration parameters.
+  map<string, string> params = 3;
+}
+
+message ListPipeIteratorsRequest {
+  // List the pipe iterators starting at this page number
+  int32 page_number = 1;
+  // List this many pipe iterators per page.
+  int32 num_pipe_iterators_per_page = 2;
+}
+
+message ListPipeIteratorsReply {
+  // List of pipe iterator configs returned by the Lists Pipe Iterators service.
+  repeated GetPipeIteratorReply get_pipe_iterator_replies = 1;
+}
+
+message DeletePipeIteratorRequest {
+  // ID of the pipe iterator to delete.
+  string pipe_iterator_id = 1;
+}
+
+message DeletePipeIteratorReply {
+  // Success if the pipe iterator was successfully removed from the pipe iterator store.
+  bool success = 1;
+}
+
+message GetPipeIteratorConfigJsonSchemaRequest {
+  // The PF4j plugin ID of the pipe iterator for which to obtain the config json.
+  string plugin_id = 1;
+}
+
+message GetPipeIteratorConfigJsonSchemaReply {
+  // The json schema that describes the pipe iterator config in string format.
+  string pipe_iterator_config_json_schema = 1;
+}
+
+message RunPipeJobRequest {
+  // The ID of the pipe iterator in the pipe iterator store (previously saved by SavePipeIterator) to use for the pipe job.
+  string pipe_iterator_id = 1;
+  // The ID of the fetcher in the fetcher store (previously saved by SaveFetcher) to use for the pipe job.
+  string fetcher_id = 2;
+  // The ID of the emitter in the emitter store (previously saved by SaveEmitter) to use for the pipe job.
+  string emitter_id = 3;
+  // Hard timeout of job in seconds
+  int32 job_completion_timeout_seconds = 4;
+}
+
+message RunPipeJobReply {
+  // The ID of the pipe job that was started.
+  string pipe_job_id = 1;
+}
+
+message GetPipeJobRequest {
+  // The ID of the pipe job for which to return state.
+  string pipe_job_id = 1;
+}
+
+message GetPipeJobReply {
+  // The ID of the pipe job being returned.
+  string pipe_job_id = 1;
+  // The ID of the pipe iterator used in the pipe job.
+  string pipe_iterator_id = 2;
+  // The ID of the fetcher used in the pipe job.
+  string fetcher_id = 3;
+  // The ID of the emitter used in the pipe job.
+  string emitter_id = 4;
+  bool is_running = 5;
+  bool is_completed = 6;
+  bool has_error = 7;
+}
