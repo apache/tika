@@ -65,7 +65,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.Tika;
-import org.apache.tika.async.cli.TikaAsyncCLI;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.detect.CompositeDetector;
@@ -226,9 +225,6 @@ public class TikaCLI {
         if (cli.testForHelp(args)) {
             cli.usage();
             return;
-        } else if (cli.testForAsync(args)) {
-            async(args);
-            return;
         }
 
         if (args.length > 0) {
@@ -251,19 +247,6 @@ public class TikaCLI {
                 cli.process("--gui");
             }
         }
-    }
-
-    private static void async(String[] args) throws Exception {
-        String tikaConfigPath = "";
-        String config = "--config=";
-        for (String arg : args) {
-            if (arg.startsWith(config)) {
-                tikaConfigPath = arg.substring(config.length());
-                TikaAsyncCLI.main(new String[]{tikaConfigPath});
-                return;
-            }
-        }
-        TikaAsyncCLI.main(args);
     }
 
     /**
@@ -315,27 +298,6 @@ public class TikaCLI {
         }
         handler.setResult(new StreamResult(output));
         return handler;
-    }
-
-    private boolean testForAsync(String[] args) {
-        if (args.length == 2) {
-            if (Files.isDirectory(Paths.get(args[0]))) {
-                return true;
-            }
-        }
-        for (String arg : args) {
-            if (arg.equals("-a") || arg.equals("--async")) {
-                return true;
-            }
-            if (arg.equals("-i") || arg.startsWith("--input")) {
-                return true;
-            }
-            if (arg.equals("-o") || arg.startsWith("--output")) {
-                return true;
-            }
-
-        }
-        return false;
     }
 
     public void process(String arg) throws Exception {
@@ -544,7 +506,6 @@ public class TikaCLI {
         out.println("    -J  or --jsonRecursive Output metadata and content from all");
         out.println("                           embedded files (choose content type");
         out.println("                           with -x, -h, -t or -m; default is -x)");
-        out.println("    -a  or --async         Run Tika in async mode; must specify details in a" + " tikaConfig file");
         out.println("    -l  or --language      Output only language");
         out.println("    -d  or --detect        Detect document type");
         out.println("           --digest=X      Include digest X (md2, md5, sha1,");

@@ -1,33 +1,78 @@
-<?xm  <parent>
-    <groupId>org.apache.tika</groupId>
-    <artifactId>tika-pipes</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
-  </parent>ion="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.tika</groupId>
-    <artifactId>tika-pipes-parent</artifactId>
-     <version>3.0.0-beta7</version>
+    <artifactId>tika-pipes</artifactId>
+     <version>4.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>tika-pipes-cli</artifactId>
   <name>Tika Pipes CLI</name>
   <description>Tika pipes clients for each fetcher.</description>
   <properties>
-    <guava.version>33.4.0-jre</guava.version>
+    <guava.version>33.5.0-jre</guava.version>
     <jcommander.version>1.82</jcommander.version>
     <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
     <jakarta.servlet-api.version>5.0.0</jakarta.servlet-api.version>
     <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
+
+    <guava.version>33.5.0-jre</guava.version>
+    <azure-identity.version>1.11.0</azure-identity.version>
+    <microsoft-graph.version>6.4.0</microsoft-graph.version>
+    <microsoft-kiota-serialization-json.version>1.1.1</microsoft-kiota-serialization-json.version>
+    <microsoft-kiota-authentication.version>1.0.4</microsoft-kiota-authentication.version>
+    <microsoft-kiota-abstractions.version>1.0.4</microsoft-kiota-abstractions.version>
+    <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
+
   </properties>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.microsoft.azure</groupId>
+        <artifactId>msal4j</artifactId>
+        <version>1.14.0</version>
+      </dependency>
+      <dependency>
+        <groupId>net.java.dev.jna</groupId>
+        <artifactId>jna-platform</artifactId>
+        <version>5.13.0</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.annotation</groupId>
+        <artifactId>jakarta.annotation-api</artifactId>
+        <version>3.0.0</version>
+      </dependency>
+      <!-- Force consistent versions to resolve dependency convergence errors -->
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm</artifactId>
+        <version>9.8</version>
+      </dependency>
+      <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-context</artifactId>
+        <version>1.72.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains</groupId>
+        <artifactId>annotations</artifactId>
+        <version>16.0.3</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.api</groupId>
+        <artifactId>api-common</artifactId>
+        <version>2.49.0</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-pipes-grpc</artifactId>
-      <version>${parent.version}</version>
+      <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>jakarta.servlet</groupId>
@@ -37,27 +82,27 @@
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-fetcher-s3</artifactId>
-      <version>${parent.version}</version>
+      <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-fetcher-microsoft-graph</artifactId>
-      <version>${parent.version}</version>
+      <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-fetcher-google-drive</artifactId>
-      <version>${parent.version}</version>
+      <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-fetcher-file-system</artifactId>
-      <version>${parent.version}</version>
+      <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-fetcher-http</artifactId>
-      <version>${parent.version}</version>
+      <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>com.beust</groupId>
@@ -77,12 +122,10 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>${commons-lang3.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>

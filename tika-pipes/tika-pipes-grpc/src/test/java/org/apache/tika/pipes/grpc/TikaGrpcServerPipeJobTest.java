@@ -42,9 +42,9 @@ import org.apache.tika.SavePipeIteratorReply;
 import org.apache.tika.SavePipeIteratorRequest;
 import org.apache.tika.TikaGrpc;
 import org.apache.tika.pipes.TikaPipesIntegrationTestBase;
-import org.apache.tika.pipes.fetcher.fs.config.FileSystemFetcherConfig;
 import org.apache.tika.pipes.fetchers.filesystem.CsvPipeIteratorConfig;
 import org.apache.tika.pipes.fetchers.filesystem.FileSystemEmitterConfig;
+import org.apache.tika.pipes.fetchers.filesystem.FileSystemFetcherConfig;
 
 @Slf4j
 class TikaGrpcServerPipeJobTest extends TikaPipesIntegrationTestBase {

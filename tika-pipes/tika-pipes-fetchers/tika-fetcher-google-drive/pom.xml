@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-pipes-fetchers</artifactId>
-    <version>3.0.0-beta7</version>
+    <version>4.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>tika-fetcher-google-drive</artifactId>
@@ -13,27 +13,78 @@
   <description>A Fetcher that uses an Google Drive to acquire documents for Tika to parse.</description>
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
-    <guava.version>33.4.0-jre</guava.version>
+    <guava.version>33.5.0-jre</guava.version>
     <azure-identity.version>1.11.0</azure-identity.version>
     <microsoft-graph.version>6.4.0</microsoft-graph.version>
     <microsoft-kiota-serialization-json.version>1.1.1</microsoft-kiota-serialization-json.version>
     <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
     <aws.version>1.12.744</aws.version>
     <google-api-services-drive.version>v3-rev20241027-2.0.0</google-api-services-drive.version>
-    <google-auth-library-oauth2-http.version>1.30.0</google-auth-library-oauth2-http.version>
-    <google-api-client.version>1.33.0</google-api-client.version>
+    <google-api-client.version>2.8.1</google-api-client.version>
+    <google-http-client.version>2.0.0</google-http-client.version>
   </properties>
   <dependencies>
     <dependency>
       <groupId>com.google.api-client</groupId>
       <artifactId>google-api-client</artifactId>
       <version>${google-api-client.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.http-client</groupId>
+          <artifactId>google-http-client</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.http-client</groupId>
+          <artifactId>google-http-client-gson</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.http-client</groupId>
+          <artifactId>google-http-client-apache-v2</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
+    <!-- Force consistent HTTP client versions -->
     <dependency>
-      <groupId>com.google.auth</groupId>
-      <artifactId>google-auth-library-oauth2-http</artifactId>
-      <version>${google-auth-library-oauth2-http.version}</version>
+      <groupId>com.google.http-client</groupId>
+      <artifactId>google-http-client</artifactId>
+      <version>${google-http-client.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.opencensus</groupId>
+          <artifactId>opencensus-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.google.http-client</groupId>
+      <artifactId>google-http-client-gson</artifactId>
+      <version>${google-http-client.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.http-client</groupId>
+      <artifactId>google-http-client-apache-v2</artifactId>
+      <version>${google-http-client.version}</version>
+    </dependency>
+
+    <!-- Force consistent grpc-context version -->
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-context</artifactId>
+      <version>1.70.0</version>
+    </dependency>
+
+    <!-- Add opencensus-api without grpc-context conflict -->
+    <dependency>
+      <groupId>io.opencensus</groupId>
+      <artifactId>opencensus-api</artifactId>
+      <version>0.31.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.grpc</groupId>
+          <artifactId>grpc-context</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- Google Drive API -->
@@ -41,6 +92,12 @@
       <groupId>com.google.apis</groupId>
       <artifactId>google-api-services-drive</artifactId>
       <version>${google-api-services-drive.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.api-client</groupId>
+          <artifactId>google-api-client</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.pf4j</groupId>

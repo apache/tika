@@ -34,6 +34,35 @@
   <name>Apache Tika Pipes</name>
   <description>Apache Tika Pipes aggregator project</description>
 
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <pf4j.version>3.12.0</pf4j.version>
+    <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
+         to get messed up when finding your plugins. -->
+    <plugin.excluded.artifactIds>tika-core,tika-pipes-core,tika-pipe-iterators-core,tika-emitters-core,tika-fetchers-core</plugin.excluded.artifactIds>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.pf4j</groupId>
+        <artifactId>pf4j</artifactId>
+        <version>${pf4j.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${commons.io.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${commons.lang3.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <modules>
     <module>tika-pipes-core</module>
     <module>tika-pipes-pipe-iterators</module>

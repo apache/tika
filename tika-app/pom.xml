@@ -63,10 +63,9 @@
       <artifactId>tika-xmp</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!-- this brings in tika-core -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-async-cli</artifactId>
+      <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
     </dependency>
 

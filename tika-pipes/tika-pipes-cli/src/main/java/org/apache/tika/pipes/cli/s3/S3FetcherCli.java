@@ -5,6 +5,7 @@ import static org.apache.tika.pipes.cli.mapper.ObjectMapperProvider.OBJECT_MAPPE
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -204,7 +205,7 @@ public class S3FetcherCli {
             }
         });
 
-        try (LineIterator lineIterator = new LineIterator(new FileReader(urlsToFetchFile))) {
+        try (LineIterator lineIterator = new LineIterator(new FileReader(urlsToFetchFile, StandardCharsets.UTF_8))) {
             while (lineIterator.hasNext()) {
                 String nextS3Key = lineIterator.nextLine();
                 requestStreamObserver.onNext(FetchAndParseRequest

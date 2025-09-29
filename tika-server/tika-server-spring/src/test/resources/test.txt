@@ -1,0 +1,2 @@
+This is a plain text file for testing MIME type detection.
+

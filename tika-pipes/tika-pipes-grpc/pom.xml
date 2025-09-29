@@ -15,23 +15,21 @@
   </description>
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
-    <grpc.version>1.70.0</grpc.version>
-    <protobuf.version>3.25.5</protobuf.version>
-    <protoc.version>3.25.5</protoc.version>
+    <grpc.version>1.72.0</grpc.version>
+    <protobuf.version>3.25.8</protobuf.version>
+    <protoc.version>3.25.8</protoc.version>
     <asarkar-grpc-test.version>1.2.2</asarkar-grpc-test.version>
     <awaitility.version>4.2.1</awaitility.version>
     <j2objc-annotations.version>3.0.0</j2objc-annotations.version>
-    <error_prone_annotations.version>2.28.0</error_prone_annotations.version>
-    <jackson-module-jsonSchema.version>2.15.0</jackson-module-jsonSchema.version>
-    <guava.version>33.4.0-jre</guava.version>
+    <error_prone_annotations.version>2.42.0</error_prone_annotations.version>
+    <jackson-module-jsonSchema.version>2.18.2</jackson-module-jsonSchema.version>
+    <guava.version>33.5.0-jre</guava.version>
     <spring-data-jpa.version>3.3.4</spring-data-jpa.version>
     <ignite.version>2.16.0</ignite.version>
     <ignite-spring-data-ext.version>3.0.0</ignite-spring-data-ext.version>
     <jakarta.persistence-api.version>3.2.0</jakarta.persistence-api.version>
-    <tika-version>3.0.0</tika-version>
-    <commons-io.version>2.18.0</commons-io.version>
     <json-schema-validator.version>2.2.14</json-schema-validator.version>
-    <grpc-starter-dependencies.version>3.5.0.1</grpc-starter-dependencies.version>
+    <grpc-starter-dependencies.version>3.5.5</grpc-starter-dependencies.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -60,17 +58,17 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parsers-standard-package</artifactId>
-      <version>${tika-version}</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>${tika-version}</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-parser-microsoft-module</artifactId>
-      <version>${tika-version}</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.junit.platform</groupId>
@@ -83,11 +81,6 @@
       <artifactId>json-schema-validator</artifactId>
       <version>${json-schema-validator.version}</version>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>${commons-io.version}</version>
     </dependency>
     <dependency>
       <groupId>org.junit.vintage</groupId>
@@ -141,7 +134,6 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.25.4</version>
     </dependency>
     <dependency>
       <groupId>org.hsqldb</groupId>
@@ -279,11 +271,6 @@
       <version>${jakarta.persistence-api.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <version>1.4.197</version>
-    </dependency>
-    <dependency>
       <groupId>org.pf4j</groupId>
       <artifactId>pf4j</artifactId>
       <scope>compile</scope>
@@ -377,7 +364,7 @@
                 <argument>${project.basedir}/docker-build/docker-build.sh</argument>
               </arguments>
               <environmentVariables>
-                <TIKA_PIPES_VERSION>${version}</TIKA_PIPES_VERSION>
+                <TIKA_PIPES_VERSION>${project.version}</TIKA_PIPES_VERSION>
               </environmentVariables>
             </configuration>
           </execution>

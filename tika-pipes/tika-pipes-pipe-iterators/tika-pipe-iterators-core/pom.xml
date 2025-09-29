@@ -13,7 +13,38 @@
   <description>Tika Pipes Pipe Iterator library.</description>
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
+    <protobuf.version>3.25.8</protobuf.version>
+    <j2objc-annotations.version>3.0.0</j2objc-annotations.version>
+    <grpc-google.version>2.51.0</grpc-google.version>
+    <failureaccess.version>1.0.2</failureaccess.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Force consistent versions to resolve convergence issues -->
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java-util</artifactId>
+        <version>${protobuf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.j2objc</groupId>
+        <artifactId>j2objc-annotations</artifactId>
+        <version>${j2objc-annotations.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.api.grpc</groupId>
+        <artifactId>proto-google-common-protos</artifactId>
+        <version>${grpc-google.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>failureaccess</artifactId>
+        <version>${failureaccess.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>org.pf4j</groupId>

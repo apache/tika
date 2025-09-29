@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Locale;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FilenameUtils;
@@ -56,7 +57,7 @@ public class FileSystemEmitter implements Emitter {
         String addFileExtension = fileSystemEmitterConfig.getAddFileExtension();
         OnExistBehavior onExists = OnExistBehavior.valueOf(fileSystemEmitterConfig
                 .getOnExists()
-                .toUpperCase());
+                .toUpperCase(Locale.ROOT));
         for (EmitOutput emitOutput : emitOutputs) {
             Path output;
             String emitKey = FilenameUtils.getName(emitOutput.getFetchKey());

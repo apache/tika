@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-pipes-fetchers</artifactId>
-    <version>3.0.0-beta7</version>
+    <version>4.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>tika-fetcher-atlassian-jwt</artifactId>
@@ -13,7 +13,7 @@
   <description>A Fetcher that uses Atlassian JWT authentication to acquire documents for Tika to parse.</description>
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
-    <guava.version>33.4.0-jre</guava.version>
+    <guava.version>33.5.0-jre</guava.version>
     <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
   </properties>
   <dependencies>

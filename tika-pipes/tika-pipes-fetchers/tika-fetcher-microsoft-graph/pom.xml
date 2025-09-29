@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-pipes-fetchers</artifactId>
-    <version>3.0.0-beta7</version>
+    <version>4.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>tika-fetcher-microsoft-graph</artifactId>
@@ -13,7 +13,7 @@
   <description>A Fetcher that uses an Microsoft Graph Fetcher to acquire documents for Tika to parse.</description>
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
-    <guava.version>33.4.0-jre</guava.version>
+    <guava.version>33.5.0-jre</guava.version>
     <azure-identity.version>1.11.0</azure-identity.version>
     <microsoft-graph.version>6.4.0</microsoft-graph.version>
     <microsoft-kiota-serialization-json.version>1.1.1</microsoft-kiota-serialization-json.version>
@@ -21,6 +21,27 @@
     <microsoft-kiota-abstractions.version>1.0.4</microsoft-kiota-abstractions.version>
     <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.microsoft.azure</groupId>
+        <artifactId>msal4j</artifactId>
+        <version>1.14.0</version>
+      </dependency>
+      <dependency>
+        <groupId>net.java.dev.jna</groupId>
+        <artifactId>jna-platform</artifactId>
+        <version>5.13.0</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.annotation</groupId>
+        <artifactId>jakarta.annotation-api</artifactId>
+        <version>3.0.0</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>io.opentelemetry</groupId>
@@ -32,12 +53,6 @@
       <groupId>io.opentelemetry</groupId>
       <artifactId>opentelemetry-context</artifactId>
       <version>1.43.0</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>jakarta.annotation</groupId>
-      <artifactId>jakarta.annotation-api</artifactId>
-      <version>2.1.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -169,7 +184,6 @@
             <configuration>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>compile</includeScope>
-              <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
             </configuration>
           </execution>
         </executions>

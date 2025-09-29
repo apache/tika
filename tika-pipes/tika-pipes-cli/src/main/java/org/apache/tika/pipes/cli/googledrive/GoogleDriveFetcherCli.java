@@ -117,7 +117,7 @@ public class GoogleDriveFetcherCli {
             }
         });
 
-        try (LineIterator lineIterator = new LineIterator(new FileReader(urlsToFetchFile))) {
+        try (LineIterator lineIterator = new LineIterator(new FileReader(urlsToFetchFile, StandardCharsets.UTF_8))) {
             while (lineIterator.hasNext()) {
                 String nextS3Key = lineIterator.nextLine();
                 requestStreamObserver.onNext(FetchAndParseRequest
