@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: main jdk23 build
+name: main jdk25 build
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '23' ]
+        java: [ '25' ]
 
     steps:
       - uses: actions/checkout@v4
