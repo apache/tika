@@ -32,11 +32,11 @@
     </fetcher>
   </fetchers>
   <emitters>
-    <emitter class="org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter">
+    <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
       <name>fse</name>
       <basePath>{FILL_IN_HERE}</basePath>
     </emitter>
-    <emitter class="org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter">
+    <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
       <name>temp</name>
     </emitter>
   </emitters>

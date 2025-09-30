@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.fetcher.url;
+package org.apache.tika.pipes.fetcher.url;
 
 import java.io.IOException;
 import java.io.InputStream;

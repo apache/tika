@@ -78,7 +78,7 @@
     <timeoutMillis>60000</timeoutMillis>
   </async>
   <fetchers>
-    <fetcher class="org.apache.tika.pipes.core.fetcher.fs.FileSystemFetcher">
+    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
       <name>fsf</name>
       <basePath>{PATH_TO_DOCS}</basePath>
     </fetcher>
@@ -95,7 +95,7 @@
       <connectionTimeout>10000</connectionTimeout>
       <socketTimeout>60000</socketTimeout>
     </emitter>
-    <emitter class="org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter">
+    <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
       <name>fse</name>
       <basePath>/path/to/extracts</basePath>
     </emitter>

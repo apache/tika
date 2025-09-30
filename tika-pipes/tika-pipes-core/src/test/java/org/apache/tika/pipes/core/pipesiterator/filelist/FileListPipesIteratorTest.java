@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.pipesiterator.filelist.FileListPipesIterator;
 
 public class FileListPipesIteratorTest {
 

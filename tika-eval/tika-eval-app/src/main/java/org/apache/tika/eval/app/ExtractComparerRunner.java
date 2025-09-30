@@ -58,7 +58,7 @@ import org.apache.tika.eval.app.io.IDBWriter;
 import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
-import org.apache.tika.pipes.core.pipesiterator.fs.FileSystemPipesIterator;
+import org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator;
 
 public class ExtractComparerRunner {
 

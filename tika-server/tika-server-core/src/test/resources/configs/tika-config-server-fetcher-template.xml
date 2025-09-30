@@ -17,7 +17,7 @@
 -->
 <properties>
   <fetchers>
-    <fetcher class="org.apache.tika.pipes.core.fetcher.fs.FileSystemFetcher">
+    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
       <name>fsf</name>
       <basePath>{FETCHER_BASE_PATH}</basePath>
     </fetcher>

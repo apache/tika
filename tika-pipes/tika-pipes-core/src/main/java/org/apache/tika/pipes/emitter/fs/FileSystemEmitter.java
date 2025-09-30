@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.emitter.fs;
+package org.apache.tika.pipes.emitter.fs;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,7 +45,7 @@ import org.apache.tika.serialization.JsonMetadataList;
  * <pre class="prettyprint">
  *  &lt;properties&gt;
  *      &lt;emitters&gt;
- *          &lt;emitter class="org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter&gt;
+ *          &lt;emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter&gt;
  *              &lt;params&gt;
  *                  &lt;!-- required --&gt;
  *                  &lt;param name="name" type="string"&gt;fs&lt;/param&gt;

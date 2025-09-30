@@ -35,8 +35,8 @@ import org.apache.tika.pipes.core.emitter.Emitter;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.fetcher.Fetcher;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
-import org.apache.tika.pipes.core.fetcher.fs.FileSystemFetcher;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 
 public class TikaPipesConfigTest extends AbstractTikaConfigTest {
     //this handles tests for the newer pipes type configs.

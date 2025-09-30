@@ -84,7 +84,7 @@ public class AsyncChaosMonkeyTest {
                 "  <emitter class=\"org.apache.tika.pipes.core.async.MockEmitter\">\n" +
                 "         <name>mock</name>\n" + "  </emitter>" +
                 "  </emitters>" + "  <fetchers>" +
-                "    <fetcher class=\"org.apache.tika.pipes.core.fetcher.fs.FileSystemFetcher\">" +
+                "    <fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
                 "      <name>mock</name>\n" + "      <basePath>" +
                 ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString()) +
                 "</basePath>\n" + "    </fetcher>" + "  </fetchers>" +

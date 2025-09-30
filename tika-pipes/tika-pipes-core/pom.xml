@@ -28,7 +28,7 @@
 
   <artifactId>tika-pipes-core</artifactId>
 
-  <name>Apache Tika Async CLI</name>
+  <name>Apache Tika Pipes Core</name>
   <url>https://tika.apache.org/</url>
 
   <dependencies>

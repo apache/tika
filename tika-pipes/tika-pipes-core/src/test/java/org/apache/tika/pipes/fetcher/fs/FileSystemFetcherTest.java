@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.fetcher.fs;
+package org.apache.tika.pipes.fetcher.fs;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 
 
 public class FileSystemFetcherTest {

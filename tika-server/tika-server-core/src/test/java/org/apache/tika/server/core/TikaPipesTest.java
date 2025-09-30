@@ -103,10 +103,10 @@ public class TikaPipesTest extends CXFTestBase {
         TIKA_PIPES_LOG4j2_PATH = Files.createTempFile(TMP_DIR, "log4j2-", ".xml");
         Files.copy(TikaPipesTest.class.getResourceAsStream("/log4j2.xml"), TIKA_PIPES_LOG4j2_PATH, StandardCopyOption.REPLACE_EXISTING);
         TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" +
-                "<fetchers>" + "<fetcher class=\"org.apache.tika.pipes.core.fetcher.fs.FileSystemFetcher\">" +
+                "<fetchers>" + "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
                 "<name>fsf</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>"
                 + "</fetcher>" + "</fetchers>" + "<emitters>" +
-                "<emitter class=\"org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter\">" + "<name>fse</name>"
+                "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>fse</name>"
                 + "<basePath>" + TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" +
                 "</emitter>" + "</emitters>" + "<pipes><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG_PATH
                 .toAbsolutePath()

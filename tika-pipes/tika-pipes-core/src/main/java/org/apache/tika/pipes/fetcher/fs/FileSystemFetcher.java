@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.fetcher.fs;
+package org.apache.tika.pipes.fetcher.fs;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -43,7 +43,7 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.core.fetcher.fs.config.FileSystemFetcherConfig;
+import org.apache.tika.pipes.fetcher.fs.config.FileSystemFetcherConfig;
 
 public class FileSystemFetcher extends AbstractFetcher implements Initializable {
     public FileSystemFetcher() {

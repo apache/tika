@@ -107,12 +107,12 @@ public class TikaPipesTest extends CXFTestBase {
 
         //TODO: templatify this config
         TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
-                "<fetcher class=\"org.apache.tika.pipes.core.fetcher.fs.FileSystemFetcher\">" +
+                "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
                 "<params>" + "<name>fsf</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" +
                 "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
-                "<emitter class=\"org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter\">" + "<params>" + "<name>fse</name>" +
+                "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<params>" + "<name>fse</name>" +
                 "<basePath>" + TMP_OUTPUT_DIR.toAbsolutePath() +
-                "</basePath>" + "</params>" + "</emitter>" + "<emitter class=\"org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter\">" +
+                "</basePath>" + "</params>" + "</emitter>" + "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
                 "<params>" + "<name>bytes</name>" +
                 "<basePath>" + TMP_BYTES_DIR.toAbsolutePath() + "</basePath>" + "</params>" + "</emitter>" + "</emitters>" +
                 "<pipes><params><tikaConfig>" +

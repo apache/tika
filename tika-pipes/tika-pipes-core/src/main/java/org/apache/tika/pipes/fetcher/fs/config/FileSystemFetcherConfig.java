@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.fetcher.fs.config;
+package org.apache.tika.pipes.fetcher.fs.config;
 
 import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
 

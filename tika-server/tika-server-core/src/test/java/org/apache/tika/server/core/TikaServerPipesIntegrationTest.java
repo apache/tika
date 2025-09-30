@@ -77,11 +77,11 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
         //TODO -- clean this up so that port is sufficient and we don't need portString
         String xml1 =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
-                        "<fetcher class=\"org.apache.tika.pipes.core.fetcher.fs.FileSystemFetcher\">" +
+                        "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
                         "<name>" +
                         FETCHER_NAME + "</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</fetcher>" +
                         "</fetchers>" + "<emitters>" +
-                        "<emitter class=\"org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter\">" + "<name>" + EMITTER_NAME +
+                        "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>" + EMITTER_NAME +
                         "</name>" + "<basePath>" +
                         TEMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</emitter>" + "</emitters>" + "<server>" +
                         "<enableUnsecureFeatures>true</enableUnsecureFeatures>" +

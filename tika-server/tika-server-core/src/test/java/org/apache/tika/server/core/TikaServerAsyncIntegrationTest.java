@@ -98,7 +98,7 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         TIKA_CONFIG_XML =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" + "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" + "<name>" +
                         FETCHER_NAME + "</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
-                        "<emitter class=\"org.apache.tika.pipes.core.emitter.fs.FileSystemEmitter\">" + "<name>" + EMITTER_NAME + "</name>" + "<basePath>" +
+                        "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>" + EMITTER_NAME + "</name>" + "<basePath>" +
                         TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</emitter>" + "</emitters>" + "<server><endpoints><endpoint>async</endpoint></endpoints>" +
                         "<enableUnsecureFeatures>true</enableUnsecureFeatures></server>" + "<async><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG
                         .toAbsolutePath()

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.pipesiterator;
+package org.apache.tika.pipes.pipesiterator.fs;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.pipesiterator.fs.FileSystemPipesIterator;
+import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 
 
 public class FileSystemPipesIteratorTest {
