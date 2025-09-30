@@ -29,7 +29,7 @@
   </parent>
   
   <artifactId>tika-server-spring</artifactId>
-  <name>Apache Tika Spring Boot Server</name>
+  <name>Apache Tika Spring Web Service</name>
   <description>Apache Tika Server implemented with Spring Boot and OpenAPI 3.0</description>
 
   <dependencyManagement>
@@ -94,6 +94,17 @@
       <version>${project.parent.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-eval-core</artifactId>
+      <version>${project.parent.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-langdetect-opennlp</artifactId>
+      <version>${project.parent.version}</version>
+    </dependency>
 
     <dependency>
       <groupId>org.apache.tika</groupId>

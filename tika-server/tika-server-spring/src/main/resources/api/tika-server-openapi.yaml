@@ -177,11 +177,20 @@ paths:
       operationId: put_stream
       requestBody:
         content:
-          '*/*':
+          application/octet-stream:
             schema:
               type: string
               format: binary
         required: true
+      parameters:
+        - in: header
+          name: Content-Disposition
+          description: |
+            Optional header to provide a filename hint to Tika for more accurate detection.
+            Example: `attachment; filename="document.pdf"`
+          schema:
+            type: string
+          required: false
       responses:
         '200':
           content:
@@ -1284,12 +1293,34 @@ paths:
                   "tika-eval:numAlphaTokensB":
                     type: integer
                     description: Number of alphabetic tokens in text B
-                  "tika-eval:languageA":
+                  "tika-eval:numUniqueAlphaTokensA":
+                    type: integer
+                    description: Number of unique alphabetic tokens in text A
+                  "tika-eval:numUniqueAlphaTokensB":
+                    type: integer
+                    description: Number of unique alphabetic tokens in text B
+                  "tika-eval:oovA":
+                    type: number
+                    format: float
+                    description: Out-of-vocabulary ratio for text A
+                  "tika-eval:oovB":
+                    type: number
+                    format: float
+                    description: Out-of-vocabulary ratio for text B
+                  "tika-eval:langA":
                     type: string
                     description: Detected language for text A
-                  "tika-eval:languageB":
+                  "tika-eval:langB":
                     type: string
                     description: Detected language for text B
+                  "tika-eval:langConfidenceA":
+                    type: number
+                    format: float
+                    description: Language detection confidence for text A
+                  "tika-eval:langConfidenceB":
+                    type: number
+                    format: float
+                    description: Language detection confidence for text B
           description: If successful, this operation returns HTTP status code 200 with comparison statistics and similarity metrics.
         '500':
           description: An error occurred processing the call.
@@ -1342,15 +1373,15 @@ paths:
                   "tika-eval:numUniqueAlphaTokens":
                     type: integer
                     description: Number of unique alphabetic tokens
-                  "tika-eval:outOfVocabulary":
+                  "tika-eval:oov":
                     type: number
                     format: float
                     description: Out-of-vocabulary ratio (-1.0 if no alphabetic tokens)
-                  "tika-eval:language":
+                  "tika-eval:lang":
                     type: string
                     description: Detected language code
                     example: "en"
-                  "tika-eval:languageConfidence":
+                  "tika-eval:langConfidence":
                     type: number
                     format: float
                     description: Language detection confidence score

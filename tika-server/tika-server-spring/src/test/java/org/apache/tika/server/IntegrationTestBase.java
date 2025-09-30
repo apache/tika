@@ -29,7 +29,7 @@ import org.springframework.web.context.WebApplicationContext;
  * and setup for Spring Boot tests with a random port.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = {"tika.config.path=classpath:test-tika-config.xml"})
+@TestPropertySource(properties = {"tika.config=test-tika-config.xml"})
 public abstract class IntegrationTestBase {
 
     @LocalServerPort

@@ -18,23 +18,25 @@ package org.apache.tika.server.controller;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.NativeWebRequest;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.server.api.DetectorResourceApi;
 import org.apache.tika.server.component.ServerStatus;
-import org.apache.tika.server.util.TikaResource;
 
 /**
  * Controller for MIME/media type detection using the default detector.
@@ -42,45 +44,51 @@ import org.apache.tika.server.util.TikaResource;
  */
 @RestController
 public class DetectorController implements DetectorResourceApi {
-    
     private static final Logger LOG = LoggerFactory.getLogger(DetectorController.class);
     private final ServerStatus serverStatus;
+    private final TikaConfig tikaConfig;
+
+    @Value("${tika.detector.taskTimeoutMillis:30000}")
+    private long timeoutMillis;
+
 
     @Autowired
-    public DetectorController(ServerStatus serverStatus) {
+    public DetectorController(ServerStatus serverStatus, TikaConfig tikaConfig) {
         this.serverStatus = serverStatus;
+        this.tikaConfig = tikaConfig;
     }
 
     @Override
-    public ResponseEntity<String> putStream(Resource body) {
+    public Optional<NativeWebRequest> getRequest() {
+        return DetectorResourceApi.super.getRequest();
+    }
+
+    @Override
+    public ResponseEntity<String> putStream(Resource body, String contentDisposition) {
         if (body == null) {
             return ResponseEntity.badRequest().body("No document provided");
         }
-        
+
         Metadata metadata = new Metadata();
         String filename = body.getFilename();
         LOG.info("Detecting media type for Filename: {}", filename);
-        
+
         if (filename != null) {
             metadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         }
-        
-        ParseContext parseContext = new ParseContext();
-        long timeoutMillis = TikaResource.getTaskTimeout(parseContext);
+
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename, timeoutMillis);
 
         try (InputStream is = body.getInputStream();
              TikaInputStream tis = TikaInputStream.get(is)) {
-            
-            String mediaType = TikaResource
-                    .getConfig()
+
+            String mediaType = tikaConfig
                     .getDetector()
                     .detect(tis, metadata)
                     .toString();
-            
+
             LOG.info("Detected media type: {} for file: {}", mediaType, filename);
             return ResponseEntity.ok(mediaType);
-            
         } catch (IOException e) {
             LOG.warn("Unable to detect MIME type for file. Reason: {} ({})", e.getMessage(), filename, e);
             return ResponseEntity.ok(MediaType.OCTET_STREAM.toString());
@@ -88,11 +96,11 @@ public class DetectorController implements DetectorResourceApi {
             LOG.error("OOM while detecting: ({})", filename, e);
             serverStatus.setStatus(ServerStatus.STATUS.ERROR);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Out of memory error during detection");
+                                 .body("Out of memory error during detection");
         } catch (Throwable e) {
             LOG.error("Exception while detecting: ({})", filename, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error during MIME type detection: " + e.getMessage());
+                                 .body("Error during MIME type detection: " + e.getMessage());
         } finally {
             serverStatus.complete(taskId);
         }

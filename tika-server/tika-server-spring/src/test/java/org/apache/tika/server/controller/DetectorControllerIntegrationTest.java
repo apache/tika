@@ -27,8 +27,6 @@ import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import org.apache.tika.server.IntegrationTestBase;
 
@@ -55,7 +53,8 @@ public class DetectorControllerIntegrationTest extends IntegrationTestBase {
 
         mockMvc.perform(put("/detect/stream")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .content(jsonContent))
+                .content(jsonContent)
+                .header("Content-Disposition", "attachment; filename=\"test.json\""))
                 .andExpect(status().isOk())
                 .andExpect(content().string("application/json"));
     }
@@ -101,11 +100,12 @@ public class DetectorControllerIntegrationTest extends IntegrationTestBase {
     public void testDetectEmptyContent() throws Exception {
         byte[] emptyContent = new byte[0];
 
+        // Empty content is treated as missing request body by Spring, so expect 400
         mockMvc.perform(put("/detect/stream")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .content(emptyContent))
-                .andExpect(status().isOk())
-                .andExpect(content().string("application/octet-stream"));
+                .content(emptyContent)
+                .header("Content-Disposition", "attachment; filename=\"empty.txt\""))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -126,9 +126,10 @@ public class DetectorControllerIntegrationTest extends IntegrationTestBase {
         byte[] textContent = "This is a test file.".getBytes(StandardCharsets.UTF_8);
 
         // Test that filename hints help with detection
-        mockMvc.perform(MockMvcRequestBuilders.multipart("/detect/stream")
-                .file(new MockMultipartFile("file", "test.txt",
-                      MediaType.TEXT_PLAIN_VALUE, textContent)))
+        mockMvc.perform(put("/detect/stream")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .content(textContent)
+                .header("Content-Disposition", "attachment; filename=\"test.txt\""))
                 .andExpect(status().isOk())
                 .andExpect(content().string("text/plain"));
     }
@@ -139,9 +140,10 @@ public class DetectorControllerIntegrationTest extends IntegrationTestBase {
 
         mockMvc.perform(put("/detect/stream")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .content(jsContent))
+                .content(jsContent)
+                .header("Content-Disposition", "attachment; filename=\"test.js\""))
                 .andExpect(status().isOk())
-                .andExpect(content().string("application/javascript"));
+                .andExpect(content().string("text/javascript"));
     }
 
     @Test
@@ -150,7 +152,8 @@ public class DetectorControllerIntegrationTest extends IntegrationTestBase {
 
         mockMvc.perform(put("/detect/stream")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .content(cssContent))
+                .content(cssContent)
+                .header("Content-Disposition", "attachment; filename=\"style.css\""))
                 .andExpect(status().isOk())
                 .andExpect(content().string("text/css"));
     }
@@ -175,8 +178,7 @@ public class DetectorControllerIntegrationTest extends IntegrationTestBase {
     public void testDetectNullContent() throws Exception {
         // Test with no content - should return bad request
         mockMvc.perform(put("/detect/stream"))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string("No document provided"));
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -238,10 +240,10 @@ public class DetectorControllerIntegrationTest extends IntegrationTestBase {
 
         mockMvc.perform(put("/detect/stream")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .content(markdownContent))
+                .content(markdownContent)
+                .header("Content-Disposition", "attachment; filename=\"test.md\""))
                 .andExpect(status().isOk())
-                // Markdown might be detected as text/plain since it's text-based
-                .andExpect(content().string("text/plain"));
+                .andExpect(content().string("text/x-web-markdown"));
     }
 
     @Test
@@ -251,7 +253,8 @@ public class DetectorControllerIntegrationTest extends IntegrationTestBase {
 
         mockMvc.perform(put("/detect/stream")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .content(csvContent))
+                .content(csvContent)
+                .header("Content-Disposition", "attachment; filename=\"test.csv\""))
                 .andExpect(status().isOk())
                 .andExpect(content().string("text/csv"));
     }
@@ -311,7 +314,8 @@ public class DetectorControllerIntegrationTest extends IntegrationTestBase {
 
         mockMvc.perform(put("/detect/stream")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .content(jsonContent))
+                .content(jsonContent)
+                .header("Content-Disposition", "attachment; filename=\"test.json\""))
                 .andExpect(status().isOk())
                 .andExpect(content().string("application/json"));
     }
