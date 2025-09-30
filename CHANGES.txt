@@ -1,6 +1,9 @@
 Release 4.0.0-BETA1 - ???
   BREAKING CHANGES
 
+   * tika-pipes core classes have been moved to a new module: tika-pipes-core,
+     and the FileSystem pipes components have moved (TIKA-4334).
+
    * Headers are no longer injected into the body/content of MSG files (TIKA-4345). Please open
      a ticket if you need this behavior across email formats.
 

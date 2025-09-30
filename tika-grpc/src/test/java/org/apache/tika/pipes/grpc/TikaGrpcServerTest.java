@@ -65,7 +65,7 @@ import org.apache.tika.GetFetcherRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
-import org.apache.tika.pipes.PipesResult;
+import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 
 @ExtendWith(GrpcCleanupExtension.class)

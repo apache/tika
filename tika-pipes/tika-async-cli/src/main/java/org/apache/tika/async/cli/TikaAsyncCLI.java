@@ -30,9 +30,9 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.async.AsyncProcessor;
-import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.async.AsyncProcessor;
+import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 
 public class TikaAsyncCLI {
 
