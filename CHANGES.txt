@@ -15,6 +15,8 @@ Release 4.0.0-BETA1 - ???
 
 Release 3.3.0 - ???
 
+  * Allow per file timeouts in tika-pipes (TIKA-4497).
+
   * Add matroska detector (TIKA-1180).
 
   * Allow multiple values for many Dublin Core keys (TIKA-4466).
