@@ -69,7 +69,6 @@
     <module>tika-pipes-fetchers</module>
     <module>tika-pipes-emitters</module>
     <module>tika-pipes-proto</module>
-    <module>tika-pipes-grpc</module>
     <module>tika-pipes-cli</module>
   </modules>
 </project>

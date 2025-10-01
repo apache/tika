@@ -4,11 +4,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.tika</groupId>
-    <artifactId>tika-pipes</artifactId>
+    <artifactId>tika-server</artifactId>
     <version>4.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>tika-pipes-grpc</artifactId>
+  <artifactId>tika-server-grpc</artifactId>
   <name>Tika Pipes GRPC Server</name>
   <description>Tika Pipes GRPC Server provides bidirectional streams to and from the Tika parsers for
     running parsers on files in a platform independent and efficient way using HTTP2.

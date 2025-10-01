@@ -6,7 +6,12 @@ import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-import org.pf4j.*;
+import org.pf4j.DefaultPluginManager;
+import org.pf4j.PluginDescriptor;
+import org.pf4j.PluginDescriptorFinder;
+import org.pf4j.PluginLoader;
+import org.pf4j.PluginRepository;
+import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

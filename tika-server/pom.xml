@@ -38,6 +38,7 @@
   <modelVersion>4.0.0</modelVersion>
   <modules>
     <module>tika-server-spring</module>
+    <module>tika-server-grpc</module>
   </modules>
 
   <parent>

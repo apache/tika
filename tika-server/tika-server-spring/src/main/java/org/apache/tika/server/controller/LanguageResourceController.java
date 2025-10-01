@@ -16,14 +16,20 @@
  */
 package org.apache.tika.server.controller;
 
-import java.util.Optional;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.apache.commons.io.IOUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.NativeWebRequest;
 
+import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
+import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.server.api.LanguageResourceApi;
+import org.apache.tika.server.exception.TikaServerRuntimeException;
 
 /**
  * Controller for language identification services.
@@ -32,27 +38,36 @@ import org.apache.tika.server.api.LanguageResourceApi;
 @RestController
 public class LanguageResourceController implements LanguageResourceApi {
     @Override
-    public Optional<NativeWebRequest> getRequest() {
-        return LanguageResourceApi.super.getRequest();
-    }
-
-    @Override
     public ResponseEntity<String> postLanguageStream(Resource body) {
-        return LanguageResourceApi.super.postLanguageStream(body);
+        try {
+            InputStream is = body.getInputStream();
+            String fileTxt = IOUtils.toString(is, UTF_8);
+            LanguageResult language = new OptimaizeLangDetector()
+                    .loadModels()
+                    .detect(fileTxt);
+            String detectedLang = language.getLanguage();
+            return ResponseEntity.ok(detectedLang);
+        } catch (IOException e) {
+            throw new TikaServerRuntimeException(e);
+        }
     }
 
     @Override
     public ResponseEntity<String> postLanguageString(String body) {
-        return LanguageResourceApi.super.postLanguageString(body);
+        LanguageResult language = new OptimaizeLangDetector()
+                .loadModels()
+                .detect(body);
+        String detectedLang = language.getLanguage();
+        return ResponseEntity.ok(detectedLang);
     }
 
     @Override
     public ResponseEntity<String> putLanguageStream(Resource body) {
-        return LanguageResourceApi.super.putLanguageStream(body);
+        return postLanguageStream(body);
     }
 
     @Override
     public ResponseEntity<String> putLanguageString(String body) {
-        return LanguageResourceApi.super.putLanguageString(body);
+        return postLanguageString(body);
     }
 }

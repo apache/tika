@@ -1,0 +1,2 @@
+Ceci est un exemple de texte français pour tester la détection de langue. Le renard brun et rapide saute par-dessus le chien paresseux. Les algorithmes de détection de langue devraient être capables d'identifier ce texte comme étant du français basé sur les mots communs et les modèles. Ce texte contient suffisamment de contenu pour fournir un résultat fiable de détection de langue.
+

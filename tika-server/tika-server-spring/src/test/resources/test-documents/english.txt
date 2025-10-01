@@ -1,0 +1,2 @@
+This is a sample English text for language detection testing. The quick brown fox jumps over the lazy dog. Language detection algorithms should be able to identify this text as English based on common words and patterns. This text contains enough content to provide a reliable language detection result.
+
