@@ -121,7 +121,7 @@
                   <exclude>org.apache.tika:tika-core:jar:</exclude>
                   <exclude>org.apache.tika:tika-translate:jar:</exclude>
                   <exclude>org.apache.tika:tika-parsers-standard-package:jar:</exclude>
-                  <exclude>org.apache.tika:tika-serialization:jar:</exclude>
+                  <exclude>org.apache.tika:tika-pipes-core:jar:</exclude>
                   <exclude>org.apache.tika:tika-langdetect-optimaize:jar:</exclude>
                   <exclude>org.apache.tika:tika-handler-boilerpipe:jar:</exclude>
                   <exclude>org.apache.tika:tika-parser-digest-commons:jar:</exclude>
