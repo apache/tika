@@ -16,9 +16,11 @@
  */
 package org.apache.tika.config;
 
+import java.io.Serializable;
+
 import org.apache.tika.parser.ParseContext;
 
-public class TikaTaskTimeout {
+public class TikaTaskTimeout implements Serializable {
 
     private final long timeoutMillis;
 
@@ -31,6 +33,9 @@ public class TikaTaskTimeout {
     }
 
     public static long getTimeoutMillis(ParseContext context, long defaultTimeoutMillis) {
+        if (context == null) {
+            return defaultTimeoutMillis;
+        }
         TikaTaskTimeout tikaTaskTimeout = context.get(TikaTaskTimeout.class);
         if (tikaTaskTimeout == null) {
             return defaultTimeoutMillis;
