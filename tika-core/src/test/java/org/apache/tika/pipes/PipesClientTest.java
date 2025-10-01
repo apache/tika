@@ -16,6 +16,8 @@
  */
 package org.apache.tika.pipes;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,8 +29,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.MockUpperCaseFilter;
@@ -61,9 +65,9 @@ public class PipesClientTest {
                 new FetchEmitTuple(testPdfFile, new FetchKey(fetcherName, testPdfFile),
                         new EmitKey(), new Metadata(), new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
         Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
-        Assertions.assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
+        assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
         Metadata metadata = pipesResult.getEmitData().getMetadataList().get(0);
-        Assertions.assertEquals("testOverlappingText.pdf", metadata.get("resourceName"));
+        assertEquals("testOverlappingText.pdf", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     @Test
@@ -75,9 +79,9 @@ public class PipesClientTest {
                 new FetchEmitTuple(testPdfFile, new FetchKey(fetcherName, testPdfFile),
                         new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
         Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
-        Assertions.assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
+        assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
         Metadata metadata = pipesResult.getEmitData().getMetadataList().get(0);
-        Assertions.assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get("resourceName"));
+        assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     @Test
@@ -89,8 +93,23 @@ public class PipesClientTest {
                 new FetchEmitTuple("mock/embedded.xml", new FetchKey(fetcherName, "mock/embedded.xml"),
                         new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
         Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
-        Assertions.assertEquals(5, pipesResult.getEmitData().getMetadataList().size());
+        assertEquals(5, pipesResult.getEmitData().getMetadataList().size());
         Metadata metadata = pipesResult.getEmitData().getMetadataList().get(0);
-        Assertions.assertEquals(4, Integer.parseInt(metadata.get("X-TIKA:attachment_count")));
+        assertEquals(4, Integer.parseInt(metadata.get("X-TIKA:attachment_count")));
+    }
+
+    @Test
+    public void testTimeout() throws IOException, InterruptedException {
+        //TODO -- add unit test for timeout > default
+        //TODO -- figure out how to test pipes server timeout alone
+        //I did both manually during development, but unit tests are better. :D
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(1000));
+        MetadataListFilter metadataFilter = new CompositeMetadataListFilter(List.of(new AttachmentCountingListFilter()));
+        parseContext.set(MetadataListFilter.class, metadataFilter);
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple("mock/timeout-10s.xml", new FetchKey(fetcherName, "mock/timeout-10s.xml"),
+                        new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+        assertEquals(PipesResult.TIMEOUT.getStatus(), pipesResult.getStatus());
     }
 }

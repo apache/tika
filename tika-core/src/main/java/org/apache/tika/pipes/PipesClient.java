@@ -46,6 +46,7 @@ import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -199,7 +200,8 @@ public class PipesClient implements Closeable {
                         ": PipesClient closed");
             }
             executorService.execute(futureTask);
-            return futureTask.get(pipesConfig.getTimeoutMillis(), TimeUnit.MILLISECONDS);
+            long timeout = TikaTaskTimeout.getTimeoutMillis(t.getParseContext(), pipesConfig.getTimeoutMillis());
+            return futureTask.get(timeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             destroyForcibly();
             throw e;

@@ -41,6 +41,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
@@ -135,8 +136,9 @@ public class PipesServer implements Runnable {
     //if it is smaller than this value, write it back to the
     //PipesClient so that it can cache the extracts and then batch emit.
     private final long maxForEmitBatchBytes;
-    private final long serverParseTimeoutMillis;
+    private final long defaultServerParseTimeoutMillis;
     private final long serverWaitTimeoutMillis;
+    private volatile long serverParseTimeoutMillis;
     private Parser autoDetectParser;
     private Parser rMetaParser;
     private TikaConfig tikaConfig;
@@ -154,6 +156,7 @@ public class PipesServer implements Runnable {
         this.input = new DataInputStream(in);
         this.output = new DataOutputStream(out);
         this.maxForEmitBatchBytes = maxForEmitBatchBytes;
+        this.defaultServerParseTimeoutMillis = serverParseTimeoutMillis;
         this.serverParseTimeoutMillis = serverParseTimeoutMillis;
         this.serverWaitTimeoutMillis = serverWaitTimeoutMillis;
         this.parsing = false;
@@ -189,9 +192,9 @@ public class PipesServer implements Runnable {
             while (true) {
                 synchronized (lock) {
                     long elapsed = System.currentTimeMillis() - since;
-                    if (parsing && elapsed > serverParseTimeoutMillis) {
-                        LOG.warn("timeout server; elapsed {}  with {}", elapsed,
-                                serverParseTimeoutMillis);
+                    long timeout = serverParseTimeoutMillis;
+                    if (parsing && elapsed > timeout) {
+                        LOG.warn("timeout server; elapsed {}ms  with timeout={}", elapsed, timeout);
                         exit(TIMEOUT_EXIT_CODE);
                     } else if (!parsing && serverWaitTimeoutMillis > 0 &&
                             elapsed > serverWaitTimeoutMillis) {
@@ -341,6 +344,7 @@ public class PipesServer implements Runnable {
                         System.currentTimeMillis() - start);
             }
             start = System.currentTimeMillis();
+            updateTimeout(t);
             actuallyParse(t);
             if (LOG.isTraceEnabled()) {
                 LOG.trace("timer -- actually parsed: {} ms", System.currentTimeMillis() - start);
@@ -351,7 +355,29 @@ public class PipesServer implements Runnable {
             synchronized (lock) {
                 parsing = false;
                 since = System.currentTimeMillis();
+                serverParseTimeoutMillis = defaultServerParseTimeoutMillis;
             }
+        }
+    }
+
+    private void updateTimeout(FetchEmitTuple t) {
+        if (t == null) {
+            return;
+        }
+
+        ParseContext parseContext = t.getParseContext();
+        if (parseContext == null) {
+            return;
+        }
+
+        TikaTaskTimeout tikaTaskTimeout = parseContext.get(TikaTaskTimeout.class);
+        if (tikaTaskTimeout == null) {
+            return;
+        }
+
+        synchronized (lock) {
+            serverParseTimeoutMillis = tikaTaskTimeout.getTimeoutMillis();
+            LOG.debug("setting per file timeout {}ms", serverParseTimeoutMillis);
         }
     }
 
