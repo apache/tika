@@ -102,7 +102,6 @@
         <module>tika-age-recogniser</module>
         <module>tika-parser-advancedmedia-module</module>
         <module>tika-parser-advancedmedia-package</module>
-        <module>tika-dl</module>
       </modules>
     </profile>
   </profiles>
