@@ -62,7 +62,7 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
-import org.apache.tika.pipes.HandlerConfig;
+import org.apache.tika.pipes.core.HandlerConfig;
 import org.apache.tika.utils.SystemUtils;
 
 /**

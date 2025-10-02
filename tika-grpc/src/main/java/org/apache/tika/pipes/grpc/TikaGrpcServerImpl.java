@@ -70,15 +70,15 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.PipesClient;
-import org.apache.tika.pipes.PipesConfig;
-import org.apache.tika.pipes.PipesResult;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
-import org.apache.tika.pipes.fetcher.config.FetcherConfigContainer;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.PipesClient;
+import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.PipesResult;
+import org.apache.tika.pipes.core.emitter.EmitKey;
+import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.core.fetcher.config.FetcherConfigContainer;
 import org.apache.tika.utils.XMLReaderUtils;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {

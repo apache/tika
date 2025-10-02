@@ -37,11 +37,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-serialization</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>tika-langdetect-opennlp</artifactId>
       <version>${project.version}</version>
     </dependency>

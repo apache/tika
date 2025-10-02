@@ -31,8 +31,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.fetcher.Fetcher;
-import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.core.fetcher.Fetcher;
+import org.apache.tika.pipes.core.fetcher.FetcherManager;
 
 @Disabled("write actual unit tests")
 public class TestGCSFetcher {

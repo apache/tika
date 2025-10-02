@@ -43,14 +43,14 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.async.AsyncProcessor;
-import org.apache.tika.pipes.async.OfferLargerThanQueueSize;
-import org.apache.tika.pipes.emitter.EmitData;
-import org.apache.tika.pipes.emitter.EmitterManager;
-import org.apache.tika.pipes.extractor.EmbeddedDocumentBytesConfig;
-import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.serialization.pipes.JsonFetchEmitTupleList;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.async.AsyncProcessor;
+import org.apache.tika.pipes.core.async.OfferLargerThanQueueSize;
+import org.apache.tika.pipes.core.emitter.EmitData;
+import org.apache.tika.pipes.core.emitter.EmitterManager;
+import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
+import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
 
 @Path("/async")
 public class AsyncResource {

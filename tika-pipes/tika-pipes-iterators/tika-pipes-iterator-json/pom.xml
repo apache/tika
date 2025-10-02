@@ -34,13 +34,7 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-serialization</artifactId>
+      <artifactId>tika-pipes-core</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

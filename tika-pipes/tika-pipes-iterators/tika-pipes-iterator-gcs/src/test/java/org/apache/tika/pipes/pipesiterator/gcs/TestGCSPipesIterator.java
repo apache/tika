@@ -32,8 +32,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 
 @Disabled("turn into an actual unit test")
 public class TestGCSPipesIterator {

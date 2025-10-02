@@ -1,16 +1,23 @@
 Release 4.0.0-BETA1 - ???
   BREAKING CHANGES
 
+   * tika-pipes core classes have been moved to a new module: tika-pipes-core,
+     and the FileSystem pipes components have moved (TIKA-4334).
+
    * Headers are no longer injected into the body/content of MSG files (TIKA-4345). Please open
      a ticket if you need this behavior across email formats.
 
    * The tika-batch module has been removed (TIKA-4333).
+
+   * Removed the dotnet module (TIKA-4332).
 
   OTHER CHANGES
 
    * Fix concurrency bug in TikaToXMP (TIKA-4393)
 
 Release 3.3.0 - ???
+
+  * Allow per file timeouts in tika-pipes (TIKA-4497).
 
   * Add matroska detector (TIKA-1180).
 

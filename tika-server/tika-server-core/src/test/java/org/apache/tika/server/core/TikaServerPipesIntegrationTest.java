@@ -44,11 +44,11 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.HandlerConfig;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.serialization.pipes.JsonFetchEmitTuple;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.HandlerConfig;
+import org.apache.tika.pipes.core.emitter.EmitKey;
+import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
 import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
@@ -76,10 +76,15 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
         TIKA_CONFIG_TIMEOUT = TEMP_WORKING_DIR.resolve("tika-config-timeout.xml");
         //TODO -- clean this up so that port is sufficient and we don't need portString
         String xml1 =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" + "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" + "<name>" +
-                        FETCHER_NAME + "</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
-                        "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>" + EMITTER_NAME + "</name>" + "<basePath>" +
-                        TEMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</emitter>" + "</emitters>" + "<server>" + "<enableUnsecureFeatures>true</enableUnsecureFeatures>" +
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
+                        "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
+                        "<name>" +
+                        FETCHER_NAME + "</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</fetcher>" +
+                        "</fetchers>" + "<emitters>" +
+                        "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>" + EMITTER_NAME +
+                        "</name>" + "<basePath>" +
+                        TEMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</emitter>" + "</emitters>" + "<server>" +
+                        "<enableUnsecureFeatures>true</enableUnsecureFeatures>" +
                         "<port>9999</port>" + "<endpoints>" + "<endpoint>pipes</endpoint>" + "<endpoint>status</endpoint>" + "</endpoints>";
         String xml2 = "</server>" + "<pipes><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG
                 .toAbsolutePath()

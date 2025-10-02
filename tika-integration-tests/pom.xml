@@ -41,18 +41,6 @@
   </modules>
 
   <dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-serialization</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
     <!-- after we migrate everything to junit5, we can get rid of this -->
     <dependency>
       <groupId>org.junit.vintage</groupId>

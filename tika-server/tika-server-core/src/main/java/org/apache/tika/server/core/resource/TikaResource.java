@@ -74,7 +74,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.pipes.HandlerConfig;
+import org.apache.tika.pipes.core.HandlerConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
