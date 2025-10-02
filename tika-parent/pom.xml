@@ -445,9 +445,9 @@
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
-    <uimafit.version>3.6.0</uimafit.version>
-    <uimaj.core.version>3.6.0</uimaj.core.version>
-    <uimaj.cpe.version>3.6.0</uimaj.cpe.version>
+    <uimafit.version>3.6.1</uimafit.version>
+    <uimaj.core.version>3.6.1</uimaj.core.version>
+    <uimaj.cpe.version>3.6.1</uimaj.cpe.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
     <woodstox.core.version>7.1.1</woodstox.core.version>
@@ -456,6 +456,7 @@
     <zstd.version>1.5.7-4</zstd.version>
     <nimbus-jose-jwt.version>10.5</nimbus-jose-jwt.version>
     <javacpp.version>1.5.12</javacpp.version>
+    <maven.exec.version>3.6.0</maven.exec.version>
 
     <!-- needs to exist even if empty due to problems with jacoco-maven-plugin -->
     <addmod />
