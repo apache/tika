@@ -294,8 +294,8 @@
     <maven.assembly.version>3.7.1</maven.assembly.version>
     <!-- can't update to 6, needs jdk17 -->
     <maven.bundle.version>5.1.9</maven.bundle.version>
-    <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
-    <maven.javadoc.version>3.11.3</maven.javadoc.version>
+    <maven.compiler.plugin.version>3.14.1</maven.compiler.plugin.version>
+    <maven.javadoc.version>3.12.0</maven.javadoc.version>
     <maven.jar.version>3.4.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.failsafe.version>3.5.4</maven.failsafe.version>
@@ -309,7 +309,7 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.57.0</google.cloud.version>
+    <google.cloud.version>2.58.0</google.cloud.version>
     <aws.version>1.12.791</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
@@ -366,13 +366,13 @@
     <jempbox.version>1.8.17</jempbox.version>
     <jetty.version>9.4.58.v20250814</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
-    <jna.version>5.17.0</jna.version>
+    <jna.version>5.18.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.13.4</junit5.version>
     <junrar.version>7.5.5</junrar.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.25.1</log4j2.version>
+    <log4j2.version>2.25.2</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
     <!-- lucene >= 9.x requires Java 11 -->
     <lucene.version>8.11.4</lucene.version>
@@ -383,7 +383,7 @@
     <mockito.version>4.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.6.Final</netty.version>
-    <oak.jackrabbit.version>1.84.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>1.86.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
     <opennlp.version>1.9.4</opennlp.version>
@@ -398,7 +398,7 @@
     <poi.version>5.4.1</poi.version>
     <!-- 2.5.0 needs jakarta.xml.bind 4.0.2 in tika-parser-scientific-module -->
     <quartz.version>2.3.2</quartz.version>
-    <reactor.core.version>3.7.9</reactor.core.version>
+    <reactor.core.version>3.7.11</reactor.core.version>
     <reactor.netty.version>1.3.0-M7</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.1.0</scm.version>
@@ -1101,7 +1101,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.19.0</version>
+        <version>2.19.1</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
