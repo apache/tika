@@ -11,6 +11,8 @@ Release 4.0.0-BETA1 - ???
 
    * Removed the dotnet module (TIKA-4332).
 
+   * Removed the advanced media module (TIKA-4500).
+
   OTHER CHANGES
 
    * Fix concurrency bug in TikaToXMP (TIKA-4393)
