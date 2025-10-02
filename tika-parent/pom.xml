@@ -394,7 +394,7 @@
     <parso.version>2.0.14</parso.version>
     <!-- 4.14.0 needs jdk11 -->
     <pax.exam.version>4.13.5</pax.exam.version>
-    <pdfbox.version>2.0.34</pdfbox.version>
+    <pdfbox.version>2.0.35</pdfbox.version>
     <poi.version>5.4.1</poi.version>
     <!-- 2.5.0 needs jakarta.xml.bind 4.0.2 in tika-parser-scientific-module -->
     <quartz.version>2.3.2</quartz.version>
