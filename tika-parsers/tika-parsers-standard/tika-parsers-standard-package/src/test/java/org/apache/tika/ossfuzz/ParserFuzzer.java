@@ -27,7 +27,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
-
 import org.apache.tika.sax.ToTextContentHandler;
 
 
