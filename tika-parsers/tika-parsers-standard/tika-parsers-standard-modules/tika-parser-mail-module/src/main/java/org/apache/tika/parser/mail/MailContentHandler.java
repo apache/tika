@@ -128,6 +128,10 @@ class MailContentHandler implements ContentHandler {
         if (!extractAllAlternatives && alternativePartBuffer.size() > 0) {
             UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             IOUtils.copy(is, bos);
+            byte[] bytes = bos.toByteArray();
+            if (bytes.length == 0) {
+                return;
+            }
             alternativePartBuffer.peek().children.add(new BodyContents(submd, bos.toByteArray()));
         } else if (!extractAllAlternatives && parts.size() < 2) {
             //if you're at the first level of embedding
@@ -137,6 +141,9 @@ class MailContentHandler implements ContentHandler {
             UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             IOUtils.copy(is, bos);
             final byte[] bytes = bos.toByteArray();
+            if (bytes.length == 0) {
+                return;
+            }
             if (detectInlineTextOrHtml(submd, bytes)) {
                 handleInlineBodyPart(new BodyContents(submd, bytes));
             } else {
