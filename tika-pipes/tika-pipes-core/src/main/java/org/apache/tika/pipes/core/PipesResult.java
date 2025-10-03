@@ -34,6 +34,7 @@ public class PipesResult {
         OOM, TIMEOUT, UNSPECIFIED_CRASH,
         NO_EMITTER_FOUND,
         EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_EXCEPTION,
+        EMIT_SUCCESS_PASSBACK,//emit happened and some data is returned
         INTERRUPTED_EXCEPTION, NO_FETCHER_FOUND,
         INTERMEDIATE_RESULT;
     }
@@ -51,7 +52,7 @@ public class PipesResult {
     private final EmitData emitData;
     private final String message;
 
-    private PipesResult(STATUS status, EmitData emitData, String message, boolean intermediate) {
+    public PipesResult(STATUS status, EmitData emitData, String message, boolean intermediate) {
         this.status = status;
         this.emitData = emitData;
         this.message = message;

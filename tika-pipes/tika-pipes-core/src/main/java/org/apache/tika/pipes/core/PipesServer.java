@@ -105,7 +105,7 @@ public class PipesServer implements Runnable {
     public enum STATUS {
         READY, CALL, PING, FAILED_TO_START, FETCHER_NOT_FOUND, EMITTER_NOT_FOUND,
         FETCHER_INITIALIZATION_EXCEPTION, FETCH_EXCEPTION, PARSE_SUCCESS, PARSE_EXCEPTION_NO_EMIT,
-        EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_EXCEPTION, OOM, TIMEOUT, EMPTY_OUTPUT,
+        EMIT_SUCCESS, EMIT_SUCCESS_PASS_BACK, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_EXCEPTION, OOM, TIMEOUT, EMPTY_OUTPUT,
         INTERMEDIATE_RESULT;
 
         byte getByte() {
@@ -312,12 +312,44 @@ public class PipesServer implements Runnable {
             write(STATUS.EMIT_EXCEPTION, bytes);
             return;
         }
-        if (StringUtils.isBlank(parseExceptionStack)) {
-            write(STATUS.EMIT_SUCCESS);
-        } else {
-            write(STATUS.EMIT_SUCCESS_PARSE_EXCEPTION,
-                    parseExceptionStack.getBytes(StandardCharsets.UTF_8));
+        writeEmitResponse(emitKey, parseData.metadataList, parseExceptionStack, parseContext);
+
+    }
+
+    private void writeEmitResponse(EmitKey emitKey, List<Metadata> metadataList,  String parseExceptionStack, ParseContext parseContext) {
+
+        STATUS status = (StringUtils.isBlank(parseExceptionStack)) ? STATUS.EMIT_SUCCESS :
+                STATUS.EMIT_SUCCESS_PARSE_EXCEPTION;
+        PassbackFilter filter = parseContext.get(PassbackFilter.class);
+        if (filter == null) {
+            if (status == STATUS.EMIT_SUCCESS) {
+                write(status);
+            } else {
+                write(status, parseExceptionStack.getBytes(StandardCharsets.UTF_8));
+            }
+            return;
         }
+        List<Metadata> filtered = null;
+        try {
+            filtered = filter.filter(metadataList);
+        } catch (TikaException e) {
+            LOG.error("problem filtering data for passback", e);
+            exit(1);
+        }
+
+        EmitData filteredEmitData = new EmitData(emitKey, filtered, parseExceptionStack);
+
+        try {
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
+            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
+                objectOutputStream.writeObject(filteredEmitData);
+            }
+            write(STATUS.EMIT_SUCCESS_PASS_BACK, bos.toByteArray());
+        } catch (IOException e) {
+            LOG.error("problem writing response data (forking process shutdown?)", e);
+            exit(1);
+        }
+
     }
 
     private void emitContentsAndBytes(Emitter emitter, EmitKey emitKey,
