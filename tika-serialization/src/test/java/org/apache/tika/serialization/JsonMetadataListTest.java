@@ -18,17 +18,20 @@ package org.apache.tika.serialization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.Reader;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -60,16 +63,6 @@ public class JsonMetadataListTest {
         JsonMetadataList.toJson(metadataList, writer);
         List<Metadata> deserialized = JsonMetadataList.fromJson(new StringReader(writer.toString()));
         assertEquals(metadataList, deserialized);
-
-        //now test streaming serializer
-        writer = new StringWriter();
-        try (JsonStreamingSerializer streamingSerializer = new JsonStreamingSerializer(writer)) {
-            streamingSerializer.add(m1);
-            streamingSerializer.add(m2);
-        }
-        deserialized = JsonMetadataList.fromJson(new StringReader(writer.toString()));
-        assertEquals(metadataList, deserialized);
-
     }
 
     @Test
@@ -87,8 +80,7 @@ public class JsonMetadataListTest {
     @Test
     public void testListCorrupted() throws Exception {
         String json = "[{\"k1\":[\"v1\",\"v2\",\"v3\",\"v4\",\"v4\"],\"k2\":\"v1\"}," + "\"k3\":[\"v1\",\"v2\",\"v3\",\"v4\",\"v4\"],\"k4\":\"v1\"}]";
-        List<Metadata> m = JsonMetadataList.fromJson(null);
-        assertNull(m);
+        Exception ex = assertThrows(JsonMappingException.class, () -> JsonMetadataList.fromJson(new StringReader(json)));
     }
 
     @Test
@@ -119,13 +111,17 @@ public class JsonMetadataListTest {
                 .toString()
                 .startsWith("["));
         writer = new StringWriter();
+        JsonMetadata.setPrettyPrinting(true);
+
+
         JsonMetadataList.setPrettyPrinting(true);
         JsonMetadataList.toJson(metadataList, writer);
-        assertTrue(writer
+        String expected = "[ {[NEWLINE]  \"zk1\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],[NEWLINE]  \"zk2\" : \"v1\",[NEWLINE]" +
+                "  \"X-TIKA:content\" : \"this is the content\"[NEWLINE]}, " +
+                "{[NEWLINE]  \"k3\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],[NEWLINE]  \"k4\" : \"v1\"[NEWLINE]} ]";
+        assertEquals(expected, writer
                 .toString()
-                .replaceAll("\r\n", "\n")
-                .startsWith("[ {\n" + "  \"zk1\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],\n" + "  \"zk2\" : \"v1\",\n" + "  \"X-TIKA:content\" : \"this is the content\"\n" +
-                        "},"));
+                .replaceAll("[\r\n]+", "[NEWLINE]"));
 
 
         //now set it back to false
@@ -138,35 +134,24 @@ public class JsonMetadataListTest {
     }
 
     @Test
-    public void testSwitchingOrderOfMainDoc() throws Exception {
-        Metadata m1 = new Metadata();
-        m1.add("k1", "v1");
-        m1.add("k1", "v2");
-        m1.add("k1", "v3");
-        m1.add("k1", "v4");
-        m1.add("k1", "v4");
-        m1.add("k2", "v1");
-        m1.add(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, "/embedded-1");
-
-        Metadata m2 = new Metadata();
-        m2.add("k3", "v1");
-        m2.add("k3", "v2");
-        m2.add("k3", "v3");
-        m2.add("k3", "v4");
-        m2.add("k3", "v4");
-        m2.add("k4", "v1");
-
-        List<Metadata> truth = new ArrayList<>();
-        truth.add(m2);
-        truth.add(m1);
-        StringWriter stringWriter = new StringWriter();
-        try (JsonStreamingSerializer serializer = new JsonStreamingSerializer(stringWriter)) {
-            serializer.add(m1);
-            serializer.add(m2);
+    public void testLargeValues() throws Exception {
+        //TIKA-4154
+        TikaConfig tikaConfig = null;
+        try (InputStream is = JsonMetadata.class.getResourceAsStream("/config/tika-config-json.xml")) {
+            tikaConfig = new TikaConfig(is);
         }
-        Reader reader = new StringReader(stringWriter.toString());
-        List<Metadata> deserialized = JsonMetadataList.fromJson(reader);
-        assertEquals(truth, deserialized);
-
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 30000000; i++) {
+            sb.append("v");
+        }
+        Metadata m = new Metadata();
+        m.add("large_value", sb.toString());
+        List<Metadata> list = new ArrayList<>();
+        list.add(m);
+        list.add(m);
+        StringWriter writer = new StringWriter();
+        JsonMetadataList.toJson(list, writer);
+        List<Metadata> deserialized = JsonMetadataList.fromJson(new StringReader(writer.toString()));
+        assertEquals(list, deserialized);
     }
 }

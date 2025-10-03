@@ -20,35 +20,33 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.StreamReadConstraints;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.serialization.MetadataSerializer;
+import org.apache.tika.serialization.ParseContextSerializer;
 
 public class JsonFetchEmitTupleList {
 
-    public static List<FetchEmitTuple> fromJson(Reader reader) throws IOException {
-        JsonNode root = new ObjectMapper().readTree(reader);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-        if (!root.isArray()) {
-            throw new IOException("FetchEmitTupleList must be an array");
-        }
-        List<FetchEmitTuple> list = new ArrayList<>();
-        Iterator<JsonNode> it = root.iterator();
-        while (it.hasNext()) {
-            JsonNode n = it.next();
-            FetchEmitTuple t = JsonFetchEmitTuple.parseFetchEmitTuple(n);
-            list.add(t);
-        }
-        return list;
+    static {
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(FetchEmitTuple.class, new FetchEmitTupleDeserializer());
+        module.addSerializer(FetchEmitTuple.class, new FetchEmitTupleSerializer());
+        module.addSerializer(Metadata.class, new MetadataSerializer());
+        module.addSerializer(ParseContext.class, new ParseContextSerializer());
+        OBJECT_MAPPER.registerModule(module);
+    }
+
+    public static List<FetchEmitTuple> fromJson(Reader reader) throws IOException {
+        return OBJECT_MAPPER.readValue(reader, new TypeReference<List<FetchEmitTuple>>() {});
     }
 
     public static String toJson(List<FetchEmitTuple> list) throws IOException {
@@ -58,18 +56,6 @@ public class JsonFetchEmitTupleList {
     }
 
     public static void toJson(List<FetchEmitTuple> list, Writer writer) throws IOException {
-
-        try (JsonGenerator jsonGenerator = new JsonFactory()
-                .setStreamReadConstraints(StreamReadConstraints
-                        .builder()
-                        .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
-                        .build())
-                .createGenerator(writer)) {
-            jsonGenerator.writeStartArray();
-            for (FetchEmitTuple t : list) {
-                JsonFetchEmitTuple.writeTuple(t, jsonGenerator);
-            }
-            jsonGenerator.writeEndArray();
-        }
+        OBJECT_MAPPER.writeValue(writer, list);
     }
 }

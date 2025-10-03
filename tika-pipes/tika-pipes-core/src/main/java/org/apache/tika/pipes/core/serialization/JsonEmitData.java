@@ -19,41 +19,28 @@ package org.apache.tika.pipes.core.serialization;
 import java.io.IOException;
 import java.io.Writer;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.StreamReadConstraints;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.emitter.EmitData;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.serialization.JsonMetadata;
+import org.apache.tika.serialization.MetadataSerializer;
+import org.apache.tika.serialization.ParseContextSerializer;
 
 public class JsonEmitData {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    static {
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(FetchEmitTuple.class, new FetchEmitTupleSerializer());
+        module.addSerializer(ParseContext.class, new ParseContextSerializer());
+        module.addSerializer(Metadata.class, new MetadataSerializer());
+        OBJECT_MAPPER.registerModule(module);
+    }
 
     public static void toJson(EmitData emitData, Writer writer) throws IOException {
-        try (JsonGenerator jsonGenerator = new JsonFactory()
-                .setStreamReadConstraints(StreamReadConstraints
-                        .builder()
-                        .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
-                        .build())
-                .createGenerator(writer)) {
-            jsonGenerator.writeStartObject();
-            EmitKey key = emitData.getEmitKey();
-            jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITTER, key.getEmitterName());
-            jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITKEY, key.getEmitKey());
-            if (!emitData
-                    .getParseContext()
-                    .isEmpty()) {
-                jsonGenerator.writeObject(emitData.getParseContext());
-            }
-            jsonGenerator.writeFieldName("data");
-            jsonGenerator.writeStartArray();
-            for (Metadata m : emitData.getMetadataList()) {
-                JsonMetadata.writeMetadataObject(m, jsonGenerator, false);
-            }
-            jsonGenerator.writeEndArray();
-            jsonGenerator.writeEndObject();
-        }
+        OBJECT_MAPPER.writeValue(writer, emitData);
     }
 }
