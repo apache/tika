@@ -16,8 +16,9 @@
  */
 package org.apache.tika.pipes.core.serialization;
 
-import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.EMIT_KEY;
+
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.EMITTER;
+import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.EMIT_KEY;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.FETCHER;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.FETCH_KEY;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.FETCH_RANGE_END;
