@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -95,6 +96,7 @@ public class RFC822Parser implements Parser {
         parser.setNoRecurse();
         xhtml.startDocument();
         TikaInputStream tstream = TikaInputStream.get(stream);
+        checkForZeroByte(tstream);//avoid stackoverflow
         try {
             parser.parse(tstream);
         } catch (IOException e) {
@@ -112,6 +114,17 @@ public class RFC822Parser implements Parser {
             }
         }
         xhtml.endDocument();
+    }
+
+    private void checkForZeroByte(TikaInputStream tstream) throws IOException, ZeroByteFileException {
+        tstream.mark(1);
+        try {
+            if (tstream.read() < 0) {
+                throw new ZeroByteFileException("rfc822 parser found zero bytes");
+            }
+        } finally {
+            tstream.reset();
+        }
     }
 
     /**
