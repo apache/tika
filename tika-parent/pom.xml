@@ -445,7 +445,7 @@
     <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
     <uimafit.version>3.4.0</uimafit.version>
     <uimaj.core.version>3.4.1</uimaj.core.version>
-    <uimaj.cpe.version>3.6.0</uimaj.cpe.version>
+    <uimaj.cpe.version>3.6.1</uimaj.cpe.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
     <woodstox.core.version>7.1.1</woodstox.core.version>
@@ -457,7 +457,7 @@
     <logback.version>1.5.19</logback.version>
     <javacpp.version>1.5.12</javacpp.version>
     <maven.site.version>3.21.0</maven.site.version>
-    <maven.exec.version>3.5.1</maven.exec.version>
+    <maven.exec.version>3.6.0</maven.exec.version>
   </properties>
 
   <dependencyManagement>
