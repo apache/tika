@@ -311,8 +311,8 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.58.0</google.cloud.version>
-    <aws.version>1.12.791</aws.version>
-    <aws2.version>2.34.8</aws2.version>
+    <aws.version>1.12.792</aws.version>
+    <aws2.version>2.34.9</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -399,7 +399,7 @@
     <jsoup.version>1.21.2</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.13.4</junit5.version>
+    <junit5.version>6.0.0</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.32.0</jwarc.version>
@@ -453,7 +453,7 @@
     <woodstox.core.version>7.1.1</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.4</zookeeper.version>
-    <zstd.version>1.5.7-4</zstd.version>
+    <zstd.version>1.5.7-5</zstd.version>
     <nimbus-jose-jwt.version>10.5</nimbus-jose-jwt.version>
     <javacpp.version>1.5.12</javacpp.version>
     <maven.exec.version>3.6.0</maven.exec.version>
@@ -1177,7 +1177,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.6.1</version>
+        <version>3.6.2</version>
       </plugin>
       </plugins>
     </pluginManagement>
@@ -1287,6 +1287,8 @@
             </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
+          <!-- TIKA-4495 -->
+          <skip>true</skip>
         </configuration>
         <executions>
           <execution>

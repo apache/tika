@@ -9,9 +9,13 @@ Release 4.0.0-BETA1 - ???
 
    * The tika-batch module has been removed (TIKA-4333).
 
+   * Remove snaps deployment (TIKA-4502).
+
    * Removed the dotnet module (TIKA-4332).
 
    * Removed the advanced media module (TIKA-4500).
+   
+   * Remove the tika-dl module (TIKA-4499).
 
   OTHER CHANGES
 
