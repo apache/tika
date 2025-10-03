@@ -16,14 +16,14 @@
  */
 package org.apache.tika.pipes.core.serialization;
 
-import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.EMITKEY;
+import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.EMIT_KEY;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.EMITTER;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.FETCHER;
-import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.FETCHKEY;
+import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.FETCH_KEY;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.FETCH_RANGE_END;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.FETCH_RANGE_START;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.ID;
-import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.METADATAKEY;
+import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.METADATA_KEY;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.ON_PARSE_EXCEPTION;
 import static org.apache.tika.serialization.ParseContextSerializer.PARSE_CONTEXT;
 
@@ -51,9 +51,9 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
 
         String id = readVal(ID, root, null, true);
         String fetcherName = readVal(FETCHER, root, null, true);
-        String fetchKey = readVal(FETCHKEY, root, null, true);
+        String fetchKey = readVal(FETCH_KEY, root, null, true);
         String emitterName = readVal(EMITTER, root, "", false);
-        String emitKey = readVal(EMITKEY, root, "", false);
+        String emitKey = readVal(EMIT_KEY, root, "", false);
         long fetchRangeStart = readLong(FETCH_RANGE_START, root, -1l, false);
         long fetchRangeEnd = readLong(FETCH_RANGE_END, root, -1l, false);
         Metadata metadata = readMetadata(root);
@@ -82,7 +82,7 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
     }
 
     private static Metadata readMetadata(JsonNode root) {
-        JsonNode metadataNode = root.get(METADATAKEY);
+        JsonNode metadataNode = root.get(METADATA_KEY);
         if (metadataNode == null) {
             return new Metadata();
         }

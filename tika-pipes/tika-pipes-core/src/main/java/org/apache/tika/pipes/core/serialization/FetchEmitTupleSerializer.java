@@ -31,12 +31,12 @@ import org.apache.tika.utils.StringUtils;
 public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
     public static final String ID = "id";
     public static final String FETCHER = "fetcher";
-    public static final String FETCHKEY = "fetchKey";
+    public static final String FETCH_KEY = "fetchKey";
     public static final String FETCH_RANGE_START = "fetchRangeStart";
     public static final String FETCH_RANGE_END = "fetchRangeEnd";
     public static final String EMITTER = "emitter";
-    public static final String EMITKEY = "emitKey";
-    public static final String METADATAKEY = "metadata";
+    public static final String EMIT_KEY = "emitKey";
+    public static final String METADATA_KEY = "metadata";
     public static final String ON_PARSE_EXCEPTION = "onParseException";
 
     public void serialize(FetchEmitTuple t, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
@@ -44,17 +44,17 @@ public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
         jsonGenerator.writeStartObject();
         jsonGenerator.writeStringField(ID, t.getId());
         jsonGenerator.writeStringField(FETCHER, t.getFetchKey().getFetcherName());
-        jsonGenerator.writeStringField(FETCHKEY, t.getFetchKey().getFetchKey());
+        jsonGenerator.writeStringField(FETCH_KEY, t.getFetchKey().getFetchKey());
         if (t.getFetchKey().hasRange()) {
             jsonGenerator.writeNumberField(FETCH_RANGE_START, t.getFetchKey().getRangeStart());
             jsonGenerator.writeNumberField(FETCH_RANGE_END, t.getFetchKey().getRangeEnd());
         }
         jsonGenerator.writeStringField(EMITTER, t.getEmitKey().getEmitterName());
         if (!StringUtils.isBlank(t.getEmitKey().getEmitKey())) {
-            jsonGenerator.writeStringField(EMITKEY, t.getEmitKey().getEmitKey());
+            jsonGenerator.writeStringField(EMIT_KEY, t.getEmitKey().getEmitKey());
         }
         if (t.getMetadata().size() > 0) {
-            jsonGenerator.writeObjectField(METADATAKEY, t.getMetadata());
+            jsonGenerator.writeObjectField(METADATA_KEY, t.getMetadata());
         }
         jsonGenerator.writeStringField(ON_PARSE_EXCEPTION, t.getOnParseException().name().toLowerCase(Locale.US));
         if (!t.getParseContext().isEmpty()) {
