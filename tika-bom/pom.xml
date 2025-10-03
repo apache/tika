@@ -277,11 +277,6 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-dl</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-advancedmedia-module</artifactId>
         <version>4.0.0-SNAPSHOT</version>
       </dependency>
