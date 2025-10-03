@@ -1287,6 +1287,8 @@
             </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
+          <!-- TIKA-4495 -->
+          <skip>true</skip>
         </configuration>
         <executions>
           <execution>
