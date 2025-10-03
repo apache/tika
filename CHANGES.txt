@@ -13,6 +13,8 @@ Release 4.0.0-BETA1 - ???
 
    * Removed the dotnet module (TIKA-4332).
 
+   * Removed the advanced media module (TIKA-4500).
+   
    * Remove the tika-dl module (TIKA-4499).
 
   OTHER CHANGES
