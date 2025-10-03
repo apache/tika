@@ -380,8 +380,13 @@ public class PipesClient implements Closeable {
 
             String stack = emitData.getContainerStackTrace();
             if (StringUtils.isBlank(stack)) {
+                //stack is blank for PARSE_SUCCESS and for PASSBACK
                 return new PipesResult(status, emitData, false);
             } else {
+                //tweak this
+                if (status == PipesResult.STATUS.PARSE_SUCCESS) {
+                    status = PipesResult.STATUS.PARSE_SUCCESS_WITH_EXCEPTION;
+                }
                 return new PipesResult(status, emitData, stack, false);
             }
         } catch (ClassNotFoundException e) {
