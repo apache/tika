@@ -156,7 +156,6 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
-        <version>${rat.version}</version>
         <configuration>
           <excludes>
             <exclude>src/test/resources/org/apache/tika/**</exclude>
@@ -164,6 +163,7 @@
             <exclude>src/main/resources/org/apache/tika/detect/*.nnmodel</exclude>
             <exclude>src/test/resources/test-documents/file-list.txt</exclude>
             <exclude>src/test/resources/test-documents/ang20150420t182050_corr_v1e_img.hdr</exclude>
+            <exclude>src/test/resources/test-documents/*.pdf</exclude>
           </excludes>
         </configuration>
       </plugin>
