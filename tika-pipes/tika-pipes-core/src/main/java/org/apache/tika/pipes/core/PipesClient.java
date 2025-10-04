@@ -334,7 +334,11 @@ public class PipesClient implements Closeable {
                 //there may have been a parse exception, but the parse didn't crash
                 LOG.debug("pipesClientId={} parse success: {} in {} ms", pipesClientId, t.getId(),
                         millis);
-                return deserializeEmitData();
+                return deserializeEmitData(PipesResult.STATUS.PARSE_SUCCESS);
+            case EMIT_SUCCESS_PASS_BACK:
+                LOG.debug("pipesClientId={} emit success with passback: {} in {} ms", pipesClientId, t.getId(),
+                        millis);
+                return deserializeEmitData(PipesResult.STATUS.EMIT_SUCCESS_PASSBACK);
             case PARSE_EXCEPTION_NO_EMIT:
                 return readMessage(PipesResult.STATUS.PARSE_EXCEPTION_NO_EMIT);
             case EMIT_SUCCESS:
@@ -366,7 +370,7 @@ public class PipesClient implements Closeable {
         return new PipesResult(status, msg);
     }
 
-    private PipesResult deserializeEmitData() throws IOException {
+    private PipesResult deserializeEmitData(PipesResult.STATUS status) throws IOException {
         int length = input.readInt();
         byte[] bytes = new byte[length];
         input.readFully(bytes);
@@ -376,9 +380,14 @@ public class PipesClient implements Closeable {
 
             String stack = emitData.getContainerStackTrace();
             if (StringUtils.isBlank(stack)) {
-                return new PipesResult(emitData);
+                //stack is blank for PARSE_SUCCESS and for PASSBACK
+                return new PipesResult(status, emitData, false);
             } else {
-                return new PipesResult(emitData, stack);
+                //tweak this
+                if (status == PipesResult.STATUS.PARSE_SUCCESS) {
+                    status = PipesResult.STATUS.PARSE_SUCCESS_WITH_EXCEPTION;
+                }
+                return new PipesResult(status, emitData, stack, false);
             }
         } catch (ClassNotFoundException e) {
             LOG.error("class not found exception deserializing data", e);
@@ -386,6 +395,7 @@ public class PipesClient implements Closeable {
             throw new RuntimeException(e);
         }
     }
+
 
     private PipesResult deserializeIntermediateResult(EmitKey emitKey, ParseContext parseContext) throws IOException {
 
