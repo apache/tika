@@ -40,16 +40,6 @@
     <pluginManagement>
       <plugins>
         <plugin>
-          <groupId>org.apache.rat</groupId>
-          <artifactId>apache-rat-plugin</artifactId>
-          <configuration>
-            <excludes>
-              <exclude>tika-parsers-standard-modules/tika-parser-image-module/**</exclude> <!-- already checked -->
-              <exclude>tika-parsers-standard-modules/tika-parser-text-module/**</exclude> <!-- already checked -->
-            </excludes>
-          </configuration>
-        </plugin>
-        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
           <configuration>
@@ -82,6 +72,26 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>tika-parsers-standard-modules/tika-parser-code-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard-modules/tika-parser-text-module/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard-modules/tika-parser-xml-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard-modules/tika-parser-html-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard-modules/tika-parser-image-module/src/main/resources/com/github/jaiimageio/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard-modules/tika-parser-mail-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard-modules/tika-parser-pdf-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard-modules/tika-parser-pkg-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard-modules/tika-parser-miscoffice-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard-package/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 
   <scm>

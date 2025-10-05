@@ -48,18 +48,20 @@
   </dependencies>
 
   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>tika-parser-scientific-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parser-scientific-package/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
     <pluginManagement>
       <plugins>
-        <plugin>
-          <groupId>org.apache.rat</groupId>
-          <artifactId>apache-rat-plugin</artifactId>
-          <version>${rat.version}</version>
-          <configuration>
-            <excludes>
-              <exclude>src/test/resources/test-documents/**</exclude>
-            </excludes>
-          </configuration>
-        </plugin>
         <plugin>
           <groupId>org.apache.felix</groupId>
           <artifactId>maven-bundle-plugin</artifactId>
