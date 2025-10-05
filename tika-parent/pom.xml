@@ -1482,7 +1482,14 @@
           <plugin>
             <groupId>org.apache.rat</groupId>
             <artifactId>apache-rat-plugin</artifactId>
-            <version>${rat.version}</version>
+            <configuration>
+              <excludes>
+                <exclude>nb-configuration.xml</exclude> <!-- local netbeans -->
+                <exclude>nbactions.xml</exclude> <!-- local netbeans -->
+                <exclude>**/test-documents/**</exclude>
+                <exclude>**/target/**</exclude> <!-- generated files -->
+              </excludes>
+            </configuration>
             <executions>
               <execution>
                 <phase>verify</phase>
