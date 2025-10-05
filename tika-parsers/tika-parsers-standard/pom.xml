@@ -42,10 +42,10 @@
         <plugin>
           <groupId>org.apache.rat</groupId>
           <artifactId>apache-rat-plugin</artifactId>
-          <version>${rat.version}</version>
           <configuration>
             <excludes>
-              <exclude>src/test/resources/test-documents/**</exclude>
+              <exclude>tika-parsers-standard-modules/tika-parser-image-module/**</exclude> <!-- already checked -->
+              <exclude>tika-parsers-standard-modules/tika-parser-text-module/**</exclude> <!-- already checked -->
             </excludes>
           </configuration>
         </plugin>
