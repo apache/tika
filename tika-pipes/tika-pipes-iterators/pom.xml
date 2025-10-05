@@ -44,6 +44,20 @@
     <module>tika-pipes-iterator-az-blob</module>
   </modules>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>tika-pipes-iterator-csv/src/test/resources/test-simple.csv</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
   <scm>
     <tag>3.0.0-rc1</tag>
   </scm>
