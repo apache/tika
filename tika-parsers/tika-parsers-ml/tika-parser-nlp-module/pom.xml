@@ -158,10 +158,10 @@
             <plugin>
                 <groupId>org.apache.rat</groupId>
                 <artifactId>apache-rat-plugin</artifactId>
-                <version>${rat.version}</version>
                 <configuration>
                     <excludes>
                         <exclude>src/test/resources/org/apache/tika/parser/ner/opennlp/*.bin</exclude>
+                        <exclude>src/test/resources/test-documents/testJournalParser.pdf</exclude>
                     </excludes>
                 </configuration>
             </plugin>

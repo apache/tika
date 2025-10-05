@@ -54,8 +54,8 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <excludes>
-            <exclude>tika-parser-scientific-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-scientific-package/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parser-scientific-module/src/test/resources/**</exclude> <!-- already checked -->
+            <exclude>tika-parser-scientific-package/**</exclude> <!-- already checked -->
           </excludes>
         </configuration>
       </plugin>
