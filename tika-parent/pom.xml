@@ -1482,6 +1482,7 @@
           <plugin>
             <groupId>org.apache.rat</groupId>
             <artifactId>apache-rat-plugin</artifactId>
+            <version>${rat.version}</version> <!-- keep this when testing snapshot -->
             <configuration>
               <excludes>
                 <exclude>nb-configuration.xml</exclude> <!-- local netbeans -->
