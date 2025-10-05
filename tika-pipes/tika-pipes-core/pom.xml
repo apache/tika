@@ -21,29 +21,41 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-pipes</artifactId>
-    <version>3.3.0-SNAPSHOT</version>
+    <version>4.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-pipes-iterators</artifactId>
-  <name>Apache Tika Pipes Iterators</name>
+  <artifactId>tika-pipes-core</artifactId>
+
+  <name>Apache Tika Pipes Core</name>
   <url>https://tika.apache.org/</url>
-  <packaging>pom</packaging>
 
-  <!-- see also org.apache.tika.pipes.pipesiterator.fs.FileSystemIterator
-       in tika-core if you want a file system directory crawler -->
-  <modules>
-    <module>tika-pipes-iterator-csv</module>
-    <module>tika-pipes-iterator-json</module>
-    <module>tika-pipes-iterator-jdbc</module>
-    <module>tika-pipes-iterator-s3</module>
-    <module>tika-pipes-iterator-kafka</module>
-    <module>tika-pipes-iterator-solr</module>
-    <module>tika-pipes-iterator-gcs</module>
-    <module>tika-pipes-iterator-az-blob</module>
-  </modules>
-
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-serialization</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.martensigwart</groupId>
+      <artifactId>fakeload</artifactId>
+      <version>${fakeload.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
   <build>
     <plugins>
       <plugin>
@@ -51,14 +63,22 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <excludes>
-            <exclude>tika-pipes-iterator-csv/src/test/resources/test-simple.csv</exclude>
+            <exclude>src/test/resources/test-documents/file-list.txt</exclude>
+            <exclude>src/test/resources/test-documents/testOverlappingText.pdf</exclude>
           </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>org.apache.tika.pipes.core</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
         </configuration>
       </plugin>
     </plugins>
   </build>
-
-  <scm>
-    <tag>3.0.0-rc1</tag>
-  </scm>
 </project>
