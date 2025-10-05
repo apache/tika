@@ -35,6 +35,20 @@
   <modules>
     <module>tika-bundle-standard</module>
   </modules>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>tika-bundle-standard/dependency-reduced-pom.xml</exclude> <!-- generated -->
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
   <scm>
     <tag>3.0.0-rc1</tag>
