@@ -78,11 +78,6 @@
         <artifactId>tika-eval-core</artifactId>
         <version>4.0.0-SNAPSHOT</version>
       </dependency>
-      <dependency>
-        <groupId>org.apache.tika</groupId>
-        <artifactId>tika-fuzzing</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-      </dependency>
 
       <!-- Tika language detection modules -->
       <dependency>
