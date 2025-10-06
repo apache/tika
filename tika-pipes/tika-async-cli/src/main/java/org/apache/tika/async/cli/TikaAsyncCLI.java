@@ -49,6 +49,8 @@ public class TikaAsyncCLI {
         options.addOption("?", "help", false, "this help message");
         options.addOption("t", "timeoutMs", true, "timeout for each parse in milliseconds");
         options.addOption("l", "fileList", true, "file list");
+        options.addOption("c", "config", true, "tikaConfig to inherit from -- " +
+                "commandline options will not overwrite existing iterators, emitters, fetchers and async");
 
         return options;
     }
@@ -83,7 +85,7 @@ public class TikaAsyncCLI {
     //not private for testing purposes
     static SimpleAsyncConfig parseCommandLine(String[] args) throws ParseException, IOException {
         if (args.length == 2 && ! args[0].startsWith("-")) {
-            return new SimpleAsyncConfig(args[0], args[1], null, null, null, null);
+            return new SimpleAsyncConfig(args[0], args[1], null, null, null, null, null);
         }
 
         Options options = getOptions();
@@ -100,6 +102,7 @@ public class TikaAsyncCLI {
         Long timeoutMs = null;
         Integer numClients = null;
         String fileList = null;
+        String tikaConfig = null;
         if (line.hasOption("i")) {
             inputDir = line.getOptionValue("i");
         }
@@ -118,8 +121,12 @@ public class TikaAsyncCLI {
         if (line.hasOption("l")) {
             fileList = line.getOptionValue("l");
         }
+
+        if (line.hasOption("c")) {
+            tikaConfig = line.getOptionValue("c");
+        }
         return new SimpleAsyncConfig(inputDir, outputDir,
-                numClients, timeoutMs, xmx, fileList);
+                numClients, timeoutMs, xmx, fileList, tikaConfig);
     }
 
 

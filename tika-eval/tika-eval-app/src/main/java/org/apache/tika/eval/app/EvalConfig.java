@@ -85,4 +85,12 @@ public class EvalConfig {
                 jdbcDriverClass + '\'' + ", forceDrop=" + forceDrop + ", maxFilesToAdd=" + maxFilesToAdd + ", maxTokens=" + maxTokens + ", maxContentLength=" + maxContentLength +
                 ", numThreads=" + numWorkers + ", errorLogFile=" + errorLogFile + '}';
     }
+
+    public void setNumWorkers(int n) {
+        numWorkers = n;
+    }
+
+    public void setMaxExtractLength(long m) {
+        maxExtractLength = m;
+    }
 }

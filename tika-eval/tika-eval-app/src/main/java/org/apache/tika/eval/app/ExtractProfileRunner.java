@@ -76,8 +76,11 @@ public class ExtractProfileRunner {
                         + " If not specified, -extracts is crawled as is.").get())
                 .addOption(Option.builder("d").longOpt("db").hasArg().desc("optional: db path").get())
                 .addOption(Option.builder("c").longOpt("config").hasArg().desc("tika-eval json config file").get())
-                ;
+                .addOption(Option.builder("n").longOpt("numWorkers").hasArg().desc("number of worker threads").get())
+                .addOption(Option.builder("m").longOpt("maxExtractLength").hasArg().desc("maximum extract length").get())
+        ;
     }
+
     public static void main(String[] args) throws Exception {
         DefaultParser defaultCLIParser = new DefaultParser();
         CommandLine commandLine = defaultCLIParser.parse(OPTIONS, args);
@@ -86,6 +89,13 @@ public class ExtractProfileRunner {
         Path inputDir = commandLine.hasOption('i') ? Paths.get(commandLine.getOptionValue('i')) : extractsDir;
         String dbPath = commandLine.hasOption('d') ? commandLine.getOptionValue('d') : USAGE_FAIL("Must specify the db name: -d");
         String jdbcString = getJdbcConnectionString(dbPath);
+        if (commandLine.hasOption('n')) {
+            evalConfig.setNumWorkers(Integer.parseInt(commandLine.getOptionValue('n')));
+        }
+
+        if (commandLine.hasOption('m')) {
+            evalConfig.setMaxExtractLength(Long.parseLong(commandLine.getOptionValue('m')));
+        }
         execute(inputDir, extractsDir, jdbcString, evalConfig);
     }
 
