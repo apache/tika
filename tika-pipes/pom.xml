@@ -58,6 +58,7 @@
           <excludes>
             <exclude>tika-pipes-iterators/tika-pipes-iterator-csv/src/test/resources/test-simple.csv</exclude> <!-- already checked -->
             <exclude>tika-pipes-core/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-grpc/target/**</exclude>
           </excludes>
         </configuration>
       </plugin>

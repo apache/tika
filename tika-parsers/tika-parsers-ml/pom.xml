@@ -63,6 +63,7 @@
             <exclude>tika-parser-nlp-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
             <exclude>tika-age-recogniser/model/opennlp/**</exclude> <!-- already checked -->
             <exclude>tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/opennlp/**</exclude> <!-- already checked -->
+            <exclude>tika-age-recogniser/target/**</exclude>
           </excludes>
         </configuration>
       </plugin>
