@@ -43,7 +43,7 @@ public class TikaConfigAsyncWriterTest {
         Path p = Paths.get(TikaConfigAsyncWriter.class.getResource("/configs/TIKA-4508-parsers.xml").toURI());
         SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
                 10000L, "-Xmx1g", null, p.toAbsolutePath().toString());
-        Path target = Paths.get("/home/tallison/Desktop/tmp/").resolve("combined.xml");
+        Path target = dir.resolve("combined.xml");
         TikaConfigAsyncWriter writer = new TikaConfigAsyncWriter(simpleAsyncConfig);
         writer.write(target);
 
@@ -57,7 +57,7 @@ public class TikaConfigAsyncWriterTest {
         Path p = Paths.get(TikaConfigAsyncWriter.class.getResource("/configs/TIKA-4508-emitters.xml").toURI());
         SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
                 10000L, "-Xmx1g", null, p.toAbsolutePath().toString());
-        Path target = Paths.get("/home/tallison/Desktop/tmp/").resolve("combined.xml");
+        Path target = dir.resolve("combined.xml");
         TikaConfigAsyncWriter writer = new TikaConfigAsyncWriter(simpleAsyncConfig);
         writer.write(target);
 
