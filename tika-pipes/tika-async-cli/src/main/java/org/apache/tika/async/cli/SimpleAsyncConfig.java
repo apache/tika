@@ -24,14 +24,17 @@ class SimpleAsyncConfig {
     private Long timeoutMs;
     private String xmx;
     private String fileList;
+    private String tikaConfig;//path to the tikaConfig file to be used in the forked process
 
-    public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx, String fileList) {
+    //TODO -- switch to a builder
+    public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx, String fileList, String tikaConfig) {
         this.inputDir = inputDir;
         this.outputDir = outputDir;
         this.numClients = numClients;
         this.timeoutMs = timeoutMs;
         this.xmx = xmx;
         this.fileList = fileList;
+        this.tikaConfig = tikaConfig;
     }
 
     public String getInputDir() {
@@ -56,5 +59,9 @@ class SimpleAsyncConfig {
 
     public String getFileList() {
         return fileList;
+    }
+
+    public String getTikaConfig() {
+        return tikaConfig;
     }
 }
