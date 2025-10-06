@@ -291,7 +291,7 @@
     <!-- updates may not be detected by the maven versions plugin:
          https://github.com/mojohaus/versions/issues/1070 -->
     <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
-    <forbiddenapis.version>3.9</forbiddenapis.version>
+    <forbiddenapis.version>3.10</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.7.1</maven.assembly.version>
