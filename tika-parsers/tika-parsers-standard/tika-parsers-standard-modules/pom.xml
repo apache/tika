@@ -96,8 +96,8 @@
             <exclude>tika-parser-xml-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
             <exclude>tika-parser-mail-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
             <exclude>tika-parser-miscoffice-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-            <exclude></exclude>
-            <exclude></exclude>
+            <exclude>tika-parser-miscoffice-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parser-html-commons/target/**</exclude>
           </excludes>
         </configuration>
       </plugin>
