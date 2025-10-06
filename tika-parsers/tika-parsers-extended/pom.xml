@@ -56,6 +56,8 @@
           <excludes>
             <exclude>tika-parser-scientific-module/src/test/resources/**</exclude> <!-- already checked -->
             <exclude>tika-parser-scientific-package/**</exclude> <!-- already checked -->
+            <exclude>tika-parser-tagsoup-module/target/**</exclude> <!-- already checked -->
+            <exclude>tika-parser-tagsoup-package/target/**</exclude> <!-- already checked -->
           </excludes>
         </configuration>
       </plugin>

@@ -55,6 +55,7 @@
           <excludes>
             <exclude>src/test/resources/test-documents/**</exclude>
             <exclude>tika-parser-nlp-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-age-recogniser/target/**</exclude>
           </excludes>
         </configuration>
       </plugin>
