@@ -289,7 +289,7 @@
     <project.build.outputTimestamp>1754499584</project.build.outputTimestamp>
     <!-- plugin versions -->
     <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
-    <forbiddenapis.version>3.9</forbiddenapis.version>
+    <forbiddenapis.version>3.10</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.7.1</maven.assembly.version>
@@ -316,7 +316,7 @@
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
-    <asm.version>9.8</asm.version>
+    <asm.version>9.9</asm.version>
     <azure.core.version>1.56.1</azure.core.version>
     <azure.core.http.netty.version>1.16.1</azure.core.http.netty.version>
     <azure.storage.blob.version>12.31.2</azure.storage.blob.version>
@@ -458,7 +458,7 @@
     <logback.version>1.5.19</logback.version>
     <javacpp.version>1.5.12</javacpp.version>
     <maven.site.version>3.21.0</maven.site.version>
-    <maven.exec.version>3.6.0</maven.exec.version>
+    <maven.exec.version>3.6.1</maven.exec.version>
   </properties>
 
   <dependencyManagement>
