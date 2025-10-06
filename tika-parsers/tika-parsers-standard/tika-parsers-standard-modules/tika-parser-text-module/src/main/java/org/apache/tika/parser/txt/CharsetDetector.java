@@ -187,6 +187,7 @@ public class CharsetDetector {
      * analyzed will not be added to the list of possible encodings.
      *
      * @param encoding The declared encoding
+     * @return This CharsetDetector
      * @stable ICU 3.4
      */
     public CharsetDetector setDeclaredEncoding(String encoding) {
@@ -225,6 +226,7 @@ public class CharsetDetector {
      *
      * @param in the input text of unknown encoding
      * @return This CharsetDetector
+     * @throws java.io.IOException if there is an error while reading.
      * @stable ICU 3.4
      */
 
@@ -260,12 +262,6 @@ public class CharsetDetector {
      * only looks at the start of the input data,
      * there is a possibility that the returned charset will fail to handle
      * the full set of input data.
-     * <p>
-     * Raise an exception if
-     * <ul>
-     * <li>no charset appears to match the data.</li>
-     * <li>no input text has been provided</li>
-     * </ul>
      *
      * @return a CharsetMatch object representing the best matching charset, or
      * <code>null</code> if there are no matches.
@@ -289,12 +285,6 @@ public class CharsetDetector {
      * Return an array of all charsets that appear to be plausible
      * matches with the input data.  The array is ordered with the
      * best quality match first.
-     * <p>
-     * Raise an exception if
-     * <ul>
-     * <li>no charsets appear to match the input data.</li>
-     * <li>no input text has been provided</li>
-     * </ul>
      *
      * @return An array of CharsetMatch objects representing possibly matching charsets.
      * @stable ICU 3.4
@@ -330,7 +320,7 @@ public class CharsetDetector {
         }
         Collections.sort(matches);      // CharsetMatch compares on confidence
         Collections.reverse(matches);   //  Put best match first.
-        return matches.toArray(new CharsetMatch[0]);
+        return matches.toArray(CharsetMatch[]::new);
     }
 
     /**
@@ -345,12 +335,14 @@ public class CharsetDetector {
      * then return the stream to its original position via
      * the InputStream.reset() operation.  The exact amount that will
      * be read depends on the characteristics of the data itself.
-     * <p>
-     * Raise an exception if no charsets appear to match the input data.
      *
      * @param in               The source of the byte data in the unknown charset.
      * @param declaredEncoding A declared encoding for the data, if available,
      *                         or null or an empty string if none is available.
+     *
+     * @return an appropriate Java Reader or null if no charsets appear to match the input data or
+     * if an error occurred.
+     *
      * @stable ICU 3.4
      */
     public Reader getReader(InputStream in, String declaredEncoding) {
@@ -378,12 +370,14 @@ public class CharsetDetector {
      * <p>
      * This is a convenience method that is equivalent to
      * <code>this.setDeclaredEncoding(declaredEncoding).setText(in).detect().getString();</code>
-     * <p>
-     * Raise an exception if no charsets appear to match the input data.
      *
      * @param in               The source of the byte data in the unknown charset.
      * @param declaredEncoding A declared encoding for the data, if available,
      *                         or null or an empty string if none is available.
+     *
+     * @return a String containing the converted input data, or null if no charsets appear to match
+     * the input data or if an error occurred.
+     *
      * @stable ICU 3.4
      */
     public String getString(byte[] in, String declaredEncoding) {
@@ -547,7 +541,7 @@ public class CharsetDetector {
                 csnames.add(rcinfo.recognizer.getName());
             }
         }
-        return csnames.toArray(new String[0]);
+        return csnames.toArray(String[]::new);
     }
 
     /**
