@@ -456,7 +456,7 @@
     <zstd.version>1.5.7-5</zstd.version>
     <nimbus-jose-jwt.version>10.5</nimbus-jose-jwt.version>
     <javacpp.version>1.5.12</javacpp.version>
-    <maven.exec.version>3.6.0</maven.exec.version>
+    <maven.exec.version>3.6.1</maven.exec.version>
 
     <!-- needs to exist even if empty due to problems with jacoco-maven-plugin -->
     <addmod />
