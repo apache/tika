@@ -310,7 +310,7 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.58.0</google.cloud.version>
+    <google.cloud.version>2.58.1</google.cloud.version>
     <aws.version>1.12.792</aws.version>
     <aws2.version>2.35.0</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
@@ -318,8 +318,8 @@
         See TIKA-2992.
     -->
     <asm.version>9.9</asm.version>
-    <azure.core.version>1.56.1</azure.core.version>
-    <azure.core.http.netty.version>1.16.1</azure.core.http.netty.version>
+    <azure.core.version>1.57.0</azure.core.version>
+    <azure.core.http.netty.version>1.16.2</azure.core.http.netty.version>
     <azure.storage.blob.version>12.32.0-beta.1</azure.storage.blob.version>
     <azure.storage.common>12.31.0-beta.1</azure.storage.common>
     <azure-identity.version>1.18.0</azure-identity.version>
@@ -435,7 +435,7 @@
     <reactor.netty.version>1.3.0-M7</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <slf4j.version>2.0.17</slf4j.version>
-    <sis.version>1.4</sis.version>
+    <sis.version>1.5</sis.version>
     <snappy.version>1.1.10.8</snappy.version>
     <solrj.version>9.9.0</solrj.version>
     <spring.version>6.2.11</spring.version>

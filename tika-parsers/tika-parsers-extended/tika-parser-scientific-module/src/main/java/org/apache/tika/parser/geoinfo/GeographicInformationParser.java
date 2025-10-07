@@ -39,7 +39,6 @@ import org.apache.sis.storage.DataStoreException;
 import org.apache.sis.storage.DataStores;
 import org.apache.sis.storage.UnsupportedStorageException;
 import org.apache.sis.util.collection.CodeListSet;
-import org.apache.sis.util.internal.CheckedArrayList;
 import org.opengis.metadata.Identifier;
 import org.opengis.metadata.citation.Citation;
 import org.opengis.metadata.citation.CitationDate;
@@ -219,8 +218,8 @@ public class GeographicInformationParser implements Parser {
 
 
     private void getMetaDataContact(Metadata metadata, DefaultMetadata defaultMetaData) {
-        CheckedArrayList<ResponsibleParty> contactSet =
-                (CheckedArrayList<ResponsibleParty>) defaultMetaData.getContacts();
+        Collection<ResponsibleParty> contactSet =
+                (Collection<ResponsibleParty>) defaultMetaData.getContacts();
         for (ResponsibleParty rparty : contactSet) {
             if (rparty.getRole() != null) {
                 metadata.add("ContactRole", rparty.getRole().name());
