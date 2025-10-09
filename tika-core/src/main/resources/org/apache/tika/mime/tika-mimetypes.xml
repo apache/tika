@@ -6380,20 +6380,48 @@
     <magic priority="50">
       <match value="BM" type="string" offset="0">
         <match value="0x0100" type="string" offset="26">
-      	  <match value="0x0000" type="string" offset="28"/>
-      	  <match value="0x0100" type="string" offset="28"/>
-      	  <match value="0x0400" type="string" offset="28"/>
-      	  <match value="0x0800" type="string" offset="28"/>
-      	  <match value="0x1000" type="string" offset="28"/>
-      	  <match value="0x1800" type="string" offset="28"/>
-      	  <match value="0x2000" type="string" offset="28"/>
+          <match minShouldMatch="2">
+            <match minShouldMatch="1">
+              <match value="0x0000" type="string" offset="28"/>
+              <match value="0x0100" type="string" offset="28"/>
+              <match value="0x0400" type="string" offset="28"/>
+              <match value="0x0800" type="string" offset="28"/>
+              <match value="0x1000" type="string" offset="28"/>
+              <match value="0x1800" type="string" offset="28"/>
+              <match value="0x2000" type="string" offset="28"/>
+            </match>
+            <match value="0x00000000" type="string" offset="30"/>
+          </match>
         </match>
       </match>
     </magic>
     <glob pattern="*.bmp"/>
     <glob pattern="*.dib"/>
   </mime-type>
-
+  <mime-type type="image/bmp;format=compressed">
+    <acronym>BMP</acronym>
+    <_comment>Windows bitmap compressed</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/BMP_file_format</tika:link>
+    <tika:uti>com.microsoft.bmp</tika:uti>
+    <!-- detection could be based on a non-zero value at offset=30.
+         current strategy is to determine uncompressed if value is zero
+         at a lower priority.
+    -->
+    <magic priority="45">
+      <match value="BM" type="string" offset="0">
+        <match value="0x0100" type="string" offset="26">
+          <match value="0x0000" type="string" offset="28"/>
+          <match value="0x0100" type="string" offset="28"/>
+          <match value="0x0400" type="string" offset="28"/>
+          <match value="0x0800" type="string" offset="28"/>
+          <match value="0x1000" type="string" offset="28"/>
+          <match value="0x1800" type="string" offset="28"/>
+          <match value="0x2000" type="string" offset="28"/>
+        </match>
+      </match>
+    </magic>
+    <sub-class-of type="image/bmp"/>
+  </mime-type>
   <mime-type type="image/x-bpg">
     <acronym>BPG</acronym>
     <_comment>Better Portable Graphics</_comment>
