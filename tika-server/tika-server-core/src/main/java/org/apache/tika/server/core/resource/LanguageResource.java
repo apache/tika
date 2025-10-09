@@ -38,27 +38,45 @@ import org.apache.tika.language.detect.LanguageResult;
 public class LanguageResource {
     private static final Logger LOG = LoggerFactory.getLogger(LanguageResource.class);
 
+    // TIKA-4510: handle @PUT and @POST separately to avoid nondeterministic failures
     @PUT
+    @Path("/stream")
+    @Consumes("*/*")
+    @Produces("text/plain")
+    public String detectPutStream(final InputStream is) throws IOException {
+        return detectStream(is);
+    }
+
     @POST
     @Path("/stream")
     @Consumes("*/*")
     @Produces("text/plain")
-    public String detect(final InputStream is) throws IOException {
-        String fileTxt = IOUtils.toString(is, UTF_8);
-        LanguageResult language = new OptimaizeLangDetector()
-                .loadModels()
-                .detect(fileTxt);
-        String detectedLang = language.getLanguage();
-        LOG.info("Detecting language for incoming resource: [{}]", detectedLang);
-        return detectedLang;
+    public String detectPostStream(final InputStream is) throws IOException {
+        return detectStream(is);
     }
 
     @PUT
+    @Path("/string")
+    @Consumes("*/*")
+    @Produces("text/plain")
+    public String detectPutString(final String string) throws IOException {
+        return detectString(string);
+    }
+
     @POST
     @Path("/string")
     @Consumes("*/*")
     @Produces("text/plain")
-    public String detect(final String string) throws IOException {
+    public String detectPostString(final String string) throws IOException {
+        return detectString(string);
+    }
+
+    private String detectStream(InputStream is) throws IOException {
+        String fileTxt = IOUtils.toString(is, UTF_8);
+        return detectString(fileTxt);
+    }
+
+    private String detectString(String string) throws IOException {
         LanguageResult language = new OptimaizeLangDetector()
                 .loadModels()
                 .detect(string);
@@ -66,5 +84,4 @@ public class LanguageResource {
         LOG.info("Detecting language for incoming resource: [{}]", detectedLang);
         return detectedLang;
     }
-
 }
