@@ -1,5 +1,7 @@
 Release 3.3.0 - ???
 
+  * Add detection of compressed bmp (TIKA-4511).
+
   * Allow per file timeouts in tika-pipes (TIKA-4497).
 
   * Add matroska detector (TIKA-1180).
