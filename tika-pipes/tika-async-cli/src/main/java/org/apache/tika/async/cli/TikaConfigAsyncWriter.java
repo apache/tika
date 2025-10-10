@@ -50,7 +50,7 @@ class TikaConfigAsyncWriter {
     private static final Logger LOG = LoggerFactory.getLogger(TikaAsyncCLI.class);
 
     private static final String FETCHER_NAME = "fsf";
-    private static final String EMITTER_NAME = "fse";
+    static final String EMITTER_NAME = "fse";
 
     private final SimpleAsyncConfig simpleAsyncConfig;
 
@@ -85,7 +85,7 @@ class TikaConfigAsyncWriter {
         writePipesIterator(document, properties);
         writeFetchers(document, properties);
         writeEmitters(document, properties);
-        writeAsync(document, properties);
+        writeAsync(document, properties, output);
         Transformer transformer = TransformerFactory
                 .newInstance().newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -166,7 +166,7 @@ class TikaConfigAsyncWriter {
         }
     }
 
-    private void writeAsync(Document document, Element properties) {
+    private void writeAsync(Document document, Element properties, Path thisTikaConfig) {
         Element async = findChild("async", properties);
         if (async != null) {
             LOG.info("async already exists in tika-config. Not overwriting with commandline");
@@ -190,10 +190,9 @@ class TikaConfigAsyncWriter {
         if (simpleAsyncConfig.getTimeoutMs() != null) {
             appendTextElement(document, async, "timeoutMillis", Long.toString(simpleAsyncConfig.getTimeoutMs()));
         }
-        if (simpleAsyncConfig.getTikaConfig() != null) {
-            Path p = Paths.get(simpleAsyncConfig.getTikaConfig());
-            appendTextElement(document, async, "tikaConfig", p.toAbsolutePath().toString());
-        }
+        appendTextElement(document, async, "tikaConfig", thisTikaConfig.toAbsolutePath().toString());
+
+        appendTextElement(document, async, "maxForEmitBatchBytes", "0");
     }
 
     private static  void appendTextElement(Document document, Element parent, String itemName, String text, String... attrs) {
