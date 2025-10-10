@@ -25,9 +25,11 @@ class SimpleAsyncConfig {
     private String xmx;
     private String fileList;
     private String tikaConfig;//path to the tikaConfig file to be used in the forked process
+    private boolean extractBytes;
 
     //TODO -- switch to a builder
-    public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx, String fileList, String tikaConfig) {
+    public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx, String fileList,
+                             String tikaConfig, boolean extractBytes) {
         this.inputDir = inputDir;
         this.outputDir = outputDir;
         this.numClients = numClients;
@@ -35,6 +37,7 @@ class SimpleAsyncConfig {
         this.xmx = xmx;
         this.fileList = fileList;
         this.tikaConfig = tikaConfig;
+        this.extractBytes = extractBytes;
     }
 
     public String getInputDir() {
@@ -63,5 +66,9 @@ class SimpleAsyncConfig {
 
     public String getTikaConfig() {
         return tikaConfig;
+    }
+
+    public boolean isExtractBytes() {
+        return extractBytes;
     }
 }
