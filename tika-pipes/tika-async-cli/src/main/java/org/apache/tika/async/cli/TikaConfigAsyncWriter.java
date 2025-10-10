@@ -49,7 +49,7 @@ class TikaConfigAsyncWriter {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaAsyncCLI.class);
 
-    private static final String FETCHER_NAME = "fsf";
+    private static final String FETCHER_NAME = "file-system-fetcher";
     private static final String EMITTER_NAME = "fse";
 
     private final SimpleAsyncConfig simpleAsyncConfig;
@@ -83,7 +83,6 @@ class TikaConfigAsyncWriter {
             document.appendChild(properties);
         }
         writePipesIterator(document, properties);
-        writeFetchers(document, properties);
         writeEmitters(document, properties);
         writeAsync(document, properties);
         Transformer transformer = TransformerFactory

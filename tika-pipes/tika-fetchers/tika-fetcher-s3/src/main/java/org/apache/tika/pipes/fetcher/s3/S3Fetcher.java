@@ -57,7 +57,6 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.core.fetcher.RangeFetcher;
 import org.apache.tika.pipes.fetcher.s3.config.S3FetcherConfig;
 import org.apache.tika.utils.StringUtils;
 

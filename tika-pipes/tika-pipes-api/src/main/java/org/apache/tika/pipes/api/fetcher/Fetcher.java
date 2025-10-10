@@ -14,27 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.fetcher;
+package org.apache.tika.pipes.api.fetcher;
 
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.pf4j.ExtensionPoint;
+
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * This class extracts a range of bytes from a given fetch key.
+ * Interface for an object that will fetch an InputStream given
+ * a fetch string.  This will also update the metadata object
+ * based on the fetch.
+ * <p>
+ * Implementations of Fetcher must be thread safe.
  */
-public interface RangeFetcher extends Fetcher {
-    //At some point, Tika 3.x?, we may want to add optional ranges to the fetchKey?
+public interface Fetcher extends ExtensionPoint {
 
-    default InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata)
-            throws TikaException, IOException {
-        return fetch(fetchKey, startOffset, endOffset, metadata, new ParseContext());
-    }
+    void loadDefaultConfig(InputStream is) throws TikaConfigException, IOException;
 
-    InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata, ParseContext parseContext)
-            throws TikaException, IOException;
+    String getName();
 
+    InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException;
 }

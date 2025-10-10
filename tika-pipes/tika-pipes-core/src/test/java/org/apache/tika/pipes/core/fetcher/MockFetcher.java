@@ -31,7 +31,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
-public class MockFetcher extends AbstractFetcher implements Initializable {
+public class MockFetcher extends AbstractFetcher{
 
     private Map<String, Param> params;
 
@@ -50,19 +50,11 @@ public class MockFetcher extends AbstractFetcher implements Initializable {
         this.byteString = byteString;
     }
 
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        this.params = params;
-    }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-        if (throwOnCheck) {
-            throw new TikaConfigException("throw on check");
-        }
+    public void loadDefaultConfig(InputStream is) throws TikaConfigException {
+        //no-op
     }
-
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {

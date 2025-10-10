@@ -26,64 +26,34 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-pipes-core</artifactId>
+  <artifactId>tika-pipes-api</artifactId>
 
   <name>Apache Tika Pipes Core</name>
   <url>https://tika.apache.org/</url>
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pipes-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.pf4j</groupId>
       <artifactId>pf4j</artifactId>
+      <scope>provided</scope>
     </dependency>
+
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-serialization</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.martensigwart</groupId>
-      <artifactId>fakeload</artifactId>
-      <version>${fakeload.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>src/test/resources/test-documents/file-list.txt</exclude>
-            <exclude>src/test/resources/test-documents/testOverlappingText.pdf</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.pipes.core</Automatic-Module-Name>
+              <Automatic-Module-Name>org.apache.tika.pipes.api</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>

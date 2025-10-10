@@ -20,44 +20,83 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.tika.config.ConfigBase;
+import org.pf4j.DefaultPluginManager;
+import org.pf4j.PluginManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
 
 /**
  * Utility class to hold multiple fetchers.
  * <p>
  * This forbids multiple fetchers supporting the same name.
  */
-public class FetcherManager extends ConfigBase {
+public class FetcherManager {
 
-    public static FetcherManager load(Path p) throws IOException, TikaConfigException {
-        try (InputStream is =
-                     Files.newInputStream(p)) {
-            return FetcherManager.buildComposite("fetchers", FetcherManager.class,
-                    "fetcher", Fetcher.class, is);
-        }
-    }
-    private final Map<String, Fetcher> fetcherMap = new ConcurrentHashMap<>();
+    private static final Logger LOG = LoggerFactory.getLogger(FetcherManager.class);
 
-    public FetcherManager(List<Fetcher> fetchers) throws TikaConfigException {
-        for (Fetcher fetcher : fetchers) {
-            String name = fetcher.getName();
-            if (name == null || name.isBlank()) {
-                throw new TikaConfigException("fetcher name must not be blank");
-            }
-            if (fetcherMap.containsKey(fetcher.getName())) {
-                throw new TikaConfigException(
-                        "Multiple fetchers cannot support the same prefix: " + fetcher.getName());
+    public static FetcherManager load() throws IOException, TikaConfigException {
+        PluginManager pluginManager = new DefaultPluginManager();
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+        List<Path> pluginRoots = pluginManager.getPluginsRoots();
+        Map<String, Fetcher> fetcherMap = new HashMap<>();
+        List<Fetcher> fetchers = pluginManager.getExtensions(Fetcher.class);
+        System.out.println("HERE " + fetchers.size());
+        //if (LOG.isDebugEnabled()) {
+            loadDebug(pluginRoots, fetchers);
+        //}
+        for (Fetcher fetcher : pluginManager.getExtensions(Fetcher.class)) {
+            Path p = findConfig(pluginRoots, fetcher.getName());
+            if (p == null) {
+                LOG.warn("couldn't find config for {}", fetcher.getName());
+            } else {
+                try (InputStream is = Files.newInputStream(p)) {
+                    fetcher.loadDefaultConfig(is);
+                }
             }
             fetcherMap.put(fetcher.getName(), fetcher);
         }
+        return new FetcherManager(fetcherMap);
+
     }
+
+    private static void loadDebug(List<Path> pluginRoots, List<Fetcher> fetchers) {
+        for (Path p : pluginRoots) {
+            LOG.warn("plugin root: {}", p.toAbsolutePath());
+        }
+        LOG.warn("loaded {} fetchers", fetchers.size());
+        for (Fetcher f : fetchers) {
+            LOG.warn("fetcher name={} class={}", f.getName(), f.getClass());
+        }
+    }
+
+    private static Path findConfig(List<Path> pluginRoots, String name) {
+        String target = name + ".json";
+        for (Path p : pluginRoots) {
+            Path candidate = p.toAbsolutePath().resolve(target);
+            if (Files.exists(candidate)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private final Map<String, Fetcher> fetcherMap = new ConcurrentHashMap<>();
+
+    private FetcherManager(Map<String, Fetcher> fetcherMap) throws TikaConfigException {
+        this.fetcherMap.putAll(fetcherMap);
+    }
+
 
     public Fetcher getFetcher(String fetcherName) throws IOException, TikaException {
         Fetcher fetcher = fetcherMap.get(fetcherName);
