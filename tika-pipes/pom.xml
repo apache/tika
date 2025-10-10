@@ -30,6 +30,7 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>tika-pipes-api</module>
     <module>tika-pipes-core</module>
     <module>tika-httpclient-commons</module>
     <module>tika-fetchers</module>
@@ -39,6 +40,10 @@
     <module>tika-async-cli</module>
   </modules>
   <dependencies>
+    <dependency>
+      <groupId>org.pf4j</groupId>
+      <artifactId>pf4j</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>

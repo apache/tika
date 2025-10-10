@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.core.fetcher;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
 
 
 public abstract class AbstractFetcher implements Fetcher {

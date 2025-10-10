@@ -25,15 +25,11 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
-import java.util.Map;
 
+import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -42,28 +38,35 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.fs.config.FileSystemFetcherConfig;
+import org.apache.tika.utils.StringUtils;
 
-public class FileSystemFetcher extends AbstractFetcher implements Initializable {
+
+@Extension
+public class FileSystemFetcher implements Fetcher {
+
     public FileSystemFetcher() {
-    }
-
-    public FileSystemFetcher(FileSystemFetcherConfig fileSystemFetcherConfig) {
-        setBasePath(fileSystemFetcherConfig.getBasePath());
-        setExtractFileSystemMetadata(fileSystemFetcherConfig.isExtractFileSystemMetadata());
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemFetcher.class);
 
-    //Warning! basePath can be null!
-    private Path basePath = null;
-
-    private boolean extractFileSystemMetadata = false;
+    private FileSystemFetcherConfig defaultFileSystemFetcherConfig = new FileSystemFetcherConfig();
 
     static boolean isDescendant(Path root, Path descendant) {
         return descendant.toAbsolutePath().normalize()
                 .startsWith(root.toAbsolutePath().normalize());
+    }
+
+    @Override
+    public void loadDefaultConfig(InputStream is) throws IOException, TikaConfigException {
+        defaultFileSystemFetcherConfig = FileSystemFetcherConfig.load(is);
+        checkInitialization(defaultFileSystemFetcherConfig);
+    }
+
+    @Override
+    public String getName() {
+        return "file-system-fetcher";
     }
 
     @Override
@@ -73,33 +76,33 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
                     "Please review the life decisions that led you to requesting " +
                     "a file name with this character in it.");
         }
+        FileSystemFetcherConfig config = parseContext.get(FileSystemFetcherConfig.class, defaultFileSystemFetcherConfig);
         Path p = null;
-        if (basePath != null) {
+        if (! StringUtils.isBlank(config.getBasePath())) {
+            Path basePath = Paths.get(config.getBasePath());
+            if (!Files.isDirectory(basePath)) {
+                throw new IOException("BasePath is not a directory: " + basePath);
+            }
             p = basePath.resolve(fetchKey);
             if (!p.toRealPath().startsWith(basePath.toRealPath())) {
                 throw new IllegalArgumentException(
                         "fetchKey must resolve to be a descendant of the 'basePath'");
             }
-        } else {
-            p = Paths.get(fetchKey);
         }
 
         metadata.set(TikaCoreProperties.SOURCE_PATH, fetchKey);
-        updateFileSystemMetadata(p, metadata);
-
+        LOG.warn("about to read from {} with base={}", p.toAbsolutePath(), config.getBasePath());
         if (!Files.isRegularFile(p)) {
-            if (basePath != null && !Files.isDirectory(basePath)) {
-                throw new IOException("BasePath is not a directory: " + basePath);
-            } else {
-                throw new FileNotFoundException(p.toAbsolutePath().toString());
-            }
+            throw new FileNotFoundException(p.toAbsolutePath().toString());
         }
+        updateFileSystemMetadata(p, metadata, config);
+
 
         return TikaInputStream.get(p, metadata);
     }
 
-    private void updateFileSystemMetadata(Path p, Metadata metadata) throws IOException {
-        if (! extractFileSystemMetadata) {
+    private void updateFileSystemMetadata(Path p, Metadata metadata, FileSystemFetcherConfig config) throws IOException {
+        if (! config.isExtractFileSystemMetadata()) {
             return;
         }
         BasicFileAttributes attrs = Files.readAttributes(p, BasicFileAttributes.class);
@@ -120,42 +123,10 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
      *
      * @return the basePath or <code>null</code> if no base path was set
      */
-    public Path getBasePath() {
-        return basePath;
-    }
-
-    /**
-     * Default behavior si that clients will send in relative paths, this
-     * must be set to allow this fetcher to fetch the
-     * full path.
-     *
-     * @param basePath
-     */
-    @Field
-    public void setBasePath(String basePath) {
-        this.basePath = Paths.get(basePath);
-    }
-
-    /**
-     * Extract file system metadata (created, modified, accessed) when fetching file.
-     * The default is <code>false</code>.
-     *
-     * @param extractFileSystemMetadata
-     */
-    @Field
-    public void setExtractFileSystemMetadata(boolean extractFileSystemMetadata) {
-        this.extractFileSystemMetadata = extractFileSystemMetadata;
-    }
-
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //no-op
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
+    private void checkInitialization(FileSystemFetcherConfig config)
             throws TikaConfigException {
-        if (basePath == null || basePath.toString().isBlank()) {
+        String basePath = config.getBasePath();
+        if (basePath == null || basePath.isBlank()) {
             LOG.warn("'basePath' has not been set. " +
                     "This means that client code or clients can read from any file that this " +
                     "process has permissions to read. If you are running tika-server, make " +
@@ -174,7 +145,7 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
                     " Please use the tika-fetcher-s3 module");
         }
 
-        if (basePath.toAbsolutePath().toString().contains("\u0000")) {
+        if (basePath.contains("\u0000")) {
             throw new TikaConfigException(
                     "base path must not contain \u0000. " + "Seriously, what were you thinking?");
         }

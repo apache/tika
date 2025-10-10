@@ -14,29 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetcher.fs.config;
+package org.apache.tika.pipes.fetcher.fs;
 
-import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
+import org.pf4j.Plugin;
+import org.pf4j.PluginWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class FileSystemFetcherConfig extends AbstractConfig {
-    private String basePath;
-    private boolean extractFileSystemMetadata;
+public class FileSystemFetcherPlugin extends Plugin {
+    private static final Logger LOG = LoggerFactory.getLogger(FileSystemFetcherPlugin.class);
 
-    public String getBasePath() {
-        return basePath;
+    public FileSystemFetcherPlugin(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
-    public FileSystemFetcherConfig setBasePath(String basePath) {
-        this.basePath = basePath;
-        return this;
+    @Override
+    public void start() {
+        LOG.info("Starting");
+        super.start();
     }
 
-    public boolean isExtractFileSystemMetadata() {
-        return extractFileSystemMetadata;
+    @Override
+    public void stop() {
+        LOG.info("Stopping");
+        super.stop();
     }
 
-    public FileSystemFetcherConfig setExtractFileSystemMetadata(boolean extractFileSystemMetadata) {
-        this.extractFileSystemMetadata = extractFileSystemMetadata;
-        return this;
+    @Override
+    public void delete() {
+        LOG.info("Deleting");
+        super.delete();
     }
+
 }

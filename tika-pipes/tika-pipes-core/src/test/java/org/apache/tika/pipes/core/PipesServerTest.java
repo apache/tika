@@ -33,11 +33,11 @@ import org.junit.jupiter.api.io.TempDir;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.fetcher.Fetcher;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 
 public class PipesServerTest extends TikaTest {
@@ -71,7 +71,7 @@ public class PipesServerTest extends TikaTest {
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fs", "mock.xml"),
                 new EmitKey("", ""));
-        Fetcher fetcher = FetcherManager.load(tikaConfig).getFetcher();
+        Fetcher fetcher = FetcherManager.load().getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
                 parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
         assertEquals("5f3b924303e960ce35d7f705e91d3018dd110a9c3cef0546a91fe013d6dad6fd",
@@ -111,7 +111,7 @@ public class PipesServerTest extends TikaTest {
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fs", "mock.xml"),
                 new EmitKey("", ""), new Metadata(), parseContext);
-        Fetcher fetcher = FetcherManager.load(tikaConfig).getFetcher();
+        Fetcher fetcher = FetcherManager.load().getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
                 parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
         assertEquals(2, parseData.metadataList.size());
@@ -168,7 +168,7 @@ public class PipesServerTest extends TikaTest {
                 new FetchKey("fs", "mock.xml"),
                 new EmitKey("", ""), new Metadata(), parseContext);
 
-        Fetcher fetcher = FetcherManager.load(tikaConfig).getFetcher();
+        Fetcher fetcher = FetcherManager.load().getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
                 parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
         assertEquals(2, parseData.metadataList.size());
