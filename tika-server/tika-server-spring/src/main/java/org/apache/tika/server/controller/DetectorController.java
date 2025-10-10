@@ -18,7 +18,6 @@ package org.apache.tika.server.controller;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +27,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.NativeWebRequest;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
@@ -56,11 +54,6 @@ public class DetectorController implements DetectorResourceApi {
     public DetectorController(ServerStatus serverStatus, TikaConfig tikaConfig) {
         this.serverStatus = serverStatus;
         this.tikaConfig = tikaConfig;
-    }
-
-    @Override
-    public Optional<NativeWebRequest> getRequest() {
-        return DetectorResourceApi.super.getRequest();
     }
 
     @Override

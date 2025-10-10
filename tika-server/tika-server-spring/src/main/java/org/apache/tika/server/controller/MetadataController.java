@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -31,17 +30,25 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.apache.tika.extractor.DocumentSelector;
+import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.DigestingParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.server.api.MetadataResourceApi;
+import org.apache.tika.server.service.TikaLoggingService;
 import org.apache.tika.server.service.TikaMetadataFillerService;
+import org.apache.tika.server.service.TikaParseContextService;
+import org.apache.tika.server.service.TikaParsingService;
 
 /**
  * Controller for metadata extraction services.
@@ -55,10 +62,20 @@ public class MetadataController implements MetadataResourceApi {
     @Autowired
     private TikaMetadataFillerService tikaMetadataFillerService;
 
-    @Override
-    public Optional<NativeWebRequest> getRequest() {
-        return MetadataResourceApi.super.getRequest();
-    }
+    @Autowired
+    private TikaLoggingService tikaLoggingService;
+
+    @Autowired
+    private TikaParseContextService tikaParseContextService;
+
+    @Autowired
+    private TikaParsingService tikaParsingService;
+
+    @Autowired
+    private Parser parser;
+
+    @Autowired
+    private DigestingParser.Digester digester;
 
     @Override
     public ResponseEntity<Map<String, String>> postDocumentMetaForm(MultipartFile file) {
@@ -199,31 +216,29 @@ public class MetadataController implements MetadataResourceApi {
      * Core metadata parsing method ported from legacy implementation
      */
     protected Metadata parseMetadata(InputStream is, Metadata metadata, Map<String, String> headers) throws IOException {
-//        final ParseContext context = new ParseContext();
-//        Parser parser = TikaResource.createParser();
-//
-//        MultiValueMap<String, String> multiValueHeaders = new org.springframework.util.LinkedMultiValueMap<>();
-//        for (Map.Entry<String, String> entry : headers.entrySet()) {
-//            multiValueHeaders.add(entry.getKey(), entry.getValue());
-//        }
-//
-//        tikaMetadataFillerService.fillMetadata(parser, metadata, multiValueHeaders);
-//        fillParseContext(multiValueHeaders, metadata, context);
-//
-//        // No need to parse embedded docs
-//        context.set(DocumentSelector.class, metadata1 -> false);
-//
-//        TikaResource.logRequest(LOG, "/meta", metadata);
-//        TikaResource.parse(parser, LOG, "/meta", is, new LanguageHandler() {
-//            public void endDocument() {
-//                String language = getLanguage().getLanguage();
-//                if (language != null) {
-//                    metadata.set("language", language);
-//                }
-//            }
-//        }, metadata, context);
-//        return metadata;
-        return null;
+        final ParseContext context = new ParseContext();
+
+        MultiValueMap<String, String> multiValueHeaders = new org.springframework.util.LinkedMultiValueMap<>();
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            multiValueHeaders.add(entry.getKey(), entry.getValue());
+        }
+
+        tikaMetadataFillerService.fillMetadata(parser, metadata, multiValueHeaders);
+        tikaParseContextService.fillParseContext(multiValueHeaders, metadata, context);
+
+        // No need to parse embedded docs
+        context.set(DocumentSelector.class, metadata1 -> false);
+
+        tikaLoggingService.logRequest(LOG, "/meta", metadata);
+        tikaParsingService.parse(parser, LOG, "/meta", is, new LanguageHandler() {
+            public void endDocument() {
+                String language = getLanguage().getLanguage();
+                if (language != null) {
+                    metadata.set("language", language);
+                }
+            }
+        }, metadata, context);
+        return metadata;
     }
 
     /**

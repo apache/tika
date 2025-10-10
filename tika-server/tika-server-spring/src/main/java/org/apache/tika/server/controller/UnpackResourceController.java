@@ -16,12 +16,9 @@
  */
 package org.apache.tika.server.controller;
 
-import java.util.Optional;
-
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.NativeWebRequest;
 
 import org.apache.tika.server.api.UnpackResourceApi;
 
@@ -32,11 +29,6 @@ import org.apache.tika.server.api.UnpackResourceApi;
  */
 @RestController
 public class UnpackResourceController implements UnpackResourceApi {
-    @Override
-    public Optional<NativeWebRequest> getRequest() {
-        return UnpackResourceApi.super.getRequest();
-    }
-
     @Override
     public ResponseEntity<Resource> putUnpack(Resource body) {
         return UnpackResourceApi.super.putUnpack(body);

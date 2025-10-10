@@ -70,5 +70,6 @@
     <module>tika-pipes-emitters</module>
     <module>tika-pipes-proto</module>
     <module>tika-pipes-cli</module>
+    <module>tika-pipes-integration-tests</module>
   </modules>
 </project>

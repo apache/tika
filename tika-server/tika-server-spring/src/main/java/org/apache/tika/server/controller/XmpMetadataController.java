@@ -20,21 +20,15 @@
 
 package org.apache.tika.server.controller;
 
-import java.util.Optional;
-
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import org.apache.tika.server.api.XmpMetadataResourceApi;
 
+@RestController
 public class XmpMetadataController implements XmpMetadataResourceApi {
-    @Override
-    public Optional<NativeWebRequest> getRequest() {
-        return XmpMetadataResourceApi.super.getRequest();
-    }
-
     @Override
     public ResponseEntity<String> postDocumentXmpmetaForm(MultipartFile file) {
         return XmpMetadataResourceApi.super.postDocumentXmpmetaForm(file);

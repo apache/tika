@@ -17,32 +17,21 @@
  *
  *
  */
+package org.apache.tika.server.exception;
 
-package org.apache.tika.server.service;
+import jakarta.ws.rs.WebApplicationException;
 
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.DigestingParser;
-import org.apache.tika.parser.Parser;
+/**
+ * Simple wrapper exception to be thrown for consistent handling
+ * of exceptions that can happen during a parse.
+ */
+public class TikaServerParseException extends WebApplicationException {
 
-public class ParserService {
+    public TikaServerParseException(String msg) {
+        super(msg);
+    }
 
-
-    @SuppressWarnings("serial")
-    public static Parser createParser() {
-        final Parser parser = new AutoDetectParser(TIKA_CONFIG);
-
-        if (DIGESTER != null) {
-            boolean skipContainer = false;
-            if (TIKA_CONFIG
-                    .getAutoDetectParserConfig()
-                    .getDigesterFactory() != null && TIKA_CONFIG
-                    .getAutoDetectParserConfig()
-                    .getDigesterFactory()
-                    .isSkipContainerDocument()) {
-                skipContainer = true;
-            }
-            return new DigestingParser(parser, DIGESTER, skipContainer);
-        }
-        return parser;
+    public TikaServerParseException(Exception e) {
+        super(e);
     }
 }

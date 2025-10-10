@@ -18,12 +18,10 @@ package org.apache.tika.server.controller;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import org.apache.tika.server.api.RecursiveMetadataAndContentApi;
@@ -34,11 +32,6 @@ import org.apache.tika.server.api.RecursiveMetadataAndContentApi;
  */
 @RestController
 public class RecursiveMetadataAndContentController implements RecursiveMetadataAndContentApi {
-    @Override
-    public Optional<NativeWebRequest> getRequest() {
-        return RecursiveMetadataAndContentApi.super.getRequest();
-    }
-
     @Override
     public ResponseEntity<List<Map<String, String>>> postRmetaForm(MultipartFile file) {
         return RecursiveMetadataAndContentApi.super.postRmetaForm(file);

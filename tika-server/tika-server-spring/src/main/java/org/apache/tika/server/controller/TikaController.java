@@ -17,12 +17,10 @@
 package org.apache.tika.server.controller;
 
 import java.util.Map;
-import java.util.Optional;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import org.apache.tika.server.api.TikaResourceApi;
@@ -33,11 +31,6 @@ import org.apache.tika.server.api.TikaResourceApi;
  */
 @RestController
 public class TikaController implements TikaResourceApi {
-    @Override
-    public Optional<NativeWebRequest> getRequest() {
-        return TikaResourceApi.super.getRequest();
-    }
-
     @Override
     public ResponseEntity<String> getTika() {
         return TikaResourceApi.super.getTika();

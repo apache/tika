@@ -39,6 +39,7 @@
   <modules>
     <module>tika-server-spring</module>
     <module>tika-server-grpc</module>
+    <module>tika-client-grpc</module>
   </modules>
 
   <parent>

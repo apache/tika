@@ -16,11 +16,8 @@
  */
 package org.apache.tika.server.controller;
 
-import java.util.Optional;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.NativeWebRequest;
 
 import org.apache.tika.server.api.ServerStatusApi;
 import org.apache.tika.server.model.GetStatus200Response;
@@ -31,11 +28,6 @@ import org.apache.tika.server.model.GetStatus200Response;
  */
 @RestController
 public class ServerStatusController implements ServerStatusApi {
-    @Override
-    public Optional<NativeWebRequest> getRequest() {
-        return ServerStatusApi.super.getRequest();
-    }
-
     @Override
     public ResponseEntity<GetStatus200Response> getStatus() {
         return ServerStatusApi.super.getStatus();
