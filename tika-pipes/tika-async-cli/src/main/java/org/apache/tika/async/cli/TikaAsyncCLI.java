@@ -33,11 +33,13 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.HandlerConfig;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.utils.StringUtils;
 
 public class TikaAsyncCLI {
@@ -49,11 +51,11 @@ public class TikaAsyncCLI {
         Options options = new Options();
         options.addOption("i", "inputDir", true, "input directory");
         options.addOption("o", "outputDir", true, "output directory");
-
         options.addOption("n", "numClients", true, "number of forked clients");
-        options.addOption("x", "Xmx", true, "heap for the forked clients in usual jvm heap amount, e.g. -x 1g");
+        options.addOption("X", "Xmx", true, "heap for the forked clients in usual jvm heap amount, e.g. -x 1g");
         options.addOption("?", "help", false, "this help message");
-        options.addOption("t", "timeoutMs", true, "timeout for each parse in milliseconds");
+        options.addOption("T", "timeoutMs", true, "timeout for each parse in milliseconds");
+        options.addOption("h", "handlerType", true, "handler type: t=text, h=html, x=xml, b=body, i=ignore");
         options.addOption("l", "fileList", true, "file list");
         options.addOption("c", "config", true, "tikaConfig to inherit from -- " +
                 "commandline options will not overwrite existing iterators, emitters, fetchers and async");
@@ -72,12 +74,12 @@ public class TikaAsyncCLI {
 
     private static void processCommandLine(String[] args) throws Exception {
         if (args.length == 1) {
-            processWithTikaConfig(PipesIterator.build(Paths.get(args[0])), Paths.get(args[0]), false);
+            processWithTikaConfig(PipesIterator.build(Paths.get(args[0])), Paths.get(args[0]), null);
             return;
 
         }
         if (args.length == 2 && args[0].equals("-c")) {
-            processWithTikaConfig(PipesIterator.build(Paths.get(args[1])), Paths.get(args[1]), false);
+            processWithTikaConfig(PipesIterator.build(Paths.get(args[1])), Paths.get(args[1]), null);
             return;
         }
         SimpleAsyncConfig simpleAsyncConfig = parseCommandLine(args);
@@ -88,7 +90,7 @@ public class TikaAsyncCLI {
             TikaConfigAsyncWriter tikaConfigAsyncWriter = new TikaConfigAsyncWriter(simpleAsyncConfig);
             tikaConfigAsyncWriter.write(tikaConfig);
             PipesIterator pipesIterator = buildPipesIterator(tikaConfig, simpleAsyncConfig);
-            processWithTikaConfig(pipesIterator, tikaConfig, simpleAsyncConfig.isExtractBytes());
+            processWithTikaConfig(pipesIterator, tikaConfig, simpleAsyncConfig);
         } finally {
             if (tikaConfig != null) {
                 Files.delete(tikaConfig);
@@ -103,23 +105,24 @@ public class TikaAsyncCLI {
         }
         Path p = Paths.get(simpleAsyncConfig.getInputDir());
         if (Files.isRegularFile(p)) {
-            return new SingleFilePipesIterator(p.getFileName().toString(), simpleAsyncConfig.isExtractBytes());
+            return new SingleFilePipesIterator(p.getFileName().toString());
         }
         return PipesIterator.build(tikaConfig);
     }
 
     //not private for testing purposes
-    static SimpleAsyncConfig parseCommandLine(String[] args) throws ParseException, IOException {
+    static SimpleAsyncConfig parseCommandLine(String[] args) throws TikaConfigException, ParseException, IOException {
         if (args.length == 2 && ! args[0].startsWith("-")) {
             return new SimpleAsyncConfig(args[0], args[1], null,
-                    null, null, null, null, false);
+                    null, null, null, null,
+                    BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false);
         }
 
         Options options = getOptions();
 
         CommandLineParser cliParser = new DefaultParser();
 
-        CommandLine line = cliParser.parse(options, args);
+        CommandLine line = cliParser.parse(options, args, true);
         if (line.hasOption("help")) {
             usage(options);
         }
@@ -130,6 +133,7 @@ public class TikaAsyncCLI {
         Integer numClients = null;
         String fileList = null;
         String tikaConfig = null;
+        BasicContentHandlerFactory.HANDLER_TYPE handlerType = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
         boolean extractBytes = false;
         if (line.hasOption("i")) {
             inputDir = line.getOptionValue("i");
@@ -137,11 +141,11 @@ public class TikaAsyncCLI {
         if (line.hasOption("o")) {
             outputDir = line.getOptionValue("o");
         }
-        if (line.hasOption("x")) {
-            xmx = line.getOptionValue("x");
+        if (line.hasOption("X")) {
+            xmx = line.getOptionValue("X");
         }
-        if (line.hasOption("t")) {
-            timeoutMs = Long.parseLong(line.getOptionValue("t"));
+        if (line.hasOption("T")) {
+            timeoutMs = Long.parseLong(line.getOptionValue("T"));
         }
         if (line.hasOption("n")) {
             numClients = Integer.parseInt(line.getOptionValue("n"));
@@ -155,18 +159,71 @@ public class TikaAsyncCLI {
         if (line.hasOption("Z")) {
             extractBytes = true;
         }
+        if (line.hasOption('h')) {
+            handlerType = getHandlerType(line.getOptionValue('h'));
+        }
+        if (line.getArgList().size() > 2) {
+            throw new TikaConfigException("Can't have more than 2 unknown args: " + line.getArgList());
+        }
+
+        if (line.getArgList().size() == 2) {
+            if (inputDir != null || outputDir != null) {
+                throw new TikaConfigException("Can only set inputDir and outputDir once. Extra args: " + line.getArgList());
+            }
+            String inString = line.getArgList().get(0);
+            String outString = line.getArgList().get(1);
+            if (inString.startsWith("-") || outString.startsWith("-")) {
+                throw new TikaConfigException("Found an unknown arg in one of the last two args: " + line.getArgList());
+            }
+            Path p = Paths.get(inString);
+            if (! Files.isDirectory(p) && ! Files.isRegularFile(p)) {
+                throw new TikaConfigException("Input file/dir must exist: " + p);
+            }
+            inputDir = inString;
+            outputDir = outString;
+        } else if (line.getArgList().size() == 1) {
+            if (inputDir != null) {
+                throw new TikaConfigException("Can only set inputDir once. Extra args: " + line.getArgList());
+            }
+            String inString = line.getArgList().get(0);
+            if (inString.startsWith("-")) {
+                throw new TikaConfigException("Found an unknown arg in one of the last arg: " + inString);
+            }
+            Path inputPath = Paths.get(inString);
+            if (! Files.isDirectory(inputPath) && ! Files.isRegularFile(inputPath)) {
+                throw new TikaConfigException("Input file/dir must exist: " + inputPath);
+            }
+            inputDir = inString;
+            if (Files.isRegularFile(inputPath)) {
+                outputDir = Paths.get(".").toAbsolutePath().toString();
+            } else {
+                outputDir = Paths.get("output").toAbsolutePath().toString();
+            }
+        }
 
         return new SimpleAsyncConfig(inputDir, outputDir,
-                numClients, timeoutMs, xmx, fileList, tikaConfig, extractBytes);
+                numClients, timeoutMs, xmx, fileList, tikaConfig, handlerType, extractBytes);
+    }
+
+    private static BasicContentHandlerFactory.HANDLER_TYPE getHandlerType(String t) throws TikaConfigException {
+        return switch (t) {
+            case "x" -> BasicContentHandlerFactory.HANDLER_TYPE.XML;
+            case "h" -> BasicContentHandlerFactory.HANDLER_TYPE.HTML;
+            case "b" -> BasicContentHandlerFactory.HANDLER_TYPE.BODY;
+            case "i" -> BasicContentHandlerFactory.HANDLER_TYPE.IGNORE;
+            case "t" -> BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
+            default -> throw new TikaConfigException("Can't understand " + t + " as a handler type. Must be one of: x(ml), h(tml), b(ody), i(gnore), t(ext)");
+        };
     }
 
 
-    private static void processWithTikaConfig(PipesIterator pipesIterator, Path tikaConfigPath, boolean extractBytes) throws Exception {
+    private static void processWithTikaConfig(PipesIterator pipesIterator, Path tikaConfigPath, SimpleAsyncConfig asyncConfig) throws Exception {
         long start = System.currentTimeMillis();
         try (AsyncProcessor processor = new AsyncProcessor(tikaConfigPath, pipesIterator)) {
 
             for (FetchEmitTuple t : pipesIterator) {
-                configureExtractBytes(t, extractBytes);
+                configureExtractBytes(t, asyncConfig);
+                configureHandler(t, asyncConfig);
                 boolean offered = processor.offer(t, TIMEOUT_MS);
                 if (!offered) {
                     throw new TimeoutException("timed out waiting to add a fetch emit tuple");
@@ -186,8 +243,23 @@ public class TikaAsyncCLI {
         }
     }
 
-    private static void configureExtractBytes(FetchEmitTuple t, boolean extractBytes) {
-        if (! extractBytes) {
+    private static void configureHandler(FetchEmitTuple t, SimpleAsyncConfig asyncConfig) {
+        if (asyncConfig == null) {
+            return;
+        }
+        if (asyncConfig.getHandlerType() == BasicContentHandlerFactory.HANDLER_TYPE.TEXT) {
+            return;
+        }
+        HandlerConfig handlerConfig = new HandlerConfig(asyncConfig.getHandlerType(), HandlerConfig.PARSE_MODE.RMETA,
+                -1, -1, false);
+        t.getParseContext().set(HandlerConfig.class, handlerConfig);
+    }
+
+    private static void configureExtractBytes(FetchEmitTuple t, SimpleAsyncConfig asyncConfig) {
+        if (asyncConfig == null) {
+            return;
+        }
+        if (!asyncConfig.isExtractBytes()) {
             return;
         }
         ParseContext parseContext = t.getParseContext();
@@ -213,11 +285,9 @@ public class TikaAsyncCLI {
 
     private static class SingleFilePipesIterator extends PipesIterator {
         private final String fName;
-        private final boolean extractBytes;
-        public SingleFilePipesIterator(String string, boolean extractBytes) {
+        public SingleFilePipesIterator(String string) {
             super();
             this.fName = string;
-            this.extractBytes = extractBytes;
         }
 
         @Override

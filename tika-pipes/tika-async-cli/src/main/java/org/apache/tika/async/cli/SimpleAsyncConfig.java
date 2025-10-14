@@ -16,6 +16,8 @@
  */
 package org.apache.tika.async.cli;
 
+import org.apache.tika.sax.BasicContentHandlerFactory;
+
 class SimpleAsyncConfig {
 
     private String inputDir;
@@ -26,10 +28,11 @@ class SimpleAsyncConfig {
     private String fileList;
     private String tikaConfig;//path to the tikaConfig file to be used in the forked process
     private boolean extractBytes;
+    private final BasicContentHandlerFactory.HANDLER_TYPE handlerType;
 
     //TODO -- switch to a builder
     public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx, String fileList,
-                             String tikaConfig, boolean extractBytes) {
+                             String tikaConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType, boolean extractBytes) {
         this.inputDir = inputDir;
         this.outputDir = outputDir;
         this.numClients = numClients;
@@ -37,6 +40,7 @@ class SimpleAsyncConfig {
         this.xmx = xmx;
         this.fileList = fileList;
         this.tikaConfig = tikaConfig;
+        this.handlerType = handlerType;
         this.extractBytes = extractBytes;
     }
 
@@ -70,5 +74,9 @@ class SimpleAsyncConfig {
 
     public boolean isExtractBytes() {
         return extractBytes;
+    }
+
+    public BasicContentHandlerFactory.HANDLER_TYPE getHandlerType() {
+        return handlerType;
     }
 }
