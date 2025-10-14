@@ -103,7 +103,7 @@ public class TikaCLIAsyncTest {
 
     @Test
     public void testAsync() throws Exception {
-        String content = getParamOutContent("-a", "--config=" + ASYNC_CONFIG.toAbsolutePath());
+        String content = getParamOutContent("-a", "-c", ASYNC_CONFIG.toAbsolutePath().toString());
 
         int json = 0;
         for (File f : ASYNC_OUTPUT_DIR

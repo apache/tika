@@ -133,7 +133,7 @@ class S3PipeIntegrationTest {
                     createTikaConfigXml(tikaConfigFile, log4jPropFile, tikaConfigTemplateXml);
 
             FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
-            TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
+            TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.getAbsolutePath()});
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
