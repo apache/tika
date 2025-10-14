@@ -30,11 +30,15 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
+import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
+import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.utils.StringUtils;
 
 public class TikaAsyncCLI {
 
@@ -61,15 +65,21 @@ public class TikaAsyncCLI {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             usage(getOptions());
-        } else if (args.length == 1) {
-            processWithTikaConfig(Paths.get(args[0]), false);
         } else {
             processCommandLine(args);
         }
     }
 
     private static void processCommandLine(String[] args) throws Exception {
+        if (args.length == 1) {
+            processWithTikaConfig(PipesIterator.build(Paths.get(args[0])), Paths.get(args[0]), false);
+            return;
 
+        }
+        if (args.length == 2 && args[0].equals("-c")) {
+            processWithTikaConfig(PipesIterator.build(Paths.get(args[1])), Paths.get(args[1]), false);
+            return;
+        }
         SimpleAsyncConfig simpleAsyncConfig = parseCommandLine(args);
 
         Path tikaConfig = null;
@@ -77,12 +87,25 @@ public class TikaAsyncCLI {
             tikaConfig = Files.createTempFile("tika-async-tmp-", ".xml");
             TikaConfigAsyncWriter tikaConfigAsyncWriter = new TikaConfigAsyncWriter(simpleAsyncConfig);
             tikaConfigAsyncWriter.write(tikaConfig);
-            processWithTikaConfig(tikaConfig, simpleAsyncConfig.isExtractBytes());
+            PipesIterator pipesIterator = buildPipesIterator(tikaConfig, simpleAsyncConfig);
+            processWithTikaConfig(pipesIterator, tikaConfig, simpleAsyncConfig.isExtractBytes());
         } finally {
             if (tikaConfig != null) {
                 Files.delete(tikaConfig);
             }
         }
+    }
+
+    private static PipesIterator buildPipesIterator(Path tikaConfig, SimpleAsyncConfig simpleAsyncConfig) throws TikaConfigException, IOException {
+        String inputDirString = simpleAsyncConfig.getInputDir();
+        if (StringUtils.isBlank(inputDirString)) {
+            return PipesIterator.build(tikaConfig);
+        }
+        Path p = Paths.get(simpleAsyncConfig.getInputDir());
+        if (Files.isRegularFile(p)) {
+            return new SingleFilePipesIterator(p.getFileName().toString(), simpleAsyncConfig.isExtractBytes());
+        }
+        return PipesIterator.build(tikaConfig);
     }
 
     //not private for testing purposes
@@ -138,8 +161,7 @@ public class TikaAsyncCLI {
     }
 
 
-    private static void processWithTikaConfig(Path tikaConfigPath, boolean extractBytes) throws Exception {
-        PipesIterator pipesIterator = PipesIterator.build(tikaConfigPath);
+    private static void processWithTikaConfig(PipesIterator pipesIterator, Path tikaConfigPath, boolean extractBytes) throws Exception {
         long start = System.currentTimeMillis();
         try (AsyncProcessor processor = new AsyncProcessor(tikaConfigPath, pipesIterator)) {
 
@@ -187,5 +209,24 @@ public class TikaAsyncCLI {
         org.apache.commons.cli.help.HelpFormatter helpFormatter = org.apache.commons.cli.help.HelpFormatter.builder().get();
         helpFormatter.printHelp("tikaAsyncCli", null, options, null, true);
         System.exit(1);
+    }
+
+    private static class SingleFilePipesIterator extends PipesIterator {
+        private final String fName;
+        private final boolean extractBytes;
+        public SingleFilePipesIterator(String string, boolean extractBytes) {
+            super();
+            this.fName = string;
+            this.extractBytes = extractBytes;
+        }
+
+        @Override
+        protected void enqueue() throws IOException, TimeoutException, InterruptedException {
+            FetchEmitTuple t = new FetchEmitTuple("0",
+                    new FetchKey(TikaConfigAsyncWriter.FETCHER_NAME, fName),
+                    new EmitKey(TikaConfigAsyncWriter.EMITTER_NAME, fName)
+                    );
+            tryToAdd(t);
+        }
     }
 }

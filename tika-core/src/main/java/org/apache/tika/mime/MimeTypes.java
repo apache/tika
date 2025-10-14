@@ -347,26 +347,25 @@ public final class MimeTypes implements Detector, Serializable {
      */
     public MimeType forName(String name) throws MimeTypeException {
         MediaType type = MediaType.parse(name);
-        if (type != null) {
-            MediaType normalisedType = registry.normalize(type);
-            MimeType mime = types.get(normalisedType);
-
-            if (mime == null) {
-                synchronized (this) {
-                    // Double check it didn't already get added while
-                    //  we were waiting for the lock
-                    mime = types.get(normalisedType);
-                    if (mime == null) {
-                        mime = new MimeType(type);
-                        add(mime);
-                        types.put(type, mime);
-                    }
-                }
-            }
-            return mime;
-        } else {
+        if (type == null) {
             throw new MimeTypeException("Invalid media type name: " + name);
         }
+        MediaType normalisedType = registry.normalize(type);
+        MimeType mime = types.get(normalisedType);
+
+        if (mime == null) {
+            synchronized (this) {
+                // Double check it didn't already get added while
+                //  we were waiting for the lock
+                mime = types.get(normalisedType);
+                if (mime == null) {
+                    mime = new MimeType(type);
+                    add(mime);
+                    types.put(type, mime);
+                }
+            }
+        }
+        return mime;
     }
 
     /**
