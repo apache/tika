@@ -420,7 +420,7 @@ public class OpenSearchTest {
         Path tikaConfigFile = getTikaConfigFile(attachmentStrategy, updateStrategy, parseMode,
                 endpoint, pipesDirectory, testDocDirectory);
 
-        TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.toAbsolutePath().toString()});
+        TikaCLI.main(new String[]{"-a", "-c",  tikaConfigFile.toAbsolutePath().toString()});
 
         //refresh to make sure the content is searchable
         JsonResponse refresh = client.getJson(endpoint + "/_refresh");
