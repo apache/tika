@@ -16,28 +16,16 @@
  */
 package org.apache.tika.cli;
 
-import java.util.ArrayList;
-import java.util.List;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
+import org.junit.jupiter.api.Test;
 
-public class AsyncHelper {
+public class AsyncHelperTest {
 
-    private static final String TIKA_CONFIG_KEY = "--config=";
-
-    public static String[] translateArgs(String[] args) {
-        List<String> argList = new ArrayList<>();
-        for (int i = 0; i < args.length; i++) {
-            String arg = args[i];
-            if (arg.startsWith(TIKA_CONFIG_KEY)) {
-                String c = arg.substring(TIKA_CONFIG_KEY.length());
-                argList.add("-c");
-                argList.add(c);
-            } else if (arg.equals("-a")) {
-                //do nothing
-            } else {
-                argList.add(args[i]);
-            }
-        }
-        return argList.toArray(new String[0]);
+    @Test
+    public void testBasic() throws Exception {
+        String[] args = new String[]{"-a", "--config=blah.xml", "-i", "input.docx", "-o", "output/dir"};
+        String[] expected = new String[]{"-c", "blah.xml", "-i", "input.docx", "-o", "output/dir"};
+        assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 }

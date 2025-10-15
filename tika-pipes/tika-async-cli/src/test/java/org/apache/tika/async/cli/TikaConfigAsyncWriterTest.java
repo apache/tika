@@ -33,6 +33,7 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.utils.XMLReaderUtils;
 
 public class TikaConfigAsyncWriterTest {
@@ -42,7 +43,8 @@ public class TikaConfigAsyncWriterTest {
     public void testBasic(@TempDir Path dir) throws Exception {
         Path p = Paths.get(TikaConfigAsyncWriter.class.getResource("/configs/TIKA-4508-parsers.xml").toURI());
         SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
-                10000L, "-Xmx1g", null, p.toAbsolutePath().toString(), false);
+                10000L, "-Xmx1g", null, p.toAbsolutePath().toString(),
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false);
         Path target = dir.resolve("combined.xml");
         TikaConfigAsyncWriter writer = new TikaConfigAsyncWriter(simpleAsyncConfig);
         writer.write(target);
@@ -56,7 +58,8 @@ public class TikaConfigAsyncWriterTest {
     public void testDontOverwriteEmitters(@TempDir Path dir) throws Exception {
         Path p = Paths.get(TikaConfigAsyncWriter.class.getResource("/configs/TIKA-4508-emitters.xml").toURI());
         SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
-                10000L, "-Xmx1g", null, p.toAbsolutePath().toString(), false);
+                10000L, "-Xmx1g", null, p.toAbsolutePath().toString(),
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false);
         Path target = dir.resolve("combined.xml");
         TikaConfigAsyncWriter writer = new TikaConfigAsyncWriter(simpleAsyncConfig);
         writer.write(target);

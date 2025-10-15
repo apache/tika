@@ -276,11 +276,11 @@ public class TikaCLI {
             Files.copy(TikaCLI.class.getResourceAsStream("/tika-config-default-single-file.xml"),
                     tmpConfig, StandardCopyOption.REPLACE_EXISTING);
             List<String> argList = new ArrayList<>();
+            argList.add("-c");
+            argList.add(tmpConfig.toAbsolutePath().toString());
             for (String arg : args) {
                 argList.add(arg);
             }
-            argList.add("-c");
-            argList.add(tmpConfig.toAbsolutePath().toString());
             TikaAsyncCLI.main(argList.toArray(new String[0]));
         } finally {
             if (tmpConfig != null) {
@@ -625,27 +625,15 @@ public class TikaCLI {
         out.println("    Specify two directories as args with no other args:");
         out.println("         java -jar tika-app.jar <inputDirectory> <outputDirectory>");
         out.println();
-        out.println("Batch Options:");
-        out.println("    -i  or --inputDir          Input directory");
-        out.println("    -o  or --outputDir         Output directory");
-        out.println("    -numConsumers              Number of processing threads");
-        out.println("    -bc                        Batch config file");
-        out.println("    -maxRestarts               Maximum number of times the ");
-        out.println("                               watchdog process will restart the forked process.");
-        out.println("    -timeoutThresholdMillis    Number of milliseconds allowed to a parse");
-        out.println("                               before the process is terminated and restarted");
-        out.println("    -fileList                  List of files to process, with");
-        out.println("                               paths relative to the input directory");
-        out.println("    -includeFilePat            Regular expression to determine which");
-        out.println("                               files to process, e.g. \"(?i)\\.pdf\"");
-        out.println("    -excludeFilePat            Regular expression to determine which");
-        out.println("                               files to avoid processing, e.g. \"(?i)\\.pdf\"");
-        out.println("    -maxFileSizeBytes          Skip files longer than this value");
+        out.println("Batch/Pipes Options:");
+        out.println("    -i                         Input directory");
+        out.println("    -o                         Output directory");
+        out.println("    -n                         Number of forked processes");
+        out.println("    -X                         -Xmx in the forked processes");
+        out.println("    -T                         Timeout in milliseconds");
+        out.println("    -Z                         Recursively unpack all the attachments, too");
         out.println();
-        out.println("    Control the type of output with -x, -h, -t and/or -J.");
         out.println();
-        out.println("    To modify forked process jvm args, prepend \"J\" as in:");
-        out.println("    -JXmx4g or -JDlog4j.configuration=file:log4j.xml.");
     }
 
     private void version() {
