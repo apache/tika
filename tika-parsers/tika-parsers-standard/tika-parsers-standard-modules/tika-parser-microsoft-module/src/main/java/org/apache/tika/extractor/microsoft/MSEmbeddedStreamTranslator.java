@@ -18,9 +18,12 @@ package org.apache.tika.extractor.microsoft;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.commons.io.output.CloseShieldOutputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
@@ -43,26 +46,22 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
     private static final Logger LOG = LoggerFactory.getLogger(MSEmbeddedStreamTranslator.class);
 
     @Override
-    public boolean shouldTranslate(InputStream inputStream, Metadata metadata) throws IOException {
+    public boolean shouldTranslate(TikaInputStream tis, Metadata metadata) throws IOException {
         String contentType = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
         if ("application/vnd.openxmlformats-officedocument.oleObject".equals(contentType)) {
             return true;
-        } else if (inputStream instanceof TikaInputStream) {
-            TikaInputStream tin = (TikaInputStream) inputStream;
-            if (tin.getOpenContainer() != null &&
-                    tin.getOpenContainer() instanceof DirectoryEntry) {
-                return true;
-            }
+        } else {
+            return tis.getOpenContainer() != null &&
+                    tis.getOpenContainer() instanceof DirectoryEntry;
         }
-        return false;
     }
 
     @Override
-    public InputStream translate(InputStream inputStream, Metadata metadata) throws IOException {
+    public void translate(TikaInputStream tis, Metadata metadata, OutputStream os) throws IOException {
         String contentType = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
         if ("application/vnd.openxmlformats-officedocument.oleObject".equals(contentType)) {
             UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
-            IOUtils.copy(inputStream, bos);
+            IOUtils.copy(tis, bos);
             POIFSFileSystem poifs = new POIFSFileSystem(bos.toInputStream());
             OfficeParser.POIFSDocumentType type = OfficeParser.POIFSDocumentType.detectType(poifs);
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
@@ -82,21 +81,17 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
                 name += '.' + type.getExtension();
             }
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
-            return UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get();
-        } else if (inputStream instanceof TikaInputStream) {
-            TikaInputStream tin = (TikaInputStream) inputStream;
-
-            if (tin.getOpenContainer() != null &&
-                    tin.getOpenContainer() instanceof DirectoryEntry) {
-                POIFSFileSystem fs = new POIFSFileSystem();
-                copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
-                try (UnsynchronizedByteArrayOutputStream bos2 = UnsynchronizedByteArrayOutputStream.builder().get()) {
-                    fs.writeFilesystem(bos2);
-                    return bos2.toInputStream();
+            os.write(data);
+            os.flush();
+        } else {
+            if (tis.getOpenContainer() != null &&
+                    tis.getOpenContainer() instanceof DirectoryEntry) {
+                try (POIFSFileSystem fs = new POIFSFileSystem()) {
+                    copy((DirectoryEntry) tis.getOpenContainer(), fs.getRoot());
+                    fs.writeFilesystem(CloseShieldOutputStream.wrap(os));
                 }
             }
         }
-        return inputStream;
     }
 
     protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir) throws IOException {

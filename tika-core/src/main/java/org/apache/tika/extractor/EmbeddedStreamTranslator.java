@@ -18,7 +18,9 @@ package org.apache.tika.extractor;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -30,9 +32,8 @@ import org.apache.tika.metadata.Metadata;
  */
 public interface EmbeddedStreamTranslator {
 
-    boolean shouldTranslate(InputStream inputStream, Metadata metadata) throws IOException;
+    boolean shouldTranslate(TikaInputStream inputStream, Metadata metadata) throws IOException;
 
-    InputStream translate(InputStream inputStream,
-                          Metadata metadata) throws IOException;
+    void translate(TikaInputStream inputStream, Metadata metadata, OutputStream os) throws IOException;
 
 }

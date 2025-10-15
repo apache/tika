@@ -17,10 +17,11 @@
 package org.apache.tika.extractor;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
@@ -58,7 +59,7 @@ public class DefaultEmbeddedStreamTranslator implements EmbeddedStreamTranslator
      * @throws IOException
      */
     @Override
-    public boolean shouldTranslate(InputStream inputStream, Metadata metadata) throws IOException {
+    public boolean shouldTranslate(TikaInputStream inputStream, Metadata metadata) throws IOException {
         for (EmbeddedStreamTranslator translator : translators) {
             if (translator.shouldTranslate(inputStream, metadata)) {
                 return true;
@@ -75,13 +76,12 @@ public class DefaultEmbeddedStreamTranslator implements EmbeddedStreamTranslator
      * @throws IOException
      */
     @Override
-    public InputStream translate(InputStream inputStream, Metadata metadata) throws IOException {
+    public void translate(TikaInputStream inputStream, Metadata metadata, OutputStream outputStream) throws IOException {
         for (EmbeddedStreamTranslator translator : translators) {
-            InputStream translated = translator.translate(inputStream, metadata);
-            if (translated != null) {
-                return translated;
+            if (translator.shouldTranslate(inputStream, metadata)) {
+                translator.translate(inputStream, metadata, outputStream);
+                return;
             }
         }
-        return inputStream;
     }
 }

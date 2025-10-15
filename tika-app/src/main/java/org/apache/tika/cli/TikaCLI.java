@@ -1112,9 +1112,7 @@ public class TikaCLI {
 
             try (OutputStream os = Files.newOutputStream(outputFile)) {
                 if (embeddedStreamTranslator.shouldTranslate(tis, metadata)) {
-                    try (InputStream translated = embeddedStreamTranslator.translate(tis, metadata)) {
-                        IOUtils.copy(translated, os);
-                    }
+                    embeddedStreamTranslator.translate(tis, metadata, os);
                 } else {
                     IOUtils.copy(tis, os);
                 }
