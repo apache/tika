@@ -37,6 +37,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -79,7 +81,7 @@ import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeType;
@@ -104,6 +106,7 @@ import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
 import org.apache.tika.serialization.JsonMetadata;
 import org.apache.tika.serialization.JsonMetadataList;
+import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.apache.tika.xmp.XMPMetadata;
 
@@ -112,6 +115,7 @@ import org.apache.tika.xmp.XMPMetadata;
  */
 public class TikaCLI {
     private static final Logger LOG = LoggerFactory.getLogger(TikaCLI.class);
+    private static final Property NORMALIZED_EMBEDDED_NAME = Property.externalText("tk:normalized-embedded-name");
 
     private final int MAX_MARK = 20 * 1024 * 1024;//20MB
 
@@ -254,16 +258,35 @@ public class TikaCLI {
     }
 
     private static void async(String[] args) throws Exception {
+        args = AsyncHelper.translateArgs(args);
         String tikaConfigPath = "";
-        String config = "--config=";
-        for (String arg : args) {
-            if (arg.startsWith(config)) {
-                tikaConfigPath = arg.substring(config.length());
-                TikaAsyncCLI.main(new String[]{tikaConfigPath});
-                return;
+        for (int i = 0; i < args.length - 1; i++) {
+            if (args[i].equals("-c")) {
+                tikaConfigPath = args[i + 1];
+                break;
             }
         }
-        TikaAsyncCLI.main(args);
+        if (! StringUtils.isBlank(tikaConfigPath)) {
+            TikaAsyncCLI.main(args);
+            return;
+        }
+        Path tmpConfig = null;
+        try {
+            tmpConfig = Files.createTempFile("tika-config-", ".xml");
+            Files.copy(TikaCLI.class.getResourceAsStream("/tika-config-default-single-file.xml"),
+                    tmpConfig, StandardCopyOption.REPLACE_EXISTING);
+            List<String> argList = new ArrayList<>();
+            argList.add("-c");
+            argList.add(tmpConfig.toAbsolutePath().toString());
+            for (String arg : args) {
+                argList.add(arg);
+            }
+            TikaAsyncCLI.main(argList.toArray(new String[0]));
+        } finally {
+            if (tmpConfig != null) {
+                Files.delete(tmpConfig);
+            }
+        }
     }
 
     /**
@@ -318,6 +341,7 @@ public class TikaCLI {
     }
 
     private boolean testForAsync(String[] args) {
+
         if (args.length == 2) {
             if (Files.isDirectory(Paths.get(args[0]))) {
                 return true;
@@ -331,6 +355,9 @@ public class TikaCLI {
                 return true;
             }
             if (arg.equals("-o") || arg.startsWith("--output")) {
+                return true;
+            }
+            if (arg.equals("-Z")) {
                 return true;
             }
 
@@ -598,27 +625,15 @@ public class TikaCLI {
         out.println("    Specify two directories as args with no other args:");
         out.println("         java -jar tika-app.jar <inputDirectory> <outputDirectory>");
         out.println();
-        out.println("Batch Options:");
-        out.println("    -i  or --inputDir          Input directory");
-        out.println("    -o  or --outputDir         Output directory");
-        out.println("    -numConsumers              Number of processing threads");
-        out.println("    -bc                        Batch config file");
-        out.println("    -maxRestarts               Maximum number of times the ");
-        out.println("                               watchdog process will restart the forked process.");
-        out.println("    -timeoutThresholdMillis    Number of milliseconds allowed to a parse");
-        out.println("                               before the process is terminated and restarted");
-        out.println("    -fileList                  List of files to process, with");
-        out.println("                               paths relative to the input directory");
-        out.println("    -includeFilePat            Regular expression to determine which");
-        out.println("                               files to process, e.g. \"(?i)\\.pdf\"");
-        out.println("    -excludeFilePat            Regular expression to determine which");
-        out.println("                               files to avoid processing, e.g. \"(?i)\\.pdf\"");
-        out.println("    -maxFileSizeBytes          Skip files longer than this value");
+        out.println("Batch/Pipes Options:");
+        out.println("    -i                         Input directory");
+        out.println("    -o                         Output directory");
+        out.println("    -n                         Number of forked processes");
+        out.println("    -X                         -Xmx in the forked processes");
+        out.println("    -T                         Timeout in milliseconds");
+        out.println("    -Z                         Recursively unpack all the attachments, too");
         out.println();
-        out.println("    Control the type of output with -x, -h, -t and/or -J.");
         out.println();
-        out.println("    To modify forked process jvm args, prepend \"J\" as in:");
-        out.println("    -JXmx4g or -JDlog4j.configuration=file:log4j.xml.");
     }
 
     private void version() {
@@ -1076,16 +1091,18 @@ public class TikaCLI {
 
         @Override
         public void parseEmbedded(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata, boolean outputHtml) throws SAXException, IOException {
-
-            MediaType contentType = detector.detect(tis, metadata);
-
-            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-            Path outputFile = null;
-            if (name == null) {
-                name = "file_" + count++;
+            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+            if (StringUtils.isBlank(contentType)) {
+                MediaType mediaType = detector.detect(tis, metadata);
+                if (mediaType == null) {
+                    mediaType = MediaType.OCTET_STREAM;
+                }
+                contentType = mediaType.toString();
+                metadata.set(Metadata.CONTENT_TYPE, contentType);
             }
-            outputFile = getOutputFile(name, metadata, contentType);
 
+            Path outputFile = getOutputFile(metadata);
+            String name = metadata.get(NORMALIZED_EMBEDDED_NAME);
 
             Path parent = outputFile.getParent();
             if (parent != null && ! Files.isDirectory(parent)) {
@@ -1110,33 +1127,14 @@ public class TikaCLI {
             }
         }
 
-        private Path getOutputFile(String name, Metadata metadata, MediaType contentType) throws IOException {
-            String ext = getExtension(contentType);
-            if (name.indexOf('.') == -1 && contentType != null) {
-                name += ext;
-            }
-
-            String relID = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
-            if (relID != null && !name.startsWith(relID)) {
-                name = relID + "_" + name;
-            }
-            //defensively do this so that we don't get an exception
-            //from FilenameUtils.normalize
-            name = name.replaceAll("\u0000", " ");
-            String normalizedName = FilenameUtils.normalize(name);
-
+        private Path getOutputFile(Metadata metadata) throws IOException {
+            String normalizedName = org.apache.tika.io.FilenameUtils.getSanitizedEmbeddedFilePath(metadata, ".bin", 50);
             if (normalizedName == null) {
-                normalizedName = FilenameUtils.getName(name);
+                String ext = org.apache.tika.io.FilenameUtils.calculateExtension(metadata, ".bin");
+                normalizedName = "file-" + count++ + ext;
             }
+            metadata.set(NORMALIZED_EMBEDDED_NAME, normalizedName);
 
-            if (normalizedName == null) {
-                normalizedName = "file" + count++ + ext;
-            }
-            //strip off initial C:/ or ~/ or /
-            int prefixLength = FilenameUtils.getPrefixLength(normalizedName);
-            if (prefixLength > -1) {
-                normalizedName = normalizedName.substring(prefixLength);
-            }
             Path outputFile = extractDir.resolve(normalizedName);
             //if file already exists, prepend uuid
             if (Files.exists(outputFile)) {
@@ -1149,23 +1147,6 @@ public class TikaCLI {
             return outputFile;
         }
 
-        private String getExtension(MediaType contentType) {
-            try {
-                String ext = config
-                        .getMimeRepository()
-                        .forName(contentType.toString())
-                        .getExtension();
-                if (ext == null) {
-                    return ".bin";
-                } else {
-                    return ext;
-                }
-            } catch (MimeTypeException e) {
-                LOG.info("bad mime type?", e);
-            }
-            return ".bin";
-
-        }
     }
 
     private class NoDocumentJSONMetHandler extends DefaultHandler {

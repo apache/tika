@@ -223,7 +223,7 @@ public abstract class TikaPipesSolrTestBase {
                         SolrEmitter.UpdateStrategy.ADD, SolrEmitter.AttachmentStrategy.PARENT_CHILD,
                         HandlerConfig.PARSE_MODE.RMETA);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
-        TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
+        TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.getAbsolutePath()});
 
         try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
             solrClient.commit(collection, true, true);
@@ -257,7 +257,7 @@ public abstract class TikaPipesSolrTestBase {
                         HandlerConfig.PARSE_MODE.RMETA);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
 
-        TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
+        TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.getAbsolutePath()});
 
         try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
             solrClient.commit(collection, true, true);

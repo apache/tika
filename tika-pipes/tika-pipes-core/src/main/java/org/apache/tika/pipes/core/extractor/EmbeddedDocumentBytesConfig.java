@@ -43,6 +43,23 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
             throw new IllegalArgumentException("can't parse " + s);
         }
     }
+
+    public enum KEY_BASE_STRATEGY {
+        CONTAINER_NAME_NUMBERED,
+        CONTAINER_NAME_AS_IS,
+        CUSTOM_BASE;
+
+        public static KEY_BASE_STRATEGY parse(String s) {
+            if (s.equalsIgnoreCase(CONTAINER_NAME_NUMBERED.name())) {
+                return CONTAINER_NAME_NUMBERED;
+            } else if (s.equalsIgnoreCase(CONTAINER_NAME_AS_IS.name())) {
+                return CONTAINER_NAME_AS_IS;
+            } else if (s.equalsIgnoreCase(CUSTOM_BASE.name())) {
+                return CUSTOM_BASE;
+            }
+            throw new IllegalArgumentException("can't parse " + s);
+        }
+    }
     //for our current custom serialization, this can't be final. :(
     private boolean extractEmbeddedDocumentBytes;
 
@@ -56,9 +73,10 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
 
     private boolean includeOriginal = false;
 
+    private KEY_BASE_STRATEGY keyBaseStrategy = KEY_BASE_STRATEGY.CONTAINER_NAME_NUMBERED;
     //This should be set per file. This allows a custom
     //emit key base that bypasses the algorithmic generation of the emitKey
-    //from the primary json emitKey
+    //from the primary json emitKey when keyBase Strategy is CUSTOM_BASE
     private String emitKeyBase = "";
 
     /**
@@ -94,6 +112,10 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
         return suffixStrategy;
     }
 
+    public KEY_BASE_STRATEGY getKeyBaseStrategy() {
+        return keyBaseStrategy;
+    }
+
     public String getEmbeddedIdPrefix() {
         return embeddedIdPrefix;
     }
@@ -118,6 +140,14 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
         setSuffixStrategy(SUFFIX_STRATEGY.valueOf(suffixStrategy));
     }
 
+    public void setKeyBaseStrategy(KEY_BASE_STRATEGY keyBaseStrategy) {
+        this.keyBaseStrategy = keyBaseStrategy;
+    }
+
+    public void setKeyBaseStrategy(String keyBaseStrategy) {
+        setKeyBaseStrategy(KEY_BASE_STRATEGY.valueOf(keyBaseStrategy));
+    }
+
     public void setEmbeddedIdPrefix(String embeddedIdPrefix) {
         this.embeddedIdPrefix = embeddedIdPrefix;
     }
@@ -140,28 +170,20 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
 
     @Override
     public String toString() {
-        return "EmbeddedDocumentBytesConfig{" + "extractEmbeddedDocumentBytes=" + extractEmbeddedDocumentBytes + ", zeroPadName=" +
-                zeroPadName + ", suffixStrategy=" +
-                suffixStrategy + ", embeddedIdPrefix='" + embeddedIdPrefix + '\'' + ", emitter='" + emitter + '\'' +
-                ", includeOriginal=" + includeOriginal + ", emitKeyBase='" +
-                emitKeyBase + '\'' + '}';
+        return "EmbeddedDocumentBytesConfig{" + "extractEmbeddedDocumentBytes=" + extractEmbeddedDocumentBytes + ", zeroPadName=" + zeroPadName + ", suffixStrategy=" +
+                suffixStrategy + ", embeddedIdPrefix='" + embeddedIdPrefix + '\'' + ", emitter='" + emitter + '\'' + ", includeOriginal=" + includeOriginal + ", keyBaseStrategy=" +
+                keyBaseStrategy + ", emitKeyBase='" + emitKeyBase + '\'' + '}';
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
+    public final boolean equals(Object o) {
+        if (!(o instanceof EmbeddedDocumentBytesConfig config)) {
             return false;
         }
 
-        EmbeddedDocumentBytesConfig that = (EmbeddedDocumentBytesConfig) o;
-        return extractEmbeddedDocumentBytes == that.extractEmbeddedDocumentBytes && zeroPadName == that.zeroPadName
-                && includeOriginal == that.includeOriginal &&
-                suffixStrategy == that.suffixStrategy && Objects.equals(embeddedIdPrefix, that.embeddedIdPrefix)
-                && Objects.equals(emitter, that.emitter) &&
-                Objects.equals(emitKeyBase, that.emitKeyBase);
+        return extractEmbeddedDocumentBytes == config.extractEmbeddedDocumentBytes && zeroPadName == config.zeroPadName && includeOriginal == config.includeOriginal &&
+                suffixStrategy == config.suffixStrategy && Objects.equals(embeddedIdPrefix, config.embeddedIdPrefix) && Objects.equals(emitter, config.emitter) &&
+                keyBaseStrategy == config.keyBaseStrategy && Objects.equals(emitKeyBase, config.emitKeyBase);
     }
 
     @Override
@@ -172,6 +194,7 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
         result = 31 * result + Objects.hashCode(embeddedIdPrefix);
         result = 31 * result + Objects.hashCode(emitter);
         result = 31 * result + Boolean.hashCode(includeOriginal);
+        result = 31 * result + Objects.hashCode(keyBaseStrategy);
         result = 31 * result + Objects.hashCode(emitKeyBase);
         return result;
     }

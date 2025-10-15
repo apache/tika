@@ -123,10 +123,10 @@ public class AsyncProcessorTest extends TikaTest {
         }
         processor.close();
 
-        String container = Files.readString(bytesDir.resolve("emit-1/emit-1-0"));
+        String container = Files.readString(bytesDir.resolve("emit-1-embed/emit-1-0"));
         assertContains("\"dc:creator\">Nikolai Lobachevsky", container);
 
-        String xmlEmbedded = Files.readString(bytesDir.resolve("emit-1/emit-1-1"));
+        String xmlEmbedded = Files.readString(bytesDir.resolve("emit-1-embed/emit-1-1"));
         assertContains("name=\"dc:creator\"", xmlEmbedded);
         assertContains(">embeddedAuthor</metadata>", xmlEmbedded);
 

@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -56,6 +56,7 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
     private EmbeddedBytesSelector embeddedBytesSelector = EmbeddedBytesSelector.ACCEPT_ALL;
 
+    private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
     private long bytesExtracted = 0;
     private final long maxEmbeddedBytesForExtraction;
 
@@ -113,13 +114,20 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
             throws TikaException, IOException, SAXException {
         //TODO -- improve the efficiency of this so that we're not
         //literally writing out a file per request
-        Path p = stream.getPath();
-        try {
-            //warp in CloseShieldInputStream to ensure that a misbehaving parser isn't closing
-            //the stream and thereby deleting the temp file.
-            parse(CloseShieldInputStream.wrap(stream), handler, metadata);
+        Path tmp = Files.createTempFile("tika-tmp-", ".bin");
+        if (embeddedStreamTranslator.shouldTranslate(stream, metadata)) {
+            Files.copy(embeddedStreamTranslator.translate(stream, metadata), tmp, StandardCopyOption.REPLACE_EXISTING);
+        } else {
+            Files.copy(stream, tmp, StandardCopyOption.REPLACE_EXISTING);
+        }
+        try (TikaInputStream tmpTis = TikaInputStream.get(tmp)) {
+            parse(tmpTis, handler, metadata);
         } finally {
-            storeEmbeddedBytes(p, metadata);
+            try {
+                storeEmbeddedBytes(tmp, metadata);
+            } finally {
+                Files.delete(tmp);
+            }
         }
     }
 
