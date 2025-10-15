@@ -299,10 +299,10 @@ public class TikaCLITest {
                 "testPST.pst-embed/00000008-First email.msg",
                 "testPST.pst-embed/00000004-[jira] [Resolved] (TIKA-1249) Vcard files detection.msg",
                 "testPST.pst-embed/00000003-Feature Generators.msg",
-                "testPST.pst-embed/00000002-putstatic\".msg",
+                "testPST.pst-embed/00000002-putstatic%22.msg",
                 "testPST.pst-embed/00000005-[jira] [Commented] (TIKA-1250) Process loops infintely processing a CHM file.msg",
                 "testPST.pst-embed/00000009-attachment.docx",
-                "testPST.pst-embed/00000006-[WEBINAR] - \"Introducing Couchbase Server 2.5\".msg"};
+                "testPST.pst-embed/00000006-[WEBINAR] - %22Introducing Couchbase Server 2.5%22.msg"};
         testRecursiveUnpack("testPST.pst", expectedChildren, 2);
         try (Reader reader = Files.newBufferedReader(extractDir.resolve("testPST.pst.json"))) {
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);

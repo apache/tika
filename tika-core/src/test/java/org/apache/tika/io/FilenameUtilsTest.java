@@ -152,7 +152,7 @@ public class FilenameUtilsTest {
         assertEquals("_the quick brown fox.xlsx", sanitizeFilename("C:\\a/b/c/..the quick brown fox.xlsx"));
         assertEquals("_the quick brown fox.xlsx", sanitizeFilename("~/a/b/c/.the quick brown fox.xlsx"));
         assertEquals("the quick%3Ebrown fox.xlsx", sanitizeFilename("the quick>brown fox.xlsx"));
-        assertEquals("the quick\"brown fox.xlsx", sanitizeFilename("the quick\"brown fox.xlsx"));
+        assertEquals("the quick%22brown fox.xlsx", sanitizeFilename("the quick\"brown fox.xlsx"));
         assertEquals("the quick brown fox.xlsx", sanitizeFilename("\"the quick brown fox.xlsx\""));
 
         assertEquals("_.docx", sanitizeFilename("..................docx"));
