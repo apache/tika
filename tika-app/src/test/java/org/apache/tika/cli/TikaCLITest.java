@@ -368,11 +368,8 @@ public class TikaCLITest {
 
     private void testRecursiveUnpack(String targetFile, String[] expectedChildrenFileNames, int expectedLength) throws Exception {
         Path input = Paths.get(new URI(resourcePrefix + "/" + targetFile));
-        String[] params = {"-Z",
-                ProcessUtils.escapeCommandLine(input.toAbsolutePath().toString()),
-                ProcessUtils.escapeCommandLine(extractDir
-                .toAbsolutePath()
-                .toString())};
+        String[] params = {"-Z", input.toAbsolutePath().toString(),
+                extractDir.toAbsolutePath().toString()};
 
         TikaCLI.main(params);
         Set<String> fileNames = getFileNames(extractDir);
@@ -398,7 +395,7 @@ public class TikaCLITest {
 
             @Override
             public @NotNull FileVisitResult visitFile(Path path, @NotNull BasicFileAttributes basicFileAttributes) throws IOException {
-                names.add(extractDir.relativize(path).toString());
+                names.add(extractDir.relativize(path).toString().replace('\\', '/'));
                 return FileVisitResult.CONTINUE;
             }
 
