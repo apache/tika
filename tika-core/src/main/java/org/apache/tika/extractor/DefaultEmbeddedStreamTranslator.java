@@ -27,9 +27,7 @@ import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
  * Loads EmbeddedStreamTranslators via service loading.  Tries to run each
- * in turn and returns the first non-null value.  If no translation has occurred,
- * this returns the original InputStream. If a translation has occurred, the
- * translator will consume the InputStream but not close it.
+ * in turn. If a translator accepts the stream, it will do the translation but not close the stream.
  */
 public class DefaultEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
 
@@ -69,9 +67,10 @@ public class DefaultEmbeddedStreamTranslator implements EmbeddedStreamTranslator
     }
 
     /**
-     * This will consume the InputStream and return a new stream of translated bytes.
+     * This will consume the InputStream and write the stream to the output stream
      * @param inputStream
      * @param metadata
+     * @param outputStream to write to
      * @return
      * @throws IOException
      */

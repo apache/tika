@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.Reader;
 import java.net.URI;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -34,6 +35,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +46,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.ProcessUtils;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Tests the Tika's cli
@@ -285,6 +291,28 @@ public class TikaCLITest {
         testRecursiveUnpack("testPDFPackage.pdf", expectedChildren, 2);
     }
 
+    @Test
+    public void testPSTRUnpack() throws Exception {
+        String[] expectedChildren = new String[]{"testPST.pst.json",
+                "testPST.pst-embed/00000007-First email.msg",
+                "testPST.pst-embed/00000001-Feature Generators.msg",
+                "testPST.pst-embed/00000008-First email.msg",
+                "testPST.pst-embed/00000004-[jira] [Resolved] (TIKA-1249) Vcard files detection.msg",
+                "testPST.pst-embed/00000003-Feature Generators.msg",
+                "testPST.pst-embed/00000002-putstatic\".msg",
+                "testPST.pst-embed/00000005-[jira] [Commented] (TIKA-1250) Process loops infintely processing a CHM file.msg",
+                "testPST.pst-embed/00000009-attachment.docx",
+                "testPST.pst-embed/00000006-[WEBINAR] - \"Introducing Couchbase Server 2.5\".msg"};
+        testRecursiveUnpack("testPST.pst", expectedChildren, 2);
+        try (Reader reader = Files.newBufferedReader(extractDir.resolve("testPST.pst.json"))) {
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            for (Metadata m : metadataList) {
+                String content = m.get(TikaCoreProperties.TIKA_CONTENT);
+                assertFalse(StringUtils.isBlank(content));
+            }
+        }
+    }
+
 
     /**
      * Tests -l option of the cli
@@ -378,7 +406,6 @@ public class TikaCLITest {
                 .list();
         assertNotNull(jsonFile);
         assertEquals(expectedLength, jsonFile.length);
-        //assertEquals(fileNames.size(), expectedChildrenFileNames.length);
 
         for (String expectedChildName : expectedChildrenFileNames) {
             assertTrue(fileNames.contains(expectedChildName));
