@@ -7,17 +7,11 @@ Release 4.0.0-BETA1 - ???
    * Headers are no longer injected into the body/content of MSG files (TIKA-4345). Please open
      a ticket if you need this behavior across email formats.
 
-   * Remove tika-batch (TIKA-4333).
+   * Removed several modules, including: tika-batch (TIKA-4333), snaps deployment (TIKA-4502),
+     dotnet (TIKA-4332), advanced media module (TIKA-4500), tika-dl module (TIKA-4499),
+     tika-fuzzing module (TIKA-4506).
 
-   * Remove snaps deployment (TIKA-4502).
-
-   * Removed the dotnet module (TIKA-4332).
-
-   * Removed the advanced media module (TIKA-4500).
-   
-   * Removed the tika-dl module (TIKA-4499).
-
-   * Removed the tika-fuzzing module (TIKA-4506).
+   * API changes in the EmbeddedStreamTranslator (TIKA-4518).
 
   OTHER CHANGES
 

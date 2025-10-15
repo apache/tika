@@ -121,7 +121,7 @@ public class TikaCLIAsyncTest {
                 json++;
             }
         }
-        assertEquals(20, json);
+        assertEquals(21, json);
     }
 
     private void checkForPrettyPrint(File f) throws IOException {

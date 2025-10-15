@@ -140,12 +140,16 @@ public class FilenameUtils {
 
     public static String getSanitizedEmbeddedFileName(Metadata metadata,
                                                       String defaultExtension, int maxLength) {
-        String path = getEmbeddedPath(metadata);
+        String path = getEmbeddedName(metadata);
         //fName could be a full path or null
         if (StringUtils.isBlank(path)) {
             return null;
         }
         path = path.replaceAll("\u0000", " ");
+        if (path.startsWith("\"") && path.endsWith("\"")) {
+            path = path.substring(1, path.length() - 1);
+        }
+
         int prefixLength = getPrefixLength(path);
         if (prefixLength > 0) {
             path = path.substring(prefixLength);
@@ -173,6 +177,7 @@ public class FilenameUtils {
         namePart = namePart.replaceAll("(\\.\\.)+", "_");
         namePart = namePart.replaceAll("[/\\\\]+", "_");
         namePart = namePart.replaceAll(":+", "_");
+        namePart = namePart.trim();
 
         if (StringUtils.isBlank(namePart)) {
             return null;
@@ -286,6 +291,7 @@ public class FilenameUtils {
         return path;
     }
 
+    //may return null
     private static String getEmbeddedPath(Metadata metadata) {
         //potentially look for other values in embedded path or original file name, etc...
         //maybe different fallback order?
@@ -301,6 +307,27 @@ public class FilenameUtils {
         if (! StringUtils.isBlank(path)) {
             return path;
         }
+        return metadata.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME);
+    }
+
+    //this tries for resource name first, and then backs off to path
+    private static String getEmbeddedName(Metadata metadata) {
+        //potentially look for other values in embedded path or original file name, etc...
+        //maybe different fallback order?
+        String path = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        if (! StringUtils.isBlank(path)) {
+            return path;
+        }
+        path = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
+        if (! StringUtils.isBlank(path)) {
+            return path;
+        }
+
+        path = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
+        if (! StringUtils.isBlank(path)) {
+            return path;
+        }
+
         return metadata.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME);
     }
 
