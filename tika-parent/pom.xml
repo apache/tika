@@ -395,6 +395,7 @@
     <!-- junit 6.x requires jdk 17 -->
     <junit5.version>5.13.4</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
+    <!-- junrar 7.5.6 is for jdk17, might be a bug, see https://github.com/junrar/junrar/issues/218 -->
     <junrar.version>7.5.5</junrar.version>
     <jwarc.version>0.32.0</jwarc.version>
     <kafka.version>4.1.0</kafka.version>
