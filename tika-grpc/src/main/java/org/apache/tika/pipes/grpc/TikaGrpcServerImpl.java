@@ -75,10 +75,7 @@ import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
-import org.apache.tika.pipes.core.fetcher.config.FetcherConfigContainer;
 import org.apache.tika.utils.XMLReaderUtils;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {

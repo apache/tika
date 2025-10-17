@@ -24,16 +24,17 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.fetcher.FetcherConfig;
 
 public class EmptyFetcher implements Fetcher {
 
     @Override
-    public void loadDefaultConfig(InputStream is) throws TikaConfigException {
+    public void configure(FetcherConfig fetcherConfig) throws TikaConfigException {
         //no-op
     }
 
     @Override
-    public String getName() {
+    public String getPluginId() {
         return "empty";
     }
 

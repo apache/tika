@@ -20,8 +20,27 @@
       </includes>
     </fileSet>
     <fileSet>
+      <directory>${project.build.directory}</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>classes/META-INF/extensions.idx</include>
+      </includes>
+    </fileSet>
+    <!-- this is a bit of a hack. There has to be a better solution. -->
+    <!-- this one is for pf4j -->
+    <fileSet>
       <directory>${project.basedir}/src/main/resources</directory>
       <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>plugin.properties</include>
+      </includes>
+    </fileSet>
+    <!-- this one is for the application so that the extension can read its pluginId, when in zip mode
+      we don't need this for jar mode
+    -->
+    <fileSet>
+      <directory>${project.basedir}/src/main/resources</directory>
+      <outputDirectory>/classes</outputDirectory>
       <includes>
         <include>plugin.properties</include>
       </includes>

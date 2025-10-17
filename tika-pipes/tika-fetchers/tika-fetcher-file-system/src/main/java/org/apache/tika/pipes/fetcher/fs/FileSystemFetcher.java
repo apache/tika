@@ -38,15 +38,17 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.api.fetcher.FetcherConfig;
 import org.apache.tika.pipes.fetcher.fs.config.FileSystemFetcherConfig;
 import org.apache.tika.utils.StringUtils;
 
 
 @Extension
-public class FileSystemFetcher implements Fetcher {
+public class FileSystemFetcher extends AbstractFetcher {
 
-    public FileSystemFetcher() {
+    public FileSystemFetcher() throws IOException {
+        super();
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemFetcher.class);
@@ -59,14 +61,10 @@ public class FileSystemFetcher implements Fetcher {
     }
 
     @Override
-    public void loadDefaultConfig(InputStream is) throws IOException, TikaConfigException {
-        defaultFileSystemFetcherConfig = FileSystemFetcherConfig.load(is);
-        checkInitialization(defaultFileSystemFetcherConfig);
-    }
-
-    @Override
-    public String getName() {
-        return "file-system-fetcher";
+    public void configure(FetcherConfig fetcherConfig) throws IOException, TikaConfigException {
+        checkPluginId(fetcherConfig.getPluginId());
+        defaultFileSystemFetcherConfig = FileSystemFetcherConfig.load(fetcherConfig.getConfigJson());
+        checkConfig(defaultFileSystemFetcherConfig);
     }
 
     @Override
@@ -76,7 +74,13 @@ public class FileSystemFetcher implements Fetcher {
                     "Please review the life decisions that led you to requesting " +
                     "a file name with this character in it.");
         }
-        FileSystemFetcherConfig config = parseContext.get(FileSystemFetcherConfig.class, defaultFileSystemFetcherConfig);
+        FileSystemFetcherConfig config = defaultFileSystemFetcherConfig;
+        FetcherConfig fetcherConfig = parseContext.get(FetcherConfig.class);
+        if (fetcherConfig != null) {
+            checkPluginId(fetcherConfig.getPluginId());
+            config = FileSystemFetcherConfig.load(fetcherConfig.getConfigJson());
+            checkConfig(config);
+        }
         Path p = null;
         if (! StringUtils.isBlank(config.getBasePath())) {
             Path basePath = Paths.get(config.getBasePath());
@@ -119,13 +123,8 @@ public class FileSystemFetcher implements Fetcher {
         metadata.set(property, new Date(fileTime.toMillis()));
     }
 
-    /**
-     *
-     * @return the basePath or <code>null</code> if no base path was set
-     */
-    private void checkInitialization(FileSystemFetcherConfig config)
-            throws TikaConfigException {
-        String basePath = config.getBasePath();
+    private void checkConfig(FileSystemFetcherConfig fetcherConfig) throws TikaConfigException {
+        String basePath = fetcherConfig.getBasePath();
         if (basePath == null || basePath.isBlank()) {
             LOG.warn("'basePath' has not been set. " +
                     "This means that client code or clients can read from any file that this " +

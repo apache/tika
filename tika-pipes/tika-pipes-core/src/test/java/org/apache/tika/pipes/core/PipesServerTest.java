@@ -52,15 +52,20 @@ public class PipesServerTest extends TikaTest {
     @Test
     public void testBasic(@TempDir Path tmp) throws Exception {
         Path tikaConfig = tmp.resolve("tika-config.xml");
-        String xml = IOUtils.toString(
-                PipesServerTest.class.getResourceAsStream("TIKA-3941.xml"), StandardCharsets.UTF_8);
-        xml = xml.replace("BASE_PATH", tmp.toAbsolutePath().toString());
-        Files.write(tikaConfig, xml.getBytes(StandardCharsets.UTF_8));
+        Path pipesConfig = tmp.resolve("pipes-config.json");
+
+        String json = IOUtils.toString(
+                PipesServerTest.class.getResourceAsStream("TIKA-4207-emitters.json"),
+                StandardCharsets.UTF_8);
+        json = json.replace("BASE_PATH", tmp.toAbsolutePath().toString());
+        Files.write(pipesConfig, json.getBytes(StandardCharsets.UTF_8));
+
+        Files.copy(PipesServerTest.class.getResourceAsStream("TIKA-3941.xml"), tikaConfig);
 
         Files.copy(PipesServerTest.class.getResourceAsStream("/test-documents/mock_times.xml"),
                 tmp.resolve("mock.xml"));
 
-        PipesServer pipesServer = new PipesServer(tikaConfig,
+        PipesServer pipesServer = new PipesServer(tikaConfig, pipesConfig,
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
                 new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
@@ -71,7 +76,7 @@ public class PipesServerTest extends TikaTest {
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fs", "mock.xml"),
                 new EmitKey("", ""));
-        Fetcher fetcher = FetcherManager.load().getFetcher();
+        Fetcher fetcher = FetcherManager.load(pipesConfig).getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
                 parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
         assertEquals("5f3b924303e960ce35d7f705e91d3018dd110a9c3cef0546a91fe013d6dad6fd",
@@ -85,17 +90,20 @@ public class PipesServerTest extends TikaTest {
         }
         Files.createDirectories(tmp);
         Path tikaConfig = tmp.resolve("tika-config.xml");
+        Path pipesConfig = tmp.resolve("pipes-config.json");
 
-        String xml = IOUtils.toString(
-                PipesServerTest.class.getResourceAsStream("TIKA-4207.xml"),
+        String json = IOUtils.toString(
+                PipesServerTest.class.getResourceAsStream("TIKA-4207-emitters.json"),
                 StandardCharsets.UTF_8);
-        xml = xml.replace("BASE_PATH", tmp.toAbsolutePath().toString());
-        Files.write(tikaConfig, xml.getBytes(StandardCharsets.UTF_8));
+        json = json.replace("BASE_PATH", tmp.toAbsolutePath().toString());
+        Files.write(pipesConfig, json.getBytes(StandardCharsets.UTF_8));
+
+        Files.copy(PipesServerTest.class.getResourceAsStream("TIKA-4207.xml"), tikaConfig);
 
         Files.copy(PipesServerTest.class.getResourceAsStream("/test-documents/basic_embedded.xml"),
                 tmp.resolve("mock.xml"));
 
-        PipesServer pipesServer = new PipesServer(tikaConfig,
+        PipesServer pipesServer = new PipesServer(tikaConfig, pipesConfig,
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
                 new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
@@ -111,7 +119,7 @@ public class PipesServerTest extends TikaTest {
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fs", "mock.xml"),
                 new EmitKey("", ""), new Metadata(), parseContext);
-        Fetcher fetcher = FetcherManager.load().getFetcher();
+        Fetcher fetcher = FetcherManager.load(pipesConfig).getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
                 parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
         assertEquals(2, parseData.metadataList.size());
@@ -142,16 +150,20 @@ public class PipesServerTest extends TikaTest {
         Files.createDirectories(tmp);
         Path tikaConfig = tmp.resolve("tika-config.xml");
 
-        String xml = IOUtils.toString(
-                PipesServerTest.class.getResourceAsStream("TIKA-4207-limit-bytes.xml"),
+        Path pipesConfig = tmp.resolve("pipes-config.json");
+
+        String json = IOUtils.toString(
+                PipesServerTest.class.getResourceAsStream("TIKA-4207-emitters.json"),
                 StandardCharsets.UTF_8);
-        xml = xml.replace("BASE_PATH", tmp.toAbsolutePath().toString());
-        Files.write(tikaConfig, xml.getBytes(StandardCharsets.UTF_8));
+        json = json.replace("BASE_PATH", tmp.toAbsolutePath().toString());
+        Files.write(pipesConfig, json.getBytes(StandardCharsets.UTF_8));
+
+        Files.copy(PipesServerTest.class.getResourceAsStream("TIKA-4207-limit-bytes.xml"), tikaConfig);
 
         Files.copy(PipesServerTest.class.getResourceAsStream("/test-documents/basic_embedded.xml"),
                 tmp.resolve("mock.xml"));
 
-        PipesServer pipesServer = new PipesServer(tikaConfig,
+        PipesServer pipesServer = new PipesServer(tikaConfig, pipesConfig,
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
                 new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
@@ -168,7 +180,7 @@ public class PipesServerTest extends TikaTest {
                 new FetchKey("fs", "mock.xml"),
                 new EmitKey("", ""), new Metadata(), parseContext);
 
-        Fetcher fetcher = FetcherManager.load().getFetcher();
+        Fetcher fetcher = FetcherManager.load(pipesConfig).getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
                 parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
         assertEquals(2, parseData.metadataList.size());

@@ -1,8 +1,11 @@
 package org.apache.tika.pipes.api.fetcher;
 
-public abstract class FetcherConfig {
+import java.io.Serializable;
 
-    public boolean allowRuntimeModifications() {
-        return false;
-    }
+public interface FetcherConfig extends Serializable {
+
+    String getPluginId();
+    FetcherConfig setPluginId(String pluginId);
+    String getConfigJson();
+    FetcherConfig setConfigJson(String config);
 }

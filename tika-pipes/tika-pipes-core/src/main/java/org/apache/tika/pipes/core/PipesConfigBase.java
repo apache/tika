@@ -131,10 +131,6 @@ public class PipesConfigBase extends ConfigBase {
         this.tikaConfig = tikaConfig;
     }
 
-    public void setTikaConfig(String tikaConfig) {
-        setTikaConfig(Paths.get(tikaConfig));
-    }
-
     public String getJavaPath() {
         return javaPath;
     }

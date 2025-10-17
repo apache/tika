@@ -21,10 +21,4 @@
       <skipContainerDocument>false</skipContainerDocument>
     </digesterFactory>
   </autoDetectParserConfig>
-  <fetchers>
-    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
-      <name>fs</name>
-      <basePath>BASE_PATH</basePath>
-    </fetcher>
-  </fetchers>
 </properties>

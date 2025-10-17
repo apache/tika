@@ -30,8 +30,10 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.api.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.api.fetcher.FetcherConfig;
 
-public class MockFetcher extends AbstractFetcher{
+public class MockFetcher extends AbstractFetcher {
 
     private Map<String, Param> params;
 
@@ -40,6 +42,10 @@ public class MockFetcher extends AbstractFetcher{
 
     @Field
     private boolean throwOnCheck = false;
+
+    public MockFetcher() throws IOException {
+        super();
+    }
 
 
     public void setThrowOnCheck(boolean throwOnCheck) {
@@ -50,9 +56,8 @@ public class MockFetcher extends AbstractFetcher{
         this.byteString = byteString;
     }
 
-
     @Override
-    public void loadDefaultConfig(InputStream is) throws TikaConfigException {
+    public void configure(FetcherConfig fetcherConfig) throws TikaConfigException, IOException {
         //no-op
     }
 

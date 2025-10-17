@@ -3,9 +3,6 @@ package org.apache.tika.pipes.fetcher.fs.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-
 import org.junit.jupiter.api.Test;
 
 public class FileSystemFetcherConfigTest {
@@ -19,7 +16,7 @@ public class FileSystemFetcherConfigTest {
                 }
                 """;
 
-        FileSystemFetcherConfig config = FileSystemFetcherConfig.load(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+        FileSystemFetcherConfig config = FileSystemFetcherConfig.load(json);
         assertEquals("/some/base/path", config.getBasePath());
         assertTrue(config.isExtractFileSystemMetadata());
     }

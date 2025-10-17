@@ -20,11 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
+
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.core.fetcher.config.FetcherConfigImpl;
 
 
 public class FileSystemFetcherTest {
@@ -46,10 +48,8 @@ public class FileSystemFetcherTest {
     @Test
     public void testNullByte() throws Exception {
         FileSystemFetcher f = new FileSystemFetcher();
-        assertThrows(InvalidPathException.class, () -> {
-            //f.setBasePath("bad\u0000path");
-
-            //f.checkInitialization(InitializableProblemHandler.IGNORE);
+        assertThrows(TikaConfigException.class, () -> {
+            f.configure(new FetcherConfigImpl("blah", "{ \"basePath\":\"bad\u0000path\"}"));
         });
     }
 }

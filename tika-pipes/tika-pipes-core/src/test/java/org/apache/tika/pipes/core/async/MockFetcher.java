@@ -25,22 +25,22 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.api.fetcher.FetcherConfig;
 
-public class MockFetcher implements Fetcher {
+public class MockFetcher extends AbstractFetcher {
 
     private static final byte[] BYTES = ("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
             "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>" +
             "<write element=\"p\">main_content</write>" + "</mock>").getBytes(StandardCharsets.UTF_8);
 
-    @Override
-    public void loadDefaultConfig(InputStream is) throws TikaConfigException {
-        //no-op
+    public MockFetcher() throws IOException {
+        super();
     }
 
     @Override
-    public String getName() {
-        return "mock";
+    public void configure(FetcherConfig fetcherConfig) throws TikaConfigException, IOException {
+        //no-op
     }
 
     @Override

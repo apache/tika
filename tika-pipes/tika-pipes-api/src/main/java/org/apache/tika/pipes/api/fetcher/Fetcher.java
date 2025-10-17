@@ -35,9 +35,9 @@ import org.apache.tika.parser.ParseContext;
  */
 public interface Fetcher extends ExtensionPoint {
 
-    void loadDefaultConfig(InputStream is) throws TikaConfigException, IOException;
+    void configure(FetcherConfig fetcherConfig) throws TikaConfigException, IOException;
 
-    String getName();
+    String getPluginId();
 
     InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException;
 }
