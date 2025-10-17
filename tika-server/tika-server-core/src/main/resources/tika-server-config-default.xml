@@ -89,5 +89,33 @@
           Not allowed if nofork=true. -->
       <javaPath>java</javaPath>
     </params>
+    
+    <!-- OpenTelemetry configuration for distributed tracing, metrics, and logs.
+         See OPENTELEMETRY.md for detailed documentation. -->
+    <openTelemetry>
+      <!-- Enable or disable OpenTelemetry instrumentation.
+           Can also be controlled via OTEL_SDK_DISABLED environment variable. -->
+      <enabled>false</enabled>
+      
+      <!-- Exporter type - currently only 'otlp' is supported -->
+      <exporterType>otlp</exporterType>
+      
+      <!-- OTLP endpoint URL for exporting telemetry data.
+           For manual instrumentation (gRPC): http://localhost:4317
+           For Java agent (HTTP): http://localhost:4318
+           Can be overridden via OTEL_EXPORTER_OTLP_ENDPOINT environment variable. -->
+      <otlpEndpoint>http://localhost:4317</otlpEndpoint>
+      
+      <!-- Service name to identify this Tika Server instance in traces.
+           Can be overridden via OTEL_SERVICE_NAME environment variable. -->
+      <serviceName>tika-server</serviceName>
+      
+      <!-- Sampling probability (0.0 to 1.0). 1.0 means sample all traces.
+           Can be overridden via OTEL_TRACES_SAMPLER_ARG environment variable. -->
+      <samplingProbability>1.0</samplingProbability>
+      
+      <!-- Timeout in milliseconds for exporting telemetry data -->
+      <exportTimeoutMillis>30000</exportTimeoutMillis>
+    </openTelemetry>
   </server>
 </properties>

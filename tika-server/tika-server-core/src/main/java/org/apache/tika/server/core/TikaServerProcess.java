@@ -188,6 +188,14 @@ public class TikaServerProcess {
             tika = TikaConfig.getDefaultConfig();
         }
 
+        // Initialize OpenTelemetry if enabled
+        TikaOpenTelemetry.initialize(tikaServerConfig.getOpenTelemetry());
+        // Register shutdown hook to gracefully shutdown OpenTelemetry
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            LOG.info("Shutting down OpenTelemetry...");
+            TikaOpenTelemetry.shutdown();
+        }));
+
         DigestingParser.Digester digester = null;
         if (!StringUtils.isBlank(tikaServerConfig.getDigest())) {
             try {

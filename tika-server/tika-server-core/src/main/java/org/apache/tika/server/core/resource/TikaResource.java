@@ -84,6 +84,7 @@ import org.apache.tika.server.core.CompositeParseContextConfig;
 import org.apache.tika.server.core.InputStreamFactory;
 import org.apache.tika.server.core.ParseContextConfig;
 import org.apache.tika.server.core.ServerStatus;
+import org.apache.tika.server.core.TikaOpenTelemetry;
 import org.apache.tika.server.core.TikaServerConfig;
 import org.apache.tika.server.core.TikaServerParseException;
 import org.apache.tika.utils.ExceptionUtils;
@@ -361,23 +362,64 @@ public class TikaResource {
         long timeoutMillis = getTaskTimeout(parseContext);
 
         long taskId = SERVER_STATUS.start(ServerStatus.TASK.PARSE, fileName, timeoutMillis);
+        
+        // Start OpenTelemetry span for parse operation
+        io.opentelemetry.api.trace.Span span = null;
+        if (TikaOpenTelemetry.isEnabled()) {
+            span = TikaOpenTelemetry.getTracer()
+                    .spanBuilder("tika.parse")
+                    .setAttribute("tika.resource_name", fileName != null ? fileName : "unknown")
+                    .setAttribute("tika.endpoint", path != null ? path : "/tika")
+                    .startSpan();
+            
+            // Add detected content type if available
+            String contentType = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
+            if (contentType != null) {
+                span.setAttribute("tika.content_type", contentType);
+            }
+        }
+        
         try {
             parser.parse(inputStream, handler, metadata, parseContext);
+            
+            // Mark span as successful and add output metadata
+            if (span != null) {
+                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+            }
         } catch (SAXException e) {
+            if (span != null) {
+                span.recordException(e);
+                span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, "SAX parsing error");
+            }
             throw new TikaServerParseException(e);
         } catch (EncryptedDocumentException e) {
             logger.warn("{}: Encrypted document ({})", path, fileName, e);
+            if (span != null) {
+                span.recordException(e);
+                span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, "Encrypted document");
+            }
             throw new TikaServerParseException(e);
         } catch (Exception e) {
             if (!WriteLimitReachedException.isWriteLimitReached(e)) {
                 logger.warn("{}: Text extraction failed ({})", path, fileName, e);
             }
+            if (span != null) {
+                span.recordException(e);
+                span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, "Parse error");
+            }
             throw new TikaServerParseException(e);
         } catch (OutOfMemoryError e) {
             logger.warn("{}: OOM ({})", path, fileName, e);
             SERVER_STATUS.setStatus(ServerStatus.STATUS.ERROR);
+            if (span != null) {
+                span.recordException(e);
+                span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, "Out of memory");
+            }
             throw e;
         } finally {
+            if (span != null) {
+                span.end();
+            }
             SERVER_STATUS.complete(taskId);
             inputStream.close();
         }

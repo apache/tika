@@ -36,6 +36,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.server.core.ServerStatus;
+import org.apache.tika.server.core.TikaOpenTelemetry;
 
 @Path("/detect")
 public class DetectorResource {
@@ -61,23 +62,55 @@ public class DetectorResource {
         long timeoutMillis = TikaResource.getTaskTimeout(parseContext);
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename, timeoutMillis);
 
+        // Start OpenTelemetry span for detect operation
+        io.opentelemetry.api.trace.Span span = null;
+        if (TikaOpenTelemetry.isEnabled()) {
+            span = TikaOpenTelemetry.getTracer()
+                    .spanBuilder("tika.detect")
+                    .setAttribute("tika.resource_name", filename != null ? filename : "unknown")
+                    .setAttribute("tika.endpoint", "/detect")
+                    .startSpan();
+        }
+
         try (TikaInputStream tis = TikaInputStream.get(TikaResource.getInputStream(is, met, httpHeaders, info))) {
-            return TikaResource
+            String detectedType = TikaResource
                     .getConfig()
                     .getDetector()
                     .detect(tis, met)
                     .toString();
+            
+            if (span != null) {
+                span.setAttribute("tika.detected_type", detectedType);
+                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+            }
+            
+            return detectedType;
         } catch (IOException e) {
             LOG.warn("Unable to detect MIME type for file. Reason: {} ({})", e.getMessage(), filename, e);
+            if (span != null) {
+                span.recordException(e);
+                span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, "IO error during detection");
+            }
             return MediaType.OCTET_STREAM.toString();
         } catch (OutOfMemoryError e) {
             LOG.error("OOM while detecting: ({})", filename, e);
             serverStatus.setStatus(ServerStatus.STATUS.ERROR);
+            if (span != null) {
+                span.recordException(e);
+                span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, "Out of memory");
+            }
             throw e;
         } catch (Throwable e) {
             LOG.error("Exception while detecting: ({})", filename, e);
+            if (span != null) {
+                span.recordException(e);
+                span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, "Detection error");
+            }
             throw e;
         } finally {
+            if (span != null) {
+                span.end();
+            }
             serverStatus.complete(taskId);
         }
     }

@@ -132,6 +132,8 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
     private TlsConfig tlsConfig = new TlsConfig();
 
+    private TikaOpenTelemetryConfig openTelemetry = new TikaOpenTelemetryConfig();
+
     /**
      * Config with only the defaults
      */
@@ -566,6 +568,14 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
     public void setTlsConfig(TlsConfig tlsConfig) {
         this.tlsConfig = tlsConfig;
+    }
+
+    public TikaOpenTelemetryConfig getOpenTelemetry() {
+        return openTelemetry;
+    }
+
+    public void setOpenTelemetry(TikaOpenTelemetryConfig openTelemetry) {
+        this.openTelemetry = openTelemetry;
     }
 
     public List<String> getEndpoints() {
