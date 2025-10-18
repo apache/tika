@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -91,7 +90,6 @@ class S3PipeIntegrationTest {
             testFiles.add(nextFileName);
             String s = "<html><body>body-of-" + nextFileName + "</body></html>";
             byte[] bytes = s.getBytes(StandardCharsets.US_ASCII);
-            MessageDigest md = MessageDigest.getInstance("SHA256");
             PutObjectRequest request = PutObjectRequest.builder().bucket(FETCH_BUCKET).key(nextFileName).build();
             RequestBody requestBody = RequestBody.fromBytes(bytes);
             s3Client.putObject(request, requestBody);
