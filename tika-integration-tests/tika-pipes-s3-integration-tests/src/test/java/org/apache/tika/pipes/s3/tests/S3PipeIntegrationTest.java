@@ -25,7 +25,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -46,11 +45,11 @@ import org.testcontainers.shaded.org.hamcrest.Matchers;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
-import software.amazon.awssdk.services.s3.model.ChecksumAlgorithm;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -97,10 +96,11 @@ class S3PipeIntegrationTest {
             // https://github.com/minio/minio/issues/17662
             // https://github.com/minio/minio/issues/20845
             MessageDigest md = MessageDigest.getInstance("SHA256");
-            byte [] hash = md.digest(bytes);
-            String enc64 = Base64.getEncoder().encodeToString(hash);
+            //byte [] hash = md.digest(bytes);
+            //String enc64 = Base64.getEncoder().encodeToString(hash);
             PutObjectRequest request = PutObjectRequest.builder().bucket(FETCH_BUCKET).key(nextFileName).
-                    checksumAlgorithm(ChecksumAlgorithm.SHA256).checksumSHA256(enc64).build();
+                    //checksumAlgorithm(ChecksumAlgorithm.SHA256).checksumSHA256(enc64).
+                    build();
             RequestBody requestBody = RequestBody.fromBytes(bytes);
             s3Client.putObject(request, requestBody);
         }
@@ -122,7 +122,9 @@ class S3PipeIntegrationTest {
         // https://github.com/aws/aws-sdk-java-v2/discussions/3536
         StaticCredentialsProvider credentialsProvider = StaticCredentialsProvider.create(awsCreds);
         S3Configuration s3c = S3Configuration.builder().pathStyleAccessEnabled(true).build(); // SO11228792
-        s3Client = S3Client.builder().serviceConfiguration(s3c).region(REGION).
+        s3Client = S3Client.builder().
+                requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED). // https://stackoverflow.com/a/79488850/535646
+                serviceConfiguration(s3c).region(REGION).
                 credentialsProvider(credentialsProvider).endpointOverride(new URI(MINIO_ENDPOINT)).build();
     }
 
