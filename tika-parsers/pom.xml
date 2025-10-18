@@ -111,7 +111,7 @@
             <exclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-pkg-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
             <exclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-xml-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
             <exclude>tika-parsers-standard/tika-parsers-standard-package/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-            <exclude>tika-parsers-ml/tika-parser-nlp-module/src/test/resources/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-ml/tika-parser-nlp-module/**</exclude> <!-- already checked -->
             <exclude>tika-parsers-ml/tika-age-recogniser/model/**</exclude> <!-- already checked -->
           </excludes>
         </configuration>
