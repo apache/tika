@@ -39,8 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.shaded.org.hamcrest.MatcherAssert;
-import org.testcontainers.shaded.org.hamcrest.Matchers;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -157,9 +155,8 @@ class S3PipeIntegrationTest {
             ResponseInputStream<GetObjectResponse> object = s3Client.getObject(objectRequest);
             Assertions.assertNotNull(object);
             String data = IOUtils.toString(object, StandardCharsets.UTF_8);
-            MatcherAssert.assertThat(
-                    "Should be able to read the parsed body of the HTML file as the body of the document",
-                    data, Matchers.containsString("body-of-" + testFile));
+            Assertions.assertTrue(data.contains("body-of-" + testFile), 
+                    "Should be able to read the parsed body of the HTML file as the body of the document");
         }
     }
 
