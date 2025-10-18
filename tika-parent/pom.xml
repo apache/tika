@@ -438,7 +438,7 @@
     <sis.version>1.5</sis.version>
     <snappy.version>1.1.10.8</snappy.version>
     <solrj.version>9.9.0</solrj.version>
-    <spring.version>6.2.11</spring.version>
+    <spring.version>7.0.0-RC1</spring.version>
     <sqlite.version>3.50.3.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.1</testcontainers.version>
