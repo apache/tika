@@ -32,15 +32,26 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>tika-fetcher-http</module>
+    <module>tika-fetcher-file-system</module>
+<!--    <module>tika-fetcher-http</module>
     <module>tika-fetcher-s3</module>
     <module>tika-fetcher-gcs</module>
     <module>tika-fetcher-az-blob</module>
-    <module>tika-fetcher-microsoft-graph</module>
+    <module>tika-fetcher-microsoft-graph</module> -->
   </modules>
 
   <dependencies>
-
+    <dependency>
+      <groupId>org.pf4j</groupId>
+      <artifactId>pf4j</artifactId>
+      <!-- !!! VERY IMPORTANT -->
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-pipes-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <scm>
     <tag>3.0.0-rc1</tag>

@@ -1,0 +1,10 @@
+{
+  "pipesPluginsConfig" : {
+    "fetchers": {
+      "file-system-fetcher": {
+        "basePath": "{BASE_PATH}",
+        "extractFileSystemMetadata": false
+      }
+    }
+  }
+}

@@ -66,6 +66,7 @@ import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.core.emitter.EmitData;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.emitter.Emitter;
@@ -75,7 +76,6 @@ import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.pipes.core.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.extractor.EmittingEmbeddedDocumentBytesHandler;
-import org.apache.tika.pipes.core.fetcher.Fetcher;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -130,6 +130,7 @@ public class PipesServer implements Runnable {
     private final Object[] lock = new Object[0];
     private long checkForTimeoutMs = 1000;
     private final Path tikaConfigPath;
+    private final Path pipesConfigPath;
     private final DataInputStream input;
     private final DataOutputStream output;
     //if an extract is larger than this value, emit it directly;
@@ -148,11 +149,13 @@ public class PipesServer implements Runnable {
     private volatile long since;
 
 
-    public PipesServer(Path tikaConfigPath, InputStream in, PrintStream out,
+    public PipesServer(Path tikaConfigPath, Path pipesConfigPath,
+                       InputStream in, PrintStream out,
                        long maxForEmitBatchBytes, long serverParseTimeoutMillis,
                        long serverWaitTimeoutMillis)
             throws IOException, TikaException, SAXException {
         this.tikaConfigPath = tikaConfigPath;
+        this.pipesConfigPath = pipesConfigPath;
         this.input = new DataInputStream(in);
         this.output = new DataOutputStream(out);
         this.maxForEmitBatchBytes = maxForEmitBatchBytes;
@@ -167,12 +170,13 @@ public class PipesServer implements Runnable {
     public static void main(String[] args) throws Exception {
         try {
             Path tikaConfig = Paths.get(args[0]);
-            long maxForEmitBatchBytes = Long.parseLong(args[1]);
-            long serverParseTimeoutMillis = Long.parseLong(args[2]);
-            long serverWaitTimeoutMillis = Long.parseLong(args[3]);
+            Path pipesConfig = Paths.get(args[1]);
+            long maxForEmitBatchBytes = Long.parseLong(args[2]);
+            long serverParseTimeoutMillis = Long.parseLong(args[3]);
+            long serverWaitTimeoutMillis = Long.parseLong(args[4]);
 
             PipesServer server =
-                    new PipesServer(tikaConfig, System.in, System.out, maxForEmitBatchBytes,
+                    new PipesServer(tikaConfig, pipesConfig, System.in, System.out, maxForEmitBatchBytes,
                             serverParseTimeoutMillis, serverWaitTimeoutMillis);
             System.setIn(UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get());
             System.setOut(System.err);
@@ -819,7 +823,7 @@ public class PipesServer implements Runnable {
     protected void initializeResources() throws TikaException, IOException, SAXException {
         //TODO allowed named configurations in tika config
         this.tikaConfig = new TikaConfig(tikaConfigPath);
-        this.fetcherManager = FetcherManager.load(tikaConfigPath);
+        this.fetcherManager = FetcherManager.load(pipesConfigPath);
         //skip initialization of the emitters if emitting
         //from the pipesserver is turned off.
         if (maxForEmitBatchBytes > -1) {

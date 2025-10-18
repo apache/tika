@@ -14,8 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.fetcher.config;
+package org.apache.tika.pipes.fetcher.fs;
 
-public abstract class AbstractConfig {
-    //  Nothing to do here yet.
+import org.pf4j.Plugin;
+import org.pf4j.PluginWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class FileSystemFetcherPlugin extends Plugin {
+    private static final Logger LOG = LoggerFactory.getLogger(FileSystemFetcherPlugin.class);
+
+    public FileSystemFetcherPlugin(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
+    @Override
+    public void start() {
+        LOG.info("Starting");
+        super.start();
+    }
+
+    @Override
+    public void stop() {
+        LOG.info("Stopping");
+        super.stop();
+    }
+
+    @Override
+    public void delete() {
+        LOG.info("Deleting");
+        super.delete();
+    }
+
 }
