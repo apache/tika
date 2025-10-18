@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.shaded.org.hamcrest.MatcherAssert;
 import org.testcontainers.shaded.org.hamcrest.Matchers;
@@ -63,7 +63,7 @@ class S3PipeIntegrationTest {
     private static final Logger LOG = LoggerFactory.getLogger(S3PipeIntegrationTest.class);
 
     public static final int MAX_STARTUP_TIMEOUT = 120;
-    private static final DockerComposeContainer<?> minioContainer = new DockerComposeContainer<>(
+    private static final ComposeContainer minioContainer = new ComposeContainer(
             new File("src/test/resources/docker-compose.yml")).withStartupTimeout(
                     Duration.of(MAX_STARTUP_TIMEOUT, ChronoUnit.SECONDS))
             .withExposedService("minio-service", 9000);
