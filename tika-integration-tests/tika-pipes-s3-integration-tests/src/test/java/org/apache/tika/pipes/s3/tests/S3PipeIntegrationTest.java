@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -91,16 +90,7 @@ class S3PipeIntegrationTest {
             testFiles.add(nextFileName);
             String s = "<html><body>body-of-" + nextFileName + "</body></html>";
             byte[] bytes = s.getBytes(StandardCharsets.US_ASCII);
-            // checksum must be done explicitely, or we get an exception:
-            // "The provided 'x-amz-content-sha256' header does not match what was computed"
-            // https://github.com/minio/minio/issues/17662
-            // https://github.com/minio/minio/issues/20845
-            MessageDigest md = MessageDigest.getInstance("SHA256");
-            //byte [] hash = md.digest(bytes);
-            //String enc64 = Base64.getEncoder().encodeToString(hash);
-            PutObjectRequest request = PutObjectRequest.builder().bucket(FETCH_BUCKET).key(nextFileName).
-                    //checksumAlgorithm(ChecksumAlgorithm.SHA256).checksumSHA256(enc64).
-                    build();
+            PutObjectRequest request = PutObjectRequest.builder().bucket(FETCH_BUCKET).key(nextFileName).build();
             RequestBody requestBody = RequestBody.fromBytes(bytes);
             s3Client.putObject(request, requestBody);
         }
