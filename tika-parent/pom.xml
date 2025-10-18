@@ -305,7 +305,7 @@
     <maven.project.info.reports.version>3.9.0</maven.project.info.reports.version>
     <!-- can't update to 11, needs jdk17 -->
     <puppycrawl.version>10.26.1</puppycrawl.version>
-    <rat.version>0.16.1</rat.version>
+    <rat.version>0.17</rat.version>
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
@@ -1459,7 +1459,7 @@
           <plugin>
             <groupId>org.apache.rat</groupId>
             <artifactId>apache-rat-plugin</artifactId>
-            <version>${rat.version}</version> <!-- keep this when testing snapshot -->
+            <version>${rat.version}</version> <!-- keep this when version newer than apache parent -->
             <configuration>
               <excludes>
                 <exclude>nb-configuration.xml</exclude> <!-- local netbeans -->
