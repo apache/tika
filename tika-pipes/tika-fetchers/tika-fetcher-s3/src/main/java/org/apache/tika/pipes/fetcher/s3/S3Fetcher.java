@@ -360,7 +360,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
 
     /**
      * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
-     * e.g. AmazonClientException in a TikaConfigException.
+     * e.g. SdkClientException in a TikaConfigException.
      *
      * @param params params to use for initialization
      * @throws TikaConfigException
@@ -385,21 +385,25 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
         }
         SdkHttpClient httpClient = ApacheHttpClient.builder().maxConnections(maxConnections).build();
         S3Configuration clientConfig = S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccessEnabled).build();
-        synchronized (clientLock) {
-            S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient).
-                    requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED). // https://stackoverflow.com/a/79488850/535646
-                    serviceConfiguration(clientConfig).credentialsProvider(provider);
-            if (!StringUtils.isBlank(endpointConfigurationService)) {
-                try {
-                    s3ClientBuilder.endpointOverride(new URI(endpointConfigurationService)).region(Region.of(region));
+        try {
+            synchronized (clientLock) {
+                S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient).
+                        requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED). // https://stackoverflow.com/a/79488850/535646
+                        serviceConfiguration(clientConfig).credentialsProvider(provider);
+                if (!StringUtils.isBlank(endpointConfigurationService)) {
+                    try {
+                        s3ClientBuilder.endpointOverride(new URI(endpointConfigurationService)).region(Region.of(region));
+                    }
+                    catch (URISyntaxException ex) {
+                        throw new TikaConfigException("bad endpointConfigurationService: " + endpointConfigurationService, ex);
+                    }
+                } else {
+                    s3ClientBuilder.region(Region.of(region));
                 }
-                catch (URISyntaxException ex) {
-                    throw new TikaConfigException("bad endpointConfigurationService: " + endpointConfigurationService, ex);
-                }
-            } else {
-                s3ClientBuilder.region(Region.of(region));
+                s3Client = s3ClientBuilder.build();
             }
-            s3Client = s3ClientBuilder.build();
+        } catch (SdkClientException e) {
+            throw new TikaConfigException("can't initialize s3 fetcher", e);
         }
         if (throttleSeconds == null) {
             throttleSeconds = new long[retries];

@@ -42,6 +42,7 @@ import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvide
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.SdkHttpConfigurationOption;
@@ -299,7 +300,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
 
     /**
      * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
-     * e.g. AmazonClientException in a TikaConfigException.
+     * e.g. SdkClientException in a TikaConfigException.
      *
      * @param params params to use for initialization
      * @throws TikaConfigException
@@ -324,20 +325,24 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
         }
         SdkHttpClient httpClient = ApacheHttpClient.builder().maxConnections(maxConnections).build();
         S3Configuration clientConfig = S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccessEnabled).build();
-        S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient).
-                requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED). // https://stackoverflow.com/a/79488850/535646
-                serviceConfiguration(clientConfig).credentialsProvider(provider);
-        if (!StringUtils.isBlank(endpointConfigurationService)) {
-            try {
-                s3ClientBuilder.endpointOverride(new URI(endpointConfigurationService)).region(Region.of(region));
+        try {
+            S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient).
+                    requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED). // https://stackoverflow.com/a/79488850/535646
+                    serviceConfiguration(clientConfig).credentialsProvider(provider);
+            if (!StringUtils.isBlank(endpointConfigurationService)) {
+                try {
+                    s3ClientBuilder.endpointOverride(new URI(endpointConfigurationService)).region(Region.of(region));
+                }
+                catch (URISyntaxException ex) {
+                    throw new TikaConfigException("bad endpointConfigurationService: " + endpointConfigurationService, ex);
+                }
+            } else {
+                s3ClientBuilder.region(Region.of(region));
             }
-            catch (URISyntaxException ex) {
-                throw new TikaConfigException("bad endpointConfigurationService: " + endpointConfigurationService, ex);
-            }
-        } else {
-            s3ClientBuilder.region(Region.of(region));
+            s3Client = s3ClientBuilder.build();
+        } catch (SdkClientException e) {
+            throw new TikaConfigException("can't initialize s3 emitter", e);
         }
-        s3Client = s3ClientBuilder.build();
     }
 
     @Override
