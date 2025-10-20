@@ -58,7 +58,7 @@
       <groupId>org.opensearch</groupId>
       <artifactId>opensearch-testcontainers</artifactId>
       <!-- can't update to 3.0.0, needs jdk21 --> 
-      <version>2.1.4</version>
+      <version>4.0.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
