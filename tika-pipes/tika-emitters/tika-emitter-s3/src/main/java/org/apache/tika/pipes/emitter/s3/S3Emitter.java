@@ -17,7 +17,6 @@
 package org.apache.tika.pipes.emitter.s3;
 
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-import static software.amazon.awssdk.http.SdkHttpConfigurationOption.MAX_CONNECTIONS;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -116,7 +115,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     private String fileExtension = "json";
     private boolean spoolToTemp = true;
     private String prefix = null;
-    private int maxConnections = SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS.get(MAX_CONNECTIONS);
+    private int maxConnections = SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS.get(SdkHttpConfigurationOption.MAX_CONNECTIONS);
     private boolean pathStyleAccessEnabled = false;
     private S3Client s3Client;
 
@@ -309,8 +308,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //params have already been set...ignore them
         AwsCredentialsProvider provider;
-        switch (credentialsProvider)
-        {
+        switch (credentialsProvider) {
             case "instance":
                 provider = InstanceProfileCredentialsProvider.builder().build();
                 break;
@@ -325,10 +323,10 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
                 throw new TikaConfigException("credentialsProvider must be set and " + "must be either 'instance', 'profile' or 'key_secret'");
         }
         SdkHttpClient httpClient = ApacheHttpClient.builder().maxConnections(maxConnections).build();
-        S3Configuration clientConfig1 = S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccessEnabled).build();
+        S3Configuration clientConfig = S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccessEnabled).build();
         S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient).
                 requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED). // https://stackoverflow.com/a/79488850/535646
-                serviceConfiguration(clientConfig1).credentialsProvider(provider);
+                serviceConfiguration(clientConfig).credentialsProvider(provider);
         if (!StringUtils.isBlank(endpointConfigurationService)) {
             try {
                 s3ClientBuilder.endpointOverride(new URI(endpointConfigurationService)).region(Region.of(region));
