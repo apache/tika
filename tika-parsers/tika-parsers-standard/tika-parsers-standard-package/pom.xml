@@ -362,10 +362,9 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
-        <version>${rat.version}</version>
         <configuration>
           <excludes>
-            <exclude>src/test/resources/test-documents/**</exclude>
+            <exclude>src/test/resources/test-documents/*</exclude>
           </excludes>
         </configuration>
       </plugin>

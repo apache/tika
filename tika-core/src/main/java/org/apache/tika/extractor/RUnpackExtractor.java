@@ -21,10 +21,11 @@ import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -56,6 +57,7 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
     private EmbeddedBytesSelector embeddedBytesSelector = EmbeddedBytesSelector.ACCEPT_ALL;
 
+    private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
     private long bytesExtracted = 0;
     private final long maxEmbeddedBytesForExtraction;
 
@@ -109,17 +111,33 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         }
     }
 
-    private void parseWithBytes(TikaInputStream stream, ContentHandler handler, Metadata metadata)
-            throws TikaException, IOException, SAXException {
-        //TODO -- improve the efficiency of this so that we're not
-        //literally writing out a file per request
-        Path p = stream.getPath();
+    private void parseWithBytes(TikaInputStream tis, ContentHandler handler, Metadata metadata) throws TikaException, IOException, SAXException {
+
+        Path tmp = Files.createTempFile("tika-tmp-", ".bin");
         try {
-            //warp in CloseShieldInputStream to ensure that a misbehaving parser isn't closing
-            //the stream and thereby deleting the temp file.
-            parse(CloseShieldInputStream.wrap(stream), handler, metadata);
+            //translate the stream or not
+            if (embeddedStreamTranslator.shouldTranslate(tis, metadata)) {
+                try (OutputStream os = Files.newOutputStream(tmp)) {
+                    embeddedStreamTranslator.translate(tis, metadata, os);
+                }
+            } else {
+                Files.copy(tis, tmp, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            //now do the parse
+            if (tis.getOpenContainer() != null) {
+                parse(tis, handler, metadata);
+            } else {
+                try (TikaInputStream tisTmp = TikaInputStream.get(tmp)) {
+                    parse(tisTmp, handler, metadata);
+                }
+            }
         } finally {
-            storeEmbeddedBytes(p, metadata);
+            try {
+                storeEmbeddedBytes(tmp, metadata);
+            } finally {
+                Files.delete(tmp);
+            }
         }
     }
 
@@ -131,6 +149,10 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
     }
 
     private void storeEmbeddedBytes(Path p, Metadata metadata) {
+        if (p == null) {
+            return;
+        }
+
         if (! embeddedBytesSelector.select(metadata)) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("skipping embedded bytes {} <-> {}",

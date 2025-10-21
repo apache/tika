@@ -212,7 +212,9 @@ public class ProcessUtils {
             if (p != null) {
                 p.destroyForcibly();
             }
-            release(id);
+            if (id != null) {
+                release(id);
+            }
         }
 
     }

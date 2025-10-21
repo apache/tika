@@ -91,6 +91,7 @@ import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
 import org.apache.tika.serialization.JsonMetadataList;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Simple Swing GUI for Apache Tika. You can drag and drop files on top
@@ -193,10 +194,14 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
      * @throws Exception if an error occurs
      */
     public static void main(String[] args) throws Exception {
-        TikaConfig config = TikaConfig.getDefaultConfig();
+        TikaConfig config = null;
         if (args.length > 0) {
             File configFile = new File(args[0]);
             config = new TikaConfig(configFile);
+        } else {
+            try (InputStream is = TikaGUI.class.getResourceAsStream("/tika-config-default-single-file.xml")) {
+                config = new TikaConfig(is);
+            }
         }
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         final TikaConfig finalConfig = config;
@@ -498,8 +503,8 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
      * @return HTML content handler
      * @throws TransformerConfigurationException if an error occurs
      */
-    private ContentHandler getHtmlHandler(Writer writer) throws TransformerConfigurationException {
-        SAXTransformerFactory factory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+    private ContentHandler getHtmlHandler(Writer writer) throws TransformerConfigurationException, TikaException {
+        SAXTransformerFactory factory = XMLReaderUtils.getSAXTransformerFactory();
         TransformerHandler handler = factory.newTransformerHandler();
         handler
                 .getTransformer()
@@ -573,8 +578,8 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
         return new BoilerpipeContentHandler(writer);
     }
 
-    private ContentHandler getXmlContentHandler(Writer writer) throws TransformerConfigurationException {
-        SAXTransformerFactory factory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+    private ContentHandler getXmlContentHandler(Writer writer) throws TransformerConfigurationException, TikaException {
+        SAXTransformerFactory factory = XMLReaderUtils.getSAXTransformerFactory();
         TransformerHandler handler = factory.newTransformerHandler();
         handler
                 .getTransformer()

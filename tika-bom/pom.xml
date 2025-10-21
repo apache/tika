@@ -78,11 +78,6 @@
         <artifactId>tika-eval-core</artifactId>
         <version>4.0.0-SNAPSHOT</version>
       </dependency>
-      <dependency>
-        <groupId>org.apache.tika</groupId>
-        <artifactId>tika-fuzzing</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-      </dependency>
 
       <!-- Tika language detection modules -->
       <dependency>
@@ -277,11 +272,6 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-dl</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-advancedmedia-module</artifactId>
         <version>4.0.0-SNAPSHOT</version>
       </dependency>
@@ -310,7 +300,7 @@
       <!-- Tika Pipes modules -->
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-emitter-fs</artifactId>
+        <artifactId>tika-pipes-core</artifactId>
         <version>4.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>

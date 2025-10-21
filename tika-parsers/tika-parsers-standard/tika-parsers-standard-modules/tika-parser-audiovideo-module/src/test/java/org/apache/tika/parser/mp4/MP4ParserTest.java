@@ -17,11 +17,20 @@
 package org.apache.tika.parser.mp4;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import com.drew.metadata.mp4.Mp4Directory;
+import com.drew.metadata.mp4.media.Mp4MetaDirectory;
+import com.drew.metadata.mp4.media.Mp4SoundDirectory;
+import com.drew.metadata.mp4.media.Mp4VideoDirectory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.xml.sax.ContentHandler;
@@ -34,6 +43,7 @@ import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+
 
 /**
  * Test case for parsing mp4 files.
@@ -127,6 +137,37 @@ public class MP4ParserTest extends TikaTest {
         XMLResult r = getXML("testMP4_truncated.m4a");
         assertEquals("audio/mp4", r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("M4A", r.metadata.get(XMPDM.AUDIO_COMPRESSOR));
+    }
+
+    @Test
+    public void testAudioOnlyMP4() throws Exception {
+        final XMLResult xmlResult = getXML("testMP4AudioOnly.mp4");
+        final Metadata metadata = xmlResult.metadata;
+
+        assertEquals("audio/mp4", metadata.get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testAudioOnlyCheck() {
+        assertTrue(MP4Parser.isAudioOnly(List.of(new Mp4SoundDirectory())));
+    }
+
+    @Test
+    public void testMetadataWithSoundConsideredAudio() {
+        assertTrue(MP4Parser.isAudioOnly(List.of(new Mp4SoundDirectory(), new Mp4MetaDirectory())));
+    }
+
+    @Test
+    public void testVideoDirectoriesNotConsideredAudio() {
+        final Collection<Mp4Directory> directories =
+                List.of(new Mp4VideoDirectory(), new Mp4VideoDirectory(), new Mp4SoundDirectory());
+
+        assertFalse(MP4Parser.isAudioOnly(directories));
+    }
+
+    @Test
+    public void testNoDirectoriesNotConsideredAudio() {
+        assertFalse(MP4Parser.isAudioOnly(Collections.emptyList()));
     }
 
 /*

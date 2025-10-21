@@ -16,8 +16,8 @@
  */
 package org.apache.tika.pipes.reporters.jdbc;
 
-import static org.apache.tika.pipes.PipesResult.STATUS.PARSE_SUCCESS;
-import static org.apache.tika.pipes.PipesResult.STATUS.PARSE_SUCCESS_WITH_EXCEPTION;
+import static org.apache.tika.pipes.core.PipesResult.STATUS.PARSE_SUCCESS;
+import static org.apache.tika.pipes.core.PipesResult.STATUS.PARSE_SUCCESS_WITH_EXCEPTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,13 +48,14 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.PipesReporter;
-import org.apache.tika.pipes.PipesResult;
-import org.apache.tika.pipes.async.AsyncConfig;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.PipesReporter;
+import org.apache.tika.pipes.core.PipesResult;
+import org.apache.tika.pipes.core.async.AsyncConfig;
+import org.apache.tika.pipes.core.emitter.EmitKey;
+import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
+
 
 public class TestJDBCPipesReporter {
 
@@ -133,7 +134,7 @@ public class TestJDBCPipesReporter {
         Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
         reporter.close();
         Map<PipesResult.STATUS, Long> total = countReported(connectionString);
-        assertEquals(16, total.size());
+        assertEquals(17, total.size());
         long sum = 0;
         for (Map.Entry<PipesResult.STATUS, Long> e : expected.entrySet()) {
             if (e.getKey() != PARSE_SUCCESS && e.getKey() != PARSE_SUCCESS_WITH_EXCEPTION) {

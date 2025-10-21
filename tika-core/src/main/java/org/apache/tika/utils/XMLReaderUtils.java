@@ -42,7 +42,9 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.sax.SAXTransformerFactory;
 
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -123,8 +125,11 @@ public class XMLReaderUtils implements Serializable {
     private static final AtomicInteger POOL_GENERATION = new AtomicInteger();
     private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER =
             (publicId, systemId) -> new InputSource(new StringReader(""));
+
+    //BE CAREFUL with the return type. Some parsers will silently ignore an unexpected return type: CVE-2025-54988
     private static final XMLResolver IGNORING_STAX_ENTITY_RESOLVER =
-            (publicID, systemID, baseURI, namespace) -> "";
+            (publicID, systemID, baseURI, namespace) ->
+                    UnsynchronizedByteArrayInputStream.nullInputStream();
     /**
      * Parser pool size
      */
@@ -294,7 +299,7 @@ public class XMLReaderUtils implements Serializable {
      * If a factory is not explicitly specified, then a default factory
      * instance is created and returned. The default factory instance is
      * configured to be namespace-aware and to apply reasonable security
-     * using the {@link #IGNORING_STAX_ENTITY_RESOLVER}.
+     * precautions.
      *
      * @return StAX input factory
      * @since Apache Tika 1.13
@@ -306,8 +311,14 @@ public class XMLReaderUtils implements Serializable {
         }
 
         tryToSetStaxProperty(factory, XMLInputFactory.IS_NAMESPACE_AWARE, true);
-        tryToSetStaxProperty(factory, XMLInputFactory.IS_VALIDATING, false);
 
+        //try to configure secure processing
+        tryToSetStaxProperty(factory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        tryToSetStaxProperty(factory, XMLInputFactory.IS_VALIDATING, false);
+        tryToSetStaxProperty(factory, XMLInputFactory.SUPPORT_DTD, false);
+        tryToSetStaxProperty(factory, XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+
+        //defense in depth
         factory.setXMLResolver(IGNORING_STAX_ENTITY_RESOLVER);
         trySetStaxSecurityManager(factory);
         return factory;
@@ -362,6 +373,14 @@ public class XMLReaderUtils implements Serializable {
         }
     }
 
+    private static void tryToSetStaxProperty(XMLInputFactory factory, String key, String value) {
+        try {
+            factory.setProperty(key, value);
+        } catch (IllegalArgumentException e) {
+            LOG.warn("StAX Feature unsupported: {}", key, e);
+        }
+    }
+
     /**
      * Returns a new transformer
      * <p>
@@ -373,13 +392,51 @@ public class XMLReaderUtils implements Serializable {
      * @since Apache Tika 1.17
      */
     public static Transformer getTransformer() throws TikaException {
+        TransformerFactory transformerFactory = getTransformerFactory();
         try {
+            return transformerFactory.newTransformer();
+        } catch (TransformerConfigurationException e) {
+            throw new TikaException("Transformer not available", e);
+        }
+    }
+
+    /**
+     * Returns a TransformerFactory. The factory is configured with
+     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing} and other
+     * settings to prevent XXE.
+     *
+     * @return TransformerFactory
+     * @throws TikaException
+     */
+    public static TransformerFactory getTransformerFactory() throws TikaException {
+        try {
+
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_STYLESHEET,
-                    "");
-            return transformerFactory.newTransformer();
+            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+            return transformerFactory;
+        } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
+            throw new TikaException("Transformer not available", e);
+        }
+    }
+
+    /**
+     * Returns a SAXTransformerFactory. The factory is configured with
+     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing} and other
+     * settings to prevent XXE.
+     *
+     * @return TransformerFactory
+     * @throws TikaException
+     */
+    public static SAXTransformerFactory getSAXTransformerFactory() throws TikaException {
+        try {
+
+            SAXTransformerFactory transformerFactory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+            transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+            return transformerFactory;
         } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
             throw new TikaException("Transformer not available", e);
         }
@@ -1214,7 +1271,7 @@ public class XMLReaderUtils implements Serializable {
      * If a factory is not explicitly specified, then a default factory
      * instance is created and returned. The default factory instance is
      * configured to be namespace-aware and to apply reasonable security
-     * using the {@link XMLReaderUtils#IGNORING_STAX_ENTITY_RESOLVER}.
+     * precautions.
      *
      * @return StAX input factory
      */

@@ -35,9 +35,9 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.pipesiterator.CallablePipesIterator;
-import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
+import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 
 public class TikaClientCLI {
 

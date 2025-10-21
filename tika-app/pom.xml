@@ -33,9 +33,6 @@
   <name>Apache Tika application</name>
   <url>https://tika.apache.org/</url>
 
-  <properties>
-    <ikvm>${env.IKVM_HOME}</ikvm>
-  </properties>
 
   <dependencies>
     <dependency>
@@ -55,17 +52,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-serialization</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>tika-xmp</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-emitter-fs</artifactId>
       <version>${project.version}</version>
     </dependency>
     <!-- this brings in tika-core -->
@@ -176,13 +163,6 @@
             </manifestEntries>
           </archive>
         </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>test-jar</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.rat</groupId>
@@ -196,78 +176,6 @@
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <id>ikvm</id>
-      <activation>
-        <file>
-          <exists>${ikvm}/bin/ikvmc.exe</exists>
-        </file>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <version>${maven.antrun.version}</version>
-            <executions>
-              <execution>
-                <phase>package</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target>
-                    <exec executable="${ikvm}/bin/ikvmc.exe">
-                      <arg value="-nowarn:0100" />
-                      <arg value="-nowarn:0105" />
-                      <arg value="-nowarn:0109" />
-                      <arg value="-nowarn:0111" />
-                      <arg value="-nowarn:0112" />
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Util.dll" />
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Charsets.dll" />
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Text.dll" />
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Core.dll" />
-                      <arg value="-reference:${ikvm}/bin/IKVM.AWT.WinForms.dll" />
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Media.dll" />
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Misc.dll" />
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Security.dll" />
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.SwingAWT.dll" />
-                      <arg value="-target:library" />
-                      <arg value="-compressresources" />
-                      <arg value="-out:${project.build.directory}/${project.build.finalName}.dll" />
-                      <arg value="${project.build.directory}/${project.build.finalName}.jar" />
-                    </exec>
-                  </target>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>build-helper-maven-plugin</artifactId>
-            <version>3.6.1</version>
-            <executions>
-              <execution>
-                <phase>package</phase>
-                <goals>
-                  <goal>attach-artifact</goal>
-                </goals>
-                <configuration>
-                  <artifacts>
-                    <artifacts>
-                      <file>${project.build.directory}/${project.build.finalName}.dll</file>
-                      <type>dll</type>
-                    </artifacts>
-                  </artifacts>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 
   <organization>
     <name>The Apache Software Foundation</name>

@@ -25,6 +25,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -413,6 +414,12 @@ public class ODFParserTest extends TikaTest {
                                 "/test-documents/testODTEncrypted.odt").toURI());
         assertThrows(EncryptedDocumentException.class, () -> {
             getRecursiveMetadata(p, false);
+        });
+
+        assertThrows(EncryptedDocumentException.class, () -> {
+            try (InputStream is = Files.newInputStream(p)) {
+                getRecursiveMetadata(is, false);
+            }
         });
 
         List<Metadata> metadataList = getRecursiveMetadata(p, true);

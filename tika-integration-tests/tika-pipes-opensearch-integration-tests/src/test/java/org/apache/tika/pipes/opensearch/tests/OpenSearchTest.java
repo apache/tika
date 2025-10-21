@@ -50,15 +50,15 @@ import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.HandlerConfig;
-import org.apache.tika.pipes.emitter.Emitter;
-import org.apache.tika.pipes.emitter.EmitterManager;
+import org.apache.tika.pipes.core.HandlerConfig;
+import org.apache.tika.pipes.core.emitter.Emitter;
+import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.opensearch.JsonResponse;
 import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
 
 @Testcontainers(disabledWithoutDocker = true)
 public class OpenSearchTest {
-    private static DockerImageName OPENSEARCH_IMAGE = DockerImageName.parse("opensearchproject/opensearch:2.17.1");
+    private static DockerImageName OPENSEARCH_IMAGE = DockerImageName.parse("opensearchproject/opensearch:2.19.3");
     private static OpensearchContainer<?> CONTAINER;
 
     protected static final String TEST_INDEX = "tika-pipes-index";
@@ -420,7 +420,7 @@ public class OpenSearchTest {
         Path tikaConfigFile = getTikaConfigFile(attachmentStrategy, updateStrategy, parseMode,
                 endpoint, pipesDirectory, testDocDirectory);
 
-        TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.toAbsolutePath().toString()});
+        TikaCLI.main(new String[]{"-a", "-c",  tikaConfigFile.toAbsolutePath().toString()});
 
         //refresh to make sure the content is searchable
         JsonResponse refresh = client.getJson(endpoint + "/_refresh");

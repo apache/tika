@@ -54,6 +54,7 @@ public class DcXMLParser extends XMLParser {
                 getDublinCoreHandler(metadata, TikaCoreProperties.FORMAT, "format"),
                 getDublinCoreHandler(metadata, TikaCoreProperties.IDENTIFIER, "identifier"),
                 getDublinCoreHandler(metadata, TikaCoreProperties.LANGUAGE, "language"),
+                getDublinCoreHandler(metadata, TikaCoreProperties.SOURCE, "source"),
                 getDublinCoreHandler(metadata, TikaCoreProperties.RIGHTS, "rights"));
     }
 

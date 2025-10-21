@@ -30,6 +30,7 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>tika-pipes-core</module>
     <module>tika-httpclient-commons</module>
     <module>tika-fetchers</module>
     <module>tika-emitters</module>
@@ -51,6 +52,17 @@
   </dependencies>
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>tika-pipes-iterators/tika-pipes-iterator-csv/src/test/resources/test-simple.csv</exclude> <!-- already checked -->
+            <exclude>tika-pipes-core/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-grpc/target/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>

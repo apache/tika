@@ -28,7 +28,6 @@
         <exclude>**/.*/**</exclude>
         <exclude>**/opennlp/ner-*.bin</exclude>
         <exclude>**/opennlp/en-*.bin</exclude>
-        <exclude>**/recognition/*.bin</exclude>
         <exclude>**/*.releaseBackup</exclude>
       </excludes>
     </fileSet>

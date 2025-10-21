@@ -19,6 +19,7 @@ package org.apache.tika.server.core;
 
 import static org.apache.tika.server.core.TikaServerConfig.DEFAULT_HOST;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorCompletionService;
@@ -30,8 +31,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.help.HelpFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,9 +181,9 @@ public class TikaServerCli {
         TikaServerProcess.main(args.toArray(new String[0]));
     }
 
-    private static void usage(Options options) {
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp("tikaserver", options);
+    private static void usage(Options options) throws IOException {
+        HelpFormatter helpFormatter = HelpFormatter.builder().get();
+        helpFormatter.printHelp("tikaserver", null, options, null, true);
         System.exit(-1);
     }
 

@@ -50,7 +50,6 @@
     <module>tika-server</module>
     <module>tika-integration-tests</module>
     <module>tika-eval</module>
-    <module>tika-fuzzing</module>
     <module>tika-translate</module>
     <module>tika-example</module>
     <module>tika-java7</module>
@@ -194,6 +193,9 @@ least three +1 Tika PMC votes are cast.
             <!-- remove this once we figure out the bundle packaging -->
             <exclude>tika-bundle/src/main/resources/META-INF/MANIFEST.MF</exclude>
             <exclude>.gitattributes</exclude>
+
+            <!-- subprojects already checked, added for RAT 0.17, see also RAT-97 -->
+            <exclude>tika-*/**</exclude>
           </excludes>
         </configuration>
       </plugin>

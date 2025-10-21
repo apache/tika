@@ -45,10 +45,8 @@ public class TestParseContextSerialization {
         String json;
         try (Writer writer = new StringWriter()) {
             try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
-                jsonGenerator.writeStartObject();
                 ParseContextSerializer serializer = new ParseContextSerializer();
                 serializer.serialize(pc, jsonGenerator, null);
-                jsonGenerator.writeEndObject();
             }
             json = writer.toString();
         }

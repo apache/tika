@@ -29,8 +29,8 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.pipes.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
 
 public class ExpiringFetcherStore implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(ExpiringFetcherStore.class);

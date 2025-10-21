@@ -38,7 +38,7 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-core</artifactId>
+      <artifactId>tika-pipes-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -49,11 +49,6 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-langdetect-optimaize</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-serialization</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -114,12 +109,6 @@
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-emitter-fs</artifactId>
-      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -284,7 +273,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
-            <version>3.5.1</version>
+            <version>${maven.exec.version}</version>
             <executions>
               <execution>
                 <phase>test</phase>

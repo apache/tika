@@ -42,6 +42,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -311,7 +312,7 @@ public class DWGReadParser extends AbstractDWGParser {
                             metadata.set(TikaCoreProperties.TITLE, textVal);
                         } else if ("LASTSAVEDBY".equals(nextFieldName)) {
                             metadata.set(TikaCoreProperties.MODIFIER, textVal);
-                        } else if (!StringUtils.startsWithIgnoreCase(nextFieldName, "unknown")) {
+                        } else if (!Strings.CI.startsWith(nextFieldName, "unknown")) {
                             metadata.set(nextFieldName, textVal);
                         }
                     }

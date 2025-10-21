@@ -53,6 +53,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import jakarta.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.cxf.attachment.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.impl.MetadataMap;
@@ -73,7 +74,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.pipes.HandlerConfig;
+import org.apache.tika.pipes.core.HandlerConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
@@ -86,6 +87,7 @@ import org.apache.tika.server.core.ServerStatus;
 import org.apache.tika.server.core.TikaServerConfig;
 import org.apache.tika.server.core.TikaServerParseException;
 import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.XMLReaderUtils;
 
 @Path("/tika")
 public class TikaResource {
@@ -178,7 +180,7 @@ public class TikaResource {
      */
     public static void processHeaderConfig(Object object, String key, String val, String prefix) {
         try {
-            String property = StringUtils.removeStartIgnoreCase(key, prefix);
+            String property = Strings.CI.removeStart(key, prefix);
             Field field = null;
             try {
                 field = object
@@ -634,7 +636,7 @@ public class TikaResource {
             ContentHandler content;
 
             try {
-                SAXTransformerFactory factory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+                SAXTransformerFactory factory = XMLReaderUtils.getSAXTransformerFactory();
                 TransformerHandler handler = factory.newTransformerHandler();
                 handler
                         .getTransformer()
@@ -650,7 +652,7 @@ public class TikaResource {
                         .setOutputProperty(OutputKeys.VERSION, "1.1");
                 handler.setResult(new StreamResult(writer));
                 content = new ExpandedTitleContentHandler(handler);
-            } catch (TransformerConfigurationException e) {
+            } catch (TransformerConfigurationException | TikaException e) {
                 throw new WebApplicationException(e);
             }
 

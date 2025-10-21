@@ -17,7 +17,7 @@
 package org.apache.tika.server.core.config;
 
 import jakarta.ws.rs.core.MultivaluedMap;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.metadata.Metadata;
@@ -32,7 +32,7 @@ public class DocumentSelectorConfig implements ParseContextConfig {
     public void configure(MultivaluedMap<String, String> httpHeaders, Metadata mtadata, ParseContext context) {
         DocumentSelector documentSelector = null;
         for (String key : httpHeaders.keySet()) {
-            if (StringUtils.endsWithIgnoreCase(key, X_TIKA_SKIP_EMBEDDED_HEADER)) {
+            if (Strings.CS.endsWith(key, X_TIKA_SKIP_EMBEDDED_HEADER)) {
                 String skipEmbedded = httpHeaders.getFirst(key);
                 if (Boolean.parseBoolean(skipEmbedded)) {
                     documentSelector = metadata -> false;

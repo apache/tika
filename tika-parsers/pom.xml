@@ -93,6 +93,28 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>tika-parsers-extended/tika-parser-scientific-module/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-extended/tika-parser-scientific-package/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-image-module/src/main/resources/com/github/jaiimageio/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-text-module/src/main/java/org/apache/tika/parser/txt/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-text-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-code-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-html-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-mail-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-miscoffice-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-pdf-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-pkg-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-xml-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-standard/tika-parsers-standard-package/src/test/resources/test-documents/**</exclude> <!-- already checked -->
+            <exclude>tika-parsers-ml/tika-parser-nlp-module/**</exclude> <!-- already checked -->
+          </excludes>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 

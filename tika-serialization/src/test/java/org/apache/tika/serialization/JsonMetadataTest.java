@@ -29,12 +29,14 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 public class JsonMetadataTest {
 
     @Test
     public void testBasicSerializationAndDeserialization() throws Exception {
         Metadata metadata = new Metadata();
+        metadata.add(TikaCoreProperties.TIKA_CONTENT, "this is the content");
         metadata.add("k1", "v1");
         metadata.add("k1", "v2");
         //test duplicate value
@@ -54,7 +56,7 @@ public class JsonMetadataTest {
         StringWriter writer = new StringWriter();
         JsonMetadata.toJson(metadata, writer);
         Metadata deserialized = JsonMetadata.fromJson(new StringReader(writer.toString()));
-        assertEquals(7, deserialized.names().length);
+        assertEquals(8, deserialized.names().length);
         assertEquals(metadata, deserialized);
 
         //test that this really is 6 Chinese characters
@@ -66,11 +68,13 @@ public class JsonMetadataTest {
         writer = new StringWriter();
         JsonMetadata.setPrettyPrinting(true);
         JsonMetadata.toJson(metadata, writer);
-        assertTrue(writer
+        String expected = "{[NEWLINE]  \"alma_mater\" : \"普林斯顿大学\",[NEWLINE]  \"html\" : \"<html><body>&amp;&nbsp;</body></html>\"," +
+                "[NEWLINE]  \"json_escapes\" : \"the: \\\"quick\\\" brown, fox\"," +
+                "[NEWLINE]  \"k1\" : [ \"v1\", \"v2\" ],[NEWLINE]  \"k3\" : [ \"v3\", \"v3\" ],[NEWLINE]  \"k4\" : \"500,000\"," +
+                "[NEWLINE]  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\",[NEWLINE]  \"X-TIKA:content\" : \"this is the content\"[NEWLINE]}";
+        assertEquals(expected, writer
                 .toString()
-                .replaceAll("\r\n", "\n")
-                .contains("\"json_escapes\" : \"the: \\\"quick\\\" brown, fox\",\n" + "  \"k1\" : [ \"v1\", \"v2\" ],\n" + "  \"k3\" : [ \"v3\", \"v3\" ],\n" +
-                        "  \"k4\" : \"500,000\",\n" + "  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\"\n" + "}"));
+                .replaceAll("[\r\n]+", "[NEWLINE]"));
     }
 
     @Test

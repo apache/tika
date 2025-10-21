@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Stopwatch;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -58,11 +59,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.ConfluentKafkaContainer;
-import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
-import org.apache.tika.pipes.HandlerConfig;
+import org.apache.tika.pipes.core.HandlerConfig;
 import org.apache.tika.utils.SystemUtils;
 
 /**
@@ -183,7 +183,7 @@ public class TikaPipesKafkaTest {
                         createTikaConfigXml(tikaConfigFile, log4jPropFile, tikaConfigTemplateXml);
 
                 FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
-                TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
+                TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.getAbsolutePath()});
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

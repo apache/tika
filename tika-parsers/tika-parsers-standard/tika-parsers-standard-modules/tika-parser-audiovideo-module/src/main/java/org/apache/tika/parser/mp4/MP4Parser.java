@@ -73,6 +73,8 @@ public class MP4Parser implements Parser {
             Collections.unmodifiableSet(typesMap.keySet());
 
     private static final MediaType APPLICATION_MP4 = MediaType.application("mp4");
+    private static final MediaType AUDIO_MP4 = MediaType.audio("mp4");
+
     private static final int MAX_ERROR_MESSAGES = 100;
     static {
         // All types should be 4 bytes long, space padded as needed
@@ -111,10 +113,15 @@ public class MP4Parser implements Parser {
             }
             //TODO -- figure out how to get IOExceptions out of boxhandler. Mp4Reader
             //currently swallows IOExceptions.
-            Set<String> errorMessages =
-                    processMp4Directories(
-                            mp4Metadata.getDirectoriesOfType(Mp4Directory.class),
-                    metadata);
+            final Collection<Mp4Directory> mp4Directories =
+                    mp4Metadata.getDirectoriesOfType(Mp4Directory.class);
+            final Set<String> errorMessages = processMp4Directories(mp4Directories, metadata);
+
+            // Despite the brand, if we ONLY have audio streams with no video
+            if (isAudioOnly(mp4Directories)) {
+                // Mark this as audio/mp4
+                metadata.set(Metadata.CONTENT_TYPE, AUDIO_MP4.toString());
+            }
 
             for (String m : errorMessages) {
                 metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, m);
@@ -158,6 +165,30 @@ public class MP4Parser implements Parser {
             String compressor = mp4Directory.getString(Mp4VideoDirectory.TAG_COMPRESSOR_NAME);
             metadata.set(XMPDM.VIDEO_COMPRESSOR, compressor);
         }
+    }
+
+    /**
+     * Check we have only audio with no video metadata.
+     * <p>
+     * Other non-video metadata can exist - as long as there's at least one {@link Mp4SoundDirectory}.
+     *
+     * @param directories from MP4 file
+     * @return whether we can classify the file audio/mp4
+     */
+    static boolean isAudioOnly(final Collection<Mp4Directory> directories) {
+        boolean containsSound = false;
+
+        for (final Mp4Directory directory : directories) {
+            if (directory instanceof Mp4VideoDirectory) {
+                // Fail fast as this isn't audio only
+                return false;
+            }
+            if (directory instanceof Mp4SoundDirectory) {
+                containsSound = true;
+            }
+        }
+
+        return containsSound;
     }
 
     private void processMp4SoundDirectory(Mp4SoundDirectory mp4SoundDirectory,

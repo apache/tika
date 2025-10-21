@@ -26,17 +26,31 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.Reader;
 import java.net.URI;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.ProcessUtils;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Tests the Tika's cli
@@ -232,7 +246,8 @@ public class TikaCLITest {
     public void testJsonMetadataPrettyPrintOutput() throws Exception {
         String json = getParamOutContent("--json", "-r", resourcePrefix + "testJsonMultipleInts.html");
 
-        assertTrue(json.contains("\"X-TIKA:Parsed-By\" : [ \"org.apache.tika.parser.DefaultParser\", " + "\"org.apache.tika.parser.html.JSoupParser\" ],"));
+        assertTrue(json.contains("\"X-TIKA:Parsed-By\" : [ \"org.apache.tika.parser.CompositeParser\", " +
+                "\"org.apache.tika.parser.DefaultParser\", \"org.apache.tika.parser.html.JSoupParser\" ],"));
         //test pretty-print alphabetic sort of keys
         int enc = json.indexOf("\"Content-Encoding\"");
         int fb = json.indexOf("fb:admins");
@@ -248,6 +263,56 @@ public class TikaCLITest {
         assertTrue(json.contains("pdf:incrementalUpdateCount\":\"2\""));
         assertTrue(json.contains("embeddedResourceType\":\"VERSION\""));
     }
+
+    @Test
+    public void testExtractJavascript() throws Exception {
+        String json = getParamOutContent("-J", resourcePrefix + "testPDFPackage.pdf");
+        assertTrue(json.contains("type=\\\"PDActionJavaScript\\\""));
+        assertTrue(json.contains("MACRO"));
+        assertTrue(json.contains("NAMES_TREE"));
+    }
+
+    @Test
+    public void testMacros() throws Exception {
+        String json = getParamOutContent("-J", resourcePrefix + "testPPT_macros.ppt");
+        assertTrue(json.contains("MACRO"));
+        assertTrue(json.contains("Module1"));
+    }
+
+    @Test
+    public void testRUnpack() throws Exception {
+        String[] expectedChildren = new String[]{
+                "testPDFPackage.pdf.json",
+                //the first two test that the default single file config is working
+                "testPDFPackage.pdf-embed/00000001-embedded-1",
+                "testPDFPackage.pdf-embed/00000002-image0.jpg",
+                "testPDFPackage.pdf-embed/00000003-PDF1.pdf",
+                "testPDFPackage.pdf-embed/00000004-PDF2.pdf"};
+        testRecursiveUnpack("testPDFPackage.pdf", expectedChildren, 2);
+    }
+
+    @Test
+    public void testPSTRUnpack() throws Exception {
+        String[] expectedChildren = new String[]{"testPST.pst.json",
+                "testPST.pst-embed/00000007-First email.msg",
+                "testPST.pst-embed/00000001-Feature Generators.msg",
+                "testPST.pst-embed/00000008-First email.msg",
+                "testPST.pst-embed/00000004-[jira] [Resolved] (TIKA-1249) Vcard files detection.msg",
+                "testPST.pst-embed/00000003-Feature Generators.msg",
+                "testPST.pst-embed/00000002-putstatic%22.msg",
+                "testPST.pst-embed/00000005-[jira] [Commented] (TIKA-1250) Process loops infintely processing a CHM file.msg",
+                "testPST.pst-embed/00000009-attachment.docx",
+                "testPST.pst-embed/00000006-[WEBINAR] - %22Introducing Couchbase Server 2.5%22.msg"};
+        testRecursiveUnpack("testPST.pst", expectedChildren, 2);
+        try (Reader reader = Files.newBufferedReader(extractDir.resolve("testPST.pst.json"))) {
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            for (Metadata m : metadataList) {
+                String content = m.get(TikaCoreProperties.TIKA_CONTENT);
+                assertFalse(StringUtils.isBlank(content));
+            }
+        }
+    }
+
 
     /**
      * Tests -l option of the cli
@@ -295,7 +360,7 @@ public class TikaCLITest {
 
     @Test
     public void testExtractSimple() throws Exception {
-        String[] expectedChildren = new String[]{"MBD002B040A.cdx", "file4.png", "MBD002B0FA6.bin", "MBD00262FE3.txt", "file0.emf"};
+        String[] expectedChildren = new String[]{"MBD002B040A.cdx", "file-4.png", "MBD002B0FA6.bin", "MBD00262FE3.txt", "file-0.emf"};
         testExtract("/coffee.xls", expectedChildren, 8);
     }
 
@@ -307,7 +372,7 @@ public class TikaCLITest {
 
     @Test
     public void testExtractRelative() throws Exception {
-        String[] expectedChildren = new String[]{"touch.pl",};
+        String[] expectedChildren = new String[]{"dangerous/dont/touch.pl",};
         testExtract("testZip_relative.zip", expectedChildren);
     }
 
@@ -322,6 +387,56 @@ public class TikaCLITest {
     public void testExtract0x00() throws Exception {
         String[] expectedChildren = new String[]{"dang erous.pl",};
         testExtract("testZip_zeroByte.zip", expectedChildren);
+    }
+
+
+    private void testRecursiveUnpack(String targetFile, String[] expectedChildrenFileNames) throws Exception {
+        testRecursiveUnpack(targetFile, expectedChildrenFileNames, expectedChildrenFileNames.length);
+    }
+
+    private void testRecursiveUnpack(String targetFile, String[] expectedChildrenFileNames, int expectedLength) throws Exception {
+        Path input = Paths.get(new URI(resourcePrefix + "/" + targetFile));
+        String[] params = {"-Z", input.toAbsolutePath().toString(),
+                extractDir.toAbsolutePath().toString()};
+
+        TikaCLI.main(params);
+        Set<String> fileNames = getFileNames(extractDir);
+        String[] jsonFile = extractDir
+                .toFile()
+                .list();
+        assertNotNull(jsonFile);
+        assertEquals(expectedLength, jsonFile.length);
+
+        for (String expectedChildName : expectedChildrenFileNames) {
+            assertTrue(fileNames.contains(expectedChildName));
+        }
+    }
+
+    private Set<String> getFileNames(Path extractDir) throws IOException {
+        final Set<String> names = new HashSet<>();
+        Files.walkFileTree(extractDir, new FileVisitor<Path>() {
+            @Override
+            public @NotNull FileVisitResult preVisitDirectory(Path path, @NotNull BasicFileAttributes basicFileAttributes) throws IOException {
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public @NotNull FileVisitResult visitFile(Path path, @NotNull BasicFileAttributes basicFileAttributes) throws IOException {
+                names.add(extractDir.relativize(path).toString().replace('\\', '/'));
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public @NotNull FileVisitResult visitFileFailed(Path path, @NotNull IOException e) throws IOException {
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public @NotNull FileVisitResult postVisitDirectory(Path path, @Nullable IOException e) throws IOException {
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return names;
     }
 
     private void testExtract(String targetFile, String[] expectedChildrenFileNames) throws Exception {
@@ -383,10 +498,10 @@ public class TikaCLITest {
         new File("subdir/foo.txt").delete();
         new File("subdir").delete();
         String content = getParamOutContent("-z", "--extract-dir=target", resourcePrefix + "testWithSubdirs.zip");
-        assertTrue(content.contains("Extracting 'subdir/foo.txt'"));
+        //assertTrue(content.contains("Extracting 'subdir/foo.txt'"));
         // clean up. TODO: These should be in target.
-        new File("target/subdir/foo.txt").delete();
-        new File("target/subdir").delete();
+        assertTrue(new File("target/subdir/foo.txt").delete());
+        assertTrue(new File("target/subdir").delete());
     }
 
     @Test
@@ -404,7 +519,7 @@ public class TikaCLITest {
         Path jpeg = extractDir.resolve("image0.jpg");
         //tiff isn't extracted without optional image dependency
 //            File tiff = new File(tempFile, "image1.tif");
-        Path jobOptions = extractDir.resolve("Press Quality(1).joboptions");
+        Path jobOptions = extractDir.resolve("Press Quality(1).joboptions.txt");
         Path doc = extractDir.resolve("Unit10.doc");
 
         assertExtracted(jpeg, allFiles);

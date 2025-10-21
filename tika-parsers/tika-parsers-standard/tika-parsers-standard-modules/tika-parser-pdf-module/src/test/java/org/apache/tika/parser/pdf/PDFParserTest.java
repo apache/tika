@@ -711,15 +711,15 @@ public class PDFParserTest extends TikaTest {
 
     }
 
-    //STUB test for once TIKA-1295 is fixed
     @Test
     public void testMultipleTitles() throws Exception {
+        //TIKA-1295 and TIKA-4466
         XMLResult r = getXML("testPDFTripleLangTitle.pdf");
-        //TODO: add other tests as part of TIKA-1295
-        //dc:title-fr-ca (or whatever we decide) should be "Bonjour World"
-        //dc:title-zh-ch is currently hosed...bug in PDFBox while injecting xmp?
-        //
-        assertEquals("Hello World", r.metadata.get("dc:title"));
+        String[] titles = new String[]{"Hello World", "Bonjour World", "你好世界"};
+        assertArrayEquals(titles, r.metadata.getValues(TikaCoreProperties.TITLE));
+        assertEquals("Hello World", r.metadata.get(TikaCoreProperties.TITLE.getName() + ":x-default"));
+        assertEquals("Bonjour World", r.metadata.get(TikaCoreProperties.TITLE.getName() + ":fr-ca"));
+        assertEquals("你好世界", r.metadata.get(TikaCoreProperties.TITLE.getName() + ":zh-cn"));
     }
 
     @Test

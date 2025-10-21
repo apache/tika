@@ -40,9 +40,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.help.HelpFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,9 +55,9 @@ import org.apache.tika.eval.app.io.DBWriter;
 import org.apache.tika.eval.app.io.ExtractReader;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.pipesiterator.CallablePipesIterator;
-import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
+import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator;
 
 public class ExtractComparerRunner {
@@ -71,14 +71,17 @@ public class ExtractComparerRunner {
     static {
 
         OPTIONS = new Options()
-                .addOption(Option.builder("a").longOpt("extractsA").hasArg().desc("required: directory of 'A' extracts").build())
-                .addOption(Option.builder("b").longOpt("extractsB").hasArg().desc("required: directory of 'B' extracts").build())
+                .addOption(Option.builder("a").longOpt("extractsA").hasArg().desc("required: directory of 'A' extracts").get())
+                .addOption(Option.builder("b").longOpt("extractsB").hasArg().desc("required: directory of 'B' extracts").get())
                 .addOption(Option.builder("i").longOpt("inputDir").hasArg().desc("optional: directory for original binary input documents."
-                        + " If not specified, -extracts is crawled as is.").build())
-                .addOption(Option.builder("d").longOpt("db").hasArg().desc("optional: db path").build())
-                .addOption(Option.builder("c").longOpt("config").hasArg().desc("tika-eval json config file").build())
+                        + " If not specified, -extracts is crawled as is.").get())
+                .addOption(Option.builder("d").longOpt("db").hasArg().desc("optional: db path").get())
+                .addOption(Option.builder("c").longOpt("config").hasArg().desc("tika-eval json config file").get())
+                .addOption(Option.builder("n").longOpt("numWorkers").hasArg().desc("number of worker threads").get())
+                .addOption(Option.builder("m").longOpt("maxExtractLength").hasArg().desc("maximum extract length").get())
                 ;
     }
+
     public static void main(String[] args) throws Exception {
         DefaultParser defaultCLIParser = new DefaultParser();
         CommandLine commandLine = defaultCLIParser.parse(OPTIONS, args);
@@ -87,6 +90,15 @@ public class ExtractComparerRunner {
         Path extractsBDir = commandLine.hasOption('b') ? Paths.get(commandLine.getOptionValue('b')) : Paths.get(USAGE_FAIL("Must specify extractsB dir: -b"));
         Path inputDir = commandLine.hasOption('i') ? Paths.get(commandLine.getOptionValue('i')) : extractsADir;
         String dbPath = commandLine.hasOption('d') ? commandLine.getOptionValue('d') : USAGE_FAIL("Must specify the db name: -d");
+
+        if (commandLine.hasOption('n')) {
+            evalConfig.setNumWorkers(Integer.parseInt(commandLine.getOptionValue('n')));
+        }
+
+        if (commandLine.hasOption('m')) {
+            evalConfig.setMaxExtractLength(Long.parseLong(commandLine.getOptionValue('m')));
+        }
+
         String jdbcString = getJdbcConnectionString(dbPath);
         execute(inputDir, extractsADir, extractsBDir, jdbcString, evalConfig);
     }
@@ -182,13 +194,13 @@ public class ExtractComparerRunner {
         return new MimeBuffer(jdbcUtil.getConnection(), builder.getMimeTable(), TikaConfig.getDefaultConfig());
     }
 
-    private static void USAGE() {
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp(80, "java -jar tika-eval-app-x.y.z.jar FileProfiler -e docs -d mydb [-i inputDir, -c config.json]",
-                "Tool: Profile", OPTIONS, "");
+    private static void USAGE() throws IOException {
+        HelpFormatter helpFormatter = HelpFormatter.builder().get();
+        helpFormatter.printHelp("java -jar tika-eval-app-x.y.z.jar FileProfiler -e docs -d mydb [-i inputDir, -c config.json]",
+                "Tool: Profile", OPTIONS, null, true);
     }
 
-    private static String USAGE_FAIL(String msg) {
+    private static String USAGE_FAIL(String msg) throws IOException {
         USAGE();
         throw new IllegalArgumentException(msg);
     }

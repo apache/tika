@@ -82,6 +82,7 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 
 public class HtmlParserTest extends TikaTest {
 
@@ -710,7 +711,7 @@ public class HtmlParserTest extends TikaTest {
      * @throws Exception
      */
     private ContentHandler makeHtmlTransformer(Writer writer) throws Exception {
-        SAXTransformerFactory factory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+        SAXTransformerFactory factory = XMLReaderUtils.getSAXTransformerFactory();
         TransformerHandler handler = factory.newTransformerHandler();
         handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");

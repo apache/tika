@@ -364,7 +364,7 @@ public class TikaConfig {
         InputStream stream = null;
         try {
             stream = new URI(config).toURL().openStream();
-        } catch (IOException | URISyntaxException ignore) {
+        } catch (IOException | URISyntaxException | IllegalArgumentException ignore) {
         }
         if (stream == null) {
             stream = serviceLoader.getResourceAsStream(config);

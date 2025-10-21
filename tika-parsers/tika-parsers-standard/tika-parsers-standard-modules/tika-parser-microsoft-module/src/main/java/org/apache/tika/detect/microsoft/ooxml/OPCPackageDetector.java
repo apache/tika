@@ -198,6 +198,10 @@ public class OPCPackageDetector implements ZipContainerDetector {
 
         // Get the type of the core document part
         PackagePart corePart = pkg.getPart(core.getRelationship(0));
+        if (corePart == null) {
+            return null;
+        }
+
         String coreType = corePart.getContentType();
 
         if (coreType.contains(".xps")) {

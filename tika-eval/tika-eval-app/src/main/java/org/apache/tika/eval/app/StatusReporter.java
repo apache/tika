@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.pipes.pipesiterator.CallablePipesIterator;
+import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.utils.DurationFormatUtils;
 
 public class StatusReporter implements Callable<Long> {

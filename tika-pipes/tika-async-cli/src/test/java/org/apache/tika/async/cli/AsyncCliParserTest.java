@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.sax.BasicContentHandlerFactory;
+
 public class AsyncCliParserTest {
 
     @Test
@@ -69,13 +71,14 @@ public class AsyncCliParserTest {
     @Test
     public void testAll() throws Exception {
         SimpleAsyncConfig simpleAsyncConfig = TikaAsyncCLI.parseCommandLine(
-                new String[]{"-i", "input", "-o", "output", "-n", "5", "-t", "30000", "-x", "1g"});
+                new String[]{"-i", "input", "-o", "output", "-n", "5", "-T", "30000", "-X", "1g", "-h", "x"});
         assertEquals("input", simpleAsyncConfig.getInputDir());
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
         assertEquals(5, simpleAsyncConfig.getNumClients());
         assertEquals(30000L, simpleAsyncConfig.getTimeoutMs());
         assertEquals("1g", simpleAsyncConfig.getXmx());
+        assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.XML, simpleAsyncConfig.getHandlerType());
     }
 
     //TODO -- test for file list with and without inputDir
