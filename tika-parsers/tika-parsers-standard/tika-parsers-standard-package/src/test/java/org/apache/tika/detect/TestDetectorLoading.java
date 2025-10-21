@@ -18,6 +18,7 @@ package org.apache.tika.detect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -32,14 +33,20 @@ public class TestDetectorLoading {
         //integration test
         Detector detector = TikaConfig.getDefaultConfig().getDetector();
         List<Detector> detectors = ((CompositeDetector) detector).getDetectors();
+        String[] expected = new String[]{
+                "org.gagravarr.tika.OggDetector",
+                "org.apache.tika.detect.MatroskaDetector",
+                "org.apache.tika.detect.apple.BPListDetector",
+                "org.apache.tika.detect.crypto.ASN1Detector",
+                "org.apache.tika.detect.gzip.GZipSpecializationDetector",
+                "org.apache.tika.detect.microsoft.POIFSContainerDetector",
+                "org.apache.tika.detect.ole.MiscOLEDetector",
+                "org.apache.tika.detect.zip.DefaultZipContainerDetector",
+                "org.apache.tika.mime.MimeTypes"
+        };
         assertEquals(9, detectors.size());
-        assertEquals("org.gagravarr.tika.OggDetector", detectors.get(0).getClass().getName());
-        assertEquals("org.apache.tika.detect.crypto.ASN1Detector",
-                detectors.get(2).getClass().getName());
-        assertEquals("org.apache.tika.detect.gzip.GZipSpecializationDetector",
-                detectors.get(3).getClass().getName());
-        assertEquals("org.apache.tika.detect.microsoft.POIFSContainerDetector",
-                detectors.get(4).getClass().getName());
-        assertEquals("org.apache.tika.mime.MimeTypes", detectors.get(7).getClass().getName());
+        for (int i = 0; i < detectors.size(); i++) {
+            assertEquals(expected[i], detectors.get(i).getClass().getName());
+        }
     }
 }
