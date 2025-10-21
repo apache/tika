@@ -546,7 +546,7 @@ public class PipesClient implements Closeable {
         }
         if (hasExitOnOOM) {
             LOG.warn(
-                    "I notice that you have an exit/crash on OOM. If you run heavy external processes " +
+                    "I notice that you have a jdk setting to exit/crash on OOM. If you run heavy external processes " +
                             "like tesseract, this setting may result in orphaned processes which could be disastrous" +
                             " for performance.");
         }
