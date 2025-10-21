@@ -43,85 +43,12 @@
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>${maven.shade.version}</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <createDependencyReducedPom>
-                false
-              </createDependencyReducedPom>
-              <artifactSet>
-                <excludes>
-                  <!-- there has to be a better way -->
-                  <exclude>org.apache.tika:tika-server-core:jar:</exclude>
-                  <exclude>org.apache.tika:tika-core:jar:</exclude>
-                  <exclude>org.apache.tika:tika-pipes-core:jar:</exclude>
-                  <exclude>org.apache.tika:tika-langdetect-opennlp:jar:</exclude>
-                  <exclude>commons-io:commons-io:jar:</exclude>
-                  <exclude>commons-codec:commons-codec:jar:</exclude>
-                  <exclude>org.apache.commons:commons-lang3:jar:</exclude>
-                  <exclude>org.apache.commons:commons-math3:jar:</exclude>
-                  <exclude>org.apache.lucene:lucene-core:jar:</exclude>
-                  <exclude>org.apache.lucene:lucene-analysis-common:jar:</exclude>
-                  <exclude>org.apache.lucene:lucene-analysis-icu:jar:</exclude>
-                  <exclude>org.jsoup:jar:</exclude>
-                  <exclude>com.ibm.icu:icu4j:jar:</exclude>
-                  <exclude>com.fasterxml.jackson.core:jackson-core:jar:</exclude>
-                  <exclude>com.fasterxml.jackson.core:jackson-databind:jar:</exclude>
-                  <exclude>com.fasterxml.jackson.core:jackson-annotations:jar:</exclude>
-                  <exclude>org.apache.opennlp:opennlp-tools:jar:</exclude>
-                  <exclude>org.slf4j:slf4j-api:jar:</exclude>
-                </excludes>
-              </artifactSet>
-              <filters>
-                <filter>
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>module-info.class</exclude>
-                    <exclude>META-INF/*</exclude>
-                    <exclude>LICENSE.txt</exclude>
-                    <exclude>NOTICE.txt</exclude>
-                    <exclude>CHANGES</exclude>
-                    <exclude>README</exclude>
-                  </excludes>
-                </filter>
-              </filters>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <manifestEntries>
-                    <Multi-Release>true</Multi-Release>
-                  </manifestEntries>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                  <resource>META-INF/LICENSE</resource>
-                  <file>target/classes/META-INF/LICENSE</file>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                  <resource>META-INF/NOTICE</resource>
-                  <file>target/classes/META-INF/NOTICE</file>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                  <resource>META-INF/DEPENDENCIES</resource>
-                  <file>target/classes/META-INF/DEPENDENCIES</file>
-                </transformer>
-              </transformers>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.app</Automatic-Module-Name>
+              <Automatic-Module-Name>org.apache.tika.server.eval</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>
