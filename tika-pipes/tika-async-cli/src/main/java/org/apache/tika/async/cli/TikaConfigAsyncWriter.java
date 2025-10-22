@@ -85,11 +85,9 @@ class TikaConfigAsyncWriter {
         Path baseInput = Paths.get(simpleAsyncConfig.getInputDir());
         Path baseOutput = Paths.get(simpleAsyncConfig.getOutputDir());
         if (Files.isRegularFile(baseInput)) {
-            if (baseInput.equals(baseOutput)) {
-                baseInput = baseInput.getParent();
-                baseOutput = baseInput;
-            } else {
-                baseInput = baseInput.getParent();
+            baseInput = baseInput.toAbsolutePath().getParent();
+            if (baseInput == null) {
+                throw new IllegalArgumentException("input file must be at least one directory below root");
             }
         }
 
