@@ -570,7 +570,7 @@ public class PipesClient implements Closeable {
         commandLine.add("org.apache.tika.pipes.core.PipesServer");
         commandLine.add(ProcessUtils.escapeCommandLine(
                 pipesConfig.getTikaConfig().toAbsolutePath().toString()));
-
+        commandLine.add(ProcessUtils.escapeCommandLine(pipesConfig.getPipesPluginsConfig().toAbsolutePath().toString()));
         commandLine.add(Long.toString(pipesConfig.getMaxForEmitBatchBytes()));
         commandLine.add(Long.toString(pipesConfig.getTimeoutMillis()));
         commandLine.add(Long.toString(pipesConfig.getShutdownClientAfterMillis()));

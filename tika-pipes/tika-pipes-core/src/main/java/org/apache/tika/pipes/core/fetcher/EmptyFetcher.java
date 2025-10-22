@@ -19,14 +19,22 @@ package org.apache.tika.pipes.core.fetcher;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.fetcher.FetcherConfig;
 
 public class EmptyFetcher implements Fetcher {
 
     @Override
-    public String getName() {
+    public void configure(FetcherConfig fetcherConfig) throws TikaConfigException {
+        //no-op
+    }
+
+    @Override
+    public String getPluginId() {
         return "empty";
     }
 
