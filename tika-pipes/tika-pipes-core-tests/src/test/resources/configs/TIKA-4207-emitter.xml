@@ -16,32 +16,20 @@
   limitations under the License.
 -->
 <properties>
-  <pipes>
-    <params>
-      <numClients>2</numClients>
-      <forkedJvmArgs>
-        <arg>-Xmx1g</arg>
-        <arg>-XX:ParallelGCThreads=2</arg>
-      </forkedJvmArgs>
-      <timeoutMillis>60000</timeoutMillis>
-      <maxForEmitBatchBytes>0</maxForEmitBatchBytes> <!-- always emit -->
-    </params>
-  </pipes>
-  <autoDetectParserConfig>
-    <digesterFactory class="org.apache.tika.pipes.core.async.MockDigesterFactory">
-      <skipContainerDocument>false</skipContainerDocument>
-    </digesterFactory>
-  </autoDetectParserConfig>
   <fetchers>
     <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
       <name>fs</name>
-      <basePath>src/test/resources/test-documents</basePath>
+      <basePath>BASE_PATH</basePath>
     </fetcher>
   </fetchers>
   <emitters>
     <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
-      <name>fs</name>
-      <basePath>EMITTER_BASE_PATH</basePath>
+      <name>json</name>
+      <basePath>JSON_PATH</basePath>
+    </emitter>
+    <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
+      <name>bytes</name>
+      <basePath>BYTES_PATH</basePath>
     </emitter>
   </emitters>
 </properties>

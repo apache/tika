@@ -1,10 +1,11 @@
 {
   "pipesPluginsConfig" : {
     "fetchers": {
-      "fs": {
+      "file-system-fetcher": {
         "basePath": "BASE_PATH",
         "extractFileSystemMetadata": false
       }
-    }
+    },
+    "pf4j.pluginsDir": "PLUGINS_DIR"
   }
 }

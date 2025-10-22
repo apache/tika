@@ -69,12 +69,12 @@ public class AsyncProcessor implements Closeable {
     private boolean addedEmitterSemaphores = false;
     boolean isShuttingDown = false;
 
-    public AsyncProcessor(Path tikaConfigPath) throws TikaException, IOException {
-        this(tikaConfigPath, null);
+    public AsyncProcessor(Path tikaConfigPath, Path pipesPluginsConfigPath) throws TikaException, IOException {
+        this(tikaConfigPath, pipesPluginsConfigPath, null);
     }
 
-    public AsyncProcessor(Path tikaConfigPath, PipesIterator pipesIterator) throws TikaException, IOException {
-        this.asyncConfig = AsyncConfig.load(tikaConfigPath);
+    public AsyncProcessor(Path tikaConfigPath, Path pipesPluginsConfigPath, PipesIterator pipesIterator) throws TikaException, IOException {
+        this.asyncConfig = AsyncConfig.load(tikaConfigPath, pipesPluginsConfigPath);
         this.fetchEmitTuples = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
         this.emitData = new ArrayBlockingQueue<>(100);
         //+1 is the watcher thread

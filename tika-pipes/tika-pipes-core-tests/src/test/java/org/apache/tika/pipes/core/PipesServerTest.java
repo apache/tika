@@ -23,10 +23,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -42,6 +42,11 @@ import org.apache.tika.pipes.core.fetcher.FetcherManager;
 
 public class PipesServerTest extends TikaTest {
 
+    @BeforeAll
+    public static void setUp() {
+        //System.setProperty("pf4j.pluginsDir", "../tika-fetchers/tika-fetcher-file-system/target/plugins");
+    }
+
     /**
      * This test is useful for stepping through the debugger on PipesServer
      * without having to attach the debugger to the forked process.
@@ -51,19 +56,13 @@ public class PipesServerTest extends TikaTest {
      */
     @Test
     public void testBasic(@TempDir Path tmp) throws Exception {
+        String testDoc = "mock_times.xml";
+        Path pipesConfig = PluginsTestHelper.getFileSystemFetcherConfig(tmp);
+        PluginsTestHelper.copyTestFilesToTmpInput(tmp, testDoc);
+
         Path tikaConfig = tmp.resolve("tika-config.xml");
-        Path pipesConfig = tmp.resolve("pipes-config.json");
-
-        String json = IOUtils.toString(
-                PipesServerTest.class.getResourceAsStream("TIKA-4207-emitters.json"),
-                StandardCharsets.UTF_8);
-        json = json.replace("BASE_PATH", tmp.toAbsolutePath().toString());
-        Files.write(pipesConfig, json.getBytes(StandardCharsets.UTF_8));
-
         Files.copy(PipesServerTest.class.getResourceAsStream("TIKA-3941.xml"), tikaConfig);
 
-        Files.copy(PipesServerTest.class.getResourceAsStream("/test-documents/mock_times.xml"),
-                tmp.resolve("mock.xml"));
 
         PipesServer pipesServer = new PipesServer(tikaConfig, pipesConfig,
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
@@ -74,7 +73,7 @@ public class PipesServerTest extends TikaTest {
         pipesServer.initializeResources();
 
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
-                new FetchKey("fs", "mock.xml"),
+                new FetchKey("file-system-fetcher", testDoc),
                 new EmitKey("", ""));
         Fetcher fetcher = FetcherManager.load(pipesConfig).getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
@@ -85,23 +84,14 @@ public class PipesServerTest extends TikaTest {
 
     @Test
     public void testEmbeddedStreamEmitter(@TempDir Path tmp) throws Exception {
-        if (Files.isDirectory(tmp)) {
-            FileUtils.deleteDirectory(tmp.toFile());
-        }
-        Files.createDirectories(tmp);
+
+        String testDoc = "basic_embedded.xml";
+        Path pipesConfig = PluginsTestHelper.getFileSystemFetcherConfig(tmp);
+        PluginsTestHelper.copyTestFilesToTmpInput(tmp, testDoc);
+
         Path tikaConfig = tmp.resolve("tika-config.xml");
-        Path pipesConfig = tmp.resolve("pipes-config.json");
-
-        String json = IOUtils.toString(
-                PipesServerTest.class.getResourceAsStream("TIKA-4207-emitters.json"),
-                StandardCharsets.UTF_8);
-        json = json.replace("BASE_PATH", tmp.toAbsolutePath().toString());
-        Files.write(pipesConfig, json.getBytes(StandardCharsets.UTF_8));
-
         Files.copy(PipesServerTest.class.getResourceAsStream("TIKA-4207.xml"), tikaConfig);
 
-        Files.copy(PipesServerTest.class.getResourceAsStream("/test-documents/basic_embedded.xml"),
-                tmp.resolve("mock.xml"));
 
         PipesServer pipesServer = new PipesServer(tikaConfig, pipesConfig,
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
@@ -117,7 +107,7 @@ public class PipesServerTest extends TikaTest {
         parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
         parseContext.set(EmbeddedDocumentBytesConfig.class, embeddedDocumentBytesConfig);
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
-                new FetchKey("fs", "mock.xml"),
+                new FetchKey("fs", testDoc),
                 new EmitKey("", ""), new Metadata(), parseContext);
         Fetcher fetcher = FetcherManager.load(pipesConfig).getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
@@ -144,24 +134,12 @@ public class PipesServerTest extends TikaTest {
 
     @Test
     public void testEmbeddedStreamEmitterLimitBytes(@TempDir Path tmp) throws Exception {
-        if (Files.isDirectory(tmp)) {
-            FileUtils.deleteDirectory(tmp.toFile());
-        }
-        Files.createDirectories(tmp);
+        String testDoc = "basic_embedded.xml";
+        Path pipesConfig = PluginsTestHelper.getFileSystemFetcherConfig(tmp);
+        PluginsTestHelper.copyTestFilesToTmpInput(tmp, testDoc);
+
         Path tikaConfig = tmp.resolve("tika-config.xml");
-
-        Path pipesConfig = tmp.resolve("pipes-config.json");
-
-        String json = IOUtils.toString(
-                PipesServerTest.class.getResourceAsStream("TIKA-4207-emitters.json"),
-                StandardCharsets.UTF_8);
-        json = json.replace("BASE_PATH", tmp.toAbsolutePath().toString());
-        Files.write(pipesConfig, json.getBytes(StandardCharsets.UTF_8));
-
         Files.copy(PipesServerTest.class.getResourceAsStream("TIKA-4207-limit-bytes.xml"), tikaConfig);
-
-        Files.copy(PipesServerTest.class.getResourceAsStream("/test-documents/basic_embedded.xml"),
-                tmp.resolve("mock.xml"));
 
         PipesServer pipesServer = new PipesServer(tikaConfig, pipesConfig,
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
@@ -177,7 +155,7 @@ public class PipesServerTest extends TikaTest {
         parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
         parseContext.set(EmbeddedDocumentBytesConfig.class, embeddedDocumentBytesConfig);
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
-                new FetchKey("fs", "mock.xml"),
+                new FetchKey("fs", testDoc),
                 new EmitKey("", ""), new Metadata(), parseContext);
 
         Fetcher fetcher = FetcherManager.load(pipesConfig).getFetcher();

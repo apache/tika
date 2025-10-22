@@ -33,7 +33,7 @@ public class MockReporterTest {
     @Test
     public void testBasic() throws Exception {
         Path configPath = Paths.get(this.getClass().getResource("TIKA-3507.xml").toURI());
-        AsyncConfig asyncConfig = AsyncConfig.load(configPath);
+        AsyncConfig asyncConfig = AsyncConfig.load(configPath, null);
         PipesReporter reporter = asyncConfig.getPipesReporter();
         assertTrue(reporter instanceof MockReporter);
         assertEquals("somethingOrOther", ((MockReporter)reporter).getEndpoint());
@@ -42,7 +42,7 @@ public class MockReporterTest {
     @Test
     public void testCompositePipesReporter() throws Exception {
         Path configPath = Paths.get(this.getClass().getResource("TIKA-3865.xml").toURI());
-        AsyncConfig asyncConfig = AsyncConfig.load(configPath);
+        AsyncConfig asyncConfig = AsyncConfig.load(configPath, null);
         PipesReporter reporter = asyncConfig.getPipesReporter();
         assertTrue(reporter instanceof CompositePipesReporter);
         List<PipesReporter> reporters = ((CompositePipesReporter)reporter).getPipesReporters();

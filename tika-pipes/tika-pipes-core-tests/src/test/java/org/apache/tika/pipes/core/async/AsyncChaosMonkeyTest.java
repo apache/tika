@@ -18,11 +18,9 @@ package org.apache.tika.pipes.core.async;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
@@ -34,13 +32,15 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.PipesResult;
+import org.apache.tika.pipes.core.PluginsTestHelper;
 import org.apache.tika.pipes.core.emitter.EmitData;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
-import org.apache.tika.utils.ProcessUtils;
 
 public class AsyncChaosMonkeyTest {
+
+    String fetcherPluginId = "file-system-fetcher";
 
     private final String OOM = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
             "<throw class=\"java.lang.OutOfMemoryError\">oom message</throw>\n</mock>";
@@ -67,13 +67,15 @@ public class AsyncChaosMonkeyTest {
     @TempDir
     private Path configDir;
 
+    private Path pipesPluginsConfigPath;
+
     private int ok = 0;
     private int oom = 0;
     private int timeouts = 0;
     private int crash = 0;
 
 
-    public Path setUp(boolean emitIntermediateResults) throws SQLException, IOException {
+    public Path setUp(boolean emitIntermediateResults) throws Exception {
         ok = 0;
         oom = 0;
         timeouts = 0;
@@ -83,11 +85,7 @@ public class AsyncChaosMonkeyTest {
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<properties>" + "  <emitters>" +
                 "  <emitter class=\"org.apache.tika.pipes.core.async.MockEmitter\">\n" +
                 "         <name>mock</name>\n" + "  </emitter>" +
-                "  </emitters>" + "  <fetchers>" +
-                "    <fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                "      <name>mock</name>\n" + "      <basePath>" +
-                ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString()) +
-                "</basePath>\n" + "    </fetcher>" + "  </fetchers>" +
+                "  </emitters>" +
                 " <autoDetectParserConfig>\n" +
                         "    <digesterFactory\n" +
                         "        class=\"org.apache.tika.pipes.core.async.MockDigesterFactory\"/>\n" +
@@ -95,14 +93,14 @@ public class AsyncChaosMonkeyTest {
                 "<async><pipesReporter class=\"org.apache.tika.pipes.core.async.MockReporter\"/>" +
                         "<emitIntermediateResults>" + emitIntermediateResults +
                         "</emitIntermediateResults>" +
-                        "<tikaConfig>" +
-                        ProcessUtils.escapeCommandLine(tikaConfigPath.toAbsolutePath().toString()) +
-                        "</tikaConfig><forkedJvmArgs><arg>-Xmx512m</arg" +
+                        "<forkedJvmArgs><arg>-Xmx512m</arg" +
                         "></forkedJvmArgs><maxForEmitBatchBytes>1000000</maxForEmitBatchBytes>" +
                         "<timeoutMillis>5000</timeoutMillis>" +
                         "<numClients>4</numClients></async>" +
                         "</properties>";
         Files.write(tikaConfigPath, xml.getBytes(StandardCharsets.UTF_8));
+
+
         Random r = new Random();
         for (int i = 0; i < totalFiles; i++) {
             float f = r.nextFloat();
@@ -122,6 +120,7 @@ public class AsyncChaosMonkeyTest {
         }
         MockEmitter.EMIT_DATA.clear();
         MockReporter.RESULTS.clear();
+        pipesPluginsConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(configDir, inputDir);
         return tikaConfigPath;
     }
 
@@ -140,10 +139,10 @@ public class AsyncChaosMonkeyTest {
 
     @Test
     public void testBasic() throws Exception {
-        AsyncProcessor processor = new AsyncProcessor(setUp(false));
+        AsyncProcessor processor = new AsyncProcessor(setUp(false), pipesPluginsConfigPath);
         for (int i = 0; i < totalFiles; i++) {
             FetchEmitTuple t = new FetchEmitTuple("myId-" + i,
-                    new FetchKey("mock", i + ".xml"),
+                    new FetchKey(fetcherPluginId, i + ".xml"),
                     new EmitKey("mock", "emit-" + i), new Metadata());
             processor.offer(t, 1000);
         }
@@ -169,9 +168,9 @@ public class AsyncChaosMonkeyTest {
 
     @Test
     public void testEmitIntermediate() throws Exception {
-        AsyncProcessor processor = new AsyncProcessor(setUp(true));
+        AsyncProcessor processor = new AsyncProcessor(setUp(true), pipesPluginsConfigPath);
         for (int i = 0; i < totalFiles; i++) {
-            FetchEmitTuple t = new FetchEmitTuple("myId-" + i, new FetchKey("mock", i + ".xml"),
+            FetchEmitTuple t = new FetchEmitTuple("myId-" + i, new FetchKey(fetcherPluginId, i + ".xml"),
                     new EmitKey("mock", "emit-" + i), new Metadata());
             processor.offer(t, 1000);
         }

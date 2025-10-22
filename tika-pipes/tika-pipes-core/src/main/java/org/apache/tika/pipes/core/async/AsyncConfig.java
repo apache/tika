@@ -37,14 +37,15 @@ public class AsyncConfig extends PipesConfigBase {
 
     private PipesReporter pipesReporter = PipesReporter.NO_OP_REPORTER;
 
-    public static AsyncConfig load(Path p) throws IOException, TikaConfigException {
+    public static AsyncConfig load(Path tikaConfig, Path pipesPluginsConfig) throws IOException, TikaConfigException {
         AsyncConfig asyncConfig = new AsyncConfig();
-        try (InputStream is = Files.newInputStream(p)) {
+        try (InputStream is = Files.newInputStream(tikaConfig)) {
             asyncConfig.configure("async", is);
         }
         if (asyncConfig.getTikaConfig() == null) {
-            asyncConfig.setTikaConfig(p);
+            asyncConfig.setTikaConfig(tikaConfig);
         }
+        asyncConfig.setPipesPluginsConfig(pipesPluginsConfig);
         return asyncConfig;
     }
 

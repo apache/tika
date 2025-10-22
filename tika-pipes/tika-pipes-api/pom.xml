@@ -28,7 +28,7 @@
 
   <artifactId>tika-pipes-api</artifactId>
 
-  <name>Apache Tika Pipes Core</name>
+  <name>Apache Tika pipes api</name>
   <url>https://tika.apache.org/</url>
 
   <dependencies>

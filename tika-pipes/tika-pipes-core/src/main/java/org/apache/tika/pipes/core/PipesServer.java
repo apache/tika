@@ -170,13 +170,13 @@ public class PipesServer implements Runnable {
     public static void main(String[] args) throws Exception {
         try {
             Path tikaConfig = Paths.get(args[0]);
-            Path pipesConfig = Paths.get(args[1]);
+            Path pipesPluginsConfig = Paths.get(args[1]);
             long maxForEmitBatchBytes = Long.parseLong(args[2]);
             long serverParseTimeoutMillis = Long.parseLong(args[3]);
             long serverWaitTimeoutMillis = Long.parseLong(args[4]);
 
             PipesServer server =
-                    new PipesServer(tikaConfig, pipesConfig, System.in, System.out, maxForEmitBatchBytes,
+                    new PipesServer(tikaConfig, pipesPluginsConfig, System.in, System.out, maxForEmitBatchBytes,
                             serverParseTimeoutMillis, serverWaitTimeoutMillis);
             System.setIn(UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get());
             System.setOut(System.err);
@@ -821,6 +821,8 @@ public class PipesServer implements Runnable {
     }
 
     protected void initializeResources() throws TikaException, IOException, SAXException {
+        PipesPluginsConfig pipesPluginsConfig = PipesPluginsConfig.load(Files.newInputStream(pipesConfigPath));
+
         //TODO allowed named configurations in tika config
         this.tikaConfig = new TikaConfig(tikaConfigPath);
         this.fetcherManager = FetcherManager.load(pipesConfigPath);

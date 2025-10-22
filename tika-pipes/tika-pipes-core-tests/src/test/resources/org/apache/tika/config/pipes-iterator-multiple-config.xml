@@ -16,12 +16,16 @@
   limitations under the License.
 -->
 <properties>
-  <emitters>
-    <emitter class="org.apache.tika.pipes.core.emitter.MockEmitter">
-      <name>em1</name>
-    </emitter>
-    <emitter class="org.apache.tika.pipes.core.emitter.MockEmitter">
-      <name>em2</name>
-    </emitter>
-  </emitters>
+  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
+    <params>
+      <fetcherName>fs1</fetcherName>
+      <basePath>/my/base/path1</basePath>
+    </params>
+  </pipesIterator>
+  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
+    <params>
+      <fetcherName>fs2</fetcherName>
+      <basePath>/my/base/path2</basePath>
+    </params>
+  </pipesIterator>
 </properties>

@@ -27,16 +27,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -49,22 +46,27 @@ import org.apache.tika.utils.StringUtils;
 public class PassbackFilterTest {
 
     private Path tmpDir;
-    String fetcherName = "fs";
+    String fetcherPluginId = "file-system-fetcher";
     String testPdfFile = "testOverlappingText.pdf";
 
     private PipesClient pipesClient;
 
     @BeforeEach
-    public void init() throws TikaConfigException, IOException, ParserConfigurationException, SAXException {
+    public void init() throws Exception {
         Path tikaConfigTemplate = Paths.get("src", "test", "resources", "org", "apache", "tika", "pipes", "core", "tika-emit-config.xml");
         tmpDir = Files.createTempDirectory("tika-pipes");
+        Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmpDir);
+
         Path tikaConfigPath = Files.createTempFile(tmpDir, "tika-pipes-", ".xml");
         String template = Files.readString(tikaConfigTemplate, StandardCharsets.UTF_8);
         template = template.replace("EMITTER_BASE_PATH", tmpDir
                 .toAbsolutePath()
                 .toString());
         Files.writeString(tikaConfigPath, template);
-        PipesConfig pipesConfig = PipesConfig.load(tikaConfigPath);
+
+        PipesConfig pipesConfig = PipesConfig.load(tikaConfigPath, pipesConfigPath);
+        PluginsTestHelper.copyTestFilesToTmpInput(tmpDir, testPdfFile);
+
         pipesClient = new PipesClient(pipesConfig);
     }
 
@@ -79,7 +81,7 @@ public class PassbackFilterTest {
         ParseContext parseContext = new ParseContext();
         parseContext.set(PassbackFilter.class, new MyPassbackFilter());
         PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(testPdfFile, new FetchKey(fetcherName, testPdfFile), new EmitKey("fs", emitFileBase), new Metadata(), parseContext,
+                new FetchEmitTuple(testPdfFile, new FetchKey(fetcherPluginId, testPdfFile), new EmitKey("fs", emitFileBase), new Metadata(), parseContext,
                         FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
         assertEquals(PipesResult.STATUS.EMIT_SUCCESS_PASSBACK, pipesResult.getStatus());
         Assertions.assertNotNull(pipesResult

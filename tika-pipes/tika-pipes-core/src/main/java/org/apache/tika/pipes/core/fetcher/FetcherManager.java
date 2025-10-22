@@ -56,8 +56,12 @@ public class FetcherManager {
 
     public static FetcherManager load(InputStream pipesPluginsConfigIs) throws IOException, TikaConfigException {
         PipesPluginsConfig pluginsConfig = PipesPluginsConfig.load(pipesPluginsConfigIs);
-
-        PluginManager pluginManager = new DefaultPluginManager();
+        PluginManager pluginManager = null;
+        if (pluginsConfig.getPluginsDir().isPresent()) {
+            pluginManager = new DefaultPluginManager(pluginsConfig.getPluginsDir().get());
+        } else {
+            pluginManager = new DefaultPluginManager();
+        }
         pluginManager.loadPlugins();
         pluginManager.startPlugins();
         Map<String, Fetcher> fetcherMap = new HashMap<>();

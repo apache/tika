@@ -18,19 +18,16 @@ package org.apache.tika.pipes.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.config.TikaTaskTimeout;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
@@ -44,25 +41,30 @@ import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 
 public class PipesClientTest {
-    String fetcherName = "fs";
-    String testPdfFile = "testOverlappingText.pdf";
+    String fetcherName = "file-system-fetcher";
+    String testDoc = "testOverlappingText.pdf";
 
-    private PipesClient pipesClient;
 
-    @BeforeEach
-    public void init()
-            throws TikaConfigException, IOException, ParserConfigurationException, SAXException {
+    private PipesClient init(Path tmp, String testFileName) throws Exception {
         Path tikaConfigPath =
                 Paths.get("src", "test", "resources", "org", "apache", "tika", "pipes", "core",
                         "tika-sample-config.xml");
-        PipesConfig pipesConfig = PipesConfig.load(tikaConfigPath);
-        pipesClient = new PipesClient(pipesConfig);
+        Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp);
+        PluginsTestHelper.copyTestFilesToTmpInput(tmp, testFileName);
+
+        Path tikaConfig = tmp.resolve("tika-config.xml");
+        Files.copy(PipesServerTest.class.getResourceAsStream("TIKA-3941.xml"), tikaConfig);
+
+        PipesConfig pipesConfig = PipesConfig.load(tikaConfigPath, pipesConfigPath);
+        return new PipesClient(pipesConfig);
     }
 
     @Test
-    public void testBasic() throws IOException, InterruptedException {
+    public void testBasic(@TempDir Path tmp) throws Exception {
+        PipesClient pipesClient = init(tmp, testDoc);
+
         PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(testPdfFile, new FetchKey(fetcherName, testPdfFile),
+                new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
                         new EmitKey(), new Metadata(), new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
         Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
         assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
@@ -71,12 +73,13 @@ public class PipesClientTest {
     }
 
     @Test
-    public void testMetadataFilter() throws IOException, InterruptedException {
+    public void testMetadataFilter(@TempDir Path tmp) throws Exception {
         ParseContext parseContext = new ParseContext();
         MetadataFilter metadataFilter = new CompositeMetadataFilter(List.of(new MockUpperCaseFilter()));
         parseContext.set(MetadataFilter.class, metadataFilter);
+        PipesClient pipesClient = init(tmp, testDoc);
         PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(testPdfFile, new FetchKey(fetcherName, testPdfFile),
+                new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
                         new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
         Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
         assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
@@ -85,12 +88,17 @@ public class PipesClientTest {
     }
 
     @Test
-    public void testMetadataListFilter() throws IOException, InterruptedException {
+    public void testMetadataListFilter(@TempDir Path tmp) throws Exception {
         ParseContext parseContext = new ParseContext();
         MetadataListFilter metadataFilter = new CompositeMetadataListFilter(List.of(new AttachmentCountingListFilter()));
         parseContext.set(MetadataListFilter.class, metadataFilter);
+
+        String testFile = "mock-embedded.xml";
+
+        PipesClient pipesClient = init(tmp, testFile);
+
         PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple("mock/embedded.xml", new FetchKey(fetcherName, "mock/embedded.xml"),
+                new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
                         new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
         Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
         assertEquals(5, pipesResult.getEmitData().getMetadataList().size());
@@ -99,7 +107,7 @@ public class PipesClientTest {
     }
 
     @Test
-    public void testTimeout() throws IOException, InterruptedException {
+    public void testTimeout(@TempDir Path tmp) throws Exception {
         //TODO -- add unit test for timeout > default
         //TODO -- figure out how to test pipes server timeout alone
         //I did both manually during development, but unit tests are better. :D
@@ -107,8 +115,11 @@ public class PipesClientTest {
         parseContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(1000));
         MetadataListFilter metadataFilter = new CompositeMetadataListFilter(List.of(new AttachmentCountingListFilter()));
         parseContext.set(MetadataListFilter.class, metadataFilter);
+
+        String testFile = "mock-timeout-10s.xml";
+        PipesClient pipesClient = init(tmp, testFile);
         PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple("mock/timeout-10s.xml", new FetchKey(fetcherName, "mock/timeout-10s.xml"),
+                new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
                         new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
         assertEquals(PipesResult.TIMEOUT.getStatus(), pipesResult.getStatus());
     }

@@ -23,7 +23,7 @@ import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.PipesReporter;
 import org.apache.tika.pipes.core.PipesResult;
 
-public class MockReporter extends PipesReporter {
+public final class MockReporter extends PipesReporter {
 
     static ArrayBlockingQueue<PipesResult> RESULTS = new ArrayBlockingQueue<>(10000);
 

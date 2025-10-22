@@ -98,4 +98,5 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
             assertEquals("fs1", it.getFetcherName());
         });
     }
+
 }
