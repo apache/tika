@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
@@ -49,6 +50,8 @@ import org.apache.tika.serialization.JsonMetadataList;
  * This should be in tika-core, but we want to avoid a dependency mess with tika-serialization
  */
 public class AsyncProcessorTest extends TikaTest {
+
+
     //TODO -- integrate json pipes iterator and run with AyncProcessor.main
     @TempDir
     private Path basedir;
@@ -89,6 +92,14 @@ public class AsyncProcessorTest extends TikaTest {
 
         Files.writeString(tikaConfig, xml, StandardCharsets.UTF_8);
 
+        Path pipesConfig = configDir.resolve("tika-pipes.json");
+        Path pluginsDir = Paths.get("target/plugins").toAbsolutePath();
+        System.out.println("PLUG " + pluginsDir);
+        String jsonTemp = PluginsWriter.JSON_TEMPLATE
+                .replace("BASE_PATH", inputDir.toAbsolutePath().toString())
+                .replace("PLUGINS_DIR", pluginsDir.toString());
+        Files.writeString(pipesConfig, jsonTemp, StandardCharsets.UTF_8);
+
         Path mock = inputDir.resolve("mock.xml");
         try (OutputStream os = Files.newOutputStream(mock)) {
             IOUtils.copy(getClass().getResourceAsStream("/test-documents/basic_embedded.xml"), os);
@@ -99,7 +110,7 @@ public class AsyncProcessorTest extends TikaTest {
     public void testBasic() throws Exception {
 //        TikaAsyncCLI cli = new TikaAsyncCLI();
         //      cli.main(new String[]{ configDir.resolve("tika-config.xml").toAbsolutePath().toString()});
-        AsyncProcessor processor = new AsyncProcessor(configDir.resolve("tika-config.xml"));
+        AsyncProcessor processor = new AsyncProcessor(configDir.resolve("tika-config.xml"), configDir.resolve("tika-pipes.json"));
 
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = new EmbeddedDocumentBytesConfig(true);
         embeddedDocumentBytesConfig.setIncludeOriginal(true);
@@ -110,7 +121,8 @@ public class AsyncProcessorTest extends TikaTest {
         parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
         parseContext.set(EmbeddedDocumentBytesConfig.class, embeddedDocumentBytesConfig);
         FetchEmitTuple t =
-                new FetchEmitTuple("myId-1", new FetchKey("fs", "mock.xml"), new EmitKey("json", "emit-1"), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+                new FetchEmitTuple("myId-1", new FetchKey("file-system-fetcher", "mock.xml"),
+                        new EmitKey("json", "emit-1"), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
 
         processor.offer(t, 1000);
 

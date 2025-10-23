@@ -18,15 +18,8 @@
   under the License.
 -->
 <properties>
-  <fetchers>
-    <fetcher class="org.apache.tika.pipes.fetcher.s3.S3Fetcher">
-      <name>s3</name>
-      <region>us-east-1</region>
-      <profile><!-- fill in here --></profile>
-    </fetcher>
-  </fetchers>
-  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
-    <fetcherName>fs</fetcherName>
+  <pipesIterato class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
+    <fetcheName>fs</fetcheName>
     <basePath>basePath</basePath>
-  </pipesIterator>
+  </pipesIterato>
 </properties>

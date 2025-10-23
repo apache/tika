@@ -43,13 +43,13 @@ public class TikaConfigAsyncWriterTest {
     public void testBasic(@TempDir Path dir) throws Exception {
         Path p = Paths.get(TikaConfigAsyncWriter.class.getResource("/configs/TIKA-4508-parsers.xml").toURI());
         SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
-                10000L, "-Xmx1g", null, p.toAbsolutePath().toString(),
+                10000L, "-Xmx1g", null, p.toAbsolutePath().toString(), null,
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false);
         Path target = dir.resolve("combined.xml");
         TikaConfigAsyncWriter writer = new TikaConfigAsyncWriter(simpleAsyncConfig);
         writer.write(target);
 
-        Set<String> expected = Set.of("service-loader", "parsers", "pipesIterator", "fetchers", "emitters", "async");
+        Set<String> expected = Set.of("service-loader", "parsers", "pipesIterator", "emitters", "async");
         Set<String> properties = loadProperties(target);
         assertEquals(expected, properties);
     }
@@ -58,13 +58,13 @@ public class TikaConfigAsyncWriterTest {
     public void testDontOverwriteEmitters(@TempDir Path dir) throws Exception {
         Path p = Paths.get(TikaConfigAsyncWriter.class.getResource("/configs/TIKA-4508-emitters.xml").toURI());
         SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
-                10000L, "-Xmx1g", null, p.toAbsolutePath().toString(),
+                10000L, "-Xmx1g", null, p.toAbsolutePath().toString(), null,
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false);
         Path target = dir.resolve("combined.xml");
         TikaConfigAsyncWriter writer = new TikaConfigAsyncWriter(simpleAsyncConfig);
         writer.write(target);
 
-        Set<String> expected = Set.of("parsers", "pipesIterator", "fetchers", "emitters", "async");
+        Set<String> expected = Set.of("parsers", "pipesIterator", "emitters", "async");
         Set<String> properties = loadProperties(target);
         assertEquals(expected, properties);
 

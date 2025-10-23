@@ -72,49 +72,26 @@
         </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>${maven.shade.version}</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
-            <phase>package</phase>
+            <id>copy-plugins</id>
+            <phase>generate-test-resources</phase>
             <goals>
-              <goal>shade</goal>
+              <goal>copy</goal>
             </goals>
             <configuration>
-              <createDependencyReducedPom>
-                false
-              </createDependencyReducedPom>
-              <!-- <filters> -->
-              <filters>
-                <filter>
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/*</exclude>
-                    <exclude>LICENSE.txt</exclude>
-                    <exclude>NOTICE.txt</exclude>
-                  </excludes>
-                </filter>
-              </filters>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>org.apache.tika.async.cli.TikaAsyncCLI</mainClass>
-                  <manifestEntries>
-                    <Multi-Release>true</Multi-Release>
-                  </manifestEntries>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                  <resource>META-INF/LICENSE</resource>
-                  <file>target/classes/META-INF/LICENSE</file>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                  <resource>META-INF/NOTICE</resource>
-                  <file>target/classes/META-INF/NOTICE</file>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                  <resource>META-INF/DEPENDENCIES</resource>
-                  <file>target/classes/META-INF/DEPENDENCIES</file>
-                </transformer>
-              </transformers>
+              <outputDirectory>${project.build.directory}/plugins</outputDirectory>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.apache.tika</groupId>
+                  <artifactId>tika-fetcher-file-system</artifactId>
+                  <version>${project.version}</version>
+                  <type>zip</type>
+                  <overWrite>true</overWrite>
+                </artifactItem>
+              </artifactItems>
             </configuration>
           </execution>
         </executions>

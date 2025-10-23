@@ -270,6 +270,11 @@ public class TikaCLI {
             TikaAsyncCLI.main(args);
             return;
         }
+        if (args.length == 2 && args[0].endsWith(".xml") &&  args[1].endsWith(".json")) {
+            TikaAsyncCLI.main(args);
+            return;
+        };
+        //TODO -- are there other shortcuts?
         Path tmpConfig = null;
         try {
             tmpConfig = Files.createTempFile("tika-config-", ".xml");

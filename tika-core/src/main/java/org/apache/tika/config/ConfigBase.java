@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -45,7 +47,7 @@ public abstract class ConfigBase {
 
     private static Class[] SUPPORTED_PRIMITIVES =
             new Class[]{String.class, boolean.class, long.class, int.class, double.class,
-                    float.class};
+                    float.class, Path.class};
 
     /**
      * Use this to build a single class, where the user specifies the instance class, e.g.
@@ -493,6 +495,8 @@ public abstract class ConfigBase {
                 setterClassPair.setterMethod.invoke(object, Double.parseDouble(value));
             } else if (setterClassPair.itemClass == boolean.class) {
                 setterClassPair.setterMethod.invoke(object, Boolean.parseBoolean(value));
+            } else if (setterClassPair.itemClass == Path.class) {
+                setterClassPair.setterMethod.invoke(object, Paths.get(value));
             } else {
                 setterClassPair.setterMethod.invoke(object, value);
             }

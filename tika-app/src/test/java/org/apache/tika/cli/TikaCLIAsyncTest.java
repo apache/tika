@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -33,9 +34,26 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TikaCLIAsyncTest {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TikaCLI.class);
+
+    final static String JSON_TEMPLATE = """
+            {
+              "pipesPluginsConfig" : {
+                "fetchers": {
+                  "file-system-fetcher": {
+                    "basePath": "BASE_PATH",
+                    "extractFileSystemMetadata": false
+                  }
+                },
+                "pf4j.pluginsDir": "PLUGINS_DIR"
+              }
+            }
+            """;
 
     static final File TEST_DATA_FILE = new File("src/test/resources/test-data");
 
@@ -46,20 +64,25 @@ public class TikaCLIAsyncTest {
     private PrintStream stderr = null;
 
     private static Path ASYNC_CONFIG;
+    private static Path ASYNC_PLUGINS_CONFIG;
+
     @TempDir
     private static Path ASYNC_OUTPUT_DIR;
 
     @BeforeAll
     public static void setUpClass() throws Exception {
         ASYNC_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "async-config-", ".xml");
-        String xml = "<properties>" + "<async>" + "<numClients>3</numClients>" + "<tikaConfig>" + ASYNC_CONFIG.toAbsolutePath() + "</tikaConfig>" + "</async>" + "<fetchers>" +
-                "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" + "<name>fsf</name>" + "<basePath>" + TEST_DATA_FILE.getAbsolutePath() +
-                "</basePath>" +
-                "</fetcher>" + "</fetchers>" + "<emitters>" + "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>fse</name>" + "<basePath>" +
+        String xml = "<properties>" + "<async>" + "<numClients>3</numClients>" + "<tikaConfig>" + ASYNC_CONFIG.toAbsolutePath() + "</tikaConfig>" + "</async>" +
+                "<emitters>" + "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>fse</name>" + "<basePath>" +
                 ASYNC_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "<prettyPrint>true</prettyPrint>" + "</emitter>" + "</emitters>" +
                 "<pipesIterator class=\"org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator\">" + "<basePath>" + TEST_DATA_FILE.getAbsolutePath() + "</basePath>" +
-                "<fetcherName>fsf</fetcherName>" + "<emitterName>fse</emitterName>" + "</pipesIterator>" + "</properties>";
+                "<fetcherName>file-system-fetcher</fetcherName>" + "<emitterName>fse</emitterName>" + "</pipesIterator>" + "</properties>";
         Files.write(ASYNC_CONFIG, xml.getBytes(UTF_8));
+        ASYNC_PLUGINS_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "plugins-", ".json");
+
+        Path pluginsDir = Paths.get("target/plugins");
+        String json = JSON_TEMPLATE.replace("BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString()).replace("PLUGINS_DIR", pluginsDir.toAbsolutePath().toString());
+        Files.writeString(ASYNC_PLUGINS_CONFIG, json, UTF_8);
     }
 
     /**
@@ -103,7 +126,8 @@ public class TikaCLIAsyncTest {
 
     @Test
     public void testAsync() throws Exception {
-        String content = getParamOutContent("-a", "-c", ASYNC_CONFIG.toAbsolutePath().toString());
+        String content = getParamOutContent("-c", ASYNC_CONFIG.toAbsolutePath().toString(),
+                "-a", ASYNC_PLUGINS_CONFIG.toAbsolutePath().toString());
 
         int json = 0;
         for (File f : ASYNC_OUTPUT_DIR
@@ -121,7 +145,7 @@ public class TikaCLIAsyncTest {
                 json++;
             }
         }
-        assertEquals(20, json);
+        assertEquals(21, json);
     }
 
     private void checkForPrettyPrint(File f) throws IOException {

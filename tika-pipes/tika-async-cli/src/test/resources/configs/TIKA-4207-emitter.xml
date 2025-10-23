@@ -16,12 +16,6 @@
   limitations under the License.
 -->
 <properties>
-  <fetchers>
-    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
-      <name>fs</name>
-      <basePath>BASE_PATH</basePath>
-    </fetcher>
-  </fetchers>
   <emitters>
     <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
       <name>json</name>

@@ -17,6 +17,7 @@
 package org.apache.tika.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.tika.cli.TikaCLIAsyncTest.JSON_TEMPLATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -368,13 +369,25 @@ public class TikaCLITest {
 
     private void testRecursiveUnpack(String targetFile, String[] expectedChildrenFileNames, int expectedLength) throws Exception {
         Path input = Paths.get(new URI(resourcePrefix + "/" + targetFile));
+        Path asyncConfig = Files.createTempFile("async-config-", ".json");
+        Path pluginsDir = Paths.get("target/plugins");
+
+        String json = JSON_TEMPLATE.replace("BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString())
+                                   .replace("PLUGINS_DIR", pluginsDir.toAbsolutePath().toString());
+        Files.writeString(asyncConfig, json, UTF_8);
+
         String[] params = {"-Z",
+                "-a", asyncConfig.toAbsolutePath().toString(),
+
                 ProcessUtils.escapeCommandLine(input.toAbsolutePath().toString()),
                 ProcessUtils.escapeCommandLine(extractDir
                 .toAbsolutePath()
                 .toString())};
-
-        TikaCLI.main(params);
+        try {
+            TikaCLI.main(params);
+        } finally {
+            Files.delete(asyncConfig);
+        }
         Set<String> fileNames = getFileNames(extractDir);
         String[] jsonFile = extractDir
                 .toFile()

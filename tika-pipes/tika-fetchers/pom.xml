@@ -39,7 +39,14 @@
     <module>tika-fetcher-az-blob</module>
     <module>tika-fetcher-microsoft-graph</module> -->
   </modules>
-
+  <properties>
+  <!-- Override below properties in each plugin's pom.xml -->
+  <plugin.id />
+  <plugin.class />
+  <plugin.version />
+  <plugin.provider />
+  <plugin.dependencies />
+</properties>
   <dependencies>
     <dependency>
       <groupId>org.pf4j</groupId>

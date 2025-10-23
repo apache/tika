@@ -14,27 +14,38 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<assembly>
-  <id>standalone</id>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.1"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.1 http://maven.apache.org/xsd/assembly-2.1.1.xsd">
+  <id>bin</id>
   <formats>
-    <format>jar</format>
+    <format>zip</format>
   </formats>
   <includeBaseDirectory>false</includeBaseDirectory>
+
   <dependencySets>
     <dependencySet>
-      <outputDirectory></outputDirectory>
-      <unpack>true</unpack>
-      <unpackOptions>
-        <excludes>
-          <exclude>META-INF/MANIFEST.MF</exclude>
-          <exclude>META-INF/README*</exclude>
-          <exclude>META-INF/NOTICE*</exclude>
-          <exclude>META-INF/LICENSE*</exclude>
-          <exclude>README*</exclude>
-          <exclude>NOTICE*</exclude>
-          <exclude>LICENSE*</exclude>
-        </excludes>
-      </unpackOptions>
+      <outputDirectory>lib</outputDirectory>
+      <useProjectArtifact>false</useProjectArtifact>
+      <unpack>false</unpack>
+      <scope>runtime</scope>
     </dependencySet>
   </dependencySets>
+  <fileSets>
+    <fileSet>
+      <directory>${project.build.directory}</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>*.jar</include>
+      </includes>
+      <excludes>
+        <exclude>*-sources.jar</exclude>
+        <exclude>*-javadoc.jar</exclude>
+      </excludes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.build.directory}/plugins</directory>
+      <outputDirectory>plugins</outputDirectory>
+    </fileSet>
+  </fileSets>
 </assembly>

@@ -24,6 +24,7 @@
       <outputDirectory>/</outputDirectory>
       <includes>
         <include>classes/META-INF/extensions.idx</include>
+        <include>classes/META-INF/MANIFEST.MF</include>
       </includes>
     </fileSet>
     <!-- this is a bit of a hack. There has to be a better solution. -->

@@ -49,8 +49,8 @@ class TikaConfigAsyncWriter {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaAsyncCLI.class);
 
-    private static final String FETCHER_NAME = "file-system-fetcher";
-    private static final String EMITTER_NAME = "fse";
+    protected static final String FETCHER_NAME = "file-system-fetcher";
+    protected static final String EMITTER_NAME = "fse";
 
     private final SimpleAsyncConfig simpleAsyncConfig;
 
@@ -94,7 +94,6 @@ class TikaConfigAsyncWriter {
         }
 
         writePipesIterator(document, properties, baseInput);
-        writeFetchers(document, properties, baseInput);
         writeEmitters(document, properties, baseOutput);
         writeAsync(document, properties, output);
         Transformer transformer = TransformerFactory
@@ -152,24 +151,6 @@ class TikaConfigAsyncWriter {
                 "class", "org.apache.tika.pipes.emitter.fs.FileSystemEmitter");
         appendTextElement(document, emitter, "name", EMITTER_NAME);
         appendTextElement(document, emitter, "basePath", baseOutput.toAbsolutePath().toString());
-    }
-
-    private void writeFetchers(Document document, Element properties, Path baseInput) {
-        Element fetchers = findChild("fetchers", properties);
-        if (fetchers != null) {
-            LOG.info("fetchers already exist in tika-config. Not overwriting with commandline");
-            return;
-        }
-
-        fetchers = createAndGetElement(document, properties, "fetchers");
-        Element fetcher = createAndGetElement(document, fetchers, "fetcher",
-                "class", "org.apache.tika.pipes.fetcher.fs.FileSystemFetcher");
-        appendTextElement(document, fetcher, "name", FETCHER_NAME);
-        if (!StringUtils.isBlank(simpleAsyncConfig.getInputDir())) {
-            appendTextElement(document, fetcher, "basePath", baseInput.toAbsolutePath().toString());
-        } else {
-            appendTextElement(document, fetcher, "basePath", "");
-        }
     }
 
     private void writeAsync(Document document, Element properties, Path thisTikaConfig) {

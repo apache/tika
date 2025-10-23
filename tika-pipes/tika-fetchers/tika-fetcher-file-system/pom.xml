@@ -28,9 +28,15 @@
   <artifactId>tika-fetcher-file-system</artifactId>
   <name>Apache Tika file system fetcher</name>
   <properties>
+    <plugin.id>file-system-fetcher</plugin.id>
+    <plugin.class>org.apache.tika.pipes.fetcher.fs.FileSystemFetcherPlugin</plugin.class>
+    <plugin.version>4.0.0-SNAPSHOT</plugin.version>
+    <plugin.provider>Local File System Fetcher</plugin.provider>
+    <plugin.dependencies />
     <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
      to get messed up when finding your plugins. -->
     <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-pipes-core</plugin.excluded.artifactIds>
+
   </properties>
   <dependencies>
     <dependency>
@@ -80,9 +86,21 @@
         <artifactId>maven-jar-plugin</artifactId>
         <version>3.4.2</version>
         <configuration>
-          <excludes>
-            <exclude>plugin.properties</exclude>
-          </excludes>
+          <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+            </manifest>
+            <manifestEntries>
+              <Plugin-Id>file-system-fetcher</Plugin-Id>
+              <Plugin-Version>${project.version}</Plugin-Version>
+              <Plugin-Class>org.apache.tika.pipes.fetcher.fs.FileSystemFetcherPlugin</Plugin-Class>
+              <Plugin-Provider>Local File System Fetcher</Plugin-Provider>
+              <Plugin-Description>Capable of fetching the local file system</Plugin-Description>
+<!--              <Plugin-Requires>1.0.0</Plugin-Requires> -->
+              <Plugin-Dependencies></Plugin-Dependencies>
+            </manifestEntries>
+          </archive>
         </configuration>
       </plugin>
       <plugin>
