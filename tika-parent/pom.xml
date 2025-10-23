@@ -293,7 +293,7 @@
     <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
     <forbiddenapis.version>3.10</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
-    <maven.antrun.version>3.1.0</maven.antrun.version>
+    <maven.antrun.version>3.2.0</maven.antrun.version>
     <maven.assembly.version>3.7.1</maven.assembly.version>
     <maven.bundle.version>6.0.0</maven.bundle.version>
     <maven.compiler.plugin.version>3.14.1</maven.compiler.plugin.version>
@@ -310,9 +310,9 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.58.1</google.cloud.version>
+    <google.cloud.version>2.59.0</google.cloud.version>
     <aws.version>1.12.792</aws.version>
-    <aws2.version>2.35.10</aws2.version>
+    <aws2.version>2.35.11</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -320,8 +320,8 @@
     <asm.version>9.9</asm.version>
     <azure.core.version>1.57.0</azure.core.version>
     <azure.core.http.netty.version>1.16.2</azure.core.http.netty.version>
-    <azure.storage.blob.version>12.32.0-beta.1</azure.storage.blob.version>
-    <azure.storage.common>12.31.0-beta.1</azure.storage.common>
+    <azure.storage.blob.version>12.32.0</azure.storage.blob.version>
+    <azure.storage.common>12.31.0</azure.storage.common>
     <azure-identity.version>1.18.1</azure-identity.version>
     <azure.json.version>1.5.0</azure.json.version>
     <azure.xml.version>1.2.0</azure.xml.version>
@@ -419,7 +419,7 @@
     <netty.version>4.2.7.Final</netty.version>
     <oak.jackrabbit.version>1.86.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
-    <opennlp.version>2.5.6</opennlp.version>
+    <opennlp.version>2.5.6.1</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
@@ -454,7 +454,7 @@
     <woodstox.core.version>7.1.1</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.4</zookeeper.version>
-    <zstd.version>1.5.7-5</zstd.version>
+    <zstd.version>1.5.7-6</zstd.version>
     <nimbus-jose-jwt.version>10.5</nimbus-jose-jwt.version>
     <javacpp.version>1.5.12</javacpp.version>
     <maven.exec.version>3.6.2</maven.exec.version>
@@ -706,7 +706,7 @@
       <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
-        <version>2.42.0</version>
+        <version>2.43.0</version>
       </dependency>
       <dependency>
         <groupId>com.googlecode.json-simple</groupId>
