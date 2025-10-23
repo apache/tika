@@ -20,13 +20,6 @@ package org.apache.tika.server.core;
 import static org.apache.tika.server.core.TikaServerConfig.DEFAULT_HOST;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -43,9 +36,6 @@ public class TikaServerCli {
      * This value is set to the server's id in the forked process.
      */
     public static String TIKA_SERVER_ID_ENV = "tika.server.id";
-    private static List<TikaServerWatchDog> WATCHERS = new ArrayList<>();
-
-    private static boolean PREVENT_STOP = false;
 
     private static Options getOptions() {
         Options options = new Options();
@@ -56,8 +46,6 @@ public class TikaServerCli {
         options.addOption("c", "config", true, "tika-config file");
 
         options.addOption("i", "id", true, "id to use for server in" + " the server status endpoint and logging");
-        options.addOption("noFork", "noFork", false, "runs in legacy 1.x mode -- " + "server runs in process and is not safely isolated in a forked process");
-
         return options;
     }
 
@@ -72,113 +60,11 @@ public class TikaServerCli {
                 usage(options);
             }
             TikaServerConfig tikaServerConfig = TikaServerConfig.load(line);
-            PREVENT_STOP = tikaServerConfig.isPreventStopMethod();
-
-            execute(tikaServerConfig);
+            TikaServerProcess.main(args);
         } catch (Exception e) {
             LOG.error("Can't start: ", e);
             System.exit(-1);
         }
-    }
-
-    private static void execute(TikaServerConfig tikaServerConfig) throws Exception {
-
-        if (tikaServerConfig.isNoFork()) {
-            noFork(tikaServerConfig);
-        } else {
-            try {
-                mainLoop(tikaServerConfig);
-            } catch (InterruptedException e) {
-                //swallow
-                LOG.debug("interrupted", e);
-            }
-        }
-    }
-
-    private static void mainLoop(TikaServerConfig tikaServerConfig) throws Exception {
-
-        List<PortIdPair> portIdPairs = getPortIdPairs(tikaServerConfig);
-
-        ExecutorService executorService = Executors.newFixedThreadPool(portIdPairs.size());
-        ExecutorCompletionService<WatchDogResult> executorCompletionService = new ExecutorCompletionService<>(executorService);
-
-        for (PortIdPair p : portIdPairs) {
-            TikaServerWatchDog watcher = new TikaServerWatchDog(p.port, p.id, tikaServerConfig);
-            executorCompletionService.submit(watcher);
-            WATCHERS.add(watcher);
-        }
-
-        int finished = 0;
-        try {
-            while (finished < portIdPairs.size()) {
-                Future<WatchDogResult> future = executorCompletionService.poll(1, TimeUnit.MINUTES);
-                if (future != null) {
-                    LOG.debug("main loop future is available");
-                    WatchDogResult result = future.get();
-                    LOG.debug("main loop future: ({}); finished", result);
-                    finished++;
-                }
-            }
-        } catch (InterruptedException e) {
-            for (TikaServerWatchDog w : WATCHERS) {
-                w.shutDown();
-            }
-            LOG.debug("thread interrupted", e);
-        } finally {
-            //this is just asking nicely...there is no guarantee!
-            executorService.shutdownNow();
-        }
-    }
-
-    public static void stop(String[] args) {
-        if (PREVENT_STOP) {
-            LOG.info("preventStopMethod was set to true in the server config. I'm not stopping.");
-        }
-        // process service stop function
-        try {
-            Options options = getStopOptions();
-            CommandLineParser cliParser = new DefaultParser();
-            CommandLine line = cliParser.parse(options, args);
-            LOG.debug("Seeing 'preventSystemExit' on stop's commandline; not exiting");
-            if (line.hasOption("preventSystemExit")) {
-                return;
-            }
-        } catch (org.apache.commons.cli.ParseException e) {
-            LOG.error("Can't parse stop arguments: ", e);
-            System.exit(-1);
-        }
-
-        for (TikaServerWatchDog watcher : WATCHERS) {
-            try {
-                watcher.close();
-            } catch (Exception e) {
-                LOG.warn("Exception trying to close watcher", e);
-            }
-        }
-        System.exit(0);
-    }
-
-    private static Options getStopOptions() {
-        Options options = new Options();
-        options.addOption("preventSystemExit", false,
-                "Prevent the stop method from calling system.exit, " + "which would terminate the JVM. This is useful for integration tests.");
-        return options;
-    }
-
-    private static String[] stripForkedArgs(String[] args) {
-        List<String> ret = new ArrayList<>();
-        for (String arg : args) {
-            if (!arg.startsWith("-J")) {
-                ret.add(arg);
-            }
-        }
-        return ret.toArray(new String[0]);
-    }
-
-    public static void noFork(TikaServerConfig tikaServerConfig) throws Exception {
-        List<String> args = tikaServerConfig.getForkedProcessArgs(tikaServerConfig.getPort(), tikaServerConfig.getIdBase());
-        args.add("--noFork");
-        TikaServerProcess.main(args.toArray(new String[0]));
     }
 
     private static void usage(Options options) throws IOException {
@@ -187,45 +73,4 @@ public class TikaServerCli {
         System.exit(-1);
     }
 
-    private static List<PortIdPair> getPortIdPairs(TikaServerConfig tikaServerConfig) {
-        List<PortIdPair> pairs = new ArrayList<>();
-        int[] ports = tikaServerConfig.getPorts();
-        //if there's only one port, use only the idbase, otherwise append -$port
-        if (ports.length == 0) {
-            throw new IllegalArgumentException("Couldn't find any ports in: " + tikaServerConfig.getPort());
-        } else if (ports.length == 1) {
-            pairs.add(new PortIdPair(ports[0], tikaServerConfig.getIdBase()));
-        } else {
-            for (int p : ports) {
-                pairs.add(new PortIdPair(p, tikaServerConfig.getIdBase() + "-" + p));
-            }
-        }
-
-        return pairs;
-    }
-
-
-    private static class PortIdPair {
-        int port;
-        String id;
-
-        public PortIdPair(int port, String id) {
-            this.port = port;
-            this.id = id;
-        }
-    }
-
-    /**
-     * these are parameters that should not go
-     * directly into the forked process.  They
-     * are either used by the forking process or
-     * they are modified or may be modified before
-     * creating the forked process.
-     */
-    private static class NonForkedValues {
-        String portString;
-        String id;
-        int maxRestarts = -1;
-
-    }
 }

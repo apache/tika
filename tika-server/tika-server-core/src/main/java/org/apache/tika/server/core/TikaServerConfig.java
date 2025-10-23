@@ -25,9 +25,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.cli.CommandLine;
@@ -40,7 +40,6 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -96,37 +95,26 @@ private long forkedProcessStartupMillis = DEFAULT_FORKED_PROCESS_STARTUP_MILLIS;
 private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLIS;
 
  */
-    private int maxRestarts = -1;
-    private long maxFiles = 100000;
     private long taskTimeoutMillis = DEFAULT_TASK_TIMEOUT_MILLIS;
     private long minimumTimeoutMillis = DEFAULT_MINIMUM_TIMEOUT_MILLIS;
     private long taskPulseMillis = DEFAULT_TASK_PULSE_MILLIS;
-    private long maxforkedStartupMillis = DEFAULT_FORKED_STARTUP_MILLIS;
     private boolean enableUnsecureFeatures = false;
     private String cors = "";
     private boolean returnStackTrace = false;
-    private boolean noFork = false;
-    //TODO: make parameterizable for debugging
-    private String tempFilePrefix = "apache-tika-server-forked-tmp-";
     private Set<String> supportedFetchers = new HashSet<>();
     private Set<String> supportedEmitters = new HashSet<>();
-    private List<String> forkedJvmArgs = new ArrayList<>();
     private String idBase = UUID
             .randomUUID()
             .toString();
-    private String port = Integer.toString(DEFAULT_PORT);
+    private int port = DEFAULT_PORT;
     private String host = DEFAULT_HOST;
     private int digestMarkLimit = DEFAULT_DIGEST_MARK_LIMIT;
     private String digest = "";
-    private String javaPath = "java";
     //debug or info only
     private String logLevel = "";
     private Path configPath;
+    private Path pipesConfigPath;
     private List<String> endpoints = new ArrayList<>();
-    //these should only be set in the forked process
-    //and they are automatically set by the forking process
-    private String forkedStatusFile;
-    private int numRestarts = 0;
 
     private boolean preventStopMethod = false;
 
@@ -143,15 +131,19 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
         TikaServerConfig config = null;
         Set<String> settings = new HashSet<>();
+        Path pipesConfig = null;
+        if (commandLine.hasOption('a')) {
+            pipesConfig = Paths.get(commandLine.getOptionValue('a'));
+        }
         if (commandLine.hasOption("c")) {
-            config = load(Paths.get(commandLine.getOptionValue("c")), commandLine, settings);
+            config = load(Paths.get(commandLine.getOptionValue("c")), pipesConfig, commandLine, settings);
         } else {
             config = new TikaServerConfig();
         }
 
-        //port, host, nofork and id can be overwritten on the commandline at runtime
+        //port, host and id can be overwritten on the commandline at runtime
         if (commandLine.hasOption("p")) {
-            config.setPort(commandLine.getOptionValue("p"));
+            config.setPort(Integer.parseInt(commandLine.getOptionValue("p")));
             settings.add("port");
         }
 
@@ -160,51 +152,34 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
             settings.add("host");
         }
 
-        if (commandLine.hasOption("noFork")) {
-            config.setNoFork(true);
-            settings.add("noFork");
-        }
-
         if (commandLine.hasOption("i")) {
             config.setId(commandLine.getOptionValue("i"));
             settings.add("id");
         }
 
-        //this should only be set by the parent process
-        if (commandLine.hasOption("numRestarts")) {
-            config.setNumRestarts(Integer.parseInt(commandLine.getOptionValue("numRestarts")));
-            settings.add("numRestarts");
-        }
-
-        if (commandLine.hasOption("forkedStatusFile")) {
-            config.setForkedStatusFile(commandLine.getOptionValue("forkedStatusFile"));
-            settings.add("forkedStatusFile");
-        }
         config.validateConsistency(settings);
         return config;
     }
 
-    static TikaServerConfig load(Path p, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
+    static TikaServerConfig load(Path p, Path pipesConfigPath, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
         try (InputStream is = Files.newInputStream(p)) {
-            TikaServerConfig config = TikaServerConfig.load(is, commandLine, settings);
+            TikaServerConfig config = TikaServerConfig.load(is, pipesConfigPath, commandLine, settings);
             if (config.getConfigPath() == null) {
                 config.setConfigPath(p
                         .toAbsolutePath()
                         .toString());
             }
+            config.setPipesConfigPath(pipesConfigPath);
             loadSupportedFetchersEmitters(config);
             return config;
         }
     }
 
-    private static TikaServerConfig load(InputStream is, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
+    private static TikaServerConfig load(InputStream is, Path pipesConfigPath, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
         TikaServerConfig tikaServerConfig = new TikaServerConfig();
         Set<String> configSettings = tikaServerConfig.configure("server", is);
         settings.addAll(configSettings);
-        //override a few things in config file
-        if (commandLine.hasOption("noFork")) {
-            tikaServerConfig.setNoFork(true);
-        }
+        tikaServerConfig.setPipesConfigPath(pipesConfigPath);
         return tikaServerConfig;
     }
 
@@ -270,48 +245,11 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         return null;
     }
 
-    protected static List<String> interpolateSysProps(List<String> forkedJvmArgs) {
-        List<String> ret = new ArrayList<>();
-        for (String arg : forkedJvmArgs) {
-            if (arg.startsWith("-D")) {
-                String interpolated = interpolate(arg);
-                ret.add(interpolated);
-            } else {
-                ret.add(arg);
-            }
-        }
-        return ret;
-    }
-
-    private static String interpolate(String arg) {
-        StringBuilder sb = new StringBuilder();
-        Matcher m = SYS_PROPS.matcher(arg);
-        while (m.find()) {
-            String prop = System.getProperty(m.group(1));
-            LOG.debug("interpolating {} -> {}", m.group(1), prop);
-            if (prop == null) {
-                LOG.warn("no system property set for {}, falling back to {}", m.group(1), arg);
-                return arg;
-            }
-            m.appendReplacement(sb, Matcher.quoteReplacement(prop));
-        }
-        m.appendTail(sb);
-        return sb.toString();
-    }
-
-    public boolean isNoFork() {
-        return noFork;
-    }
-
-    public void setNoFork(boolean noFork) {
-        this.noFork = noFork;
-    }
-
-    public String getPort() {
+    public int getPort() {
         return port;
     }
 
-    public void setPort(String port) {
+    public void setPort(int port) {
         this.port = port;
     }
 
@@ -346,55 +284,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         this.taskPulseMillis = taskPulseMillis;
     }
 
-    public int getMaxRestarts() {
-        return maxRestarts;
-    }
-
-    public void setMaxRestarts(int maxRestarts) {
-        this.maxRestarts = maxRestarts;
-    }
-
-    /**
-     * Maximum time in millis to allow for the forked process to startup
-     * or restart
-     *
-     * @return
-     */
-    public long getMaxForkedStartupMillis() {
-        return maxforkedStartupMillis;
-    }
-
-    public void setMaxForkedStartupMillis(long maxForkedStartupMillis) {
-        this.maxforkedStartupMillis = maxForkedStartupMillis;
-    }
-
-    public List<String> getForkedProcessArgs(String portString, String id) {
-        int[] ports = getPorts(portString);
-        if (ports.length > 1 || ports.length == 0) {
-            throw new IllegalArgumentException("must specify one and only one port here:" + portString);
-        }
-        int port = ports[0];
-        return getForkedProcessArgs(port, id);
-    }
-
-    public List<String> getForkedProcessArgs(int port, String id) {
-        //these are the arguments for the forked process
-        List<String> args = new ArrayList<>();
-        args.add("-h");
-        args.add(getHost());
-        args.add("-p");
-        args.add(Integer.toString(port));
-        args.add("-i");
-        args.add(id);
-        if (hasConfigFile()) {
-            args.add("-c");
-            args.add(ProcessUtils.escapeCommandLine(configPath
-                    .toAbsolutePath()
-                    .toString()));
-        }
-        return args;
-    }
-
     public long getMinimumTimeoutMillis() {
         return minimumTimeoutMillis;
     }
@@ -405,32 +294,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
     public String getIdBase() {
         return idBase;
-    }
-
-    /**
-     * full path to the java executable
-     *
-     * @return
-     */
-    public String getJavaPath() {
-        return javaPath;
-    }
-
-    public void setJavaPath(String javaPath) {
-        this.javaPath = javaPath;
-    }
-
-    public List<String> getForkedJvmArgs() {
-        //defensively copy
-        return new ArrayList<>(forkedJvmArgs);
-    }
-
-    public void setForkedJvmArgs(List<String> forkedJvmArgs) {
-        this.forkedJvmArgs = new ArrayList<>(interpolateSysProps(forkedJvmArgs));
-    }
-
-    public String getTempFilePrefix() {
-        return tempFilePrefix;
     }
 
     public boolean isEnableUnsecureFeatures() {
@@ -445,28 +308,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         if (host == null) {
             throw new TikaConfigException("Must specify 'host'");
         }
-
-        if (!StringUtils.isBlank(port)) {
-            setPort(port);
-        }
-
-        if (isNoFork()) {
-            for (String onlyFork : ONLY_IN_FORK_MODE) {
-                if (settings.contains(onlyFork)) {
-                    throw new TikaConfigException("Can't set param=" + onlyFork + "if you've selected noFork");
-                }
-            }
-        }
-        //add headless if not already configured
-        boolean foundHeadlessOption = forkedJvmArgs
-                .stream()
-                .anyMatch(arg -> arg.contains("java.awt.headless"));
-        //if user has already specified headless...don't modify
-        if (!foundHeadlessOption) {
-            forkedJvmArgs.add("-Djava.awt.headless=true");
-        }
-
-
     }
 
     public String getHost() {
@@ -515,6 +356,14 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         this.configPath = Paths.get(path);
     }
 
+    public void setPipesConfigPath(Path path) {
+        this.pipesConfigPath = path;
+    }
+
+    public Optional<Path> getPipesConfigPath() {
+        return Optional.ofNullable(pipesConfigPath);
+    }
+
     public int getDigestMarkLimit() {
         return digestMarkLimit;
     }
@@ -536,20 +385,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     public void setDigest(String digest) {
         LOG.info("As of Tika 2.5.0, you can set the digester via the AutoDetectParserConfig in " + "tika-config.xml. We plan to remove this commandline option in 2.8.0");
         this.digest = digest;
-    }
-
-    /**
-     * maximum number of files before the forked server restarts.
-     * This is useful for avoiding any slow-building memory leaks/bloat.
-     *
-     * @return
-     */
-    public long getMaxFiles() {
-        return maxFiles;
-    }
-
-    public void setMaxFiles(long maxFiles) {
-        this.maxFiles = maxFiles;
     }
 
     public boolean isReturnStackTrace() {
@@ -587,72 +422,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
     private void addEndPoints(List<String> endPoints) {
         this.endpoints.addAll(endPoints);
-    }
-
-    private void addJVMArgs(List<String> args) {
-        this.forkedJvmArgs.addAll(args);
-    }
-
-    public int getNumRestarts() {
-        return numRestarts;
-    }
-
-    /******
-     * these should only be used in the commandline for a forked process
-     ******/
-
-
-    private void setNumRestarts(int numRestarts) {
-        this.numRestarts = numRestarts;
-    }
-
-    public String getForkedStatusFile() {
-        return forkedStatusFile;
-    }
-
-    private void setForkedStatusFile(String forkedStatusFile) {
-        this.forkedStatusFile = forkedStatusFile;
-    }
-
-    public void setMaxforkedStartupMillis(long maxforkedStartupMillis) {
-        this.maxforkedStartupMillis = maxforkedStartupMillis;
-    }
-
-    public boolean isPreventStopMethod() {
-        return preventStopMethod;
-    }
-
-    public void setPreventStopMethod(boolean preventStopMethod) {
-        this.preventStopMethod = preventStopMethod;
-    }
-
-    public int[] getPorts() {
-        return getPorts(port);
-    }
-
-    private int[] getPorts(String portString) {
-        //throws NumberFormatException
-        Matcher rangeMatcher = Pattern
-                .compile("^(\\d+)-(\\d+)\\Z")
-                .matcher("");
-        String[] commaDelimited = portString.split(",");
-        List<Integer> indivPorts = new ArrayList<>();
-        for (String val : commaDelimited) {
-            rangeMatcher.reset(val);
-            if (rangeMatcher.find()) {
-                int min = Math.min(Integer.parseInt(rangeMatcher.group(1)), Integer.parseInt(rangeMatcher.group(2)));
-                int max = Math.max(Integer.parseInt(rangeMatcher.group(1)), Integer.parseInt(rangeMatcher.group(2)));
-                for (int i = min; i <= max; i++) {
-                    indivPorts.add(i);
-                }
-            } else {
-                indivPorts.add(Integer.parseInt(val));
-            }
-        }
-        return indivPorts
-                .stream()
-                .mapToInt(Integer::intValue)
-                .toArray();
     }
 
     public Set<String> getSupportedFetchers() {

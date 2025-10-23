@@ -19,12 +19,10 @@
   <server>
       <port>9999</port>
       <taskTimeoutMillis>54321</taskTimeoutMillis>
+      <taskPulseMillis>100</taskPulseMillis>
       <minimumTimeoutMillis>10</minimumTimeoutMillis>
       <enableUnsecureFeatures>true</enableUnsecureFeatures>
       <maxFiles>20</maxFiles>
-      <forkedJvmArgs>
-        <arg>-Xmx2g</arg>
-      </forkedJvmArgs>
       <endpoints>
         <endpoint>rmeta</endpoint>
       </endpoints>

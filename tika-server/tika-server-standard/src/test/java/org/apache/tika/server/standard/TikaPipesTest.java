@@ -86,6 +86,7 @@ public class TikaPipesTest extends CXFTestBase {
     private static Path TMP_BYTES_DIR;
     private static Path TIKA_PIPES_LOG4j2_PATH;
     private static Path TIKA_CONFIG_PATH;
+    private static Path TIKA_PIPES_CONFIG_PATH;
     private static String TIKA_CONFIG_XML;
     private static FetcherManager FETCHER_MANAGER;
 
@@ -106,10 +107,7 @@ public class TikaPipesTest extends CXFTestBase {
         Files.copy(TikaPipesTest.class.getResourceAsStream("/log4j2.xml"), TIKA_PIPES_LOG4j2_PATH, StandardCopyOption.REPLACE_EXISTING);
 
         //TODO: templatify this config
-        TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
-                "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                "<params>" + "<name>fsf</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" +
-                "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
+        TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<emitters>" +
                 "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<params>" + "<name>fse</name>" +
                 "<basePath>" + TMP_OUTPUT_DIR.toAbsolutePath() +
                 "</basePath>" + "</params>" + "</emitter>" + "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
@@ -124,6 +122,9 @@ public class TikaPipesTest extends CXFTestBase {
                         .toAbsolutePath()
                         .toString()) + "</arg>" + "</forkedJvmArgs>" + "</params></pipes>" + "</properties>";
         Files.write(TIKA_CONFIG_PATH, TIKA_CONFIG_XML.getBytes(StandardCharsets.UTF_8));
+
+        TIKA_PIPES_CONFIG_PATH = Files.createTempFile(TMP_WORKING_DIR, "tika-pipes-config-", ".json");
+        //TODO
     }
 
 
@@ -137,7 +138,7 @@ public class TikaPipesTest extends CXFTestBase {
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         List<ResourceProvider> rCoreProviders = new ArrayList<>();
         try {
-            rCoreProviders.add(new SingletonResourceProvider(new PipesResource(TIKA_CONFIG_PATH)));
+            rCoreProviders.add(new SingletonResourceProvider(new PipesResource(TIKA_CONFIG_PATH, TIKA_PIPES_CONFIG_PATH)));
         } catch (IOException | TikaConfigException e) {
             throw new RuntimeException(e);
         }

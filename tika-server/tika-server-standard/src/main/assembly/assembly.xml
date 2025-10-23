@@ -19,10 +19,19 @@
           xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 https://maven.apache.org/xsd/assembly-2.0.0.xsd">
   <id>bin</id>
   <baseDirectory>${project.build.finalName}-bin</baseDirectory>
+  <includeBaseDirectory>false</includeBaseDirectory>
   <formats>
     <format>tgz</format>
     <format>zip</format>
   </formats>
+  <dependencySets>
+    <dependencySet>
+      <outputDirectory>lib</outputDirectory>
+      <useProjectArtifact>false</useProjectArtifact>
+      <unpack>false</unpack>
+      <scope>runtime</scope>
+    </dependencySet>
+  </dependencySets>
   <fileSets>
     <fileSet>
       <directory>${project.basedir}</directory>

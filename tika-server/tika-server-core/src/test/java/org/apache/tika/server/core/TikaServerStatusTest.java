@@ -45,7 +45,7 @@ public class TikaServerStatusTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaServerStatus.class);
-        sf.setResourceProvider(TikaServerStatus.class, new SingletonResourceProvider(new TikaServerStatus(new ServerStatus(SERVER_ID, 0))));
+        sf.setResourceProvider(TikaServerStatus.class, new SingletonResourceProvider(new TikaServerStatus(new ServerStatus())));
     }
 
     @Override

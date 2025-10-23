@@ -72,7 +72,7 @@ public class DetectorResource {
             return MediaType.OCTET_STREAM.toString();
         } catch (OutOfMemoryError e) {
             LOG.error("OOM while detecting: ({})", filename, e);
-            serverStatus.setStatus(ServerStatus.STATUS.ERROR);
+            serverStatus.setStatus(ServerStatus.STATUS.OOM);
             throw e;
         } catch (Throwable e) {
             LOG.error("Exception while detecting: ({})", filename, e);

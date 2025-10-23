@@ -123,7 +123,7 @@ public abstract class CXFTestBase {
         this.tika = new TikaConfig(getTikaConfigInputStream());
         TikaServerConfig tikaServerConfig = getTikaServerConfig();
         TikaResource.init(tika, tikaServerConfig, new CommonsDigester(DIGESTER_READ_LIMIT, "md5," + "sha1:32"), getInputStreamFactory(getTikaConfigInputStream()),
-                new ServerStatus("", 0, true));
+                new ServerStatus());
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         //set compression interceptors
         sf.setOutInterceptors(Collections.singletonList(new GZIPOutInterceptor()));

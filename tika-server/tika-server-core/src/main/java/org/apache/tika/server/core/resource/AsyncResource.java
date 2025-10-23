@@ -62,8 +62,8 @@ public class AsyncResource {
     long maxQueuePauseMs = 60000;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
-    public AsyncResource(java.nio.file.Path tikaConfigPath, Set<String> supportedFetchers) throws TikaException, IOException, SAXException {
-        this.asyncProcessor = new AsyncProcessor(tikaConfigPath);
+    public AsyncResource(java.nio.file.Path tikaConfigPath, java.nio.file.Path asyncConfig, Set<String> supportedFetchers) throws TikaException, IOException, SAXException {
+        this.asyncProcessor = new AsyncProcessor(tikaConfigPath, asyncConfig);
         this.supportedFetchers = supportedFetchers;
         this.emitterManager = EmitterManager.load(tikaConfigPath);
     }

@@ -52,8 +52,8 @@ public class PipesResource {
 
     private final PipesParser pipesParser;
 
-    public PipesResource(java.nio.file.Path tikaConfig) throws TikaConfigException, IOException {
-        PipesConfig pipesConfig = PipesConfig.load(tikaConfig);
+    public PipesResource(java.nio.file.Path tikaConfig, java.nio.file.Path asyncConfig) throws TikaConfigException, IOException {
+        PipesConfig pipesConfig = PipesConfig.load(tikaConfig, asyncConfig);
         //this has to be zero. everything must be emitted through the PipesServer
         long maxEmit = pipesConfig.getMaxForEmitBatchBytes();
         if (maxEmit != 0) {

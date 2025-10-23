@@ -375,8 +375,7 @@ public class TikaResource {
             throw new TikaServerParseException(e);
         } catch (OutOfMemoryError e) {
             logger.warn("{}: OOM ({})", path, fileName, e);
-            SERVER_STATUS.setStatus(ServerStatus.STATUS.ERROR);
-            throw e;
+            SERVER_STATUS.setStatus(ServerStatus.STATUS.OOM);
         } finally {
             SERVER_STATUS.complete(taskId);
             inputStream.close();

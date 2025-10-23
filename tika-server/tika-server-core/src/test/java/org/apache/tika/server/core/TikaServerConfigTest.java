@@ -47,8 +47,10 @@ public class TikaServerConfigTest {
         Path path = Paths.get(TikaConfigTest.class
                 .getResource("/configs/tika-config-server.xml")
                 .toURI());
-        TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
-        assertEquals(-1, config.getMaxRestarts());
+        Path pipesConfig = Paths.get(TikaConfigTest.class
+                .getResource("/configs/tika-pipes-config.json")
+                .toURI());
+        TikaServerConfig config = TikaServerConfig.load(path, pipesConfig, emptyCommandLine, settings);
         assertEquals(54321, config.getTaskTimeoutMillis());
         assertEquals(true, config.isEnableUnsecureFeatures());
 
@@ -64,8 +66,10 @@ public class TikaServerConfigTest {
         Path path = Paths.get(TikaConfigTest.class
                 .getResource("/configs/tika-config-server-fetchers-emitters.xml")
                 .toURI());
-        TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
-        assertEquals(-1, config.getMaxRestarts());
+        Path pipesConfig = Paths.get(TikaConfigTest.class
+                .getResource("/configs/tika-pipes-config.json")
+                .toURI());
+        TikaServerConfig config = TikaServerConfig.load(path, pipesConfig, emptyCommandLine, settings);
         assertEquals(54321, config.getTaskTimeoutMillis());
         assertEquals(true, config.isEnableUnsecureFeatures());
         assertEquals(1, config
@@ -102,10 +106,6 @@ public class TikaServerConfigTest {
                 .toAbsolutePath()
                 .toString())});
         TikaServerConfig config = TikaServerConfig.load(commandLine);
-        int[] ports = config.getPorts();
-        assertEquals(6, ports.length);
-        assertEquals(9994, ports[0]);
-        assertEquals(9999, ports[5]);
     }
 
     @Test
@@ -116,7 +116,11 @@ public class TikaServerConfigTest {
         Path path = Paths.get(TikaConfigTest.class
                 .getResource("/configs/tika-config-server-tls.xml")
                 .toURI());
-        TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
+        Path pipesConfig = Paths.get(TikaConfigTest.class
+                .getResource("/configs/tika-pipes-config.json")
+                .toURI());
+
+        TikaServerConfig config = TikaServerConfig.load(path, pipesConfig, emptyCommandLine, settings);
         TlsConfig tlsConfig = config.getTlsConfig();
         assertTrue(tlsConfig.isActive());
         assertFalse(tlsConfig.isClientAuthenticationWanted());
@@ -127,27 +131,5 @@ public class TikaServerConfigTest {
         assertEquals("myType2", tlsConfig.getTrustStoreType());
         assertEquals("pass2", tlsConfig.getTrustStorePassword());
         assertEquals("/something/or/other2", tlsConfig.getTrustStoreFile());
-    }
-
-    @Test
-    public void testInterpolation() throws Exception {
-        List<String> input = new ArrayList<>();
-        System.setProperty("logpath", "qwertyuiop");
-        System.setProperty("logslash", "qwerty\\uiop");
-        try {
-            input.add("-Dlogpath=\"${sys:logpath}\"");
-            input.add("-Dlogpath=no-interpolation");
-            input.add("-Xlogpath=\"${sys:logpath}\"");
-            input.add("-Dlogpath=\"${sys:logslash}\"");
-
-            List<String> output = TikaServerConfig.interpolateSysProps(input);
-            assertEquals("-Dlogpath=\"qwertyuiop\"", output.get(0));
-            assertEquals("-Dlogpath=no-interpolation", output.get(1));
-            assertEquals("-Xlogpath=\"${sys:logpath}\"", output.get(2));
-            assertEquals("-Dlogpath=\"qwerty\\uiop\"", output.get(3));
-        } finally {
-            System.clearProperty("logpath");
-            System.clearProperty("logslash");
-        }
     }
 }
