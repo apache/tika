@@ -127,6 +127,12 @@ public class PipesServer implements Runnable {
         }
     }
 
+    public enum EMIT_STRATEGY {
+        EMIT_ALL,
+        PASSBACK_ALL,
+        DYNAMIC
+    }
+
     private final Object[] lock = new Object[0];
     private long checkForTimeoutMs = 1000;
     private final Path tikaConfigPath;
@@ -139,6 +145,7 @@ public class PipesServer implements Runnable {
     private final long maxForEmitBatchBytes;
     private final long defaultServerParseTimeoutMillis;
     private final long serverWaitTimeoutMillis;
+    private final EMIT_STRATEGY emitStrategy;
     private volatile long serverParseTimeoutMillis;
     private Parser autoDetectParser;
     private Parser rMetaParser;
@@ -152,8 +159,7 @@ public class PipesServer implements Runnable {
     public PipesServer(Path tikaConfigPath, Path pipesConfigPath,
                        InputStream in, PrintStream out,
                        long maxForEmitBatchBytes, long serverParseTimeoutMillis,
-                       long serverWaitTimeoutMillis)
-            throws IOException, TikaException, SAXException {
+                       long serverWaitTimeoutMillis) {
         this.tikaConfigPath = tikaConfigPath;
         this.pipesConfigPath = pipesConfigPath;
         this.input = new DataInputStream(in);
@@ -164,6 +170,13 @@ public class PipesServer implements Runnable {
         this.serverWaitTimeoutMillis = serverWaitTimeoutMillis;
         this.parsing = false;
         this.since = System.currentTimeMillis();
+        if (maxForEmitBatchBytes == 0) {
+            emitStrategy = EMIT_STRATEGY.EMIT_ALL;
+        } else if (maxForEmitBatchBytes < 0) {
+            emitStrategy = EMIT_STRATEGY.PASSBACK_ALL;
+        } else {
+            emitStrategy = EMIT_STRATEGY.DYNAMIC;
+        }
     }
 
 
@@ -478,12 +491,7 @@ public class PipesServer implements Runnable {
                 t.setEmitKey(emitKey);
             }
             EmitData emitData = new EmitData(t.getEmitKey(), parseData.getMetadataList(), stack);
-            if (embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
-                    parseData.toBePackagedForStreamEmitter()) {
-                emit(t.getId(), emitKey, embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes(),
-                        parseData, stack, parseContext);
-            } else if (maxForEmitBatchBytes >= 0 &&
-                    emitData.getEstimatedSizeBytes() >= maxForEmitBatchBytes) {
+            if (shouldEmit(embeddedDocumentBytesConfig, parseData, emitData)) {
                 emit(t.getId(), emitKey, embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes(),
                         parseData, stack, parseContext);
             } else {
@@ -496,6 +504,22 @@ public class PipesServer implements Runnable {
         } else {
             write(STATUS.PARSE_EXCEPTION_NO_EMIT, stack);
         }
+    }
+
+    private boolean shouldEmit(EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, MetadataListAndEmbeddedBytes parseData, EmitData emitData) {
+        if (emitStrategy == EMIT_STRATEGY.EMIT_ALL) {
+            return true;
+        } else if (embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
+                parseData.toBePackagedForStreamEmitter()) {
+            return true;
+        } else if (emitStrategy == EMIT_STRATEGY.PASSBACK_ALL) {
+            return false;
+        } else if (emitStrategy == EMIT_STRATEGY.DYNAMIC) {
+            if (emitData.getEstimatedSizeBytes() >= maxForEmitBatchBytes) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void filterMetadata(FetchEmitTuple t, List<Metadata> metadataList) {

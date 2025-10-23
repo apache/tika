@@ -48,11 +48,13 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
@@ -126,9 +128,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
         <annotationProcessors>
-          <annotationProcessor>
-            org.pf4j.processor.ExtensionAnnotationProcessor
-          </annotationProcessor>
+          <annotationProcessor>org.pf4j.processor.ExtensionAnnotationProcessor</annotationProcessor>
         </annotationProcessors>
       </configuration>
       </plugin>
