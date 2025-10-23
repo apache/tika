@@ -95,7 +95,7 @@ public class FileSystemFetcher extends AbstractFetcher {
         }
 
         metadata.set(TikaCoreProperties.SOURCE_PATH, fetchKey);
-        LOG.warn("about to read from {} with base={}", p.toAbsolutePath(), config.getBasePath());
+        LOG.trace("about to read from {} with base={}", p.toAbsolutePath(), config.getBasePath());
         if (!Files.isRegularFile(p)) {
             throw new FileNotFoundException(p.toAbsolutePath().toString());
         }

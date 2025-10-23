@@ -5,7 +5,6 @@
         "basePath": "BASE_PATH",
         "extractFileSystemMetadata": false
       }
-    },
-    "pf4j.pluginsDir": "PLUGINS_DIR"
+    }
   }
 }

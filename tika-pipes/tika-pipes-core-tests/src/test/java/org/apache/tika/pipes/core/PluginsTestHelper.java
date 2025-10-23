@@ -38,16 +38,6 @@ public class PluginsTestHelper {
                 .toAbsolutePath()
                 .toString());
 
-        Path plugins = Paths
-                .get("target/plugins")
-                .toAbsolutePath();
-        if (Files.isDirectory(plugins)) {
-            //yay
-            json = json.replace("PLUGINS_DIR", plugins
-                    .toAbsolutePath()
-                    .toString());
-        }
-
         Files.write(pipesConfig, json.getBytes(StandardCharsets.UTF_8));
         return pipesConfig;
     }

@@ -44,8 +44,6 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- we're forcing this to be built. With plugins, we're copying the zip artifact to this module's plugins/
-         directory before running unit tests. -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-fetcher-file-system</artifactId>
@@ -74,59 +72,6 @@
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <!-- we're forcing the unit test to use the actual built plugin zip
-               rather than relying on classpath -->
-        <classpathDependencyExcludes>
-          <classpathDependencyExclude>org.apache.tika:tika-fetcher-file-system</classpathDependencyExclude>
-        </classpathDependencyExcludes>
-      </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy-plugins</id>
-            <phase>generate-test-resources</phase>
-            <goals>
-              <goal>copy</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/plugins</outputDirectory>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>org.apache.tika</groupId>
-                  <artifactId>tika-fetcher-file-system</artifactId>
-                  <version>${project.version}</version>
-                  <type>zip</type>
-                  <overWrite>true</overWrite>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <systemPropertyVariables>
-            <pf4j.pluginsDir>${project.build.directory}/plugins</pf4j.pluginsDir>
-          </systemPropertyVariables>
-        </configuration>
-      </plugin>
     <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>

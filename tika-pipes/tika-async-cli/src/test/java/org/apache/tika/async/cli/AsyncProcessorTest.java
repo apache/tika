@@ -25,7 +25,6 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
@@ -51,6 +50,18 @@ import org.apache.tika.serialization.JsonMetadataList;
  */
 public class AsyncProcessorTest extends TikaTest {
 
+    final static String JSON_TEMPLATE_TEST = """
+            {
+              "pipesPluginsConfig" : {
+                "fetchers": {
+                  "file-system-fetcher": {
+                    "basePath": "BASE_PATH",
+                    "extractFileSystemMetadata": false
+                  }
+                }
+              }
+            }
+            """;
 
     //TODO -- integrate json pipes iterator and run with AyncProcessor.main
     @TempDir
@@ -93,11 +104,8 @@ public class AsyncProcessorTest extends TikaTest {
         Files.writeString(tikaConfig, xml, StandardCharsets.UTF_8);
 
         Path pipesConfig = configDir.resolve("tika-pipes.json");
-        Path pluginsDir = Paths.get("target/plugins").toAbsolutePath();
-        System.out.println("PLUG " + pluginsDir);
-        String jsonTemp = PluginsWriter.JSON_TEMPLATE
-                .replace("BASE_PATH", inputDir.toAbsolutePath().toString())
-                .replace("PLUGINS_DIR", pluginsDir.toString());
+        String jsonTemp = JSON_TEMPLATE_TEST
+                .replace("BASE_PATH", inputDir.toAbsolutePath().toString());
         Files.writeString(pipesConfig, jsonTemp, StandardCharsets.UTF_8);
 
         Path mock = inputDir.resolve("mock.xml");
