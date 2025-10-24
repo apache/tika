@@ -199,6 +199,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private InputStream _fetch(String fetchKey, Metadata metadata,
                                Long startRange, Long endRange) throws IOException {
         TemporaryResources tmp = null;
+        ResponseInputStream<GetObjectResponse> s3Object = null;
         try {
             long start = System.currentTimeMillis();
             GetObjectRequest.Builder builder = GetObjectRequest.builder().bucket(bucket).key(fetchKey);
@@ -208,7 +209,6 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
                 builder.range(range);
             }
             GetObjectRequest objectRequest = builder.build();
-            ResponseInputStream<GetObjectResponse> s3Object = null;
             synchronized (clientLock) {
                 s3Object = s3Client.getObject(objectRequest);
             }
@@ -241,6 +241,9 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
         } catch (Throwable e) {
             if (tmp != null) {
                 tmp.close();
+            }
+            if (s3Object != null) {
+                s3Object.close();
             }
             throw e;
         }

@@ -152,11 +152,12 @@ class S3PipeIntegrationTest {
 
         for (String testFile : testFiles) {
             GetObjectRequest objectRequest = GetObjectRequest.builder().bucket(EMIT_BUCKET).key(testFile + ".json").build();
-            ResponseInputStream<GetObjectResponse> object = s3Client.getObject(objectRequest);
-            Assertions.assertNotNull(object);
-            String data = IOUtils.toString(object, StandardCharsets.UTF_8);
-            Assertions.assertTrue(data.contains("body-of-" + testFile), 
-                    "Should be able to read the parsed body of the HTML file as the body of the document");
+            try (ResponseInputStream<GetObjectResponse> is = s3Client.getObject(objectRequest)) {
+                Assertions.assertNotNull(is);
+                String data = IOUtils.toString(is, StandardCharsets.UTF_8);
+                Assertions.assertTrue(data.contains("body-of-" + testFile),
+                        "Should be able to read the parsed body of the HTML file as the body of the document");
+            }
         }
     }
 
