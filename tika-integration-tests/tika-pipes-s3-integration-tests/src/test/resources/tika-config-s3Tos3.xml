@@ -23,24 +23,25 @@
       <name>s3f</name>
       <region>us-east-1</region>
       <bucket><!-- fill in here --></bucket>
-      <profile><!-- fill in here --></profile>
+      <profile>default</profile>
+      <credentialsProvider>profile</credentialsProvider>
     </fetcher>
   </fetchers>
-  <pipesIterators>
-    <pipesIterator class="org.apache.tika.pipes.pipesiterator.s3.S3PipesIterator">
-      <fetcherName>s3f</fetcherName>
-      <region>us-east-1</region>
-      <bucket><!-- fill in here --></bucket>
-      <profile><!-- fill in here --></profile>
-    </pipesIterator>
-  </pipesIterators>
+  <pipesIterator class="org.apache.tika.pipes.pipesiterator.s3.S3PipesIterator">
+    <fetcherName>s3f</fetcherName>
+    <region>us-east-1</region>
+    <bucket><!-- fill in here --></bucket>
+    <profile>default</profile>
+    <credentialsProvider>profile</credentialsProvider>
+  </pipesIterator>
   <emitters>
     <emitter class="org.apache.tika.pipes.emitter.s3.S3Emitter">
       <name>s3e</name>
       <region>us-east-1</region>
-      <bucket><!-- fill in here -->></bucket>
-      <profile><!-- fill in here --></profile>
+      <bucket><!-- fill in here --></bucket>
+      <profile>default</profile>
       <fileExtension></fileExtension>
+      <credentialsProvider>profile</credentialsProvider>
     </emitter>
   </emitters>
 </properties>
