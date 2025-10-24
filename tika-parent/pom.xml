@@ -312,7 +312,7 @@
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.59.0</google.cloud.version>
     <aws.version>1.12.792</aws.version>
-    <aws2.version>2.35.11</aws2.version>
+    <aws2.version>2.36.1</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -438,7 +438,7 @@
     <sis.version>1.5</sis.version>
     <snappy.version>1.1.10.8</snappy.version>
     <solrj.version>9.9.0</solrj.version>
-    <spring.version>7.0.0-RC1</spring.version>
+    <spring.version>7.0.0-RC2</spring.version>
     <sqlite.version>3.50.3.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.1</testcontainers.version>
