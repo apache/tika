@@ -40,7 +40,6 @@ import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseInputStream;
-import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.SdkHttpConfigurationOption;
@@ -391,7 +390,6 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
         try {
             synchronized (clientLock) {
                 S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient).
-                        requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED). // https://stackoverflow.com/a/79488850/535646
                         serviceConfiguration(clientConfig).credentialsProvider(provider);
                 if (!StringUtils.isBlank(endpointConfigurationService)) {
                     try {
