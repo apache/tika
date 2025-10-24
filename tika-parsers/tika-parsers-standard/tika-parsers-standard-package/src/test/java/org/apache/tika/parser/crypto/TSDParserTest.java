@@ -40,6 +40,7 @@ public class TSDParserTest extends TikaTest {
         //make sure that embedded file appears in list
         //and make sure embedded exception is recorded
         List<Metadata> list = getRecursiveMetadata("testTSD_broken_pdf.tsd", parseContext);
+        debug(list);
         assertEquals(2, list.size());
         assertEquals("application/pdf", list.get(1).get(Metadata.CONTENT_TYPE));
         assertNotNull(list.get(1).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
