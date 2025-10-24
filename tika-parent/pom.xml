@@ -602,13 +602,6 @@
         <version>${biz.aqute.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-bom</artifactId>
-        <version>${aws.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
         <version>${aws2.version}</version>

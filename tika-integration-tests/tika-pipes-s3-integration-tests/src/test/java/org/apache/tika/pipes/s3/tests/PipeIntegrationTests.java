@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorCompletionService;
@@ -32,14 +33,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.iterable.S3Objects;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -62,27 +66,31 @@ public class PipeIntegrationTests {
         String region = "";
         String profile = "";
         String bucket = "";
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().withRegion(region)
-                .withCredentials(new ProfileCredentialsProvider(profile)).build();
-        s3Client.listObjects(bucket);
+        AwsCredentialsProvider provider = ProfileCredentialsProvider.builder().profileName(profile).build();
+        S3Client s3Client = S3Client.builder().credentialsProvider(provider).region(Region.of(region)).build();
+
         int cnt = 0;
         long sz = 0;
 
-        for (S3ObjectSummary summary : S3Objects.withPrefix(s3Client, bucket, "")) {
-            Path targ = OUTDIR.resolve(summary.getKey());
+        ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder().bucket(bucket).prefix("").build();
+        List<S3Object> s3ObjectList = s3Client.listObjectsV2Paginator(listObjectsV2Request).stream().
+                flatMap(resp -> resp.contents().stream()).toList();
+        for (S3Object s3Object : s3ObjectList) {
+            String key = s3Object.key();
+            Path targ = OUTDIR.resolve(key);
             if (Files.isRegularFile(targ)) {
                 continue;
             }
             if (!Files.isDirectory(targ.getParent())) {
                 Files.createDirectories(targ.getParent());
             }
-            System.out
-                    .println("id: " + cnt + " :: " + summary.getKey() + " : " + summary.getSize());
-            S3Object s3Object = s3Client.getObject(bucket, summary.getKey());
-            Files.copy(s3Object.getObjectContent(), targ);
-            summary.getSize();
+            System.out.println("id: " + cnt + " :: " + key + " : " + s3Object.size());
+            GetObjectRequest objectRequest = GetObjectRequest.builder().bucket(bucket).key(key).build();
+            try (ResponseInputStream<GetObjectResponse> is = s3Client.getObject(objectRequest)) {
+                Files.copy(is, targ);
+            }
             cnt++;
-            sz += summary.getSize();
+            sz += s3Object.size();
         }
         System.out.println("iterated: " + cnt + " sz: " + sz);
     }
