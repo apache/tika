@@ -37,11 +37,9 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
-import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
@@ -86,9 +84,7 @@ public class PipeIntegrationTests {
             }
             System.out.println("id: " + cnt + " :: " + key + " : " + s3Object.size());
             GetObjectRequest objectRequest = GetObjectRequest.builder().bucket(bucket).key(key).build();
-            try (ResponseInputStream<GetObjectResponse> is = s3Client.getObject(objectRequest)) {
-                Files.copy(is, targ);
-            }
+            s3Client.getObject(objectRequest, targ);
             cnt++;
             sz += s3Object.size();
         }

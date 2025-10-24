@@ -41,7 +41,7 @@ import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
@@ -152,12 +152,10 @@ class S3PipeIntegrationTest {
 
         for (String testFile : testFiles) {
             GetObjectRequest objectRequest = GetObjectRequest.builder().bucket(EMIT_BUCKET).key(testFile + ".json").build();
-            try (ResponseInputStream<GetObjectResponse> is = s3Client.getObject(objectRequest)) {
-                Assertions.assertNotNull(is);
-                String data = IOUtils.toString(is, StandardCharsets.UTF_8);
-                Assertions.assertTrue(data.contains("body-of-" + testFile),
+            ResponseBytes<GetObjectResponse> objectAsBytes = s3Client.getObjectAsBytes(objectRequest);
+            String data = objectAsBytes.asString(StandardCharsets.UTF_8);
+            Assertions.assertTrue(data.contains("body-of-" + testFile),
                         "Should be able to read the parsed body of the HTML file as the body of the document");
-            }
         }
     }
 
