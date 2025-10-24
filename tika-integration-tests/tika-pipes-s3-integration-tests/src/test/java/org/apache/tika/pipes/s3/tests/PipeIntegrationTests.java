@@ -54,15 +54,20 @@ import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.emitter.s3.S3Emitter;
 
+// To enable these tests, fill OUTDIR and bucket, and adjust profile and region if needed.
 @Disabled("turn these into actual tests with mock s3")
 public class PipeIntegrationTests {
 
     private static final Path OUTDIR = Paths.get("");
 
+    /**
+     * This downloads files from a specific bucket.
+     * @throws Exception 
+     */
     @Test
     public void testBruteForce() throws Exception {
-        String region = "";
-        String profile = "";
+        String region = "us-east-1";
+        String profile = "default";
         String bucket = "";
         AwsCredentialsProvider provider = ProfileCredentialsProvider.builder().profileName(profile).build();
         S3Client s3Client = S3Client.builder().credentialsProvider(provider).region(Region.of(region)).build();
@@ -91,6 +96,7 @@ public class PipeIntegrationTests {
         System.out.println("iterated: " + cnt + " sz: " + sz);
     }
 
+    // to test this, files must be in the fetcher bucket
     @Test
     public void testS3ToFS() throws Exception {
         Fetcher fetcher = getFetcher("tika-config-s3ToFs.xml", "s3f");
@@ -121,6 +127,7 @@ public class PipeIntegrationTests {
         }
     }
 
+    // to test this, files must be in the iterator bucket
     @Test
     public void testS3ToS3() throws Exception {
         Fetcher fetcher = getFetcher("tika-config-s3Tos3.xml", "s3f");
