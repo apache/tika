@@ -310,7 +310,6 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.59.0</google.cloud.version>
-    <aws.version>1.12.792</aws.version>
     <aws2.version>2.36.2</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
@@ -575,13 +574,6 @@
         <artifactId>biz.aQute.bndlib</artifactId>
         <!-- can't update to 7.0.0: "class file has wrong version 61.0, should be 55.0" -->
         <version>${biz.aqute.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-bom</artifactId>
-        <version>${aws.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
