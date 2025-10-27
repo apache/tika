@@ -19,25 +19,31 @@ package org.apache.tika.pipes.pipesiterator.s3;
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.InstanceProfileCredentialsProvider;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.iterable.S3Objects;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.http.SdkHttpConfigurationOption;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3ClientBuilder;
+import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -66,10 +72,10 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
     private String profile;
     private String bucket;
     private Pattern fileNamePattern = null;
-    private int maxConnections = ClientConfiguration.DEFAULT_MAX_CONNECTIONS;
+    private int maxConnections = SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS.get(SdkHttpConfigurationOption.MAX_CONNECTIONS);
     private boolean pathStyleAccessEnabled = false;
 
-    private AmazonS3 s3Client;
+    private S3Client s3Client;
 
     @Field
     public void setEndpointConfigurationService(String endpointConfigurationService) {
@@ -136,7 +142,7 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
 
     /**
      * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
-     * e.g. AmazonClientException in a TikaConfigException.
+     * e.g. SdkClientException in a TikaConfigException.
      *
      * @param params params to use for initialization
      * @throws TikaConfigException
@@ -144,31 +150,39 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //params have already been set...ignore them
-        AWSCredentialsProvider provider;
-        if (credentialsProvider.equals("instance")) {
-            provider = InstanceProfileCredentialsProvider.getInstance();
-        } else if (credentialsProvider.equals("profile")) {
-            provider = new ProfileCredentialsProvider(profile);
-        } else if (credentialsProvider.equals("key_secret")) {
-            provider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey));
-        } else {
-            throw new TikaConfigException("credentialsProvider must be set and " + "must be either 'instance', 'profile' or 'key_secret'");
+        AwsCredentialsProvider provider;
+        switch (credentialsProvider) {
+            case "instance":
+                provider = InstanceProfileCredentialsProvider.builder().build();
+                break;
+            case "profile":
+                provider = ProfileCredentialsProvider.builder().profileName(profile).build();
+                break;
+            case "key_secret":
+                AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
+                provider = StaticCredentialsProvider.create(awsCreds);
+                break;
+            default:
+                throw new TikaConfigException("credentialsProvider must be set and " + "must be either 'instance', 'profile' or 'key_secret'");
         }
 
-        ClientConfiguration clientConfig = new ClientConfiguration().withMaxConnections(maxConnections);
+        SdkHttpClient httpClient = ApacheHttpClient.builder().maxConnections(maxConnections).build();
+        S3Configuration clientConfig = S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccessEnabled).build();
         try {
-            AmazonS3ClientBuilder amazonS3ClientBuilder = AmazonS3ClientBuilder
-                    .standard()
-                    .withClientConfiguration(clientConfig)
-                    .withCredentials(provider)
-                    .withPathStyleAccessEnabled(pathStyleAccessEnabled);
+            S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient).
+                    serviceConfiguration(clientConfig).credentialsProvider(provider);
             if (!StringUtils.isBlank(endpointConfigurationService)) {
-                amazonS3ClientBuilder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpointConfigurationService, region));
+                try {
+                    s3ClientBuilder.endpointOverride(new URI(endpointConfigurationService)).region(Region.of(region));
+                }
+                catch (URISyntaxException ex) {
+                    throw new TikaConfigException("bad endpointConfigurationService: " + endpointConfigurationService, ex);
+                }
             } else {
-                amazonS3ClientBuilder.withRegion(region);
+                s3ClientBuilder.region(Region.of(region));
             }
-            s3Client = amazonS3ClientBuilder.build();
-        } catch (AmazonClientException e) {
+            s3Client = s3ClientBuilder.build();
+        } catch (SdkClientException e) {
             throw new TikaConfigException("can't initialize s3 pipesiterator", e);
         }
     }
@@ -187,16 +201,23 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
         long start = System.currentTimeMillis();
         int count = 0;
         HandlerConfig handlerConfig = getHandlerConfig();
-        Matcher fileNameMatcher = null;
+        final Matcher fileNameMatcher;
         if (fileNamePattern != null) {
             fileNameMatcher = fileNamePattern.matcher("");
+        } else {
+            fileNameMatcher = null;
         }
-        for (S3ObjectSummary summary : S3Objects.withPrefix(s3Client, bucket, prefix)) {
-            if (fileNameMatcher != null && !accept(fileNameMatcher, summary.getKey())) {
+
+        ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).build();
+        List<S3Object> s3ObjectList = s3Client.listObjectsV2Paginator(listObjectsV2Request).stream().
+                flatMap(resp -> resp.contents().stream()).toList();
+        for (S3Object s3Object : s3ObjectList) {
+            String key = s3Object.key();
+            if (fileNameMatcher != null && !accept(fileNameMatcher, key)) {
                 continue;
             }
             long elapsed = System.currentTimeMillis() - start;
-            LOGGER.debug("adding ({}) {} in {} ms", count, summary.getKey(), elapsed);
+            LOGGER.debug("adding ({}) {} in {} ms", count, key, elapsed);
             //TODO -- allow user specified metadata as the "id"?
             ParseContext parseContext = new ParseContext();
             parseContext.set(HandlerConfig.class, handlerConfig);

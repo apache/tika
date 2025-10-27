@@ -39,7 +39,7 @@ public class FilenameUtils {
     public final static char[] RESERVED_FILENAME_CHARACTERS =
             {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
                     0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A,
-                    0x1B, 0x1C, 0x1D, 0x1E, 0x1F, '?', ':', '*', '<', '>', '|'};
+                    0x1B, 0x1C, 0x1D, 0x1E, 0x1F, '?', ':', '*', '<', '>', '|', '"', '\''};
 
     private final static HashSet<Character> RESERVED = new HashSet<>(38);
 
@@ -140,12 +140,16 @@ public class FilenameUtils {
 
     public static String getSanitizedEmbeddedFileName(Metadata metadata,
                                                       String defaultExtension, int maxLength) {
-        String path = getEmbeddedPath(metadata);
+        String path = getEmbeddedName(metadata);
         //fName could be a full path or null
         if (StringUtils.isBlank(path)) {
             return null;
         }
         path = path.replaceAll("\u0000", " ");
+        if (path.startsWith("\"") && path.endsWith("\"")) {
+            path = path.substring(1, path.length() - 1);
+        }
+
         int prefixLength = getPrefixLength(path);
         if (prefixLength > 0) {
             path = path.substring(prefixLength);
@@ -173,6 +177,7 @@ public class FilenameUtils {
         namePart = namePart.replaceAll("(\\.\\.)+", "_");
         namePart = namePart.replaceAll("[/\\\\]+", "_");
         namePart = namePart.replaceAll(":+", "_");
+        namePart = namePart.trim();
 
         if (StringUtils.isBlank(namePart)) {
             return null;
@@ -286,6 +291,7 @@ public class FilenameUtils {
         return path;
     }
 
+    //may return null
     private static String getEmbeddedPath(Metadata metadata) {
         //potentially look for other values in embedded path or original file name, etc...
         //maybe different fallback order?
@@ -301,6 +307,27 @@ public class FilenameUtils {
         if (! StringUtils.isBlank(path)) {
             return path;
         }
+        return metadata.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME);
+    }
+
+    //this tries for resource name first, and then backs off to path
+    private static String getEmbeddedName(Metadata metadata) {
+        //potentially look for other values in embedded path or original file name, etc...
+        //maybe different fallback order?
+        String path = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        if (! StringUtils.isBlank(path)) {
+            return path;
+        }
+        path = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
+        if (! StringUtils.isBlank(path)) {
+            return path;
+        }
+
+        path = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
+        if (! StringUtils.isBlank(path)) {
+            return path;
+        }
+
         return metadata.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME);
     }
 

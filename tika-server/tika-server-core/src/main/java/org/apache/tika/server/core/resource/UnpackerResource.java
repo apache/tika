@@ -43,7 +43,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -193,12 +192,16 @@ public class UnpackerResource {
                     .builder()
                     .get();
 
-            BoundedInputStream bis = new BoundedInputStream(unpackMaxBytes, tis);
-            IOUtils.copy(bis, bos);
-            if (bis.hasHitBound()) {
-                throw new IOException(new TikaMemoryLimitException(
-                        "An attachment is longer than " + "'unpackMaxBytes' (default=100MB, actual=" + unpackMaxBytes + "). " + "If you need to increase this " +
-                                "limit, add a header to your request, such as: unpackMaxBytes: " + "1073741824.  There is a hard limit of 2GB."));
+            if (embeddedStreamTranslator.shouldTranslate(tis, metadata)) {
+                embeddedStreamTranslator.translate(tis, metadata, bos);
+            } else {
+                BoundedInputStream bis = new BoundedInputStream(unpackMaxBytes, tis);
+                IOUtils.copy(bis, bos);
+                if (bis.hasHitBound()) {
+                    throw new IOException(new TikaMemoryLimitException(
+                            "An attachment is longer than " + "'unpackMaxBytes' (default=100MB, actual=" + unpackMaxBytes + "). " + "If you need to increase this " +
+                                    "limit, add a header to your request, such as: unpackMaxBytes: " + "1073741824.  There is a hard limit of 2GB."));
+                }
             }
             byte[] data = bos.toByteArray();
 
@@ -222,16 +225,6 @@ public class UnpackerResource {
                     }
                 } catch (MimeTypeException e) {
                     LOG.warn("Unexpected MimeTypeException", e);
-                }
-            }
-            try (TikaInputStream is = TikaInputStream.get(data)) {
-                if (embeddedStreamTranslator.shouldTranslate(is, metadata)) {
-                    InputStream translated = embeddedStreamTranslator.translate(UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get(), metadata);
-                    UnsynchronizedByteArrayOutputStream bos2 = UnsynchronizedByteArrayOutputStream
-                            .builder()
-                            .get();
-                    IOUtils.copy(translated, bos2);
-                    data = bos2.toByteArray();
                 }
             }
 

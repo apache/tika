@@ -18,25 +18,17 @@ package org.apache.tika.pipes.core.extractor;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.mime.MimeTypes;
-import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.utils.StringUtils;
 
 public abstract class AbstractEmbeddedDocumentBytesHandler implements EmbeddedDocumentBytesHandler {
-
-    private static final MimeTypes MIME_TYPES = TikaConfig.getDefaultConfig().getMimeRepository();
 
     List<Integer> ids = new ArrayList<>();
 
@@ -56,13 +48,10 @@ public abstract class AbstractEmbeddedDocumentBytesHandler implements EmbeddedDo
             emitKey.append("-embed");
             emitKey.append("/");
             emitKey.append(embeddedIdString).append(embeddedDocumentBytesConfig.getEmbeddedIdPrefix());
-            Path p = Paths.get(metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-            String fName = p.getFileName().toString();
-            emitKey.append(fName);
-            if (! fName.contains(".")) {
-                appendSuffix(emitKey, metadata, embeddedDocumentBytesConfig);
+            String fName = FilenameUtils.getSanitizedEmbeddedFileName(metadata, ".bin", 100);
+            if (! StringUtils.isBlank(fName)) {
+                emitKey.append(fName);
             }
-
             return emitKey.toString();
         } else if (embeddedDocumentBytesConfig.getKeyBaseStrategy() ==
                 EmbeddedDocumentBytesConfig.KEY_BASE_STRATEGY.CONTAINER_NAME_NUMBERED) {
@@ -101,25 +90,7 @@ public abstract class AbstractEmbeddedDocumentBytesHandler implements EmbeddedDo
             emitKey.append(suffix);
         } else if (embeddedDocumentBytesConfig.getSuffixStrategy()
                                               .equals(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.DETECTED)) {
-            emitKey.append(getExtension(metadata));
+            emitKey.append(FilenameUtils.calculateExtension(metadata, ".bin"));
         }
-    }
-
-    private String getExtension(Metadata metadata) {
-        String mime = metadata.get(Metadata.CONTENT_TYPE);
-        try {
-            String ext = MIME_TYPES
-                    .forName(mime)
-                    .getExtension();
-            if (ext == null) {
-                return ".bin";
-            } else {
-                return ext;
-            }
-        } catch (MimeTypeException e) {
-            //swallow
-        }
-        return ".bin";
-
     }
 }

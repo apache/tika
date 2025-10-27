@@ -151,6 +151,9 @@ public class FilenameUtilsTest {
         assertEquals("brown fox.xlsx", sanitizeFilename("a:/the quick:brown fox.xlsx"));
         assertEquals("_the quick brown fox.xlsx", sanitizeFilename("C:\\a/b/c/..the quick brown fox.xlsx"));
         assertEquals("_the quick brown fox.xlsx", sanitizeFilename("~/a/b/c/.the quick brown fox.xlsx"));
+        assertEquals("the quick%3Ebrown fox.xlsx", sanitizeFilename("the quick>brown fox.xlsx"));
+        assertEquals("the quick%22brown fox.xlsx", sanitizeFilename("the quick\"brown fox.xlsx"));
+        assertEquals("the quick brown fox.xlsx", sanitizeFilename("\"the quick brown fox.xlsx\""));
 
         assertEquals("_.docx", sanitizeFilename("..................docx"));
         assertEquals("_.docx", sanitizeFilename("..docx"));
@@ -168,7 +171,7 @@ public class FilenameUtilsTest {
     @Test
     public void testEmbeddedFilePaths() throws Exception {
         String n = "the quick brown fox.docx";
-        /*assertEquals(n, sanitizePath(n));
+        assertEquals(n, sanitizePath(n));
         assertEquals(n, sanitizePath(n.substring(0, n.length() - 5),
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
         assertEquals(n, sanitizeFilename("the quick\u0000brown fox.docx"));
@@ -204,7 +207,7 @@ public class FilenameUtilsTest {
         assertNull(sanitizePath(""));
         assertNull(sanitizePath(null));
         assertNull(sanitizePath("/"));
-        assertNull(sanitizePath("~/"));*/
+        assertNull(sanitizePath("~/"));
         assertNull(sanitizePath("C:"));
         assertNull(sanitizePath("C:/"));
         assertNull(sanitizePath("C:\\"));
@@ -235,6 +238,7 @@ public class FilenameUtilsTest {
 
     private Metadata getMetadata(String name) {
         Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, name);
         return metadata;
     }

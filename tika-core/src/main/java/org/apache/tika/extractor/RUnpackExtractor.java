@@ -21,6 +21,7 @@ import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -110,18 +111,27 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         }
     }
 
-    private void parseWithBytes(TikaInputStream stream, ContentHandler handler, Metadata metadata)
-            throws TikaException, IOException, SAXException {
-        //TODO -- improve the efficiency of this so that we're not
-        //literally writing out a file per request
+    private void parseWithBytes(TikaInputStream tis, ContentHandler handler, Metadata metadata) throws TikaException, IOException, SAXException {
+
         Path tmp = Files.createTempFile("tika-tmp-", ".bin");
-        if (embeddedStreamTranslator.shouldTranslate(stream, metadata)) {
-            Files.copy(embeddedStreamTranslator.translate(stream, metadata), tmp, StandardCopyOption.REPLACE_EXISTING);
-        } else {
-            Files.copy(stream, tmp, StandardCopyOption.REPLACE_EXISTING);
-        }
-        try (TikaInputStream tmpTis = TikaInputStream.get(tmp)) {
-            parse(tmpTis, handler, metadata);
+        try {
+            //translate the stream or not
+            if (embeddedStreamTranslator.shouldTranslate(tis, metadata)) {
+                try (OutputStream os = Files.newOutputStream(tmp)) {
+                    embeddedStreamTranslator.translate(tis, metadata, os);
+                }
+            } else {
+                Files.copy(tis, tmp, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            //now do the parse
+            if (tis.getOpenContainer() != null) {
+                parse(tis, handler, metadata);
+            } else {
+                try (TikaInputStream tisTmp = TikaInputStream.get(tmp)) {
+                    parse(tisTmp, handler, metadata);
+                }
+            }
         } finally {
             try {
                 storeEmbeddedBytes(tmp, metadata);
@@ -139,6 +149,10 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
     }
 
     private void storeEmbeddedBytes(Path p, Metadata metadata) {
+        if (p == null) {
+            return;
+        }
+
         if (! embeddedBytesSelector.select(metadata)) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("skipping embedded bytes {} <-> {}",

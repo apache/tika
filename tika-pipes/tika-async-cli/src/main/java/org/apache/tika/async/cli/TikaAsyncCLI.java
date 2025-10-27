@@ -53,7 +53,7 @@ public class TikaAsyncCLI {
         options.addOption("i", "inputDir", true, "input directory");
         options.addOption("o", "outputDir", true, "output directory");
         options.addOption("n", "numClients", true, "number of forked clients");
-        options.addOption("X", "Xmx", true, "heap for the forked clients in usual jvm heap amount, e.g. -x 1g");
+        options.addOption("X", "Xmx", true, "heap for the forked clients in usual jvm heap amount, e.g. -X 1g");
         options.addOption("?", "help", false, "this help message");
         options.addOption("T", "timeoutMs", true, "timeout for each parse in milliseconds");
         options.addOption("h", "handlerType", true, "handler type: t=text, h=html, x=xml, b=body, i=ignore");

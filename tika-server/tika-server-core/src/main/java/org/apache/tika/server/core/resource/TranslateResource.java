@@ -57,36 +57,40 @@ public class TranslateResource {
         this.serverStatus = serverStatus;
         this.timeoutMillis = timeoutMillis;
     }
-
-    @PUT
+    
+    // TIKA-4526: handle @PUT and @POST separately to avoid nondeterministic failures
     @POST
     @Path("/all/{translator}/{src}/{dest}")
     @Consumes("*/*")
     @Produces("text/plain")
-    public String translate(final InputStream is, @PathParam("translator") String translator, @PathParam("src") String sLang, @PathParam("dest") String dLang)
+    public String translatePost(final InputStream is, @PathParam("translator") String translator, @PathParam("src") String sLang, @PathParam("dest") String dLang)
             throws TikaException, IOException {
         return doTranslate(IOUtils.toString(is, UTF_8), translator, sLang, dLang);
-
     }
 
     @PUT
+    @Path("/all/{translator}/{src}/{dest}")
+    @Consumes("*/*")
+    @Produces("text/plain")
+    public String translatePut(final InputStream is, @PathParam("translator") String translator, @PathParam("src") String sLang, @PathParam("dest") String dLang)
+            throws TikaException, IOException {
+        return doTranslate(IOUtils.toString(is, UTF_8), translator, sLang, dLang);
+    }
+
     @POST
     @Path("/all/{translator}/{dest}")
     @Consumes("*/*")
     @Produces("text/plain")
-    public String autoTranslate(final InputStream is, @PathParam("translator") String translator, @PathParam("dest") String dLang) throws TikaException, IOException {
-        final String content = IOUtils.toString(is, UTF_8);
-        LanguageResult language = new OptimaizeLangDetector()
-                .loadModels()
-                .detect(content);
-        if (language.isUnknown()) {
-            throw new TikaException("Unable to detect language to use for translation of text");
-        }
+    public String autoTranslatePost(final InputStream is, @PathParam("translator") String translator, @PathParam("dest") String dLang) throws TikaException, IOException {
+        return doAutoTranslate(IOUtils.toString(is, UTF_8), translator, dLang);
+    }
 
-        String sLang = language.getLanguage();
-        LOG.info("LanguageIdentifier: detected source lang: [{}]", sLang);
-
-        return doTranslate(content, translator, sLang, dLang);
+    @PUT
+    @Path("/all/{translator}/{dest}")
+    @Consumes("*/*")
+    @Produces("text/plain")
+    public String autoTranslatePut(final InputStream is, @PathParam("translator") String translator, @PathParam("dest") String dLang) throws TikaException, IOException {
+        return doAutoTranslate(IOUtils.toString(is, UTF_8), translator, dLang);
     }
 
     private String doTranslate(String content, String translator, String sLang, String dLang) throws TikaException, IOException {
@@ -106,6 +110,20 @@ public class TranslateResource {
         } finally {
             serverStatus.complete(taskId);
         }
+    }
+    
+    private String doAutoTranslate(String content, String translator, String dLang) throws TikaException, IOException {
+        LanguageResult language = new OptimaizeLangDetector()
+                .loadModels()
+                .detect(content);
+        if (language.isUnknown()) {
+            throw new TikaException("Unable to detect language to use for translation of text");
+        }
+
+        String sLang = language.getLanguage();
+        LOG.info("LanguageIdentifier: detected source lang: [{}]", sLang);
+
+        return doTranslate(content, translator, sLang, dLang);
     }
 
     private Translator byClassName(String className) {
