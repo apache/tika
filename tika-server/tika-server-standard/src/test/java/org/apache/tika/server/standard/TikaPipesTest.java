@@ -287,7 +287,8 @@ public class TikaPipesTest extends CXFTestBase {
         parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
         parseContext.set(EmbeddedDocumentBytesConfig.class, config);
         FetchEmitTuple t =
-                new FetchEmitTuple("myId", new FetchKey(FETCHER_PLUGIN_ID, "test_recursive_embedded.docx"), new EmitKey("fse", "test_recursive_embedded.docx"), new Metadata(), parseContext,
+                new FetchEmitTuple("myId", new FetchKey(FETCHER_PLUGIN_ID, "test_recursive_embedded.docx"),
+                        new EmitKey("fse", "test_recursive_embedded.docx"), new Metadata(), parseContext,
                         FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);

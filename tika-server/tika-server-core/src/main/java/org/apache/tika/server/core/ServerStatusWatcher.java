@@ -17,8 +17,6 @@
 
 package org.apache.tika.server.core;
 
-import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -33,7 +31,6 @@ public class ServerStatusWatcher implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(ServerStatusWatcher.class);
     private final ServerStatus serverStatus;
     private final TikaServerConfig tikaServerConfig;
-    private volatile boolean shuttingDown = false;
 
     public ServerStatusWatcher(ServerStatus serverStatus, TikaServerConfig tikaServerConfig) throws InterruptedException {
         this.serverStatus = serverStatus;
@@ -70,8 +67,10 @@ public class ServerStatusWatcher implements Runnable {
                     .toMillis();
             if (millisElapsed > status.timeoutMillis) {
                 serverStatus.setStatus(ServerStatus.STATUS.TIMEOUT);
-                    LOG.error("Timeout task {}, millis elapsed {}; " + "consider increasing the allowable time with the " + "<taskTimeoutMillis/> parameter or the {} header",
-                            status.task.toString(), millisElapsed, TimeoutConfig.X_TIKA_TIMEOUT_MILLIS);
+                LOG.error("Timeout task {}, millis elapsed {}; " +
+                                "consider increasing the allowable time with the "
+                                + "<taskTimeoutMillis/> parameter or the {} header",
+                        status.task.toString(), millisElapsed, TimeoutConfig.X_TIKA_TIMEOUT_MILLIS);
                 shutdown();
             }
         }

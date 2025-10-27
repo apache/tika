@@ -40,7 +40,6 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 public class TikaServerConfig extends ConfigBase {

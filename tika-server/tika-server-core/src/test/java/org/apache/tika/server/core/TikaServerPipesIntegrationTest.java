@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -250,7 +249,8 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     private String getJsonString(String fileName, FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) throws IOException {
         ParseContext parseContext = new ParseContext();
         parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
-        FetchEmitTuple t = new FetchEmitTuple(fileName, new FetchKey(CXFTestBase.FETCHER_PLUGIN_ID, fileName), new EmitKey(EMITTER_NAME, ""), new Metadata(), parseContext, onParseException);
+        FetchEmitTuple t = new FetchEmitTuple(fileName, new FetchKey(CXFTestBase.FETCHER_PLUGIN_ID, fileName),
+                new EmitKey(EMITTER_NAME, ""), new Metadata(), parseContext, onParseException);
         return JsonFetchEmitTuple.toJson(t);
     }
 }

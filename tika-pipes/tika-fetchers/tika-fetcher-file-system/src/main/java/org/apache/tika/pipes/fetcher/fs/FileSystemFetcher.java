@@ -43,6 +43,17 @@ import org.apache.tika.pipes.api.fetcher.FetcherConfig;
 import org.apache.tika.pipes.fetcher.fs.config.FileSystemFetcherConfig;
 import org.apache.tika.utils.StringUtils;
 
+/**
+ * Fetches files from a local/mounted file system.
+ * Config:
+ * <pre>{@code
+ * "file-system-fetcher": {
+ * "basePath": "BASE_PATH",
+ * "extractFileSystemMetadata": false
+ * }
+ * }
+ * </pre>
+ */
 
 @Extension
 public class FileSystemFetcher extends AbstractFetcher {
@@ -100,7 +111,6 @@ public class FileSystemFetcher extends AbstractFetcher {
             throw new FileNotFoundException(p.toAbsolutePath().toString());
         }
         updateFileSystemMetadata(p, metadata, config);
-
 
         return TikaInputStream.get(p, metadata);
     }
