@@ -967,6 +967,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     private void addJavaScript(Map<String, PDActionJavaScript> pdActionJavaScriptMap) throws IOException, SAXException {
+        if (pdActionJavaScriptMap == null) {
+            return;
+        }
         for (Map.Entry<String, PDActionJavaScript> e : pdActionJavaScriptMap.entrySet()) {
             String action = e.getValue().getAction();
             if (StringUtils.isBlank(action)) {
