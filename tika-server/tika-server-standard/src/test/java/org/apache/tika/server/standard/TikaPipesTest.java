@@ -39,6 +39,7 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -75,6 +76,21 @@ import org.apache.tika.utils.ProcessUtils;
  * We use file system fetchers and emitters.
  */
 public class TikaPipesTest extends CXFTestBase {
+
+    final static String JSON_TEMPLATE = """
+            {
+              "pipesPluginsConfig" : {
+                "fetchers": {
+                  "file-system-fetcher": {
+                    "basePath": "BASE_PATH",
+                    "extractFileSystemMetadata": false
+                  }
+                }
+              }
+            }
+            """;
+    final static String FETCHER_PLUGIN_ID = "file-system-fetcher";
+
 
     private static final String PIPES_PATH = "/pipes";
     private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
@@ -124,7 +140,12 @@ public class TikaPipesTest extends CXFTestBase {
         Files.write(TIKA_CONFIG_PATH, TIKA_CONFIG_XML.getBytes(StandardCharsets.UTF_8));
 
         TIKA_PIPES_CONFIG_PATH = Files.createTempFile(TMP_WORKING_DIR, "tika-pipes-config-", ".json");
-        //TODO
+        TIKA_PIPES_CONFIG_PATH = Files.createTempFile(TMP_WORKING_DIR, "tika-pipes-config-", ".json");
+        String json = JSON_TEMPLATE.replace("BASE_PATH", inputDir.toAbsolutePath().toString());
+        Files.writeString(TIKA_PIPES_CONFIG_PATH, json, StandardCharsets.UTF_8);
+        FETCHER_MANAGER = FetcherManager.load(UnsynchronizedByteArrayInputStream
+                .builder().setByteArray(json.getBytes(StandardCharsets.UTF_8)).get());
+
     }
 
 
@@ -168,7 +189,7 @@ public class TikaPipesTest extends CXFTestBase {
     @Test
     public void testBasic() throws Exception {
 
-        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey("fsf", "test_recursive_embedded.docx"),
+        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_PLUGIN_ID, "test_recursive_embedded.docx"),
                 new EmitKey("fse", ""));
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
@@ -196,7 +217,7 @@ public class TikaPipesTest extends CXFTestBase {
         HandlerConfig handlerConfig = new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, HandlerConfig.PARSE_MODE.CONCATENATE, -1, -1, true);
         parseContext.set(HandlerConfig.class, handlerConfig);
 
-        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey("fsf", "test_recursive_embedded.docx"),
+        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_PLUGIN_ID, "test_recursive_embedded.docx"),
                 new EmitKey("fse", ""), new Metadata(), parseContext,
                 FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         StringWriter writer = new StringWriter();
@@ -230,7 +251,7 @@ public class TikaPipesTest extends CXFTestBase {
         pdfParserConfig.setSortByPosition(true);
         parseContext.set(PDFParserConfig.class, pdfParserConfig);
 
-        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey("fsf", TEST_TWO_BOXES_PDF),
+        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_PLUGIN_ID, TEST_TWO_BOXES_PDF),
                 new EmitKey("fse", ""), metadata, parseContext);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
@@ -266,7 +287,7 @@ public class TikaPipesTest extends CXFTestBase {
         parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
         parseContext.set(EmbeddedDocumentBytesConfig.class, config);
         FetchEmitTuple t =
-                new FetchEmitTuple("myId", new FetchKey("fsf", "test_recursive_embedded.docx"), new EmitKey("fse", "test_recursive_embedded.docx"), new Metadata(), parseContext,
+                new FetchEmitTuple("myId", new FetchKey(FETCHER_PLUGIN_ID, "test_recursive_embedded.docx"), new EmitKey("fse", "test_recursive_embedded.docx"), new Metadata(), parseContext,
                         FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);

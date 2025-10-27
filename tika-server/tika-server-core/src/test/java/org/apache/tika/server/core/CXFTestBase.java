@@ -59,6 +59,7 @@ import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.resource.UnpackerResource;
 
 public abstract class CXFTestBase {
+
     final static String FETCHER_PLUGIN_ID = "file-system-fetcher";
 
     //TODO -- add back in: ,
