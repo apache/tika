@@ -553,9 +553,9 @@ public class PipesServer implements Runnable {
 
     private Fetcher getFetcher(FetchEmitTuple t) {
         try {
-            return fetcherManager.getFetcher(t.getFetchKey().getFetcherName());
+            return fetcherManager.getFetcher(t.getFetchKey().getFetcherPluginId());
         } catch (IllegalArgumentException e) {
-            String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherName());
+            String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherPluginId());
             LOG.warn(noFetcherMsg);
             write(STATUS.FETCHER_NOT_FOUND, noFetcherMsg);
             return null;
@@ -582,9 +582,9 @@ public class PipesServer implements Runnable {
         return null;
     }
 
-    private String getNoFetcherMsg(String fetcherName) {
+    private String getNoFetcherMsg(String fetcherPluginId) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Fetcher '").append(fetcherName).append("'");
+        sb.append("Fetcher '").append(fetcherPluginId).append("'");
         sb.append(" not found.");
         sb.append("\nThe configured FetcherManager supports:");
         int i = 0;

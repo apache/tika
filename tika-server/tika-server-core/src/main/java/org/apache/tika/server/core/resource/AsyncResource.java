@@ -105,7 +105,7 @@ public class AsyncResource {
         for (FetchEmitTuple t : request.getTuples()) {
             if (!supportedFetchers.contains(t
                     .getFetchKey()
-                    .getFetcherName())) {
+                    .getFetcherPluginId())) {
                 return badFetcher(t.getFetchKey());
             }
             if (!emitterManager
@@ -177,7 +177,7 @@ public class AsyncResource {
     }
 
     private Map<String, Object> badFetcher(FetchKey fetchKey) {
-        throw new BadRequestException("can't find fetcher for " + fetchKey.getFetcherName());
+        throw new BadRequestException("can't find fetcher for " + fetchKey.getFetcherPluginId());
     }
 
     private AsyncRequest deserializeASyncRequest(InputStream is) throws IOException {

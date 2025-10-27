@@ -43,7 +43,7 @@ public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
 
         jsonGenerator.writeStartObject();
         jsonGenerator.writeStringField(ID, t.getId());
-        jsonGenerator.writeStringField(FETCHER, t.getFetchKey().getFetcherName());
+        jsonGenerator.writeStringField(FETCHER, t.getFetchKey().getFetcherPluginId());
         jsonGenerator.writeStringField(FETCH_KEY, t.getFetchKey().getFetchKey());
         if (t.getFetchKey().hasRange()) {
             jsonGenerator.writeNumberField(FETCH_RANGE_START, t.getFetchKey().getRangeStart());

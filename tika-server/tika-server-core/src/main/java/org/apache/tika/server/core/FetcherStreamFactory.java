@@ -81,7 +81,7 @@ public class FetcherStreamFactory implements InputStreamFactory {
     @Override
     public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders, UriInfo uriInfo) throws IOException {
         MultivaluedMap params = (uriInfo == null) ? null : uriInfo.getQueryParameters();
-        String fetcherName = getParam("fetcherPluginId", httpHeaders, params);
+        String fetcherPluginId = getParam("fetcherPluginId", httpHeaders, params);
         String fetchKey = getParam("fetchKey", httpHeaders, params);
         fetchKey = urlDecode(fetchKey);
         if (StringUtils.isBlank(fetchKey)) {
@@ -91,8 +91,8 @@ public class FetcherStreamFactory implements InputStreamFactory {
         TikaResource.fillParseContext(httpHeaders.getRequestHeaders(), metadata, parseContext);
         long fetchRangeStart = getLong(getParam("fetchRangeStart", httpHeaders, params));
         long fetchRangeEnd = getLong(getParam("fetchRangeEnd", httpHeaders, params));
-        if (StringUtils.isBlank(fetcherName) != StringUtils.isBlank(fetchKey)) {
-            throw new IOException("Must specify both a 'fetcherName' and a 'fetchKey'. I see: " + " fetcherName:" + fetcherName + " and fetchKey:" + fetchKey);
+        if (StringUtils.isBlank(fetcherPluginId) != StringUtils.isBlank(fetchKey)) {
+            throw new IOException("Must specify both a 'fetcherPluginId' and a 'fetchKey'. I see: " + " fetcherPluginId:" + fetcherPluginId + " and fetchKey:" + fetchKey);
         }
         if (fetchRangeStart < 0 && fetchRangeEnd > -1) {
             throw new IllegalArgumentException("fetchRangeStart must be > -1 if a fetchRangeEnd " + "is specified");
@@ -102,10 +102,10 @@ public class FetcherStreamFactory implements InputStreamFactory {
             throw new IllegalArgumentException("fetchRangeEnd must be > -1 if a fetchRangeStart " + "is specified");
         }
 
-        if (!StringUtils.isBlank(fetcherName)) {
+        if (!StringUtils.isBlank(fetcherPluginId)) {
             try {
-                LOG.debug("going to fetch '{}' from fetcher: {}", fetchKey, fetcherName);
-                Fetcher fetcher = fetcherManager.getFetcher(fetcherName);
+                LOG.debug("going to fetch '{}' from fetcher: {}", fetchKey, fetcherPluginId);
+                Fetcher fetcher = fetcherManager.getFetcher(fetcherPluginId);
                 if (fetchRangeStart > -1 && fetchRangeEnd > -1 && !(fetcher instanceof RangeFetcher)) {
                     throw new IllegalArgumentException(
                             "Can't call a fetch with a range on a fetcher that" + " is not a RangeFetcher: name=" + fetcher.getPluginId() + " class=" + fetcher.getClass());

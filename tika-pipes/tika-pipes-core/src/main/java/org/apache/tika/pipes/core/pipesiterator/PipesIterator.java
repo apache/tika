@@ -64,7 +64,7 @@ public abstract class PipesIterator extends ConfigBase
     private long maxWaitMs = DEFAULT_MAX_WAIT_MS;
     private ArrayBlockingQueue<FetchEmitTuple> queue = null;
     private int queueSize = DEFAULT_QUEUE_SIZE;
-    private String fetcherName;
+    private String fetcherPluginId;
     private String emitterName;
     private FetchEmitTuple.ON_PARSE_EXCEPTION onParseException =
             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
@@ -90,12 +90,12 @@ public abstract class PipesIterator extends ConfigBase
     }
 
     public String getFetcherName() {
-        return fetcherName;
+        return fetcherPluginId;
     }
 
     @Field
-    public void setFetcherName(String fetcherName) {
-        this.fetcherName = fetcherName;
+    public void setFetcherName(String fetcherPluginId) {
+        this.fetcherPluginId = fetcherPluginId;
     }
 
     public String getEmitterName() {

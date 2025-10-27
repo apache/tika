@@ -141,9 +141,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                     });
             Element fetcher = tikaConfigDoc.createElement("fetcher");
             fetcher.setAttribute("class", fetcherEntry.getValue().getClass().getName());
-            Element fetcherName = tikaConfigDoc.createElement("name");
-            fetcherName.setTextContent(fetcherObject.getName());
-            fetcher.appendChild(fetcherName);
+            Element fetcherPluginId = tikaConfigDoc.createElement("name");
+            fetcherPluginId.setTextContent(fetcherObject.getName());
+            fetcher.appendChild(fetcherPluginId);
             populateFetcherConfigs(fetcherConfigParams, tikaConfigDoc, fetcher);
             fetchersElement.appendChild(fetcher);
         }
@@ -411,7 +411,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         responseObserver.onCompleted();
     }
 
-    private boolean deleteFetcher(String fetcherName) {
+    private boolean deleteFetcher(String fetcherPluginId) {
         return expiringFetcherStore.deleteFetcher(fetcherName);
     }
 }

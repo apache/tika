@@ -148,7 +148,7 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
 
     @Override
     protected void enqueue() throws InterruptedException, TimeoutException {
-        String fetcherName = getFetcherName();
+        String fetcherPluginId = getFetcherName();
         String emitterName = getEmitterName();
         long start = System.currentTimeMillis();
         int count = 0;
@@ -164,7 +164,7 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
                 }
                 ParseContext parseContext = new ParseContext();
                 parseContext.set(HandlerConfig.class, handlerConfig);
-                tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherName, r.key()), new EmitKey(emitterName, r.key()), new Metadata(), parseContext, getOnParseException()));
+                tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherPluginId, r.key()), new EmitKey(emitterName, r.key()), new Metadata(), parseContext, getOnParseException()));
                 ++count;
             }
         } while ((emitMax > 0 || count < emitMax) && !records.isEmpty());

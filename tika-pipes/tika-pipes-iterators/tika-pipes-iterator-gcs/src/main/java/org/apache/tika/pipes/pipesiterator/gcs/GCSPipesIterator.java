@@ -92,7 +92,7 @@ public class GCSPipesIterator extends PipesIterator implements Initializable {
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        String fetcherName = getFetcherName();
+        String fetcherPluginId = getFetcherName();
         String emitterName = getEmitterName();
         long start = System.currentTimeMillis();
         int count = 0;
@@ -116,7 +116,7 @@ public class GCSPipesIterator extends PipesIterator implements Initializable {
             //TODO -- allow user specified metadata as the "id"?
             ParseContext parseContext = new ParseContext();
             parseContext.set(HandlerConfig.class, handlerConfig);
-            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherName, blob.getName()), new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
+            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherPluginId, blob.getName()), new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
                     getOnParseException()));
             count++;
         }

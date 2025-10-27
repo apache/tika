@@ -144,9 +144,9 @@ public class PipeIntegrationTests {
         }
     }
 
-    private Fetcher getFetcher(String fileName, String fetcherName) throws Exception {
+    private Fetcher getFetcher(String fileName, String fetcherPluginId) throws Exception {
         FetcherManager manager = FetcherManager.load(getPath(fileName));
-        return manager.getFetcher(fetcherName);
+        return manager.getFetcher(fetcherPluginId);
     }
 
     private Emitter getEmitter(String fileName, String emitterName) throws Exception {

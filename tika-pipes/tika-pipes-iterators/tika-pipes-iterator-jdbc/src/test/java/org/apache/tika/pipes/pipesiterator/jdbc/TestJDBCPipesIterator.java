@@ -154,7 +154,7 @@ public class TestJDBCPipesIterator {
 
     private PipesIterator getConfig() throws Exception {
         String config = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><properties>\n" + "        <pipesIterator " +
-                "       class=\"org.apache.tika.pipes.pipesiterator.jdbc.JDBCPipesIterator\">\n" + "                <fetcherName>s3f</fetcherName>\n" +
+                "       class=\"org.apache.tika.pipes.pipesiterator.jdbc.JDBCPipesIterator\">\n" + "                <fetcherPluginId>s3f</fetcherPluginId>\n" +
                 "                <emitterName>s3e</emitterName>\n" + "                <queueSize>57</queueSize>\n" + "                <idColumn>my_id</idColumn>\n" +
                 "                <fetchKeyColumn>my_fetchkey</fetchKeyColumn>\n" + "                <emitKeyColumn>my_fetchkey</emitKeyColumn>\n" + "                <select>" +
                 "select id as my_id, project as my_project, fetchKey as my_fetchKey " + "from fetchkeys</select>\n" + "                <connection>jdbc:h2:file:" +

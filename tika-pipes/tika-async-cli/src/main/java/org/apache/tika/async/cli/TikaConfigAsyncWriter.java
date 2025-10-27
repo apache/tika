@@ -125,14 +125,12 @@ class TikaConfigAsyncWriter {
         Element pipesIterator = createAndGetElement(document, properties, "pipesIterator",
                 "class", "org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator");
         appendTextElement(document, pipesIterator, "basePath", baseInput.toAbsolutePath().toString());
-        appendTextElement(document, pipesIterator, "fetcherName", FETCHER_NAME);
         appendTextElement(document, pipesIterator, "emitterName", EMITTER_NAME);
     }
 
     private void writeFileListIterator(Document document, Element properties, Path baseInput) {
         Element pipesIterator = createAndGetElement(document, properties, "pipesIterator",
                 "class", "org.apache.tika.pipes.pipesiterator.filelist.FileListPipesIterator");
-        appendTextElement(document, pipesIterator, "fetcherName", FETCHER_NAME);
         appendTextElement(document, pipesIterator, "emitterName", EMITTER_NAME);
         appendTextElement(document, pipesIterator, "fileList",
                 baseInput.toAbsolutePath().toString());

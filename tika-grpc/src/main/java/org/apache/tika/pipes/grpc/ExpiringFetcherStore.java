@@ -41,18 +41,18 @@ public class ExpiringFetcherStore implements AutoCloseable {
     public ExpiringFetcherStore(int expireAfterSeconds, int checkForExpiredFetchersDelaySeconds) {
         executorService.scheduleAtFixedRate(() -> {
             Set<String> expired = new HashSet<>();
-            for (String fetcherName : fetchers.keySet()) {
-                Instant lastAccessed = fetcherLastAccessed.get(fetcherName);
+            for (String fetcherPluginId : fetchers.keySet()) {
+                Instant lastAccessed = fetcherLastAccessed.get(fetcherPluginId);
                 if (lastAccessed == null) {
-                    LOG.error("Detected a fetcher with no last access time. FetcherName={}", fetcherName);
-                    expired.add(fetcherName);
+                    LOG.error("Detected a fetcher with no last access time. FetcherName={}", fetcherPluginId);
+                    expired.add(fetcherPluginId);
                 } else if (Instant
                         .now()
                         .isAfter(lastAccessed.plusSeconds(expireAfterSeconds))) {
-                    LOG.info("Detected stale fetcher {} hasn't been accessed in {} seconds. " + "Deleting.", fetcherName, Instant
+                    LOG.info("Detected stale fetcher {} hasn't been accessed in {} seconds. " + "Deleting.", fetcherPluginId, Instant
                             .now()
                             .getEpochSecond() - lastAccessed.getEpochSecond());
-                    expired.add(fetcherName);
+                    expired.add(fetcherPluginId);
                 }
             }
             for (String expiredFetcherId : expired) {
@@ -61,10 +61,10 @@ public class ExpiringFetcherStore implements AutoCloseable {
         }, EXPIRE_JOB_INITIAL_DELAY, checkForExpiredFetchersDelaySeconds, TimeUnit.SECONDS);
     }
 
-    public boolean deleteFetcher(String fetcherName) {
-        boolean success = fetchers.remove(fetcherName) != null;
-        fetcherConfigs.remove(fetcherName);
-        fetcherLastAccessed.remove(fetcherName);
+    public boolean deleteFetcher(String fetcherPluginId) {
+        boolean success = fetchers.remove(fetcherPluginId) != null;
+        fetcherConfigs.remove(fetcherPluginId);
+        fetcherLastAccessed.remove(fetcherPluginId);
         return success;
     }
 
@@ -80,9 +80,9 @@ public class ExpiringFetcherStore implements AutoCloseable {
      * This method will get the fetcher, but will also log the access the fetcher as having
      * been accessed. This prevents the scheduled job from removing the stale fetcher.
      */
-    public <T extends AbstractFetcher> T getFetcherAndLogAccess(String fetcherName) {
-        fetcherLastAccessed.put(fetcherName, Instant.now());
-        return (T) fetchers.get(fetcherName);
+    public <T extends AbstractFetcher> T getFetcherAndLogAccess(String fetcherPluginId) {
+        fetcherLastAccessed.put(fetcherPluginId, Instant.now());
+        return (T) fetchers.get(fetcherPluginId);
     }
 
     public <T extends AbstractFetcher, C> void createFetcher(T fetcher, C config) {

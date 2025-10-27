@@ -182,7 +182,7 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        String fetcherName = getFetcherName();
+        String fetcherPluginId = getFetcherName();
         String emitterName = getEmitterName();
         long start = System.currentTimeMillis();
         int count = 0;
@@ -200,7 +200,7 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
             //TODO -- allow user specified metadata as the "id"?
             ParseContext parseContext = new ParseContext();
             parseContext.set(HandlerConfig.class, handlerConfig);
-            tryToAdd(new FetchEmitTuple(summary.getKey(), new FetchKey(fetcherName, summary.getKey()), new EmitKey(emitterName, summary.getKey()), new Metadata(), parseContext,
+            tryToAdd(new FetchEmitTuple(summary.getKey(), new FetchKey(fetcherPluginId, summary.getKey()), new EmitKey(emitterName, summary.getKey()), new Metadata(), parseContext,
                     getOnParseException()));
             count++;
         }

@@ -91,7 +91,7 @@ public class FetcherManager {
         Fetcher fetcher = fetcherMap.get(pluginId);
         if (fetcher == null) {
             throw new IllegalArgumentException(
-                    "Can't find fetcher for fetcherName: " + pluginId + ". I've loaded: " +
+                    "Can't find fetcher for fetcherPluginId: " + pluginId + ". I've loaded: " +
                             fetcherMap.keySet());
         }
         return fetcher;
@@ -112,7 +112,7 @@ public class FetcherManager {
             throw new IllegalArgumentException("fetchers size must == 1 for the no arg call");
         }
         if (fetcherMap.size() > 1) {
-            throw new IllegalArgumentException("need to specify 'fetcherName' if > 1 fetchers are" +
+            throw new IllegalArgumentException("need to specify 'fetcherPluginId' if > 1 fetchers are" +
                     " available");
         }
         for (Fetcher fetcher : fetcherMap.values()) {

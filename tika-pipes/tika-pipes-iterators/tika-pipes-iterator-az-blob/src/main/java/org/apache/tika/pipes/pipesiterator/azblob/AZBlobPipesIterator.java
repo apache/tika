@@ -87,7 +87,7 @@ public class AZBlobPipesIterator extends PipesIterator implements Initializable 
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        String fetcherName = getFetcherName();
+        String fetcherPluginId = getFetcherName();
         String emitterName = getEmitterName();
         long start = System.currentTimeMillis();
         int count = 0;
@@ -124,7 +124,7 @@ public class AZBlobPipesIterator extends PipesIterator implements Initializable 
             //TODO -- extract metadata about content length etc from properties
             ParseContext parseContext = new ParseContext();
             parseContext.set(HandlerConfig.class, handlerConfig);
-            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherName, blob.getName()), new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
+            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherPluginId, blob.getName()), new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
                     getOnParseException()));
             count++;
         }

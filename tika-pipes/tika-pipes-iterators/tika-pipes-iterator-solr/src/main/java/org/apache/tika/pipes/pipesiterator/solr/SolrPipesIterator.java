@@ -174,7 +174,7 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        String fetcherName = getFetcherName();
+        String fetcherPluginId = getFetcherName();
         String emitterName = getEmitterName();
 
         try (SolrClient solrClient = createSolrClient()) {
@@ -220,7 +220,7 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
                     LOGGER.info("iterator doc: {}, idField={}, fetchKey={}", sd, idField, fetchKey);
                     ParseContext parseContext = new ParseContext();
                     parseContext.set(HandlerConfig.class, handlerConfig);
-                    tryToAdd(new FetchEmitTuple(fetchKey, new FetchKey(fetcherName, fetchKey), new EmitKey(emitterName, emitKey), new Metadata(), parseContext,
+                    tryToAdd(new FetchEmitTuple(fetchKey, new FetchKey(fetcherPluginId, fetchKey), new EmitKey(emitterName, emitKey), new Metadata(), parseContext,
                             getOnParseException()));
                 }
                 if (cursorMark.equals(nextCursorMark)) {

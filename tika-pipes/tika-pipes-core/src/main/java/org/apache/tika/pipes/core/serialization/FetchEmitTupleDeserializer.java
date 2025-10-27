@@ -51,7 +51,7 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         JsonNode root = jsonParser.readValueAsTree();
 
         String id = readVal(ID, root, null, true);
-        String fetcherName = readVal(FETCHER, root, null, true);
+        String fetcherPluginId = readVal(FETCHER, root, null, true);
         String fetchKey = readVal(FETCH_KEY, root, null, true);
         String emitterName = readVal(EMITTER, root, "", false);
         String emitKey = readVal(EMIT_KEY, root, "", false);
@@ -62,7 +62,7 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         ParseContext parseContext = parseContextNode == null ? new ParseContext() : ParseContextDeserializer.readParseContext(parseContextNode);
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = readOnParseException(root);
 
-        return new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey, fetchRangeStart, fetchRangeEnd),
+        return new FetchEmitTuple(id, new FetchKey(fetcherPluginId, fetchKey, fetchRangeStart, fetchRangeEnd),
                 new EmitKey(emitterName, emitKey), metadata, parseContext,
                 onParseException);
     }
