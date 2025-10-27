@@ -101,9 +101,6 @@ public class MboxParser implements Parser {
             int mailItem = 0;
             boolean inHeader = true;
             do {
-                if (curLine.contains("1495533845574511907")) {
-                    System.out.println("here");
-                }
                 if (curLine.startsWith(MBOX_RECORD_DIVIDER)) {
                     Metadata mailMetadata = new Metadata();
                     Queue<String> multiline = new LinkedList<>();
