@@ -204,9 +204,7 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
             NodeList children = properties.getChildNodes();
             for (int i = 0; i < children.getLength(); i++) {
                 Node child = children.item(i);
-                if ("fetchers".equals(child.getLocalName())) {
-                    loadSupported(child, "fetcher", tikaServerConfig.supportedFetchers);
-                } else if ("emitters".equals(child.getLocalName())) {
+                if ("emitters".equals(child.getLocalName())) {
                     loadSupported(child, "emitter", tikaServerConfig.supportedEmitters);
                 }
             }

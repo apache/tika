@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -55,11 +56,11 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerPipesIntegrationTest.class);
     private static final String EMITTER_NAME = "fse";
-    private static final String FETCHER_NAME = "fsf";
 
     private static Path TEMP_OUTPUT_DIR;
     private static Path TIKA_CONFIG;
     private static Path TIKA_CONFIG_TIMEOUT;
+    private static Path TIKA_PIPES_CONFIG;
     private static String[] FILES = new String[]{"hello_world.xml", "heavy_hang_30000.xml", "fake_oom.xml", "system_exit.xml", "null_pointer.xml"};
 
     @BeforeAll
@@ -74,13 +75,10 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
         }
         TIKA_CONFIG = TEMP_WORKING_DIR.resolve("tika-config.xml");
         TIKA_CONFIG_TIMEOUT = TEMP_WORKING_DIR.resolve("tika-config-timeout.xml");
+        TIKA_PIPES_CONFIG = TEMP_OUTPUT_DIR.resolve("tika-pipes.json");
         //TODO -- clean this up so that port is sufficient and we don't need portString
         String xml1 =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
-                        "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                        "<name>" +
-                        FETCHER_NAME + "</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</fetcher>" +
-                        "</fetchers>" + "<emitters>" +
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<emitters>" +
                         "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>" + EMITTER_NAME +
                         "</name>" + "<basePath>" +
                         TEMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</emitter>" + "</emitters>" + "<server>" +
@@ -98,6 +96,9 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
         String tikaConfigTimeoutXML = xml1 + "<taskPulseMillis>100</taskPulseMillis>" + "<taskTimeoutMillis>10000</taskTimeoutMillis>" + xml2;
         FileUtils.write(TIKA_CONFIG_TIMEOUT.toFile(), tikaConfigTimeoutXML, UTF_8);
 
+
+        String json = CXFTestBase.JSON_TEMPLATE.replace("BASE_PATH", inputDir.toAbsolutePath().toString());
+        Files.writeString(TIKA_PIPES_CONFIG, json, UTF_8);
     }
 
     @AfterEach
@@ -120,7 +121,9 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
     @Test
     public void testBasic() throws Exception {
-        startProcess(new String[]{"-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
+        startProcess(new String[]{
+                "-a", ProcessUtils.escapeCommandLine(TIKA_PIPES_CONFIG.toAbsolutePath().toString()),
+                "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
                 .toAbsolutePath()
                 .toString())});
         JsonNode node = testOne("hello_world.xml", true);
@@ -133,7 +136,9 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     @Test
     public void testNPEDefault() throws Exception {
 
-        startProcess(new String[]{"-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
+        startProcess(new String[]{
+                "-a", ProcessUtils.escapeCommandLine(TIKA_PIPES_CONFIG.toAbsolutePath().toString()),
+                "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
                 .toAbsolutePath()
                 .toString())});
         JsonNode node = testOne("null_pointer.xml", true);
@@ -148,7 +153,9 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     @Test
     public void testNPESkip() throws Exception {
 
-        startProcess(new String[]{"-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
+        startProcess(new String[]{
+                "-a", ProcessUtils.escapeCommandLine(TIKA_PIPES_CONFIG.toAbsolutePath().toString()),
+                "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
                 .toAbsolutePath()
                 .toString())});
         JsonNode node = testOne("null_pointer.xml", false, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
@@ -162,7 +169,9 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
     @Test
     public void testSystemExit() throws Exception {
-        startProcess(new String[]{"-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
+        startProcess(new String[]{
+                "-a", ProcessUtils.escapeCommandLine(TIKA_PIPES_CONFIG.toAbsolutePath().toString()),
+                "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
                 .toAbsolutePath()
                 .toString())});
         JsonNode node = testOne("system_exit.xml", false);
@@ -178,7 +187,9 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     public void testOOM() throws Exception {
 
         try {
-            startProcess(new String[]{"-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
+            startProcess(new String[]{
+                    "-a", ProcessUtils.escapeCommandLine(TIKA_PIPES_CONFIG.toAbsolutePath().toString()),
+                    "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
                     .toAbsolutePath()
                     .toString())});
             JsonNode node = testOne("fake_oom.xml", false);
@@ -197,7 +208,9 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
     @Test
     public void testTimeout() throws Exception {
-        startProcess(new String[]{"-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG_TIMEOUT
+        startProcess(new String[]{
+                "-a", ProcessUtils.escapeCommandLine(TIKA_PIPES_CONFIG.toAbsolutePath().toString()),
+                "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG_TIMEOUT
                 .toAbsolutePath()
                 .toString())});
         JsonNode node = testOne("heavy_hang_30000.xml", false);
@@ -237,7 +250,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     private String getJsonString(String fileName, FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) throws IOException {
         ParseContext parseContext = new ParseContext();
         parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
-        FetchEmitTuple t = new FetchEmitTuple(fileName, new FetchKey(FETCHER_NAME, fileName), new EmitKey(EMITTER_NAME, ""), new Metadata(), parseContext, onParseException);
+        FetchEmitTuple t = new FetchEmitTuple(fileName, new FetchKey(CXFTestBase.FETCHER_PLUGIN_ID, fileName), new EmitKey(EMITTER_NAME, ""), new Metadata(), parseContext, onParseException);
         return JsonFetchEmitTuple.toJson(t);
     }
 }

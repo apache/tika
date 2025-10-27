@@ -106,6 +106,13 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>tika-fetcher-file-system</artifactId>
+      <version>${project.version}</version>
+      <!-- for now bring this in as a dependency. TODO: use the literal plugins directory -->
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>

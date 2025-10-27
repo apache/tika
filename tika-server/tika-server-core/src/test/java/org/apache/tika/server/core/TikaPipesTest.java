@@ -39,6 +39,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -117,7 +118,9 @@ public class TikaPipesTest extends CXFTestBase {
         Files.write(TIKA_CONFIG_PATH, TIKA_CONFIG_XML.getBytes(StandardCharsets.UTF_8));
 
         TIKA_PIPES_CONFIG_PATH = Files.createTempFile(TMP_DIR, "tika-pipes-config-", ".json");
-        //TODO -- file system fetcher
+        String json = JSON_TEMPLATE.replace("BASE_PATH", inputDir.toAbsolutePath().toString());
+        Files.writeString(TIKA_PIPES_CONFIG_PATH, json, StandardCharsets.UTF_8);
+        FETCHER_MANAGER = FetcherManager.load(UnsynchronizedByteArrayInputStream.builder().setByteArray(json.getBytes(StandardCharsets.UTF_8)).get());
     }
 
     @AfterAll
@@ -175,7 +178,7 @@ public class TikaPipesTest extends CXFTestBase {
             userMetadata.add("my-key-multi", s);
         }
 
-        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey("fsf", "hello_world.xml"), new EmitKey("fse", ""), userMetadata);
+        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_PLUGIN_ID, "hello_world.xml"), new EmitKey("fse", ""), userMetadata);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 
@@ -214,7 +217,7 @@ public class TikaPipesTest extends CXFTestBase {
         HandlerConfig handlerConfig = new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML, HandlerConfig.PARSE_MODE.RMETA, -1, -1, true);
         parseContext.set(HandlerConfig.class, handlerConfig);
         FetchEmitTuple t =
-                new FetchEmitTuple("myId", new FetchKey("fsf", "hello_world.xml"), new EmitKey("fse", ""), userMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+                new FetchEmitTuple("myId", new FetchKey(FETCHER_PLUGIN_ID, "hello_world.xml"), new EmitKey("fse", ""), userMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 
@@ -244,7 +247,7 @@ public class TikaPipesTest extends CXFTestBase {
             userMetadata.add("my-key-multi", s);
         }
 
-        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey("fsf", "null_pointer.xml"), new EmitKey("fse", ""), userMetadata);
+        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_PLUGIN_ID, "null_pointer.xml"), new EmitKey("fse", ""), userMetadata);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 
@@ -281,7 +284,7 @@ public class TikaPipesTest extends CXFTestBase {
 
     @Test
     public void testPostNPENoEmit() throws Exception {
-        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey("fsf", "null_pointer.xml"), new EmitKey("fse", ""), new Metadata(), new ParseContext(),
+        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_PLUGIN_ID, "null_pointer.xml"), new EmitKey("fse", ""), new Metadata(), new ParseContext(),
                 FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);

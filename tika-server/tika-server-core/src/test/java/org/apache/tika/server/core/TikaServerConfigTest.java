@@ -72,15 +72,10 @@ public class TikaServerConfigTest {
         TikaServerConfig config = TikaServerConfig.load(path, pipesConfig, emptyCommandLine, settings);
         assertEquals(54321, config.getTaskTimeoutMillis());
         assertEquals(true, config.isEnableUnsecureFeatures());
-        assertEquals(1, config
-                .getSupportedFetchers()
-                .size());
+
         assertEquals(1, config
                 .getSupportedEmitters()
                 .size());
-        assertTrue(config
-                .getSupportedFetchers()
-                .contains("fsf"));
         assertTrue(config
                 .getSupportedEmitters()
                 .contains("fse"));
@@ -102,7 +97,7 @@ public class TikaServerConfigTest {
                         .builder("c")
                         .longOpt("config")
                         .hasArg()
-                        .get()), new String[]{"-p", "9994-9999", "-c", ProcessUtils.escapeCommandLine(path
+                        .get()), new String[]{"-p", "9994", "-c", ProcessUtils.escapeCommandLine(path
                 .toAbsolutePath()
                 .toString())});
         TikaServerConfig config = TikaServerConfig.load(commandLine);

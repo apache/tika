@@ -22,7 +22,6 @@
       <taskPulseMillis>100</taskPulseMillis>
       <minimumTimeoutMillis>10</minimumTimeoutMillis>
       <enableUnsecureFeatures>true</enableUnsecureFeatures>
-      <maxFiles>20</maxFiles>
       <endpoints>
         <endpoint>rmeta</endpoint>
       </endpoints>

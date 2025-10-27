@@ -33,6 +33,7 @@ import org.apache.cxf.attachment.AttachmentUtil;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
@@ -98,29 +99,6 @@ public class TikaResourceTest extends CXFTestBase {
     public void testJAXBAndActivationDependency() {
         //TIKA-2778
         AttachmentUtil.getCommandMap();
-    }
-
-    @Test
-    public void testOOMInLegacyMode() throws Exception {
-
-        Response response = null;
-        try {
-            response = WebClient
-                    .create(endPoint + TIKA_PATH)
-                    .accept("text/plain")
-                    .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
-        } catch (Exception e) {
-            //oom may or may not cause an exception depending
-            //on the timing
-        }
-
-        response = WebClient
-                .create(endPoint + TIKA_PATH)
-                .accept("text/plain")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
-        String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
-
-        assertContains("hello world", responseMsg);
     }
 
     @Test

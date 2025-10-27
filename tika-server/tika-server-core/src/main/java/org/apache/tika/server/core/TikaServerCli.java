@@ -41,9 +41,10 @@ public class TikaServerCli {
         Options options = new Options();
         options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ", use * for all)");
         options.addOption("p", "port", true,
-                "listen port(s) (default = 9998)\n" + "Can specify multiple ports with inclusive ranges (e.g. 9990-9999)\n" + "or with comma delimited list (e.g. 9996,9998,9995)");
+                "listen port (default = 9998)\n");
         options.addOption("?", "help", false, "this help message");
         options.addOption("c", "config", true, "tika-config file");
+        options.addOption("a", "pipesConfig", true, "tike pipes config");
 
         options.addOption("i", "id", true, "id to use for server in" + " the server status endpoint and logging");
         return options;

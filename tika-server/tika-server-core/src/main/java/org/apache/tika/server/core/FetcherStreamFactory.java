@@ -38,12 +38,12 @@ import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.server.core.resource.TikaResource;
 
 /**
- * This class looks for &quot;fetcherName&quot; in the http header.  If it is not null
+ * This class looks for &quot;fetcherPluginId&quot; in the http header.  If it is not null
  * and not empty, this will return a new TikaInputStream from the fetch key
  * and the base path as set in the definition of the named fetcher.
  * As of Tika &gt; 2.5.0, the &quot;fetchKey&quot; is URL decoded.
  * <p>
- * Users may also specify the &quot;fetcherName&quote; and &quot;fetchKey&quot; in
+ * Users may also specify the &quot;fetcherPluginId&quote; and &quot;fetchKey&quot; in
  * query parameters with in the request.
  * <p>
  * <em>WARNING:</em> Unless you carefully lock down access to the server,
@@ -81,7 +81,7 @@ public class FetcherStreamFactory implements InputStreamFactory {
     @Override
     public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders, UriInfo uriInfo) throws IOException {
         MultivaluedMap params = (uriInfo == null) ? null : uriInfo.getQueryParameters();
-        String fetcherName = getParam("fetcherName", httpHeaders, params);
+        String fetcherName = getParam("fetcherPluginId", httpHeaders, params);
         String fetchKey = getParam("fetchKey", httpHeaders, params);
         fetchKey = urlDecode(fetchKey);
         if (StringUtils.isBlank(fetchKey)) {

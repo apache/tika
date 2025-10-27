@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -42,6 +43,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
@@ -57,6 +59,23 @@ import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.resource.UnpackerResource;
 
 public abstract class CXFTestBase {
+    final static String FETCHER_PLUGIN_ID = "file-system-fetcher";
+
+    //TODO -- add back in: ,
+    //                "pf4j.pluginsDir": "PLUGINS_DIR"
+    final static String JSON_TEMPLATE = """
+            {
+              "pipesPluginsConfig" : {
+                "fetchers": {
+                  "file-system-fetcher": {
+                    "basePath": "BASE_PATH",
+                    "extractFileSystemMetadata": false
+                  }
+                }
+              }
+            }
+            """;
+
     protected static final String endPoint = "http://localhost:" + TikaServerConfig.DEFAULT_PORT;
     protected final static int DIGESTER_READ_LIMIT = 20 * 1024 * 1024;
     protected Server server;
@@ -122,7 +141,8 @@ public abstract class CXFTestBase {
 
         this.tika = new TikaConfig(getTikaConfigInputStream());
         TikaServerConfig tikaServerConfig = getTikaServerConfig();
-        TikaResource.init(tika, tikaServerConfig, new CommonsDigester(DIGESTER_READ_LIMIT, "md5," + "sha1:32"), getInputStreamFactory(getTikaConfigInputStream()),
+        TikaResource.init(tika, tikaServerConfig, new CommonsDigester(DIGESTER_READ_LIMIT, "md5," + "sha1:32"),
+                getInputStreamFactory(getPipesConfigInputStream()),
                 new ServerStatus());
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         //set compression interceptors
@@ -159,6 +179,18 @@ public abstract class CXFTestBase {
         return new ByteArrayInputStream(new String(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<properties>\n" + "    <parsers>\n" + "        <parser class=\"org.apache.tika.parser.DefaultParser\"/>\n" +
                         "    </parsers>\n" + "</properties>").getBytes(UTF_8));
+    }
+
+    protected InputStream getPipesConfigInputStream() throws IOException {
+        if (getPipesInputPath() != null) {
+            String json = JSON_TEMPLATE.replace("BASE_PATH", getPipesInputPath());
+            return UnsynchronizedByteArrayInputStream.builder().setByteArray(json.getBytes(UTF_8)).get();
+        }
+        return null;
+    }
+
+    protected String getPipesInputPath() {
+        return null;
     }
 
     /**

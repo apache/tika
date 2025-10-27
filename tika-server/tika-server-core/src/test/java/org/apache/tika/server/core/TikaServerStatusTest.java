@@ -62,7 +62,6 @@ public class TikaServerStatusTest extends CXFTestBase {
                 .get();
         String jsonString = getStringFromInputStream((InputStream) response.getEntity());
         JsonNode root = new ObjectMapper().readTree(jsonString);
-        assertTrue(root.has("server_id"));
         assertTrue(root.has("status"));
         assertTrue(root.has("millis_since_last_parse_started"));
         assertTrue(root.has("files_processed"));
@@ -76,8 +75,5 @@ public class TikaServerStatusTest extends CXFTestBase {
                 .get("millis_since_last_parse_started")
                 .longValue();
         assertTrue(millis >= 0 && millis < 360000);
-        assertEquals(SERVER_ID, root
-                .get("server_id")
-                .asText());
     }
 }

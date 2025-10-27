@@ -45,7 +45,6 @@ public class TikaResourceFetcherTest extends CXFTestBase {
 
     private static final String TIKA_PATH = "/tika";
 
-
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaResource.class);
@@ -71,12 +70,21 @@ public class TikaResourceFetcherTest extends CXFTestBase {
             throw new RuntimeException(e);
         }
         String configXML = getStringFromInputStream(TikaResourceFetcherTest.class.getResourceAsStream("/configs/tika-config-server-fetcher-template.xml"));
-        configXML = configXML.replace("{FETCHER_BASE_PATH}", inputDir
-                .toAbsolutePath()
-                .toString());
 
         configXML = configXML.replace("{PORT}", "9998");
         return new ByteArrayInputStream(configXML.getBytes(StandardCharsets.UTF_8));
+    }
+
+    protected String getPipesInputPath() {
+        Path inputDir = null;
+        try {
+            inputDir = Paths.get(TikaResourceFetcherTest.class
+                    .getResource("/test-documents/")
+                    .toURI());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        return inputDir.toAbsolutePath().toString();
     }
 
     @Override
@@ -92,7 +100,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     @Test
     public void testHeader() throws Exception {
         MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
-        map.putSingle("fetcherName", "fsf");
+        map.putSingle("fetcherPluginId", FETCHER_PLUGIN_ID);
         map.putSingle("fetchKey", "mock/hello_world.xml");
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
@@ -107,7 +115,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     public void testQueryPart() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
-                .query("fetcherName", "fsf")
+                .query("fetcherPluginId", FETCHER_PLUGIN_ID)
                 .query("fetchKey", "mock/hello_world.xml")
                 .accept("text/xml")
                 .put(null);
@@ -120,7 +128,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     public void testNonAsciiInQueryParameters() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
-                .query("fetcherName", "fsf")
+                .query("fetcherPluginId", FETCHER_PLUGIN_ID)
                 .query("fetchKey", "mock/中文.xml")
                 .accept("text/xml")
                 .put(null);
@@ -133,7 +141,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     public void testNonAsciiUrlEncodedInQueryParameters() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
-                .query("fetcherName", "fsf")
+                .query("fetcherPlugId", FETCHER_PLUGIN_ID)
                 .query("fetchKey", "mock/%E4%B8%AD%E6%96%87.xml")
                 .accept("text/xml")
                 .put(null);
