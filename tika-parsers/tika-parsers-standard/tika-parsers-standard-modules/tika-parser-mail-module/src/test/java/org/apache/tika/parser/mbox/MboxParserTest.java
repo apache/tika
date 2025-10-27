@@ -17,8 +17,11 @@
 package org.apache.tika.parser.mbox;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -116,6 +119,16 @@ public class MboxParserTest extends TikaTest {
 
         Metadata mailMetadata = mboxParser.getTrackingMetadata().get(0);
         assertEquals("from xxx by xxx with xxx; date", mailMetadata.get("MboxParser-received"));
+    }
+
+    @Test
+    public void testMultilineHeader2() throws Exception {
+        //make sure that we aren't injecting body content into headers
+        for (Metadata m : getRecursiveMetadata("multiline2.mbox")) {
+            for (String mime : m.getValues(Metadata.CONTENT_TYPE)) {
+                assertFalse("something".equals(mime));
+            }
+        }
     }
 
     @Test

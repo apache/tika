@@ -49,6 +49,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.mailcommons.MailUtil;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Mbox (mailbox) parser. This version extracts each mail from Mbox and uses the
@@ -98,7 +99,11 @@ public class MboxParser implements Parser {
         try (BufferedReader reader = new BufferedReader(isr)) {
             String curLine = reader.readLine();
             int mailItem = 0;
+            boolean inHeader = true;
             do {
+                if (curLine.contains("1495533845574511907")) {
+                    System.out.println("here");
+                }
                 if (curLine.startsWith(MBOX_RECORD_DIVIDER)) {
                     Metadata mailMetadata = new Metadata();
                     Queue<String> multiline = new LinkedList<>();
@@ -111,16 +116,21 @@ public class MboxParser implements Parser {
                     if (curLine == null) {
                         break;
                     }
+
                     UnsynchronizedByteArrayOutputStream message = UnsynchronizedByteArrayOutputStream.builder().setBufferSize(100000).get();
                     do {
-                        if (curLine.startsWith(" ") || curLine.startsWith("\t")) {
-                            String latestLine = multiline.poll();
-                            latestLine += " " + curLine.trim();
-                            multiline.add(latestLine);
-                        } else {
-                            multiline.add(curLine);
+                        if (inHeader && StringUtils.isBlank(curLine)) {
+                            inHeader = false;
                         }
-
+                        if (inHeader) {
+                            if (curLine.startsWith(" ") || curLine.startsWith("\t")) {
+                                String latestLine = multiline.poll();
+                                latestLine += " " + curLine.trim();
+                                multiline.add(latestLine);
+                            } else {
+                                multiline.add(curLine);
+                            }
+                        }
                         message.write(curLine.getBytes(charsetName));
                         message.write(0x0A);
                         curLine = reader.readLine();
