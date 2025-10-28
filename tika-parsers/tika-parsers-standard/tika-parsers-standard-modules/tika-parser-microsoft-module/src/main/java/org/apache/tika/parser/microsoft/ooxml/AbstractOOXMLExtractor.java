@@ -72,7 +72,7 @@ import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Base class for all Tika OOXML extractors.
- * <p/>
+ * <p>
  * Tika extractors decorate POI extractors so that the parsed content of
  * documents is returned as a sequence of XHTML SAX events. Subclasses must
  * implement the buildXHTML method {@link #buildXHTML(XHTMLContentHandler)} that
@@ -329,9 +329,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             return;
         }
 
-        InputStream is = part.getInputStream();
         // Open the POIFS (OLE2) structure and process
-        POIFSFileSystem fs = null;
+        POIFSFileSystem fs;
         try {
             fs = new POIFSFileSystem(part.getInputStream());
         } catch (Exception e) {
@@ -398,9 +397,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         } catch (IOException e) {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
         } finally {
-            if (fs != null) {
-                fs.close();
-            }
+            fs.close();
             if (stream != null) {
                 stream.close();
             }
