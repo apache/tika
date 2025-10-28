@@ -79,17 +79,15 @@ public class UnpackerResource {
     private static final Logger LOG = LoggerFactory.getLogger(UnpackerResource.class);
 
     public static void metadataToCsv(Metadata metadata, OutputStream outputStream) throws IOException {
-        CSVPrinter writer = new CSVPrinter(new OutputStreamWriter(outputStream, UTF_8), CSVFormat.EXCEL);
-
-        for (String name : metadata.names()) {
-            String[] values = metadata.getValues(name);
-            ArrayList<String> list = new ArrayList<>(values.length + 1);
-            list.add(name);
-            list.addAll(Arrays.asList(values));
-            writer.printRecord(list);
+        try (CSVPrinter writer = new CSVPrinter(new OutputStreamWriter(outputStream, UTF_8), CSVFormat.EXCEL)) {
+            for (String name : metadata.names()) {
+                String[] values = metadata.getValues(name);
+                ArrayList<String> list = new ArrayList<>(values.length + 1);
+                list.add(name);
+                list.addAll(Arrays.asList(values));
+                writer.printRecord(list);
+            }
         }
-
-        writer.close();
     }
 
     @Path("/{id:(/.*)?}")
