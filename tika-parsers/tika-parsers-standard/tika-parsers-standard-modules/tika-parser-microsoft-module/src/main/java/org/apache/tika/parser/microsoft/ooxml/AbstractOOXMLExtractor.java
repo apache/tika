@@ -180,29 +180,28 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 if (tPart == null) {
                     continue;
                 }
-                InputStream tStream = tPart.getInputStream();
-                Metadata thumbnailMetadata = new Metadata();
-                String thumbName = tPart.getPartName().getName();
-                thumbnailMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, thumbName);
+                try (InputStream tStream = tPart.getInputStream()) {
+                    Metadata thumbnailMetadata = new Metadata();
+                    String thumbName = tPart.getPartName().getName();
+                    thumbnailMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, thumbName);
 
-                AttributesImpl attributes = new AttributesImpl();
-                attributes.addAttribute(XHTML, "class", "class", "CDATA", "embedded");
-                attributes.addAttribute(XHTML, "id", "id", "CDATA", thumbName);
-                handler.startElement(XHTML, "div", "div", attributes);
-                handler.endElement(XHTML, "div", "div");
+                    AttributesImpl attributes = new AttributesImpl();
+                    attributes.addAttribute(XHTML, "class", "class", "CDATA", "embedded");
+                    attributes.addAttribute(XHTML, "id", "id", "CDATA", thumbName);
+                    handler.startElement(XHTML, "div", "div", attributes);
+                    handler.endElement(XHTML, "div", "div");
 
-                thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, thumbName);
-                thumbnailMetadata.set(Metadata.CONTENT_TYPE, tPart.getContentType());
-                thumbnailMetadata.set(TikaCoreProperties.TITLE, tPart.getPartName().getName());
-                thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                        TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name());
+                    thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, thumbName);
+                    thumbnailMetadata.set(Metadata.CONTENT_TYPE, tPart.getContentType());
+                    thumbnailMetadata.set(TikaCoreProperties.TITLE, tPart.getPartName().getName());
+                    thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                            TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name());
 
-                if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata)) {
-                    embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream),
-                            new EmbeddedContentHandler(handler), thumbnailMetadata, false);
+                    if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata)) {
+                        embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream),
+                                new EmbeddedContentHandler(handler), thumbnailMetadata, false);
+                    }
                 }
-
-                tStream.close();
             }
         } catch (SecurityException e) {
             throw e;
