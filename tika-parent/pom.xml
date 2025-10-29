@@ -392,7 +392,7 @@
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
     <!-- junit 6.x requires jdk 17 -->
-    <junit5.version>5.13.4</junit5.version>
+    <junit5.version>5.14.0</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.7</junrar.version>
     <jwarc.version>0.32.0</jwarc.version>
@@ -400,7 +400,7 @@
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.25.2</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
-    <lucene.version>9.12.2</lucene.version>
+    <lucene.version>9.12.3</lucene.version>
     <maven.plugin.annotations.version>3.15.2</maven.plugin.annotations.version>
     <mchange.version>0.3.2</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
@@ -452,7 +452,7 @@
     <woodstox.core.version>7.1.1</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
-    <zookeeper.version>3.8.4</zookeeper.version>
+    <zookeeper.version>3.8.5</zookeeper.version>
     <zstd.version>1.5.7-6</zstd.version>
     <nimbus-jose-jwt.version>10.5</nimbus-jose-jwt.version>
     <logback.version>1.5.19</logback.version>
