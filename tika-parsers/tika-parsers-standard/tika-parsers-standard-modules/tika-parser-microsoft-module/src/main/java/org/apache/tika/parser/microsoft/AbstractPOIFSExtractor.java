@@ -118,7 +118,7 @@ abstract class AbstractPOIFSExtractor {
                                           XHTMLContentHandler xhtml, boolean outputHtml)
             throws IOException, SAXException, TikaException {
 
-        try {
+        try (resource) {
             if (filename != null) {
                 embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
             }
@@ -136,8 +136,6 @@ abstract class AbstractPOIFSExtractor {
             if (embeddedDocumentUtil.shouldParseEmbedded(embeddedMetadata)) {
                 embeddedDocumentUtil.parseEmbedded(resource, xhtml, embeddedMetadata, outputHtml);
             }
-        } finally {
-            resource.close();
         }
     }
 
