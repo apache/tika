@@ -73,12 +73,10 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
     }
 
     private void testingChm(InputStream stream) throws IOException, SAXException, TikaException {
-        try {
+        try (stream) {
             BodyContentHandler handler = new BodyContentHandler(-1);
             parser.parse(stream, handler, new Metadata(), new ParseContext());
             assertTrue(!handler.toString().isEmpty());
-        } finally {
-            stream.close();
         }
     }
 
