@@ -406,7 +406,7 @@
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.25.2</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
-    <lucene.version>9.12.2</lucene.version>
+    <lucene.version>9.12.3</lucene.version>
     <maven.plugin.annotations.version>3.15.2</maven.plugin.annotations.version>
     <mchange.version>0.3.2</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
