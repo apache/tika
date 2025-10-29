@@ -41,7 +41,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.emitter.Emitter;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 
 public class JDBCEmitterTest {

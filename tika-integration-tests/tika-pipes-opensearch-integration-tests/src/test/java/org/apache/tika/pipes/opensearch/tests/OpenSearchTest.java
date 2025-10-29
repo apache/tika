@@ -51,7 +51,6 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.pipes.core.emitter.Emitter;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.opensearch.JsonResponse;
 import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;

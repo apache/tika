@@ -14,16 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.emitter;
+package org.apache.tika.pipes.api.emitter;
 
 import java.io.IOException;
+import java.io.InputStream;
 
-public class TikaEmitterException extends IOException {
-    public TikaEmitterException(String msg) {
-        super(msg);
-    }
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
-    public TikaEmitterException(String msg, Throwable t) {
-        super(msg, t);
-    }
+public interface StreamEmitter extends Emitter {
+    void emit(String emitKey, InputStream inputStream, Metadata userMetadata, ParseContext parseContext)
+            throws IOException;
 }

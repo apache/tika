@@ -49,12 +49,12 @@ public class PipesResult {
     public static final PipesResult EMPTY_OUTPUT =
             new PipesResult(STATUS.EMPTY_OUTPUT);
     private final STATUS status;
-    private final EmitData emitData;
+    private final EmitData emitDataTuple;
     private final String message;
 
-    public PipesResult(STATUS status, EmitData emitData, String message, boolean intermediate) {
+    public PipesResult(STATUS status, EmitData emitDataTuple, String message, boolean intermediate) {
         this.status = status;
-        this.emitData = emitData;
+        this.emitDataTuple = emitDataTuple;
         this.message = message;
         this.intermediate = intermediate;
     }
@@ -70,25 +70,25 @@ public class PipesResult {
     /**
      * This assumes parse success with no parse exception
      *
-     * @param emitData
+     * @param emitDataTuple
      */
-    public PipesResult(EmitData emitData) {
-        this(STATUS.PARSE_SUCCESS, emitData, null, false);
+    public PipesResult(EmitData emitDataTuple) {
+        this(STATUS.PARSE_SUCCESS, emitDataTuple, null, false);
     }
 
-    public PipesResult(STATUS status, EmitData emitData, boolean intermediate) {
-        this(status, emitData, null, intermediate);
+    public PipesResult(STATUS status, EmitData emitDataTuple, boolean intermediate) {
+        this(status, emitDataTuple, null, intermediate);
     }
 
     /**
      * This assumes that the message is a stack trace (container
      * parse exception).
      *
-     * @param emitData
+     * @param emitDataTuple
      * @param message
      */
-    public PipesResult(EmitData emitData, String message) {
-        this(STATUS.PARSE_SUCCESS_WITH_EXCEPTION, emitData, message, false);
+    public PipesResult(EmitData emitDataTuple, String message) {
+        this(STATUS.PARSE_SUCCESS_WITH_EXCEPTION, emitDataTuple, message, false);
     }
 
     public STATUS getStatus() {
@@ -96,7 +96,7 @@ public class PipesResult {
     }
 
     public EmitData getEmitData() {
-        return emitData;
+        return emitDataTuple;
     }
 
     public String getMessage() {
@@ -110,6 +110,6 @@ public class PipesResult {
     @Override
     public String toString() {
         return "PipesResult{" + "intermediate=" + intermediate + ", status=" + status +
-                ", emitData=" + emitData + ", message='" + message + '\'' + '}';
+                ", emitData=" + emitDataTuple + ", message='" + message + '\'' + '}';
     }
 }

@@ -30,8 +30,8 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.core.emitter.EmitData;
-import org.apache.tika.pipes.core.emitter.Emitter;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.utils.ExceptionUtils;
@@ -110,7 +110,7 @@ public class AsyncEmitter implements Callable<Integer> {
                         (estimatedSize + sz), maxBytes);
                 emitAll();
             }
-            List<EmitData> cached = map.computeIfAbsent(data.getEmitKey().getEmitterName(), k -> new ArrayList<>());
+            List<EmitData> cached = map.computeIfAbsent(data.getEmitKey().getEmitterPluginId(), k -> new ArrayList<>());
             updateEstimatedSize(sz);
             cached.add(data);
         }
@@ -131,11 +131,11 @@ public class AsyncEmitter implements Callable<Integer> {
             lastEmitted = Instant.now();
         }
 
-        private void tryToEmit(Emitter emitter, List<EmitData> cachedEmitData) {
+        private void tryToEmit(Emitter emitter, List<EmitData> cachedEmitDatumTuples) {
 
             try {
-                emitter.emit(cachedEmitData);
-            } catch (IOException | TikaEmitterException e) {
+                emitter.emit(cachedEmitDatumTuples);
+            } catch (IOException e) {
                 LOG.warn("emitter class ({}): {}", emitter.getClass(),
                         ExceptionUtils.getStackTrace(e));
             }

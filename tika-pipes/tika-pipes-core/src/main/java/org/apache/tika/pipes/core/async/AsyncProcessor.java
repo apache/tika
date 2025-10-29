@@ -58,7 +58,7 @@ public class AsyncProcessor implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(AsyncProcessor.class);
 
     private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
-    private final ArrayBlockingQueue<EmitData> emitData;
+    private final ArrayBlockingQueue<EmitData> emitDatumTuples;
     private final ExecutorCompletionService<Integer> executorCompletionService;
     private final ExecutorService executorService;
     private final AsyncConfig asyncConfig;
@@ -76,7 +76,7 @@ public class AsyncProcessor implements Closeable {
     public AsyncProcessor(Path tikaConfigPath, Path pipesPluginsConfigPath, PipesIterator pipesIterator) throws TikaException, IOException {
         this.asyncConfig = AsyncConfig.load(tikaConfigPath, pipesPluginsConfigPath);
         this.fetchEmitTuples = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
-        this.emitData = new ArrayBlockingQueue<>(100);
+        this.emitDatumTuples = new ArrayBlockingQueue<>(100);
         //+1 is the watcher thread
         this.executorService = Executors.newFixedThreadPool(
                 asyncConfig.getNumClients() + asyncConfig.getNumEmitters() + 1);
@@ -107,13 +107,13 @@ public class AsyncProcessor implements Closeable {
 
             for (int i = 0; i < asyncConfig.getNumClients(); i++) {
                 executorCompletionService.submit(
-                        new FetchEmitWorker(asyncConfig, fetchEmitTuples, emitData));
+                        new FetchEmitWorker(asyncConfig, fetchEmitTuples, emitDatumTuples));
             }
 
             EmitterManager emitterManager = EmitterManager.load(asyncConfig.getTikaConfig());
             for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
                 executorCompletionService.submit(
-                        new AsyncEmitter(asyncConfig, emitData, emitterManager));
+                        new AsyncEmitter(asyncConfig, emitDatumTuples, emitterManager));
             }
         } catch (Exception e) {
             LOG.error("problem initializing AsyncProcessor", e);
@@ -231,7 +231,7 @@ public class AsyncProcessor implements Closeable {
         if (numParserThreadsFinished == asyncConfig.getNumClients() && ! addedEmitterSemaphores) {
             for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
                 try {
-                    boolean offered = emitData.offer(AsyncEmitter.EMIT_DATA_STOP_SEMAPHORE,
+                    boolean offered = emitDatumTuples.offer(AsyncEmitter.EMIT_DATA_STOP_SEMAPHORE,
                             MAX_OFFER_WAIT_MS,
                             TimeUnit.MILLISECONDS);
                     if (! offered) {
@@ -262,14 +262,14 @@ public class AsyncProcessor implements Closeable {
 
         private final AsyncConfig asyncConfig;
         private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
-        private final ArrayBlockingQueue<EmitData> emitDataQueue;
+        private final ArrayBlockingQueue<EmitData> emitDataTupleQueue;
 
         private FetchEmitWorker(AsyncConfig asyncConfig,
                                 ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples,
-                                ArrayBlockingQueue<EmitData> emitDataQueue) {
+                                ArrayBlockingQueue<EmitData> emitDataTupleQueue) {
             this.asyncConfig = asyncConfig;
             this.fetchEmitTuples = fetchEmitTuples;
-            this.emitDataQueue = emitDataQueue;
+            this.emitDataTupleQueue = emitDataTupleQueue;
         }
 
         @Override
@@ -305,7 +305,7 @@ public class AsyncProcessor implements Closeable {
 
                         if (shouldEmit(result)) {
                             LOG.trace("adding result to emitter queue: " + result.getEmitData());
-                            boolean offered = emitDataQueue.offer(result.getEmitData(),
+                            boolean offered = emitDataTupleQueue.offer(result.getEmitData(),
                                     MAX_OFFER_WAIT_MS,
                                     TimeUnit.MILLISECONDS);
                             if (! offered) {

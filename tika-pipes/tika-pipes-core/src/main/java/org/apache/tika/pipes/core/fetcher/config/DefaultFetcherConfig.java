@@ -14,22 +14,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.emitter;
+package org.apache.tika.pipes.core.fetcher.config;
 
-import java.io.IOException;
-import java.util.List;
+import org.apache.tika.pipes.api.fetcher.FetcherConfig;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
+public class DefaultFetcherConfig implements FetcherConfig {
 
-public interface Emitter {
+    private String plugId;
+    private String configJson;
 
-    String getName();
+    public DefaultFetcherConfig(String plugId, String configJson) {
+        this.plugId = plugId;
+        this.configJson = configJson;
+    }
+    @Override
+    public String getPluginId() {
+        return plugId;
+    }
 
-    void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException, TikaEmitterException;
+    @Override
+    public FetcherConfig setPluginId(String pluginId) {
+        this.plugId = pluginId;
+        return this;
+    }
 
-    void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException;
-    //TODO -- add this later for xhtml?
-    //void emit(String txt, Metadata metadata) throws IOException, TikaException;
+    @Override
+    public String getConfigJson() {
+        return configJson;
+    }
 
+    @Override
+    public FetcherConfig setConfigJson(String configJson) {
+        this.configJson = configJson;
+        return this;
+    }
 }

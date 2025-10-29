@@ -31,7 +31,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.emitter.TikaEmitterException;
+import org.apache.tika.pipes.api.emitter.StreamEmitter;
 import org.apache.tika.serialization.JsonMetadataList;
 
 /**
@@ -63,7 +63,7 @@ import org.apache.tika.serialization.JsonMetadataList;
  *      &lt;/emitters&gt;
  *  &lt;/properties&gt;</pre>
  */
-public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter {
+public class FileSystemEmitter implements StreamEmitter {
 
     private Path basePath = null;
     private String fileExtension = "json";
@@ -72,10 +72,10 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
     private boolean prettyPrint = false;
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException, TikaEmitterException {
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException {
         Path output;
         if (metadataList == null || metadataList.isEmpty()) {
-            throw new TikaEmitterException("metadata list must not be null or of size 0");
+            throw new IOException("metadata list must not be null or of size 0");
         }
 
         if (fileExtension != null && ! fileExtension.isEmpty()) {
@@ -84,7 +84,7 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
         if (basePath != null) {
             output = basePath.resolve(emitKey);
             if (!output.toAbsolutePath().normalize().startsWith(basePath.toAbsolutePath().normalize())) {
-                throw new TikaEmitterException("path traversal?! " + output.toAbsolutePath());
+                throw new IOException("path traversal?! " + output.toAbsolutePath());
             }
         } else {
             output = Paths.get(emitKey);
@@ -144,7 +144,7 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
     }
 
     @Override
-    public void emit(String path, InputStream inputStream, Metadata userMetadata, ParseContext parseContext) throws IOException, TikaEmitterException {
+    public void emit(String path, InputStream inputStream, Metadata userMetadata, ParseContext parseContext) throws IOException {
         Path target = basePath.resolve(path);
 
         if (!Files.isDirectory(target.getParent())) {

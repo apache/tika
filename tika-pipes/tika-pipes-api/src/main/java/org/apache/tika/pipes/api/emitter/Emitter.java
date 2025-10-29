@@ -14,39 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.emitter;
+package org.apache.tika.pipes.api.emitter;
 
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
-public abstract class AbstractEmitter implements Emitter {
+public interface Emitter {
 
-    private String name;
+    void configure(EmitterConfig emitterConfig) throws TikaConfigException, IOException;
 
-    @Override
-    public String getName() {
-        return name;
-    }
+    String getPluginId();
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException;
 
-    /**
-     * The default behavior is to call {@link #emit(String, List, ParseContext)} on each item.
-     * Some implementations, e.g. Solr/ES/vespa, can benefit from subclassing this and
-     * emitting a bunch of docs at once.
-     *
-     * @param emitData
-     * @throws IOException
-     * @throws TikaEmitterException
-     */
-    @Override
-    public void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException {
-        for (EmitData d : emitData) {
-            emit(d.getEmitKey().getEmitKey(), d.getMetadataList(), d.getParseContext());
-        }
-    }
+    //TODO -- add this later for xhtml?
+    //void emit(String txt, Metadata metadata) throws IOException, TikaException;
+
 }

@@ -24,7 +24,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.emitter.AbstractEmitter;
 import org.apache.tika.pipes.core.emitter.EmitData;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;

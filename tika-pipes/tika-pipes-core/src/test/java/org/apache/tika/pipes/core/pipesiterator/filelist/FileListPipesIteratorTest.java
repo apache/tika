@@ -47,7 +47,7 @@ public class FileListPipesIteratorTest {
             assertEquals(t.getFetchKey().getFetchKey(), t.getEmitKey().getEmitKey());
             assertEquals(t.getId(), t.getEmitKey().getEmitKey());
             assertEquals("f", t.getFetchKey().getFetcherPluginId());
-            assertEquals("e", t.getEmitKey().getEmitterName());
+            assertEquals("e", t.getEmitKey().getEmitterPluginId());
             lines.add(t.getId());
         }
         assertEquals("the", lines.get(0));
@@ -70,7 +70,7 @@ public class FileListPipesIteratorTest {
             assertEquals(t.getFetchKey().getFetchKey(), t.getEmitKey().getEmitKey());
             assertEquals(t.getId(), t.getEmitKey().getEmitKey());
             assertEquals("f", t.getFetchKey().getFetcherPluginId());
-            assertEquals("e", t.getEmitKey().getEmitterName());
+            assertEquals("e", t.getEmitKey().getEmitterPluginId());
             lines.add(t.getId());
         }
         assertEquals("brown", lines.get(0));

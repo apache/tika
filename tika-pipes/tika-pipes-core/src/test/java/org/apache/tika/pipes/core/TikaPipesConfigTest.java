@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.AbstractTikaConfigTest;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.core.emitter.Emitter;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 

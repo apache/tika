@@ -20,46 +20,72 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.pf4j.DefaultPluginManager;
+import org.pf4j.PluginManager;
+
 import org.apache.tika.config.ConfigBase;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.api.emitter.Emitter;
+import org.apache.tika.pipes.api.emitter.EmitterConfig;
+import org.apache.tika.pipes.core.PipesPluginsConfig;
 
 /**
- * Utility class that will apply the appropriate fetcher
- * to the fetcherString based on the prefix.
+ * Utility class that will apply the appropriate emitter
+ * to the emitterString based on the prefix.
  * <p>
- * This does not allow multiple fetchers supporting the same prefix.
+ * This does not allow multiple emitters supporting the same prefix.
  */
 public class EmitterManager extends ConfigBase {
 
     private final Map<String, Emitter> emitterMap = new ConcurrentHashMap<>();
 
-    public static EmitterManager load(Path tikaConfigPath) throws IOException, TikaConfigException {
-        try (InputStream is = Files.newInputStream(tikaConfigPath) ) {
-            return EmitterManager.buildComposite(
-                    "emitters", EmitterManager.class,
-                    "emitter",
-                    Emitter.class, is);
+    public static EmitterManager load(Path path) throws IOException, TikaConfigException {
+        try (InputStream is = Files.newInputStream(path)) {
+            return load(is);
         }
+    }
+
+    public static EmitterManager load(InputStream pipesPluginsConfigIs) throws IOException, TikaConfigException {
+        PipesPluginsConfig pluginsConfig = PipesPluginsConfig.load(pipesPluginsConfigIs);
+        PluginManager pluginManager = null;
+        if (pluginsConfig.getPluginsDir().isPresent()) {
+            pluginManager = new DefaultPluginManager(pluginsConfig.getPluginsDir().get());
+        } else {
+            pluginManager = new DefaultPluginManager();
+        }
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+        Map<String, Emitter> emitterMap = new HashMap<>();
+        for (Emitter emitter : pluginManager.getExtensions(Emitter.class)) {
+            Optional<EmitterConfig> emitterConfig = pluginsConfig.getEmitterConfig(emitter.getPluginId());
+            if (emitterConfig.isPresent()) {
+                emitter.configure(emitterConfig.get());
+                if (emitter instanceof Initializable) {
+                    ((Initializable) emitter).checkInitialization(InitializableProblemHandler.THROW);
+                }
+            } else {
+                LOG.warn("no configuration found for emitter pluginId={}", emitter.getPluginId());
+            }
+            emitterMap.put(emitter.getPluginId(), emitter);
+        }
+        return new EmitterManager(emitterMap);
     }
 
     private EmitterManager() {
 
     }
 
-    public EmitterManager(List<Emitter> emitters) {
-        for (Emitter emitter : emitters) {
-            if (emitterMap.containsKey(emitter.getName())) {
-                throw new IllegalArgumentException(
-                        "Multiple emitters cannot support the same name: " + emitter.getName());
-            }
-            emitterMap.put(emitter.getName(), emitter);
-
-        }
+    private EmitterManager(Map<String, Emitter> emitters) {
+        emitterMap.putAll(emitters);
     }
 
     public Set<String> getSupported() {

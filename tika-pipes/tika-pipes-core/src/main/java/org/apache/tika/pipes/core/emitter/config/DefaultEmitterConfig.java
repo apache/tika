@@ -14,15 +14,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.emitter;
+package org.apache.tika.pipes.core.emitter.config;
 
-import java.io.IOException;
-import java.io.InputStream;
+import org.apache.tika.pipes.api.emitter.EmitterConfig;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
+public class DefaultEmitterConfig implements EmitterConfig {
 
-public interface StreamEmitter extends Emitter {
-    void emit(String emitKey, InputStream inputStream, Metadata userMetadata, ParseContext parseContext)
-            throws IOException, TikaEmitterException;
+    private String plugId;
+    private String configJson;
+
+    public DefaultEmitterConfig(String plugId, String configJson) {
+        this.plugId = plugId;
+        this.configJson = configJson;
+    }
+    @Override
+    public String getPluginId() {
+        return plugId;
+    }
+
+    @Override
+    public EmitterConfig setPluginId(String pluginId) {
+        this.plugId = pluginId;
+        return this;
+    }
+
+    @Override
+    public String getConfigJson() {
+        return configJson;
+    }
+
+    @Override
+    public EmitterConfig setConfigJson(String configJson) {
+        this.configJson = configJson;
+        return this;
+    }
 }

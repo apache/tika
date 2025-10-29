@@ -261,21 +261,20 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
      * @param emitKey      emit key
      * @param metadataList list of metadata per file
      * @throws IOException
-     * @throws TikaEmitterException
      */
     @Override
     public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
-            throws IOException, TikaEmitterException {
+            throws IOException {
         if (metadataList == null || metadataList.size() < 1) {
             return;
         }
-        List<EmitData> emitDataList = new ArrayList<>();
-        emitDataList.add(new EmitData(new EmitKey("", emitKey), metadataList));
-        emit(emitDataList);
+        List<EmitData> emitDataTupleList = new ArrayList<>();
+        emitDataTupleList.add(new EmitData(new EmitKey("", emitKey), metadataList));
+        emit(emitDataTupleList);
     }
 
     @Override
-    public void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException {
+    public void emit(List<? extends EmitData> emitData) throws IOException {
         int tries = 0;
         Exception ex = null;
         while (tries++ <= maxRetries) {

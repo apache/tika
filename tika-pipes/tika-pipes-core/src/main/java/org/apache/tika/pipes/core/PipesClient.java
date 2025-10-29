@@ -405,8 +405,8 @@ public class PipesClient implements Closeable {
         try (ObjectInputStream objectInputStream = new ObjectInputStream(
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
             Metadata metadata = (Metadata) objectInputStream.readObject();
-            EmitData emitData = new EmitData(emitKey, Collections.singletonList(metadata));
-            return new PipesResult(PipesResult.STATUS.INTERMEDIATE_RESULT, emitData, true);
+            EmitData emitDataTuple = new EmitData(emitKey, Collections.singletonList(metadata));
+            return new PipesResult(PipesResult.STATUS.INTERMEDIATE_RESULT, emitDataTuple, true);
         } catch (ClassNotFoundException e) {
             LOG.error("class not found exception deserializing data", e);
             //this should be catastrophic

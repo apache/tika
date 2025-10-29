@@ -112,10 +112,10 @@ public class AsyncResource {
                     .getSupported()
                     .contains(t
                             .getEmitKey()
-                            .getEmitterName())) {
+                            .getEmitterPluginId())) {
                 return badEmitter(t
                         .getEmitKey()
-                        .getEmitterName());
+                        .getEmitterPluginId());
             }
             ParseContext parseContext = t.getParseContext();
             EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);

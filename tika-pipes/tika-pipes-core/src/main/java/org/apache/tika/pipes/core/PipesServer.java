@@ -66,12 +66,12 @@ import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.pipes.api.emitter.Emitter;
+import org.apache.tika.pipes.api.emitter.StreamEmitter;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.core.emitter.EmitData;
 import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.emitter.Emitter;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.emitter.StreamEmitter;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.pipes.core.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
@@ -307,7 +307,7 @@ public class PipesServer implements Runnable {
         Emitter emitter = null;
 
         try {
-            emitter = emitterManager.getEmitter(emitKey.getEmitterName());
+            emitter = emitterManager.getEmitter(emitKey.getEmitterPluginId());
         } catch (IllegalArgumentException e) {
             String noEmitterMsg = getNoEmitterMsg(taskId);
             LOG.warn(noEmitterMsg);
@@ -321,7 +321,7 @@ public class PipesServer implements Runnable {
             } else {
                 emitter.emit(emitKey.getEmitKey(), parseData.getMetadataList(), parseContext);
             }
-        } catch (IOException | TikaEmitterException e) {
+        } catch (IOException e) {
             LOG.warn("emit exception", e);
             String msg = ExceptionUtils.getStackTrace(e);
             byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
@@ -354,12 +354,12 @@ public class PipesServer implements Runnable {
             exit(1);
         }
 
-        EmitData filteredEmitData = new EmitData(emitKey, filtered, parseExceptionStack);
+        EmitData filteredEmitDataTuple = new EmitData(emitKey, filtered, parseExceptionStack);
 
         try {
             UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
-                objectOutputStream.writeObject(filteredEmitData);
+                objectOutputStream.writeObject(filteredEmitDataTuple);
             }
             write(STATUS.EMIT_SUCCESS_PASS_BACK, bos.toByteArray());
         } catch (IOException e) {
@@ -487,16 +487,16 @@ public class PipesServer implements Runnable {
             injectUserMetadata(t.getMetadata(), parseData.getMetadataList());
             EmitKey emitKey = t.getEmitKey();
             if (StringUtils.isBlank(emitKey.getEmitKey())) {
-                emitKey = new EmitKey(emitKey.getEmitterName(), t.getFetchKey().getFetchKey());
+                emitKey = new EmitKey(emitKey.getEmitterPluginId(), t.getFetchKey().getFetchKey());
                 t.setEmitKey(emitKey);
             }
-            EmitData emitData = new EmitData(t.getEmitKey(), parseData.getMetadataList(), stack);
-            if (shouldEmit(embeddedDocumentBytesConfig, parseData, emitData)) {
+            EmitData emitDataTuple = new EmitData(t.getEmitKey(), parseData.getMetadataList(), stack);
+            if (shouldEmit(embeddedDocumentBytesConfig, parseData, emitDataTuple)) {
                 emit(t.getId(), emitKey, embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes(),
                         parseData, stack, parseContext);
             } else {
                 //send back to the client
-                write(emitData);
+                write(emitDataTuple);
             }
             if (LOG.isTraceEnabled()) {
                 LOG.trace("timer -- emitted: {} ms", System.currentTimeMillis() - start);
@@ -506,7 +506,7 @@ public class PipesServer implements Runnable {
         }
     }
 
-    private boolean shouldEmit(EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, MetadataListAndEmbeddedBytes parseData, EmitData emitData) {
+    private boolean shouldEmit(EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, MetadataListAndEmbeddedBytes parseData, EmitData emitDataTuple) {
         if (emitStrategy == EMIT_STRATEGY.EMIT_ALL) {
             return true;
         } else if (embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
@@ -515,7 +515,7 @@ public class PipesServer implements Runnable {
         } else if (emitStrategy == EMIT_STRATEGY.PASSBACK_ALL) {
             return false;
         } else if (emitStrategy == EMIT_STRATEGY.DYNAMIC) {
-            if (emitData.getEstimatedSizeBytes() >= maxForEmitBatchBytes) {
+            if (emitDataTuple.getEstimatedSizeBytes() >= maxForEmitBatchBytes) {
                 return true;
             }
         }

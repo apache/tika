@@ -31,8 +31,9 @@ import java.util.Optional;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.tika.pipes.api.emitter.EmitterConfig;
 import org.apache.tika.pipes.api.fetcher.FetcherConfig;
-import org.apache.tika.pipes.core.fetcher.config.FetcherConfigImpl;
+import org.apache.tika.pipes.core.fetcher.config.DefaultFetcherConfig;
 
 public class PipesPluginsConfig {
 
@@ -46,26 +47,45 @@ public class PipesPluginsConfig {
             while (it.hasNext()) {
                 String pluginId = it.next();
                 JsonNode fetcherConfig = fetchers.get(pluginId);
-                fetcherMap.put(pluginId, new FetcherConfigImpl(pluginId, fetcherConfig.toString()));
+                fetcherMap.put(pluginId, new DefaultFetcherConfig(pluginId, fetcherConfig.toString()));
+            }
+        }
+        Map<String, FetcherConfig> emitterMap = new HashMap<>();
+        if (plugins.has("emitters")) {
+            JsonNode emitters = plugins.get("emitters");
+            Iterator<String> it = emitters.fieldNames();
+            while (it.hasNext()) {
+                String pluginId = it.next();
+                JsonNode emitterConfig = emitters.get(pluginId);
+                emitterMap.put(pluginId, new EmitterConfigImpl(pluginId, emitterConfig.toString()));
             }
         }
         Path pluginsDir = null;
         if (plugins.has("pf4j.pluginsDir")) {
             pluginsDir = Paths.get(plugins.get("pf4j.pluginsDir").asText());
         }
-        return new PipesPluginsConfig(fetcherMap, pluginsDir);
+        return new PipesPluginsConfig(fetcherMap, emitterMap, pluginsDir);
     }
 
     private final Map<String, FetcherConfig> fetcherMap;
+    private final Map<String, EmitterConfig> emitterMap;
+
+
     private final Path pluginsDir;
-    private PipesPluginsConfig(Map<String, FetcherConfig> fetcherMap, Path pluginsDir) {
+    private PipesPluginsConfig(Map<String, FetcherConfig> fetcherMap, Map<String, EmitterConfig> emitterMap, Path pluginsDir) {
         this.fetcherMap = fetcherMap;
+        this.emitterMap = emitterMap;
         this.pluginsDir = pluginsDir;
     }
 
     public Optional<FetcherConfig> getFetcherConfig(String pluginId) {
         return Optional.ofNullable(fetcherMap.get(pluginId));
     }
+
+    public Optional<EmitterConfig> getEmitterConfig(String pluginId) {
+        return Optional.ofNullable(emitterMap.get(pluginId));
+    }
+
 
     public Optional<Path> getPluginsDir() {
         return Optional.ofNullable(pluginsDir);

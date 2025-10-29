@@ -40,7 +40,7 @@ public class JsonEmitData {
         OBJECT_MAPPER.registerModule(module);
     }
 
-    public static void toJson(EmitData emitData, Writer writer) throws IOException {
-        OBJECT_MAPPER.writeValue(writer, emitData);
+    public static void toJson(EmitData emitDataTuple, Writer writer) throws IOException {
+        OBJECT_MAPPER.writeValue(writer, emitDataTuple);
     }
 }

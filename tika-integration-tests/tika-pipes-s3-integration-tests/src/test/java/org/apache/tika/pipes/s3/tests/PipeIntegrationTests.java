@@ -46,7 +46,6 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.emitter.Emitter;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;

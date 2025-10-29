@@ -14,38 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.fetcher.config;
+package org.apache.tika.pipes.api.emitter;
 
-import org.apache.tika.pipes.api.fetcher.FetcherConfig;
+import java.io.Serializable;
 
-public class FetcherConfigImpl implements FetcherConfig {
+public interface EmitterConfig extends Serializable {
 
-    private String plugId;
-    private String configJson;
-
-    public FetcherConfigImpl(String plugId, String configJson) {
-        this.plugId = plugId;
-        this.configJson = configJson;
-    }
-    @Override
-    public String getPluginId() {
-        return plugId;
-    }
-
-    @Override
-    public FetcherConfig setPluginId(String pluginId) {
-        this.plugId = pluginId;
-        return this;
-    }
-
-    @Override
-    public String getConfigJson() {
-        return configJson;
-    }
-
-    @Override
-    public FetcherConfig setConfigJson(String configJson) {
-        this.configJson = configJson;
-        return this;
-    }
+    String getPluginId();
+    EmitterConfig setPluginId(String pluginId);
+    String getConfigJson();
+    EmitterConfig setConfigJson(String config);
 }
