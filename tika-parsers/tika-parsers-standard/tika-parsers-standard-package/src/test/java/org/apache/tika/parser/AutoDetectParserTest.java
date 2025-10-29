@@ -46,6 +46,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
+import org.apache.tika.extractor.RUnpackExtractorFactory;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -575,17 +576,26 @@ public class AutoDetectParserTest extends TikaTest {
         try (InputStream is = AutoDetectParserTest.class.getResourceAsStream("/configs/tika-4533.xml")) {
             tikaConfig = new TikaConfig(is);
         }
-        Parser parser = new AutoDetectParser(tikaConfig);
-        List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", parser, new ParseContext());
+        Parser autoDetectParser = new AutoDetectParser(tikaConfig);
+        if (((AutoDetectParser) autoDetectParser).getAutoDetectParserConfig()
+                    .getEmbeddedDocumentExtractorFactory() == null) {
+                ((AutoDetectParser) autoDetectParser)
+                        .getAutoDetectParserConfig().setEmbeddedDocumentExtractorFactory(
+                                new RUnpackExtractorFactory());
+        }
+        List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", autoDetectParser, new ParseContext());
         assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256"));
+        assertNull(metadataList.get(2).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
+        assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(Metadata.CONTENT_LENGTH)));
 
-        //now test that we get the same digest if we warp the auto detect parser vs configuring it
-        Parser autoDetectParser = new AutoDetectParser();
-        Parser digestingParser = new DigestingParser(autoDetectParser, new CommonsDigester(10000, "SHA256"), true);
+        DigestingParser.Digester digester = new CommonsDigester(10000, "SHA256");
 
+        //now test that we get the same digest if we wrap the auto detect parser vs configuring it
+        autoDetectParser = new AutoDetectParser();
+        Parser digestingParser = new DigestingParser(autoDetectParser, digester, true);
         metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", digestingParser, new ParseContext());
         assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256").toLowerCase(Locale.US));
-
+        assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(Metadata.CONTENT_LENGTH)));
 
     }
 }
