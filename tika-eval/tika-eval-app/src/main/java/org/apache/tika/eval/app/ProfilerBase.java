@@ -34,8 +34,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,6 +62,7 @@ import org.apache.tika.eval.core.tokens.TokenIntPair;
 import org.apache.tika.eval.core.util.ContentTagParser;
 import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.eval.core.util.EvalExceptionUtils;
+import org.apache.tika.eval.core.util.MutableInt;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
@@ -616,15 +615,15 @@ public abstract class ProfilerBase {
     void unicodeBlocks(Map<Class, Object> tokenStats, Map<Cols, String> data) {
 
         Map<String, MutableInt> blocks = (Map<String, MutableInt>) tokenStats.get(UnicodeBlockCounter.class);
-        List<Pair<String, Integer>> pairs = new ArrayList<>();
+        List<FeatureCount> pairs = new ArrayList<>();
         for (Map.Entry<String, MutableInt> e : blocks.entrySet()) {
-            pairs.add(Pair.of(e.getKey(), e
+            pairs.add(new FeatureCount(e.getKey(), e
                     .getValue()
                     .intValue()));
         }
-        pairs.sort((o1, o2) -> o2
-                .getValue()
-                .compareTo(o1.getValue()));
+        pairs.sort((o1, o2) ->
+                Integer.compare(o2.count, o1.count)
+        );
         StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < 20 && i < pairs.size(); i++) {
@@ -633,12 +632,10 @@ public abstract class ProfilerBase {
             }
             sb
                     .append(pairs
-                            .get(i)
-                            .getKey())
+                            .get(i).feature)
                     .append(": ")
                     .append(pairs
-                            .get(i)
-                            .getValue());
+                            .get(i).feature);
         }
         data.put(Cols.UNICODE_CHAR_BLOCKS, sb.toString());
     }
@@ -810,6 +807,9 @@ public abstract class ProfilerBase {
         OOM, TIMEOUT
     }
 
+    private record FeatureCount(String feature, int count) {
+
+    };
 
 }
 

@@ -20,14 +20,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.commons.lang3.tuple.Pair;
-
 import org.apache.tika.eval.core.tokens.AlphaIdeographFilterFactory;
 import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
 import org.apache.tika.eval.core.tokens.CommonTokenResult;
-import org.apache.tika.eval.core.tokens.LangModel;
 import org.apache.tika.eval.core.tokens.TokenCounts;
+import org.apache.tika.eval.core.util.MutableInt;
 import org.apache.tika.language.detect.LanguageResult;
 
 public class CommonTokens implements LanguageAwareTokenCountStats<CommonTokenResult> {
@@ -44,10 +41,10 @@ public class CommonTokens implements LanguageAwareTokenCountStats<CommonTokenRes
 
     @Override
     public CommonTokenResult calculate(List<LanguageResult> languages, TokenCounts tokenCounts) {
-        Pair<String, LangModel> pair =
+        LangModelPair pair =
                 commonTokenCountManager.getLangTokens(languages.get(0).getLanguage());
-        String actualLangCode = pair.getKey();
-        Set<String> commonTokens = pair.getValue().getTokens();
+
+        Set<String> commonTokens = pair.langModel().getTokens();
         int numUniqueCommonTokens = 0;
         int numCommonTokens = 0;
         int numUniqueAlphabeticTokens = 0;
@@ -65,7 +62,7 @@ public class CommonTokens implements LanguageAwareTokenCountStats<CommonTokenRes
             }
 
         }
-        return new CommonTokenResult(actualLangCode, numUniqueCommonTokens, numCommonTokens,
+        return new CommonTokenResult(pair.lang(), numUniqueCommonTokens, numCommonTokens,
                 numUniqueAlphabeticTokens, numAlphabeticTokens);
     }
 }

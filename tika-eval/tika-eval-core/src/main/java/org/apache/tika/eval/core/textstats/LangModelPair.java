@@ -14,38 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.eval.core.tokens;
+package org.apache.tika.eval.core.textstats;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.tika.eval.core.tokens.LangModel;
 
-import org.apache.tika.eval.core.util.MutableInt;
-
-public class TokenCounts {
-
-    private int totalTokens = 0;
-    private Map<String, MutableInt> tokens = new HashMap<>();
-
-    public void increment(String token) {
-        MutableInt i = tokens.get(token);
-        if (i == null) {
-            i = new MutableInt(1);
-            tokens.put(token, i);
-        } else {
-            i.increment();
-        }
-        totalTokens++;
-    }
-
-    public Map<String, MutableInt> getTokens() {
-        return tokens;
-    }
-
-    public int getTotalTokens() {
-        return totalTokens;
-    }
-
-    public int getTotalUniqueTokens() {
-        return tokens.size();
-    }
+public record LangModelPair(String lang, LangModel langModel) {
 }

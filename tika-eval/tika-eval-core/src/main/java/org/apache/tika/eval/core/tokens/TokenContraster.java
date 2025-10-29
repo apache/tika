@@ -19,8 +19,9 @@ package org.apache.tika.eval.core.tokens;
 
 import java.util.Map;
 
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.lucene.util.PriorityQueue;
+
+import org.apache.tika.eval.core.util.MutableInt;
 
 /**
  * Computes some corpus contrast statistics.

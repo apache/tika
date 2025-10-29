@@ -168,7 +168,6 @@
                   <exclude>org.slf4j:slf4j-api:jar:</exclude>
                   <exclude>commons-logging:commons-logging:jar:</exclude>
                   <exclude>org.apache.cxf:cxf-rt-rs-client:jar:</exclude>
-                  <exclude>org.apache.commons:commons-lang3:jar:</exclude>
                   <exclude>commons-cli:commons-cli:jar:</exclude>
                   <exclude>org.apache.cxf:cxf-rt-rs-security-cors:jar:</exclude>
                   <exclude>org.eclipse.jetty:jetty-io:jar:</exclude>

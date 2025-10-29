@@ -34,9 +34,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.eval.core.textstats.LangModelPair;
 
 public class CommonTokenCountManager {
     private static final Logger LOG = LoggerFactory.getLogger(CommonTokenCountManager.class);
@@ -90,9 +91,9 @@ public class CommonTokenCountManager {
      * @return pair of actual language code used and a set of common
      * tokens for that language
      */
-    public Pair<String, LangModel> getLangTokens(String lang) {
+    public LangModelPair getLangTokens(String lang) {
         String actualLangCode = getActualLangCode(lang);
-        return Pair.of(actualLangCode, commonTokenMap.get(actualLangCode));
+        return new LangModelPair(actualLangCode, commonTokenMap.get(actualLangCode));
     }
 
     //return langcode for lang that you are actually using

@@ -18,10 +18,10 @@ package org.apache.tika.eval.core.textstats;
 
 import java.util.Map;
 
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 import org.apache.tika.eval.core.tokens.TokenCounts;
+import org.apache.tika.eval.core.util.MutableInt;
 
 public class TokenLengths implements TokenCountStatsCalculator<SummaryStatistics> {
 

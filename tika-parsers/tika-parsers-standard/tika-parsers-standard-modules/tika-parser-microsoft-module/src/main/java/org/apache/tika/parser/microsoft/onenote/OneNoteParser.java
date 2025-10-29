@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -127,7 +126,7 @@ public class OneNoteParser implements Parser {
                 metadata.set(ONE_NOTE_PREFIX + "rgbPlaceholder",
                         "0x" + Long.toHexString(oneNoteDocument.header.rgbPlaceholder));
 
-                Pair<Long, ExtendedGUID> roleAndContext = Pair.of(1L, ExtendedGUID.nil());
+               RoleGuid roleAndContext = new RoleGuid(1L, ExtendedGUID.nil());
                 OneNoteTreeWalker oneNoteTreeWalker =
                         new OneNoteTreeWalker(options, oneNoteDocument, oneNoteDirectFileResource,
                                 xhtml, metadata, context, roleAndContext);

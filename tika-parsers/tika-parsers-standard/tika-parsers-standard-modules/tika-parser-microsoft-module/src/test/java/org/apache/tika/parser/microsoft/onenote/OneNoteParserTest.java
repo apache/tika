@@ -25,7 +25,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -285,8 +284,7 @@ public class OneNoteParserTest extends TikaTest {
     public void testDupeText() throws Exception {
         Metadata metadata = new Metadata();
         String txt = getText("test-tika-3970-dupetext.one", metadata);
-
-        assertEquals(1, StringUtils.countMatches(txt, "Sunday morning"));
+        assertContainsCount("Sunday morning", txt, 1);
     }
 
     /**

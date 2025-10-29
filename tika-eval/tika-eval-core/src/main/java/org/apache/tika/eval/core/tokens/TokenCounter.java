@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.lucene.analysis.Analyzer;
@@ -33,6 +32,7 @@ import org.apache.tika.eval.core.textstats.TokenCountPriorityQueue;
 import org.apache.tika.eval.core.textstats.TokenEntropy;
 import org.apache.tika.eval.core.textstats.TokenLengths;
 import org.apache.tika.eval.core.textstats.TopNTokens;
+import org.apache.tika.eval.core.util.MutableInt;
 
 /**
  * @deprecated use {@link CompositeTextStatsCalculator}

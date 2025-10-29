@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 class OneNoteDocument {
     OneNoteHeader header;
     List<ExtendedGUID> revisionListOrder = new ArrayList<>();
@@ -32,7 +30,7 @@ class OneNoteDocument {
     Map<ExtendedGUID, FileChunkReference> guidToRef = new HashMap<>();
     Map<ExtendedGUID, FileNodePtr> guidToObject = new HashMap<>();
 
-    Map<ExtendedGUID, Pair<Long, ExtendedGUID>> revisionRoleMap = new HashMap<>();
+    Map<ExtendedGUID, RoleGuid> revisionRoleMap = new HashMap<>();
     ExtendedGUID currentRevision = ExtendedGUID.nil();
     FileNodeList root = new FileNodeList();
 
@@ -63,7 +61,7 @@ class OneNoteDocument {
 
     public void registerAdditionalRevisionRole(ExtendedGUID gosid, long revisionRole,
                                                ExtendedGUID gctxid) {
-        revisionRoleMap.put(gosid, Pair.of(revisionRole, gctxid));
+        revisionRoleMap.put(gosid, new RoleGuid(revisionRole, gctxid));
     }
 
     public List<ExtendedGUID> getRevisionListOrder() {
@@ -112,12 +110,12 @@ class OneNoteDocument {
         return this;
     }
 
-    public Map<ExtendedGUID, Pair<Long, ExtendedGUID>> getRevisionRoleMap() {
+    public Map<ExtendedGUID, RoleGuid> getRevisionRoleMap() {
         return revisionRoleMap;
     }
 
     public OneNoteDocument setRevisionRoleMap(
-            Map<ExtendedGUID, Pair<Long, ExtendedGUID>> revisionRoleMap) {
+            Map<ExtendedGUID, RoleGuid> revisionRoleMap) {
         this.revisionRoleMap = revisionRoleMap;
         return this;
     }

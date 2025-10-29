@@ -23,9 +23,9 @@ import java.util.Map;
 
 import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.mutable.MutableInt;
 
 import org.apache.tika.eval.core.tokens.TokenCounts;
+import org.apache.tika.eval.core.util.MutableInt;
 
 /**
  * Copied nearly directly from Apache Nutch:

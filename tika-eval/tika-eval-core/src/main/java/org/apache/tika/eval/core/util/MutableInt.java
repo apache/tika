@@ -14,38 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.eval.core.tokens;
+package org.apache.tika.eval.core.util;
 
-import java.util.HashMap;
-import java.util.Map;
+/**
+ * non-thread safe mutable int
+ */
+public class MutableInt {
 
-import org.apache.tika.eval.core.util.MutableInt;
+    private int val = 0;
+    public MutableInt(int i) {
+        this.val = i;
+    }
 
-public class TokenCounts {
+    public void increment() {
+        val++;
+    }
+    public int intValue() {
+        return val;
+    }
 
-    private int totalTokens = 0;
-    private Map<String, MutableInt> tokens = new HashMap<>();
-
-    public void increment(String token) {
-        MutableInt i = tokens.get(token);
-        if (i == null) {
-            i = new MutableInt(1);
-            tokens.put(token, i);
-        } else {
-            i.increment();
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof MutableInt that)) {
+            return false;
         }
-        totalTokens++;
+
+        return val == that.val;
     }
 
-    public Map<String, MutableInt> getTokens() {
-        return tokens;
-    }
-
-    public int getTotalTokens() {
-        return totalTokens;
-    }
-
-    public int getTotalUniqueTokens() {
-        return tokens.size();
+    @Override
+    public int hashCode() {
+        return val;
     }
 }

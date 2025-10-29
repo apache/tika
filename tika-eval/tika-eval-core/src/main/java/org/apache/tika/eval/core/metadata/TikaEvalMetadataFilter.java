@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
-
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
 import org.apache.tika.eval.core.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.core.textstats.CommonTokens;
@@ -35,6 +33,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.utils.StringUtils;
 
 public class TikaEvalMetadataFilter extends MetadataFilter {
 
@@ -75,7 +74,7 @@ public class TikaEvalMetadataFilter extends MetadataFilter {
     @Override
     public void filter(Metadata metadata) throws TikaException {
         String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
-        if (StringUtils.isAllBlank(content)) {
+        if (StringUtils.isBlank(content)) {
             return;
         }
         calcStats(content, metadata);

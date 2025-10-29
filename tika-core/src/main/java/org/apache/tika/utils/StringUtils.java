@@ -44,6 +44,23 @@ public class StringUtils {
         return s == null || s.isBlank();
     }
 
+    public static boolean isNotBlank(final String s) {
+        return ! isBlank(s);
+    }
+
+    public static boolean startsWithIgnoreCase(String str, String prefix) {
+        if (str == null || prefix == null) {
+            return str != null && prefix.length() == 0;
+        }
+
+        if (str.length() < prefix.length()) {
+            return false;
+        }
+
+        return str.regionMatches(true, 0, prefix, 0, prefix.length());
+    }
+
+
     /**
      * <p>Left pad a String with a specified String.</p>
      *

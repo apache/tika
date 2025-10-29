@@ -24,7 +24,6 @@ import java.util.Comparator;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -111,7 +110,7 @@ public class UniversalExecutableParser implements Parser {
         long archsSize = (long) archsCount * archStructSize;
 
         var unsortedOffsets = false;
-        var offsetAndSizePerArch = new Pair[archsCount];
+        var offsetAndSizePerArch = new OffsetSize[archsCount];
         for (int archIndex = 0; archIndex < archsCount; archIndex++) {
             IOUtils.skipFully(stream, 8);
 
@@ -121,7 +120,7 @@ public class UniversalExecutableParser implements Parser {
             if (offset < 4 + 4 + archsSize) {
                 throw new TikaException("Invalid offset: " + offset);
             }
-            if (!unsortedOffsets && archIndex > 0 && offset < (long) offsetAndSizePerArch[archIndex - 1].getLeft()) {
+            if (!unsortedOffsets && archIndex > 0 && offset < (long) offsetAndSizePerArch[archIndex - 1].offset) {
                 unsortedOffsets = true;
             }
             long size = is64
@@ -131,7 +130,7 @@ public class UniversalExecutableParser implements Parser {
             if (size < 0 || size > MAX_ARCH_SIZE) {
                 throw new TikaException("Arch size=" + size + " must be > 0 and < " + MAX_ARCH_SIZE);
             }
-            offsetAndSizePerArch[archIndex] = Pair.of(offset, size);
+            offsetAndSizePerArch[archIndex] = new OffsetSize(offset, size);
 
             if (is64) {
                 IOUtils.skipFully(stream, 8);
@@ -142,14 +141,14 @@ public class UniversalExecutableParser implements Parser {
             currentOffset += archStructSize;
         }
         if (unsortedOffsets) {
-            Arrays.sort(offsetAndSizePerArch, Comparator.comparingLong(entry -> (long) entry.getLeft()));
+            Arrays.sort(offsetAndSizePerArch, Comparator.comparingLong(entry -> (long) entry.offset));
         }
 
         for (int archIndex = 0; archIndex < archsCount; archIndex++) {
-            long skipUntilStart = (long)offsetAndSizePerArch[archIndex].getLeft() - currentOffset;
+            long skipUntilStart = (long)offsetAndSizePerArch[archIndex].offset - currentOffset;
             IOUtils.skipFully(stream, skipUntilStart);
             currentOffset += skipUntilStart;
-            long sz = (long)offsetAndSizePerArch[archIndex].getRight();
+            long sz = (long)offsetAndSizePerArch[archIndex].size;
             //we bounds checked this above.
             byte[] perArchMachO = new byte[(int)sz];
             IOUtils.readFully(stream, perArchMachO);
@@ -163,4 +162,7 @@ public class UniversalExecutableParser implements Parser {
         }
     }
 
+    private record OffsetSize(long offset, long size) {
+
+    }
 }

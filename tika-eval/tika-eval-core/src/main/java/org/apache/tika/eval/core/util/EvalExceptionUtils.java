@@ -19,9 +19,8 @@ package org.apache.tika.eval.core.util;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringUtils;
-
 import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.StringUtils;
 
 public class EvalExceptionUtils {
 

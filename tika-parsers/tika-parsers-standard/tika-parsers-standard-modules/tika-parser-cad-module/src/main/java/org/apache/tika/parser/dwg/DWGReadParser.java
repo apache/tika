@@ -41,8 +41,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -57,6 +55,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
+import org.apache.tika.utils.StringUtils;
 
 
 
@@ -245,7 +244,6 @@ public class DWGReadParser extends AbstractDWGParser {
                     if ("text".equals(nextFieldName)) {
                         String textVal = jsonParser.getText();
                         if (StringUtils.isNotBlank(textVal)) {
-
                             textConsumer.accept(textVal);
                         }
                     } else if ("text_value".equals(nextFieldName)) {
@@ -312,7 +310,7 @@ public class DWGReadParser extends AbstractDWGParser {
                             metadata.set(TikaCoreProperties.TITLE, textVal);
                         } else if ("LASTSAVEDBY".equals(nextFieldName)) {
                             metadata.set(TikaCoreProperties.MODIFIER, textVal);
-                        } else if (!Strings.CI.startsWith(nextFieldName, "unknown")) {
+                        } else if (! StringUtils.startsWithIgnoreCase(nextFieldName, "unknown")) {
                             metadata.set(nextFieldName, textVal);
                         }
                     }

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.NotImplementedException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.LeafNodeObject;
@@ -218,6 +217,6 @@ public class ZipFilesChunking extends AbstractChunking {
      */
     private SignatureObject getSubChunkSignature() {
         // In current, it has no idea about how to compute the signature for sub chunk.
-        throw new NotImplementedException("The Get sub chunk signature method is not implemented.");
+        throw new IllegalStateException("The Get sub chunk signature method is not implemented.");
     }
 }

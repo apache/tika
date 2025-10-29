@@ -24,15 +24,13 @@ import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Helper Class to Parse and Extract Adobe MIF Files.
@@ -124,8 +122,7 @@ public class MIFExtractor {
         handler.startElement(StringUtils.EMPTY, tag.getName(), tag.getName(), attrs);
         String value = Strings.CS.removeStart(tag.getValue(), START_TAG_VALUE);
         value = Strings.CS.removeEnd(value, END_TAG_VALUE);
-        String content = StringEscapeUtils.escapeXml(value);
-        handler.characters(content.toCharArray(), 0, content.length());
+        handler.characters(content.toCharArray(), 0, value.length());
         handler.endElement(StringUtils.EMPTY, tag.getName(), tag.getName());
     }
 

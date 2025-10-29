@@ -44,7 +44,6 @@ import com.google.rpc.Status;
 import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -79,6 +78,7 @@ import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
 import org.apache.tika.pipes.core.fetcher.config.FetcherConfigContainer;
+import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
@@ -225,7 +225,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         try {
             ParseContext parseContext = new ParseContext();
             String additionalFetchConfigJson = request.getAdditionalFetchConfigJson();
-            if (StringUtils.isNotBlank(additionalFetchConfigJson)) {
+            if (! StringUtils.isBlank(additionalFetchConfigJson)) {
                 // The fetch and parse has the option to specify additional configuration
                 AbstractConfig abstractConfig = expiringFetcherStore
                         .getFetcherConfigs()

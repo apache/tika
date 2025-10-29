@@ -50,11 +50,6 @@
       <version>${asm.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>com.epam</groupId>
       <artifactId>parso</artifactId>
       <version>${parso.version}</version>

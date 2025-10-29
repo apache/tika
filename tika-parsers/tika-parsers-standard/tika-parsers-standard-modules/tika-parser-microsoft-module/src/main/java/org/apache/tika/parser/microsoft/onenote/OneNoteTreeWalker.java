@@ -35,7 +35,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -92,7 +91,7 @@ class OneNoteTreeWalker {
     private final OneNoteDocument oneNoteDocument;
     private final OneNoteDirectFileResource dif;
     private final XHTMLContentHandler xhtml;
-    private final Pair<Long, ExtendedGUID> roleAndContext;
+    private final RoleGuid roleAndContext;
     private Instant lastModifiedTimestamp = Instant.MIN;
     private long creationTimestamp = Long.MAX_VALUE;
     private long lastModified = Long.MIN_VALUE;
@@ -102,7 +101,7 @@ class OneNoteTreeWalker {
     /**
      * Contains pairs of {Offset,Length} that we have added to the text stream already.
      */
-    private final Set<Pair<Long, Integer>> textAlreadyFetched = new HashSet<>();
+    private final Set<RoleGuid> textAlreadyFetched = new HashSet<>();
 
     /**
      * Create a one tree walker.
@@ -119,7 +118,7 @@ class OneNoteTreeWalker {
     public OneNoteTreeWalker(OneNoteTreeWalkerOptions options, OneNoteDocument oneNoteDocument,
                              OneNoteDirectFileResource dif, XHTMLContentHandler xhtml,
                              Metadata parentMetadata, ParseContext parseContext,
-                             Pair<Long, ExtendedGUID> roleAndContext) {
+                             RoleGuid roleAndContext) {
         this.options = options;
         this.oneNoteDocument = oneNoteDocument;
         this.dif = dif;
@@ -176,8 +175,8 @@ class OneNoteTreeWalker {
      * @param revisionRole The revision role Long,GUID pair.
      * @return True if exists, false if not.
      */
-    private boolean hasRevisionRole(ExtendedGUID rid, Pair<Long, ExtendedGUID> revisionRole) {
-        Pair<Long, ExtendedGUID> where = oneNoteDocument.revisionRoleMap.get(rid);
+    private boolean hasRevisionRole(ExtendedGUID rid, RoleGuid revisionRole) {
+        RoleGuid where = oneNoteDocument.revisionRoleMap.get(rid);
         return where != null && where.equals(revisionRole);
     }
 
