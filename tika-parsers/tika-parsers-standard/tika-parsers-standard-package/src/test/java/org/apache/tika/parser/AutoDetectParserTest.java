@@ -563,25 +563,20 @@ public class AutoDetectParserTest extends TikaTest {
     }
 
     @Test
-    public void testLargeEmbeddedOle2Object() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc");
-        assertEquals(3, metadataList.size());
-        assertNull(metadataList.get(2).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
-    }
-
-    @Test
     public void testDigestingOpenContainers() throws Exception {
+        //TIKA-4533 -- this tests both that a very large embedded OLE doc doesn't cause a zip bomb
+        //exception AND that the sha for the embedded OLE doc is not the sha for a zero-byte file
         String expectedSha = "bbc2057a1ff8fe859a296d2fbb493fc0c3e5796749ba72507c0e13f7a3d81f78";
         TikaConfig tikaConfig = null;
         try (InputStream is = AutoDetectParserTest.class.getResourceAsStream("/configs/tika-4533.xml")) {
             tikaConfig = new TikaConfig(is);
         }
-        Parser autoDetectParser = new AutoDetectParser(tikaConfig);
-        if (((AutoDetectParser) autoDetectParser).getAutoDetectParserConfig()
+        AutoDetectParser autoDetectParser = new AutoDetectParser(tikaConfig);
+        //this models what happens in tika-pipes
+        if (autoDetectParser.getAutoDetectParserConfig()
                     .getEmbeddedDocumentExtractorFactory() == null) {
-                ((AutoDetectParser) autoDetectParser)
-                        .getAutoDetectParserConfig().setEmbeddedDocumentExtractorFactory(
-                                new RUnpackExtractorFactory());
+            autoDetectParser.getAutoDetectParserConfig()
+                                                     .setEmbeddedDocumentExtractorFactory(new RUnpackExtractorFactory());
         }
         List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", autoDetectParser, new ParseContext());
         assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256"));
