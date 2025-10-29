@@ -20,6 +20,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.poi.hpsf.ClassID;
@@ -194,7 +195,6 @@ abstract class AbstractPOIFSExtractor {
         }
 
         // It's regular OLE2:
-
         // What kind of document is it?
         metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, dir.getName());
         if (dir.getStorageClsid() != null) {
@@ -237,6 +237,18 @@ abstract class AbstractPOIFSExtractor {
         }
     }
 
+    private long estimateSize(DirectoryEntry dir) {
+        Iterator<Entry> entries = dir.getEntries();
+        long sz = 0;
+        while (entries.hasNext()) {
+            Entry entry = entries.next();
+            if (entry.isDocumentEntry()) {
+                sz += ((DocumentEntry)entry).getSize();
+            }
+        }
+        return sz;
+    }
+
     private void extractOCXName(DirectoryEntry dir, Metadata metadata) {
         if (! dir.hasEntry(OCX_NAME)) {
             return;
@@ -266,14 +278,14 @@ abstract class AbstractPOIFSExtractor {
         }
     }
 
-    private void handleCompObj(DirectoryEntry dir, POIFSDocumentType type, String rName,
+    private void handleCompObj(DirectoryEntry parentDir, POIFSDocumentType type, String rName,
                                Metadata metadata, XHTMLContentHandler xhtml, boolean outputHtml)
             throws IOException, SAXException {
         //TODO: figure out if the equivalent of OLE 1.0's
         //getCommand() and getFileName() exist for OLE 2.0 to populate
         //TikaCoreProperties.ORIGINAL_RESOURCE_NAME
 
-        String contentsEntryName = getContentsEntryName(dir);
+        String contentsEntryName = getContentsEntryName(parentDir);
         if (contentsEntryName == null) {
             //log or record exception?
             return;
@@ -282,7 +294,7 @@ abstract class AbstractPOIFSExtractor {
         DocumentEntry contentsEntry;
 
         try {
-            contentsEntry = (DocumentEntry) dir.getEntry(contentsEntryName);
+            contentsEntry = (DocumentEntry) parentDir.getEntry(contentsEntryName);
         } catch (FileNotFoundException fnfe) {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(fnfe, parentMetadata);
             return;
@@ -314,7 +326,7 @@ abstract class AbstractPOIFSExtractor {
             metadata.set(Metadata.CONTENT_TYPE, mediaType.getType());
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName + extension);
             metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
-            parseEmbedded(dir, tis, xhtml, metadata, outputHtml);
+            parseEmbedded(parentDir, tis, xhtml, metadata, outputHtml);
         } finally {
             inp.close();
         }
@@ -374,15 +386,15 @@ abstract class AbstractPOIFSExtractor {
         }
     }
 
-    private void parseEmbedded(DirectoryEntry dir, TikaInputStream tis, XHTMLContentHandler xhtml,
+    private void parseEmbedded(DirectoryEntry parentDir, TikaInputStream tis, XHTMLContentHandler xhtml,
                                Metadata metadata, boolean outputHtml) throws IOException,
             SAXException {
         if (!embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
             return;
         }
-        if (dir.getStorageClsid() != null) {
+        if (parentDir.getStorageClsid() != null) {
             metadata.set(Office.EMBEDDED_STORAGE_CLASS_ID,
-                    dir.getStorageClsid().toString());
+                    parentDir.getStorageClsid().toString());
         }
         embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, outputHtml);
     }
@@ -393,8 +405,8 @@ abstract class AbstractPOIFSExtractor {
         if (!embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
             return;
         }
-        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
-            tis.setOpenContainer(dir);
+        long sz = estimateSize(dir);
+        try (TikaInputStream tis = TikaInputStream.getFromContainer(dir, sz, metadata)) {
             if (dir.getStorageClsid() != null) {
                 metadata.set(Office.EMBEDDED_STORAGE_CLASS_ID,
                         dir.getStorageClsid().toString());

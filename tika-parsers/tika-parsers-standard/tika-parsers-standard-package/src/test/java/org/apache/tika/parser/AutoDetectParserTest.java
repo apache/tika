@@ -19,6 +19,7 @@ package org.apache.tika.parser;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -27,6 +28,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -48,6 +51,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.parser.external.CompositeExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
@@ -555,5 +559,33 @@ public class AutoDetectParserTest extends TikaTest {
                     "  statedType              = " + statedType + "\n" +
                     "  expectedContentFragment = " + expectedContentFragment + "\n";
         }
+    }
+
+    @Test
+    public void testLargeEmbeddedOle2Object() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc");
+        assertEquals(3, metadataList.size());
+        assertNull(metadataList.get(2).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
+    }
+
+    @Test
+    public void testDigestingOpenContainers() throws Exception {
+        String expectedSha = "bbc2057a1ff8fe859a296d2fbb493fc0c3e5796749ba72507c0e13f7a3d81f78";
+        TikaConfig tikaConfig = null;
+        try (InputStream is = AutoDetectParserTest.class.getResourceAsStream("/configs/tika-4533.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
+        Parser parser = new AutoDetectParser(tikaConfig);
+        List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", parser, new ParseContext());
+        assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256"));
+
+        //now test that we get the same digest if we warp the auto detect parser vs configuring it
+        Parser autoDetectParser = new AutoDetectParser();
+        Parser digestingParser = new DigestingParser(autoDetectParser, new CommonsDigester(10000, "SHA256"), true);
+
+        metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", digestingParser, new ParseContext());
+        assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256").toLowerCase(Locale.US));
+
+
     }
 }
