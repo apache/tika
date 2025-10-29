@@ -670,6 +670,21 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     /**
+     * This is a hack for TIKA-4533 and is fixed correctly in Tika 4.x.
+     * Be careful and do not use this unless you know what you're doing!
+     *
+     * @param container
+     * @param length
+     */
+    public void setOpenContainer(Object container, long length) {
+        openContainer = container;
+        if (container instanceof Closeable) {
+            tmp.addResource((Closeable) container);
+        }
+        this.length = length;
+    }
+
+    /**
      *
      * @param closeable
      */

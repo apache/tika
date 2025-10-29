@@ -105,7 +105,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             if (stream instanceof TikaInputStream) {
                 final Object container = ((TikaInputStream) stream).getOpenContainer();
                 if (container != null) {
-                    newStream.setOpenContainer(container);
+                    newStream.setOpenContainer(container, ((TikaInputStream) stream).getLength());
                 }
             }
             DELEGATING_PARSER.parse(newStream, new EmbeddedContentHandler(new BodyContentHandler(handler)),
