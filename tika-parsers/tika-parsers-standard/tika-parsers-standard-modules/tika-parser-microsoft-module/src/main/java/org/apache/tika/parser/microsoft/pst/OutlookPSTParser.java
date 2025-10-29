@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
+import com.pff.PSTException;
 import com.pff.PSTFile;
 import com.pff.PSTFolder;
 import com.pff.PSTMessage;
@@ -114,9 +115,9 @@ public class OutlookPSTParser implements Parser {
                 Metadata metadata = new Metadata();
                 metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 metadata.set(PST.PST_FOLDER_PATH, folderPath);
-                try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
-                    tis.setOpenContainer(pstMail);
-                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getSubject() + ".msg");
+                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getSubject() + ".msg");
+                long length = estimateSize(pstMail);
+                try (TikaInputStream tis = TikaInputStream.getFromContainer(pstMail, length, metadata)) {
                     embeddedExtractor.parseEmbedded(tis, handler, metadata, true);
                 }
                 pstMail = (PSTMessage) pstFolder.getNextChild();
@@ -133,5 +134,29 @@ public class OutlookPSTParser implements Parser {
                 handler.endElement("div");
             }
         }
+    }
+
+    static protected long estimateSize(PSTMessage attachedEmail) {
+        //we do this for a rough estimate of email body size
+        //so that we don't get a zip bomb exception on exceedingly large msgs.
+        long sz = 0;
+        sz += getStringLength(attachedEmail.getBody());
+        try {
+            sz += getStringLength(attachedEmail.getRTFBody());
+        } catch (PSTException | IOException e) {
+            //swallow
+        }
+        sz += getStringLength(attachedEmail.getBodyHTML());
+        sz += getStringLength(attachedEmail.getSubject());
+        //complete heuristic to account for from, to, etc...
+        sz += 100_000;
+        return sz;
+    }
+
+    private static long getStringLength(String s) {
+        if (s == null) {
+            return 0;
+        }
+        return s.length();
     }
 }
