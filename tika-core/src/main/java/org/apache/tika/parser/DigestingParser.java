@@ -20,11 +20,16 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
+import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -32,6 +37,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 
 public class DigestingParser extends ParserDecorator {
 
+    private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
     private final Digester digester;
     private final boolean skipContainerDocument;
     /**
@@ -48,10 +54,25 @@ public class DigestingParser extends ParserDecorator {
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
+
+
+        if (! shouldDigest(metadata)) {
+            super.parse(stream, handler, metadata, context);
+            return;
+        }
         TemporaryResources tmp = new TemporaryResources();
         TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
         try {
-            if (shouldDigest(metadata)) {
+
+            if (embeddedStreamTranslator.shouldTranslate(tis, metadata)) {
+                Path tmpBytes = tmp.createTempFile();
+                try (OutputStream os = Files.newOutputStream(tmpBytes)) {
+                    embeddedStreamTranslator.translate(tis, metadata, os);
+                }
+                try (TikaInputStream translated = TikaInputStream.get(tmpBytes)) {
+                    digester.digest(translated, metadata, context);
+                }
+            } else {
                 digester.digest(tis, metadata, context);
             }
             super.parse(tis, handler, metadata, context);
