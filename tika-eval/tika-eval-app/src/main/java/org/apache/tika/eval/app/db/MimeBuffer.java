@@ -31,14 +31,14 @@ import org.apache.tika.mime.MimeTypes;
 public class MimeBuffer extends AbstractDBBuffer {
 
     private final PreparedStatement st;
-    private final TikaConfig config;
+    private final MimeTypes mimeTypes;
     private final Connection connection;
 
 
-    public MimeBuffer(Connection connection, TableInfo mimeTable, TikaConfig config) throws SQLException {
+    public MimeBuffer(Connection connection, TableInfo mimeTable, MimeTypes mimeTypes) throws SQLException {
         st = connection.prepareStatement(
                 "insert into " + mimeTable.getName() + "( " + Cols.MIME_ID.name() + ", " + Cols.MIME_STRING.name() + ", " + Cols.FILE_EXTENSION.name() + ") values (?,?,?)");
-        this.config = config;
+        this.mimeTypes = mimeTypes;
         this.connection = connection;
     }
 
@@ -49,7 +49,7 @@ public class MimeBuffer extends AbstractDBBuffer {
             st.setInt(1, id);
             st.setString(2, value);
             try {
-                String ext = MimeUtil.getExtension(value, config);
+                String ext = MimeUtil.getExtension(value, mimeTypes);
                 if (ext == null || ext.isEmpty()) {
                     st.setNull(3, Types.VARCHAR);
                 } else {
@@ -92,13 +92,12 @@ public class MimeBuffer extends AbstractDBBuffer {
          * don't currently return anything for {@link MimeType#getExtension};
          *
          * @param contentType string representing a content type, for example: "application/pdf"
-         * @param config      config from which to get MimeRepository
+         * @param mimeTypes MimeRepository
          * @return extension or empty string
          * @throws MimeTypeException thrown if MimeTypes can't parse the contentType
          */
-        public static String getExtension(String contentType, TikaConfig config) throws MimeTypeException {
-            MimeTypes types = config.getMimeRepository();
-            MimeType mime = types.forName(contentType);
+        public static String getExtension(String contentType, MimeTypes mimeTypes) throws MimeTypeException {
+            MimeType mime = mimeTypes.forName(contentType);
             return getExtension(mime);
         }
 

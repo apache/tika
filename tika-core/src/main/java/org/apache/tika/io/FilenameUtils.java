@@ -31,7 +31,7 @@ import org.apache.tika.utils.StringUtils;
 
 public class FilenameUtils {
 
-    private static final MimeTypes MIME_TYPES = TikaConfig.getDefaultConfig().getMimeRepository();
+    private static final MimeTypes MIME_TYPES = MimeTypes.getDefaultMimeTypes();
     private static final Pattern PROTOCOL_PATTERN = Pattern.compile("[A-Za-z0-9]{1,10}://+");
     /**
      * Reserved characters
