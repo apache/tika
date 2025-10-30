@@ -21,7 +21,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;

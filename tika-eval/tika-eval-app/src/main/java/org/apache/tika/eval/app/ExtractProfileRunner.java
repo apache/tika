@@ -46,7 +46,6 @@ import org.apache.commons.cli.help.HelpFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.JDBCUtil;
 import org.apache.tika.eval.app.db.MimeBuffer;
