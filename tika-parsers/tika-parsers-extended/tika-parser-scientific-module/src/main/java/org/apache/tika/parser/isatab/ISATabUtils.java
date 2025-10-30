@@ -33,6 +33,8 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.detect.DefaultEncodingDetector;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -79,12 +81,9 @@ public class ISATabUtils {
             throws IOException, TikaException, SAXException {
         TikaInputStream tis = TikaInputStream.get(stream);
         // Automatically detect the character encoding
-        TikaConfig tikaConfig = context.get(TikaConfig.class);
-        if (tikaConfig == null) {
-            tikaConfig = TikaConfig.getDefaultConfig();
-        }
+        EncodingDetector encodingDetector = getEncodingDetector(context);
         try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
-                metadata, tikaConfig.getEncodingDetector());
+                metadata, encodingDetector);
                 CSVParser csvParser = CSVParser.builder().setReader(reader).setFormat(CSVFormat.TDF).get()) {
             Iterator<CSVRecord> iterator = csvParser.iterator();
 
@@ -118,19 +117,23 @@ public class ISATabUtils {
         }
     }
 
+    private static EncodingDetector getEncodingDetector(ParseContext context) {
+        TikaConfig tikaConfig = context.get(TikaConfig.class);
+        if (tikaConfig != null) {
+            return tikaConfig.getEncodingDetector();
+        }
+        return new DefaultEncodingDetector();
+    }
+
     public static void parseAssay(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
                                   ParseContext context)
             throws IOException, TikaException, SAXException {
         TikaInputStream tis = TikaInputStream.get(stream);
 
         // Automatically detect the character encoding
-
-        TikaConfig tikaConfig = context.get(TikaConfig.class);
-        if (tikaConfig == null) {
-            tikaConfig = TikaConfig.getDefaultConfig();
-        }
+        EncodingDetector encodingDetector = getEncodingDetector(context);
         try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
-                metadata, tikaConfig.getEncodingDetector());
+                metadata, encodingDetector);
                 CSVParser csvParser = CSVParser.builder().setReader(reader).setFormat(CSVFormat.TDF).get()) {
             xhtml.startElement("table");
 

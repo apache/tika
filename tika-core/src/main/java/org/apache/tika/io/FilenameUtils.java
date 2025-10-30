@@ -21,7 +21,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MimeTypeException;
@@ -31,7 +30,7 @@ import org.apache.tika.utils.StringUtils;
 
 public class FilenameUtils {
 
-    private static final MimeTypes MIME_TYPES = TikaConfig.getDefaultConfig().getMimeRepository();
+    private static final MimeTypes MIME_TYPES = MimeTypes.getDefaultMimeTypes();
     private static final Pattern PROTOCOL_PATTERN = Pattern.compile("[A-Za-z0-9]{1,10}://+");
     /**
      * Reserved characters
