@@ -59,7 +59,7 @@ public class RTGTranslatorTest {
                 .waitingFor(Wait.forHttp("/about")
                         .forPort(6060)
                         .forStatusCode(200)
-                        .withStartupTimeout(Duration.ofMinutes(2)));
+                        .withStartupTimeout(Duration.ofMinutes(5)));
         container.start();
         translator = new RTGTranslator();
     }
