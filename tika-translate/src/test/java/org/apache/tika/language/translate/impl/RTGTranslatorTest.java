@@ -22,51 +22,25 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.time.Duration;
 import java.util.Locale;
 
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.PortBinding;
-import com.github.dockerjava.api.model.Ports;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 
 /**
- * Test harness for the {@link RTGTranslator}.
+ * Test harness for the {@link RTGTranslator}. See the RTG code on how to start docker.
+ * Alternatively try the revision from 31.10.2025.
+ *
  */
-@Testcontainers(disabledWithoutDocker = true)
 public class RTGTranslatorTest {
 
-    static private RTGTranslator translator;
-    static private GenericContainer<?> container;
+    private RTGTranslator translator;
 
 
-    @BeforeAll
-    static void setUp() {
-        // ChatGPT, prompts used:
-        // How can I run "docker run --rm -i -p 6060:6060 tgowda/rtg-model:500toEng-v1" with testcontainers in java?
-        // What can I do if the container takes longer to initialize?
-        DockerImageName imageName = DockerImageName.parse("tgowda/rtg-model:500toEng-v1");
-        PortBinding portBinding = new PortBinding(Ports.Binding.bindPort(6060), new ExposedPort(6060));
-        container = new GenericContainer<>(imageName)
-                .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig().withPortBindings(portBinding))
-                .waitingFor(Wait.forHttp("/about")
-                        .forPort(6060)
-                        .forStatusCode(200)
-                        .withStartupTimeout(Duration.ofMinutes(5)));
-        container.start();
+    @BeforeEach
+    public void setUp() {
         translator = new RTGTranslator();
-    }
-
-    @AfterAll
-    static void finish() {
-        container.close();
     }
 
     @Test
@@ -75,8 +49,9 @@ public class RTGTranslatorTest {
         String source = "hola señor";
         String expected = "hello, sir.";
 
+        String result = null;
         try {
-            String result = translator.translate(source);
+            result = translator.translate(source);
             assertNotNull(result);
             assertEquals(expected, result.toLowerCase(Locale.getDefault()),
                     "Result: [" + result + "]: not equal to expected: [" + expected + "]");
