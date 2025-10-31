@@ -16,3 +16,4 @@ nb-configuration.xml
 *.tmp-inception
 *.snap
 .*.swp
+.vscode
