@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.slf4j.Logger;
@@ -57,6 +58,7 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
     private EmbeddedBytesSelector embeddedBytesSelector = EmbeddedBytesSelector.ACCEPT_ALL;
 
+    private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
     private long bytesExtracted = 0;
     private final long maxEmbeddedBytesForExtraction;
 
@@ -115,17 +117,34 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         }
     }
 
-    private void parseWithBytes(TikaInputStream stream, ContentHandler handler, Metadata metadata)
-            throws TikaException, IOException, SAXException {
-        //TODO -- improve the efficiency of this so that we're not
-        //literally writing out a file per request
-        Path p = stream.getPath();
+    private void parseWithBytes(TikaInputStream tis, ContentHandler handler, Metadata metadata) throws TikaException, IOException, SAXException {
+
+        //trigger spool to disk
+        Path rawBytes = tis.getPath();
+
+        //There may be a "translated" path for OLE2 etc
+        Path translated = null;
         try {
-            //warp in CloseShieldInputStream to ensure that a misbehaving parser isn't closing
-            //the stream and thereby deleting the temp file.
-            parse(CloseShieldInputStream.wrap(stream), handler, metadata);
+            //translate the stream or not
+            if (embeddedStreamTranslator.shouldTranslate(tis, metadata)) {
+                translated = Files.createTempFile("tika-tmp-", ".bin");
+                try (InputStream is = embeddedStreamTranslator.translate(tis, metadata)) {
+                    Files.copy(is, translated, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+            parse(tis, handler, metadata);
         } finally {
-            storeEmbeddedBytes(p, metadata);
+            try {
+                if (translated != null) {
+                    storeEmbeddedBytes(translated, metadata);
+                } else {
+                    storeEmbeddedBytes(rawBytes, metadata);
+                }
+            } finally {
+                if (translated != null) {
+                    Files.delete(translated);
+                }
+            }
         }
     }
 
@@ -137,6 +156,10 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
     }
 
     private void storeEmbeddedBytes(Path p, Metadata metadata) {
+        if (p == null) {
+            return;
+        }
+
         if (! embeddedBytesSelector.select(metadata)) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("skipping embedded bytes {} <-> {}",
