@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,30 +112,31 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
     private void parseWithBytes(TikaInputStream tis, ContentHandler handler, Metadata metadata) throws TikaException, IOException, SAXException {
 
-        Path tmp = Files.createTempFile("tika-tmp-", ".bin");
+        //trigger spool to disk
+        Path rawBytes = tis.getPath();
+
+        //There may be a "translated" path for OLE2 etc
+        Path translated = null;
         try {
             //translate the stream or not
             if (embeddedStreamTranslator.shouldTranslate(tis, metadata)) {
-                try (OutputStream os = Files.newOutputStream(tmp)) {
+                translated = Files.createTempFile("tika-tmp-", ".bin");
+                try (OutputStream os = Files.newOutputStream(translated)) {
                     embeddedStreamTranslator.translate(tis, metadata, os);
                 }
-            } else {
-                Files.copy(tis, tmp, StandardCopyOption.REPLACE_EXISTING);
             }
-
-            //now do the parse
-            if (tis.getOpenContainer() != null) {
-                parse(tis, handler, metadata);
-            } else {
-                try (TikaInputStream tisTmp = TikaInputStream.get(tmp)) {
-                    parse(tisTmp, handler, metadata);
-                }
-            }
+            parse(tis, handler, metadata);
         } finally {
             try {
-                storeEmbeddedBytes(tmp, metadata);
+                if (translated != null) {
+                    storeEmbeddedBytes(translated, metadata);
+                } else {
+                    storeEmbeddedBytes(rawBytes, metadata);
+                }
             } finally {
-                Files.delete(tmp);
+                if (translated != null) {
+                    Files.delete(translated);
+                }
             }
         }
     }

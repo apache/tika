@@ -399,6 +399,15 @@ public abstract class TikaTest {
         }
     }
 
+    protected List<Metadata> getRecursiveMetadata(Path path, Parser parser, ParseContext parseContext,
+                                                  boolean suppressException) throws Exception {
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(path, metadata)) {
+            return getRecursiveMetadata(tis, parser, metadata, parseContext,
+                    suppressException);
+        }
+    }
+
     protected List<Metadata> getRecursiveMetadata(Path path, Parser parser,
                                                   boolean suppressException) throws Exception {
         Metadata metadata = new Metadata();
