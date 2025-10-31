@@ -257,7 +257,6 @@ public class TikaInputStream extends TaggedInputStream {
         tis.setOpenContainer(openContainer);
         //this overwrites the length that was set in the constructor above
         tis.setLength(length);
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
         return tis;
     }
 
@@ -776,13 +775,7 @@ public class TikaInputStream extends TaggedInputStream {
             };
 
             // Update length to file size. Update position, mark
-            long sz = Files.size(path);
-            if (getOpenContainer() != null && sz == 0 && length > -1) {
-                //don't update size if there's an open container and the sz == 0
-                //hope that the length was sent in earlier via getFromContainer
-            } else {
-                length = sz;
-            }
+            length = Files.size(path);
             position = 0;
             mark = -1;
         }
