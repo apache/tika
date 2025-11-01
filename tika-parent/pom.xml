@@ -398,7 +398,7 @@
     <jsoup.version>1.21.2</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>6.0.0</junit5.version>
+    <junit5.version>6.0.1</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.7</junrar.version>
     <jwarc.version>0.32.0</jwarc.version>
@@ -437,7 +437,7 @@
     <sis.version>1.5</sis.version>
     <snappy.version>1.1.10.8</snappy.version>
     <solrj.version>9.9.0</solrj.version>
-    <spring.version>7.0.0-RC2</spring.version>
+    <spring.version>7.0.0-RC3</spring.version>
     <sqlite.version>3.50.3.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.1</testcontainers.version>
