@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.api.fetcher.Fetcher;
 
 public abstract class AbstractEmitter implements Emitter {
 

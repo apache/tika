@@ -131,13 +131,13 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
             Files.createDirectories(output.getParent());
         }
         LOG.warn("on exists: {}", config.onExists());
-        if (config.onExists() == ON_EXISTS.REPLACE) {
+        if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.REPLACE) {
             LOG.warn("copying {}", output);
             Files.copy(inputStream, output, StandardCopyOption.REPLACE_EXISTING);
-        } else if (config.onExists() == ON_EXISTS.EXCEPTION) {
+        } else if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.EXCEPTION) {
             LOG.warn("copying 2 {}", output);
             Files.copy(inputStream, output);
-        } else if (config.onExists() == ON_EXISTS.SKIP) {
+        } else if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.SKIP) {
             if (!Files.isRegularFile(output)) {
                 try {
                     LOG.warn("copying 3 {}", output);

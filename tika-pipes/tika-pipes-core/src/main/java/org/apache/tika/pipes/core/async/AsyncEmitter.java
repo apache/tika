@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.pipes.api.emitter.Emitter;
-import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.utils.ExceptionUtils;
 

@@ -23,8 +23,6 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractEmitter;
-import org.apache.tika.pipes.api.emitter.EmitData;
-import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.plugins.PluginConfig;
 
 public class EmptyEmitter extends AbstractEmitter {
