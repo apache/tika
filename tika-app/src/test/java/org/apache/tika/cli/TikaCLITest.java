@@ -282,8 +282,10 @@ public class TikaCLITest {
 
     @Test
     public void testRUnpack() throws Exception {
+        //TODO -- rework this to use two separate emitters
+        //one for bytes and one for json
         String[] expectedChildren = new String[]{
-                "testPDFPackage.pdf.json",
+                "testPDFPackage.pdf.jsn",
                 //the first two test that the default single file config is working
                 "testPDFPackage.pdf-embed/00000001-embedded-1",
                 "testPDFPackage.pdf-embed/00000002-image0.jpg",
@@ -294,7 +296,7 @@ public class TikaCLITest {
 
     @Test
     public void testPSTRUnpack() throws Exception {
-        String[] expectedChildren = new String[]{"testPST.pst.json",
+        String[] expectedChildren = new String[]{"testPST.pst.jsn",
                 "testPST.pst-embed/00000007-First email.msg",
                 "testPST.pst-embed/00000001-Feature Generators.msg",
                 "testPST.pst-embed/00000008-First email.msg",
@@ -305,7 +307,7 @@ public class TikaCLITest {
                 "testPST.pst-embed/00000009-attachment.docx",
                 "testPST.pst-embed/00000006-[WEBINAR] - %22Introducing Couchbase Server 2.5%22.msg"};
         testRecursiveUnpack("testPST.pst", expectedChildren, 2);
-        try (Reader reader = Files.newBufferedReader(extractDir.resolve("testPST.pst.json"))) {
+        try (Reader reader = Files.newBufferedReader(extractDir.resolve("testPST.pst.jsn"))) {
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             for (Metadata m : metadataList) {
                 String content = m.get(TikaCoreProperties.TIKA_CONTENT);
@@ -400,13 +402,13 @@ public class TikaCLITest {
         Path asyncConfig = Files.createTempFile("async-config-", ".json");
         Path pluginsDir = Paths.get("target/plugins");
 
-        String json = JSON_TEMPLATE.replace("BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString())
+        String json = JSON_TEMPLATE.replace("FETCHER_BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString())
+                                   .replace("EMITTER_BASE_PATH", extractDir.toAbsolutePath().toString())
                                    .replace("PLUGINS_DIR", pluginsDir.toAbsolutePath().toString());
         Files.writeString(asyncConfig, json, UTF_8);
 
         String[] params = {"-Z",
                 "-a", asyncConfig.toAbsolutePath().toString(),
-
                 ProcessUtils.escapeCommandLine(input.toAbsolutePath().toString()),
                 ProcessUtils.escapeCommandLine(extractDir
                 .toAbsolutePath()
@@ -424,7 +426,7 @@ public class TikaCLITest {
         assertEquals(expectedLength, jsonFile.length);
 
         for (String expectedChildName : expectedChildrenFileNames) {
-            assertTrue(fileNames.contains(expectedChildName));
+            assertTrue(fileNames.contains(expectedChildName), expectedChildName);
         }
     }
 

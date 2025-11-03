@@ -39,8 +39,10 @@ public class AsyncConfig extends PipesConfigBase {
 
     public static AsyncConfig load(Path tikaConfig, Path pipesPluginsConfig) throws IOException, TikaConfigException {
         AsyncConfig asyncConfig = new AsyncConfig();
-        try (InputStream is = Files.newInputStream(tikaConfig)) {
-            asyncConfig.configure("async", is);
+        if (tikaConfig != null) {
+            try (InputStream is = Files.newInputStream(tikaConfig)) {
+                asyncConfig.configure("async", is);
+            }
         }
         if (asyncConfig.getTikaConfig() == null) {
             asyncConfig.setTikaConfig(tikaConfig);

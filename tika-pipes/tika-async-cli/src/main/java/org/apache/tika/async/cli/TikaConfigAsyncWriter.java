@@ -50,7 +50,7 @@ class TikaConfigAsyncWriter {
     private static final Logger LOG = LoggerFactory.getLogger(TikaAsyncCLI.class);
 
     protected static final String FETCHER_NAME = "file-system-fetcher";
-    protected static final String EMITTER_NAME = "fse";
+    protected static final String EMITTER_NAME = "file-system-emitter";
 
     private final SimpleAsyncConfig simpleAsyncConfig;
 
@@ -92,7 +92,6 @@ class TikaConfigAsyncWriter {
         }
 
         writePipesIterator(document, properties, baseInput);
-        writeEmitters(document, properties, baseOutput);
         writeAsync(document, properties, output);
         Transformer transformer = TransformerFactory
                 .newInstance().newTransformer();
@@ -133,20 +132,6 @@ class TikaConfigAsyncWriter {
         appendTextElement(document, pipesIterator, "fileList",
                 baseInput.toAbsolutePath().toString());
         appendTextElement(document, pipesIterator, "hasHeader", "false");
-    }
-
-    private void writeEmitters(Document document, Element properties, Path baseOutput) {
-        Element emitters = findChild("emitters", properties);
-        if (emitters != null) {
-            LOG.info("emitters already exist in tika-config. Not overwriting with commandline");
-            return;
-        }
-
-        emitters = createAndGetElement(document, properties, "emitters");
-        Element emitter = createAndGetElement( document, emitters, "emitter",
-                "class", "org.apache.tika.pipes.emitter.fs.FileSystemEmitter");
-        appendTextElement(document, emitter, "name", EMITTER_NAME);
-        appendTextElement(document, emitter, "basePath", baseOutput.toAbsolutePath().toString());
     }
 
     private void writeAsync(Document document, Element properties, Path thisTikaConfig) {

@@ -49,7 +49,7 @@ public class TikaConfigAsyncWriterTest {
         TikaConfigAsyncWriter writer = new TikaConfigAsyncWriter(simpleAsyncConfig);
         writer.write(target);
 
-        Set<String> expected = Set.of("service-loader", "parsers", "pipesIterator", "emitters", "async");
+        Set<String> expected = Set.of("service-loader", "parsers", "pipesIterator", "async");
         Set<String> properties = loadProperties(target);
         assertEquals(expected, properties);
     }

@@ -83,7 +83,7 @@ public class AsyncProcessor implements Closeable {
         this.executorCompletionService =
                 new ExecutorCompletionService<>(executorService);
         try {
-            if (!tikaConfigPath.toAbsolutePath().equals(asyncConfig.getTikaConfig().toAbsolutePath())) {
+            if (asyncConfig.getTikaConfig() != null && !tikaConfigPath.toAbsolutePath().equals(asyncConfig.getTikaConfig().toAbsolutePath())) {
                 LOG.warn("TikaConfig for AsyncProcessor ({}) is different " +
                                 "from TikaConfig for workers ({}). If this is intended," +
                                 " please ignore this warning.", tikaConfigPath.toAbsolutePath(),

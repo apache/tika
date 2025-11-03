@@ -25,11 +25,17 @@ public class PluginsWriter {
 
     final static String JSON_TEMPLATE = """
             {
-              "pipesPluginsConfig" : {
+              "plugins" : {
                 "fetchers": {
                   "file-system-fetcher": {
-                    "basePath": "BASE_PATH",
+                    "basePath": "FETCHER_BASE_PATH",
                     "extractFileSystemMetadata": false
+                  }
+                },
+                "emitters": {
+                  "file-system-emitter": {
+                    "basePath": "EMITTER_BASE_PATH",
+                    "fileExtension": "json"
                   }
                 },
                 "pf4j.pluginsDir": "PLUGINS_DIR"
@@ -52,8 +58,8 @@ public class PluginsWriter {
             }
         }
         try {
-            String json = JSON_TEMPLATE.replace("BASE_PATH", baseInput.toAbsolutePath().toString());
-            System.out.println("PWD: " + Paths.get("").toAbsolutePath());
+            String json = JSON_TEMPLATE.replace("FETCHER_BASE_PATH", baseInput.toAbsolutePath().toString());
+            json = json.replace("EMITTER_BASE_PATH", baseOutput.toAbsolutePath().toString());
             String pluginString = "plugins";
             Path plugins = Paths.get(pluginString);
             if (Files.isDirectory(plugins)) {

@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.pf4j.Extension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -52,6 +54,9 @@ import org.apache.tika.utils.StringUtils;
 @Extension
 public class FileSystemEmitter extends AbstractStreamEmitter {
 
+    private static final Logger LOG = LoggerFactory.getLogger(FileSystemEmitter.class);
+
+
     private FileSystemEmitterConfig fileSystemEmitterConfig;
 
     public FileSystemEmitter() throws IOException {
@@ -62,12 +67,18 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
     public void configure(PluginConfig pluginConfig) throws TikaConfigException, IOException {
         checkPluginId(pluginConfig.pluginId());
         fileSystemEmitterConfig = FileSystemEmitterConfig.load(pluginConfig.jsonConfig());
-        //checkConfig(fileSystemEmitterConfig);
+        checkConfig(fileSystemEmitterConfig);
+    }
+
+    private void checkConfig(FileSystemEmitterConfig fileSystemEmitterConfig) {
+        if (fileSystemEmitterConfig.onExists() == null) {
+            throw new IllegalArgumentException("Must configure 'onExists' as 'skip', 'exception' or 'replace'");
+        }
     }
 
     @Override
     public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException {
-
+        LOG.warn("about to emit: {}", emitKey);
         if (metadataList == null || metadataList.isEmpty()) {
             throw new IOException("metadata list must not be null or of size 0");
         }
@@ -100,6 +111,8 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
 
     @Override
     public void emit(String emitKey, InputStream inputStream, Metadata userMetadata, ParseContext parseContext) throws IOException {
+        LOG.warn("about to stream emit: {}", emitKey);
+
         FileSystemEmitterConfig config = getConfig(parseContext);
 
         Path output;
@@ -114,18 +127,25 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         }
 
         if (!Files.isDirectory(output.getParent())) {
+            LOG.warn("creating parent directory: {}", output);
             Files.createDirectories(output.getParent());
         }
+        LOG.warn("on exists: {}", config.onExists());
         if (config.onExists() == ON_EXISTS.REPLACE) {
+            LOG.warn("copying {}", output);
             Files.copy(inputStream, output, StandardCopyOption.REPLACE_EXISTING);
         } else if (config.onExists() == ON_EXISTS.EXCEPTION) {
+            LOG.warn("copying 2 {}", output);
             Files.copy(inputStream, output);
         } else if (config.onExists() == ON_EXISTS.SKIP) {
             if (!Files.isRegularFile(output)) {
                 try {
+                    LOG.warn("copying 3 {}", output);
+
                     Files.copy(inputStream, output);
                 } catch (FileAlreadyExistsException e) {
                     //swallow
+                    LOG.warn("file exists");
                 }
             }
         }
@@ -138,6 +158,7 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
             Optional<PluginConfig> pluginConfigOpt = pluginConfigs.get(getPluginId());
             if (pluginConfigOpt.isPresent()) {
                 config = FileSystemEmitterConfig.load(pluginConfigOpt.get().jsonConfig());
+                checkConfig(config);
             }
         }
         return config;
