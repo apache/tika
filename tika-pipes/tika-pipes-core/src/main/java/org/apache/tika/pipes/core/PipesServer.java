@@ -69,10 +69,9 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.StreamEmitter;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
-import org.apache.tika.pipes.core.emitter.EmitData;
+import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.pipes.core.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.extractor.EmittingEmbeddedDocumentBytesHandler;
@@ -309,7 +308,7 @@ public class PipesServer implements Runnable {
         try {
             emitter = emitterManager.getEmitter(emitKey.getEmitterPluginId());
         } catch (IllegalArgumentException e) {
-            String noEmitterMsg = getNoEmitterMsg(taskId);
+            String noEmitterMsg = getNoEmitterMsg(taskId, emitKey.getEmitterPluginId());
             LOG.warn(noEmitterMsg);
             write(STATUS.EMITTER_NOT_FOUND, noEmitterMsg);
             return;
@@ -354,7 +353,7 @@ public class PipesServer implements Runnable {
             exit(1);
         }
 
-        EmitData filteredEmitDataTuple = new EmitData(emitKey, filtered, parseExceptionStack);
+        EmitDataImpl filteredEmitDataTuple = new EmitDataImpl(emitKey.getEmitKey(), filtered, parseExceptionStack);
 
         try {
             UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
@@ -490,7 +489,7 @@ public class PipesServer implements Runnable {
                 emitKey = new EmitKey(emitKey.getEmitterPluginId(), t.getFetchKey().getFetchKey());
                 t.setEmitKey(emitKey);
             }
-            EmitData emitDataTuple = new EmitData(t.getEmitKey(), parseData.getMetadataList(), stack);
+            EmitDataImpl emitDataTuple = new EmitDataImpl(t.getEmitKey().getEmitKey(), parseData.getMetadataList(), stack);
             if (shouldEmit(embeddedDocumentBytesConfig, parseData, emitDataTuple)) {
                 emit(t.getId(), emitKey, embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes(),
                         parseData, stack, parseContext);
@@ -506,7 +505,7 @@ public class PipesServer implements Runnable {
         }
     }
 
-    private boolean shouldEmit(EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, MetadataListAndEmbeddedBytes parseData, EmitData emitDataTuple) {
+    private boolean shouldEmit(EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, MetadataListAndEmbeddedBytes parseData, EmitDataImpl emitDataTuple) {
         if (emitStrategy == EMIT_STRATEGY.EMIT_ALL) {
             return true;
         } else if (embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
@@ -597,9 +596,9 @@ public class PipesServer implements Runnable {
         return sb.toString();
     }
 
-    private String getNoEmitterMsg(String emitterName) {
+    private String getNoEmitterMsg(String taskName, String emitterName) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Emitter '").append(emitterName).append("'");
+        sb.append("Emitter for task='").append(taskName).append("' emitter='").append(emitterName).append("'");
         sb.append(" not found.");
         sb.append("\nThe configured emitterManager supports:");
         int i = 0;
@@ -853,7 +852,7 @@ public class PipesServer implements Runnable {
         //skip initialization of the emitters if emitting
         //from the pipesserver is turned off.
         if (maxForEmitBatchBytes > -1) {
-            this.emitterManager = EmitterManager.load(tikaConfigPath);
+            this.emitterManager = EmitterManager.load(pipesConfigPath);
         } else {
             LOG.debug("'maxForEmitBatchBytes' < 0. Not initializing emitters in PipesServer");
             this.emitterManager = null;
@@ -893,7 +892,7 @@ public class PipesServer implements Runnable {
         }
     }
 
-    private void write(EmitData emitData) {
+    private void write(EmitDataImpl emitData) {
         try {
             UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {

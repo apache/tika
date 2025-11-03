@@ -14,14 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.api.fetcher;
+package org.apache.tika.plugins;
 
-import java.io.Serializable;
+public record PluginConfig(String pluginId, String jsonConfig) {
 
-public interface FetcherConfig extends Serializable {
-
-    String getPluginId();
-    FetcherConfig setPluginId(String pluginId);
-    String getConfigJson();
-    FetcherConfig setConfigJson(String config);
 }

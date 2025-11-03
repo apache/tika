@@ -24,12 +24,12 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
-import org.apache.tika.pipes.api.fetcher.FetcherConfig;
+import org.apache.tika.plugins.PluginConfig;
 
 public class EmptyFetcher implements Fetcher {
 
     @Override
-    public void configure(FetcherConfig fetcherConfig) throws TikaConfigException {
+    public void configure(PluginConfig pluginConfig) throws TikaConfigException {
         //no-op
     }
 

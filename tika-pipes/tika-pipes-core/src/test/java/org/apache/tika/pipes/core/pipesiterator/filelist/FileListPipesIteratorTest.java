@@ -36,8 +36,8 @@ public class FileListPipesIteratorTest {
     public void testBasic() throws Exception {
         Path p = Paths.get(this.getClass().getResource("/test-documents/file-list.txt").toURI());
         FileListPipesIterator it = new FileListPipesIterator();
-        it.setFetcherName("f");
-        it.setEmitterName("e");
+        it.setFetcherPluginId("f");
+        it.setEmitterPluginId("e");
         it.setFileList(p.toAbsolutePath().toString());
         it.setHasHeader(false);
         it.checkInitialization(InitializableProblemHandler.DEFAULT);
@@ -59,8 +59,8 @@ public class FileListPipesIteratorTest {
     public void testHasHeader() throws Exception {
         Path p = Paths.get(this.getClass().getResource("/test-documents/file-list.txt").toURI());
         FileListPipesIterator it = new FileListPipesIterator();
-        it.setFetcherName("f");
-        it.setEmitterName("e");
+        it.setFetcherPluginId("f");
+        it.setEmitterPluginId("e");
         it.setFileList(p.toAbsolutePath().toString());
         it.setHasHeader(true);
         it.checkInitialization(InitializableProblemHandler.DEFAULT);

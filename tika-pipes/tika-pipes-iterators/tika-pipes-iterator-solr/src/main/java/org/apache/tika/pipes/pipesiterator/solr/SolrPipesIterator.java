@@ -175,7 +175,7 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
         String fetcherPluginId = getFetcherName();
-        String emitterName = getEmitterName();
+        String emitterName = getEmitterPluginId();
 
         try (SolrClient solrClient = createSolrClient()) {
             int fileCount = 0;

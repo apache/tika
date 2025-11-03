@@ -1,0 +1,69 @@
+package org.apache.tika.serialization;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.junit.jupiter.api.Test;
+
+import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.PluginConfigs;
+
+public class PluginsConfigTest {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    static {
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(PluginConfig.class, new PluginsConfigDeserializer());
+        module.addSerializer(PluginConfig.class, new PluginsConfigSerializer());
+        OBJECT_MAPPER.registerModule(module);
+        OBJECT_MAPPER.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+    }
+
+    @Test
+    public void testBasic() throws Exception {
+
+        PluginConfig p1 = new PluginConfig("pluginId",
+                """
+                        {"basePath":"/my/docs","includeSystemInfo":true}
+                        """);
+        String json = OBJECT_MAPPER.writeValueAsString(p1);
+
+        PluginConfig deserialized = OBJECT_MAPPER.readValue(json, PluginConfig.class);
+        assertEquals(p1.pluginId(), deserialized.pluginId());
+        assertEquals(flatten(p1.jsonConfig()), flatten(deserialized.jsonConfig()));
+    }
+
+    @Test
+    public void testMap() throws Exception {
+        PluginConfig p1 = new PluginConfig("pluginId1",
+                """
+                        {"basePath":"/my/docs1","includeSystemInfo":true}
+                        """);
+        PluginConfig p2 = new PluginConfig("pluginId2",
+                """
+                        {"basePath":"/my/docs2","includeSystemInfo":false}
+                        """);
+        Map<String, PluginConfig> map = new HashMap<>();
+        map.put(p1.pluginId(), p1);
+        map.put(p2.pluginId(), p2);
+        PluginConfigs pluginConfigManager = new PluginConfigs(map);
+
+        String json = OBJECT_MAPPER.writeValueAsString(pluginConfigManager);
+
+        PluginConfigs deserialized = OBJECT_MAPPER.readValue(json, PluginConfigs.class);
+        assertEquals(pluginConfigManager.get(p1.pluginId()).get().pluginId(), deserialized.get(p1.pluginId()).get().pluginId());
+        assertEquals(flatten(pluginConfigManager.get(p1.pluginId()).get().jsonConfig()),
+                flatten(deserialized.get(p1.pluginId()).get().jsonConfig()));
+    }
+
+    private static String flatten(String s) {
+        return s.replaceAll("[\r\n]", "");
+    }
+}

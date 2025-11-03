@@ -79,7 +79,7 @@ public class FileSystemPipesIterator extends PipesIterator
         }
 
         try {
-            Files.walkFileTree(basePath, new FSFileVisitor(getFetcherName(), getEmitterName()));
+            Files.walkFileTree(basePath, new FSFileVisitor(getFetcherPluginId(), getEmitterPluginId()));
         } catch (IOException e) {
             Throwable cause = e.getCause();
             if (cause != null && cause instanceof TimeoutException) {
@@ -95,8 +95,8 @@ public class FileSystemPipesIterator extends PipesIterator
             throws TikaConfigException {
         //these should all be fatal
         TikaConfig.mustNotBeEmpty("basePath", basePath);
-        TikaConfig.mustNotBeEmpty("fetcherName", getFetcherName());
-        TikaConfig.mustNotBeEmpty("emitterName", getFetcherName());
+        TikaConfig.mustNotBeEmpty("fetcherPluginId", getFetcherPluginId());
+        TikaConfig.mustNotBeEmpty("emitterPluginId", getEmitterPluginId());
     }
 
     @Override

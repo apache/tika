@@ -23,69 +23,102 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.tika.pipes.api.emitter.EmitterConfig;
-import org.apache.tika.pipes.api.fetcher.FetcherConfig;
-import org.apache.tika.pipes.core.fetcher.config.DefaultFetcherConfig;
+import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.PluginConfigs;
+
 
 public class PipesPluginsConfig {
 
     public static PipesPluginsConfig load(InputStream is) throws IOException {
         JsonNode root = new ObjectMapper().readTree(new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)));
-        JsonNode plugins = root.get("pipesPluginsConfig");
-        Map<String, FetcherConfig> fetcherMap = new HashMap<>();
+        PluginConfigs fetchers = null;
+        PluginConfigs emitters = null;
+        PluginConfigs iterators = null;
+        PluginConfigs reporters = null;
+
+        JsonNode plugins = root.get("plugins");
         if (plugins.has("fetchers")) {
-            JsonNode fetchers = plugins.get("fetchers");
-            Iterator<String> it = fetchers.fieldNames();
-            while (it.hasNext()) {
-                String pluginId = it.next();
-                JsonNode fetcherConfig = fetchers.get(pluginId);
-                fetcherMap.put(pluginId, new DefaultFetcherConfig(pluginId, fetcherConfig.toString()));
-            }
+            fetchers = load(plugins.get("fetchers"));
         }
-        Map<String, FetcherConfig> emitterMap = new HashMap<>();
         if (plugins.has("emitters")) {
-            JsonNode emitters = plugins.get("emitters");
-            Iterator<String> it = emitters.fieldNames();
-            while (it.hasNext()) {
-                String pluginId = it.next();
-                JsonNode emitterConfig = emitters.get(pluginId);
-                emitterMap.put(pluginId, new EmitterConfigImpl(pluginId, emitterConfig.toString()));
-            }
+            emitters = load(plugins.get("emitters"));
         }
+        if (plugins.has("iterators")) {
+            iterators = load(plugins.get("iterators"));
+        }
+        if (plugins.has("reporters")) {
+            reporters = load(plugins.get("reporters"));
+        }
+
         Path pluginsDir = null;
         if (plugins.has("pf4j.pluginsDir")) {
             pluginsDir = Paths.get(plugins.get("pf4j.pluginsDir").asText());
         }
-        return new PipesPluginsConfig(fetcherMap, emitterMap, pluginsDir);
+        return new PipesPluginsConfig(fetchers, emitters, iterators, reporters, pluginsDir);
     }
 
-    private final Map<String, FetcherConfig> fetcherMap;
-    private final Map<String, EmitterConfig> emitterMap;
+    private static PluginConfigs load(JsonNode pluginsNode) {
+        PluginConfigs manager = new PluginConfigs();
+        Iterator<String> it = pluginsNode.fieldNames();
+        manager = new PluginConfigs();
+        while (it.hasNext()) {
+            String pluginId = it.next();
+            JsonNode jsonConfig = pluginsNode.get(pluginId);
+            manager.add(new PluginConfig(pluginId, jsonConfig.toString()));
+        }
+        return manager;
+    }
+
+    private final PluginConfigs fetchers;
+    private final PluginConfigs emitters;
+    private final PluginConfigs iterators;
+    private final PluginConfigs reporters;
 
 
     private final Path pluginsDir;
-    private PipesPluginsConfig(Map<String, FetcherConfig> fetcherMap, Map<String, EmitterConfig> emitterMap, Path pluginsDir) {
-        this.fetcherMap = fetcherMap;
-        this.emitterMap = emitterMap;
+
+    public PipesPluginsConfig(PluginConfigs fetchers, PluginConfigs emitters,
+                              PluginConfigs iterators, PluginConfigs reporters, Path pluginsDir) {
+        this.fetchers = fetchers;
+        this.emitters = emitters;
+        this.iterators = iterators;
+        this.reporters = reporters;
         this.pluginsDir = pluginsDir;
     }
 
-    public Optional<FetcherConfig> getFetcherConfig(String pluginId) {
-        return Optional.ofNullable(fetcherMap.get(pluginId));
+    public Optional<PluginConfig> getFetcherConfig(String pluginId) {
+        if (fetchers == null) {
+            throw new IllegalArgumentException("fetchers element was not loaded");
+        }
+        return fetchers.get(pluginId);
     }
 
-    public Optional<EmitterConfig> getEmitterConfig(String pluginId) {
-        return Optional.ofNullable(emitterMap.get(pluginId));
+    public Optional<PluginConfig> getEmitterConfig(String pluginId) {
+        if (emitters == null) {
+            throw new IllegalArgumentException("emitters element was not loaded");
+        }
+        return emitters.get(pluginId);
     }
 
+    public Optional<PluginConfig> getIteratorConfig(String pluginId) {
+        if (iterators == null) {
+            throw new IllegalArgumentException("iterators element was not loaded");
+        }
+        return iterators.get(pluginId);
+    }
+
+    public Optional<PluginConfig> getReporterConfig(String pluginId) {
+        if (reporters == null) {
+            throw new IllegalArgumentException("reporters element was not loaded");
+        }
+        return reporters.get(pluginId);
+    }
 
     public Optional<Path> getPluginsDir() {
         return Optional.ofNullable(pluginsDir);

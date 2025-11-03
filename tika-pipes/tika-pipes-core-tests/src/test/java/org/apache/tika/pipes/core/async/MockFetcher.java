@@ -26,7 +26,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.api.fetcher.FetcherConfig;
+import org.apache.tika.plugins.PluginConfig;
 
 public class MockFetcher extends AbstractFetcher {
 
@@ -39,7 +39,7 @@ public class MockFetcher extends AbstractFetcher {
     }
 
     @Override
-    public void configure(FetcherConfig fetcherConfig) throws TikaConfigException, IOException {
+    public void configure(PluginConfig fetcherConfig) throws TikaConfigException, IOException {
         //no-op
     }
 

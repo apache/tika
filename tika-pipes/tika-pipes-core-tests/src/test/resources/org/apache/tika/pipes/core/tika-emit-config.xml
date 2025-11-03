@@ -32,16 +32,4 @@
       <skipContainerDocument>false</skipContainerDocument>
     </digesterFactory>
   </autoDetectParserConfig>
-<!--  <fetchers>
-    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
-      <name>fs</name>
-      <basePath>src/test/resources/test-documents</basePath>
-    </fetcher>
-  </fetchers> -->
-  <emitters>
-    <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
-      <name>fs</name>
-      <basePath>EMITTER_BASE_PATH</basePath>
-    </emitter>
-  </emitters>
 </properties>

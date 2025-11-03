@@ -16,7 +16,7 @@
  */
 package org.apache.tika.pipes.core;
 
-import org.apache.tika.pipes.core.emitter.EmitData;
+import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 
 public class PipesResult {
 
@@ -49,10 +49,10 @@ public class PipesResult {
     public static final PipesResult EMPTY_OUTPUT =
             new PipesResult(STATUS.EMPTY_OUTPUT);
     private final STATUS status;
-    private final EmitData emitDataTuple;
+    private final EmitDataImpl emitDataTuple;
     private final String message;
 
-    public PipesResult(STATUS status, EmitData emitDataTuple, String message, boolean intermediate) {
+    public PipesResult(STATUS status, EmitDataImpl emitDataTuple, String message, boolean intermediate) {
         this.status = status;
         this.emitDataTuple = emitDataTuple;
         this.message = message;
@@ -72,11 +72,11 @@ public class PipesResult {
      *
      * @param emitDataTuple
      */
-    public PipesResult(EmitData emitDataTuple) {
+    public PipesResult(EmitDataImpl emitDataTuple) {
         this(STATUS.PARSE_SUCCESS, emitDataTuple, null, false);
     }
 
-    public PipesResult(STATUS status, EmitData emitDataTuple, boolean intermediate) {
+    public PipesResult(STATUS status, EmitDataImpl emitDataTuple, boolean intermediate) {
         this(status, emitDataTuple, null, intermediate);
     }
 
@@ -87,7 +87,7 @@ public class PipesResult {
      * @param emitDataTuple
      * @param message
      */
-    public PipesResult(EmitData emitDataTuple, String message) {
+    public PipesResult(EmitDataImpl emitDataTuple, String message) {
         this(STATUS.PARSE_SUCCESS_WITH_EXCEPTION, emitDataTuple, message, false);
     }
 
@@ -95,7 +95,7 @@ public class PipesResult {
         return status;
     }
 
-    public EmitData getEmitData() {
+    public EmitDataImpl getEmitData() {
         return emitDataTuple;
     }
 

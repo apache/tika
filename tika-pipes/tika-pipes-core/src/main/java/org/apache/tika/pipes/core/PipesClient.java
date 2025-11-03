@@ -51,7 +51,7 @@ import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.emitter.EmitData;
+import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
@@ -376,7 +376,7 @@ public class PipesClient implements Closeable {
         input.readFully(bytes);
         try (ObjectInputStream objectInputStream = new ObjectInputStream(
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
-            EmitData emitData = (EmitData) objectInputStream.readObject();
+            EmitDataImpl emitData = (EmitDataImpl) objectInputStream.readObject();
 
             String stack = emitData.getContainerStackTrace();
             if (StringUtils.isBlank(stack)) {
@@ -405,7 +405,7 @@ public class PipesClient implements Closeable {
         try (ObjectInputStream objectInputStream = new ObjectInputStream(
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
             Metadata metadata = (Metadata) objectInputStream.readObject();
-            EmitData emitDataTuple = new EmitData(emitKey, Collections.singletonList(metadata));
+            EmitDataImpl emitDataTuple = new EmitDataImpl(emitKey.getEmitKey(), Collections.singletonList(metadata));
             return new PipesResult(PipesResult.STATUS.INTERMEDIATE_RESULT, emitDataTuple, true);
         } catch (ClassNotFoundException e) {
             LOG.error("class not found exception deserializing data", e);

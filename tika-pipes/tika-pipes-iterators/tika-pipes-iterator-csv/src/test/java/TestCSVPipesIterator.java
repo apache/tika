@@ -44,7 +44,7 @@ public class TestCSVPipesIterator {
         Path p = get("test-simple.csv");
         CSVPipesIterator it = new CSVPipesIterator();
         it.setFetcherName("fsf");
-        it.setEmitterName("fse");
+        it.setEmitterPluginId("fse");
         it.setCsvPath(p);
         it.setFetchKeyColumn("fetchKey");
         int numConsumers = 2;

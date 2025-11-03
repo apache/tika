@@ -141,7 +141,7 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
         String fetcherPluginId = getFetcherName();
-        String emitterName = getEmitterName();
+        String emitterName = getEmitterPluginId();
         FetchEmitKeyIndices fetchEmitKeyIndices = null;
         List<String> headers = new ArrayList<>();
         int rowCount = 0;
@@ -343,11 +343,11 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
             throw new TikaConfigException("If you specify a 'fetchKeyColumn', you must specify a 'fetcherPluginId'");
         }
 
-        if (StringUtils.isBlank(getEmitterName()) && !StringUtils.isBlank(emitKeyColumn)) {
+        if (StringUtils.isBlank(getEmitterPluginId()) && !StringUtils.isBlank(emitKeyColumn)) {
             throw new TikaConfigException("If you specify an 'emitKeyColumn', you must specify an 'emitterName'");
         }
 
-        if (StringUtils.isBlank(getEmitterName()) && StringUtils.isBlank(getFetcherName())) {
+        if (StringUtils.isBlank(getEmitterPluginId()) && StringUtils.isBlank(getFetcherName())) {
             LOGGER.warn("no fetcher or emitter specified?!");
         }
 

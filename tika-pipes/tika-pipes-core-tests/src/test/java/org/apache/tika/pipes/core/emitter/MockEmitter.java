@@ -17,44 +17,80 @@
 package org.apache.tika.pipes.core.emitter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.tika.config.Field;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.pf4j.Extension;
+
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.api.emitter.EmitData;
+import org.apache.tika.pipes.api.emitter.Emitter;
+import org.apache.tika.plugins.PluginConfig;
 
-public class MockEmitter extends AbstractEmitter implements Initializable {
+@Extension
+public class MockEmitter implements Initializable, Emitter {
 
-    @Field
-    private boolean throwOnCheck = false;
+    public static ArrayBlockingQueue<EmitData> EMIT_DATA = new ArrayBlockingQueue<>(10000);
 
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
+    public static List<EmitData> getData() {
+        return new ArrayList<>(EMIT_DATA);
+    }
+
+    public MockEmitter() throws IOException {
+    }
+
+    private static record MockEmitterConfig(boolean throwOnCheck) {
 
     }
 
-    public void setThrowOnCheck(boolean throwOnCheck) {
-        this.throwOnCheck = throwOnCheck;
+    private MockEmitterConfig config = new MockEmitterConfig(true);
+
+    @Override
+    public void initialize(Map<String, Param> params) throws TikaConfigException {
+        //no-op
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
 
-        if (throwOnCheck) {
+        if (config.throwOnCheck()) {
             throw new TikaConfigException("throw on check");
         }
 
     }
 
     @Override
+    public void configure(PluginConfig pluginConfig) throws TikaConfigException, IOException {
+        config = new ObjectMapper().readValue(pluginConfig.jsonConfig(), MockEmitterConfig.class);
+    }
+
+    @Override
+    public String getPluginId() {
+        return "mock-emitter";
+    }
+
+    @Override
     public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
             throws IOException, TikaEmitterException {
+        emit(
+                Collections.singletonList(new EmitDataImpl(emitKey,
+                        metadataList, null, parseContext)));
+    }
+    @Override
+    public void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException {
 
+        for (EmitData d : emitData) {
+            EMIT_DATA.offer(d);
+        }
     }
 }

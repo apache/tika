@@ -19,17 +19,22 @@ package org.apache.tika.pipes.api.emitter;
 import java.io.IOException;
 import java.util.List;
 
+import org.pf4j.ExtensionPoint;
+
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.plugins.PluginConfig;
 
-public interface Emitter {
+public interface Emitter extends ExtensionPoint {
 
-    void configure(EmitterConfig emitterConfig) throws TikaConfigException, IOException;
+    void configure(PluginConfig pluginConfig) throws TikaConfigException, IOException;
 
     String getPluginId();
 
     void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException;
+
+    void emit(List<? extends EmitData> emitData) throws IOException;
 
     //TODO -- add this later for xhtml?
     //void emit(String txt, Metadata metadata) throws IOException, TikaException;

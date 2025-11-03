@@ -30,11 +30,12 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.pipes.core.PluginsTestHelper;
-import org.apache.tika.pipes.core.emitter.EmitData;
 import org.apache.tika.pipes.core.emitter.EmitKey;
+import org.apache.tika.pipes.core.emitter.MockEmitter;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 
@@ -82,10 +83,7 @@ public class AsyncChaosMonkeyTest {
         crash = 0;
         Path tikaConfigPath = Files.createTempFile(configDir, "tika-config-", ".xml");
         String xml =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<properties>" + "  <emitters>" +
-                "  <emitter class=\"org.apache.tika.pipes.core.async.MockEmitter\">\n" +
-                "         <name>mock</name>\n" + "  </emitter>" +
-                "  </emitters>" +
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<properties>" +
                 " <autoDetectParserConfig>\n" +
                         "    <digesterFactory\n" +
                         "        class=\"org.apache.tika.pipes.core.async.MockDigesterFactory\"/>\n" +
@@ -120,7 +118,7 @@ public class AsyncChaosMonkeyTest {
         }
         MockEmitter.EMIT_DATA.clear();
         MockReporter.RESULTS.clear();
-        pipesPluginsConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(configDir, inputDir);
+        pipesPluginsConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(configDir, inputDir, null);
         return tikaConfigPath;
     }
 
@@ -143,7 +141,7 @@ public class AsyncChaosMonkeyTest {
         for (int i = 0; i < totalFiles; i++) {
             FetchEmitTuple t = new FetchEmitTuple("myId-" + i,
                     new FetchKey(fetcherPluginId, i + ".xml"),
-                    new EmitKey("mock", "emit-" + i), new Metadata());
+                    new EmitKey("mock-emitter", "emit-" + i), new Metadata());
             processor.offer(t, 1000);
         }
         for (int i = 0; i < 10; i++) {
@@ -156,7 +154,7 @@ public class AsyncChaosMonkeyTest {
         processor.close();
         Set<String> emitKeys = new HashSet<>();
         for (EmitData d : MockEmitter.EMIT_DATA) {
-            emitKeys.add(d.getEmitKey().getEmitKey());
+            emitKeys.add(d.getEmitKey());
         }
         assertEquals(ok, emitKeys.size());
         assertEquals(100, MockReporter.RESULTS.size());
@@ -171,7 +169,7 @@ public class AsyncChaosMonkeyTest {
         AsyncProcessor processor = new AsyncProcessor(setUp(true), pipesPluginsConfigPath);
         for (int i = 0; i < totalFiles; i++) {
             FetchEmitTuple t = new FetchEmitTuple("myId-" + i, new FetchKey(fetcherPluginId, i + ".xml"),
-                    new EmitKey("mock", "emit-" + i), new Metadata());
+                    new EmitKey("mock-emitter", "emit-" + i), new Metadata());
             processor.offer(t, 1000);
         }
         for (int i = 0; i < 10; i++) {
@@ -185,7 +183,7 @@ public class AsyncChaosMonkeyTest {
         Set<String> emitKeys = new HashSet<>();
         int observedOOM = 0;
         for (EmitData d : MockEmitter.EMIT_DATA) {
-            emitKeys.add(d.getEmitKey().getEmitKey());
+            emitKeys.add(d.getEmitKey());
             assertEquals(64,
                     d.getMetadataList().get(0).get("X-TIKA:digest:SHA-256").trim().length());
             assertEquals("application/mock+xml",

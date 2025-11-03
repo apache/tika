@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -47,23 +48,19 @@ public class PassbackFilterTest {
 
     private Path tmpDir;
     String fetcherPluginId = "file-system-fetcher";
+    String emitterPluginId = "file-system-emitter";
     String testPdfFile = "testOverlappingText.pdf";
 
     private PipesClient pipesClient;
 
     @BeforeEach
     public void init() throws Exception {
-        Path tikaConfigTemplate = Paths.get("src", "test", "resources", "org", "apache", "tika", "pipes", "core", "tika-emit-config.xml");
+        Path tikaConfig = Paths.get("src", "test", "resources", "org", "apache", "tika", "pipes", "core", "tika-emit-config.xml");
         tmpDir = Files.createTempDirectory("tika-pipes");
         Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmpDir);
 
         Path tikaConfigPath = Files.createTempFile(tmpDir, "tika-pipes-", ".xml");
-        String template = Files.readString(tikaConfigTemplate, StandardCharsets.UTF_8);
-        template = template.replace("EMITTER_BASE_PATH", tmpDir
-                .toAbsolutePath()
-                .toString());
-        Files.writeString(tikaConfigPath, template);
-
+        Files.copy(tikaConfig, tikaConfigPath, StandardCopyOption.REPLACE_EXISTING);
         PipesConfig pipesConfig = PipesConfig.load(tikaConfigPath, pipesConfigPath);
         PluginsTestHelper.copyTestFilesToTmpInput(tmpDir, testPdfFile);
 
@@ -81,7 +78,8 @@ public class PassbackFilterTest {
         ParseContext parseContext = new ParseContext();
         parseContext.set(PassbackFilter.class, new MyPassbackFilter());
         PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(testPdfFile, new FetchKey(fetcherPluginId, testPdfFile), new EmitKey("fs", emitFileBase), new Metadata(), parseContext,
+                new FetchEmitTuple(testPdfFile, new FetchKey(fetcherPluginId, testPdfFile),
+                        new EmitKey(emitterPluginId, emitFileBase), new Metadata(), parseContext,
                         FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
         assertEquals(PipesResult.STATUS.EMIT_SUCCESS_PASSBACK, pipesResult.getStatus());
         Assertions.assertNotNull(pipesResult
@@ -100,7 +98,7 @@ public class PassbackFilterTest {
         assertNull(metadata.get(Metadata.CONTENT_LENGTH));
         assertEquals(1, metadata.names().length);
 
-        List<Metadata> metadataList = JsonMetadataList.fromJson(Files.newBufferedReader(tmpDir.resolve(emitFileBase + ".json"), StandardCharsets.UTF_8));
+        List<Metadata> metadataList = JsonMetadataList.fromJson(Files.newBufferedReader(tmpDir.resolve("output").resolve(emitFileBase + ".json"), StandardCharsets.UTF_8));
         assertEquals(1, metadataList.size());
         assertEquals("application/pdf", metadataList
                 .get(0)

@@ -114,7 +114,7 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
         String fetcherPluginId = getFetcherName();
-        String emitterName = getEmitterName();
+        String emitterName = getEmitterPluginId();
         try (Reader reader = Files.newBufferedReader(csvPath, charset)) {
             Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(reader);
             List<String> headers = new ArrayList<>();

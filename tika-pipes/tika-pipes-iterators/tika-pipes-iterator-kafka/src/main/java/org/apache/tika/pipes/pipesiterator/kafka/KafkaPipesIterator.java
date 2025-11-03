@@ -149,7 +149,7 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     @Override
     protected void enqueue() throws InterruptedException, TimeoutException {
         String fetcherPluginId = getFetcherName();
-        String emitterName = getEmitterName();
+        String emitterName = getEmitterPluginId();
         long start = System.currentTimeMillis();
         int count = 0;
         HandlerConfig handlerConfig = getHandlerConfig();

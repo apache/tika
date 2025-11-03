@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.AbstractTikaConfigTest;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 
@@ -63,7 +64,7 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
 
         FetcherManager fetcherManager = FetcherManager.load(
                 getConfigFilePath("fetchers-nobasepath-config.xml"));
-    }*/
+    }
 
     @Test
     public void testEmitters() throws Exception {
@@ -81,12 +82,13 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
             EmitterManager.load(getConfigFilePath("emitters-duplicate-config.xml"));
         });
     }
+    */
 
     @Test
     public void testPipesIterator() throws Exception {
         PipesIterator it =
                 PipesIterator.build(getConfigFilePath("pipes-iterator-config.xml"));
-        assertEquals("fs1", it.getFetcherName());
+        assertEquals("fsf1", it.getFetcherPluginId());
     }
 
     @Test
@@ -94,7 +96,7 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
         assertThrows(TikaConfigException.class, () -> {
             PipesIterator it =
                     PipesIterator.build(getConfigFilePath("pipes-iterator-multiple-config.xml"));
-            assertEquals("fs1", it.getFetcherName());
+            assertEquals("fsf1", it.getFetcherPluginId());
         });
     }
 }

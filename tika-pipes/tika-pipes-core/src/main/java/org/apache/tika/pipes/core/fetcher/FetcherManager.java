@@ -36,8 +36,8 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
-import org.apache.tika.pipes.api.fetcher.FetcherConfig;
 import org.apache.tika.pipes.core.PipesPluginsConfig;
+import org.apache.tika.plugins.PluginConfig;
 
 /**
  * Utility class to hold multiple fetchers.
@@ -66,7 +66,7 @@ public class FetcherManager {
         pluginManager.startPlugins();
         Map<String, Fetcher> fetcherMap = new HashMap<>();
         for (Fetcher fetcher : pluginManager.getExtensions(Fetcher.class)) {
-            Optional<FetcherConfig> fetcherConfig = pluginsConfig.getFetcherConfig(fetcher.getPluginId());
+            Optional<PluginConfig> fetcherConfig = pluginsConfig.getFetcherConfig(fetcher.getPluginId());
             if (fetcherConfig.isPresent()) {
                 fetcher.configure(fetcherConfig.get());
                 if (fetcher instanceof Initializable) {

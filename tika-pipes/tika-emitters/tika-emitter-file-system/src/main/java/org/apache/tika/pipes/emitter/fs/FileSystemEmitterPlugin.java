@@ -14,38 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.emitter.config;
+package org.apache.tika.pipes.emitter.fs;
 
-import org.apache.tika.pipes.api.emitter.EmitterConfig;
+import org.pf4j.Plugin;
+import org.pf4j.PluginWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class DefaultEmitterConfig implements EmitterConfig {
+public class FileSystemEmitterPlugin extends Plugin {
+    private static final Logger LOG = LoggerFactory.getLogger(FileSystemEmitterPlugin.class);
 
-    private String plugId;
-    private String configJson;
-
-    public DefaultEmitterConfig(String plugId, String configJson) {
-        this.plugId = plugId;
-        this.configJson = configJson;
-    }
-    @Override
-    public String getPluginId() {
-        return plugId;
+    public FileSystemEmitterPlugin(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override
-    public EmitterConfig setPluginId(String pluginId) {
-        this.plugId = pluginId;
-        return this;
+    public void start() {
+        LOG.info("Starting");
+        super.start();
     }
 
     @Override
-    public String getConfigJson() {
-        return configJson;
+    public void stop() {
+        LOG.info("Stopping");
+        super.stop();
     }
 
     @Override
-    public EmitterConfig setConfigJson(String configJson) {
-        this.configJson = configJson;
-        return this;
+    public void delete() {
+        LOG.info("Deleting");
+        super.delete();
     }
+
 }

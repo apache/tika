@@ -14,21 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.api.fetcher;
+package org.apache.tika.pipes.api.emitter;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
 
-public abstract class AbstractFetcher implements Fetcher {
+public abstract class AbstractEmitter implements Emitter {
 
     private final String pluginId;
-
-    public AbstractFetcher() throws IOException {
+    public AbstractEmitter() throws IOException {
         Properties properties = new Properties();
-        try (InputStream is = this.getClass().getResourceAsStream("/fetcher-plugin.properties")) {
+        try (InputStream is = this.getClass().getResourceAsStream("/emitter-plugin.properties")) {
             properties.load(is);
         }
         pluginId = (String) properties.get("plugin.id");
@@ -38,6 +39,14 @@ public abstract class AbstractFetcher implements Fetcher {
     public String getPluginId() {
         return pluginId;
     }
+
+    @Override
+    public void emit(List<? extends EmitData> emitData) throws IOException {
+        for (EmitData item : emitData) {
+            emit(item.getEmitKey(), item.getMetadataList(), item.getParseContext());
+        }
+    }
+
 
     protected void checkPluginId(String pluginId) throws TikaConfigException {
         if (! getPluginId().equals(pluginId)) {

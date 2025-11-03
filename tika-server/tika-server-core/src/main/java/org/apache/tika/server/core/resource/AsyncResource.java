@@ -46,7 +46,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.async.OfferLargerThanQueueSize;
-import org.apache.tika.pipes.core.emitter.EmitData;
+import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
@@ -73,7 +73,7 @@ public class AsyncResource {
         return queue;
     }
 
-    public ArrayBlockingQueue<EmitData> getEmitDataQueue(int size) {
+    public ArrayBlockingQueue<EmitDataImpl> getEmitDataQueue(int size) {
         return new ArrayBlockingQueue<>(size);
     }
 

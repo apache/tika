@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -29,14 +28,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.emitter.Emitter;
-import org.apache.tika.pipes.api.emitter.EmitterConfig;
 import org.apache.tika.pipes.core.PipesPluginsConfig;
+import org.apache.tika.plugins.PluginConfig;
 
 /**
  * Utility class that will apply the appropriate emitter
@@ -44,7 +45,10 @@ import org.apache.tika.pipes.core.PipesPluginsConfig;
  * <p>
  * This does not allow multiple emitters supporting the same prefix.
  */
-public class EmitterManager extends ConfigBase {
+public class EmitterManager {
+
+    private static final Logger LOG = LoggerFactory.getLogger(EmitterManager.class);
+
 
     private final Map<String, Emitter> emitterMap = new ConcurrentHashMap<>();
 
@@ -66,7 +70,8 @@ public class EmitterManager extends ConfigBase {
         pluginManager.startPlugins();
         Map<String, Emitter> emitterMap = new HashMap<>();
         for (Emitter emitter : pluginManager.getExtensions(Emitter.class)) {
-            Optional<EmitterConfig> emitterConfig = pluginsConfig.getEmitterConfig(emitter.getPluginId());
+            LOG.warn("EMITTER PLUGIN ID: " + emitter.getPluginId() + " : " + emitter.getClass());
+            Optional<PluginConfig> emitterConfig = pluginsConfig.getEmitterConfig(emitter.getPluginId());
             if (emitterConfig.isPresent()) {
                 emitter.configure(emitterConfig.get());
                 if (emitter instanceof Initializable) {

@@ -65,7 +65,7 @@ public abstract class PipesIterator extends ConfigBase
     private ArrayBlockingQueue<FetchEmitTuple> queue = null;
     private int queueSize = DEFAULT_QUEUE_SIZE;
     private String fetcherPluginId;
-    private String emitterName;
+    private String emitterPluginId;
     private FetchEmitTuple.ON_PARSE_EXCEPTION onParseException =
             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
     private BasicContentHandlerFactory.HANDLER_TYPE handlerType =
@@ -89,22 +89,22 @@ public abstract class PipesIterator extends ConfigBase
         }
     }
 
-    public String getFetcherName() {
+    public String getFetcherPluginId() {
         return fetcherPluginId;
     }
 
     @Field
-    public void setFetcherName(String fetcherPluginId) {
+    public void setFetcherPluginId(String fetcherPluginId) {
         this.fetcherPluginId = fetcherPluginId;
     }
 
-    public String getEmitterName() {
-        return emitterName;
+    public String getEmitterPluginId() {
+        return emitterPluginId;
     }
 
     @Field
-    public void setEmitterName(String emitterName) {
-        this.emitterName = emitterName;
+    public void setEmitterPluginId(String emitterPluginId) {
+        this.emitterPluginId = emitterPluginId;
     }
 
     @Field

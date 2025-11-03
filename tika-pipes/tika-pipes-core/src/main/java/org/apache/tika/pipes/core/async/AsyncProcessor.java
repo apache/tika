@@ -39,7 +39,7 @@ import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesReporter;
 import org.apache.tika.pipes.core.PipesResult;
-import org.apache.tika.pipes.core.emitter.EmitData;
+import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
@@ -58,7 +58,7 @@ public class AsyncProcessor implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(AsyncProcessor.class);
 
     private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
-    private final ArrayBlockingQueue<EmitData> emitDatumTuples;
+    private final ArrayBlockingQueue<EmitDataPair> emitDatumTuples;
     private final ExecutorCompletionService<Integer> executorCompletionService;
     private final ExecutorService executorService;
     private final AsyncConfig asyncConfig;
@@ -110,7 +110,7 @@ public class AsyncProcessor implements Closeable {
                         new FetchEmitWorker(asyncConfig, fetchEmitTuples, emitDatumTuples));
             }
 
-            EmitterManager emitterManager = EmitterManager.load(asyncConfig.getTikaConfig());
+            EmitterManager emitterManager = EmitterManager.load(asyncConfig.getPipesPluginsConfig());
             for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
                 executorCompletionService.submit(
                         new AsyncEmitter(asyncConfig, emitDatumTuples, emitterManager));
@@ -262,11 +262,11 @@ public class AsyncProcessor implements Closeable {
 
         private final AsyncConfig asyncConfig;
         private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
-        private final ArrayBlockingQueue<EmitData> emitDataTupleQueue;
+        private final ArrayBlockingQueue<EmitDataPair> emitDataTupleQueue;
 
         private FetchEmitWorker(AsyncConfig asyncConfig,
                                 ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples,
-                                ArrayBlockingQueue<EmitData> emitDataTupleQueue) {
+                                ArrayBlockingQueue<EmitDataPair> emitDataTupleQueue) {
             this.asyncConfig = asyncConfig;
             this.fetchEmitTuples = fetchEmitTuples;
             this.emitDataTupleQueue = emitDataTupleQueue;
@@ -305,8 +305,8 @@ public class AsyncProcessor implements Closeable {
 
                         if (shouldEmit(result)) {
                             LOG.trace("adding result to emitter queue: " + result.getEmitData());
-                            boolean offered = emitDataTupleQueue.offer(result.getEmitData(),
-                                    MAX_OFFER_WAIT_MS,
+                            boolean offered = emitDataTupleQueue.offer(
+                                    new EmitDataPair(t.getEmitKey().getEmitterPluginId(), result.getEmitData()), MAX_OFFER_WAIT_MS,
                                     TimeUnit.MILLISECONDS);
                             if (! offered) {
                                 throw new RuntimeException("Couldn't offer emit data to queue " +

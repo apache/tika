@@ -25,18 +25,24 @@ import java.nio.file.Paths;
 public class PluginsTestHelper {
 
     public static Path getFileSystemFetcherConfig(Path configBase) throws Exception {
-        return getFileSystemFetcherConfig(configBase, configBase.resolve("input"));
+        return getFileSystemFetcherConfig(configBase, configBase.resolve("input"), configBase.resolve("output"));
     }
 
-    public static Path getFileSystemFetcherConfig(Path configBase, Path filesBase) throws Exception {
+    public static Path getFileSystemFetcherConfig(Path configBase, Path fetcherBase, Path emitterBase) throws Exception {
         Path pipesConfig = configBase.resolve("pipes-config.json");
 
-        Path tikaPluginsTemplate = Paths.get("src", "test", "resources", "configs", "fetchers.json");
+        Path tikaPluginsTemplate = Paths.get("src", "test", "resources", "configs", "fetchers-emitters.json");
         String json = Files.readString(tikaPluginsTemplate, StandardCharsets.UTF_8);
 
-        json = json.replace("BASE_PATH", filesBase
+        json = json.replace("FETCHERS_BASE_PATH", fetcherBase
                 .toAbsolutePath()
                 .toString());
+
+        if (emitterBase != null) {
+            json = json.replace("EMITTERS_BASE_PATH", emitterBase
+                    .toAbsolutePath()
+                    .toString());
+        }
 
         Files.write(pipesConfig, json.getBytes(StandardCharsets.UTF_8));
         return pipesConfig;

@@ -174,7 +174,7 @@ public class ExtractProfileRunner {
     private static PipesIterator createIterator(Path inputDir) {
         FileSystemPipesIterator fs = new FileSystemPipesIterator(inputDir);
         fs.setFetcherName("");
-        fs.setEmitterName("");
+        fs.setEmitterPluginId("");
         return fs;
     }
 

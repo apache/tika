@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
+import java.util.Optional;
 
 import org.pf4j.Extension;
 import org.slf4j.Logger;
@@ -39,8 +40,9 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.api.fetcher.FetcherConfig;
 import org.apache.tika.pipes.fetcher.fs.config.FileSystemFetcherConfig;
+import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.PluginConfigs;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -72,9 +74,9 @@ public class FileSystemFetcher extends AbstractFetcher {
     }
 
     @Override
-    public void configure(FetcherConfig fetcherConfig) throws IOException, TikaConfigException {
-        checkPluginId(fetcherConfig.getPluginId());
-        defaultFileSystemFetcherConfig = FileSystemFetcherConfig.load(fetcherConfig.getConfigJson());
+    public void configure(PluginConfig pluginConfig) throws IOException, TikaConfigException {
+        checkPluginId(pluginConfig.pluginId());
+        defaultFileSystemFetcherConfig = FileSystemFetcherConfig.load(pluginConfig.jsonConfig());
         checkConfig(defaultFileSystemFetcherConfig);
     }
 
@@ -86,11 +88,15 @@ public class FileSystemFetcher extends AbstractFetcher {
                     "a file name with this character in it.");
         }
         FileSystemFetcherConfig config = defaultFileSystemFetcherConfig;
-        FetcherConfig fetcherConfig = parseContext.get(FetcherConfig.class);
-        if (fetcherConfig != null) {
-            checkPluginId(fetcherConfig.getPluginId());
-            config = FileSystemFetcherConfig.load(fetcherConfig.getConfigJson());
-            checkConfig(config);
+        PluginConfigs pluginConfigManager = parseContext.get(PluginConfigs.class);
+        if (pluginConfigManager != null) {
+            Optional<PluginConfig> pluginConfigOpt = pluginConfigManager.get(getPluginId());
+            if (pluginConfigOpt.isPresent()) {
+                PluginConfig pluginConfig = pluginConfigOpt.get();
+                checkPluginId(pluginConfig.pluginId());
+                config = FileSystemFetcherConfig.load(pluginConfig.jsonConfig());
+                checkConfig(config);
+            }
         }
         Path p = null;
         if (! StringUtils.isBlank(config.getBasePath())) {

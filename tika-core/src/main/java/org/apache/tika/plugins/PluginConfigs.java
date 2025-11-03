@@ -14,14 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.api.emitter;
+package org.apache.tika.plugins;
 
-import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
-public interface EmitterConfig extends Serializable {
+public class PluginConfigs {
 
-    String getPluginId();
-    EmitterConfig setPluginId(String pluginId);
-    String getConfigJson();
-    EmitterConfig setConfigJson(String config);
+    Map<String, PluginConfig> pluginConfigs = new HashMap<>();
+
+    public PluginConfigs() {
+
+    }
+
+    public PluginConfigs(Map<String, PluginConfig> map) {
+        pluginConfigs.putAll(map);
+    }
+
+    public void add(PluginConfig pluginConfig) {
+        if (pluginConfigs.containsKey(pluginConfig.pluginId())) {
+            throw new IllegalArgumentException("Can't overwrite existing plugin for id: " + pluginConfig.pluginId());
+        }
+        pluginConfigs.put(pluginConfig.pluginId(), pluginConfig);
+    }
+
+    public Optional<PluginConfig> get(String pluginId) {
+        return Optional.ofNullable(pluginConfigs.get(pluginId));
+    }
+
 }

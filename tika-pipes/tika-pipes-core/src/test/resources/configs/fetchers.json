@@ -1,5 +1,5 @@
 {
-  "pipesPluginsConfig" : {
+  "plugins" : {
     "fetchers": {
       "file-system-fetcher": {
         "basePath": "{BASE_PATH}",
