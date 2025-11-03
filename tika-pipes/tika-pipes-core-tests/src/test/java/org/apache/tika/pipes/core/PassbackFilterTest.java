@@ -47,8 +47,8 @@ import org.apache.tika.utils.StringUtils;
 public class PassbackFilterTest {
 
     private Path tmpDir;
-    String fetcherPluginId = "file-system-fetcher";
-    String emitterPluginId = "file-system-emitter";
+    String fetcherId = "fsf";
+    String emitterId = "fse";
     String testPdfFile = "testOverlappingText.pdf";
 
     private PipesClient pipesClient;
@@ -78,8 +78,8 @@ public class PassbackFilterTest {
         ParseContext parseContext = new ParseContext();
         parseContext.set(PassbackFilter.class, new MyPassbackFilter());
         PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(testPdfFile, new FetchKey(fetcherPluginId, testPdfFile),
-                        new EmitKey(emitterPluginId, emitFileBase), new Metadata(), parseContext,
+                new FetchEmitTuple(testPdfFile, new FetchKey(fetcherId, testPdfFile),
+                        new EmitKey(emitterId, emitFileBase), new Metadata(), parseContext,
                         FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
         assertEquals(PipesResult.STATUS.EMIT_SUCCESS_PASSBACK, pipesResult.getStatus());
         Assertions.assertNotNull(pipesResult

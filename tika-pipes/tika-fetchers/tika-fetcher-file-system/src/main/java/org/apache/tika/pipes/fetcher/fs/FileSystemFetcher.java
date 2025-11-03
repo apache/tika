@@ -27,7 +27,6 @@ import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import java.util.Optional;
 
-import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +38,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.api.fetcher.AbstractFetcher;
+import org.apache.tika.plugins.AbstractTikaPlugin;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.fs.config.FileSystemFetcherConfig;
 import org.apache.tika.plugins.PluginConfig;
 import org.apache.tika.plugins.PluginConfigs;
@@ -57,25 +57,27 @@ import org.apache.tika.utils.StringUtils;
  * </pre>
  */
 
-@Extension
-public class FileSystemFetcher extends AbstractFetcher {
+public class FileSystemFetcher extends AbstractTikaPlugin implements Fetcher {
 
-    public FileSystemFetcher() throws IOException {
-        super();
+
+
+    public static FileSystemFetcher build(PluginConfig pluginConfig) throws TikaConfigException, IOException {
+        FileSystemFetcher fetcher = new FileSystemFetcher(pluginConfig);
+        fetcher.configure();
+        return fetcher;
     }
+
+    private static final String PLUGIN_ID = "file-system-fetcher";
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemFetcher.class);
 
-    private FileSystemFetcherConfig defaultFileSystemFetcherConfig = new FileSystemFetcherConfig();
+    private FileSystemFetcherConfig defaultFileSystemFetcherConfig;
 
-    static boolean isDescendant(Path root, Path descendant) {
-        return descendant.toAbsolutePath().normalize()
-                .startsWith(root.toAbsolutePath().normalize());
+    public FileSystemFetcher(PluginConfig pluginConfig) {
+        super(pluginConfig);
     }
 
-    @Override
-    public void configure(PluginConfig pluginConfig) throws IOException, TikaConfigException {
-        checkPluginId(pluginConfig.pluginId());
+    private void configure() throws IOException, TikaConfigException {
         defaultFileSystemFetcherConfig = FileSystemFetcherConfig.load(pluginConfig.jsonConfig());
         checkConfig(defaultFileSystemFetcherConfig);
     }
@@ -90,10 +92,10 @@ public class FileSystemFetcher extends AbstractFetcher {
         FileSystemFetcherConfig config = defaultFileSystemFetcherConfig;
         PluginConfigs pluginConfigManager = parseContext.get(PluginConfigs.class);
         if (pluginConfigManager != null) {
-            Optional<PluginConfig> pluginConfigOpt = pluginConfigManager.get(getPluginId());
+            Optional<PluginConfig> pluginConfigOpt = pluginConfigManager.get(getPluginConfig().id());
             if (pluginConfigOpt.isPresent()) {
                 PluginConfig pluginConfig = pluginConfigOpt.get();
-                checkPluginId(pluginConfig.pluginId());
+                checkPluginId(pluginConfig.factoryPluginId());
                 config = FileSystemFetcherConfig.load(pluginConfig.jsonConfig());
                 checkConfig(config);
             }
@@ -119,6 +121,12 @@ public class FileSystemFetcher extends AbstractFetcher {
         updateFileSystemMetadata(p, metadata, config);
 
         return TikaInputStream.get(p, metadata);
+    }
+
+    private void checkPluginId(String pluginId) {
+        if (! PLUGIN_ID.equals(pluginId)) {
+            throw new IllegalStateException("Plugin id=" + pluginId + " needs to =" + PLUGIN_ID);
+        }
     }
 
     private void updateFileSystemMetadata(Path p, Metadata metadata, FileSystemFetcherConfig config) throws IOException {
@@ -165,4 +173,10 @@ public class FileSystemFetcher extends AbstractFetcher {
                     "base path must not contain \u0000. " + "Seriously, what were you thinking?");
         }
     }
+
+    static boolean isDescendant(Path root, Path descendant) {
+        return descendant.toAbsolutePath().normalize()
+                         .startsWith(root.toAbsolutePath().normalize());
+    }
+
 }

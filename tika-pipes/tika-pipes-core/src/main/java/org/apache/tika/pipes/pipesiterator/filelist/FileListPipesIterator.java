@@ -67,8 +67,8 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
             String line = reader.readLine();
             while (line != null) {
                 if (! line.startsWith("#") && !StringUtils.isBlank(line)) {
-                    FetchKey fetchKey = new FetchKey(getFetcherPluginId(), line);
-                    EmitKey emitKey = new EmitKey(getEmitterPluginId(), line);
+                    FetchKey fetchKey = new FetchKey(getFetcherId(), line);
+                    EmitKey emitKey = new EmitKey(getEmitterId(), line);
                     ParseContext parseContext = new ParseContext();
                     parseContext.set(HandlerConfig.class, getHandlerConfig());
                     tryToAdd(new FetchEmitTuple(line, fetchKey, emitKey,
@@ -95,8 +95,8 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
             throws TikaConfigException {
         //these should all be fatal
         TikaConfig.mustNotBeEmpty("fileList", fileList);
-        TikaConfig.mustNotBeEmpty("fetcherPluginId", getFetcherPluginId());
-        TikaConfig.mustNotBeEmpty("emitterPluginId", getEmitterPluginId());
+        TikaConfig.mustNotBeEmpty("fetcherId", getFetcherId());
+        TikaConfig.mustNotBeEmpty("emitterId", getEmitterId());
 
         fileListPath = Paths.get(fileList);
         if (!Files.isRegularFile(fileListPath)) {

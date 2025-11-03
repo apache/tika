@@ -20,7 +20,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * Pair of fetcherPluginId (which fetcher to call) and the key
+ * Pair of fetcherId (which fetcher to call) and the key
  * to send to that fetcher to retrieve a specific file.
  */
 public class FetchKey implements Serializable {
@@ -29,7 +29,7 @@ public class FetchKey implements Serializable {
      */
     private static final long serialVersionUID = -3861669115439125268L;
 
-    private String fetcherPluginId;
+    private String fetcherId;
     private String fetchKey;
     private long rangeStart = -1;
     private long rangeEnd = -1;
@@ -39,19 +39,19 @@ public class FetchKey implements Serializable {
 
     }
 
-    public FetchKey(String fetcherPluginId, String fetchKey) {
-        this(fetcherPluginId, fetchKey, -1, -1);
+    public FetchKey(String fetcherId, String fetchKey) {
+        this(fetcherId, fetchKey, -1, -1);
     }
 
-    public FetchKey(String fetcherPluginId, String fetchKey, long rangeStart, long rangeEnd) {
-        this.fetcherPluginId = fetcherPluginId;
+    public FetchKey(String fetcherId, String fetchKey, long rangeStart, long rangeEnd) {
+        this.fetcherId = fetcherId;
         this.fetchKey = fetchKey;
         this.rangeStart = rangeStart;
         this.rangeEnd = rangeEnd;
     }
 
-    public String getFetcherPluginId() {
-        return fetcherPluginId;
+    public String getFetcherId() {
+        return fetcherId;
     }
 
     public String getFetchKey() {
@@ -80,18 +80,18 @@ public class FetchKey implements Serializable {
         }
         FetchKey fetchKey1 = (FetchKey) o;
         return rangeStart == fetchKey1.rangeStart && rangeEnd == fetchKey1.rangeEnd &&
-                Objects.equals(fetcherPluginId, fetchKey1.fetcherPluginId) &&
+                Objects.equals(fetcherId, fetchKey1.fetcherId) &&
                 Objects.equals(fetchKey, fetchKey1.fetchKey);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fetcherPluginId, fetchKey, rangeStart, rangeEnd);
+        return Objects.hash(fetcherId, fetchKey, rangeStart, rangeEnd);
     }
 
     @Override
     public String toString() {
-        return "FetchKey{" + "fetcherPluginId='" + fetcherPluginId + '\'' + ", fetchKey='" + fetchKey +
+        return "FetchKey{" + "fetcherId='" + fetcherId + '\'' + ", fetchKey='" + fetchKey +
                 '\'' + ", rangeStart=" + rangeStart + ", rangeEnd=" + rangeEnd + '}';
     }
 }

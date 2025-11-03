@@ -18,8 +18,8 @@
 <properties>
   <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
     <params>
-      <fetcherPluginId>fsf1</fetcherPluginId>
-      <emitterPluginId>fse1</emitterPluginId>
+      <fetcherId>fsf1</fetcherId>
+      <emitterId>fse1</emitterId>
       <basePath>/my/base/path1</basePath>
     </params>
   </pipesIterator>

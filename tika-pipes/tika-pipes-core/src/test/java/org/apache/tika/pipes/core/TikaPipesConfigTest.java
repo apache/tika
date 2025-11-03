@@ -86,7 +86,7 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
     public void testPipesIterator() throws Exception {
         PipesIterator it =
                 PipesIterator.build(getConfigFilePath("pipes-iterator-config.xml"));
-        assertEquals("fsf1", it.getFetcherPluginId());
+        assertEquals("fsf1", it.getFetcherId());
     }
 
     @Test
@@ -94,7 +94,7 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
         assertThrows(TikaConfigException.class, () -> {
             PipesIterator it =
                     PipesIterator.build(getConfigFilePath("pipes-iterator-multiple-config.xml"));
-            assertEquals("fsf1", it.getFetcherPluginId());
+            assertEquals("fsf1", it.getFetcherId());
         });
     }
 }

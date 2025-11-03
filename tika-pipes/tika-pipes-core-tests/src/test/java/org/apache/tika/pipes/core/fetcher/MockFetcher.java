@@ -28,10 +28,10 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.api.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.plugins.PluginConfig;
 
-public class MockFetcher extends AbstractFetcher {
+public class MockFetcher implements Fetcher {
 
     private Map<String, Param> params;
 
@@ -54,14 +54,15 @@ public class MockFetcher extends AbstractFetcher {
         this.byteString = byteString;
     }
 
-    @Override
-    public void configure(PluginConfig fetcherConfig) throws TikaConfigException, IOException {
-        //no-op
-    }
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
         return byteString == null ? new ByteArrayInputStream(new byte[0]) :
                 new ByteArrayInputStream(byteString.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    public PluginConfig getPluginConfig() {
+        return null;
     }
 }

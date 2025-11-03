@@ -32,12 +32,12 @@ public class PluginsConfigDeserializer extends JsonDeserializer<PluginConfig> {
     public PluginConfig deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
         JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        String pluginId = node.get("pluginId").asText();
+        String factoryPluginId = node.get("factoryPluginId").asText();
 
-        JsonNode jsonConfigNode = node.get("jsonConfig");
+        JsonNode jsonConfigNode = node.get("config");
 
         String jsonConfigRaw = jsonConfigNode.toString();
 
-        return new PluginConfig(pluginId, jsonConfigRaw);
+        return new PluginConfig("id", factoryPluginId, jsonConfigRaw);
     }
 }

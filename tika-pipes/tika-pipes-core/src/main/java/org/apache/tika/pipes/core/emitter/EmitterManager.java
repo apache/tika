@@ -31,10 +31,9 @@ import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.emitter.Emitter;
+import org.apache.tika.pipes.api.emitter.EmitterFactory;
 import org.apache.tika.pipes.core.PipesPluginsConfig;
 import org.apache.tika.plugins.PluginConfig;
 
@@ -68,18 +67,17 @@ public class EmitterManager {
         pluginManager.loadPlugins();
         pluginManager.startPlugins();
         Map<String, Emitter> emitterMap = new HashMap<>();
-        for (Emitter emitter : pluginManager.getExtensions(Emitter.class)) {
-            LOG.warn("EMITTER PLUGIN ID: " + emitter.getPluginId() + " : " + emitter.getClass());
-            Optional<PluginConfig> emitterConfig = pluginsConfig.getEmitterConfig(emitter.getPluginId());
-            if (emitterConfig.isPresent()) {
-                emitter.configure(emitterConfig.get());
-                if (emitter instanceof Initializable) {
-                    ((Initializable) emitter).checkInitialization(InitializableProblemHandler.THROW);
+        for (EmitterFactory emitterFactory : pluginManager.getExtensions(EmitterFactory.class)) {
+            for (String id : pluginsConfig.getEmitterConfig().ids()) {
+                Optional<PluginConfig> pluginConfigOpt = pluginsConfig.getFetcherConfig(id);
+                if (pluginConfigOpt.isEmpty()) {
+                    LOG.warn("Couldn't find config for id={}", id);
+                } else {
+                    PluginConfig pluginConfig = pluginConfigOpt.get();
+                    Emitter emitter = emitterFactory.buildPlugin(pluginConfig);
+                    emitterMap.put(pluginConfig.id(), emitter);
                 }
-            } else {
-                LOG.warn("no configuration found for emitter pluginId={}", emitter.getPluginId());
             }
-            emitterMap.put(emitter.getPluginId(), emitter);
         }
         return new EmitterManager(emitterMap);
     }
@@ -112,11 +110,11 @@ public class EmitterManager {
      * @return
      */
     public Emitter getEmitter() {
-        if (emitterMap.size() == 0) {
+        if (emitterMap.isEmpty()) {
             throw new IllegalArgumentException("emitters size must == 1 for the no arg call");
         }
         if (emitterMap.size() > 1) {
-            throw new IllegalArgumentException("need to specify 'emitterName' if > 1 emitters are" +
+            throw new IllegalArgumentException("need to specify 'emitterId' if > 1 emitters are" +
                     " available");
         }
         for (Emitter emitter : emitterMap.values()) {

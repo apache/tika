@@ -306,9 +306,9 @@ public class PipesServer implements Runnable {
         Emitter emitter = null;
 
         try {
-            emitter = emitterManager.getEmitter(emitKey.getEmitterPluginId());
+            emitter = emitterManager.getEmitter(emitKey.getEmitterId());
         } catch (IllegalArgumentException e) {
-            String noEmitterMsg = getNoEmitterMsg(taskId, emitKey.getEmitterPluginId());
+            String noEmitterMsg = getNoEmitterMsg(taskId, emitKey.getEmitterId());
             LOG.warn(noEmitterMsg);
             write(STATUS.EMITTER_NOT_FOUND, noEmitterMsg);
             return;
@@ -486,7 +486,7 @@ public class PipesServer implements Runnable {
             injectUserMetadata(t.getMetadata(), parseData.getMetadataList());
             EmitKey emitKey = t.getEmitKey();
             if (StringUtils.isBlank(emitKey.getEmitKey())) {
-                emitKey = new EmitKey(emitKey.getEmitterPluginId(), t.getFetchKey().getFetchKey());
+                emitKey = new EmitKey(emitKey.getEmitterId(), t.getFetchKey().getFetchKey());
                 t.setEmitKey(emitKey);
             }
             EmitDataImpl emitDataTuple = new EmitDataImpl(t.getEmitKey().getEmitKey(), parseData.getMetadataList(), stack);
@@ -552,9 +552,9 @@ public class PipesServer implements Runnable {
 
     private Fetcher getFetcher(FetchEmitTuple t) {
         try {
-            return fetcherManager.getFetcher(t.getFetchKey().getFetcherPluginId());
+            return fetcherManager.getFetcher(t.getFetchKey().getFetcherId());
         } catch (IllegalArgumentException e) {
-            String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherPluginId());
+            String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherId());
             LOG.warn(noFetcherMsg);
             write(STATUS.FETCHER_NOT_FOUND, noFetcherMsg);
             return null;
@@ -581,9 +581,9 @@ public class PipesServer implements Runnable {
         return null;
     }
 
-    private String getNoFetcherMsg(String fetcherPluginId) {
+    private String getNoFetcherMsg(String fetcherId) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Fetcher '").append(fetcherPluginId).append("'");
+        sb.append("Fetcher '").append(fetcherId).append("'");
         sb.append(" not found.");
         sb.append("\nThe configured FetcherManager supports:");
         int i = 0;

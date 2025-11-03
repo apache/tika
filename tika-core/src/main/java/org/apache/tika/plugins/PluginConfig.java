@@ -16,6 +16,6 @@
  */
 package org.apache.tika.plugins;
 
-public record PluginConfig(String pluginId, String jsonConfig) {
+public record PluginConfig(String id, String factoryPluginId, String jsonConfig) {
 
 }

@@ -19,7 +19,6 @@ package org.apache.tika.pipes.core.emitter;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractEmitter;
@@ -27,17 +26,9 @@ import org.apache.tika.plugins.PluginConfig;
 
 public class EmptyEmitter extends AbstractEmitter {
 
-    public EmptyEmitter() throws IOException {
-    }
 
-    @Override
-    public void configure(PluginConfig pluginConfig) throws TikaConfigException, IOException {
-        //no-op
-    }
-
-    @Override
-    public String getPluginId() {
-        return "";
+    public EmptyEmitter(PluginConfig pluginConfig) throws IOException {
+        super(pluginConfig);
     }
 
     @Override

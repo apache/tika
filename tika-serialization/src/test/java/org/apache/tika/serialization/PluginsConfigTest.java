@@ -52,7 +52,7 @@ public class PluginsConfigTest {
         String json = OBJECT_MAPPER.writeValueAsString(p1);
 
         PluginConfig deserialized = OBJECT_MAPPER.readValue(json, PluginConfig.class);
-        assertEquals(p1.pluginId(), deserialized.pluginId());
+        assertEquals(p1.factoryPluginId(), deserialized.factoryPluginId());
         assertEquals(flatten(p1.jsonConfig()), flatten(deserialized.jsonConfig()));
     }
 
@@ -67,16 +67,16 @@ public class PluginsConfigTest {
                         {"basePath":"/my/docs2","includeSystemInfo":false}
                         """);
         Map<String, PluginConfig> map = new HashMap<>();
-        map.put(p1.pluginId(), p1);
-        map.put(p2.pluginId(), p2);
+        map.put(p1.factoryPluginId(), p1);
+        map.put(p2.factoryPluginId(), p2);
         PluginConfigs pluginConfigManager = new PluginConfigs(map);
 
         String json = OBJECT_MAPPER.writeValueAsString(pluginConfigManager);
 
         PluginConfigs deserialized = OBJECT_MAPPER.readValue(json, PluginConfigs.class);
-        assertEquals(pluginConfigManager.get(p1.pluginId()).get().pluginId(), deserialized.get(p1.pluginId()).get().pluginId());
-        assertEquals(flatten(pluginConfigManager.get(p1.pluginId()).get().jsonConfig()),
-                flatten(deserialized.get(p1.pluginId()).get().jsonConfig()));
+        assertEquals(pluginConfigManager.get(p1.factoryPluginId()).get().factoryPluginId(), deserialized.get(p1.factoryPluginId()).get().factoryPluginId());
+        assertEquals(flatten(pluginConfigManager.get(p1.factoryPluginId()).get().jsonConfig()),
+                flatten(deserialized.get(p1.factoryPluginId()).get().jsonConfig()));
     }
 
     private static String flatten(String s) {

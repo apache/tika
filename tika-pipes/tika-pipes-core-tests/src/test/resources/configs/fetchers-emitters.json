@@ -1,15 +1,21 @@
 {
   "plugins" : {
     "fetchers": {
-      "file-system-fetcher": {
+      "fsf": {
+      "factoryPluginId": "file-system-fetcher",
+      "config": {
         "basePath": "FETCHERS_BASE_PATH",
         "extractFileSystemMetadata": false
       }
+    }
     },
     "emitters": {
-      "file-system-emitter": {
-        "basePath": "EMITTERS_BASE_PATH",
-        "fileExtension": "json"
+      "fse": {
+        "factoryPluginId": "file-system-emitter",
+        "config": {
+          "basePath": "EMITTERS_BASE_PATH",
+          "fileExtension": "json"
+        }
       }
     }
   }

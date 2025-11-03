@@ -19,6 +19,7 @@ package org.apache.tika.plugins;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public class PluginConfigs {
 
@@ -33,14 +34,18 @@ public class PluginConfigs {
     }
 
     public void add(PluginConfig pluginConfig) {
-        if (pluginConfigs.containsKey(pluginConfig.pluginId())) {
-            throw new IllegalArgumentException("Can't overwrite existing plugin for id: " + pluginConfig.pluginId());
+        if (pluginConfigs.containsKey(pluginConfig.id())) {
+            throw new IllegalArgumentException("Can't overwrite existing plugin for id: " + pluginConfig.factoryPluginId());
         }
-        pluginConfigs.put(pluginConfig.pluginId(), pluginConfig);
+        pluginConfigs.put(pluginConfig.factoryPluginId(), pluginConfig);
     }
 
-    public Optional<PluginConfig> get(String pluginId) {
-        return Optional.ofNullable(pluginConfigs.get(pluginId));
+    public Optional<PluginConfig> get(String id) {
+        return Optional.ofNullable(pluginConfigs.get(id));
+    }
+
+    public Set<String> ids() {
+        return pluginConfigs.keySet();
     }
 
 }

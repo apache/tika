@@ -18,14 +18,22 @@ package org.apache.tika.pipes.fetcher.fs.config;
 
 import java.io.IOException;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.apache.tika.exception.TikaConfigException;
 
 public class FileSystemFetcherConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static FileSystemFetcherConfig load(String json) throws IOException  {
-        return OBJECT_MAPPER.readValue(json, FileSystemFetcherConfig.class);
+    public static FileSystemFetcherConfig load(String json) throws IOException, TikaConfigException {
+        try {
+            return OBJECT_MAPPER.readValue(json, FileSystemFetcherConfig.class);
+        } catch (JacksonException e) {
+            throw new TikaConfigException("problem w json", e);
+        }
     }
 
     private String basePath;

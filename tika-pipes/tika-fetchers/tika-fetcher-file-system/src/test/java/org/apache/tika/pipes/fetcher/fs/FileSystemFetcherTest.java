@@ -47,9 +47,9 @@ public class FileSystemFetcherTest {
 
     @Test
     public void testNullByte() throws Exception {
-        FileSystemFetcher f = new FileSystemFetcher();
         assertThrows(TikaConfigException.class, () -> {
-            f.configure(new PluginConfig("test", "{ \"basePath\":\"bad\u0000path\"}"));
+            PluginConfig pluginConfig = new PluginConfig("test", "test", "{ \"basePath\":\"bad\u0000path\"}");
+            FileSystemFetcher f = FileSystemFetcher.build(pluginConfig);
         });
     }
 }

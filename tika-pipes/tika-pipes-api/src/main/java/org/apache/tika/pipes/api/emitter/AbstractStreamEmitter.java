@@ -22,27 +22,13 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.plugins.AbstractTikaPlugin;
+import org.apache.tika.plugins.PluginConfig;
 
-public abstract class AbstractStreamEmitter implements StreamEmitter {
+public abstract class AbstractStreamEmitter extends AbstractTikaPlugin implements StreamEmitter {
 
-    private final String pluginId;
-    public AbstractStreamEmitter() throws IOException {
-        Properties properties = new Properties();
-        try (InputStream is = this.getClass().getResourceAsStream("/emitter-plugin.properties")) {
-            properties.load(is);
-        }
-        pluginId = (String) properties.get("plugin.id");
-    }
-
-    @Override
-    public String getPluginId() {
-        return pluginId;
-    }
-
-    protected void checkPluginId(String pluginId) throws TikaConfigException {
-        if (! getPluginId().equals(pluginId)) {
-            throw new TikaConfigException("Plugin id mismatch: " + getPluginId() + " <> " + pluginId);
-        }
+    public AbstractStreamEmitter(PluginConfig pluginConfig) {
+        super(pluginConfig);
     }
 
     @Override

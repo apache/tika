@@ -29,17 +29,12 @@ import org.apache.tika.plugins.PluginConfig;
 public class EmptyFetcher implements Fetcher {
 
     @Override
-    public void configure(PluginConfig pluginConfig) throws TikaConfigException {
-        //no-op
-    }
-
-    @Override
-    public String getPluginId() {
-        return "empty";
-    }
-
-    @Override
     public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
         return null;
+    }
+
+    @Override
+    public PluginConfig getPluginConfig() {
+        return new PluginConfig("empty", "empty-fetcher", "");
     }
 }

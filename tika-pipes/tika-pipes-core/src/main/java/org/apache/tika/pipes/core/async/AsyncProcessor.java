@@ -305,7 +305,7 @@ public class AsyncProcessor implements Closeable {
                         if (shouldEmit(result)) {
                             LOG.trace("adding result to emitter queue: " + result.getEmitData());
                             boolean offered = emitDataTupleQueue.offer(
-                                    new EmitDataPair(t.getEmitKey().getEmitterPluginId(), result.getEmitData()), MAX_OFFER_WAIT_MS,
+                                    new EmitDataPair(t.getEmitKey().getEmitterId(), result.getEmitData()), MAX_OFFER_WAIT_MS,
                                     TimeUnit.MILLISECONDS);
                             if (! offered) {
                                 throw new RuntimeException("Couldn't offer emit data to queue " +

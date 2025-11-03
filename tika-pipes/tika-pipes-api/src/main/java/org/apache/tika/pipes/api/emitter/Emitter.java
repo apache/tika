@@ -19,18 +19,11 @@ package org.apache.tika.pipes.api.emitter;
 import java.io.IOException;
 import java.util.List;
 
-import org.pf4j.ExtensionPoint;
-
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.TikaPlugin;
 
-public interface Emitter extends ExtensionPoint {
-
-    void configure(PluginConfig pluginConfig) throws TikaConfigException, IOException;
-
-    String getPluginId();
+public interface Emitter extends TikaPlugin {
 
     void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException;
 

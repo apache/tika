@@ -63,7 +63,7 @@ public class FileSystemPipesIteratorTest {
 
         String fetcherName = "file-system-fetcher";
         PipesIterator it = new FileSystemPipesIterator(root);
-        it.setFetcherPluginId(fetcherName);
+        it.setFetcherId(fetcherName);
         it.setQueueSize(2);
 
         Set<String> iteratorSet = new HashSet<>();

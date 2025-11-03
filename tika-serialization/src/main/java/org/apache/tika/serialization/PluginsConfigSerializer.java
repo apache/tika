@@ -29,7 +29,7 @@ public class PluginsConfigSerializer extends JsonSerializer<PluginConfig> {
     @Override
     public void serialize(PluginConfig pluginsConfig, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
         jsonGenerator.writeStartObject();
-        jsonGenerator.writeStringField("pluginId", pluginsConfig.pluginId());
+        jsonGenerator.writeStringField("pluginId", pluginsConfig.factoryPluginId());
         jsonGenerator.writeFieldName("jsonConfig");
         jsonGenerator.writeRawValue(pluginsConfig.jsonConfig());
         jsonGenerator.writeEndObject();

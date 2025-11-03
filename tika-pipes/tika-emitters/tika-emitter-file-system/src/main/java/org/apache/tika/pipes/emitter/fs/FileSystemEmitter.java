@@ -51,21 +51,23 @@ import org.apache.tika.utils.StringUtils;
  * <pre class="prettyprint">
  * </pre>
  */
-@Extension
 public class FileSystemEmitter extends AbstractStreamEmitter {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemEmitter.class);
 
+    public static FileSystemEmitter build(PluginConfig pluginConfig) throws TikaConfigException, IOException {
+        FileSystemEmitter emitter = new FileSystemEmitter(pluginConfig);
+        emitter.configure();
+        return emitter;
+    }
 
     private FileSystemEmitterConfig fileSystemEmitterConfig;
 
-    public FileSystemEmitter() throws IOException {
-        super();
+    public FileSystemEmitter(PluginConfig pluginConfig) {
+        super(pluginConfig);
     }
 
-    @Override
-    public void configure(PluginConfig pluginConfig) throws TikaConfigException, IOException {
-        checkPluginId(pluginConfig.pluginId());
+    private void configure() throws TikaConfigException, IOException {
         fileSystemEmitterConfig = FileSystemEmitterConfig.load(pluginConfig.jsonConfig());
         checkConfig(fileSystemEmitterConfig);
     }
@@ -155,7 +157,7 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         FileSystemEmitterConfig config = fileSystemEmitterConfig;
         PluginConfigs pluginConfigs = parseContext.get(PluginConfigs.class);
         if (pluginConfigs != null) {
-            Optional<PluginConfig> pluginConfigOpt = pluginConfigs.get(getPluginId());
+            Optional<PluginConfig> pluginConfigOpt = pluginConfigs.get(getPluginConfig().id());
             if (pluginConfigOpt.isPresent()) {
                 config = FileSystemEmitterConfig.load(pluginConfigOpt.get().jsonConfig());
                 checkConfig(config);

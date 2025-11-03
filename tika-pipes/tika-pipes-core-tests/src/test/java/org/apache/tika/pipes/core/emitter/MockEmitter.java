@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pf4j.Extension;
 
 import org.apache.tika.config.Initializable;
@@ -36,7 +35,6 @@ import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.plugins.PluginConfig;
 
-@Extension
 public class MockEmitter implements Initializable, Emitter {
 
     public static ArrayBlockingQueue<EmitData> EMIT_DATA = new ArrayBlockingQueue<>(10000);
@@ -46,6 +44,11 @@ public class MockEmitter implements Initializable, Emitter {
     }
 
     public MockEmitter() throws IOException {
+    }
+
+    @Override
+    public PluginConfig getPluginConfig() {
+        return null;
     }
 
     private static record MockEmitterConfig(boolean throwOnCheck) {
@@ -69,15 +72,6 @@ public class MockEmitter implements Initializable, Emitter {
 
     }
 
-    @Override
-    public void configure(PluginConfig pluginConfig) throws TikaConfigException, IOException {
-        config = new ObjectMapper().readValue(pluginConfig.jsonConfig(), MockEmitterConfig.class);
-    }
-
-    @Override
-    public String getPluginId() {
-        return "mock-emitter";
-    }
 
     @Override
     public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)

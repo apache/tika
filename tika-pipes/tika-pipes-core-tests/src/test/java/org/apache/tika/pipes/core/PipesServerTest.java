@@ -73,7 +73,7 @@ public class PipesServerTest extends TikaTest {
         pipesServer.initializeResources();
 
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
-                new FetchKey("file-system-fetcher", testDoc),
+                new FetchKey("fsf", testDoc),
                 new EmitKey("", ""));
         Fetcher fetcher = FetcherManager.load(pipesConfig).getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes

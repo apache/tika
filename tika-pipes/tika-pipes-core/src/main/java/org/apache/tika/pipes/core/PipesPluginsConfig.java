@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -68,9 +69,11 @@ public class PipesPluginsConfig {
         Iterator<String> it = pluginsNode.fieldNames();
         manager = new PluginConfigs();
         while (it.hasNext()) {
-            String pluginId = it.next();
-            JsonNode jsonConfig = pluginsNode.get(pluginId);
-            manager.add(new PluginConfig(pluginId, jsonConfig.toString()));
+            String id = it.next();
+            JsonNode configNode = pluginsNode.get(id);
+            String pluginId = configNode.get("factoryPluginId").asText();
+            JsonNode config = configNode.get("config");
+            manager.add(new PluginConfig(id, pluginId, config.toString()));
         }
         return manager;
     }
@@ -92,18 +95,27 @@ public class PipesPluginsConfig {
         this.pluginsDir = pluginsDir;
     }
 
-    public Optional<PluginConfig> getFetcherConfig(String pluginId) {
+
+    public PluginConfigs getFetcherConfig() {
+        return fetchers;
+    }
+
+    public PluginConfigs getEmitterConfig() {
+        return emitters;
+    }
+
+    public Optional<PluginConfig> getFetcherConfig(String id) {
         if (fetchers == null) {
             throw new IllegalArgumentException("fetchers element was not loaded");
         }
-        return fetchers.get(pluginId);
+        return fetchers.get(id);
     }
 
-    public Optional<PluginConfig> getEmitterConfig(String pluginId) {
+    public Optional<PluginConfig> getEmitterConfig(String id) {
         if (emitters == null) {
             throw new IllegalArgumentException("emitters element was not loaded");
         }
-        return emitters.get(pluginId);
+        return emitters.get(id);
     }
 
     public Optional<PluginConfig> getIteratorConfig(String pluginId) {

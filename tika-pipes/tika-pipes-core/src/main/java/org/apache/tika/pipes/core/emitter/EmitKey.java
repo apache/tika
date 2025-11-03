@@ -28,20 +28,20 @@ public class EmitKey implements Serializable {
      */
     private static final long serialVersionUID = -3861669115439125268L;
 
-    private String emitterPluginId;
+    private String emitterId;
     private String emitKey;
 
     //for serialization only...yuck.
     public EmitKey() {
 
     }
-    public EmitKey(String emitterPluginId, String emitKey) {
-        this.emitterPluginId = emitterPluginId;
+    public EmitKey(String emitterId, String emitKey) {
+        this.emitterId = emitterId;
         this.emitKey = emitKey;
     }
 
-    public String getEmitterPluginId() {
-        return emitterPluginId;
+    public String getEmitterId() {
+        return emitterId;
     }
 
     public String getEmitKey() {
@@ -50,7 +50,7 @@ public class EmitKey implements Serializable {
 
     @Override
     public String toString() {
-        return "EmitterKey{" + "emitterPluginId='" + emitterPluginId + '\'' + ", emitterKey='" + emitKey +
+        return "EmitterKey{" + "emitterId='" + emitterId + '\'' + ", emitterKey='" + emitKey +
                 '\'' + '}';
     }
 
@@ -65,7 +65,7 @@ public class EmitKey implements Serializable {
 
         EmitKey emitKey1 = (EmitKey) o;
 
-        if (!Objects.equals(emitterPluginId, emitKey1.emitterPluginId)) {
+        if (!Objects.equals(emitterId, emitKey1.emitterId)) {
             return false;
         }
         return Objects.equals(emitKey, emitKey1.emitKey);
@@ -73,7 +73,7 @@ public class EmitKey implements Serializable {
 
     @Override
     public int hashCode() {
-        int result = emitterPluginId != null ? emitterPluginId.hashCode() : 0;
+        int result = emitterId != null ? emitterId.hashCode() : 0;
         result = 31 * result + (emitKey != null ? emitKey.hashCode() : 0);
         return result;
     }

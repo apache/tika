@@ -36,8 +36,8 @@ public class FileListPipesIteratorTest {
     public void testBasic() throws Exception {
         Path p = Paths.get(this.getClass().getResource("/test-documents/file-list.txt").toURI());
         FileListPipesIterator it = new FileListPipesIterator();
-        it.setFetcherPluginId("f");
-        it.setEmitterPluginId("e");
+        it.setFetcherId("f");
+        it.setEmitterId("e");
         it.setFileList(p.toAbsolutePath().toString());
         it.setHasHeader(false);
         it.checkInitialization(InitializableProblemHandler.DEFAULT);
@@ -46,8 +46,8 @@ public class FileListPipesIteratorTest {
         for (FetchEmitTuple t : it) {
             assertEquals(t.getFetchKey().getFetchKey(), t.getEmitKey().getEmitKey());
             assertEquals(t.getId(), t.getEmitKey().getEmitKey());
-            assertEquals("f", t.getFetchKey().getFetcherPluginId());
-            assertEquals("e", t.getEmitKey().getEmitterPluginId());
+            assertEquals("f", t.getFetchKey().getFetcherId());
+            assertEquals("e", t.getEmitKey().getEmitterId());
             lines.add(t.getId());
         }
         assertEquals("the", lines.get(0));
@@ -59,8 +59,8 @@ public class FileListPipesIteratorTest {
     public void testHasHeader() throws Exception {
         Path p = Paths.get(this.getClass().getResource("/test-documents/file-list.txt").toURI());
         FileListPipesIterator it = new FileListPipesIterator();
-        it.setFetcherPluginId("f");
-        it.setEmitterPluginId("e");
+        it.setFetcherId("f");
+        it.setEmitterId("e");
         it.setFileList(p.toAbsolutePath().toString());
         it.setHasHeader(true);
         it.checkInitialization(InitializableProblemHandler.DEFAULT);
@@ -69,8 +69,8 @@ public class FileListPipesIteratorTest {
         for (FetchEmitTuple t : it) {
             assertEquals(t.getFetchKey().getFetchKey(), t.getEmitKey().getEmitKey());
             assertEquals(t.getId(), t.getEmitKey().getEmitKey());
-            assertEquals("f", t.getFetchKey().getFetcherPluginId());
-            assertEquals("e", t.getEmitKey().getEmitterPluginId());
+            assertEquals("f", t.getFetchKey().getFetcherId());
+            assertEquals("e", t.getEmitKey().getEmitterId());
             lines.add(t.getId());
         }
         assertEquals("brown", lines.get(0));

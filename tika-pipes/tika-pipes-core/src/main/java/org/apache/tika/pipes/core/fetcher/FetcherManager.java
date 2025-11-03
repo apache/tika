@@ -36,6 +36,7 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.pipes.core.PipesPluginsConfig;
 import org.apache.tika.plugins.PluginConfig;
 
@@ -65,17 +66,17 @@ public class FetcherManager {
         pluginManager.loadPlugins();
         pluginManager.startPlugins();
         Map<String, Fetcher> fetcherMap = new HashMap<>();
-        for (Fetcher fetcher : pluginManager.getExtensions(Fetcher.class)) {
-            Optional<PluginConfig> fetcherConfig = pluginsConfig.getFetcherConfig(fetcher.getPluginId());
-            if (fetcherConfig.isPresent()) {
-                fetcher.configure(fetcherConfig.get());
-                if (fetcher instanceof Initializable) {
-                    ((Initializable) fetcher).checkInitialization(InitializableProblemHandler.THROW);
+        for (FetcherFactory fetcherFactory : pluginManager.getExtensions(FetcherFactory.class)) {
+            for (String id : pluginsConfig.getFetcherConfig().ids()) {
+                Optional<PluginConfig> pluginConfigOpt = pluginsConfig.getFetcherConfig(id);
+                if (pluginConfigOpt.isEmpty()) {
+                    LOG.warn("Couldn't find config for id={}", id);
+                } else {
+                    PluginConfig pluginConfig = pluginConfigOpt.get();
+                    Fetcher fetcher = fetcherFactory.buildPlugin(pluginConfig);
+                    fetcherMap.put(pluginConfig.id(), fetcher);
                 }
-            } else {
-                LOG.warn("no configuration found for fetcher pluginId={}", fetcher.getPluginId());
             }
-            fetcherMap.put(fetcher.getPluginId(), fetcher);
         }
         return new FetcherManager(fetcherMap);
     }
@@ -87,11 +88,11 @@ public class FetcherManager {
     }
 
 
-    public Fetcher getFetcher(String pluginId) throws IOException, TikaException {
-        Fetcher fetcher = fetcherMap.get(pluginId);
+    public Fetcher getFetcher(String id) throws IOException, TikaException {
+        Fetcher fetcher = fetcherMap.get(id);
         if (fetcher == null) {
             throw new IllegalArgumentException(
-                    "Can't find fetcher for fetcherPluginId: " + pluginId + ". I've loaded: " +
+                    "Can't find fetcher for id=" + id + ". I've loaded: " +
                             fetcherMap.keySet());
         }
         return fetcher;
@@ -112,7 +113,7 @@ public class FetcherManager {
             throw new IllegalArgumentException("fetchers size must == 1 for the no arg call");
         }
         if (fetcherMap.size() > 1) {
-            throw new IllegalArgumentException("need to specify 'fetcherPluginId' if > 1 fetchers are" +
+            throw new IllegalArgumentException("need to specify 'fetcherId' if > 1 fetchers are" +
                     " available");
         }
         for (Fetcher fetcher : fetcherMap.values()) {
