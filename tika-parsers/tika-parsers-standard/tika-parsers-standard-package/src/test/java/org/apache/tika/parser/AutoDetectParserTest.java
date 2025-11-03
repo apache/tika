@@ -19,6 +19,7 @@ package org.apache.tika.parser;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -27,6 +28,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -43,11 +46,13 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
+import org.apache.tika.extractor.RUnpackExtractorFactory;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.parser.external.CompositeExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
@@ -555,5 +560,37 @@ public class AutoDetectParserTest extends TikaTest {
                     "  statedType              = " + statedType + "\n" +
                     "  expectedContentFragment = " + expectedContentFragment + "\n";
         }
+    }
+
+    @Test
+    public void testDigestingOpenContainers() throws Exception {
+        //TIKA-4533 -- this tests both that a very large embedded OLE doc doesn't cause a zip bomb
+        //exception AND that the sha for the embedded OLE doc is not the sha for a zero-byte file
+        String expectedSha = "bbc2057a1ff8fe859a296d2fbb493fc0c3e5796749ba72507c0e13f7a3d81f78";
+        TikaConfig tikaConfig = null;
+        try (InputStream is = AutoDetectParserTest.class.getResourceAsStream("/configs/tika-4533.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
+        AutoDetectParser autoDetectParser = new AutoDetectParser(tikaConfig);
+        //this models what happens in tika-pipes
+        if (autoDetectParser.getAutoDetectParserConfig()
+                    .getEmbeddedDocumentExtractorFactory() == null) {
+            autoDetectParser.getAutoDetectParserConfig()
+                                                     .setEmbeddedDocumentExtractorFactory(new RUnpackExtractorFactory());
+        }
+        List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", autoDetectParser, new ParseContext());
+        assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256"));
+        assertNull(metadataList.get(2).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
+        assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(Metadata.CONTENT_LENGTH)));
+
+        DigestingParser.Digester digester = new CommonsDigester(10000, "SHA256");
+
+        //now test that we get the same digest if we wrap the auto detect parser vs configuring it
+        autoDetectParser = new AutoDetectParser();
+        Parser digestingParser = new DigestingParser(autoDetectParser, digester, true);
+        metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", digestingParser, new ParseContext());
+        assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256").toLowerCase(Locale.US));
+        assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(Metadata.CONTENT_LENGTH)));
+
     }
 }

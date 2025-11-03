@@ -29,7 +29,9 @@ import org.junit.jupiter.api.Test;
 
 
 /**
- * Test harness for the {@link RTGTranslator}.
+ * Test harness for the {@link RTGTranslator}. See the RTG code on how to start docker.
+ * Alternatively try the revision from 31.10.2025.
+ *
  */
 public class RTGTranslatorTest {
 

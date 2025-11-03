@@ -224,8 +224,8 @@ public class PSTMailItemParser implements Parser {
         PSTMessage attachedEmail = attachment.getEmbeddedPSTMessage();
         //check for whether this is a binary attachment or an embedded pst msg
         if (attachedEmail != null) {
-            try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
-                tis.setOpenContainer(attachedEmail);
+            long sz = OutlookPSTParser.estimateSize(attachedEmail);
+            try (TikaInputStream tis = TikaInputStream.getFromContainer(attachedEmail, sz, metadata)) {
                 Metadata attachMetadata = new Metadata();
                 attachMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 attachMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, attachedEmail.getSubject() + ".msg");
@@ -247,6 +247,7 @@ public class PSTMailItemParser implements Parser {
         attachMeta.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         attachMeta.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, filename);
         attachMeta.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
+        attachMeta.set(Metadata.CONTENT_LENGTH, Integer.toString(attachment.getSize()));
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "class", "class", "CDATA", "embedded");
         attributes.addAttribute("", "id", "id", "CDATA", filename);

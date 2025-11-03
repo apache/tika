@@ -208,11 +208,11 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      */
     protected void advance(int length) throws SAXException {
         characterCount += length;
-        long byteCount = getByteCount();
-        if (characterCount > threshold && characterCount > byteCount * ratio) {
-            throw new SecureSAXException(
-                    "Suspected zip bomb: " + byteCount + " input bytes produced " + characterCount +
-                            " output characters");
+        if (characterCount > threshold) {
+            long byteCount = getByteCount();
+            if (characterCount > byteCount * ratio) {
+                throw new SecureSAXException("Suspected zip bomb: " + byteCount + " input bytes produced " + characterCount + " output characters");
+            }
         }
     }
 

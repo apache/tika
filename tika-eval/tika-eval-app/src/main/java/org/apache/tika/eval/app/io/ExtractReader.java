@@ -37,10 +37,10 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.serialization.JsonMetadataList;
@@ -52,7 +52,7 @@ public class ExtractReader {
     private final ALTER_METADATA_LIST alterMetadataList;
     private final long minExtractLength;
     private final long maxExtractLength;
-    private TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+    private final MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
 
     /**
      * Reads full extract, no modification of metadata list, no min or max extract length checking
@@ -204,9 +204,7 @@ public class ExtractReader {
         //but better than nothing.
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileSuffixes.originalFileName);
 
-        MediaType mimeType = tikaConfig
-                .getMimeRepository()
-                .detect(null, m);
+        MediaType mimeType = mimeTypes.detect(null, m);
         if (mimeType != null) {
             m.set(Metadata.CONTENT_TYPE, mimeType.toString());
         }

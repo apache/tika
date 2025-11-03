@@ -46,7 +46,6 @@ import org.apache.commons.cli.help.HelpFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.JDBCUtil;
 import org.apache.tika.eval.app.db.MimeBuffer;
@@ -55,6 +54,7 @@ import org.apache.tika.eval.app.io.DBWriter;
 import org.apache.tika.eval.app.io.ExtractReader;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
@@ -191,7 +191,7 @@ public class ExtractComparerRunner {
         jdbcUtil.createTables(builder.getRefTableInfos(), JDBCUtil.CREATE_TABLE.THROW_EX_IF_EXISTS);
 
         //step 2. create mime buffer
-        return new MimeBuffer(jdbcUtil.getConnection(), builder.getMimeTable(), TikaConfig.getDefaultConfig());
+        return new MimeBuffer(jdbcUtil.getConnection(), builder.getMimeTable(), MimeTypes.getDefaultMimeTypes());
     }
 
     private static void USAGE() throws IOException {

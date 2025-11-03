@@ -72,7 +72,7 @@ import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Base class for all Tika OOXML extractors.
- * <p/>
+ * <p>
  * Tika extractors decorate POI extractors so that the parsed content of
  * documents is returned as a sequence of XHTML SAX events. Subclasses must
  * implement the buildXHTML method {@link #buildXHTML(XHTMLContentHandler)} that
@@ -180,29 +180,28 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 if (tPart == null) {
                     continue;
                 }
-                InputStream tStream = tPart.getInputStream();
-                Metadata thumbnailMetadata = new Metadata();
-                String thumbName = tPart.getPartName().getName();
-                thumbnailMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, thumbName);
+                try (InputStream tStream = tPart.getInputStream()) {
+                    Metadata thumbnailMetadata = new Metadata();
+                    String thumbName = tPart.getPartName().getName();
+                    thumbnailMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, thumbName);
 
-                AttributesImpl attributes = new AttributesImpl();
-                attributes.addAttribute(XHTML, "class", "class", "CDATA", "embedded");
-                attributes.addAttribute(XHTML, "id", "id", "CDATA", thumbName);
-                handler.startElement(XHTML, "div", "div", attributes);
-                handler.endElement(XHTML, "div", "div");
+                    AttributesImpl attributes = new AttributesImpl();
+                    attributes.addAttribute(XHTML, "class", "class", "CDATA", "embedded");
+                    attributes.addAttribute(XHTML, "id", "id", "CDATA", thumbName);
+                    handler.startElement(XHTML, "div", "div", attributes);
+                    handler.endElement(XHTML, "div", "div");
 
-                thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, thumbName);
-                thumbnailMetadata.set(Metadata.CONTENT_TYPE, tPart.getContentType());
-                thumbnailMetadata.set(TikaCoreProperties.TITLE, tPart.getPartName().getName());
-                thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                        TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name());
+                    thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, thumbName);
+                    thumbnailMetadata.set(Metadata.CONTENT_TYPE, tPart.getContentType());
+                    thumbnailMetadata.set(TikaCoreProperties.TITLE, tPart.getPartName().getName());
+                    thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                            TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name());
 
-                if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata)) {
-                    embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream),
-                            new EmbeddedContentHandler(handler), thumbnailMetadata, false);
+                    if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata)) {
+                        embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream),
+                                new EmbeddedContentHandler(handler), thumbnailMetadata, false);
+                    }
                 }
-
-                tStream.close();
             }
         } catch (SecurityException e) {
             throw e;
@@ -333,9 +332,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             return;
         }
 
-        InputStream is = part.getInputStream();
         // Open the POIFS (OLE2) structure and process
-        POIFSFileSystem fs = null;
+        POIFSFileSystem fs;
         try {
             fs = new POIFSFileSystem(part.getInputStream());
         } catch (Exception e) {
@@ -402,9 +400,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         } catch (IOException e) {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
         } finally {
-            if (fs != null) {
-                fs.close();
-            }
+            fs.close();
             if (stream != null) {
                 stream.close();
             }

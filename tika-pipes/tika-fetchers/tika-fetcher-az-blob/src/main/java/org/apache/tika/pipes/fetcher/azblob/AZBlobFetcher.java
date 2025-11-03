@@ -103,7 +103,7 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
                 long start = System.currentTimeMillis();
                 TemporaryResources tmpResources = new TemporaryResources();
                 Path tmp = tmpResources.createTempFile();
-                blobClient.downloadToFile(tmp.toRealPath().toString());
+                blobClient.downloadToFile(tmp.toRealPath().toString(), true);
                 TikaInputStream tis = TikaInputStream.get(tmp, metadata, tmpResources);
                 long elapsed = System.currentTimeMillis() - start;
                 LOGGER.debug("took {} ms to copy to local tmp file", elapsed);

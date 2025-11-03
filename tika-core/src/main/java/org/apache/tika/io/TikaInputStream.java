@@ -246,6 +246,27 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     /**
+     * Use this if there is no actual underlying InputStream. It is important
+     * to set a length so that the zip bomb detector won't be triggered
+     * in the SecurityHandler.
+     * <p>
+     * If your stream has underlying bytes and a length, see {@link #setOpenContainer(Object)}
+     *
+     * @param openContainer
+     * @param length
+     * @param metadata
+     * @return
+     */
+    public static TikaInputStream getFromContainer(Object openContainer, long length, Metadata metadata) {
+        TikaInputStream tis = TikaInputStream.get(new byte[0], metadata);
+        tis.setOpenContainer(openContainer);
+        //this overwrites the length that was set in the constructor above
+        tis.setLength(length);
+        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+        return tis;
+    }
+
+    /**
      * Casts or wraps the given stream to a TikaInputStream instance.
      * This method can be used to access the functionality of this class
      * even when given just a normal input stream instance.
@@ -668,6 +689,10 @@ public class TikaInputStream extends TaggedInputStream {
      * the stream, eg after a Zip contents
      * detector has loaded the file to decide
      * what it contains.
+     * <p>
+     * If there's no undelrying stream, consider {@link #getFromContainer(Object, long, Metadata)}
+     * because that will avoid potential improper zip bomb exceptions from the SecurityHandler if
+     * it thinks the length of the stream == 0.
      */
     public void setOpenContainer(Object container) {
         openContainer = container;
@@ -767,7 +792,13 @@ public class TikaInputStream extends TaggedInputStream {
             };
 
             // Update length to file size. Update position, mark
-            length = Files.size(path);
+            long sz = Files.size(path);
+            if (getOpenContainer() != null && sz == 0 && length > -1) {
+                //don't update size if there's an open container and the sz == 0
+                //hope that the length was sent in earlier via getFromContainer
+            } else {
+                length = sz;
+            }
             position = 0;
             mark = -1;
         }
@@ -816,6 +847,16 @@ public class TikaInputStream extends TaggedInputStream {
      */
     public long getPosition() {
         return position;
+    }
+
+    /**
+     * This should only be called by the constructor for an open container with a 0 length
+     * byte inputStream
+     *
+     * @param length
+     */
+    private void setLength(long length) {
+        this.length = length;
     }
 
     /**
