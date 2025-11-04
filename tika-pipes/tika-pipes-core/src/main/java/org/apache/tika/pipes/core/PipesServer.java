@@ -76,6 +76,7 @@ import org.apache.tika.pipes.core.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.extractor.EmittingEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.plugins.TikaPluginsManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -844,15 +845,17 @@ public class PipesServer implements Runnable {
     }
 
     protected void initializeResources() throws TikaException, IOException, SAXException {
-        PipesPluginsConfig pipesPluginsConfig = PipesPluginsConfig.load(Files.newInputStream(pipesConfigPath));
+        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(
+                Files.newInputStream(pipesConfigPath), TikaPluginsManager.PLUGIN_TYPES.FETCHERS,
+                TikaPluginsManager.PLUGIN_TYPES.EMITTERS);
 
         //TODO allowed named configurations in tika config
         this.tikaConfig = new TikaConfig(tikaConfigPath);
-        this.fetcherManager = FetcherManager.load(pipesConfigPath);
+        this.fetcherManager = FetcherManager.load(tikaPluginsManager);
         //skip initialization of the emitters if emitting
         //from the pipesserver is turned off.
         if (maxForEmitBatchBytes > -1) {
-            this.emitterManager = EmitterManager.load(pipesConfigPath);
+            this.emitterManager = EmitterManager.load(tikaPluginsManager);
         } else {
             LOG.debug("'maxForEmitBatchBytes' < 0. Not initializing emitters in PipesServer");
             this.emitterManager = null;

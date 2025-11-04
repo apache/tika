@@ -157,7 +157,7 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         FileSystemEmitterConfig config = fileSystemEmitterConfig;
         PluginConfigs pluginConfigs = parseContext.get(PluginConfigs.class);
         if (pluginConfigs != null) {
-            Optional<PluginConfig> pluginConfigOpt = pluginConfigs.get(getPluginConfig().id());
+            Optional<PluginConfig> pluginConfigOpt = pluginConfigs.getById(getPluginConfig().id());
             if (pluginConfigOpt.isPresent()) {
                 config = FileSystemEmitterConfig.load(pluginConfigOpt.get().jsonConfig());
                 checkConfig(config);

@@ -22,7 +22,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.pipes.core.emitter.EmitterManager;
+
 public class PluginsTestHelper {
+    private static final Logger LOG = LoggerFactory.getLogger(PluginsTestHelper.class);
 
     public static Path getFileSystemFetcherConfig(Path configBase) throws Exception {
         return getFileSystemFetcherConfig(configBase, configBase.resolve("input"), configBase.resolve("output"));
@@ -43,7 +49,14 @@ public class PluginsTestHelper {
                     .toAbsolutePath()
                     .toString());
         }
-
+        Path pwd = Paths.get("");
+        Path plugins = pwd.resolve("target/plugins");
+        if (Files.isDirectory(plugins)) {
+            json = json.replace("PLUGINS_PATHS", plugins.toAbsolutePath().toString());
+            LOG.info("found plugins path");
+        } else {
+            LOG.warn("Couldn't find plugins from {}",  pwd.toAbsolutePath());
+        }
         Files.write(pipesConfig, json.getBytes(StandardCharsets.UTF_8));
         return pipesConfig;
     }

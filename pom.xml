@@ -39,6 +39,7 @@
     <module>tika-bom</module>
     <module>tika-core</module>
     <module>tika-serialization</module>
+    <module>tika-plugins-core</module>
     <module>tika-detectors</module>
     <module>tika-parsers</module>
     <module>tika-bundles</module>

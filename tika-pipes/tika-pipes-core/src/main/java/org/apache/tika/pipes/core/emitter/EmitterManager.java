@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -28,14 +29,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginManager;
+import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
-import org.apache.tika.pipes.core.PipesPluginsConfig;
 import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.PluginConfigs;
+import org.apache.tika.plugins.TikaPluginsManager;
 
 /**
  * Utility class that will apply the appropriate emitter
@@ -47,7 +50,6 @@ public class EmitterManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmitterManager.class);
 
-
     private final Map<String, Emitter> emitterMap = new ConcurrentHashMap<>();
 
     public static EmitterManager load(Path path) throws IOException, TikaConfigException {
@@ -56,11 +58,22 @@ public class EmitterManager {
         }
     }
 
-    public static EmitterManager load(InputStream pipesPluginsConfigIs) throws IOException, TikaConfigException {
-        PipesPluginsConfig pluginsConfig = PipesPluginsConfig.load(pipesPluginsConfigIs);
+    public static EmitterManager load(InputStream is) throws IOException, TikaConfigException {
+        //this will throw a TikaConfigException if "emitters" is not loaded
+        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(is, TikaPluginsManager.PLUGIN_TYPES.EMITTERS);
+        return load(tikaPluginsManager);
+    }
+
+    public static EmitterManager load(TikaPluginsManager tikaPluginsManager) throws IOException, TikaConfigException {
+        Optional<PluginConfigs> emitterPluginConfigsOpt = tikaPluginsManager.get(TikaPluginsManager.PLUGIN_TYPES.EMITTERS);
+        if (emitterPluginConfigsOpt.isEmpty()) {
+            throw new TikaConfigException("Forgot to load 'fetchers'?");
+        }
+        PluginConfigs emitterPluginConfigs = emitterPluginConfigsOpt.get();
+
         PluginManager pluginManager = null;
-        if (pluginsConfig.getPluginsDir().isPresent()) {
-            pluginManager = new DefaultPluginManager(pluginsConfig.getPluginsDir().get());
+        if (! tikaPluginsManager.getPluginsPaths().isEmpty()) {
+            pluginManager = new DefaultPluginManager(tikaPluginsManager.getPluginsPaths());
         } else {
             pluginManager = new DefaultPluginManager();
         }
@@ -68,10 +81,21 @@ public class EmitterManager {
         pluginManager.startPlugins();
         Map<String, Emitter> emitterMap = new HashMap<>();
         for (EmitterFactory emitterFactory : pluginManager.getExtensions(EmitterFactory.class)) {
-            for (String id : pluginsConfig.getEmitterConfig().ids()) {
-                Optional<PluginConfig> pluginConfigOpt = pluginsConfig.getFetcherConfig(id);
+            LOG.warn("Pf4j loaded plugin: " + emitterFactory.getClass());
+            PluginWrapper pluginWrapper = pluginManager.whichPlugin(emitterFactory.getClass());
+            if (pluginWrapper == null) {
+                LOG.warn("Couldn't find plugin wrapper for class={}", emitterFactory.getClass());
+                continue;
+            }
+            String pluginId = pluginManager.whichPlugin(emitterFactory.getClass()).getPluginId();
+            Set<String> ids = emitterPluginConfigs.getIdsByPluginId(pluginId);
+            if (ids.isEmpty()) {
+                LOG.warn("Couldn't find config for class={} pluginId={}. Skipping", emitterFactory.getClass(), pluginId);
+            }
+            for (String id : ids) {
+                Optional<PluginConfig> pluginConfigOpt = emitterPluginConfigs.getById(id);
                 if (pluginConfigOpt.isEmpty()) {
-                    LOG.warn("Couldn't find config for id={}", id);
+                    LOG.warn("Couldn't find config for id={}. Skipping", id);
                 } else {
                     PluginConfig pluginConfig = pluginConfigOpt.get();
                     Emitter emitter = emitterFactory.buildPlugin(pluginConfig);

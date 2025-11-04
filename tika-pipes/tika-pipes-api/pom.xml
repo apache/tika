@@ -37,10 +37,15 @@
       <artifactId>pf4j</artifactId>
       <scope>provided</scope>
     </dependency>
-
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-plugins-core</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

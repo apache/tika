@@ -92,7 +92,7 @@ public class FileSystemFetcher extends AbstractTikaPlugin implements Fetcher {
         FileSystemFetcherConfig config = defaultFileSystemFetcherConfig;
         PluginConfigs pluginConfigManager = parseContext.get(PluginConfigs.class);
         if (pluginConfigManager != null) {
-            Optional<PluginConfig> pluginConfigOpt = pluginConfigManager.get(getPluginConfig().id());
+            Optional<PluginConfig> pluginConfigOpt = pluginConfigManager.getById(getPluginConfig().id());
             if (pluginConfigOpt.isPresent()) {
                 PluginConfig pluginConfig = pluginConfigOpt.get();
                 checkPluginId(pluginConfig.factoryPluginId());

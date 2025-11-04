@@ -18,14 +18,16 @@
 <properties>
   <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
     <params>
-      <fetcherName>fs1</fetcherName>
       <basePath>/my/base/path1</basePath>
+      <emitterId>fse1</emitterId>
+      <fetcherId>fsf1</fetcherId>
     </params>
   </pipesIterator>
   <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
     <params>
-      <fetcherName>fs2</fetcherName>
       <basePath>/my/base/path2</basePath>
+      <emitterId>fse2</emitterId>
+      <fetcherId>fsf2</fetcherId>
     </params>
   </pipesIterator>
 </properties>

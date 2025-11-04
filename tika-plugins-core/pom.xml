@@ -18,55 +18,46 @@
   under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.tika</groupId>
-    <artifactId>tika-pipes</artifactId>
+    <artifactId>tika-parent</artifactId>
     <version>4.0.0-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
+    <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-fetchers</artifactId>
-  <name>Apache Tika fetchers</name>
-  <url>https://tika.apache.org/</url>
-  <packaging>pom</packaging>
-
-  <modules>
-    <module>tika-fetcher-file-system</module>
-<!--    <module>tika-fetcher-http</module>
-    <module>tika-fetcher-s3</module>
-    <module>tika-fetcher-gcs</module>
-    <module>tika-fetcher-az-blob</module>
-    <module>tika-fetcher-microsoft-graph</module> -->
-  </modules>
-  <properties>
-  <!-- Override below properties in each plugin's pom.xml -->
-  <plugin.id />
-  <plugin.class />
-  <plugin.version />
-  <plugin.provider />
-  <plugin.dependencies />
-</properties>
+  <artifactId>tika-plugins-core</artifactId>
+  <name>Apache Tika plugins core</name>
+  <url>https://tika.apache.org</url>
   <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>org.pf4j</groupId>
       <artifactId>pf4j</artifactId>
-      <!-- !!! VERY IMPORTANT -->
-      <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-pipes-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-plugins-core</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
     </dependency>
   </dependencies>
-  <scm>
-    <tag>3.0.0-rc1</tag>
-  </scm>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>org.apache.tika.plugins</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

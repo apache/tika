@@ -16,36 +16,46 @@
  */
 package org.apache.tika.plugins;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 public class PluginConfigs {
 
-    Map<String, PluginConfig> pluginConfigs = new HashMap<>();
+    Map<String, PluginConfig> pluginConfigsById = new HashMap<>();
+    Map<String, Set<String>> pluginIdsToIds = new HashMap<>();
 
     public PluginConfigs() {
 
     }
 
     public PluginConfigs(Map<String, PluginConfig> map) {
-        pluginConfigs.putAll(map);
+        for (PluginConfig c : map.values()) {
+            add(c);
+        }
     }
 
     public void add(PluginConfig pluginConfig) {
-        if (pluginConfigs.containsKey(pluginConfig.id())) {
+        if (pluginConfigsById.containsKey(pluginConfig.id())) {
             throw new IllegalArgumentException("Can't overwrite existing plugin for id: " + pluginConfig.factoryPluginId());
         }
-        pluginConfigs.put(pluginConfig.factoryPluginId(), pluginConfig);
+        pluginConfigsById.put(pluginConfig.id(), pluginConfig);
+        pluginIdsToIds.computeIfAbsent(pluginConfig.factoryPluginId(), k -> new HashSet<>()).add(pluginConfig.id());
     }
 
-    public Optional<PluginConfig> get(String id) {
-        return Optional.ofNullable(pluginConfigs.get(id));
+    public Optional<PluginConfig> getById(String id) {
+        return Optional.ofNullable(pluginConfigsById.get(id));
     }
 
     public Set<String> ids() {
-        return pluginConfigs.keySet();
+        return pluginConfigsById.keySet();
     }
 
+    public Set<String> getIdsByPluginId(String pluginId) {
+        return pluginIdsToIds.getOrDefault(pluginId, Set.of());
+    }
 }

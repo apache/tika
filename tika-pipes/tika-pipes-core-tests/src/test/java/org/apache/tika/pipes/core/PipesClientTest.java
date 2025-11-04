@@ -41,7 +41,7 @@ import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 
 public class PipesClientTest {
-    String fetcherName = "file-system-fetcher";
+    String fetcherName = "fsf";
     String testDoc = "testOverlappingText.pdf";
 
 

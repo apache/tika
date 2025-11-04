@@ -2,7 +2,7 @@
   "plugins": {
     "fetchers": {
       "fsf": {
-        "file-system-fetcher" : {
+        "file-system-fetcher": {
           "basePath": "FETCHERS_BASE_PATH",
           "extractFileSystemMetadata": false
         }
@@ -12,11 +12,10 @@
       "fse": {
         "file-system-emitter" : {
           "basePath": "EMITTERS_BASE_PATH",
-          "fileExtension": "json",
-          "onExists": "EXCEPTION"
+          "fileExtension": "json"
         }
       }
     }
   },
-  "pluginsPaths": "PLUGINS_PATHS"
+  "pluginsPaths": "path1"
 }

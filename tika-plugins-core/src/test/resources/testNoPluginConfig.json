@@ -1,0 +1,15 @@
+{
+  "plugins": {
+    "fetchers": {
+      "fsf": {}
+    },
+    "emitters": {
+      "fse": {
+        "file-system-emitter" : {
+          "basePath": "EMITTERS_BASE_PATH",
+          "fileExtension": "json"
+        }
+      }
+    }
+  }
+}
