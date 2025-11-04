@@ -70,8 +70,10 @@ public class FetcherManager {
         PluginConfigs fetcherPluginConfigs = fetcherPluginConfigsOpt.get();
         PluginManager pluginManager = null;
         if (! tikaPluginsManager.getPluginsPaths().isEmpty()) {
+            LOG.warn("LOADING WITH PLUGINS PATHS: {}", tikaPluginsManager.getPluginsPaths());
             pluginManager = new DefaultPluginManager(tikaPluginsManager.getPluginsPaths());
         } else {
+            LOG.warn("NOT LOADING WITH PLUGINS PATHS: {}", tikaPluginsManager.getPluginsPaths());
             pluginManager = new DefaultPluginManager();
         }
         pluginManager.loadPlugins();

@@ -45,21 +45,25 @@ public class TikaCLIAsyncTest {
             {
               "plugins" : {
                 "fetchers": {
-                  "file-system-fetcher": {
-                    "basePath": "FETCHER_BASE_PATH",
-                    "extractFileSystemMetadata": false
+                  "fsf": {
+                    "file-system-fetcher": {
+                      "basePath": "FETCHER_BASE_PATH",
+                      "extractFileSystemMetadata": false
+                    }
                   }
                 },
                 "emitters": {
-                  "file-system-emitter": {
-                    "basePath": "EMITTER_BASE_PATH",
-                    "fileExtension": "jsn",
-                    "onExists":"EXCEPTION",
-                    "prettyPrint": true
+                  "fse": {
+                    "file-system-emitter": {
+                      "basePath": "EMITTER_BASE_PATH",
+                      "fileExtension": "jsn",
+                      "onExists":"EXCEPTION",
+                      "prettyPrint": true
+                    }
                   }
-                },
-                "pf4j.pluginsDir": "PLUGINS_DIR"
-              }
+                }
+              },
+              "pluginsPaths": "PLUGINS_PATHS"
             }
             """;
 
@@ -82,14 +86,17 @@ public class TikaCLIAsyncTest {
         ASYNC_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "async-config-", ".xml");
         String xml = "<properties>" + "<async>" + "<numClients>3</numClients>" + "<tikaConfig>" + ASYNC_CONFIG.toAbsolutePath() + "</tikaConfig>" + "</async>" +
                 "<pipesIterator class=\"org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator\">" + "<basePath>" + TEST_DATA_FILE.getAbsolutePath() + "</basePath>" +
-                "<fetcherPluginId>file-system-fetcher</fetcherPluginId>" + "<emitterPluginId>file-system-emitter</emitterPluginId>" + "</pipesIterator>" + "</properties>";
+                "<fetcherId>fsf</fetcherId>" + "<emitterId>fse</emitterId>" + "</pipesIterator>" + "</properties>";
         Files.write(ASYNC_CONFIG, xml.getBytes(UTF_8));
         ASYNC_PLUGINS_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "plugins-", ".json");
 
         Path pluginsDir = Paths.get("target/plugins");
+        if (! Files.isDirectory(pluginsDir)) {
+            LOG.warn("CAN'T FIND PLUGINS DIR. pwd={}", Paths.get("").toAbsolutePath().toString());
+        }
         String json = JSON_TEMPLATE.replace("FETCHER_BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString())
                                    .replace("EMITTER_BASE_PATH", ASYNC_OUTPUT_DIR.toAbsolutePath().toString())
-                                   .replace("PLUGINS_DIR", pluginsDir.toAbsolutePath().toString());
+                                   .replace("PLUGINS_PATHS", pluginsDir.toAbsolutePath().toString());
         Files.writeString(ASYNC_PLUGINS_CONFIG, json, UTF_8);
     }
 

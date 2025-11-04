@@ -402,9 +402,9 @@ public class TikaCLITest {
         Path asyncConfig = Files.createTempFile("async-config-", ".json");
         Path pluginsDir = Paths.get("target/plugins");
 
-        String json = JSON_TEMPLATE.replace("FETCHER_BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString())
+        String json = TikaCLIAsyncTest.JSON_TEMPLATE.replace("FETCHER_BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString())
                                    .replace("EMITTER_BASE_PATH", extractDir.toAbsolutePath().toString())
-                                   .replace("PLUGINS_DIR", pluginsDir.toAbsolutePath().toString());
+                                   .replace("PLUGINS_PATHS", pluginsDir.toAbsolutePath().toString());
         Files.writeString(asyncConfig, json, UTF_8);
 
         String[] params = {"-Z",

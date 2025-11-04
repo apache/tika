@@ -103,7 +103,6 @@ public class TikaAsyncCLI {
             try {
                 pipesIterator = PipesIterator.build(tikaConfig);
             } catch (IOException | TikaException e) {
-                e.printStackTrace();
                 //swallow
             }
         }

@@ -49,8 +49,8 @@ class TikaConfigAsyncWriter {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaAsyncCLI.class);
 
-    protected static final String FETCHER_NAME = "file-system-fetcher";
-    protected static final String EMITTER_NAME = "file-system-emitter";
+    protected static final String FETCHER_NAME = "fsf";
+    protected static final String EMITTER_NAME = "fse";
 
     private final SimpleAsyncConfig simpleAsyncConfig;
 

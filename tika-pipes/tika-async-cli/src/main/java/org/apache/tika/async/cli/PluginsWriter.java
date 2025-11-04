@@ -27,19 +27,24 @@ public class PluginsWriter {
             {
               "plugins" : {
                 "fetchers": {
-                  "file-system-fetcher": {
-                    "basePath": "FETCHER_BASE_PATH",
-                    "extractFileSystemMetadata": false
+                  "fsf" : {
+                    "file-system-fetcher": {
+                      "basePath": "FETCHER_BASE_PATH",
+                      "extractFileSystemMetadata": false
+                    }
                   }
                 },
                 "emitters": {
-                  "file-system-emitter": {
-                    "basePath": "EMITTER_BASE_PATH",
-                    "fileExtension": "json"
+                  "fse": {
+                    "file-system-emitter": {
+                      "basePath": "EMITTER_BASE_PATH",
+                      "fileExtension": "json",
+                      "onExists": "EXCEPTION"
+                    }
                   }
-                },
-                "pf4j.pluginsDir": "PLUGINS_DIR"
-              }
+                }
+              },
+                "pluginsPaths": "PLUGINS_PATHS"
             }
             """;
     private final SimpleAsyncConfig simpleAsyncConfig;
@@ -65,7 +70,7 @@ public class PluginsWriter {
             if (Files.isDirectory(plugins)) {
                 pluginString = plugins.toAbsolutePath().toString();
             }
-            json = json.replace("PLUGINS_DIR", pluginString);
+            json = json.replace("PLUGINS_PATHS", pluginString);
             Files.writeString(output, json);
         } catch (Exception e) {
             throw new IOException(e);
