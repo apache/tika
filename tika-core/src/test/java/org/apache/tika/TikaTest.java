@@ -42,8 +42,10 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedResourceHandler;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
@@ -569,10 +571,12 @@ public abstract class TikaTest {
     public String getText(InputStream is, Parser parser, ParseContext context, Metadata metadata)
             throws Exception {
         ContentHandler handler = new BodyContentHandler(1000000);
-        try {
+        try(is){
             parser.parse(is, handler, metadata, context);
-        } finally {
-            is.close();
+        } catch (SAXException e) {
+            if (!WriteLimitReachedException.isWriteLimitReached(e)) {
+                throw e;
+            }
         }
         return handler.toString();
     }
