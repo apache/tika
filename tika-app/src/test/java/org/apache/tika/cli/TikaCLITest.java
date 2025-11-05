@@ -17,7 +17,6 @@
 package org.apache.tika.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.tika.cli.TikaCLIAsyncTest.JSON_TEMPLATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

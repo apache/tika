@@ -163,7 +163,7 @@
               </artifactItems>
             </configuration>
           </execution>
-  <!--        <execution>
+          <execution>
             <id>copy-dependencies</id>
             <phase>package</phase>
             <goals>
@@ -176,7 +176,7 @@
               <overWriteReleases>false</overWriteReleases>
               <overWriteSnapshots>false</overWriteSnapshots>
             </configuration>
-          </execution> -->
+          </execution>
         </executions>
       </plugin>
     </plugins>

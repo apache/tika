@@ -25,12 +25,15 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -50,23 +53,38 @@ import org.apache.tika.serialization.JsonMetadataList;
  */
 public class AsyncProcessorTest extends TikaTest {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AsyncProcessorTest.class);
+
+
     final static String JSON_TEMPLATE_TEST = """
             {
               "plugins" : {
                 "fetchers": {
-                  "file-system-fetcher": {
-                    "basePath": "FETCHER_BASE_PATH",
-                    "extractFileSystemMetadata": false
+                  "fsf":{
+                    "file-system-fetcher": {
+                      "basePath": "FETCHER_BASE_PATH",
+                      "extractFileSystemMetadata": false
+                    }
                   }
                 },
                 "emitters": {
-                  "file-system-emitter": {
-                    "basePath": "EMITTER_BASE_PATH",
-                    "fileExtension": "",
-                    "onExists":"EXCEPTION"
+                  "fse-json": {
+                    "file-system-emitter": {
+                      "basePath": "JSON_EMITTER_BASE_PATH",
+                      "fileExtension": "",
+                      "onExists":"EXCEPTION"
+                    }
+                  },
+                  "fse-bytes": {
+                    "file-system-emitter": {
+                      "basePath": "BYTES_EMITTER_BASE_PATH",
+                      "fileExtension": "",
+                      "onExists":"EXCEPTION"
+                    }
                   }
                 }
-              }
+              },
+              "pluginsPaths": "PLUGINS_PATHS"
             }
             """;
 
@@ -76,6 +94,8 @@ public class AsyncProcessorTest extends TikaTest {
     private Path inputDir;
 
     private Path outputDir;
+    private Path jsonOutputDir;
+    private Path bytesOutputDir;
 
     private Path configDir;
 
@@ -86,6 +106,9 @@ public class AsyncProcessorTest extends TikaTest {
         inputDir = basedir.resolve("input");
 
         outputDir = basedir.resolve("output");
+        jsonOutputDir = outputDir.resolve("json");
+        bytesOutputDir = outputDir.resolve("bytes");
+
 
         configDir = basedir.resolve("config");
 
@@ -93,12 +116,19 @@ public class AsyncProcessorTest extends TikaTest {
         Files.createDirectories(configDir);
         Files.createDirectories(inputDir);
 
+        Path pluginsDir = Paths.get("target/plugins");
+        if (! Files.isDirectory(pluginsDir)) {
+            LOG.warn("CAN'T FIND PLUGINS DIR. pwd={}", Paths.get("").toAbsolutePath().toString());
+        }
+
         tikaConfigPath = configDir.resolve("tika-config.xml");
         Files.copy(AsyncProcessorTest.class.getResourceAsStream("/configs/tika-config-default.xml"), tikaConfigPath);
         Path pipesConfig = configDir.resolve("tika-pipes.json");
         String jsonTemp = JSON_TEMPLATE_TEST
                 .replace("FETCHER_BASE_PATH", inputDir.toAbsolutePath().toString())
-                .replace("EMITTER_BASE_PATH", outputDir.toAbsolutePath().toString());
+                .replace("JSON_EMITTER_BASE_PATH", jsonOutputDir.toAbsolutePath().toString())
+                .replace("BYTES_EMITTER_BASE_PATH", bytesOutputDir.toAbsolutePath().toString())
+                .replace("PLUGINS_PATHS", pluginsDir.toAbsolutePath().toString());
 
 
         Files.writeString(pipesConfig, jsonTemp, StandardCharsets.UTF_8);
@@ -110,22 +140,22 @@ public class AsyncProcessorTest extends TikaTest {
     }
 
     @Test
-    public void testBasic() throws Exception {
+    public void testRecursiveUnpacking() throws Exception {
 //        TikaAsyncCLI cli = new TikaAsyncCLI();
         //      cli.main(new String[]{ configDir.resolve("tika-config.xml").toAbsolutePath().toString()});
         AsyncProcessor processor = new AsyncProcessor(tikaConfigPath, configDir.resolve("tika-pipes.json"));
 
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = new EmbeddedDocumentBytesConfig(true);
         embeddedDocumentBytesConfig.setIncludeOriginal(true);
-        embeddedDocumentBytesConfig.setEmitter("file-system-emitter");
+        embeddedDocumentBytesConfig.setEmitter("fse-bytes");
         embeddedDocumentBytesConfig.setSuffixStrategy(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.NONE);
         embeddedDocumentBytesConfig.setEmbeddedIdPrefix("-");
         ParseContext parseContext = new ParseContext();
         parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
         parseContext.set(EmbeddedDocumentBytesConfig.class, embeddedDocumentBytesConfig);
         FetchEmitTuple t =
-                new FetchEmitTuple("myId-1", new FetchKey("file-system-fetcher", "mock.xml"),
-                        new EmitKey("file-system-emitter", "emit-1"), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+                new FetchEmitTuple("myId-1", new FetchKey("fsf", "mock.xml"),
+                        new EmitKey("fse-json", "emit-1"), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
 
         processor.offer(t, 1000);
 
@@ -138,15 +168,15 @@ public class AsyncProcessorTest extends TikaTest {
         }
         processor.close();
 
-        String container = Files.readString(outputDir.resolve("emit-1-embed/emit-1-0"));
+        String container = Files.readString(bytesOutputDir.resolve("emit-1-embed/emit-1-0"));
         assertContains("\"dc:creator\">Nikolai Lobachevsky", container);
 
-        String xmlEmbedded = Files.readString(outputDir.resolve("emit-1-embed/emit-1-1"));
+        String xmlEmbedded = Files.readString(bytesOutputDir.resolve("emit-1-embed/emit-1-1"));
         assertContains("name=\"dc:creator\"", xmlEmbedded);
         assertContains(">embeddedAuthor</metadata>", xmlEmbedded);
 
         List<Metadata> metadataList;
-        try (BufferedReader reader = Files.newBufferedReader(outputDir.resolve("emit-1"))) {
+        try (BufferedReader reader = Files.newBufferedReader(jsonOutputDir.resolve("emit-1"))) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(2, metadataList.size());

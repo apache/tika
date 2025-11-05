@@ -19,7 +19,6 @@ package org.apache.tika.pipes.fetcher.fs.config;
 import java.io.IOException;
 
 import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;

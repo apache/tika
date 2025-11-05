@@ -17,11 +17,8 @@
 package org.apache.tika.pipes.api.emitter;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
-import java.util.Properties;
 
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.AbstractTikaPlugin;
 import org.apache.tika.plugins.PluginConfig;
 
