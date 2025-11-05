@@ -89,7 +89,7 @@ public class FetcherTest extends CXFTestBase {
                 .create(endPoint + META_PATH)
                 .accept("application/json")
                 .acceptEncoding("gzip")
-                .header("fetcherPluginId", "url-fetcher")
+                .header("fetcherId", "url-fetcher")
                 .header("fetchKey", "https://tika.apache.org")
                 .put("");
 

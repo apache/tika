@@ -62,10 +62,10 @@ public class AsyncResource {
     long maxQueuePauseMs = 60000;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
-    public AsyncResource(java.nio.file.Path tikaConfigPath, java.nio.file.Path asyncConfig, Set<String> supportedFetchers) throws TikaException, IOException, SAXException {
-        this.asyncProcessor = new AsyncProcessor(tikaConfigPath, asyncConfig);
+    public AsyncResource(java.nio.file.Path tikaConfigPath, java.nio.file.Path pluginsConfig, Set<String> supportedFetchers) throws TikaException, IOException, SAXException {
+        this.asyncProcessor = new AsyncProcessor(tikaConfigPath, pluginsConfig);
         this.supportedFetchers = supportedFetchers;
-        this.emitterManager = EmitterManager.load(tikaConfigPath);
+        this.emitterManager = EmitterManager.load(pluginsConfig);
     }
 
     public ArrayBlockingQueue<FetchEmitTuple> getFetchEmitQueue(int queueSize) {
@@ -105,17 +105,17 @@ public class AsyncResource {
         for (FetchEmitTuple t : request.getTuples()) {
             if (!supportedFetchers.contains(t
                     .getFetchKey()
-                    .getFetcherPluginId())) {
+                    .getFetcherId())) {
                 return badFetcher(t.getFetchKey());
             }
             if (!emitterManager
                     .getSupported()
                     .contains(t
                             .getEmitKey()
-                            .getEmitterPluginId())) {
+                            .getEmitterId())) {
                 return badEmitter(t
                         .getEmitKey()
-                        .getEmitterPluginId());
+                        .getEmitterId());
             }
             ParseContext parseContext = t.getParseContext();
             EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
@@ -177,7 +177,7 @@ public class AsyncResource {
     }
 
     private Map<String, Object> badFetcher(FetchKey fetchKey) {
-        throw new BadRequestException("can't find fetcher for " + fetchKey.getFetcherPluginId());
+        throw new BadRequestException("can't find fetcher for " + fetchKey.getFetcherId());
     }
 
     private AsyncRequest deserializeASyncRequest(InputStream is) throws IOException {

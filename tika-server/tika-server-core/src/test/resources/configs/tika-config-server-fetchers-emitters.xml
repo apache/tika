@@ -16,12 +16,6 @@
   limitations under the License.
 -->
 <properties>
-  <emitters>
-    <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
-      <name>fse</name>
-      <basePath>/path/or/other/extracts</basePath>
-    </emitter>
-  </emitters>
   <server>
     <port>9999</port>
     <taskTimeoutMillis>54321</taskTimeoutMillis>

@@ -39,7 +39,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -106,10 +105,7 @@ public class TikaPipesTest extends CXFTestBase {
 
         TIKA_CONFIG_PATH = Files.createTempFile(TMP_DIR, "tika-pipes-", ".xml");
         TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" +
-                 "<emitters>" +
-                "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>fse</name>"
-                + "<basePath>" + TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" +
-                "</emitter>" + "</emitters>" + "<pipes><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG_PATH
+                "<pipes><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG_PATH
                 .toAbsolutePath()
                 .toString()) + "</tikaConfig><numClients>10</numClients>" + "<forkedJvmArgs>" + "<arg>-Xmx256m</arg>" + "<arg>-Dlog4j.configurationFile=file:" +
                 ProcessUtils.escapeCommandLine(TIKA_PIPES_LOG4j2_PATH
@@ -118,10 +114,12 @@ public class TikaPipesTest extends CXFTestBase {
         Files.write(TIKA_CONFIG_PATH, TIKA_CONFIG_XML.getBytes(StandardCharsets.UTF_8));
 
         TIKA_PIPES_CONFIG_PATH = Files.createTempFile(TMP_DIR, "tika-pipes-config-", ".json");
-        String json = JSON_TEMPLATE.replace("BASE_PATH", inputDir.toAbsolutePath().toString());
-        Files.writeString(TIKA_PIPES_CONFIG_PATH, json, StandardCharsets.UTF_8);
-        FETCHER_MANAGER = FetcherManager.load(
-                UnsynchronizedByteArrayInputStream.builder().setByteArray(json.getBytes(StandardCharsets.UTF_8)).get());
+
+        CXFTestBase.createPluginsConfig(TIKA_PIPES_CONFIG_PATH, inputDir, TMP_OUTPUT_DIR, null);
+
+        try (InputStream is = Files.newInputStream(TIKA_PIPES_CONFIG_PATH)) {
+            FETCHER_MANAGER = FetcherManager.load(is);
+        }
     }
 
     @AfterAll
@@ -180,7 +178,7 @@ public class TikaPipesTest extends CXFTestBase {
         }
 
         FetchEmitTuple t = new FetchEmitTuple("myId",
-                new FetchKey(FETCHER_PLUGIN_ID, "hello_world.xml"), new EmitKey("fse", ""), userMetadata);
+                new FetchKey(FETCHER_ID, "hello_world.xml"), new EmitKey(EMITTER_JSON_ID, ""), userMetadata);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 
@@ -219,8 +217,8 @@ public class TikaPipesTest extends CXFTestBase {
         HandlerConfig handlerConfig = new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML, HandlerConfig.PARSE_MODE.RMETA, -1, -1, true);
         parseContext.set(HandlerConfig.class, handlerConfig);
         FetchEmitTuple t =
-                new FetchEmitTuple("myId", new FetchKey(FETCHER_PLUGIN_ID, "hello_world.xml"),
-                        new EmitKey("fse", ""), userMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+                new FetchEmitTuple("myId", new FetchKey(FETCHER_ID, "hello_world.xml"),
+                        new EmitKey(EMITTER_JSON_ID, ""), userMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 
@@ -250,8 +248,8 @@ public class TikaPipesTest extends CXFTestBase {
             userMetadata.add("my-key-multi", s);
         }
 
-        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_PLUGIN_ID,
-                "null_pointer.xml"), new EmitKey("fse", ""), userMetadata);
+        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_ID,
+                "null_pointer.xml"), new EmitKey(EMITTER_JSON_ID, ""), userMetadata);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 
@@ -288,8 +286,8 @@ public class TikaPipesTest extends CXFTestBase {
 
     @Test
     public void testPostNPENoEmit() throws Exception {
-        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_PLUGIN_ID,
-                "null_pointer.xml"), new EmitKey("fse", ""), new Metadata(), new ParseContext(),
+        FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_ID,
+                "null_pointer.xml"), new EmitKey(EMITTER_JSON_ID, ""), new Metadata(), new ParseContext(),
                 FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);

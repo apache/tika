@@ -39,8 +39,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -52,9 +50,6 @@ import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
 import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
-
-    private static final Logger LOG = LoggerFactory.getLogger(TikaServerPipesIntegrationTest.class);
-    private static final String EMITTER_NAME = "fse";
 
     private static Path TEMP_OUTPUT_DIR;
     private static Path TIKA_CONFIG;
@@ -77,10 +72,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
         TIKA_PIPES_CONFIG = TEMP_OUTPUT_DIR.resolve("tika-pipes.json");
         //TODO -- clean this up so that port is sufficient and we don't need portString
         String xml1 =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<emitters>" +
-                        "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>" + EMITTER_NAME +
-                        "</name>" + "<basePath>" +
-                        TEMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</emitter>" + "</emitters>" + "<server>" +
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<server>" +
                         "<enableUnsecureFeatures>true</enableUnsecureFeatures>" +
                         "<port>9999</port>" + "<endpoints>" + "<endpoint>pipes</endpoint>" + "<endpoint>status</endpoint>" + "</endpoints>";
         String xml2 = "</server>" + "<pipes><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG
@@ -94,10 +86,8 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
         String tikaConfigTimeoutXML = xml1 + "<taskPulseMillis>100</taskPulseMillis>" + "<taskTimeoutMillis>10000</taskTimeoutMillis>" + xml2;
         FileUtils.write(TIKA_CONFIG_TIMEOUT.toFile(), tikaConfigTimeoutXML, UTF_8);
+        CXFTestBase.createPluginsConfig(TIKA_PIPES_CONFIG, inputDir, TEMP_OUTPUT_DIR, null);
 
-
-        String json = CXFTestBase.JSON_TEMPLATE.replace("BASE_PATH", inputDir.toAbsolutePath().toString());
-        Files.writeString(TIKA_PIPES_CONFIG, json, UTF_8);
     }
 
     @AfterEach
@@ -249,8 +239,8 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     private String getJsonString(String fileName, FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) throws IOException {
         ParseContext parseContext = new ParseContext();
         parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
-        FetchEmitTuple t = new FetchEmitTuple(fileName, new FetchKey(CXFTestBase.FETCHER_PLUGIN_ID, fileName),
-                new EmitKey(EMITTER_NAME, ""), new Metadata(), parseContext, onParseException);
+        FetchEmitTuple t = new FetchEmitTuple(fileName, new FetchKey(CXFTestBase.FETCHER_ID, fileName),
+                new EmitKey(CXFTestBase.EMITTER_JSON_ID, ""), new Metadata(), parseContext, onParseException);
         return JsonFetchEmitTuple.toJson(t);
     }
 }

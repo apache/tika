@@ -38,12 +38,12 @@ import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.server.core.resource.TikaResource;
 
 /**
- * This class looks for &quot;fetcherPluginId&quot; in the http header.  If it is not null
+ * This class looks for &quot;fetcherId&quot; in the http header.  If it is not null
  * and not empty, this will return a new TikaInputStream from the fetch key
  * and the base path as set in the definition of the named fetcher.
  * As of Tika &gt; 2.5.0, the &quot;fetchKey&quot; is URL decoded.
  * <p>
- * Users may also specify the &quot;fetcherPluginId&quote; and &quot;fetchKey&quot; in
+ * Users may also specify the &quot;fetcherId&quote; and &quot;fetchKey&quot; in
  * query parameters with in the request.
  * <p>
  * <em>WARNING:</em> Unless you carefully lock down access to the server,
@@ -81,7 +81,7 @@ public class FetcherStreamFactory implements InputStreamFactory {
     @Override
     public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders, UriInfo uriInfo) throws IOException {
         MultivaluedMap params = (uriInfo == null) ? null : uriInfo.getQueryParameters();
-        String fetcherPluginId = getParam("fetcherPluginId", httpHeaders, params);
+        String fetcherId = getParam("fetcherId", httpHeaders, params);
         String fetchKey = getParam("fetchKey", httpHeaders, params);
         fetchKey = urlDecode(fetchKey);
         if (StringUtils.isBlank(fetchKey)) {
@@ -91,8 +91,8 @@ public class FetcherStreamFactory implements InputStreamFactory {
         TikaResource.fillParseContext(httpHeaders.getRequestHeaders(), metadata, parseContext);
         long fetchRangeStart = getLong(getParam("fetchRangeStart", httpHeaders, params));
         long fetchRangeEnd = getLong(getParam("fetchRangeEnd", httpHeaders, params));
-        if (StringUtils.isBlank(fetcherPluginId) != StringUtils.isBlank(fetchKey)) {
-            throw new IOException("Must specify both a 'fetcherPluginId' and a 'fetchKey'. I see: " + " fetcherPluginId:" + fetcherPluginId + " and fetchKey:" + fetchKey);
+        if (StringUtils.isBlank(fetcherId) != StringUtils.isBlank(fetchKey)) {
+            throw new IOException("Must specify both a 'fetcherId' and a 'fetchKey'. I see: " + " fetcherId:" + fetcherId + " and fetchKey:" + fetchKey);
         }
         if (fetchRangeStart < 0 && fetchRangeEnd > -1) {
             throw new IllegalArgumentException("fetchRangeStart must be > -1 if a fetchRangeEnd " + "is specified");
@@ -102,13 +102,14 @@ public class FetcherStreamFactory implements InputStreamFactory {
             throw new IllegalArgumentException("fetchRangeEnd must be > -1 if a fetchRangeStart " + "is specified");
         }
 
-        if (!StringUtils.isBlank(fetcherPluginId)) {
+        if (!StringUtils.isBlank(fetcherId)) {
             try {
-                LOG.debug("going to fetch '{}' from fetcher: {}", fetchKey, fetcherPluginId);
-                Fetcher fetcher = fetcherManager.getFetcher(fetcherPluginId);
+                LOG.debug("going to fetch '{}' from fetcher: {}", fetchKey, fetcherId);
+                Fetcher fetcher = fetcherManager.getFetcher(fetcherId);
                 if (fetchRangeStart > -1 && fetchRangeEnd > -1 && !(fetcher instanceof RangeFetcher)) {
                     throw new IllegalArgumentException(
-                            "Can't call a fetch with a range on a fetcher that" + " is not a RangeFetcher: name=" + fetcher.getPluginId() + " class=" + fetcher.getClass());
+                            "Can't call a fetch with a range on a fetcher that" + " is not a RangeFetcher: id="
+                                    + fetcher.getPluginConfig().id() + " class=" + fetcher.getClass());
                 }
                 return fetcher.fetch(fetchKey, metadata, parseContext);
             } catch (TikaException e) {

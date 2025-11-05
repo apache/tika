@@ -1,9 +1,19 @@
 {
-  "pipesPluginsConfig" : {
+  "plugins" : {
     "fetchers": {
-      "file-system-fetcher": {
-        "basePath": "BASE_PATH",
-        "extractFileSystemMetadata": false
+      "fsf": {
+        "file-system-fetcher": {
+          "basePath": "BASE_PATH",
+          "extractFileSystemMetadata": false
+        }
+      }
+    },
+    "emitters": {
+      "fse-json": {
+        "file-system-emitter": {
+          "basePath": "BASE_PATH",
+          "onExists": "EXCEPTION"
+        }
       }
     }
   }

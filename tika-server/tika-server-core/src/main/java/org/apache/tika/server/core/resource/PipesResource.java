@@ -120,7 +120,7 @@ public class PipesResource {
             case NO_EMITTER_FOUND: {
                 throw new IllegalArgumentException("Couldn't find emitter that matched: " + fetchEmitTuple
                         .getEmitKey()
-                        .getEmitterPluginId());
+                        .getEmitterId());
             }
             default:
                 throw new IllegalArgumentException("I'm sorry, I don't yet handle a status of " + "this type: " + pipesResult.getStatus());

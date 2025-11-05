@@ -102,7 +102,7 @@ public class TikaServerProcess {
         options.addOption("h", "host", true, "host name, use * for all)");
         options.addOption("p", "port", true, "listen port");
         options.addOption("c", "config", true, "Tika Configuration xml file to override default config with.");
-        options.addOption("a", "pipesConfig", true, "Tika Configuration json for pipes components");
+        options.addOption("a", "pluginsConfig", true, "Tika Configuration json for pluginscomponents");
         options.addOption("i", "id", true, "id to use for server in server status endpoint");
         options.addOption("?", "help", false, "this help message");
         options.addOption("noFork", "noFork", false, "if launched in no fork mode");
@@ -192,7 +192,8 @@ public class TikaServerProcess {
         //REALLY NEED TODO THIS
         FetcherManager fetcherManager = null;
         InputStreamFactory inputStreamFactory = null;
-        if (tikaServerConfig.isEnableUnsecureFeatures()) {
+        if (tikaServerConfig.isEnableUnsecureFeatures() &&
+                tikaServerConfig.getPipesConfigPath().isPresent()) {
             fetcherManager = FetcherManager.load(tikaServerConfig.getPipesConfigPath().get());
             inputStreamFactory = new FetcherStreamFactory(fetcherManager);
         } else {

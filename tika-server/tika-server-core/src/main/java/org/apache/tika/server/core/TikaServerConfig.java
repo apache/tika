@@ -24,23 +24,22 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.XMLReaderUtils;
+import org.apache.tika.plugins.TikaPluginsManager;
 
 public class TikaServerConfig extends ConfigBase {
 
@@ -112,7 +111,7 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     //debug or info only
     private String logLevel = "";
     private Path configPath;
-    private Path pipesConfigPath;
+    private Path pluginsConfigPath;
     private List<String> endpoints = new ArrayList<>();
 
     private boolean preventStopMethod = false;
@@ -130,12 +129,12 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
         TikaServerConfig config = null;
         Set<String> settings = new HashSet<>();
-        Path pipesConfig = null;
+        Path pluginsConfig = null;
         if (commandLine.hasOption('a')) {
-            pipesConfig = Paths.get(commandLine.getOptionValue('a'));
+            pluginsConfig = Paths.get(commandLine.getOptionValue('a'));
         }
         if (commandLine.hasOption("c")) {
-            config = load(Paths.get(commandLine.getOptionValue("c")), pipesConfig, commandLine, settings);
+            config = load(Paths.get(commandLine.getOptionValue("c")), pluginsConfig, commandLine, settings);
         } else {
             config = new TikaServerConfig();
         }
@@ -160,86 +159,45 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         return config;
     }
 
-    static TikaServerConfig load(Path p, Path pipesConfigPath, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
+    static TikaServerConfig load(Path p, Path pluginsConfigPath, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
         try (InputStream is = Files.newInputStream(p)) {
-            TikaServerConfig config = TikaServerConfig.load(is, pipesConfigPath, commandLine, settings);
+            TikaServerConfig config = TikaServerConfig.load(is, pluginsConfigPath, commandLine, settings);
             if (config.getConfigPath() == null) {
                 config.setConfigPath(p
                         .toAbsolutePath()
                         .toString());
             }
-            config.setPipesConfigPath(pipesConfigPath);
-            loadSupportedFetchersEmitters(config);
+            config.setPipesConfigPath(pluginsConfigPath);
+            loadSupportedFetchersEmitters(config, pluginsConfigPath);
             return config;
         }
     }
 
-    private static TikaServerConfig load(InputStream is, Path pipesConfigPath, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
+    private static TikaServerConfig load(InputStream is, Path pluginsConfigPath, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
         TikaServerConfig tikaServerConfig = new TikaServerConfig();
         Set<String> configSettings = tikaServerConfig.configure("server", is);
         settings.addAll(configSettings);
-        tikaServerConfig.setPipesConfigPath(pipesConfigPath);
+        tikaServerConfig.setPipesConfigPath(pluginsConfigPath);
         return tikaServerConfig;
     }
 
-    private static void loadSupportedFetchersEmitters(TikaServerConfig tikaServerConfig) throws IOException, TikaConfigException {
-        //this is an abomination... clean up this double read
-        try (InputStream is = Files.newInputStream(tikaServerConfig.getConfigPath())) {
-            Node properties = null;
-            try {
-                properties = XMLReaderUtils
-                        .buildDOM(is)
-                        .getDocumentElement();
-            } catch (SAXException e) {
-                throw new IOException(e);
-            } catch (TikaException e) {
-                throw new TikaConfigException("problem loading xml to dom", e);
-            }
-            if (!properties
-                    .getLocalName()
-                    .equals("properties")) {
-                throw new TikaConfigException("expect properties as root node");
-            }
-            NodeList children = properties.getChildNodes();
-            for (int i = 0; i < children.getLength(); i++) {
-                Node child = children.item(i);
-                if ("emitters".equals(child.getLocalName())) {
-                    loadSupported(child, "emitter", tikaServerConfig.supportedEmitters);
-                }
-            }
+    private static void loadSupportedFetchersEmitters(TikaServerConfig tikaServerConfig, Path pluginsConfigPath) throws IOException, TikaConfigException {
+        if (pluginsConfigPath == null) {
+            return;
         }
-    }
+        JsonNode root = TikaPluginsManager.loadRoot(pluginsConfigPath);
+        JsonNode plugins = root.get("plugins");
+        JsonNode fetchers = plugins.get("fetchers");
+        Iterator<String> fieldNames = fetchers.fieldNames();
+        while (fieldNames.hasNext()) {
+            tikaServerConfig.supportedFetchers.add(fieldNames.next());
+        }
 
-    private static void loadSupported(Node compound, String itemName, Set<String> supported) {
-        NodeList children = compound.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (itemName.equals(child.getLocalName())) {
-                String name = getName(child);
-                if (name != null) {
-                    supported.add(name);
-                }
-            }
+        JsonNode emitters = plugins.get("emitters");
+        fieldNames = emitters.fieldNames();
+        while (fieldNames.hasNext()) {
+            tikaServerConfig.supportedEmitters.add(fieldNames.next());
         }
-    }
-
-    private static String getName(Node fetcherOrEmitter) {
-        NodeList children = fetcherOrEmitter.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if ("params".equals(child.getLocalName())) {
-                NodeList params = child.getChildNodes();
-                for (int j = 0; j < params.getLength(); j++) {
-                    Node param = params.item(j);
-                    if ("name".equals(param.getLocalName())) {
-                        return param.getTextContent();
-                    }
-                }
-            } else if ("name".equals(child.getLocalName())) {
-                return child.getTextContent();
-            }
-        }
-        return null;
     }
 
     public int getPort() {
@@ -354,11 +312,11 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     }
 
     public void setPipesConfigPath(Path path) {
-        this.pipesConfigPath = path;
+        this.pluginsConfigPath = path;
     }
 
     public Optional<Path> getPipesConfigPath() {
-        return Optional.ofNullable(pipesConfigPath);
+        return Optional.ofNullable(pluginsConfigPath);
     }
 
     public int getDigestMarkLimit() {

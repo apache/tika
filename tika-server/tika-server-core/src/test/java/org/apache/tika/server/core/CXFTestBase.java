@@ -27,8 +27,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -51,6 +53,8 @@ import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.digestutils.CommonsDigester;
@@ -59,20 +63,41 @@ import org.apache.tika.server.core.resource.UnpackerResource;
 
 public abstract class CXFTestBase {
 
-    final static String FETCHER_PLUGIN_ID = "file-system-fetcher";
+    private static final Logger LOG = LoggerFactory.getLogger(CXFTestBase.class);
 
-    //TODO -- add back in: ,
-    //                "pf4j.pluginsDir": "PLUGINS_DIR"
-    final static String JSON_TEMPLATE = """
+    public final static String FETCHER_ID = "fsf";
+    public final static String EMITTER_JSON_ID = "fse-json";
+    public final static String EMITTER_BYTES_ID = "fse-bytes";
+
+    public final static String JSON_TEMPLATE = """
             {
-              "pipesPluginsConfig" : {
+              "plugins" : {
                 "fetchers": {
-                  "file-system-fetcher": {
-                    "basePath": "BASE_PATH",
-                    "extractFileSystemMetadata": false
+                  "fsf":{
+                    "file-system-fetcher": {
+                      "basePath": "FETCHER_BASE_PATH",
+                      "extractFileSystemMetadata": false
+                    }
+                  }
+                },
+                "emitters": {
+                  "fse-json": {
+                    "file-system-emitter": {
+                      "basePath": "JSON_EMITTER_BASE_PATH",
+                      "fileExtension": "json",
+                      "onExists":"EXCEPTION"
+                    }
+                  },
+                  "fse-bytes": {
+                    "file-system-emitter": {
+                      "basePath": "BYTES_EMITTER_BASE_PATH",
+                      "fileExtension": "",
+                      "onExists":"EXCEPTION"
+                    }
                   }
                 }
-              }
+              },
+              "pluginsPaths": "PLUGINS_PATHS"
             }
             """;
 
@@ -80,6 +105,22 @@ public abstract class CXFTestBase {
     protected final static int DIGESTER_READ_LIMIT = 20 * 1024 * 1024;
     protected Server server;
     protected TikaConfig tika;
+
+    public static void createPluginsConfig(Path configPath, Path inputDir, Path jsonOutputDir, Path bytesOutputDir) throws IOException {
+
+        Path pluginsDir = Paths.get("target/plugins");
+        if (! Files.isDirectory(pluginsDir)) {
+            LOG.warn("CAN'T FIND PLUGINS DIR. pwd={}", Paths.get("").toAbsolutePath().toString());
+        }
+        String json = CXFTestBase.JSON_TEMPLATE.replace("FETCHER_BASE_PATH", inputDir.toAbsolutePath().toString())
+                                   .replace("JSON_EMITTER_BASE_PATH", jsonOutputDir.toAbsolutePath().toString())
+                                   .replace("PLUGINS_PATHS", pluginsDir.toAbsolutePath().toString());
+        if (bytesOutputDir != null) {
+            json = json.replace("BYTES_EMITTER_BASE_PATH", bytesOutputDir.toAbsolutePath().toString());
+        }
+
+        Files.writeString(configPath, json, StandardCharsets.UTF_8);
+    }
 
     public static void assertContains(String needle, String haystack) {
         assertTrue(haystack.contains(needle), needle + " not found in:\n" + haystack);
@@ -182,11 +223,29 @@ public abstract class CXFTestBase {
     }
 
     protected InputStream getPipesConfigInputStream() throws IOException {
-        if (getPipesInputPath() != null) {
-            String json = JSON_TEMPLATE.replace("BASE_PATH", getPipesInputPath());
-            return UnsynchronizedByteArrayInputStream.builder().setByteArray(json.getBytes(UTF_8)).get();
+        if (getPipesInputPath() == null) {
+            return null;
         }
-        return null;
+
+        Path pluginsDir = Paths.get("target/plugins");
+        if (!Files.isDirectory(pluginsDir)) {
+            LOG.warn("CAN'T FIND PLUGINS DIR. pwd={}", Paths
+                    .get("")
+                    .toAbsolutePath()
+                    .toString());
+        }
+        String json = CXFTestBase.JSON_TEMPLATE
+                .replace("FETCHER_BASE_PATH", getPipesInputPath())
+                .replace("PLUGINS_PATHS", pluginsDir
+                        .toAbsolutePath()
+                        .toString());
+
+
+        return UnsynchronizedByteArrayInputStream
+                .builder()
+                .setByteArray(json.getBytes(UTF_8))
+                .get();
+
     }
 
     protected String getPipesInputPath() {

@@ -45,10 +45,10 @@ public class TikaServerConfigTest {
         Path path = Paths.get(TikaConfigTest.class
                 .getResource("/configs/tika-config-server.xml")
                 .toURI());
-        Path pipesConfig = Paths.get(TikaConfigTest.class
+        Path pluginsConfig = Paths.get(TikaConfigTest.class
                 .getResource("/configs/tika-pipes-config.json")
                 .toURI());
-        TikaServerConfig config = TikaServerConfig.load(path, pipesConfig, emptyCommandLine, settings);
+        TikaServerConfig config = TikaServerConfig.load(path, pluginsConfig, emptyCommandLine, settings);
         assertEquals(54321, config.getTaskTimeoutMillis());
         assertEquals(true, config.isEnableUnsecureFeatures());
 
@@ -64,10 +64,10 @@ public class TikaServerConfigTest {
         Path path = Paths.get(TikaConfigTest.class
                 .getResource("/configs/tika-config-server-fetchers-emitters.xml")
                 .toURI());
-        Path pipesConfig = Paths.get(TikaConfigTest.class
+        Path pluginsConfig = Paths.get(TikaConfigTest.class
                 .getResource("/configs/tika-pipes-config.json")
                 .toURI());
-        TikaServerConfig config = TikaServerConfig.load(path, pipesConfig, emptyCommandLine, settings);
+        TikaServerConfig config = TikaServerConfig.load(path, pluginsConfig, emptyCommandLine, settings);
         assertEquals(54321, config.getTaskTimeoutMillis());
         assertEquals(true, config.isEnableUnsecureFeatures());
 
@@ -76,7 +76,7 @@ public class TikaServerConfigTest {
                 .size());
         assertTrue(config
                 .getSupportedEmitters()
-                .contains("fse"));
+                .contains(CXFTestBase.EMITTER_JSON_ID));
     }
 
     @Test
@@ -109,11 +109,11 @@ public class TikaServerConfigTest {
         Path path = Paths.get(TikaConfigTest.class
                 .getResource("/configs/tika-config-server-tls.xml")
                 .toURI());
-        Path pipesConfig = Paths.get(TikaConfigTest.class
+        Path pluginsConfig = Paths.get(TikaConfigTest.class
                 .getResource("/configs/tika-pipes-config.json")
                 .toURI());
 
-        TikaServerConfig config = TikaServerConfig.load(path, pipesConfig, emptyCommandLine, settings);
+        TikaServerConfig config = TikaServerConfig.load(path, pluginsConfig, emptyCommandLine, settings);
         TlsConfig tlsConfig = config.getTlsConfig();
         assertTrue(tlsConfig.isActive());
         assertFalse(tlsConfig.isClientAuthenticationWanted());

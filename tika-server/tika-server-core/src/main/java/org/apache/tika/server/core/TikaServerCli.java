@@ -44,7 +44,7 @@ public class TikaServerCli {
                 "listen port (default = 9998)\n");
         options.addOption("?", "help", false, "this help message");
         options.addOption("c", "config", true, "tika-config file");
-        options.addOption("a", "pipesConfig", true, "tike pipes config");
+        options.addOption("a", "pluginsConfig", true, "tike pipes config");
 
         options.addOption("i", "id", true, "id to use for server in" + " the server status endpoint and logging");
         return options;
@@ -60,7 +60,6 @@ public class TikaServerCli {
             if (line.hasOption("help")) {
                 usage(options);
             }
-            TikaServerConfig tikaServerConfig = TikaServerConfig.load(line);
             TikaServerProcess.main(args);
         } catch (Exception e) {
             LOG.error("Can't start: ", e);

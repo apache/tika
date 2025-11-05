@@ -43,6 +43,7 @@ import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 
 public class TikaResourceFetcherTest extends CXFTestBase {
 
+
     private static final String TIKA_PATH = "/tika";
 
     @Override
@@ -100,7 +101,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     @Test
     public void testHeader() throws Exception {
         MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
-        map.putSingle("fetcherPluginId", FETCHER_PLUGIN_ID);
+        map.putSingle("fetcherId", FETCHER_ID);
         map.putSingle("fetchKey", "mock/hello_world.xml");
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
@@ -115,7 +116,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     public void testQueryPart() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
-                .query("fetcherPluginId", FETCHER_PLUGIN_ID)
+                .query("fetcherId", FETCHER_ID)
                 .query("fetchKey", "mock/hello_world.xml")
                 .accept("text/xml")
                 .put(null);
@@ -128,7 +129,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     public void testNonAsciiInQueryParameters() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
-                .query("fetcherPluginId", FETCHER_PLUGIN_ID)
+                .query("fetcherId", FETCHER_ID)
                 .query("fetchKey", "mock/中文.xml")
                 .accept("text/xml")
                 .put(null);
@@ -141,7 +142,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     public void testNonAsciiUrlEncodedInQueryParameters() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
-                .query("fetcherPlugId", FETCHER_PLUGIN_ID)
+                .query("fetcherPlugId", FETCHER_ID)
                 .query("fetchKey", "mock/%E4%B8%AD%E6%96%87.xml")
                 .accept("text/xml")
                 .put(null);
