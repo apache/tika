@@ -6,7 +6,7 @@
     "emitters": {
       "fse": {
         "file-system-emitter" : {
-          "basePath": "EMITTERS_BASE_PATH",
+          "basePath": "EMITTER_BASE_PATH",
           "fileExtension": "json"
         }
       }

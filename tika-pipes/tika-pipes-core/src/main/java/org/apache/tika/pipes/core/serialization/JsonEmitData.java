@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.serialization.MetadataSerializer;
 import org.apache.tika.serialization.ParseContextSerializer;

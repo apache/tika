@@ -16,28 +16,6 @@
  */
 package org.apache.tika.pipes.pipesiterator.filelist;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.concurrent.TimeoutException;
-
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
-import org.apache.tika.utils.StringUtils;
-
 /**
  * Reads a list of file names/relative paths from a UTF-8 file.
  * One file name/relative path per line.  This path is used for the fetch key,
@@ -48,7 +26,9 @@ import org.apache.tika.utils.StringUtils;
  *
  *
  */
-public class FileListPipesIterator extends PipesIterator implements Initializable {
+public class FileListPipesIterator {}
+//TODO -- this next
+/*extends PipesIteratorBase {
 
     @Field
     private String fileList;
@@ -105,3 +85,5 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
         }
     }
 }
+
+ */

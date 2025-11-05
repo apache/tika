@@ -37,8 +37,9 @@ import org.apache.tika.metadata.listfilter.AttachmentCountingListFilter;
 import org.apache.tika.metadata.listfilter.CompositeMetadataListFilter;
 import org.apache.tika.metadata.listfilter.MetadataListFilter;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
 
 public class PipesClientTest {
     String fetcherName = "fsf";

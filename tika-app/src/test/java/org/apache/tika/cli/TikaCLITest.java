@@ -284,7 +284,7 @@ public class TikaCLITest {
         //TODO -- rework this to use two separate emitters
         //one for bytes and one for json
         String[] expectedChildren = new String[]{
-                "testPDFPackage.pdf.jsn",
+                "testPDFPackage.pdf.json",
                 //the first two test that the default single file config is working
                 "testPDFPackage.pdf-embed/00000001-embedded-1",
                 "testPDFPackage.pdf-embed/00000002-image0.jpg",
@@ -295,7 +295,7 @@ public class TikaCLITest {
 
     @Test
     public void testPSTRUnpack() throws Exception {
-        String[] expectedChildren = new String[]{"testPST.pst.jsn",
+        String[] expectedChildren = new String[]{"testPST.pst.json",
                 "testPST.pst-embed/00000007-First email.msg",
                 "testPST.pst-embed/00000001-Feature Generators.msg",
                 "testPST.pst-embed/00000008-First email.msg",
@@ -306,7 +306,7 @@ public class TikaCLITest {
                 "testPST.pst-embed/00000009-attachment.docx",
                 "testPST.pst-embed/00000006-[WEBINAR] - %22Introducing Couchbase Server 2.5%22.msg"};
         testRecursiveUnpack("testPST.pst", expectedChildren, 2);
-        try (Reader reader = Files.newBufferedReader(extractDir.resolve("testPST.pst.jsn"))) {
+        try (Reader reader = Files.newBufferedReader(extractDir.resolve("testPST.pst.json"))) {
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             for (Metadata m : metadataList) {
                 String content = m.get(TikaCoreProperties.TIKA_CONTENT);
@@ -401,13 +401,13 @@ public class TikaCLITest {
         Path asyncConfig = Files.createTempFile("async-config-", ".json");
         Path pluginsDir = Paths.get("target/plugins");
 
-        String json = TikaCLIAsyncTest.JSON_TEMPLATE.replace("FETCHER_BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString())
+        String json = TikaCLIAsyncTest.JSON_TEMPLATE_FETCH_EMIT_ONLY.replace("FETCHER_BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString())
                                    .replace("EMITTER_BASE_PATH", extractDir.toAbsolutePath().toString())
                                    .replace("PLUGINS_PATHS", pluginsDir.toAbsolutePath().toString());
         Files.writeString(asyncConfig, json, UTF_8);
 
         String[] params = {"-Z",
-                "-a", asyncConfig.toAbsolutePath().toString(),
+                "-p", ProcessUtils.escapeCommandLine(pluginsDir.toAbsolutePath().toString()),
                 ProcessUtils.escapeCommandLine(input.toAbsolutePath().toString()),
                 ProcessUtils.escapeCommandLine(extractDir
                 .toAbsolutePath()

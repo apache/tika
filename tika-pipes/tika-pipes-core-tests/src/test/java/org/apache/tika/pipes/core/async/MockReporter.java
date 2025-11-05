@@ -19,7 +19,7 @@ package org.apache.tika.pipes.core.async;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.tika.config.Field;
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.core.PipesReporter;
 import org.apache.tika.pipes.core.PipesResult;
 

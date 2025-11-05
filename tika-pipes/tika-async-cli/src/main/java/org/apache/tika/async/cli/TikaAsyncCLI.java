@@ -31,15 +31,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.HandlerConfig;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
-import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
+import org.apache.tika.plugins.PluginConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.utils.StringUtils;
 
@@ -57,7 +59,8 @@ public class TikaAsyncCLI {
         options.addOption("?", "help", false, "this help message");
         options.addOption("T", "timeoutMs", true, "timeout for each parse in milliseconds");
         options.addOption("h", "handlerType", true, "handler type: t=text, h=html, x=xml, b=body, i=ignore");
-        options.addOption("l", "fileList", true, "file list");
+        options.addOption("p", "pluginsDir", true, "plugins directory");
+        //options.addOption("l", "fileList", true, "file list");
         options.addOption("c", "config", true, "tikaConfig to inherit from -- " +
                 "commandline options will not overwrite existing iterators, emitters, fetchers and async");
         options.addOption("a", "asyncConfig", true, "asyncConfig/plugins to use");
@@ -79,53 +82,35 @@ public class TikaAsyncCLI {
         if (args.length == 2) {
             if (args[0].endsWith(".xml") && args[1].endsWith(".json")) {
                 LOG.warn("processing args");
-                processWithTikaConfig(PipesIterator.build(Paths.get(args[0])), Paths.get(args[0]), Paths.get(args[1]), null);
+                processWithTikaConfig(PipesIteratorManager.load(Paths.get(args[1])), Paths.get(args[0]), Paths.get(args[1]), null);
                 return;
             }
         }
 
-        if (args.length == 3 && args[0].equals("-c")) {
-            processWithTikaConfig(PipesIterator.build(Paths.get(args[1])), Paths.get(args[1]), Paths.get(args[2]), null);
-            return;
-        }
-
         SimpleAsyncConfig simpleAsyncConfig = parseCommandLine(args);
 
-        Path tikaConfig = null;
-        Path tmpTikaConfig = null;
-        Path pluginsConfig = null;
+        Path tikaConfig = StringUtils.isBlank(simpleAsyncConfig.getTikaConfig()) ? null : Paths.get(simpleAsyncConfig.getTikaConfig());
+        Path pluginsConfig = StringUtils.isBlank(simpleAsyncConfig.getAsyncConfig()) ? null : Paths.get(simpleAsyncConfig.getAsyncConfig());
         Path tmpPluginsConfig = null;
-
-
+        Path tmpTikaConfig = null;
         PipesIterator pipesIterator = null;
-        if (! StringUtils.isBlank(simpleAsyncConfig.getTikaConfig())) {
-            tikaConfig = Paths.get(simpleAsyncConfig.getTikaConfig());
-            try {
-                pipesIterator = PipesIterator.build(tikaConfig);
-            } catch (IOException | TikaException e) {
-                //swallow
-            }
-        }
-
         try {
-            if (pipesIterator == null) {
+            if (tikaConfig == null) {
                 tmpTikaConfig = Files.createTempFile("tika-async-tmp-", ".xml");
                 tikaConfig = tmpTikaConfig;
                 TikaConfigAsyncWriter tikaConfigAsyncWriter = new TikaConfigAsyncWriter(simpleAsyncConfig);
                 tikaConfigAsyncWriter.write(tikaConfig);
             }
-
-            if (! StringUtils.isBlank(simpleAsyncConfig.getAsyncConfig())) {
-                pluginsConfig = Paths.get(simpleAsyncConfig.getAsyncConfig());
-            } else {
+            if (pluginsConfig == null) {
                 tmpPluginsConfig = Files.createTempFile("tika-async-tmp-", ".json");
                 pluginsConfig = tmpPluginsConfig;
                 PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig);
                 pluginsWriter.write(pluginsConfig);
             }
-            if (pipesIterator == null) {
-                pipesIterator = buildPipesIterator(tikaConfig, simpleAsyncConfig);
-            }
+
+            pipesIterator = buildPipesIterator(pluginsConfig, simpleAsyncConfig);
+
+
             processWithTikaConfig(pipesIterator, tikaConfig, pluginsConfig, simpleAsyncConfig);
         } finally {
             if (tmpTikaConfig != null) {
@@ -137,16 +122,17 @@ public class TikaAsyncCLI {
         }
     }
 
-    private static PipesIterator buildPipesIterator(Path tikaConfig, SimpleAsyncConfig simpleAsyncConfig) throws TikaConfigException, IOException {
+
+    private static PipesIterator buildPipesIterator(Path pluginsConfig, SimpleAsyncConfig simpleAsyncConfig) throws TikaConfigException, IOException {
         String inputDirString = simpleAsyncConfig.getInputDir();
         if (StringUtils.isBlank(inputDirString)) {
-            return PipesIterator.build(tikaConfig);
+            return PipesIteratorManager.load(pluginsConfig);
         }
         Path p = Paths.get(simpleAsyncConfig.getInputDir());
         if (Files.isRegularFile(p)) {
-            return new SingleFilePipesIterator(p.getFileName().toString());
+            return new SingleFilePipesIterator(new PluginConfig("", "", ""), p.getFileName().toString());
         }
-        return PipesIterator.build(tikaConfig);
+        return PipesIteratorManager.load(pluginsConfig);
     }
 
     //not private for testing purposes
@@ -154,7 +140,7 @@ public class TikaAsyncCLI {
         if (args.length == 2 && ! args[0].startsWith("-")) {
             return new SimpleAsyncConfig(args[0], args[1], null,
                     null, null, null, null, null,
-                    BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false);
+                    BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false, null);
         }
 
         Options options = getOptions();
@@ -173,6 +159,7 @@ public class TikaAsyncCLI {
         String fileList = null;
         String tikaConfig = null;
         String asyncConfig = null;
+        String pluginsDir = null;
         BasicContentHandlerFactory.HANDLER_TYPE handlerType = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
         boolean extractBytes = false;
         if (line.hasOption("i")) {
@@ -204,6 +191,9 @@ public class TikaAsyncCLI {
         }
         if (line.hasOption('a')) {
             asyncConfig = line.getOptionValue('a');
+        }
+        if (line.hasOption('p')) {
+            pluginsDir = line.getOptionValue('p');
         }
         if (line.getArgList().size() > 2) {
             throw new TikaConfigException("Can't have more than 2 unknown args: " + line.getArgList());
@@ -245,7 +235,8 @@ public class TikaAsyncCLI {
         }
 
         return new SimpleAsyncConfig(inputDir, outputDir,
-                numClients, timeoutMs, xmx, fileList, tikaConfig, asyncConfig, handlerType, extractBytes);
+                numClients, timeoutMs, xmx, fileList, tikaConfig, asyncConfig, handlerType,
+                extractBytes, pluginsDir);
     }
 
     private static BasicContentHandlerFactory.HANDLER_TYPE getHandlerType(String t) throws TikaConfigException {
@@ -326,11 +317,11 @@ public class TikaAsyncCLI {
         System.exit(1);
     }
 
-    private static class SingleFilePipesIterator extends PipesIterator {
+    private static class SingleFilePipesIterator extends PipesIteratorBase {
         private final String fName;
-        public SingleFilePipesIterator(String string) {
-            super();
-            this.fName = string;
+        public SingleFilePipesIterator(PluginConfig pluginConfig, String fName) {
+            super(pluginConfig);
+            this.fName = fName;
         }
 
         @Override

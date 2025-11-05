@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import static org.apache.tika.pipes.core.pipesiterator.PipesIterator.COMPLETED_SEMAPHORE;
+import static org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase.COMPLETED_SEMAPHORE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.pipesiterator.csv.CSVPipesIterator;
 
 public class TestCSVPipesIterator {

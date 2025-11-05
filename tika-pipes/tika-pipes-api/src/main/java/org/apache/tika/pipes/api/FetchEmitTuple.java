@@ -14,16 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core;
+package org.apache.tika.pipes.api;
 
 import java.io.Serializable;
 import java.util.Objects;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
 
 public class FetchEmitTuple implements Serializable {
 
@@ -39,8 +38,6 @@ public class FetchEmitTuple implements Serializable {
     private final Metadata metadata;
     private final ParseContext parseContext;
     private final ON_PARSE_EXCEPTION onParseException;
-
-    private EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig;
 
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey) {
         this(id, fetchKey, emitKey, new Metadata());
@@ -101,8 +98,7 @@ public class FetchEmitTuple implements Serializable {
         FetchEmitTuple that = (FetchEmitTuple) o;
         return Objects.equals(id, that.id) && Objects.equals(fetchKey, that.fetchKey) && Objects.equals(emitKey, that.emitKey)
                 && Objects.equals(metadata, that.metadata) &&
-                Objects.equals(parseContext, that.parseContext) && onParseException == that.onParseException &&
-                Objects.equals(embeddedDocumentBytesConfig, that.embeddedDocumentBytesConfig);
+                Objects.equals(parseContext, that.parseContext) && onParseException == that.onParseException;
     }
 
     @Override
@@ -113,7 +109,6 @@ public class FetchEmitTuple implements Serializable {
         result = 31 * result + Objects.hashCode(metadata);
         result = 31 * result + Objects.hashCode(parseContext);
         result = 31 * result + Objects.hashCode(onParseException);
-        result = 31 * result + Objects.hashCode(embeddedDocumentBytesConfig);
         return result;
     }
 
@@ -121,6 +116,6 @@ public class FetchEmitTuple implements Serializable {
     public String toString() {
         return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey=" + emitKey +
                 ", metadata=" + metadata + ", parseContext=" + parseContext +
-                ", onParseException=" + onParseException + ", embeddedDocumentBytesConfig=" + embeddedDocumentBytesConfig + '}';
+                ", onParseException=" + onParseException + '}';
     }
 }

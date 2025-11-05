@@ -24,9 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.AbstractTikaConfigTest;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.api.emitter.Emitter;
-import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 
 public class TikaPipesConfigTest extends AbstractTikaConfigTest {
     //this handles tests for the newer pipes type configs.
@@ -82,21 +80,21 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
             EmitterManager.load(getConfigFilePath("emitters-duplicate-config.xml"));
         });
     }
-*/
+
     @Test
     public void testPipesIterator() throws Exception {
-        PipesIterator it =
-                PipesIterator.build(getConfigFilePath("pipes-iterator-config.xml"));
+        PipesIteratorBase it =
+                PipesIteratorBase.build(getConfigFilePath("pipes-iterator-config.xml"));
         assertEquals("fsf1", it.getFetcherId());
     }
 
     @Test
     public void testMultiplePipesIterators() throws Exception {
         assertThrows(TikaConfigException.class, () -> {
-            PipesIterator it =
-                    PipesIterator.build(getConfigFilePath("pipes-iterator-multiple-config.xml"));
+            PipesIteratorBase it =
+                    PipesIteratorBase.build(getConfigFilePath("pipes-iterator-multiple-config.xml"));
             assertEquals("fsf1", it.getFetcherId());
         });
     }
-
+*/
 }

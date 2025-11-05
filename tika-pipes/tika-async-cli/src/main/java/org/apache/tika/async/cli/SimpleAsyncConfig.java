@@ -30,10 +30,11 @@ class SimpleAsyncConfig {
     private String asyncConfig;
     private boolean extractBytes;
     private final BasicContentHandlerFactory.HANDLER_TYPE handlerType;
-
+    private final String pluginsDir;
     //TODO -- switch to a builder
     public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx, String fileList,
-                             String tikaConfig, String asyncConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType, boolean extractBytes) {
+                             String tikaConfig, String asyncConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType, boolean extractBytes,
+                             String pluginsDir) {
         this.inputDir = inputDir;
         this.outputDir = outputDir;
         this.numClients = numClients;
@@ -44,6 +45,7 @@ class SimpleAsyncConfig {
         this.asyncConfig = asyncConfig;
         this.handlerType = handlerType;
         this.extractBytes = extractBytes;
+        this.pluginsDir = pluginsDir;
     }
 
     public String getInputDir() {
@@ -84,5 +86,9 @@ class SimpleAsyncConfig {
 
     public BasicContentHandlerFactory.HANDLER_TYPE getHandlerType() {
         return handlerType;
+    }
+
+    public String getPluginsDir() {
+        return pluginsDir;
     }
 }

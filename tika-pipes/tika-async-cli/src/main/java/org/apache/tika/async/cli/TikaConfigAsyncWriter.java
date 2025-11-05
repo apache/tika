@@ -41,7 +41,6 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 class TikaConfigAsyncWriter {
@@ -91,7 +90,6 @@ class TikaConfigAsyncWriter {
             }
         }
 
-        writePipesIterator(document, properties, baseInput);
         writeAsync(document, properties, output);
         Transformer transformer = TransformerFactory
                 .newInstance().newTransformer();
@@ -103,35 +101,6 @@ class TikaConfigAsyncWriter {
             transformer.transform(source, result);
         }
 
-    }
-
-    private void writePipesIterator(Document document, Element properties, Path baseInput) {
-        Element pipesIterator = findChild("pipesIterator", properties);
-        if (pipesIterator != null) {
-            LOG.info("pipesIterator already exists in tika-config. Not overwriting with commandline");
-            return;
-        }
-        if (! StringUtils.isBlank(simpleAsyncConfig.getFileList())) {
-            writeFileListIterator(document, properties, baseInput);
-        } else {
-            writeFileSystemIterator(document, properties, baseInput);
-        }
-    }
-
-    private void writeFileSystemIterator(Document document, Element properties, Path baseInput) {
-        Element pipesIterator = createAndGetElement(document, properties, "pipesIterator",
-                "class", "org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator");
-        appendTextElement(document, pipesIterator, "basePath", baseInput.toAbsolutePath().toString());
-        appendTextElement(document, pipesIterator, "emitterName", EMITTER_NAME);
-    }
-
-    private void writeFileListIterator(Document document, Element properties, Path baseInput) {
-        Element pipesIterator = createAndGetElement(document, properties, "pipesIterator",
-                "class", "org.apache.tika.pipes.pipesiterator.filelist.FileListPipesIterator");
-        appendTextElement(document, pipesIterator, "emitterName", EMITTER_NAME);
-        appendTextElement(document, pipesIterator, "fileList",
-                baseInput.toAbsolutePath().toString());
-        appendTextElement(document, pipesIterator, "hasHeader", "false");
     }
 
     private void writeAsync(Document document, Element properties, Path thisTikaConfig) {

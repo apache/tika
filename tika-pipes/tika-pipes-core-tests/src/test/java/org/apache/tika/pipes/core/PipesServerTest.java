@@ -33,11 +33,14 @@ import org.junit.jupiter.api.io.TempDir;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
-import org.apache.tika.pipes.core.emitter.EmitKey;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
 import org.apache.tika.pipes.core.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 
 public class PipesServerTest extends TikaTest {
@@ -104,7 +107,7 @@ public class PipesServerTest extends TikaTest {
                 new EmbeddedDocumentBytesConfig(true);
         embeddedDocumentBytesConfig.setIncludeOriginal(true);
         ParseContext parseContext = new ParseContext();
-        parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
+        parseContext.set(HandlerConfig.class, PipesIteratorBaseConfig.DEFAULT_HANDLER_CONFIG);
         parseContext.set(EmbeddedDocumentBytesConfig.class, embeddedDocumentBytesConfig);
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fs", testDoc),
@@ -152,7 +155,7 @@ public class PipesServerTest extends TikaTest {
                 new EmbeddedDocumentBytesConfig(true);
         embeddedDocumentBytesConfig.setIncludeOriginal(true);
         ParseContext parseContext = new ParseContext();
-        parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
+        parseContext.set(HandlerConfig.class, PipesIteratorBaseConfig.DEFAULT_HANDLER_CONFIG);
         parseContext.set(EmbeddedDocumentBytesConfig.class, embeddedDocumentBytesConfig);
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fs", testDoc),

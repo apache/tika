@@ -46,17 +46,17 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 import org.apache.tika.utils.StringUtils;
 
 /**
  * Iterates through results from a Solr query.
  */
-public class SolrPipesIterator extends PipesIterator implements Initializable {
+public class SolrPipesIterator extends PipesIteratorBase implements Initializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SolrPipesIterator.class);
     private final HttpClientFactory httpClientFactory;

@@ -34,13 +34,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesReporter;
 import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.core.pipesiterator.TotalCounter;
 
@@ -191,7 +192,7 @@ public class AsyncProcessor implements Closeable {
 
     public void finished() throws InterruptedException {
         for (int i = 0; i < asyncConfig.getNumClients(); i++) {
-            boolean offered = fetchEmitTuples.offer(PipesIterator.COMPLETED_SEMAPHORE,
+            boolean offered = fetchEmitTuples.offer(PipesIteratorBase.COMPLETED_SEMAPHORE,
                     MAX_OFFER_WAIT_MS, TimeUnit.MILLISECONDS);
             if (! offered) {
                 throw new RuntimeException("Couldn't offer completed semaphore within " +
@@ -282,7 +283,7 @@ public class AsyncProcessor implements Closeable {
                         if (LOG.isTraceEnabled()) {
                             LOG.trace("null fetch emit tuple");
                         }
-                    } else if (t == PipesIterator.COMPLETED_SEMAPHORE) {
+                    } else if (t == PipesIteratorBase.COMPLETED_SEMAPHORE) {
                         if (LOG.isTraceEnabled()) {
                             LOG.trace("hit completed semaphore");
                         }

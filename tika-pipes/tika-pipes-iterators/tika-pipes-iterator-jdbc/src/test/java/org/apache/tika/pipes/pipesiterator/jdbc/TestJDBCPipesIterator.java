@@ -43,8 +43,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 
 public class TestJDBCPipesIterator {
 
@@ -90,7 +90,7 @@ public class TestJDBCPipesIterator {
     public void testSimple() throws Exception {
         int numConsumers = 5;
 
-        PipesIterator pipesIterator = getConfig();
+        PipesIteratorBase pipesIterator = getConfig();
         ExecutorService es = Executors.newFixedThreadPool(numConsumers);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(100);
@@ -107,7 +107,7 @@ public class TestJDBCPipesIterator {
         }
         assertEquals(NUM_ROWS, offered);
         for (int i = 0; i < numConsumers; i++) {
-            queue.put(PipesIterator.COMPLETED_SEMAPHORE);
+            queue.put(PipesIteratorBase.COMPLETED_SEMAPHORE);
         }
         int processed = 0;
         int completed = 0;
@@ -152,7 +152,7 @@ public class TestJDBCPipesIterator {
         assertEquals(NUM_ROWS, cnt);
     }
 
-    private PipesIterator getConfig() throws Exception {
+    private PipesIteratorBase getConfig() throws Exception {
         String config = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><properties>\n" + "        <pipesIterator " +
                 "       class=\"org.apache.tika.pipes.pipesiterator.jdbc.JDBCPipesIterator\">\n" + "                <fetcherPluginId>s3f</fetcherPluginId>\n" +
                 "                <emitterName>s3e</emitterName>\n" + "                <queueSize>57</queueSize>\n" + "                <idColumn>my_id</idColumn>\n" +
@@ -161,7 +161,7 @@ public class TestJDBCPipesIterator {
                 DB_DIR.toAbsolutePath() + "/" + db + "</connection>\n" + "        </pipesIterator>\n" + "</properties>";
         Path tmp = Files.createTempFile("tika-jdbc-", ".xml");
         Files.write(tmp, config.getBytes(StandardCharsets.UTF_8));
-        PipesIterator manager = PipesIterator.build(tmp);
+        PipesIteratorBase manager = PipesIteratorBase.build(tmp);
         Files.delete(tmp);
         return manager;
     }
@@ -178,7 +178,7 @@ public class TestJDBCPipesIterator {
         public Integer call() throws Exception {
             while (true) {
                 FetchEmitTuple t = queue.poll(1, TimeUnit.HOURS);
-                if (t == PipesIterator.COMPLETED_SEMAPHORE) {
+                if (t == PipesIteratorBase.COMPLETED_SEMAPHORE) {
                     return pairs.size();
                 }
                 pairs.add(t);

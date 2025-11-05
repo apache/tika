@@ -43,7 +43,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.apache.tika.pipes.core.PipesReporter;
 import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.pipes.core.async.AsyncStatus;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
 
 public class TestFileSystemStatusReporter {
@@ -157,7 +157,7 @@ public class TestFileSystemStatusReporter {
                 PipesResult.STATUS status = statuses[random.nextInt(statuses.length)];
                 PipesResult pipesResult = new PipesResult(status);
 
-                reporter.report(PipesIterator.COMPLETED_SEMAPHORE, pipesResult, 100l);
+                reporter.report(PipesIteratorBase.COMPLETED_SEMAPHORE, pipesResult, 100l);
                 Long cnt = written.get(status);
                 if (cnt == null) {
                     written.put(status, 1l);

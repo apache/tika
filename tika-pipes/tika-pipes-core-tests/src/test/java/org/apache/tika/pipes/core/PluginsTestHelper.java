@@ -40,12 +40,12 @@ public class PluginsTestHelper {
         Path tikaPluginsTemplate = Paths.get("src", "test", "resources", "configs", "fetchers-emitters.json");
         String json = Files.readString(tikaPluginsTemplate, StandardCharsets.UTF_8);
 
-        json = json.replace("FETCHERS_BASE_PATH", fetcherBase
+        json = json.replace("FETCHER_BASE_PATH", fetcherBase
                 .toAbsolutePath()
                 .toString());
 
         if (emitterBase != null) {
-            json = json.replace("EMITTERS_BASE_PATH", emitterBase
+            json = json.replace("EMITTER_BASE_PATH", emitterBase
                     .toAbsolutePath()
                     .toString());
         }

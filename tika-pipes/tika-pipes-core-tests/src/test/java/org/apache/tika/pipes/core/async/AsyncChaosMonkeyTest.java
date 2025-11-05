@@ -20,11 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -35,15 +33,12 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.pipes.api.emitter.EmitData;
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.pipes.core.PluginsTestHelper;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
-import org.apache.tika.plugins.TikaPluginsManager;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 import org.apache.tika.serialization.JsonMetadataList;
 
 public class AsyncChaosMonkeyTest {
@@ -155,7 +150,7 @@ public class AsyncChaosMonkeyTest {
             processor.offer(t, 1000);
         }
         for (int i = 0; i < 10; i++) {
-            processor.offer(PipesIterator.COMPLETED_SEMAPHORE, 1000);
+            processor.offer(PipesIteratorBase.COMPLETED_SEMAPHORE, 1000);
         }
         //TODO clean this up
         while (processor.checkActive()) {
@@ -183,7 +178,7 @@ public class AsyncChaosMonkeyTest {
             processor.offer(t, 1000);
         }
         for (int i = 0; i < 10; i++) {
-            processor.offer(PipesIterator.COMPLETED_SEMAPHORE, 1000);
+            processor.offer(PipesIteratorBase.COMPLETED_SEMAPHORE, 1000);
         }
         //TODO clean this up
         while (processor.checkActive()) {

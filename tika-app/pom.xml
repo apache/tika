@@ -160,6 +160,13 @@
                   <type>jar</type>
                   <overWrite>true</overWrite>
                 </artifactItem>
+                <artifactItem>
+                  <groupId>org.apache.tika</groupId>
+                  <artifactId>tika-pipes-iterator-file-system</artifactId>
+                  <version>${project.version}</version>
+                  <type>jar</type>
+                  <overWrite>true</overWrite>
+                </artifactItem>
               </artifactItems>
             </configuration>
           </execution>

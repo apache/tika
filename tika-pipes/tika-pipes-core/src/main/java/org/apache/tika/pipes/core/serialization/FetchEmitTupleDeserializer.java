@@ -39,9 +39,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.serialization.ParseContextDeserializer;
 
 public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple> {

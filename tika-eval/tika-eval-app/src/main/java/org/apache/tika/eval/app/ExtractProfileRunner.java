@@ -17,6 +17,8 @@
 package org.apache.tika.eval.app;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -54,11 +56,14 @@ import org.apache.tika.eval.app.io.DBWriter;
 import org.apache.tika.eval.app.io.ExtractReader;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MimeTypes;
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 import org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator;
+import org.apache.tika.plugins.PluginConfig;
 
 public class ExtractProfileRunner {
 
@@ -152,7 +157,7 @@ public class ExtractProfileRunner {
                 if (result != null) {
                     //if the dir walker has finished
                     if (result == DIR_WALKER_COMPLETED_VALUE) {
-                        queue.put(PipesIterator.COMPLETED_SEMAPHORE);
+                        queue.put(PipesIteratorBase.COMPLETED_SEMAPHORE);
                         crawlerActive.set(false);
                     } else if (result == PROFILE_WORKER_COMPLETED_VALUE) {
                         activeWorkers.decrementAndGet();
@@ -171,11 +176,18 @@ public class ExtractProfileRunner {
 
     }
 
-    private static PipesIterator createIterator(Path inputDir) {
-        FileSystemPipesIterator fs = new FileSystemPipesIterator(inputDir);
-        fs.setFetcherName("");
-        fs.setEmitterPluginId("");
-        return fs;
+    private static PipesIterator createIterator(Path inputDir) throws IOException {
+        String json = null;
+        try (InputStream is = ExtractProfileRunner.class.getResourceAsStream("/pipes-iterator-template.json")) {
+            json = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        json = json.replace("FETCHER_BASE_PATH", inputDir.toAbsolutePath().toString());
+
+        try {
+            return FileSystemPipesIterator.build(new PluginConfig("", "", json));
+        } catch (TikaConfigException e) {
+            throw new IOException(e);
+        }
     }
 
     private static MimeBuffer initTables(JDBCUtil jdbcUtil, ExtractProfilerBuilder builder, String connectionString, EvalConfig evalConfig) throws SQLException, IOException {
@@ -219,11 +231,11 @@ public class ExtractProfileRunner {
                     LOG.info("ExtractProfileWorker waiting on queue");
                     continue;
                 }
-                if (t == PipesIterator.COMPLETED_SEMAPHORE) {
+                if (t == PipesIteratorBase.COMPLETED_SEMAPHORE) {
                     LOG.debug("worker hit semaphore and is stopping");
                     extractProfiler.closeWriter();
                     //hangs
-                    queue.put(PipesIterator.COMPLETED_SEMAPHORE);
+                    queue.put(PipesIteratorBase.COMPLETED_SEMAPHORE);
                     return PROFILE_WORKER_COMPLETED_VALUE;
                 }
                 extractProfiler.processFileResource(t.getFetchKey());

@@ -20,6 +20,8 @@ package org.apache.tika.pipes.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.pipes.api.FetchEmitTuple;
+
 /**
  * Simple PipesReporter that logs everything at the debug level.
  */

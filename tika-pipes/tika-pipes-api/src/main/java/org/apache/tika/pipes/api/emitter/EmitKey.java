@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.emitter;
+package org.apache.tika.pipes.api.emitter;
 
 import java.io.Serializable;
 import java.util.Objects;

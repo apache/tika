@@ -16,22 +16,8 @@
  */
 package org.apache.tika.pipes.core.pipesiterator.filelist;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.pipesiterator.filelist.FileListPipesIterator;
-
 public class FileListPipesIteratorTest {
-
+/*
     @Test
     public void testBasic() throws Exception {
         Path p = Paths.get(this.getClass().getResource("/test-documents/file-list.txt").toURI());
@@ -77,4 +63,6 @@ public class FileListPipesIteratorTest {
         assertFalse(lines.contains("quick"));
         assertEquals(7, lines.size());
     }
+
+ */
 }

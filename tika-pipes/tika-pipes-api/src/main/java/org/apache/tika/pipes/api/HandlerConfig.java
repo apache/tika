@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core;
+package org.apache.tika.pipes.api;
 
 import java.io.Serializable;
 import java.util.Locale;
@@ -22,16 +22,8 @@ import java.util.Objects;
 
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
+//TODO -- convert this back to a record
 public class HandlerConfig implements Serializable {
-
-    /**
-     * Serial version UID
-     */
-    private static final long serialVersionUID = -3861669115439125268L;
-
-    public static final HandlerConfig DEFAULT_HANDLER_CONFIG =
-            new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, PARSE_MODE.RMETA,
-                    -1, -1, true);
 
     /**
      * {@link PARSE_MODE#RMETA} "recursive metadata" is the same as the -J option
@@ -67,24 +59,17 @@ public class HandlerConfig implements Serializable {
                     "). I regret I do not understand: " + modeString);
         }
     }
-
-    private BasicContentHandlerFactory.HANDLER_TYPE type =
-            BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
-
+    BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
+    PARSE_MODE parseMode = PARSE_MODE.RMETA;
     int writeLimit = -1;
     int maxEmbeddedResources = -1;
-
     boolean throwOnWriteLimitReached = true;
-    PARSE_MODE parseMode = PARSE_MODE.RMETA;
-
 
     public HandlerConfig() {
 
     }
 
-    public HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE type, PARSE_MODE parseMode,
-                         int writeLimit,
-                         int maxEmbeddedResources, boolean throwOnWriteLimitReached) {
+    public HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE type, PARSE_MODE parseMode, int writeLimit, int maxEmbeddedResources, boolean throwOnWriteLimitReached) {
         this.type = type;
         this.parseMode = parseMode;
         this.writeLimit = writeLimit;
@@ -101,7 +86,19 @@ public class HandlerConfig implements Serializable {
     }
 
     public void setType(String typeString) {
-        setType(BasicContentHandlerFactory.HANDLER_TYPE.valueOf(typeString));
+        this.type = BasicContentHandlerFactory.HANDLER_TYPE.valueOf(typeString);
+    }
+
+    public PARSE_MODE getParseMode() {
+        return parseMode;
+    }
+
+    public void setParseMode(PARSE_MODE parseMode) {
+        this.parseMode = parseMode;
+    }
+
+    public void setParseMode(String parseMode) {
+        this.parseMode = PARSE_MODE.valueOf(parseMode);
     }
 
     public int getWriteLimit() {
@@ -128,34 +125,12 @@ public class HandlerConfig implements Serializable {
         this.throwOnWriteLimitReached = throwOnWriteLimitReached;
     }
 
-    public PARSE_MODE getParseMode() {
-        return parseMode;
-    }
-
-    public void setParseMode(PARSE_MODE parseMode) {
-        this.parseMode = parseMode;
-    }
-
-    public void setParseMode(String parseMode) {
-        this.parseMode = PARSE_MODE.parseMode(parseMode);
-    }
-
     @Override
-    public String toString() {
-        return "HandlerConfig{" + "type=" + type + ", writeLimit=" + writeLimit + ", maxEmbeddedResources=" + maxEmbeddedResources +
-                ", throwOnWriteLimitReached=" + throwOnWriteLimitReached + ", parseMode=" + parseMode + '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
+    public final boolean equals(Object o) {
+        if (!(o instanceof HandlerConfig that)) {
             return false;
         }
 
-        HandlerConfig that = (HandlerConfig) o;
         return writeLimit == that.writeLimit && maxEmbeddedResources == that.maxEmbeddedResources && throwOnWriteLimitReached == that.throwOnWriteLimitReached &&
                 type == that.type && parseMode == that.parseMode;
     }
@@ -163,10 +138,10 @@ public class HandlerConfig implements Serializable {
     @Override
     public int hashCode() {
         int result = Objects.hashCode(type);
+        result = 31 * result + Objects.hashCode(parseMode);
         result = 31 * result + writeLimit;
         result = 31 * result + maxEmbeddedResources;
         result = 31 * result + Boolean.hashCode(throwOnWriteLimitReached);
-        result = 31 * result + Objects.hashCode(parseMode);
         return result;
     }
 }

@@ -17,13 +17,8 @@
 package org.apache.tika.pipes.core.pipesiterator;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -32,16 +27,11 @@ import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.ConfigBase;
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaTimeoutException;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
+import org.apache.tika.plugins.AbstractTikaPlugin;
+import org.apache.tika.plugins.PluginConfig;
 
 /**
  * Abstract class that handles the testing for timeouts/thread safety
@@ -50,8 +40,7 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
  * a RuntimeException.  It will throw an IllegalStateException if
  * next() is called after hasNext() has returned false.
  */
-public abstract class PipesIterator extends ConfigBase
-        implements Callable<Integer>, Iterable<FetchEmitTuple>, Initializable  {
+public abstract class PipesIteratorBase extends AbstractTikaPlugin implements PipesIterator {
 
     public static final long DEFAULT_MAX_WAIT_MS = 300_000;
     public static final int DEFAULT_QUEUE_SIZE = 1000;
@@ -59,112 +48,19 @@ public abstract class PipesIterator extends ConfigBase
     public static final FetchEmitTuple COMPLETED_SEMAPHORE =
             new FetchEmitTuple(null,null, null, null, null, null);
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PipesIterator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PipesIteratorBase.class);
 
     private long maxWaitMs = DEFAULT_MAX_WAIT_MS;
     private ArrayBlockingQueue<FetchEmitTuple> queue = null;
     private int queueSize = DEFAULT_QUEUE_SIZE;
-    private String fetcherId;
-    private String emitterId;
-    private FetchEmitTuple.ON_PARSE_EXCEPTION onParseException =
-            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
-    private BasicContentHandlerFactory.HANDLER_TYPE handlerType =
-            BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
-
-    private HandlerConfig.PARSE_MODE parseMode = HandlerConfig.PARSE_MODE.RMETA;
-
-    private boolean throwOnWriteLimitReached = false;
-    private int writeLimit = -1;
-    private int maxEmbeddedResources = -1;
 
     private int added = 0;
     private FutureTask<Integer> futureTask;
 
-    public static PipesIterator build(Path tikaConfigFile) throws IOException,
-            TikaConfigException {
-        try (InputStream is = Files.newInputStream(tikaConfigFile)) {
-            return buildSingle(
-                    "pipesIterator",
-                    PipesIterator.class, is);
-        }
+    public PipesIteratorBase(PluginConfig pluginConfig) {
+        super(pluginConfig);
     }
 
-    public String getFetcherId() {
-        return fetcherId;
-    }
-
-    @Field
-    public void setFetcherId(String fetcherId) {
-        this.fetcherId = fetcherId;
-    }
-
-    public String getEmitterId() {
-        return emitterId;
-    }
-
-    @Field
-    public void setEmitterId(String emitterId) {
-        this.emitterId = emitterId;
-    }
-
-    @Field
-    public void setMaxWaitMs(long maxWaitMs) {
-        this.maxWaitMs = maxWaitMs;
-    }
-
-    @Field
-    public void setQueueSize(int queueSize) {
-        this.queueSize = queueSize;
-    }
-
-    public FetchEmitTuple.ON_PARSE_EXCEPTION getOnParseException() {
-        return onParseException;
-    }
-
-    @Field
-    public void setOnParseException(String onParseException) throws TikaConfigException {
-        if ("skip".equalsIgnoreCase(onParseException)) {
-            setOnParseException(FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
-        } else if ("emit".equalsIgnoreCase(onParseException)) {
-            setOnParseException(FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
-        } else {
-            throw new TikaConfigException("must be either 'skip' or 'emit': " + onParseException);
-        }
-    }
-
-    public void setOnParseException(FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) {
-        this.onParseException = onParseException;
-    }
-
-    @Field
-    public void setHandlerType(String handlerType) {
-        this.handlerType = BasicContentHandlerFactory
-                .parseHandlerType(handlerType, BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
-    }
-
-    @Field
-    public void setWriteLimit(int writeLimit) {
-        this.writeLimit = writeLimit;
-    }
-
-    @Field
-    public void setThrowOnWriteLimitReached(boolean throwOnWriteLimitReached) {
-        this.throwOnWriteLimitReached = throwOnWriteLimitReached;
-    }
-
-    @Field
-    public void setMaxEmbeddedResources(int maxEmbeddedResources) {
-        this.maxEmbeddedResources = maxEmbeddedResources;
-    }
-
-    @Field
-    public void setParseMode(String parseModeString) {
-        setParseMode(HandlerConfig.PARSE_MODE.parseMode(parseModeString));
-    }
-
-    public void setParseMode(HandlerConfig.PARSE_MODE parseMode) {
-        this.parseMode = parseMode;
-    }
 
     public Integer call() throws Exception {
         enqueue();
@@ -172,11 +68,6 @@ public abstract class PipesIterator extends ConfigBase
         return added;
     }
 
-    protected HandlerConfig getHandlerConfig() {
-        //TODO: make throwOnWriteLimitReached configurable
-        return new HandlerConfig(handlerType, parseMode, writeLimit, maxEmbeddedResources,
-                throwOnWriteLimitReached);
-    }
 
     protected abstract void enqueue() throws IOException, TimeoutException, InterruptedException;
 
@@ -186,17 +77,6 @@ public abstract class PipesIterator extends ConfigBase
         if (!offered) {
             throw new TimeoutException("timed out while offering");
         }
-    }
-
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //no-op
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-        //no-op
     }
 
     @Override

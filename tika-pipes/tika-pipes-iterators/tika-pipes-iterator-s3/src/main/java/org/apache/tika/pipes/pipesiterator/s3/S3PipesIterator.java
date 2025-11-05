@@ -53,14 +53,14 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 import org.apache.tika.utils.StringUtils;
 
-public class S3PipesIterator extends PipesIterator implements Initializable {
+public class S3PipesIterator extends PipesIteratorBase implements Initializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PipesIterator.class);
     private String prefix = "";

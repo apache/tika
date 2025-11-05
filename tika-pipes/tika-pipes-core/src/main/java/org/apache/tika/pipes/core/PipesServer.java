@@ -16,6 +16,8 @@
  */
 package org.apache.tika.pipes.core;
 
+import static org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig.DEFAULT_HANDLER_CONFIG;
+
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -66,11 +68,13 @@ import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.StreamEmitter;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
-import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
@@ -643,7 +647,7 @@ public class PipesServer implements Runnable {
             throws TikaConfigException {
         ParseContext parseContext = fetchEmitTuple.getParseContext();
         if (parseContext.get(HandlerConfig.class) == null) {
-            parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
+            parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);
         }
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
         if (embeddedDocumentBytesConfig == null) {
@@ -687,7 +691,7 @@ public class PipesServer implements Runnable {
 
         ContentHandler handler = contentHandlerFactory.getNewContentHandler();
         parseContext.set(DocumentSelector.class, new DocumentSelector() {
-            final int maxEmbedded = handlerConfig.maxEmbeddedResources;
+            final int maxEmbedded = handlerConfig.getMaxEmbeddedResources();
             int embedded = 0;
 
             @Override

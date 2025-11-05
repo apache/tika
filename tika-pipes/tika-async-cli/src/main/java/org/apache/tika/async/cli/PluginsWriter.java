@@ -21,6 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.tika.utils.StringUtils;
+
 public class PluginsWriter {
 
     final static String JSON_TEMPLATE = """
@@ -42,9 +44,31 @@ public class PluginsWriter {
                       "onExists": "EXCEPTION"
                     }
                   }
+                },
+                "pipes_iterator": {
+                  "fspi": {
+                    "file-system-pipes-iterator": {
+                      "basePath": "FETCHER_BASE_PATH",
+                      "countTotal": true,
+                      "baseConfig": {
+                        "fetcherId": "fsf",
+                        "emitterId": "fse",
+                        "handlerConfig": {
+                          "type": "TEXT",
+                          "parseMode": "RMETA",
+                          "writeLimit": -1,
+                          "maxEmbeddedResources": -1,
+                          "throwOnWriteLimitReached": true
+                        },
+                        "onParseException": "EMIT",
+                        "maxWaitMs": 600000,
+                        "queueSize": 10000
+                      }
+                    }
+                  }
                 }
               },
-                "pluginsPaths": "PLUGINS_PATHS"
+              "pluginsPaths": "PLUGINS_PATHS"
             }
             """;
     private final SimpleAsyncConfig simpleAsyncConfig;
@@ -65,7 +89,7 @@ public class PluginsWriter {
         try {
             String json = JSON_TEMPLATE.replace("FETCHER_BASE_PATH", baseInput.toAbsolutePath().toString());
             json = json.replace("EMITTER_BASE_PATH", baseOutput.toAbsolutePath().toString());
-            String pluginString = "plugins";
+            String pluginString = StringUtils.isBlank(simpleAsyncConfig.getPluginsDir()) ? "plugins" : simpleAsyncConfig.getPluginsDir();
             Path plugins = Paths.get(pluginString);
             if (Files.isDirectory(plugins)) {
                 pluginString = plugins.toAbsolutePath().toString();

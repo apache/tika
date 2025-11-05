@@ -61,6 +61,54 @@ public class TikaCLIAsyncTest {
                       "prettyPrint": true
                     }
                   }
+                },
+                "pipes_iterator": {
+                  "fspi": {
+                    "file-system-pipes-iterator": {
+                      "basePath": "FETCHER_BASE_PATH",
+                      "countTotal": true,
+                      "baseConfig": {
+                        "fetcherId": "fsf",
+                        "emitterId": "fse",
+                        "handlerConfig": {
+                          "type": "TEXT",
+                          "parseMode": "RMETA",
+                          "writeLimit": -1,
+                          "maxEmbeddedResources": -1,
+                          "throwOnWriteLimitReached": true
+                        },
+                        "onParseException": "EMIT",
+                        "maxWaitMs": 600000,
+                        "queueSize": 10000
+                      }
+                    }
+                  }
+                }
+              },
+              "pluginsPaths": "PLUGINS_PATHS"
+            }
+            """;
+
+    final static String JSON_TEMPLATE_FETCH_EMIT_ONLY = """
+            {
+              "plugins" : {
+                "fetchers": {
+                  "fsf": {
+                    "file-system-fetcher": {
+                      "basePath": "FETCHER_BASE_PATH",
+                      "extractFileSystemMetadata": false
+                    }
+                  }
+                },
+                "emitters": {
+                  "fse": {
+                    "file-system-emitter": {
+                      "basePath": "EMITTER_BASE_PATH",
+                      "fileExtension": "jsn",
+                      "onExists":"EXCEPTION",
+                      "prettyPrint": true
+                    }
+                  }
                 }
               },
               "pluginsPaths": "PLUGINS_PATHS"

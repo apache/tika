@@ -22,64 +22,66 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.pipes.core.async.AsyncProcessor;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.core.pipesiterator.TotalCounter;
+import org.apache.tika.plugins.PluginConfig;
 
-public class FileSystemPipesIterator extends PipesIterator
-        implements TotalCounter, Initializable, Closeable {
+public class FileSystemPipesIterator extends PipesIteratorBase implements TotalCounter, Closeable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AsyncProcessor.class);
+    public static FileSystemPipesIterator build(PluginConfig pluginConfig) throws TikaConfigException, IOException {
+        FileSystemPipesIterator pipesIterator = new FileSystemPipesIterator(pluginConfig);
+        pipesIterator.configure();
+        return pipesIterator;
+    }
+
+    private FileSystemPipesIteratorConfig config;
 
 
-    private Path basePath;
-    private boolean countTotal = false;
+    private void configure() throws IOException, TikaConfigException {
+        config = FileSystemPipesIteratorConfig.load(pluginConfig.jsonConfig());
+        checkConfig(config);
+        if (config.isCountTotal()) {
+            fileCountWorker = new FileCountWorker(config.getBasePath());
+        }
+
+    }
+
+    private static final Logger LOG = LoggerFactory.getLogger(FileSystemPipesIterator.class);
 
     private FileCountWorker fileCountWorker;
 
-    public FileSystemPipesIterator() {
+    private FileSystemPipesIterator(PluginConfig pluginConfig) {
+        super(pluginConfig);
     }
 
-    public FileSystemPipesIterator(Path basePath) {
-        this.basePath = basePath;
-    }
-
-    @Field
-    public void setBasePath(String basePath) {
-        this.basePath = Paths.get(basePath);
-    }
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        if (!Files.isDirectory(basePath)) {
+        if (!Files.isDirectory(config.getBasePath())) {
             throw new IllegalArgumentException(
-                    "\"basePath\" directory does not exist: " + basePath.toAbsolutePath());
+                    "\"basePath\" directory does not exist: " + config
+                            .getBasePath().toAbsolutePath());
         }
-
+        PipesIteratorBaseConfig config = this.config.getBaseConfig();
         try {
-            Files.walkFileTree(basePath, new FSFileVisitor(getFetcherId(), getEmitterId()));
+            Files.walkFileTree(this.config.getBasePath(), new FSFileVisitor(config.fetcherId(), config.emitterId()));
         } catch (IOException e) {
             Throwable cause = e.getCause();
             if (cause != null && cause instanceof TimeoutException) {
@@ -89,30 +91,16 @@ public class FileSystemPipesIterator extends PipesIterator
         }
     }
 
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
+    public void checkConfig(FileSystemPipesIteratorConfig config)
             throws TikaConfigException {
         //these should all be fatal
-        TikaConfig.mustNotBeEmpty("basePath", basePath);
-        TikaConfig.mustNotBeEmpty("fetcherId", getFetcherId());
-        TikaConfig.mustNotBeEmpty("emitterId", getEmitterId());
+        TikaConfig.mustNotBeEmpty("basePath", config.getBasePath());
     }
 
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        if (countTotal) {
-            fileCountWorker = new FileCountWorker(basePath);
-        }
-    }
 
-    @Field
-    public void setCountTotal(boolean countTotal) {
-        this.countTotal = countTotal;
-    }
     @Override
     public void startTotalCount() {
-        if (! countTotal) {
+        if (!config.isCountTotal()) {
             return;
         }
         fileCountWorker.startTotalCount();
@@ -120,7 +108,7 @@ public class FileSystemPipesIterator extends PipesIterator
 
     @Override
     public TotalCountResult getTotalCount() {
-        if (! countTotal) {
+        if (!config.isCountTotal()) {
             return TotalCountResult.UNSUPPORTED;
         }
         return fileCountWorker.getTotalCount();
@@ -135,12 +123,12 @@ public class FileSystemPipesIterator extends PipesIterator
 
     private class FSFileVisitor implements FileVisitor<Path> {
 
-        private final String fetcherName;
-        private final String emitterName;
+        private final String fetcherId;
+        private final String emitterId;
 
-        private FSFileVisitor(String fetcherName, String emitterName) {
-            this.fetcherName = fetcherName;
-            this.emitterName = emitterName;
+        private FSFileVisitor(String fetcherId, String emitterId) {
+            this.fetcherId = fetcherId;
+            this.emitterId = emitterId;
         }
 
         @Override
@@ -151,14 +139,15 @@ public class FileSystemPipesIterator extends PipesIterator
 
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-            String relPath = basePath.relativize(file).toString();
-
+            String relPath = config
+                    .getBasePath().relativize(file).toString();
+            PipesIteratorBaseConfig config = FileSystemPipesIterator.this.config.getBaseConfig();
             try {
                 ParseContext parseContext = new ParseContext();
-                parseContext.set(HandlerConfig.class, getHandlerConfig());
-                tryToAdd(new FetchEmitTuple(relPath, new FetchKey(fetcherName, relPath),
-                        new EmitKey(emitterName, relPath), new Metadata(), parseContext,
-                        getOnParseException()));
+                parseContext.set(HandlerConfig.class, config.handlerConfig());
+                tryToAdd(new FetchEmitTuple(relPath, new FetchKey(fetcherId, relPath),
+                        new EmitKey(emitterId, relPath), new Metadata(), parseContext,
+                        config.onParseException()));
             } catch (TimeoutException e) {
                 throw new IOException(e);
             } catch (InterruptedException e) {

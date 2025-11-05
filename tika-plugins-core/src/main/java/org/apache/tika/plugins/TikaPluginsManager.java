@@ -41,7 +41,8 @@ public class TikaPluginsManager {
 
     public enum PLUGIN_TYPES {
         FETCHERS,
-        EMITTERS
+        EMITTERS,
+        PIPES_ITERATOR
     }
 
     public static JsonNode loadRoot(Path p) throws IOException, TikaConfigException {
@@ -111,7 +112,7 @@ public class TikaPluginsManager {
             for (Iterator<String> pluginIds = pluginNode.fieldNames(); pluginIds.hasNext(); ) {
                 String pluginId = pluginIds.next();
                 if (++cnt > 1) {
-                    throw new TikaConfigException("Can only have one pluginId per id: id= " + id + " pluginId=" + pluginId);
+                    throw new TikaConfigException("Can only have one pluginId per id: id=" + id + " pluginId=" + pluginId);
                 }
                 JsonNode pluginConfigNode = pluginNode.get(pluginId);
                 PluginConfig pluginConfig = new PluginConfig(id, pluginId, pluginConfigNode.toString());
