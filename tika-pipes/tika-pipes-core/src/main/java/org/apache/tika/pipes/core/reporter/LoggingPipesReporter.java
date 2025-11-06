@@ -14,25 +14,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core;
+package org.apache.tika.pipes.core.reporter;
 
+
+import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
+import org.apache.tika.plugins.AbstractTikaPlugin;
+import org.apache.tika.plugins.PluginConfig;
 
 /**
  * Simple PipesReporter that logs everything at the debug level.
  */
-public class LoggingPipesReporter extends PipesReporter {
+public class LoggingPipesReporter extends AbstractTikaPlugin implements PipesReporter {
     Logger LOGGER = LoggerFactory.getLogger(LoggingPipesReporter.class);
+
+    public LoggingPipesReporter(PluginConfig pluginConfig) {
+        super(pluginConfig);
+    }
 
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
         LOGGER.debug("{} {} {}", t, result, elapsed);
+    }
+
+    @Override
+    public void report(TotalCountResult totalCountResult) {
+        LOGGER.debug("{}", totalCountResult);
+    }
+
+    @Override
+    public boolean supportsTotalCount() {
+        return false;
     }
 
     @Override
@@ -43,5 +62,10 @@ public class LoggingPipesReporter extends PipesReporter {
     @Override
     public void error(String msg) {
         LOGGER.error("error {}", msg);
+    }
+
+    @Override
+    public void close() throws IOException {
+
     }
 }

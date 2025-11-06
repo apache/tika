@@ -34,8 +34,6 @@ public class AsyncConfig extends PipesConfigBase {
 
     private boolean emitIntermediateResults = false;
 
-    private PipesReporter pipesReporter = PipesReporter.NO_OP_REPORTER;
-
     public static AsyncConfig load(Path tikaConfig, Path pipesPluginsConfig) throws IOException, TikaConfigException {
         AsyncConfig asyncConfig = new AsyncConfig();
         if (tikaConfig != null) {
@@ -102,14 +100,6 @@ public class AsyncConfig extends PipesConfigBase {
      */
     public int getNumEmitters() {
         return numEmitters;
-    }
-
-    public PipesReporter getPipesReporter() {
-        return pipesReporter;
-    }
-
-    public void setPipesReporter(PipesReporter pipesReporter) {
-        this.pipesReporter = pipesReporter;
     }
 
     public void setEmitIntermediateResults(boolean emitIntermediateResults) {

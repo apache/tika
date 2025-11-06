@@ -42,7 +42,8 @@ public class TikaPluginsManager {
     public enum PLUGIN_TYPES {
         FETCHERS,
         EMITTERS,
-        PIPES_ITERATOR
+        PIPES_ITERATOR,
+        REPORTERS
     }
 
     public static JsonNode loadRoot(Path p) throws IOException, TikaConfigException {
@@ -52,7 +53,7 @@ public class TikaPluginsManager {
     }
 
 
-    public static JsonNode loadRoot(InputStream is) throws IOException, TikaConfigException {
+    public static JsonNode loadRoot(InputStream is) throws IOException {
         return new ObjectMapper().readTree(new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)));
     }
 

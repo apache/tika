@@ -38,6 +38,7 @@ import org.apache.tika.metadata.listfilter.CompositeMetadataListFilter;
 import org.apache.tika.metadata.listfilter.MetadataListFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 
@@ -67,9 +68,9 @@ public class PipesClientTest {
         PipesResult pipesResult = pipesClient.process(
                 new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
                         new EmitKey(), new Metadata(), new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-        Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
-        assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
-        Metadata metadata = pipesResult.getEmitData().getMetadataList().get(0);
+        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
         assertEquals("testOverlappingText.pdf", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
@@ -82,9 +83,9 @@ public class PipesClientTest {
         PipesResult pipesResult = pipesClient.process(
                 new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
                         new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-        Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
-        assertEquals(1, pipesResult.getEmitData().getMetadataList().size());
-        Metadata metadata = pipesResult.getEmitData().getMetadataList().get(0);
+        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
         assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
@@ -101,9 +102,9 @@ public class PipesClientTest {
         PipesResult pipesResult = pipesClient.process(
                 new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
                         new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-        Assertions.assertNotNull(pipesResult.getEmitData().getMetadataList());
-        assertEquals(5, pipesResult.getEmitData().getMetadataList().size());
-        Metadata metadata = pipesResult.getEmitData().getMetadataList().get(0);
+        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(5, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
         assertEquals(4, Integer.parseInt(metadata.get("X-TIKA:attachment_count")));
     }
 
@@ -122,6 +123,6 @@ public class PipesClientTest {
         PipesResult pipesResult = pipesClient.process(
                 new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
                         new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-        assertEquals(PipesResult.TIMEOUT.getStatus(), pipesResult.getStatus());
+        assertEquals(PipesResults.TIMEOUT.status(), pipesResult.status());
     }
 }

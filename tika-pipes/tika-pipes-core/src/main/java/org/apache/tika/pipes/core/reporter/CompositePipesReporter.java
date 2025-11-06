@@ -14,10 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core;
+package org.apache.tika.pipes.core.reporter;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tika.config.Field;
@@ -29,7 +28,11 @@ import org.apache.tika.plugins.PluginConfig;
 
 public class CompositePipesReporter implements PipesReporter {
 
-    private List<PipesReporter> pipesReporters = new ArrayList<>();
+    private final List<PipesReporter> pipesReporters;
+
+    public CompositePipesReporter(List<PipesReporter> pipesReporterList) {
+        pipesReporters = pipesReporterList;
+    }
 
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {

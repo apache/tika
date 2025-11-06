@@ -16,13 +16,18 @@
  */
 package org.apache.tika.pipes.core.async;
 
+import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.core.PipesResult;
+import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.api.reporter.PipesReporter;
+import org.apache.tika.plugins.PluginConfig;
 
-public final class MockReporter extends PipesReporter {
+//TODO -- figure out how to add this back in for the AsyncChaosMonkeyTest
+public final class MockReporter implements PipesReporter {
 
     static ArrayBlockingQueue<PipesResult> RESULTS = new ArrayBlockingQueue<>(10000);
 
@@ -31,6 +36,16 @@ public final class MockReporter extends PipesReporter {
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
         RESULTS.add(result);
+    }
+
+    @Override
+    public void report(TotalCountResult totalCountResult) {
+
+    }
+
+    @Override
+    public boolean supportsTotalCount() {
+        return false;
     }
 
     @Override
@@ -55,5 +70,15 @@ public final class MockReporter extends PipesReporter {
     @Override
     public String toString() {
         return "MockReporter{" + "endpoint='" + endpoint + '\'' + '}';
+    }
+
+    @Override
+    public void close() throws IOException {
+
+    }
+
+    @Override
+    public PluginConfig getPluginConfig() {
+        return null;
     }
 }

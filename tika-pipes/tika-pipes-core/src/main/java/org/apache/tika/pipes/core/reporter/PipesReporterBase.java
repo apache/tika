@@ -14,35 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core;
+package org.apache.tika.pipes.core.reporter;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
+import org.apache.tika.plugins.AbstractTikaPlugin;
+import org.apache.tika.plugins.PluginConfig;
 
 /**
  * Base class that includes filtering by {@link PipesResult.STATUS}
  */
-public abstract class PipesReporterBase extends PipesReporter implements Initializable {
+public abstract class PipesReporterBase extends AbstractTikaPlugin implements PipesReporter {
 
     private final Set<PipesResult.STATUS> includes = new HashSet<>();
     private final Set<PipesResult.STATUS> excludes = new HashSet<>();
 
     private StatusFilter statusFilter;
 
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
+    public PipesReporterBase(PluginConfig pluginConfig) throws TikaConfigException {
+        super(pluginConfig);
         statusFilter = buildStatusFilter(includes, excludes);
     }
+
 
     private StatusFilter buildStatusFilter(Set<PipesResult.STATUS> includes,
                                            Set<PipesResult.STATUS> excludes) throws TikaConfigException {
@@ -58,11 +57,6 @@ public abstract class PipesReporterBase extends PipesReporter implements Initial
         return new AcceptAllFilter();
     }
 
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-
-    }
 
     /**
      * Implementations must call this for the includes/excludes filters to work!

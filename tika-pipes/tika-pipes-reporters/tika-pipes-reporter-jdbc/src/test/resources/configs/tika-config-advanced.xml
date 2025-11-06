@@ -31,20 +31,5 @@
       <arg>-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}</arg>
     </forkedJvmArgs>
     <timeoutMillis>60000</timeoutMillis>
-    <pipesReporter class="org.apache.tika.pipes.reporters.jdbc.JDBCPipesReporter">
-      <connection>CONNECTION_STRING</connection>
-      <includes>
-        <include>PARSE_SUCCESS</include>
-        <include>PARSE_SUCCESS_WITH_EXCEPTION</include>
-      </includes>
-      <tableName>my_tika_status</tableName>
-      <createTable>false</createTable>
-      <reportSql>update my_tika_status set status=?, timestamp=? where id=?</reportSql>
-      <reportVariables>
-        <v>status</v>
-        <v>timestamp</v>
-        <v>id</v>
-      </reportVariables>
-    </pipesReporter>
   </async>
 </properties>

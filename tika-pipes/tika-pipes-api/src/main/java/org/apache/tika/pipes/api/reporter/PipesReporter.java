@@ -17,7 +17,6 @@
 package org.apache.tika.pipes.api.reporter;
 
 import java.io.Closeable;
-import java.io.IOException;
 
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;

@@ -23,8 +23,5 @@
     <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
     <emitWithinMillis>60000</emitWithinMillis>
     <numEmitters>1</numEmitters>
-    <pipesReporter class="org.apache.tika.pipes.core.async.MockReporter">
-      <endpoint>somethingOrOther</endpoint>
-    </pipesReporter>
   </async>
 </properties>

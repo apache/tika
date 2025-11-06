@@ -25,17 +25,5 @@
       <emitWithinMillis>60000</emitWithinMillis>
       <numEmitters>1</numEmitters>
     </params>
-    <pipesReporter class="org.apache.tika.pipes.core.CompositePipesReporter">
-      <pipesReporter class="org.apache.tika.pipes.core.async.MockReporter">
-        <params>
-          <endpoint>somethingOrOther1</endpoint>
-        </params>
-      </pipesReporter>
-      <pipesReporter class="org.apache.tika.pipes.core.async.MockReporter">
-        <params>
-          <endpoint>somethingOrOther2</endpoint>
-        </params>
-      </pipesReporter>
-    </pipesReporter>
   </async>
 </properties>

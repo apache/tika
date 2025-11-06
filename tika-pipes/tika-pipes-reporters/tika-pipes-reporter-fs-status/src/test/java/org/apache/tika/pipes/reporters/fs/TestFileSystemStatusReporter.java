@@ -40,19 +40,29 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.pipes.core.PipesResult;
+import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.api.reporter.PipesReporter;
 import org.apache.tika.pipes.core.async.AsyncStatus;
 import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
+import org.apache.tika.plugins.PluginConfig;
 
 public class TestFileSystemStatusReporter {
 
+    private static String JSON_TEMPLATE = """
+            {
+                "statusFile": "STATUS_FILE",
+                "reportUpdateMs": 100
+            }
+            """;
+
     @Test
     public void testBasic(@TempDir Path tmpDir) throws Exception {
-        FileSystemStatusReporter reporter = new FileSystemStatusReporter();
+
         Path path = Files.createTempFile(tmpDir, "tika-fssr-", ".xml");
-        reporter.setStatusFile(path.toAbsolutePath().toString());
-        reporter.setReportUpdateMillis(100);
-        reporter.initialize(new HashMap<>());
+
+        FileSystemStatusReporter reporter = new FileSystemReporterFactory().buildPlugin(
+                new PluginConfig("", "", JSON_TEMPLATE.replace("STATUS_FILE", path.toAbsolutePath().toString())));
         final ObjectMapper objectMapper = JsonMapper.builder()
                 .addModule(new JavaTimeModule())
                 .build();

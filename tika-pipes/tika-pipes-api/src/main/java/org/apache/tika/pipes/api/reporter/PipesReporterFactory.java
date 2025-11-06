@@ -16,7 +16,6 @@
  */
 package org.apache.tika.pipes.api.reporter;
 
-import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.plugins.TikaPluginFactory;
 
 public interface PipesReporterFactory extends TikaPluginFactory<PipesReporter> {

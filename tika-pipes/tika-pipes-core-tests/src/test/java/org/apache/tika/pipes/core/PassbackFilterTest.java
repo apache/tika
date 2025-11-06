@@ -40,6 +40,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.serialization.JsonMetadataList;
@@ -82,16 +83,16 @@ public class PassbackFilterTest {
                 new FetchEmitTuple(testPdfFile, new FetchKey(fetcherId, testPdfFile),
                         new EmitKey(emitterId, emitFileBase), new Metadata(), parseContext,
                         FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-        assertEquals(PipesResult.STATUS.EMIT_SUCCESS_PASSBACK, pipesResult.getStatus());
+        assertEquals(PipesResult.STATUS.EMIT_SUCCESS_PASSBACK, pipesResult.status());
         Assertions.assertNotNull(pipesResult
-                .getEmitData()
+                .emitData()
                 .getMetadataList());
         assertEquals(1, pipesResult
-                .getEmitData()
+                .emitData()
                 .getMetadataList()
                 .size());
         Metadata metadata = pipesResult
-                .getEmitData()
+                .emitData()
                 .getMetadataList()
                 .get(0);
         assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));

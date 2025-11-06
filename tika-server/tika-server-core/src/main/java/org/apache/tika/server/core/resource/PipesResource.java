@@ -17,6 +17,8 @@
 
 package org.apache.tika.server.core.resource;
 
+import static org.apache.tika.pipes.api.PipesResult.STATUS.PARSE_SUCCESS;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -38,10 +40,10 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
-import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
 
 @Path("/pipes")
@@ -95,22 +97,22 @@ public class PipesResource {
     private Map<String, String> processTuple(FetchEmitTuple fetchEmitTuple) throws InterruptedException, PipesException, IOException {
 
         PipesResult pipesResult = pipesParser.parse(fetchEmitTuple);
-        switch (pipesResult.getStatus()) {
+        switch (pipesResult.status()) {
             case CLIENT_UNAVAILABLE_WITHIN_MS:
                 throw new IllegalStateException("client not available within " + "allotted amount of time");
             case EMIT_EXCEPTION:
-                return returnEmitException(pipesResult.getMessage());
+                return returnEmitException(pipesResult.message());
             case PARSE_SUCCESS:
             case PARSE_SUCCESS_WITH_EXCEPTION:
                 throw new IllegalArgumentException("Should have emitted in forked process?!");
             case EMIT_SUCCESS:
                 return returnSuccess();
             case EMIT_SUCCESS_PARSE_EXCEPTION:
-                return parseException(pipesResult.getMessage(), true);
+                return parseException(pipesResult.message(), true);
             case PARSE_EXCEPTION_EMIT:
                 throw new IllegalArgumentException("Should have tried to emit in forked " + "process?!");
             case PARSE_EXCEPTION_NO_EMIT:
-                return parseException(pipesResult.getMessage(), false);
+                return parseException(pipesResult.message(), false);
             case TIMEOUT:
                 return returnError("timeout");
             case OOM:
@@ -123,7 +125,7 @@ public class PipesResource {
                         .getEmitterId());
             }
             default:
-                throw new IllegalArgumentException("I'm sorry, I don't yet handle a status of " + "this type: " + pipesResult.getStatus());
+                throw new IllegalArgumentException("I'm sorry, I don't yet handle a status of " + "this type: " + pipesResult.status());
         }
     }
 
