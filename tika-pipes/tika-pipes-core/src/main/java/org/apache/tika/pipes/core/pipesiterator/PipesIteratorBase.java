@@ -45,9 +45,6 @@ public abstract class PipesIteratorBase extends AbstractTikaPlugin implements Pi
     public static final long DEFAULT_MAX_WAIT_MS = 300_000;
     public static final int DEFAULT_QUEUE_SIZE = 1000;
 
-    public static final FetchEmitTuple COMPLETED_SEMAPHORE =
-            new FetchEmitTuple(null,null, null, null, null, null);
-
     private static final Logger LOGGER = LoggerFactory.getLogger(PipesIteratorBase.class);
 
     private long maxWaitMs = DEFAULT_MAX_WAIT_MS;

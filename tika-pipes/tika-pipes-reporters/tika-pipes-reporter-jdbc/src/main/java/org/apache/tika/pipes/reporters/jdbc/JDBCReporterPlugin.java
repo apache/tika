@@ -14,28 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetcher.fs.config;
+package org.apache.tika.pipes.reporters.jdbc;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.pf4j.Plugin;
+import org.pf4j.PluginWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.junit.jupiter.api.Test;
+public class JDBCReporterPlugin extends Plugin {
+    private static final Logger LOG = LoggerFactory.getLogger(JDBCReporterPlugin.class);
 
-import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
-
-public class FileSystemFetcherConfigTest {
-
-    @Test
-    public void testBasic() throws Exception {
-        String json = """
-                {
-                    "basePath":"/some/base/path",
-                    "extractFileSystemMetadata":true
-                }
-                """;
-
-        FileSystemFetcherConfig config = FileSystemFetcherConfig.load(json);
-        assertEquals("/some/base/path", config.getBasePath());
-        assertTrue(config.isExtractFileSystemMetadata());
+    public JDBCReporterPlugin(PluginWrapper wrapper) {
+        super(wrapper);
     }
+
+    @Override
+    public void start() {
+        LOG.info("Starting");
+        super.start();
+    }
+
+    @Override
+    public void stop() {
+        LOG.info("Stopping");
+        super.stop();
+    }
+
+    @Override
+    public void delete() {
+        LOG.info("Deleting");
+        super.delete();
+    }
+
 }

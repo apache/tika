@@ -22,4 +22,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.plugins.TikaPlugin;
 
 public interface PipesIterator extends TikaPlugin, Callable<Integer>, Iterable<FetchEmitTuple> {
+    FetchEmitTuple COMPLETED_SEMAPHORE =
+            new FetchEmitTuple(null,null, null, null, null, null);
+
 }

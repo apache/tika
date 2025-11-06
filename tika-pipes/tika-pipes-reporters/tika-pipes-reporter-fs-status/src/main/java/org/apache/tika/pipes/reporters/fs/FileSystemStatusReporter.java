@@ -37,7 +37,6 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
-import org.apache.tika.pipes.core.async.AsyncStatus;
 import org.apache.tika.plugins.AbstractTikaPlugin;
 import org.apache.tika.plugins.PluginConfig;
 import org.apache.tika.utils.ExceptionUtils;

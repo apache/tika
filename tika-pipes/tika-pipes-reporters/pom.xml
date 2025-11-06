@@ -33,10 +33,48 @@
 
   <modules>
     <module>tika-pipes-reporter-fs-status</module>
-<!--    <module>tika-pipes-reporter-opensearch</module>
-    <module>tika-pipes-reporter-jdbc</module> -->
+    <module>tika-pipes-reporter-jdbc</module>
+<!--    <module>tika-pipes-reporter-opensearch</module> -->
   </modules>
 
+  <properties>
+    <!-- Override below properties in each plugin's pom.xml -->
+    <plugin.id/>
+    <plugin.class/>
+    <plugin.version/>
+    <plugin.provider/>
+    <plugin.dependencies/>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.pf4j</groupId>
+      <artifactId>pf4j</artifactId>
+      <!-- !!! VERY IMPORTANT -->
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-pipes-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-plugins-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
   <scm>
     <tag>3.0.0-rc1</tag>
   </scm>

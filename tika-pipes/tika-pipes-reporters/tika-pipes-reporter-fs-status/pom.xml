@@ -33,16 +33,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pipes-core</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
     </dependency>
@@ -60,11 +50,11 @@
             </manifest>
             <manifestEntries>
               <Automatic-Module-Name>org.apache.tika.pipes.reporters.fs.status</Automatic-Module-Name>
-              <Plugin-Id>file-system-pipes-iterator</Plugin-Id>
+              <Plugin-Id>file-system-status-reporter</Plugin-Id>
               <Plugin-Version>${project.version}</Plugin-Version>
-              <Plugin-Class>org.apache.tika.pipes.pipesiterator.fsFileSystemFetcherPlugin</Plugin-Class>
-              <Plugin-Provider>Local File System Pipes iterator</Plugin-Provider>
-              <Plugin-Description>Capable of iterating files on the local file system</Plugin-Description>
+              <Plugin-Class>org.apache.tika.pipes.reporters.fs.FileSystemReporterPlugin</Plugin-Class>
+              <Plugin-Provider>Local File System reporter</Plugin-Provider>
+              <Plugin-Description>Capable of reporting status to the file system</Plugin-Description>
               <!--              <Plugin-Requires>1.0.0</Plugin-Requires> -->
               <Plugin-Dependencies></Plugin-Dependencies>
             </manifestEntries>

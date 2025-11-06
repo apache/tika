@@ -14,28 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetcher.fs.config;
+package org.apache.tika.pipes.reporters.jdbc;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.io.IOException;
 
-import org.junit.jupiter.api.Test;
+import org.pf4j.Extension;
 
-import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.api.reporter.PipesReporterFactory;
+import org.apache.tika.plugins.PluginConfig;
 
-public class FileSystemFetcherConfigTest {
+@Extension
+public class JDBCPipesReporterFactory implements PipesReporterFactory {
 
-    @Test
-    public void testBasic() throws Exception {
-        String json = """
-                {
-                    "basePath":"/some/base/path",
-                    "extractFileSystemMetadata":true
-                }
-                """;
-
-        FileSystemFetcherConfig config = FileSystemFetcherConfig.load(json);
-        assertEquals("/some/base/path", config.getBasePath());
-        assertTrue(config.isExtractFileSystemMetadata());
+    @Override
+    public JDBCPipesReporter buildPlugin(PluginConfig pluginConfig) throws IOException, TikaConfigException {
+        return JDBCPipesReporter.build(pluginConfig);
     }
 }

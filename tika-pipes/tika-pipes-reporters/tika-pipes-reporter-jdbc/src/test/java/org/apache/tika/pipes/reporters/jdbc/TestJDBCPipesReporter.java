@@ -16,14 +16,9 @@
  */
 package org.apache.tika.pipes.reporters.jdbc;
 
-import static org.apache.tika.pipes.core.PipesResult.STATUS.PARSE_SUCCESS;
-import static org.apache.tika.pipes.core.PipesResult.STATUS.PARSE_SUCCESS_WITH_EXCEPTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -44,18 +39,26 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.core.PipesResult;
-import org.apache.tika.pipes.core.async.AsyncConfig;
+import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.api.reporter.PipesReporter;
+import org.apache.tika.plugins.PluginConfig;
 
 
 public class TestJDBCPipesReporter {
+
+    private static final String JSON_TEMPLATE = """
+            {
+                "connectionString":"CONNECTION_STRING"
+            }
+            """;
+
 
     @Test
     public void testBasic(@TempDir Path tmpDir) throws Exception {
@@ -65,9 +68,8 @@ public class TestJDBCPipesReporter {
 
         int numThreads = 10;
         int numIterations = 200;
-        JDBCPipesReporter reporter = new JDBCPipesReporter();
-        reporter.setConnection(connectionString);
-        reporter.initialize(new HashMap<>());
+        String json = JSON_TEMPLATE.replace("CONNECTION_STRING", connectionString);
+        JDBCPipesReporter reporter = JDBCPipesReporter.build(new PluginConfig("", "", json));
 
         Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
         reporter.close();
@@ -81,102 +83,6 @@ public class TestJDBCPipesReporter {
             sum += e.getValue();
         }
         assertEquals(numThreads * numIterations, sum);
-    }
-
-    @Test
-    public void testIncludes(@TempDir Path tmpDir) throws Exception {
-        Files.createDirectories(tmpDir.resolve("db"));
-        Path dbDir = tmpDir.resolve("db/h2");
-        Path config = tmpDir.resolve("tika-config.xml");
-        String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
-
-        writeConfig("/configs/tika-config-includes.xml",
-                connectionString, config);
-
-        AsyncConfig asyncConfig = AsyncConfig.load(config);
-        PipesReporter reporter = asyncConfig.getPipesReporter();
-        int numThreads = 10;
-        int numIterations = 200;
-
-        Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
-        reporter.close();
-        Map<PipesResult.STATUS, Long> total = countReported(connectionString);
-        assertEquals(2, total.size());
-        long sum = 0;
-        for (Map.Entry<PipesResult.STATUS, Long> e : expected.entrySet()) {
-            if (e.getKey() == PARSE_SUCCESS || e.getKey() == PARSE_SUCCESS_WITH_EXCEPTION) {
-                assertTrue(total.containsKey(e.getKey()), e.getKey().toString());
-                assertEquals(e.getValue(), total.get(e.getKey()), e.getKey().toString());
-            } else {
-                assertFalse(total.containsKey(e.getKey()), e.getKey().toString());
-            }
-            sum += e.getValue();
-        }
-        assertEquals(numThreads * numIterations, sum);
-    }
-
-    @Test
-    public void testExcludes(@TempDir Path tmpDir) throws Exception {
-        Files.createDirectories(tmpDir.resolve("db"));
-        Path dbDir = tmpDir.resolve("db/h2");
-        Path config = tmpDir.resolve("tika-config.xml");
-        String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
-
-        writeConfig("/configs/tika-config-excludes.xml",
-                connectionString, config);
-        AsyncConfig asyncConfig = AsyncConfig.load(config);
-        PipesReporter reporter = asyncConfig.getPipesReporter();
-        int numThreads = 10;
-        int numIterations = 200;
-
-        Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
-        reporter.close();
-        Map<PipesResult.STATUS, Long> total = countReported(connectionString);
-        assertEquals(17, total.size());
-        long sum = 0;
-        for (Map.Entry<PipesResult.STATUS, Long> e : expected.entrySet()) {
-            if (e.getKey() != PARSE_SUCCESS && e.getKey() != PARSE_SUCCESS_WITH_EXCEPTION) {
-                assertTrue(total.containsKey(e.getKey()), e.getKey().toString());
-                assertEquals(e.getValue(), total.get(e.getKey()), e.getKey().toString());
-            } else {
-                assertFalse(total.containsKey(e.getKey()), e.getKey().toString());
-            }
-            sum += e.getValue();
-        }
-        assertEquals(numThreads * numIterations, sum);
-    }
-
-    @Test
-    public void testAdvanced(@TempDir Path tmpDir) throws Exception {
-        //this only tests configuration. we should add an actual unit test
-        Files.createDirectories(tmpDir.resolve("db"));
-        Path dbDir = tmpDir.resolve("db/h2");
-        Path config = tmpDir.resolve("tika-config.xml");
-        String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
-
-        writeConfig("/configs/tika-config-advanced.xml",
-                connectionString, config);
-
-        //build the table outside of the reporter -- we set createTable=false
-        try (Connection connection = DriverManager.getConnection(connectionString)) {
-            try (Statement st = connection.createStatement()) {
-                st.execute("create table my_tika_status (id varchar(256), status varchar" +
-                        "(256), timestamp timestamp with time zone)");
-            }
-        }
-
-        AsyncConfig asyncConfig = AsyncConfig.load(config);
-        JDBCPipesReporter reporter = (JDBCPipesReporter)asyncConfig.getPipesReporter();
-        assertEquals("update my_tika_status set status=?, timestamp=? where id=?",
-                reporter.getReportSql());
-        assertFalse(reporter.isCreateTable());
-
-        List<String> expected = new ArrayList<>();
-        expected.add("status");
-        expected.add("timestamp");
-        expected.add("id");
-
-        assertEquals(expected, reporter.getReportVariables());
     }
 
 
@@ -287,9 +193,4 @@ public class TestJDBCPipesReporter {
         }
     }
 
-    private void writeConfig(String srcConfig, String dbDir, Path config) throws IOException {
-        String xml = IOUtils.resourceToString(srcConfig, StandardCharsets.UTF_8);
-        xml = xml.replace("CONNECTION_STRING", dbDir);
-        Files.write(config, xml.getBytes(StandardCharsets.UTF_8));
-    }
 }

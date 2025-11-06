@@ -39,7 +39,6 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
-import org.apache.tika.pipes.fetcher.fs.config.FileSystemFetcherConfig;
 import org.apache.tika.plugins.AbstractTikaPlugin;
 import org.apache.tika.plugins.PluginConfig;
 import org.apache.tika.plugins.PluginConfigs;

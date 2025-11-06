@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.async;
+package org.apache.tika.pipes.reporters.fs;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -24,7 +24,7 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.utils.StringUtils;
 
-public class AsyncStatus {
+class AsyncStatus {
 
     public enum ASYNC_STATUS {
         STARTED,

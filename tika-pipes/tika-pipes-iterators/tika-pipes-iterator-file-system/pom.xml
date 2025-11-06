@@ -31,14 +31,6 @@
   <name>Apache Tika Pipes Iterator - file system</name>
   <url>https://tika.apache.org/</url>
 
-  <dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pipes-core</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
   <build>
     <plugins>
       <plugin>
