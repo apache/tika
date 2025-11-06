@@ -18,6 +18,7 @@ package org.apache.tika.pipes.reporters.jdbc;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,7 +47,8 @@ import org.apache.tika.exception.TikaConfigException;
  * @param reportWithinMs
  * @param cacheSize
  */
-public record JDBCPipesReporterConfig(String connectionString, String reportSql, String tableName, boolean createTable, String postConnectionSql,
+public record JDBCPipesReporterConfig(String connectionString, Set<String> includes, Set<String> excludes, String reportSql, String tableName, boolean createTable,
+                                      String postConnectionSql,
                                       List<String> reportVariables, long reportWithinMs, int cacheSize) {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -60,8 +62,12 @@ public record JDBCPipesReporterConfig(String connectionString, String reportSql,
     }
 
     @JsonCreator
-    public JDBCPipesReporterConfig(@JsonProperty("connectionString") String connectionString) {
-        this(connectionString, null, JDBCPipesReporter.TABLE_NAME, true,
+    public JDBCPipesReporterConfig(@JsonProperty("connectionString") String connectionString,
+                                   @JsonProperty("includes") Set<String> includes,
+                                   @JsonProperty("excludes") Set<String> excludes) {
+        this(connectionString,
+                includes == null ? Set.of() : includes,
+                excludes == null ? Set.of() : excludes, null, JDBCPipesReporter.TABLE_NAME, true,
                 null, List.of(), JDBCPipesReporter.DEFAULT_REPORT_WITHIN_MS, JDBCPipesReporter.DEFAULT_CACHE_SIZE);
     }
 }

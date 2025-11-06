@@ -14,13 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.reporter;
+package org.apache.tika.pipes.reporters;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
@@ -32,26 +30,24 @@ import org.apache.tika.plugins.PluginConfig;
  */
 public abstract class PipesReporterBase extends AbstractTikaPlugin implements PipesReporter {
 
-    private final Set<PipesResult.STATUS> includes = new HashSet<>();
-    private final Set<PipesResult.STATUS> excludes = new HashSet<>();
 
     private StatusFilter statusFilter;
 
-    public PipesReporterBase(PluginConfig pluginConfig) throws TikaConfigException {
+    public PipesReporterBase(PluginConfig pluginConfig, Set<String> includes, Set<String> excludes) throws TikaConfigException {
         super(pluginConfig);
         statusFilter = buildStatusFilter(includes, excludes);
     }
 
 
-    private StatusFilter buildStatusFilter(Set<PipesResult.STATUS> includes,
-                                           Set<PipesResult.STATUS> excludes) throws TikaConfigException {
-        if (includes.size() > 0 && excludes.size() > 0) {
+    private StatusFilter buildStatusFilter(Set<String> includes,
+                                           Set<String> excludes) throws TikaConfigException {
+        if (! includes.isEmpty() && ! excludes.isEmpty()) {
             throw new TikaConfigException("Only one of includes and excludes may have any " +
                     "contents");
         }
-        if (includes.size() > 0) {
+        if (! includes.isEmpty()) {
             return new IncludesFilter(includes);
-        } else if (excludes.size() > 0) {
+        } else if (!excludes.isEmpty()) {
             return new ExcludesFilter(excludes);
         }
         return new AcceptAllFilter();
@@ -67,48 +63,6 @@ public abstract class PipesReporterBase extends AbstractTikaPlugin implements Pi
         return statusFilter.accept(status);
     }
 
-    @Field
-    public void setIncludes(List<String> includes) throws TikaConfigException {
-        for (String s : includes) {
-            try {
-                PipesResult.STATUS status = PipesResult.STATUS.valueOf(s);
-                this.includes.add(status);
-            } catch (IllegalArgumentException e) {
-                String optionString = getOptionString();
-                throw new TikaConfigException(
-                        "I regret I don't recognize " + s + ". I only understand: " + optionString,
-                        e);
-            }
-        }
-    }
-
-    @Field
-    public void setExcludes(List<String> excludes) throws TikaConfigException {
-        for (String s : excludes) {
-            try {
-                PipesResult.STATUS status = PipesResult.STATUS.valueOf(s);
-                this.excludes.add(status);
-            } catch (IllegalArgumentException e) {
-                String optionString = getOptionString();
-                throw new TikaConfigException(
-                        "I regret I don't recognize " + s + ". I only understand: " + optionString,
-                        e);
-            }
-        }
-    }
-
-    private String getOptionString() {
-        StringBuilder sb = new StringBuilder();
-        int i = 0;
-        for (PipesResult.STATUS status : PipesResult.STATUS.values()) {
-            if (++i > 1) {
-                sb.append(", ");
-            }
-            sb.append(status.name());
-        }
-        return sb.toString();
-    }
-
     private abstract static class StatusFilter {
         abstract boolean accept(PipesResult.STATUS status);
     }
@@ -116,8 +70,8 @@ public abstract class PipesReporterBase extends AbstractTikaPlugin implements Pi
     private static class IncludesFilter extends StatusFilter {
         private final Set<PipesResult.STATUS> includes;
 
-        private IncludesFilter(Set<PipesResult.STATUS> includes) {
-            this.includes = includes;
+        private IncludesFilter(Set<String> includesStrings) {
+            this.includes = convert(includesStrings);
         }
 
         @Override
@@ -129,8 +83,8 @@ public abstract class PipesReporterBase extends AbstractTikaPlugin implements Pi
     private static class ExcludesFilter extends StatusFilter {
         private final Set<PipesResult.STATUS> excludes;
 
-        ExcludesFilter(Set<PipesResult.STATUS> excludes) {
-            this.excludes = excludes;
+        ExcludesFilter(Set<String> excludes) {
+            this.excludes = convert(excludes);
         }
 
         @Override
@@ -145,6 +99,14 @@ public abstract class PipesReporterBase extends AbstractTikaPlugin implements Pi
         boolean accept(PipesResult.STATUS status) {
             return true;
         }
+    }
+
+    private static Set<PipesResult.STATUS> convert(Set<String> statusStrings) {
+        Set<PipesResult.STATUS> ret = new HashSet<>();
+        for (String s : statusStrings) {
+            ret.add(PipesResult.STATUS.valueOf(s));
+        }
+        return ret;
     }
 
 

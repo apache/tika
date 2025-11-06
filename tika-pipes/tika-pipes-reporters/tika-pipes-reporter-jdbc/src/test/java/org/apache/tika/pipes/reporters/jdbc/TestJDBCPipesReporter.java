@@ -16,7 +16,10 @@
  */
 package org.apache.tika.pipes.reporters.jdbc;
 
+import static org.apache.tika.pipes.api.PipesResult.STATUS.PARSE_SUCCESS;
+import static org.apache.tika.pipes.api.PipesResult.STATUS.PARSE_SUCCESS_WITH_EXCEPTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -59,6 +62,20 @@ public class TestJDBCPipesReporter {
             }
             """;
 
+    private static final String JSON_TEMPLATE_INCLUDES = """
+            {
+                "connectionString":"CONNECTION_STRING",
+                "includes": ["PARSE_SUCCESS", "PARSE_SUCCESS_WITH_EXCEPTION"]
+            }
+            """;
+
+    private static final String JSON_TEMPLATE_EXCLUDES = """
+            {
+                "connectionString":"CONNECTION_STRING",
+                "excludes": ["PARSE_SUCCESS", "PARSE_SUCCESS_WITH_EXCEPTION"]
+            }
+            """;
+
 
     @Test
     public void testBasic(@TempDir Path tmpDir) throws Exception {
@@ -85,6 +102,62 @@ public class TestJDBCPipesReporter {
         assertEquals(numThreads * numIterations, sum);
     }
 
+    @Test
+    public void testIncludes(@TempDir Path tmpDir) throws Exception {
+        Files.createDirectories(tmpDir.resolve("db"));
+        Path dbDir = tmpDir.resolve("db/h2");
+        String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
+
+
+        String json = JSON_TEMPLATE_INCLUDES.replace("CONNECTION_STRING", connectionString);
+        JDBCPipesReporter reporter = JDBCPipesReporter.build(new PluginConfig("", "", json));
+        int numThreads = 10;
+        int numIterations = 200;
+
+        Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
+        reporter.close();
+        Map<PipesResult.STATUS, Long> total = countReported(connectionString);
+        assertEquals(2, total.size());
+        long sum = 0;
+        for (Map.Entry<PipesResult.STATUS, Long> e : expected.entrySet()) {
+            if (e.getKey() == PARSE_SUCCESS || e.getKey() == PARSE_SUCCESS_WITH_EXCEPTION) {
+                assertTrue(total.containsKey(e.getKey()), e.getKey().toString());
+                assertEquals(e.getValue(), total.get(e.getKey()), e.getKey().toString());
+            } else {
+                assertFalse(total.containsKey(e.getKey()), e.getKey().toString());
+            }
+            sum += e.getValue();
+        }
+        assertEquals(numThreads * numIterations, sum);
+    }
+
+    @Test
+    public void testExcludes(@TempDir Path tmpDir) throws Exception {
+        Files.createDirectories(tmpDir.resolve("db"));
+        Path dbDir = tmpDir.resolve("db/h2");
+        String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
+
+        String json = JSON_TEMPLATE_EXCLUDES.replace("CONNECTION_STRING", connectionString);
+        JDBCPipesReporter reporter = JDBCPipesReporter.build(new PluginConfig("", "", json));
+        int numThreads = 10;
+        int numIterations = 200;
+
+        Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
+        reporter.close();
+        Map<PipesResult.STATUS, Long> total = countReported(connectionString);
+        assertEquals(17, total.size());
+        long sum = 0;
+        for (Map.Entry<PipesResult.STATUS, Long> e : expected.entrySet()) {
+            if (e.getKey() != PARSE_SUCCESS && e.getKey() != PARSE_SUCCESS_WITH_EXCEPTION) {
+                assertTrue(total.containsKey(e.getKey()), e.getKey().toString());
+                assertEquals(e.getValue(), total.get(e.getKey()), e.getKey().toString());
+            } else {
+                assertFalse(total.containsKey(e.getKey()), e.getKey().toString());
+            }
+            sum += e.getValue();
+        }
+        assertEquals(numThreads * numIterations, sum);
+    }
 
     private Map<PipesResult.STATUS, Long> countReported(String connectionString) throws
             SQLException {

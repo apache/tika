@@ -39,8 +39,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
-import org.apache.tika.pipes.api.reporter.PipesReporter;
-import org.apache.tika.plugins.AbstractTikaPlugin;
+import org.apache.tika.pipes.reporters.PipesReporterBase;
 import org.apache.tika.plugins.PluginConfig;
 import org.apache.tika.utils.StringUtils;
 
@@ -49,7 +48,7 @@ import org.apache.tika.utils.StringUtils;
  * the tika_status table with each run.  If you'd like different behavior,
  * please open a ticket on our JIRA!
  */
-public class JDBCPipesReporter extends AbstractTikaPlugin implements PipesReporter {
+public class JDBCPipesReporter extends PipesReporterBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(JDBCPipesReporter.class);
     static final int DEFAULT_CACHE_SIZE = 100;
@@ -79,7 +78,7 @@ public class JDBCPipesReporter extends AbstractTikaPlugin implements PipesReport
     CompletableFuture<Void> reportWorkerFuture;
 
     public JDBCPipesReporter(PluginConfig pluginConfig, JDBCPipesReporterConfig config) throws TikaConfigException {
-        super(pluginConfig);
+        super(pluginConfig, config.includes(), config.excludes());
         this.config = config;
         init();
     }
@@ -107,7 +106,9 @@ public class JDBCPipesReporter extends AbstractTikaPlugin implements PipesReport
 
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-
+        if (! accept(result.status())) {
+            return;
+        }
         try {
             queue.offer(new IdStatusPair(t.getId(), result.status()),
                     MAX_WAIT_MILLIS, TimeUnit.MILLISECONDS);
