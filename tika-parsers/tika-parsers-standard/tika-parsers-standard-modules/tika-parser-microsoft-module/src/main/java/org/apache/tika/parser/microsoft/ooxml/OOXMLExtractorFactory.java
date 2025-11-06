@@ -105,10 +105,10 @@ public class OOXMLExtractorFactory {
             OOXMLExtractor extractor = null;
 
             // Locate or Open the OPCPackage for the file
-            TikaInputStream tis = TikaInputStream.get(stream);
-            if (tis.getOpenContainer() instanceof OPCPackageWrapper) {
+            TikaInputStream tis = TikaInputStream.cast(stream);
+            if (tis != null && tis.getOpenContainer() instanceof OPCPackageWrapper) {
                 pkg = ((OPCPackageWrapper) tis.getOpenContainer()).getOPCPackage();
-            } else {
+            } else if (tis != null && tis.hasFile()) {
                 try {
                     pkg = OPCPackage.open(tis.getFile().getPath(), PackageAccess.READ);
                 } catch (InvalidOperationException e) {
@@ -117,6 +117,44 @@ public class OOXMLExtractorFactory {
                     pkg = OPCPackage.open(tmpRepairedCopy, PackageAccess.READ);
                 }
                 tis.setOpenContainer(new OPCPackageWrapper(pkg));
+            } else {
+                //OPCPackage slurps rris into memory so we can close rris
+                //without apparent problems
+                mustRevertPackage = true;
+                try (RereadableInputStream rereadableInputStream = new RereadableInputStream(stream,
+                        MAX_BUFFER_LENGTH, false)) {
+                    try {
+                        pkg = OPCPackage.open(CloseShieldInputStream.wrap(rereadableInputStream));
+                    } catch (UnsupportedZipFeatureException e) {
+                        if (e.getFeature() !=
+                                UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+                            throw e;
+                        }
+                        rereadableInputStream.rewind();
+                        tmpRepairedCopy = Files.createTempFile("tika-ooxml-repair-", "").toFile();
+                        ZipSalvager.salvageCopy(rereadableInputStream, tmpRepairedCopy, false);
+                        //if there isn't enough left to be opened as a package
+                        //throw an exception -- we may want to fall back to streaming
+                        //parsing
+                        pkg = OPCPackage.open(tmpRepairedCopy, PackageAccess.READ);
+                    } catch (IOException e) {
+                        if (e instanceof EOFException) {
+                            //keep going
+                        } else if (e instanceof IOException && e.getMessage() != null &&
+                                e.getMessage().contains("Truncated")) {
+                            //keep going
+                        } else {
+                            throw e;
+                        }
+                        rereadableInputStream.rewind();
+                        tmpRepairedCopy = Files.createTempFile("tika-ooxml-repair-", "").toFile();
+                        ZipSalvager.salvageCopy(rereadableInputStream, tmpRepairedCopy, false);
+                        //if there isn't enough left to be opened as a package
+                        //throw an exception -- we may want to fall back to streaming
+                        //parsing
+                        pkg = OPCPackage.open(tmpRepairedCopy, PackageAccess.READ);
+                    }
+                }
             }
 
             if (pkg != null) {
