@@ -19,14 +19,11 @@ package org.apache.tika.pipes.reporters.fs;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Path;
-import java.util.Objects;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorConfig;
 
 public record FileSystemReporterConfig(Path statusFile, long reportUpdateMs) implements Serializable {
 
