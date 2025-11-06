@@ -41,6 +41,15 @@ public abstract class PipesReporterBase extends AbstractTikaPlugin implements Pi
 
     private StatusFilter buildStatusFilter(Set<String> includes,
                                            Set<String> excludes) throws TikaConfigException {
+        if (includes == null && excludes == null) {
+            return new AcceptAllFilter();
+        }
+        if (includes == null) {
+            includes = Set.of();
+        }
+        if (excludes == null) {
+            excludes = Set.of();
+        }
         if (! includes.isEmpty() && ! excludes.isEmpty()) {
             throw new TikaConfigException("Only one of includes and excludes may have any " +
                     "contents");

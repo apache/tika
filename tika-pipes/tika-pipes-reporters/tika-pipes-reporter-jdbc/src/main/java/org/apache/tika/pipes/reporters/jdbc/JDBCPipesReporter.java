@@ -62,9 +62,7 @@ public class JDBCPipesReporter extends PipesReporterBase {
 
     public static JDBCPipesReporter build(PluginConfig pluginConfig) throws TikaConfigException, IOException {
         JDBCPipesReporterConfig config = JDBCPipesReporterConfig.load(pluginConfig.jsonConfig());
-
-        JDBCPipesReporter jdbcPipesReporter = new JDBCPipesReporter(pluginConfig, config);
-        return jdbcPipesReporter;
+        return new JDBCPipesReporter(pluginConfig, config);
     }
 
 
