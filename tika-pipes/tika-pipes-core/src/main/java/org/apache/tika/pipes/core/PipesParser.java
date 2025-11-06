@@ -24,6 +24,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.PipesResult;
 
 public class PipesParser implements Closeable {
 
@@ -50,7 +51,7 @@ public class PipesParser implements Closeable {
             client = clientQueue.poll(pipesConfig.getMaxWaitForClientMillis(),
                     TimeUnit.MILLISECONDS);
             if (client == null) {
-                return PipesResult.CLIENT_UNAVAILABLE_WITHIN_MS;
+                return PipesResults.CLIENT_UNAVAILABLE_WITHIN_MS;
             }
             return client.process(t);
         } finally {

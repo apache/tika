@@ -14,34 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core;
+package org.apache.tika.pipes.reporters.fs;
 
+import java.io.IOException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pf4j.Extension;
 
-import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.PipesResult;
-import org.apache.tika.pipes.api.reporter.PipesReporter;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
+import org.apache.tika.pipes.api.reporter.PipesReporterFactory;
+import org.apache.tika.plugins.PluginConfig;
 
-/**
- * Simple PipesReporter that logs everything at the debug level.
- */
-public class LoggingPipesReporter extends PipesReporter {
-    Logger LOGGER = LoggerFactory.getLogger(LoggingPipesReporter.class);
+@Extension
+public class FileSystemReporterFactory implements PipesReporterFactory {
 
     @Override
-    public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-        LOGGER.debug("{} {} {}", t, result, elapsed);
-    }
-
-    @Override
-    public void error(Throwable t) {
-        LOGGER.error("pipes error", t);
-    }
-
-    @Override
-    public void error(String msg) {
-        LOGGER.error("error {}", msg);
+    public FileSystemStatusReporter buildPlugin(PluginConfig pluginConfig) throws IOException, TikaConfigException {
+        return FileSystemStatusReporter.build(pluginConfig);
     }
 }

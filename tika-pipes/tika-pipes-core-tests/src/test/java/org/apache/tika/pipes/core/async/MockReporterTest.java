@@ -26,7 +26,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.core.CompositePipesReporter;
-import org.apache.tika.pipes.core.PipesReporter;
 
 public class MockReporterTest {
 

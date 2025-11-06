@@ -16,6 +16,8 @@
  */
 package org.apache.tika.pipes.core.pipesiterator;
 
+import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
+
 /**
  * Interface for pipesiterators that allow counting of total
  * documents.  This is useful for user-facing frontends where

@@ -19,17 +19,15 @@ package org.apache.tika.pipes.core;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.api.reporter.PipesReporter;
+import org.apache.tika.plugins.PluginConfig;
 
-public class CompositePipesReporter extends PipesReporter implements Initializable {
+public class CompositePipesReporter implements PipesReporter {
 
     private List<PipesReporter> pipesReporters = new ArrayList<>();
 
@@ -81,21 +79,6 @@ public class CompositePipesReporter extends PipesReporter implements Initializab
         return pipesReporters;
     }
 
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //no-op
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-        if (pipesReporters == null) {
-            throw new TikaConfigException("must specify 'pipesReporters'");
-        }
-        if (pipesReporters.size() == 0) {
-            throw new TikaConfigException("must specify at least one pipes reporter");
-        }
-    }
 
     /**
      * Tries to close all resources.  Throws the last encountered IOException
@@ -116,5 +99,10 @@ public class CompositePipesReporter extends PipesReporter implements Initializab
         if (ex != null) {
             throw ex;
         }
+    }
+
+    @Override
+    public PluginConfig getPluginConfig() {
+        return null;
     }
 }

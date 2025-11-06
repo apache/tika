@@ -14,46 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.async;
+package org.apache.tika.pipes.reporters.fs;
 
-import java.util.concurrent.ArrayBlockingQueue;
+import org.pf4j.Plugin;
+import org.pf4j.PluginWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.core.PipesResult;
+public class FileSystemReporterPlugin extends Plugin {
+    private static final Logger LOG = LoggerFactory.getLogger(FileSystemReporterPlugin.class);
 
-public final class MockReporter extends PipesReporter {
-
-    static ArrayBlockingQueue<PipesResult> RESULTS = new ArrayBlockingQueue<>(10000);
-
-    private String endpoint;
-
-    @Override
-    public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-        RESULTS.add(result);
+    public FileSystemReporterPlugin(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override
-    public void error(Throwable t) {
-
+    public void start() {
+        LOG.info("Starting");
+        super.start();
     }
 
     @Override
-    public void error(String msg) {
-
-    }
-
-    @Field
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
-    }
-
-    public String getEndpoint() {
-        return endpoint;
+    public void stop() {
+        LOG.info("Stopping");
+        super.stop();
     }
 
     @Override
-    public String toString() {
-        return "MockReporter{" + "endpoint='" + endpoint + '\'' + '}';
+    public void delete() {
+        LOG.info("Deleting");
+        super.delete();
     }
+
 }

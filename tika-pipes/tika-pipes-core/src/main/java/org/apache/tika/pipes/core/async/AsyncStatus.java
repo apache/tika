@@ -20,8 +20,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.tika.pipes.core.PipesResult;
-import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.utils.StringUtils;
 
 public class AsyncStatus {

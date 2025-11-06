@@ -14,34 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core;
+package org.apache.tika.pipes.api.reporter;
 
+import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
+import org.apache.tika.plugins.TikaPluginFactory;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.PipesResult;
-import org.apache.tika.pipes.api.reporter.PipesReporter;
-
-/**
- * Simple PipesReporter that logs everything at the debug level.
- */
-public class LoggingPipesReporter extends PipesReporter {
-    Logger LOGGER = LoggerFactory.getLogger(LoggingPipesReporter.class);
-
-    @Override
-    public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-        LOGGER.debug("{} {} {}", t, result, elapsed);
-    }
-
-    @Override
-    public void error(Throwable t) {
-        LOGGER.error("pipes error", t);
-    }
-
-    @Override
-    public void error(String msg) {
-        LOGGER.error("error {}", msg);
-    }
+public interface PipesReporterFactory extends TikaPluginFactory<PipesReporter> {
 }

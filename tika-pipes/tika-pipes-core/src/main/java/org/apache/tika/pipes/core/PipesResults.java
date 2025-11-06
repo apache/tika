@@ -16,32 +16,17 @@
  */
 package org.apache.tika.pipes.core;
 
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
-import org.apache.tika.pipes.api.reporter.PipesReporter;
 
-/**
- * Simple PipesReporter that logs everything at the debug level.
- */
-public class LoggingPipesReporter extends PipesReporter {
-    Logger LOGGER = LoggerFactory.getLogger(LoggingPipesReporter.class);
+public class PipesResults {
 
-    @Override
-    public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-        LOGGER.debug("{} {} {}", t, result, elapsed);
-    }
+    public static final PipesResult CLIENT_UNAVAILABLE_WITHIN_MS =
+            new PipesResult(PipesResult.STATUS.CLIENT_UNAVAILABLE_WITHIN_MS);
+    public static final PipesResult TIMEOUT = new PipesResult(PipesResult.STATUS.TIMEOUT);
+    public static final PipesResult OOM = new PipesResult(PipesResult.STATUS.OOM);
+    public static final PipesResult UNSPECIFIED_CRASH = new PipesResult(PipesResult.STATUS.UNSPECIFIED_CRASH);
+    public static final PipesResult EMIT_SUCCESS = new PipesResult(PipesResult.STATUS.EMIT_SUCCESS);
+    public static final PipesResult INTERRUPTED_EXCEPTION = new PipesResult(PipesResult.STATUS.INTERRUPTED_EXCEPTION);
+    public static final PipesResult EMPTY_OUTPUT = new PipesResult(PipesResult.STATUS.EMPTY_OUTPUT);
 
-    @Override
-    public void error(Throwable t) {
-        LOGGER.error("pipes error", t);
-    }
-
-    @Override
-    public void error(String msg) {
-        LOGGER.error("error {}", msg);
-    }
 }

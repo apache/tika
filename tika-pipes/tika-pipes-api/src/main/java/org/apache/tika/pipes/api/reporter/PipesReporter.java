@@ -14,13 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core;
+package org.apache.tika.pipes.api.reporter;
 
 import java.io.Closeable;
 import java.io.IOException;
 
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
+import org.apache.tika.plugins.TikaPlugin;
 
 /**
  * This is called asynchronously by the AsyncProcessor. This
@@ -32,25 +34,7 @@ import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
  * Implementers do not have to worry about synchronizing across processes;
  * for example, one could use an in-memory h2 database as a target.
  */
-public abstract class PipesReporter implements Closeable {
-
-    public static final PipesReporter NO_OP_REPORTER = new PipesReporter() {
-
-        @Override
-        public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-
-        }
-
-        @Override
-        public void error(Throwable t) {
-
-        }
-
-        @Override
-        public void error(String msg) {
-
-        }
-    };
+public interface PipesReporter extends Closeable, TikaPlugin {
 
     //Implementers are responsible for preventing reporting after
     //crashes if that is the desired behavior.
@@ -58,42 +42,29 @@ public abstract class PipesReporter implements Closeable {
 
 
     /**
-     * No-op implementation. Override for custom behavior
-     * and make sure to override {@link #supportsTotalCount()}
+     * Make sure to override {@link #supportsTotalCount()}
      * to return <code>true</code>
      * @param totalCountResult
      */
-    public void report(TotalCountResult totalCountResult) {
-
-    }
+    void report(TotalCountResult totalCountResult);
 
     /**
      * Override this if your reporter supports total count.
      * @return <code>false</code> as the baseline implementation
      */
-    public boolean supportsTotalCount() {
-        return false;
-    }
-    /**
-     * No-op implementation.  Override for custom behavior
-     * @throws IOException
-     */
-    @Override
-    public void close() throws IOException {
-        //no-op
-    }
+    boolean supportsTotalCount();
 
     /**
      * This is called if the process has crashed.
      * Implementers should not rely on close() to be called after this.
      * @param t
      */
-    public abstract void error(Throwable t);
+    void error(Throwable t);
     /**
      * This is called if the process has crashed.
      * Implementers should not rely on close() to be called after this.
      * @param msg
      */
-    public abstract void error(String msg);
+    void error(String msg);
 
 }

@@ -26,6 +26,8 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.reporter.PipesReporter;
 
 /**
  * Base class that includes filtering by {@link PipesResult.STATUS}
