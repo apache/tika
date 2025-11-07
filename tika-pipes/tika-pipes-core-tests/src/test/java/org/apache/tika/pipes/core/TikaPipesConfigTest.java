@@ -20,11 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.AbstractTikaConfigTest;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 
 public class TikaPipesConfigTest extends AbstractTikaConfigTest {
     //this handles tests for the newer pipes type configs.

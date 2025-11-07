@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core.pipesiterator;
+package org.apache.tika.pipes.pipesiterator;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -59,6 +59,7 @@ public abstract class PipesIteratorBase extends AbstractTikaPlugin implements Pi
     }
 
 
+    @Override
     public Integer call() throws Exception {
         enqueue();
         tryToAdd(COMPLETED_SEMAPHORE);

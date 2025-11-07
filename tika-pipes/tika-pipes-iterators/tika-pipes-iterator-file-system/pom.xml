@@ -30,6 +30,24 @@
 
   <name>Apache Tika Pipes Iterator - file system</name>
   <url>https://tika.apache.org/</url>
+  <properties>
+    <plugin.id>file-system-pipes-iterator</plugin.id>
+    <plugin.class>org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIteratorPlugin</plugin.class>
+    <plugin.version>4.0.0-SNAPSHOT</plugin.version>
+    <plugin.provider>File system pipes iterator</plugin.provider>
+    <plugin.dependencies />
+    <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
+     to get messed up when finding your plugins. -->
+    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-pipes-core</plugin.excluded.artifactIds>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-pipes-iterator-commons</artifactId>
+      <version>4.0.0-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>
@@ -55,7 +73,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>3.4.2</version>
         <configuration>
           <archive>
             <manifest>
@@ -65,7 +82,7 @@
             <manifestEntries>
               <Plugin-Id>file-system-pipes-iterator</Plugin-Id>
               <Plugin-Version>${project.version}</Plugin-Version>
-              <Plugin-Class>org.apache.tika.pipes.pipesiterator.fsFileSystemFetcherPlugin</Plugin-Class>
+              <Plugin-Class>org.apache.tika.pipes.pipesiterator.fs.FileSystemFetcherPlugin</Plugin-Class>
               <Plugin-Provider>Local File System Pipes iterator</Plugin-Provider>
               <Plugin-Description>Capable of iterating files on the local file system</Plugin-Description>
               <!--              <Plugin-Requires>1.0.0</Plugin-Requires> -->

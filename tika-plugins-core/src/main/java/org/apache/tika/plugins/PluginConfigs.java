@@ -56,4 +56,8 @@ public class PluginConfigs {
     public Set<String> getIdsByPluginId(String pluginId) {
         return pluginIdsToIds.getOrDefault(pluginId, Set.of());
     }
+
+    public Set<String> getPluginIds() {
+        return pluginIdsToIds.keySet();
+    }
 }

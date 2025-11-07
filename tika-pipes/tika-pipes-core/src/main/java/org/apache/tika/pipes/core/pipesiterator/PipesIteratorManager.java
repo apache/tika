@@ -66,7 +66,7 @@ public class PipesIteratorManager {
         PluginManager pluginManager = null;
         if (! tikaPluginsManager.getPluginsPaths().isEmpty()) {
             LOG.warn("LOADING WITH PLUGINS PATHS: {}", tikaPluginsManager.getPluginsPaths());
-            pluginManager = new DefaultPluginManager(tikaPluginsManager.getPluginsPaths());
+            pluginManager = new DefaultPluginManager(tikaPluginsManager.getPluginsPaths().toArray(new Path[0]));
         } else {
             LOG.warn("NOT LOADING WITH PLUGINS PATHS: {}", tikaPluginsManager.getPluginsPaths());
             pluginManager = new DefaultPluginManager();
@@ -102,7 +102,7 @@ public class PipesIteratorManager {
                 }
             }
         }
-        throw new TikaConfigException("Couldn't find a pipesiterator plugin");
+        throw new TikaConfigException("Couldn't find a pipes_iterator plugin");
     }
 
 }

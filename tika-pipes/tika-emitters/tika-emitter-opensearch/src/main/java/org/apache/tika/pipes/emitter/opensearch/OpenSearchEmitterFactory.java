@@ -14,27 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.reporters.opensearch;
+package org.apache.tika.pipes.emitter.opensearch;
 
 import java.io.IOException;
-import java.util.Set;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.pf4j.Extension;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.api.emitter.Emitter;
+import org.apache.tika.pipes.api.emitter.EmitterFactory;
+import org.apache.tika.plugins.PluginConfig;
 
-public record OpenSearchReporterConfig(String openSearchUrl, Set<String> includes, Set<String> excludes, String keyPrefix,
-                                       boolean includeRouting, HttpClientConfig httpClientConfig) {
+@Extension
+public class OpenSearchEmitterFactory implements EmitterFactory {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    public static OpenSearchReporterConfig load(String json) throws IOException, TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json, OpenSearchReporterConfig.class);
-        } catch (JacksonException e) {
-            throw new TikaConfigException("problem w json", e);
-        }
+    @Override
+    public Emitter buildPlugin(PluginConfig pluginConfig) throws IOException, TikaConfigException {
+        return OpenSearchEmitter.build(pluginConfig);
     }
-
 }

@@ -14,27 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.reporters.opensearch;
+package org.apache.tika.pipes.emitter.opensearch;
 
 import java.io.IOException;
-import java.util.Set;
 
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.tika.exception.TikaConfigException;
 
-public record OpenSearchReporterConfig(String openSearchUrl, Set<String> includes, Set<String> excludes, String keyPrefix,
-                                       boolean includeRouting, HttpClientConfig httpClientConfig) {
 
+public record OpenSearchEmitterConfig(String openSearchUrl, String idField, AttachmentStrategy attachmentStrategy,
+                                      UpdateStrategy updateStrategy, int commitWithin,
+                                      String embeddedFileFieldName, HttpClientConfig httpClientConfig) {
+    public enum AttachmentStrategy {
+        SEPARATE_DOCUMENTS, PARENT_CHILD,
+        //anything else?
+    }
+
+    public enum UpdateStrategy {
+        OVERWRITE, UPSERT
+        //others?
+    }
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    public static OpenSearchReporterConfig load(String json) throws IOException, TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json, OpenSearchReporterConfig.class);
-        } catch (JacksonException e) {
-            throw new TikaConfigException("problem w json", e);
-        }
+    public static OpenSearchEmitterConfig load(String json) throws IOException {
+        return OBJECT_MAPPER.readValue(json, OpenSearchEmitterConfig.class);
     }
 
 }

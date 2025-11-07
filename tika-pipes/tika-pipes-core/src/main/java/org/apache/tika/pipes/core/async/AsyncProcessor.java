@@ -38,13 +38,12 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.api.pipesiterator.TotalCounter;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
 import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesResults;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
-import org.apache.tika.pipes.core.pipesiterator.TotalCounter;
 import org.apache.tika.pipes.core.reporter.ReporterManager;
 
 /**
@@ -79,6 +78,7 @@ public class AsyncProcessor implements Closeable {
     public AsyncProcessor(Path tikaConfigPath, Path pluginsConfigPath, PipesIterator pipesIterator) throws TikaException, IOException {
         this.asyncConfig = AsyncConfig.load(tikaConfigPath, pluginsConfigPath);
         this.pipesReporter = ReporterManager.load(pluginsConfigPath);
+        LOG.debug("loaded reporter {}", pipesReporter.getClass());
         this.fetchEmitTuples = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
         this.emitDatumTuples = new ArrayBlockingQueue<>(100);
         //+1 is the watcher thread
@@ -195,7 +195,7 @@ public class AsyncProcessor implements Closeable {
 
     public void finished() throws InterruptedException {
         for (int i = 0; i < asyncConfig.getNumClients(); i++) {
-            boolean offered = fetchEmitTuples.offer(PipesIteratorBase.COMPLETED_SEMAPHORE,
+            boolean offered = fetchEmitTuples.offer(PipesIterator.COMPLETED_SEMAPHORE,
                     MAX_OFFER_WAIT_MS, TimeUnit.MILLISECONDS);
             if (! offered) {
                 throw new RuntimeException("Couldn't offer completed semaphore within " +
@@ -286,7 +286,7 @@ public class AsyncProcessor implements Closeable {
                         if (LOG.isTraceEnabled()) {
                             LOG.trace("null fetch emit tuple");
                         }
-                    } else if (t == PipesIteratorBase.COMPLETED_SEMAPHORE) {
+                    } else if (t == PipesIterator.COMPLETED_SEMAPHORE) {
                         if (LOG.isTraceEnabled()) {
                             LOG.trace("hit completed semaphore");
                         }

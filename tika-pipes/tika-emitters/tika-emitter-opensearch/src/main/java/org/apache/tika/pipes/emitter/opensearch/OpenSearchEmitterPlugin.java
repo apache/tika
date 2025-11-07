@@ -14,16 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.api.pipesiterator;
+package org.apache.tika.pipes.emitter.opensearch;
 
-import java.util.concurrent.Callable;
+import org.pf4j.Plugin;
+import org.pf4j.PluginWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.plugins.TikaPlugin;
+public class OpenSearchEmitterPlugin extends Plugin {
+    private static final Logger LOG = LoggerFactory.getLogger(OpenSearchEmitterPlugin.class);
 
-public interface PipesIterator extends TikaPlugin, Callable<Integer>, Iterable<FetchEmitTuple> {
+    public OpenSearchEmitterPlugin(PluginWrapper wrapper) {
+        super(wrapper);
+    }
 
-    FetchEmitTuple COMPLETED_SEMAPHORE =
-            new FetchEmitTuple(null,null, null, null, null, null);
+    @Override
+    public void start() {
+        LOG.info("Starting");
+        super.start();
+    }
+
+    @Override
+    public void stop() {
+        LOG.info("Stopping");
+        super.stop();
+    }
+
+    @Override
+    public void delete() {
+        LOG.info("Deleting");
+        super.delete();
+    }
 
 }

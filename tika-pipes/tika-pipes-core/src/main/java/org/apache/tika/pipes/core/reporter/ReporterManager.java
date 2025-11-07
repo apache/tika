@@ -55,7 +55,7 @@ public class ReporterManager {
 
     public static PipesReporter load(InputStream is) throws IOException, TikaConfigException {
         //this will throw a TikaConfigException if "fetchers" is not loaded
-        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(is, TikaPluginsManager.PLUGIN_TYPES.FETCHERS);
+        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(is, TikaPluginsManager.PLUGIN_TYPES.REPORTERS);
         return load(tikaPluginsManager);
     }
 

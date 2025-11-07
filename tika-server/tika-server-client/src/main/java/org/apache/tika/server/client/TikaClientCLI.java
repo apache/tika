@@ -38,7 +38,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
-import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
 
 public class TikaClientCLI {

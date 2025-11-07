@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.cli.CommandLine;
@@ -39,7 +41,6 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
-import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
 import org.apache.tika.plugins.PluginConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -130,7 +131,7 @@ public class TikaAsyncCLI {
         }
         Path p = Paths.get(simpleAsyncConfig.getInputDir());
         if (Files.isRegularFile(p)) {
-            return new SingleFilePipesIterator(new PluginConfig("", "", ""), p.getFileName().toString());
+            return new SingleFilePipesIterator(p.getFileName().toString());
         }
         return PipesIteratorManager.load(pluginsConfig);
     }
@@ -317,20 +318,30 @@ public class TikaAsyncCLI {
         System.exit(1);
     }
 
-    private static class SingleFilePipesIterator extends PipesIteratorBase {
+    private static class SingleFilePipesIterator implements PipesIterator {
         private final String fName;
-        public SingleFilePipesIterator(PluginConfig pluginConfig, String fName) {
-            super(pluginConfig);
+        public SingleFilePipesIterator(String fName) {
             this.fName = fName;
         }
 
+
         @Override
-        protected void enqueue() throws IOException, TimeoutException, InterruptedException {
+        public Iterator<FetchEmitTuple> iterator() {
             FetchEmitTuple t = new FetchEmitTuple("0",
                     new FetchKey(TikaConfigAsyncWriter.FETCHER_NAME, fName),
                     new EmitKey(TikaConfigAsyncWriter.EMITTER_NAME, fName)
-                    );
-            tryToAdd(t);
+            );
+            return List.of(t).iterator();
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            return 1;
+        }
+
+        @Override
+        public PluginConfig getPluginConfig() {
+            return null;
         }
     }
 }

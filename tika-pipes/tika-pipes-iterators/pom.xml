@@ -34,6 +34,7 @@
   <!-- see also org.apache.tika.pipes.pipesiterator.fs.FileSystemIterator
        in tika-core if you want a file system directory crawler -->
   <modules>
+    <module>tika-pipes-iterator-commons</module>
     <module>tika-pipes-iterator-file-system</module>
 <!--    <module>tika-pipes-iterator-csv</module>
     <module>tika-pipes-iterator-json</module>

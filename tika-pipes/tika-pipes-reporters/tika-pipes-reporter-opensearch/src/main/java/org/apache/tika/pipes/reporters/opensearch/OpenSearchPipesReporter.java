@@ -62,7 +62,6 @@ public class OpenSearchPipesReporter extends PipesReporterBase {
 
     private String exitValueKey = DEFAULT_EXIT_VALUE_KEY;
 
-    private boolean includeRouting = false;
     private final OpenSearchReporterConfig config;
     public OpenSearchPipesReporter(PluginConfig pluginConfig, OpenSearchReporterConfig config) throws TikaConfigException {
         super(pluginConfig, config.includes(), config.excludes());
@@ -89,7 +88,7 @@ public class OpenSearchPipesReporter extends PipesReporterBase {
         }
         //TODO -- we're not currently doing anything with the message
         try {
-            if (includeRouting) {
+            if (config.includeRouting()) {
                 openSearchClient.emitDocument(t.getEmitKey().getEmitKey(),
                         t.getEmitKey().getEmitKey(), metadata);
             } else {
@@ -124,7 +123,20 @@ public class OpenSearchPipesReporter extends PipesReporterBase {
     }
 
     public void init() throws TikaConfigException {
+        HttpClientConfig http = config.httpClientConfig();
+        httpClientFactory.setUserName(http.userName());
+        httpClientFactory.setPassword(http.password());
+        /*
+            turn these back on as necessary
+        httpClientFactory.setSocketTimeout(http.socketTimeout());
+        httpClientFactory.setConnectTimeout(http.connectionTimeout());
+        httpClientFactory.setAuthScheme(http.authScheme());
+        httpClientFactory.setProxyHost(http.proxyHost());
+        httpClientFactory.setProxyPort(http.proxyPort());
 
+         */
+        parseStatusKey = StringUtils.isBlank(config.keyPrefix()) ? parseStatusKey : config.keyPrefix() + parseStatusKey;
+        parseTimeKey = StringUtils.isBlank(config.keyPrefix()) ? parseTimeKey : config.keyPrefix() + parseTimeKey;
         if (StringUtils.isBlank(config.openSearchUrl())) {
             throw new TikaConfigException("Must specify an open search url!");
         } else {

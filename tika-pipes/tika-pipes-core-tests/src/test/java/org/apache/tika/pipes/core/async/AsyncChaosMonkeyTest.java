@@ -34,11 +34,9 @@ import org.junit.jupiter.api.io.TempDir;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.PluginsTestHelper;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 import org.apache.tika.serialization.JsonMetadataList;
 
 public class AsyncChaosMonkeyTest {
