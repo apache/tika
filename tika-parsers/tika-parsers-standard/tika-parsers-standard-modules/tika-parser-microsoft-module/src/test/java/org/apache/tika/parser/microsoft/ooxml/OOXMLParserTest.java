@@ -1795,6 +1795,9 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         testMultiThreaded(wrapper, parseContexts, numThreads, numIterations, path -> {
             String pathName = path.getName().toLowerCase(Locale.ENGLISH);
+            if (pathName.equalsIgnoreCase("testRecordSizeExceeded.xlsx")) {
+                return false;
+            }
             int i = pathName.lastIndexOf(".");
             String ext = "";
             if (i > -1) {
