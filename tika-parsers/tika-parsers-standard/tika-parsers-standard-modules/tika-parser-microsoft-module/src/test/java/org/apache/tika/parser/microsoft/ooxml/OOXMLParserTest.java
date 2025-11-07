@@ -1795,6 +1795,9 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         testMultiThreaded(wrapper, parseContexts, numThreads, numIterations, path -> {
             String pathName = path.getName().toLowerCase(Locale.ENGLISH);
+            if (pathName.equalsIgnoreCase("testRecordSizeExceeded.xlsx")) {
+                return false;
+            }
             int i = pathName.lastIndexOf(".");
             String ext = "";
             if (i > -1) {
@@ -1813,5 +1816,12 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertEquals("true", m.get(Office.HAS_HIDDEN_TEXT));
         assertEquals("true", m.get(Office.HAS_TRACK_CHANGES));
         assertEquals("true", m.get(Office.HAS_COMMENTS));
+    }
+
+    @Test
+    public void testNoRecordSizeOverflow() throws Exception {
+        //TIKA-4474 -- test: files (passed as stream) no longer have limit on record size as they are spooled
+        String content = getText("testRecordSizeExceeded.xlsx");
+        assertContains("Repetitive content pattern 3 for compression test row 1", content);
     }
 }
