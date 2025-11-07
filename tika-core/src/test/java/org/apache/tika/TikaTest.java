@@ -571,7 +571,7 @@ public abstract class TikaTest {
     public String getText(InputStream is, Parser parser, ParseContext context, Metadata metadata)
             throws Exception {
         ContentHandler handler = new BodyContentHandler(1000000);
-        try(is){
+        try (is) {
             parser.parse(is, handler, metadata, context);
         } catch (SAXException e) {
             if (!WriteLimitReachedException.isWriteLimitReached(e)) {

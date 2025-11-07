@@ -16,15 +16,12 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Locale;
 
-import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.ooxml.extractor.POIXMLExtractorFactory;
@@ -64,7 +61,6 @@ import org.apache.tika.parser.microsoft.ooxml.xps.XPSExtractorDecorator;
 import org.apache.tika.parser.microsoft.ooxml.xps.XPSTextExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
-import org.apache.tika.utils.RereadableInputStream;
 import org.apache.tika.zip.utils.ZipSalvager;
 
 /**

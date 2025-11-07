@@ -1816,7 +1816,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     }
 
     @Test
-    public void testNoRecordSizeOverflow() throws Exception{
+    public void testNoRecordSizeOverflow() throws Exception {
         //TIKA-4474 -- test: files (passed as stream) no longer have limit on record size as they are spooled
         String content = getText("testRecordSizeExceeded.xlsx");
         assertContains("Repetitive content pattern 3 for compression test row 1", content);
