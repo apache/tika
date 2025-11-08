@@ -18,7 +18,7 @@
 package org.apache.tika.parser.iwork.iwana;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -55,7 +55,7 @@ public class IWork18PackageParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // Open the Zip stream
         // Use a File if we can, and an already open zip is even better

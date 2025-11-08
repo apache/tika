@@ -17,7 +17,7 @@
 package org.apache.tika.parser.dwg;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -87,7 +87,7 @@ public class DWGParser extends AbstractDWGParser {
         return Collections.singleton(TYPE);
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, TikaException, SAXException {
 
         configure(context);

@@ -20,7 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
+
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
@@ -69,7 +69,7 @@ public class BodyContentHandlerTest extends TikaTest {
         Parser[] parsers = new Parser[1];
         parsers[0] = p;
         Parser autoDetectParser = new AutoDetectParser(parsers);
-        try (InputStream is = getResourceAsStream("/test-documents/example.xml")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/example.xml")) {
             autoDetectParser.parse(is, handler, metadata, parseContext);
         } catch (Exception e) {
             tryToFindIllegalStateException(e);

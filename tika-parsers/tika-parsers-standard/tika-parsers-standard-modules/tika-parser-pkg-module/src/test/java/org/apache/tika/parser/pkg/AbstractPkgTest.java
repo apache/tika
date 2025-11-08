@@ -17,7 +17,7 @@
 package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -77,7 +77,7 @@ public abstract class AbstractPkgTest extends TikaTest {
             mediaTypes.clear();
         }
 
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
             parser.parse(stream, handler, metadata, context);
 
@@ -105,7 +105,7 @@ public abstract class AbstractPkgTest extends TikaTest {
             return AUTO_DETECT_PARSER.getSupportedTypes(context);
         }
 
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
             filenames.add(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
             mediatypes.add(metadata.get(Metadata.CONTENT_TYPE));

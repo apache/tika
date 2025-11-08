@@ -17,7 +17,7 @@
 package org.apache.tika.pipes.emitter.fs;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;

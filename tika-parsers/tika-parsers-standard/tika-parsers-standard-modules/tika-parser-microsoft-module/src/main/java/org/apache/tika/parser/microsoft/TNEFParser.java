@@ -17,7 +17,7 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -61,7 +61,7 @@ public class TNEFParser implements Parser {
     /**
      * Extracts properties and text from an MS Document input stream
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         // We work by recursing, so get the appropriate bits

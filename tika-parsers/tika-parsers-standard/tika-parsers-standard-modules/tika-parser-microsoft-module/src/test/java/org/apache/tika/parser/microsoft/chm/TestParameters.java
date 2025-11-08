@@ -17,7 +17,7 @@
 package org.apache.tika.parser.microsoft.chm;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.apache.commons.io.IOUtils;
 

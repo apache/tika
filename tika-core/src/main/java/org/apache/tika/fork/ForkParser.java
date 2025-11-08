@@ -18,7 +18,7 @@ package org.apache.tika.fork;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -233,7 +233,7 @@ public class ForkParser implements Parser, Closeable {
      * @throws SAXException
      * @throws TikaException
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         if (stream == null) {
             throw new NullPointerException("null stream");

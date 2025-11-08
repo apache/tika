@@ -20,7 +20,7 @@ import static java.lang.String.valueOf;
 import static java.util.Collections.singleton;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Set;
 
 import com.pff.PSTException;
@@ -64,7 +64,7 @@ public class OutlookPSTParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         // Use the delegate parser to parse the contained document

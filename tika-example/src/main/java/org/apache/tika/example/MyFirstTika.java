@@ -20,7 +20,7 @@ package org.apache.tika.example;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.File;
-import java.io.InputStream;
+
 import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;

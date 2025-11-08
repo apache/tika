@@ -19,7 +19,7 @@ package org.apache.tika.pipes.fetcher.azblob;
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.file.Path;
 import java.util.Map;
 

@@ -20,7 +20,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.InputStream;
+
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;

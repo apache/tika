@@ -21,7 +21,7 @@ import static org.apache.tika.TikaTest.assertContainsCount;
 import static org.apache.tika.TikaTest.assertNotContained;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+
 import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;

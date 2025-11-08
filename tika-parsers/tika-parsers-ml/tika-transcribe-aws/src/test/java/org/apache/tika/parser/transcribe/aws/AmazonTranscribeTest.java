@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.transcribe.aws;
 
-import java.io.InputStream;
+
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;

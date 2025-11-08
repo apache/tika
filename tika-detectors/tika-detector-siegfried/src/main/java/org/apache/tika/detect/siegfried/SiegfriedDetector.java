@@ -19,7 +19,7 @@ package org.apache.tika.detect.siegfried;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -108,7 +108,7 @@ public class SiegfriedDetector implements Detector {
      * @throws IOException
      */
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
         if (hasSiegfriedCommand == null) {
             hasSiegfriedCommand = checkHasSiegfried(this.siegfriedPath);
         }

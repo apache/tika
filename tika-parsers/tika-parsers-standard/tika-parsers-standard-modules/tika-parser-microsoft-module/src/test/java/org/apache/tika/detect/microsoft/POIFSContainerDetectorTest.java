@@ -19,7 +19,7 @@ package org.apache.tika.detect.microsoft;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.Test;

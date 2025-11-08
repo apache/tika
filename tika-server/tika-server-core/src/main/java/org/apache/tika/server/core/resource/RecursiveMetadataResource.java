@@ -21,7 +21,7 @@ import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
 import static org.apache.tika.server.core.resource.TikaResource.fillParseContext;
 import static org.apache.tika.server.core.resource.TikaResource.getConfig;
 
-import java.io.InputStream;
+
 import java.util.List;
 
 import jakarta.ws.rs.Consumes;

@@ -22,7 +22,7 @@ package org.apache.tika.parser.xmp;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.OutputStream;
 
 /**
@@ -90,7 +90,7 @@ public class XMPPacketScanner {
      * @throws IOException          if an I/O error occurs
      * @throws TransformerException if an error occurs while parsing the XMP packet
      */
-    public boolean parse(InputStream in, OutputStream xmlOut) throws IOException {
+    public boolean parse(TikaInputStream in, OutputStream xmlOut) throws IOException {
         if (!in.markSupported()) {
             in = new java.io.BufferedInputStream(in);
         }

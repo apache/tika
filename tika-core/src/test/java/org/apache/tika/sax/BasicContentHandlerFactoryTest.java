@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.UnsupportedEncodingException;
 import java.util.Set;
 
@@ -311,7 +311,7 @@ public class BasicContentHandlerFactoryTest {
         }
 
         @Override
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
             handler.startDocument();
             handler.startPrefixMapping("", XHTML);

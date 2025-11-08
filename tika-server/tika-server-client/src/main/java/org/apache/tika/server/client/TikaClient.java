@@ -47,7 +47,7 @@ public class TikaClient {
         return new TikaClient(clients);
     }
 
-    /*public List<Metadata> parse(InputStream is, Metadata metadata)
+    /*public List<Metadata> parse(TikaInputStream is, Metadata metadata)
     throws IOException, TikaException {
 
     }*/

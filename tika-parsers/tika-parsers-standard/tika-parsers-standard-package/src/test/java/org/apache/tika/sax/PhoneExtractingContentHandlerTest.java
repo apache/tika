@@ -17,7 +17,7 @@
 
 package org.apache.tika.sax;
 
-import java.io.InputStream;
+
 
 import org.junit.jupiter.api.Test;
 

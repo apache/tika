@@ -17,7 +17,7 @@
 package org.apache.tika.parser.txt;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,7 +41,7 @@ public class Icu4jEncodingDetector implements EncodingDetector {
 
     private Set<String> ignoreCharsets = new HashSet<>();
 
-    public Charset detect(InputStream input, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream input, Metadata metadata) throws IOException {
         if (input == null) {
             return null;
         }

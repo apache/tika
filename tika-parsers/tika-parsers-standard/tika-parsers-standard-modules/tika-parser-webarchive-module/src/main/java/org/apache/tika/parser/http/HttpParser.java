@@ -18,7 +18,7 @@ package org.apache.tika.parser.http;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -52,7 +52,7 @@ public class HttpParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         org.netpreserve.jwarc.HttpParser parser = new org.netpreserve.jwarc.HttpParser();
         parser.lenientRequest();

@@ -21,7 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.CharArrayWriter;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.util.Arrays;
@@ -46,7 +46,7 @@ public class MagicDetector implements Detector {
 
     /**
      * The matching media type. Returned by the
-     * {@link #detect(InputStream, Metadata)} method if a match is found.
+     * {@link #detect(TikaInputStream, Metadata)} method if a match is found.
      */
     private final MediaType type;
     /**
@@ -337,7 +337,7 @@ public class MagicDetector implements Detector {
      * @param input    document input stream, or <code>null</code>
      * @param metadata ignored
      */
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
         if (input == null) {
             return MediaType.OCTET_STREAM;
         }

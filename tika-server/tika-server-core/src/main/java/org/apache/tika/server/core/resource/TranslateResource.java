@@ -20,7 +20,7 @@ package org.apache.tika.server.core.resource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.List;
 
 import jakarta.ws.rs.Consumes;

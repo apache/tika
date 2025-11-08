@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.InputStream;
+
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.text.DecimalFormatSymbols;

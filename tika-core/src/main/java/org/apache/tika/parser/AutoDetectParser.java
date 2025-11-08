@@ -17,7 +17,6 @@
 package org.apache.tika.parser;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -163,7 +162,7 @@ public class AutoDetectParser extends CompositeParser {
         return this.autoDetectParserConfig;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         if (autoDetectParserConfig.getMetadataWriteFilterFactory() != null) {
             metadata.setMetadataWriteFilter(
@@ -171,7 +170,6 @@ public class AutoDetectParser extends CompositeParser {
         }
         TemporaryResources tmp = new TemporaryResources();
         try {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             //figure out if we should spool to disk
             maybeSpool(tis, autoDetectParserConfig, metadata);
 
@@ -277,7 +275,7 @@ public class AutoDetectParser extends CompositeParser {
         context.set(EmbeddedDocumentExtractor.class, edx);
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata)
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
         ParseContext context = new ParseContext();
         context.set(Parser.class, this);

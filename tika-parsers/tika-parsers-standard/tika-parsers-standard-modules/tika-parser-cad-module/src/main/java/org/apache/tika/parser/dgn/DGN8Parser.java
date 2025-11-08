@@ -17,7 +17,7 @@
 package org.apache.tika.parser.dgn;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -50,7 +50,7 @@ public class DGN8Parser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();

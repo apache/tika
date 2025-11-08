@@ -19,7 +19,7 @@ package org.apache.tika.eval.app.db;
 
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;

@@ -19,7 +19,7 @@ package org.apache.tika.parser.microsoft;
 
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -95,7 +95,7 @@ public class EMFParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         EmbeddedDocumentExtractor embeddedDocumentExtractor = null;

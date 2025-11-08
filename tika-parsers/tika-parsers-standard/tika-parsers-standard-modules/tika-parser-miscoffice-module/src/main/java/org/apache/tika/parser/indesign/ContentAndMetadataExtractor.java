@@ -18,7 +18,7 @@ package org.apache.tika.parser.indesign;
 
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.Attributes;

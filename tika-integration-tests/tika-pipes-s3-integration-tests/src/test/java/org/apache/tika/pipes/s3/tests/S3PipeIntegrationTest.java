@@ -17,7 +17,7 @@
 package org.apache.tika.pipes.s3.tests;
 
 import java.io.File;
-import java.io.InputStream;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;

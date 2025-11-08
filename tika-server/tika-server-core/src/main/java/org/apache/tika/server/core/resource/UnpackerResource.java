@@ -22,7 +22,7 @@ import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
 import static org.apache.tika.server.core.resource.TikaResource.fillParseContext;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;

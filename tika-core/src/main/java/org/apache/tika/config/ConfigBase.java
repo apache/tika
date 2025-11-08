@@ -17,6 +17,7 @@
 package org.apache.tika.config;
 
 import java.io.IOException;
+
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -38,6 +39,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.utils.XMLReaderUtils;
 
 
@@ -521,7 +523,7 @@ public abstract class ConfigBase {
      * @throws TikaConfigException
      * @throws IOException
      */
-    protected Set<String> configure(String nodeName, InputStream is)
+    protected Set<String> configure(String nodeName, TikaInputStream is)
             throws TikaConfigException, IOException {
         Set<String> settings = new HashSet<>();
 

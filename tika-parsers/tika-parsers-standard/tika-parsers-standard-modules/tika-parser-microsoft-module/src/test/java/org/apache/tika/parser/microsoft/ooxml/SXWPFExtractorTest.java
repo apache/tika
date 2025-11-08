@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
+
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.HashMap;

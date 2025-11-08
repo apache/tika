@@ -20,7 +20,7 @@ package org.apache.tika.parser.microsoft.rtf;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;

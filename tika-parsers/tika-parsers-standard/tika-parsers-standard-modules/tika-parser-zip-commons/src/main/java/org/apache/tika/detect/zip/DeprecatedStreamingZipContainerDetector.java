@@ -16,7 +16,7 @@
  */
 package org.apache.tika.detect.zip;
 
-import java.io.InputStream;
+
 
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
@@ -39,7 +39,7 @@ public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetecto
      * @return
      */
     @Override
-    public MediaType detect(InputStream is, Metadata metadata) {
+    public MediaType detect(TikaInputStream is, Metadata metadata) {
 /*
         Set<String> fileNames = new HashSet<>();
         Set<String> directoryNames = new HashSet<>();

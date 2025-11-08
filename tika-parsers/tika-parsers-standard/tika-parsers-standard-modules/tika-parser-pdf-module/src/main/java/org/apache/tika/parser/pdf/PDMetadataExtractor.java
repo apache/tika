@@ -17,7 +17,7 @@
 package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;

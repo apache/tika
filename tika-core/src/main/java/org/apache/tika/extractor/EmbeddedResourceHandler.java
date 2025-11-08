@@ -16,8 +16,7 @@
  */
 package org.apache.tika.extractor;
 
-import java.io.InputStream;
-
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
 /**
@@ -37,5 +36,5 @@ public interface EmbeddedResourceHandler {
      * @param mediaType The media type of the embedded resource, if known
      * @param stream The contents of the embedded resource
      */
-    void handle(String filename, MediaType mediaType, InputStream stream);
+    void handle(String filename, MediaType mediaType, TikaInputStream stream);
 }

@@ -19,7 +19,7 @@ package org.apache.tika.server.core;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.net.BindException;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;

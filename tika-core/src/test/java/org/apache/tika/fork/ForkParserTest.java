@@ -25,7 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -55,6 +55,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -79,7 +80,7 @@ public class ForkParserTest extends TikaTest {
                 new ForkTestParser())) {
             Metadata metadata = new Metadata();
             ContentHandler output = new BodyContentHandler();
-            InputStream stream = new ByteArrayInputStream(new byte[0]);
+            TikaInputStream stream = TikaInputStream.get(new byte[0]);
             ParseContext context = new ParseContext();
             parser.parse(stream, output, metadata, context);
             assertEquals("Hello, World!", output.toString().trim());
@@ -94,7 +95,7 @@ public class ForkParserTest extends TikaTest {
             ParseContext context = new ParseContext();
             for (int i = 0; i < 10; i++) {
                 ContentHandler output = new BodyContentHandler();
-                InputStream stream = new ByteArrayInputStream(new byte[0]);
+                TikaInputStream tis = new ByteArrayInputStream(new byte[0]);
                 parser.parse(stream, output, new Metadata(), context);
                 assertEquals("Hello, World!", output.toString().trim());
             }
@@ -114,7 +115,7 @@ public class ForkParserTest extends TikaTest {
                 output[i] = o;
                 threads[i] = new Thread(() -> {
                     try {
-                        InputStream stream = new ByteArrayInputStream(new byte[0]);
+                        TikaInputStream tis = new ByteArrayInputStream(new byte[0]);
                         parser.parse(stream, o, new Metadata(), context);
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -166,7 +167,7 @@ public class ForkParserTest extends TikaTest {
             Thread blocked = new Thread(() -> {
                 try {
                     barrier.release();
-                    InputStream stream = new ByteArrayInputStream(new byte[0]);
+                    TikaInputStream tis = new ByteArrayInputStream(new byte[0]);
                     parser.parse(stream, o, new Metadata(), context);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -245,7 +246,7 @@ public class ForkParserTest extends TikaTest {
                 new ForkTestParser.ForkTestParserAccessingPackage())) {
             Metadata metadata = new Metadata();
             ContentHandler output = new BodyContentHandler();
-            InputStream stream = new ByteArrayInputStream(new byte[0]);
+            TikaInputStream tis = new ByteArrayInputStream(new byte[0]);
             ParseContext context = new ParseContext();
             parser.parse(stream, output, metadata, context);
             assertEquals("Hello, World!", output.toString().trim());
@@ -368,7 +369,7 @@ public class ForkParserTest extends TikaTest {
         //test that a server-side write-to-file works without proxying back the
         //AbstractContentHandlerFactory
         Path target = Files.createTempFile(tempDir, "fork-to-file-handler-", ".txt");
-        try (InputStream is = getResourceAsStream("/test-documents/basic_embedded.xml")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/basic_embedded.xml")) {
             RecursiveParserWrapper wrapper = new RecursiveParserWrapper(new AutoDetectParser());
             ToFileHandler toFileHandler =
                     new ToFileHandler(new SBContentHandlerFactory(), target.toFile());
@@ -431,10 +432,10 @@ public class ForkParserTest extends TikaTest {
         RecursiveParserWrapperHandler handler =
                 new RecursiveParserWrapperHandler(new NonSerializableHandlerFactory());
         try (ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
-                InputStream is = getResourceAsStream("/test-documents/embedded_then_npe.xml")) {
+                TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/embedded_then_npe.xml"))) {
             Metadata metadata = new Metadata();
             ParseContext context = new ParseContext();
-            fork.parse(is, handler, metadata, context);
+            fork.parse(tis, handler, metadata, context);
             fail();
         } catch (TikaException e) {
             assertTrue(e.getCause() instanceof NullPointerException);
@@ -473,10 +474,10 @@ public class ForkParserTest extends TikaTest {
                     new ForkTestParser.ForkTestParserWaiting())) {
                 Metadata metadata = new Metadata();
                 ContentHandler output = new BodyContentHandler();
-                InputStream stream = new ByteArrayInputStream(new byte[0]);
+                TikaInputStream tis = TikaInputStream.get(new byte[0]);
                 ParseContext context = new ParseContext();
                 cdl.countDown();
-                parser.parse(stream, output, metadata, context);
+                parser.parse(tis, output, metadata, context);
                 // Don't care about output not planning to get this far
             } catch (IOException | SAXException | TikaException e) {
                 throw new RuntimeException(e);

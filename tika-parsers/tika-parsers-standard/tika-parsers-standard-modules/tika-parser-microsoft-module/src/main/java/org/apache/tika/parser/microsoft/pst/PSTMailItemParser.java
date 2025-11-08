@@ -19,7 +19,7 @@ package org.apache.tika.parser.microsoft.pst;
 import static java.lang.String.valueOf;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
@@ -63,7 +63,7 @@ public class PSTMailItemParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
         TikaInputStream tis = TikaInputStream.cast(stream);
         if (tis == null) {
             throw new TikaException("Stream must be a TikaInputStream");

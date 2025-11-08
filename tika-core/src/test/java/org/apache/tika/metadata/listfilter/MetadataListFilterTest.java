@@ -19,7 +19,7 @@ package org.apache.tika.metadata.listfilter;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
+
 
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +30,7 @@ public class MetadataListFilterTest {
     @Test
     public void testBasic() throws Exception {
         TikaConfig tikaConfig;
-        try (InputStream is = MetadataListFilterTest.class.getResourceAsStream(
+        try (TikaInputStream tis = MetadataListFilterTest.class.getResourceAsStream(
                 "metadatalistfilter-config.xml")) {
             tikaConfig = new TikaConfig(is);
         }

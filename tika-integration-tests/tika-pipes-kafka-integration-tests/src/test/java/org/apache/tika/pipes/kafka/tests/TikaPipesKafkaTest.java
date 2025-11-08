@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;

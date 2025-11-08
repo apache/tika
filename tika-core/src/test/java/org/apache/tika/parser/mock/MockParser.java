@@ -20,7 +20,7 @@ package org.apache.tika.parser.mock;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
@@ -114,7 +114,7 @@ public class MockParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         if (Thread.currentThread().isInterrupted()) {
             throw new TikaException("interrupted", new InterruptedException());

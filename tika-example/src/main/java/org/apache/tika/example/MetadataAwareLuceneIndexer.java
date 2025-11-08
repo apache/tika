@@ -19,7 +19,7 @@ package org.apache.tika.example;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
+
 import java.util.Date;
 
 import org.apache.lucene.document.Document;

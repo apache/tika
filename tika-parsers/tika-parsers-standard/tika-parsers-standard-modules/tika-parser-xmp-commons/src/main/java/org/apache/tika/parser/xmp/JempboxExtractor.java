@@ -19,7 +19,7 @@ package org.apache.tika.parser.xmp;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Calendar;
 import java.util.List;
 import java.util.StringJoiner;
@@ -220,7 +220,7 @@ public class JempboxExtractor {
         MAX_EVENT_HISTORY_IN_XMPMM = maxEvents;
     }
 
-    public void parse(InputStream file) throws IOException, TikaException {
+    public void parse(TikaInputStream file) throws IOException, TikaException {
         UnsynchronizedByteArrayOutputStream xmpraw = UnsynchronizedByteArrayOutputStream.builder().get();
         if (!scanner.parse(file, xmpraw)) {
             return;

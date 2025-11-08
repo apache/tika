@@ -18,7 +18,7 @@ package org.apache.tika.parser.hwp;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;

@@ -17,7 +17,7 @@
 package org.apache.tika.parser.asm;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
@@ -61,7 +61,7 @@ class XHTMLClassVisitor extends ClassVisitor {
         return (value & flag) != 0;
     }
 
-    public void parse(InputStream stream) throws TikaException, SAXException, IOException {
+    public void parse(TikaInputStream stream) throws TikaException, SAXException, IOException {
         try {
             ClassReader reader = new ClassReader(stream);
             reader.accept(this, ClassReader.SKIP_FRAMES | ClassReader.SKIP_CODE);

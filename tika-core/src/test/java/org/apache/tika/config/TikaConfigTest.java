@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -37,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.ResourceLoggingClassLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeDetectionTest;
@@ -423,7 +423,8 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
     }
 
     private MediaType detect(String testFileName, TikaConfig tikaConfig) throws Exception {
-        try (InputStream is = MimeDetectionTest.class.getResourceAsStream(testFileName)) {
+        try (TikaInputStream is = TikaInputStream.get(
+                MimeDetectionTest.class.getResourceAsStream(testFileName))) {
             return tikaConfig.getDetector().detect(is, new Metadata());
         }
     }

@@ -19,7 +19,7 @@ package org.apache.tika.parser.microsoft;
 
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Set;
@@ -75,7 +75,7 @@ public class JackcessParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         TikaInputStream tis = TikaInputStream.get(stream);
         Database db = null;

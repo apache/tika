@@ -18,7 +18,7 @@
 package org.apache.tika.example;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import javax.crypto.Cipher;
@@ -34,7 +34,7 @@ import org.apache.tika.mime.MediaType;
 public class EncryptedPrescriptionDetector implements Detector {
     private static final long serialVersionUID = -1709652690773421147L;
 
-    public MediaType detect(InputStream stream, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream stream, Metadata metadata) throws IOException {
         Key key = Pharmacy.getKey();
         MediaType type = MediaType.OCTET_STREAM;
 

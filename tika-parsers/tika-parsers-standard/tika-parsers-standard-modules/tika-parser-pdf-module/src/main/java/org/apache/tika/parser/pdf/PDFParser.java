@@ -19,7 +19,7 @@ package org.apache.tika.parser.pdf;
 import static org.apache.tika.metadata.PDF.OCR_PAGE_COUNT;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -140,7 +140,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         PDFParserConfig localConfig = defaultConfig;

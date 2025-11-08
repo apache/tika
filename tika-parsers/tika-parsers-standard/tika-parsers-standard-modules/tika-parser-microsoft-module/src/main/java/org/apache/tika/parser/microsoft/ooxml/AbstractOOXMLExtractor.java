@@ -21,7 +21,7 @@ import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;

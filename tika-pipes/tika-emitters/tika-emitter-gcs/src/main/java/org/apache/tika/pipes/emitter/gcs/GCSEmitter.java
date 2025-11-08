@@ -19,7 +19,7 @@ package org.apache.tika.pipes.emitter.gcs;
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;

@@ -19,7 +19,7 @@ package org.apache.tika.detect;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.InputStream;
+
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -35,8 +35,9 @@ public class FileCommandDetectorTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
-        try (InputStream is = TikaConfig.class.getResourceAsStream("FileCommandDetector.xml")) {
-            DETECTOR = new TikaConfig(is).getDetector();
+        try (TikaInputStream tis = TikaInputStream.get(
+                TikaConfig.class.getResourceAsStream("FileCommandDetector.xml"))) {
+            DETECTOR = new TikaConfig(tis).getDetector();
         }
     }
 
@@ -44,28 +45,17 @@ public class FileCommandDetectorTest {
     public void testBasic() throws Exception {
         assumeTrue(FileCommandDetector.checkHasFile());
 
-        try (InputStream is = getClass()
-                .getResourceAsStream("/test-documents/basic_embedded.xml")) {
+        try (TikaInputStream tis = TikaInputStream.get(getClass()
+                .getResourceAsStream("/test-documents/basic_embedded.xml"))) {
             //run more than once to ensure that the input stream is reset
             for (int i = 0; i < 2; i++) {
                 Metadata metadata = new Metadata();
-                MediaType answer = DETECTOR.detect(is, metadata);
+                MediaType answer = DETECTOR.detect(tis, metadata);
                 String fileMime = metadata.get(FileCommandDetector.FILE_MIME);
                 assertTrue(MediaType.text("xml").equals(answer) ||
                         MediaType.application("xml").equals(answer));
                 assertTrue("application/xml".equals(fileMime) ||
                         "text/xml".equals(fileMime));
-            }
-        }
-
-        //now try with TikaInputStream
-        try (InputStream is = TikaInputStream
-                .get(getClass().getResourceAsStream("/test-documents/basic_embedded.xml"))) {
-            //run more than once to ensure that the input stream is reset
-            for (int i = 0; i < 2; i++) {
-                MediaType answer = DETECTOR.detect(is, new Metadata());
-                assertTrue(MediaType.text("xml").equals(answer) ||
-                        MediaType.application("xml").equals(answer));
             }
         }
     }

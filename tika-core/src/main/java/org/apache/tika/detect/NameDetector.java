@@ -18,7 +18,7 @@ package org.apache.tika.detect;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.InputStream;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Map;
@@ -37,7 +37,7 @@ import org.apache.tika.mime.MediaType;
  * that pattern is returned as the likely content type of the input document.
  * Otherwise the returned type is <code>application/octet-stream</code>.
  * <p>
- * See the {@link #detect(InputStream, Metadata)} method for more details
+ * See the {@link #detect(TikaInputStream, Metadata)} method for more details
  * of the matching algorithm.
  *
  * @since Apache Tika 0.3
@@ -94,7 +94,7 @@ public class NameDetector implements Detector {
      * @param metadata input metadata, possibly with a RESOURCE_NAME_KEY value
      * @return detected media type, or <code>application/octet-stream</code>
      */
-    public MediaType detect(InputStream input, Metadata metadata) {
+    public MediaType detect(TikaInputStream input, Metadata metadata) {
         // Look for a resource name in the input metadata
         String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         if (name != null) {

@@ -20,7 +20,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -58,7 +58,7 @@ public class MidiParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "audio/midi");
 

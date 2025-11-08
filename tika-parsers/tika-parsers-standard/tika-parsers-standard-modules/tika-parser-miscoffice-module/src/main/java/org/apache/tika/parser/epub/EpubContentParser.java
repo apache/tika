@@ -17,7 +17,7 @@
 package org.apache.tika.parser.epub;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -43,7 +43,7 @@ public class EpubContentParser implements Parser {
         return Collections.emptySet(); // not a top-level parser
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         XMLReaderUtils

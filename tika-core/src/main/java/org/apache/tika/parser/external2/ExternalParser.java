@@ -18,7 +18,7 @@ package org.apache.tika.parser.external2;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -98,7 +98,7 @@ public class ExternalParser implements Parser, Initializable {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         //this may remain null, depending on whether the external parser writes to a file
         Path outFile = null;

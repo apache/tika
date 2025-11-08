@@ -17,7 +17,7 @@
 package org.apache.tika.detect.apple;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
@@ -95,7 +95,7 @@ public class BPListDetector implements Detector {
      * @throws IOException
      */
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
         if (input == null) {
             return MediaType.OCTET_STREAM;
         }

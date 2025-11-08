@@ -18,7 +18,7 @@ package org.apache.tika.pipes.core.async;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 
 import org.apache.tika.exception.TikaException;

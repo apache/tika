@@ -17,7 +17,7 @@
 package org.apache.tika.detect.gzip;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
 
@@ -41,7 +41,7 @@ public class GZipSpecializationDetector implements Detector {
     public static MediaType ARC_GZ = MediaType.application("arc+gz");
 
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
         if (input == null) {
             return MediaType.OCTET_STREAM;
         }

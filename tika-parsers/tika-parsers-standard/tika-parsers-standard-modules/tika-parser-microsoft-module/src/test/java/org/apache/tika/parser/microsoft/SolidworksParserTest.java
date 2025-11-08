@@ -19,7 +19,7 @@ package org.apache.tika.parser.microsoft;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.io.InputStream;
+
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;

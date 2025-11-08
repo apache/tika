@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -101,7 +101,7 @@ public class TestZipDetector extends TikaTest {
 
             Tika tika = new Tika();
 
-            String result = tika.detect(inputStream, ZIP_FILE);
+            String result = tika.detect(TikaInputStream, ZIP_FILE);
             assertEquals("application/vnd.google-earth.kmz", result);
         }
     }
@@ -130,7 +130,7 @@ public class TestZipDetector extends TikaTest {
 
             Tika tika = new Tika(new TikaConfig(tikaConfigInputStream));
 
-            String result = tika.detect(inputStream, ZIP_FILE);
+            String result = tika.detect(TikaInputStream, ZIP_FILE);
             assertEquals("application/zip", result);
         }
     }

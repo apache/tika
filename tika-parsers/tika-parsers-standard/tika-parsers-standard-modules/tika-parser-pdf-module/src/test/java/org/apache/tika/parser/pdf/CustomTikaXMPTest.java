@@ -19,7 +19,7 @@ package org.apache.tika.parser.pdf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.junit.jupiter.api.Test;

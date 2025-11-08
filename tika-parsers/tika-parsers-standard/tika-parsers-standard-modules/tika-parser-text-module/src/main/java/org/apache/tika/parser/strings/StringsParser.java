@@ -20,7 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -90,7 +90,7 @@ public class StringsParser implements Parser, Initializable {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         if (!stringsPresent) {

@@ -18,7 +18,7 @@
 package org.apache.tika.example;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -35,7 +35,7 @@ import org.apache.tika.sax.TeeContentHandler;
 public class LanguageDetectingParser extends DelegatingParser {
     private static final long serialVersionUID = 4291320409396502774L;
 
-    public void parse(InputStream stream, ContentHandler handler, final Metadata metadata, ParseContext context) throws SAXException, IOException, TikaException {
+    public void parse(TikaInputStream stream, ContentHandler handler, final Metadata metadata, ParseContext context) throws SAXException, IOException, TikaException {
         LanguageHandler langHandler = new LanguageHandler();
         ContentHandler tee = new TeeContentHandler(handler, langHandler);
 

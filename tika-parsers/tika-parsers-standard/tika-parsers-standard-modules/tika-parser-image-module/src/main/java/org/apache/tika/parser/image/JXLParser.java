@@ -17,7 +17,7 @@
 package org.apache.tika.parser.image;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -45,7 +45,7 @@ public class JXLParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         JempboxExtractor jempboxExtractor = new JempboxExtractor(metadata);
         jempboxExtractor.parse(stream);

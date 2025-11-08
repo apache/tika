@@ -17,7 +17,7 @@
 package org.apache.tika.parser.crypto;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -58,7 +58,7 @@ public class Pkcs7Parser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         try {
             DigestCalculatorProvider digestCalculatorProvider =

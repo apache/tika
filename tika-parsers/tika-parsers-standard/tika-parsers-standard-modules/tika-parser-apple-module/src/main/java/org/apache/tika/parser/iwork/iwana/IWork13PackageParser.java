@@ -18,7 +18,7 @@
 package org.apache.tika.parser.iwork.iwana;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -79,7 +79,7 @@ public class IWork13PackageParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // Open the Zip stream
         // Use a File if we can, and an already open zip is even better
@@ -219,7 +219,7 @@ public class IWork13PackageParser implements Parser {
 
     private void extractVersionHistory(InputStream inputStream, Metadata metadata) throws TikaException {
         try {
-            NSObject rootObj = PropertyListParser.parse(inputStream);
+            NSObject rootObj = PropertyListParser.parse(TikaInputStream);
             if (rootObj instanceof NSArray) {
                 for (NSObject obj : ((NSArray)rootObj).getArray()) {
                     metadata.add(IWORKS_BUILD_VERSION_HISTORY, obj.toString());
@@ -235,7 +235,7 @@ public class IWork13PackageParser implements Parser {
 
     private void extractProperties(InputStream inputStream, Metadata metadata) throws TikaException {
         try {
-            NSObject rootObj = PropertyListParser.parse(inputStream);
+            NSObject rootObj = PropertyListParser.parse(TikaInputStream);
             if (rootObj instanceof NSDictionary) {
                 NSDictionary dict = (NSDictionary)rootObj;
                 for (String k : dict.keySet()) {

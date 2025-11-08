@@ -18,7 +18,7 @@
 package org.apache.tika.example;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.StringWriter;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;

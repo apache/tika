@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;

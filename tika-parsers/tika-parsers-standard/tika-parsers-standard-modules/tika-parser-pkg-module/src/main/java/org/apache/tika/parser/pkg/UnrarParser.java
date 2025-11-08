@@ -18,7 +18,7 @@ package org.apache.tika.parser.pkg;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,7 +65,7 @@ public class UnrarParser implements Parser {
     private long timeoutMillis = 60000;
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);

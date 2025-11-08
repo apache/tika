@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
+
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;

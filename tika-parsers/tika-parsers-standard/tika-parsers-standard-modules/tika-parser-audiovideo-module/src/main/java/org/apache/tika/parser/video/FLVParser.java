@@ -20,7 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -164,7 +164,7 @@ public class FLVParser implements Parser {
         return fis.read() == 'F' && fis.read() == 'L' && fis.read() == 'V';
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         DataInputStream datainput = new DataInputStream(stream);
         if (!checkSignature(datainput)) {

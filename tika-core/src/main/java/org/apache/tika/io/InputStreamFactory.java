@@ -17,7 +17,7 @@
 package org.apache.tika.io;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 /**
  * <p>A factory which returns a fresh {@link InputStream} for the <em>same</em>

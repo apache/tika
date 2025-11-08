@@ -17,7 +17,7 @@
 package org.apache.tika.parser.txt;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 
@@ -53,7 +53,7 @@ public class BOMDetector implements EncodingDetector {
         }
     }
     @Override
-    public Charset detect(InputStream input, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream input, Metadata metadata) throws IOException {
         input.mark(MAX_BYTES);
         byte[] bytes = new byte[MAX_BYTES];
         try {

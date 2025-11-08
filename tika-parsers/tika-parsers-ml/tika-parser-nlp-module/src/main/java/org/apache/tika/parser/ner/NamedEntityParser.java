@@ -18,7 +18,7 @@
 package org.apache.tika.parser.ner;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -113,7 +113,7 @@ public class NamedEntityParser implements Parser {
         return MEDIA_TYPES;
     }
 
-    public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata,
+    public void parse(TikaInputStream inputStream, ContentHandler contentHandler, Metadata metadata,
                       ParseContext parseContext) throws IOException, SAXException, TikaException {
 
         if (!initialized) {
@@ -126,7 +126,7 @@ public class NamedEntityParser implements Parser {
         Reader reader =
                 MediaType.TEXT_PLAIN.toString().equals(metadata.get(Metadata.CONTENT_TYPE)) ?
                         new InputStreamReader(inputStream, StandardCharsets.UTF_8) :
-                        secondaryParser.parse(inputStream);
+                        secondaryParser.parse(TikaInputStream);
 
         String text = IOUtils.toString(reader);
         IOUtils.closeQuietly(reader);

@@ -17,7 +17,7 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

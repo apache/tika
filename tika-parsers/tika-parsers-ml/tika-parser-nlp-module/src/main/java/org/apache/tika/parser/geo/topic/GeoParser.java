@@ -18,7 +18,7 @@
 package org.apache.tika.parser.geo.topic;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -97,7 +97,7 @@ public class GeoParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         /*----------------configure this parser by ParseContext Object---------------------*/

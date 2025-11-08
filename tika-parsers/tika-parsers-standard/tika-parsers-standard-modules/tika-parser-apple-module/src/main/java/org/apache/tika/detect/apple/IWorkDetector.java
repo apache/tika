@@ -17,7 +17,7 @@
 package org.apache.tika.detect.apple;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.HashSet;
 import java.util.Set;
 

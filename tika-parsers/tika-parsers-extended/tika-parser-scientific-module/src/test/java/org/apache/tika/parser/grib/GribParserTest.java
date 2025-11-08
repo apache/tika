@@ -20,7 +20,7 @@ package org.apache.tika.parser.grib;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
+
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;

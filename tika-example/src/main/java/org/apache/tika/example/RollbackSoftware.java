@@ -21,7 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -95,7 +95,7 @@ public class RollbackSoftware {
          * @see org.apache.tika.parser.Parser#parse(java.io.InputStream,
          * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata)
          */
-        public void parse(InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException {
+        public void parse(TikaInputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException {
             parse(is, handler, metadata, new ParseContext());
         }
 
@@ -106,7 +106,7 @@ public class RollbackSoftware {
          * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
          * org.apache.tika.parser.ParseContext)
          */
-        public void parse(InputStream is, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+        public void parse(TikaInputStream is, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
 
             File deployArea = new File(IOUtils.toString(is, UTF_8));
             File[] versions = deployArea.listFiles(pathname -> !pathname

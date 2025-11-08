@@ -18,7 +18,7 @@ package org.apache.tika.parser.csv;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
@@ -150,7 +150,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         TextAndCSVConfig textAndCSVConfig = context.get(TextAndCSVConfig.class, defaultTextAndCSVConfig);
 

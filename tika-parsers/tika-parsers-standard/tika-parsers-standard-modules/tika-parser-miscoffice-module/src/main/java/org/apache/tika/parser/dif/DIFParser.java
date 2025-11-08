@@ -17,7 +17,7 @@
 package org.apache.tika.parser.dif;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -52,7 +52,7 @@ public class DIFParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // TODO Auto-generated method stub
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);

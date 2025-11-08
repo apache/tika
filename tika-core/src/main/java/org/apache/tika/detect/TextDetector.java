@@ -17,7 +17,7 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Arrays;
 
 import org.apache.tika.metadata.Metadata;
@@ -110,7 +110,7 @@ public class TextDetector implements Detector {
      * @return "text/plain" if the input stream suggest a text document,
      * "application/octet-stream" otherwise
      */
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
         if (input == null) {
             return MediaType.OCTET_STREAM;
         }

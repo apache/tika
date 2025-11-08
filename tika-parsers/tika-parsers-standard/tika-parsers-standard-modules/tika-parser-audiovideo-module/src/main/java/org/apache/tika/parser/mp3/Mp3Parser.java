@@ -17,7 +17,7 @@
 package org.apache.tika.parser.mp3;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -139,7 +139,7 @@ public class Mp3Parser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "audio/mpeg");
         metadata.set(XMPDM.AUDIO_COMPRESSOR, "MP3");

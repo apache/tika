@@ -19,7 +19,7 @@ package org.apache.tika.parser.indesign;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Set;
@@ -79,7 +79,7 @@ public class IDMLParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler baseHandler, Metadata metadata, ParseContext context)
+    public void parse(TikaInputStream stream, ContentHandler baseHandler, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
 
         ZipFile zipFile = null;

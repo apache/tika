@@ -17,7 +17,7 @@
 package org.apache.tika.parser.xmp;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Date;
 import java.util.List;
 
@@ -47,7 +47,7 @@ public class XMPMetadataExtractor {
      * @throws IOException on any IO error.
      * @throws TikaException on any Tika error.
      */
-    public static void parse(InputStream stream, Metadata metadata) throws IOException, TikaException {
+    public static void parse(TikaInputStream stream, Metadata metadata) throws IOException, TikaException {
         XMPMetadata xmp;
         try {
             DomXmpParser xmpParser = new DomXmpParser();

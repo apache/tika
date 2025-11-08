@@ -19,7 +19,7 @@ package org.apache.tika.parser.isatab;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
+
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;

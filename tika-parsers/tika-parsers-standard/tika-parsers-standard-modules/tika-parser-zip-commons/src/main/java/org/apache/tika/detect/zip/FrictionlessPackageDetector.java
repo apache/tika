@@ -17,7 +17,7 @@
 package org.apache.tika.detect.zip;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;

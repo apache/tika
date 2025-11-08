@@ -21,7 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URL;
@@ -191,7 +191,7 @@ public class TIAParsingExample {
             private static final long serialVersionUID = 4424210691523343833L;
 
             @Override
-            public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+            public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
                 // custom processing of the component document
             }
         });

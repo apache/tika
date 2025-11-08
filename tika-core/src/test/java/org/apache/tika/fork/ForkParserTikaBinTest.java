@@ -19,7 +19,7 @@ package org.apache.tika.fork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -98,7 +98,7 @@ public class ForkParserTikaBinTest extends TikaTest {
         }
 
         Path tikaConfigVowelParser = JAR_DIR.resolve("TIKA_2653-iou.xml");
-        try (InputStream is = ForkServer.class
+        try (TikaInputStream tis = ForkServer.class
                 .getResourceAsStream("/org/apache/tika/config/TIKA-2653-vowel-parser-iou.xml");
                 OutputStream os = Files.newOutputStream(tikaConfigVowelParser)) {
             IOUtils.copy(is, os);
@@ -198,7 +198,7 @@ public class ForkParserTikaBinTest extends TikaTest {
         ContentHandler handler =
                 (contentHandler == null) ? new ToXMLContentHandler() : contentHandler;
         Metadata m = new Metadata();
-        try (InputStream is = getResourceAsStream("/test-documents/example.xml")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/example.xml")) {
             parser.parse(is, handler, m, new ParseContext());
         } finally {
             parser.close();

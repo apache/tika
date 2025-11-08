@@ -19,7 +19,7 @@ package org.apache.tika.parser.epub;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.file.Path;
@@ -116,7 +116,7 @@ public class EpubParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // Because an EPub file is often made up of multiple XHTML files,
         //  we need explicit control over the start and end of the document
@@ -147,7 +147,7 @@ public class EpubParser implements Parser {
         maybeThrowEncryptedException(encryptedItems);
     }
 
-    private Set<String> streamingParse(InputStream stream, ContentHandler bodyHandler,
+    private Set<String> streamingparse(TikaInputStream stream, ContentHandler bodyHandler,
                                    Metadata metadata,
                                 ParseContext context)
             throws IOException, TikaException, SAXException {
@@ -198,7 +198,7 @@ public class EpubParser implements Parser {
 
     }
 
-    private Set<String> bufferedParse(InputStream stream, ContentHandler bodyHandler,
+    private Set<String> bufferedparse(TikaInputStream stream, ContentHandler bodyHandler,
                                XHTMLContentHandler xhtml, Metadata metadata, ParseContext context)
             throws IOException, TikaException, SAXException {
         TikaInputStream tis;
@@ -583,7 +583,7 @@ public class EpubParser implements Parser {
 
 
     private static class EncryptionHandler extends DefaultHandler {
-        private static Set<String> parse(InputStream is, ParseContext parseContext)
+        private static Set<String> parse(TikaInputStream is, ParseContext parseContext)
                 throws TikaException, IOException, SAXException {
             EncryptionHandler handler = new EncryptionHandler();
             XMLReaderUtils.parseSAX(is, handler, parseContext);

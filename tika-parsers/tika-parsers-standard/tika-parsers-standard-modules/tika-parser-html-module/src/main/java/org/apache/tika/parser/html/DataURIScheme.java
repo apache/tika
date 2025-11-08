@@ -17,7 +17,7 @@
 
 package org.apache.tika.parser.html;
 
-import java.io.InputStream;
+
 import java.util.Arrays;
 import java.util.Objects;
 

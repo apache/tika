@@ -18,7 +18,7 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -45,7 +45,7 @@ public class NonDetectingEncodingDetector implements EncodingDetector {
     }
 
     @Override
-    public Charset detect(InputStream input, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream input, Metadata metadata) throws IOException {
         return charset;
     }
 

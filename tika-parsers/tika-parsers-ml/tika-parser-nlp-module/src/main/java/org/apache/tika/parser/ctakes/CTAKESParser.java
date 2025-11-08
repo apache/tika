@@ -17,7 +17,7 @@
 package org.apache.tika.parser.ctakes;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -78,7 +78,7 @@ public class CTAKESParser extends ParserDecorator {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         CTAKESConfig config = context.get(CTAKESConfig.class, new CTAKESConfig());
         CTAKESContentHandler ctakesHandler = new CTAKESContentHandler(handler, metadata, config);

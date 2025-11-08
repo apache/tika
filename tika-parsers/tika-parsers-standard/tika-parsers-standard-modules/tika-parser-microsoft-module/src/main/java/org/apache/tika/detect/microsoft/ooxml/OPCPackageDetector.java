@@ -17,7 +17,7 @@
 package org.apache.tika.detect.microsoft.ooxml;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;

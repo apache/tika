@@ -18,7 +18,7 @@ package org.apache.tika.detect.zip;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -176,7 +176,7 @@ public class DefaultZipContainerDetector implements Detector {
     }
 
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
         // Check if we have access to the document
         if (input == null) {
             return MediaType.OCTET_STREAM;

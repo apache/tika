@@ -17,7 +17,7 @@
 package org.apache.tika.parser.mp4;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -94,7 +94,7 @@ public class MP4Parser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         TemporaryResources tmp = new TemporaryResources();

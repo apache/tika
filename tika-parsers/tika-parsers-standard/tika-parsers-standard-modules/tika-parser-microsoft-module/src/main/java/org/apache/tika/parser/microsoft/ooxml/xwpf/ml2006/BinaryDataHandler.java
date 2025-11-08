@@ -19,7 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;

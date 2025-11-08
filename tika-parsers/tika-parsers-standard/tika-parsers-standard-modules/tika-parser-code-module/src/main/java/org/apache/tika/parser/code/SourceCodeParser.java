@@ -21,7 +21,7 @@ import static org.codelibs.jhighlight.renderer.XhtmlRendererFactory.GROOVY;
 import static org.codelibs.jhighlight.renderer.XhtmlRendererFactory.JAVA;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -93,7 +93,7 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
                 metadata, getEncodingDetector(context))) {

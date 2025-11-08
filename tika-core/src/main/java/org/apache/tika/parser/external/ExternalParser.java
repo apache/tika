@@ -22,7 +22,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
@@ -265,7 +265,7 @@ public class ExternalParser implements Parser {
      * Metadata is only extracted if {@link #setMetadataExtractionPatterns(Map)}
      * has been called to set patterns.
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 

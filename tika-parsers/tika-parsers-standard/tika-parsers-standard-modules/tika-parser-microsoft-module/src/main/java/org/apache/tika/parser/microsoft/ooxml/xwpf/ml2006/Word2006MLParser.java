@@ -18,7 +18,7 @@
 package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -47,7 +47,7 @@ public class Word2006MLParser extends AbstractOfficeParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         //set OfficeParserConfig if the user hasn't specified one
         configure(context);

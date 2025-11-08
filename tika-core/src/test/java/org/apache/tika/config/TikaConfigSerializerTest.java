@@ -22,13 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
@@ -66,9 +67,9 @@ public class TikaConfigSerializerTest extends TikaConfigTest {
         StringWriter writer = new StringWriter();
         TikaConfigSerializer.serialize(config,
                 TikaConfigSerializer.Mode.STATIC_FULL, writer, StandardCharsets.UTF_8);
-        try (InputStream is =
-                     new ByteArrayInputStream(writer.toString().getBytes(StandardCharsets.UTF_8))) {
-            config = new TikaConfig(is);
+        try (TikaInputStream tis = TikaInputStream.get(
+                     new ByteArrayInputStream(writer.toString().getBytes(StandardCharsets.UTF_8)))) {
+            config = new TikaConfig(tis);
         }
 
         CompositeParser parser = (CompositeParser) config.getParser();

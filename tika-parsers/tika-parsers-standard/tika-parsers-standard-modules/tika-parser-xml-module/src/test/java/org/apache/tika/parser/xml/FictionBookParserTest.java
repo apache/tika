@@ -18,7 +18,7 @@ package org.apache.tika.parser.xml;
 
 import static org.apache.tika.TikaTest.assertContains;
 
-import java.io.InputStream;
+
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;

@@ -19,7 +19,7 @@ package org.apache.tika.detect.magika;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.regex.Matcher;
@@ -134,7 +134,7 @@ public class MagikaDetector implements Detector {
      * @throws IOException
      */
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
         if (hasMagika == null) {
             hasMagika = checkHasMagika(this.magikaPath);
         }

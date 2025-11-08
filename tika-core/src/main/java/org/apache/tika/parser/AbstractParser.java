@@ -17,12 +17,12 @@
 package org.apache.tika.parser;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -42,17 +42,17 @@ public abstract class AbstractParser implements Parser {
 
     /**
      * Calls the
-     * {@link Parser#parse(InputStream, ContentHandler, Metadata, ParseContext)}
+     * {@link Parser#parse(TikaInputStream, ContentHandler, Metadata, ParseContext)}
      * method with an empty {@link ParseContext}. This method exists as a
      * leftover from Tika 0.x when the three-argument parse() method still
      * existed in the {@link Parser} interface. No new code should call this
      * method anymore, it's only here for backwards compatibility.
      *
-     * @deprecated use the {@link Parser#parse(InputStream, ContentHandler,
+     * @deprecated use the {@link Parser#parse(TikaInputStream, ContentHandler,
      * Metadata, ParseContext)} method instead
      */
     @Deprecated
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata)
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
     }

@@ -19,7 +19,7 @@ package org.apache.tika.parser.sentiment;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.net.URL;
 import java.util.Collections;
 import java.util.Map;
@@ -134,7 +134,7 @@ public class SentimentAnalysisParser implements Parser, Initializable {
      * @param context  the context for the parser
      */
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         if (classifier == null) {
             LOG.warn(getClass().getSimpleName() + " is not configured properly.");

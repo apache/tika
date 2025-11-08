@@ -20,7 +20,7 @@ import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -141,7 +141,7 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         }
     }
 
-    private void parse(InputStream stream, ContentHandler handler, Metadata metadata)
+    private void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata)
             throws TikaException, IOException, SAXException {
         getDelegatingParser().parse(stream,
                 new EmbeddedContentHandler(new BodyContentHandler(handler)),

@@ -20,7 +20,7 @@ package org.apache.tika.parser.pdf;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.pdfbox.cos.COSString;

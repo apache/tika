@@ -17,7 +17,7 @@
 package org.apache.tika.detect;
 
 import java.io.CharConversionException;
-import java.io.InputStream;
+
 import java.util.Arrays;
 import javax.xml.namespace.QName;
 
@@ -63,7 +63,7 @@ public class XmlRootExtractor {
     /**
      * @since Apache Tika 0.9
      */
-    public QName extractRootElement(InputStream stream) {
+    public QName extractRootElement(TikaInputStream stream) {
         return extractRootElement(stream, false);
     }
     

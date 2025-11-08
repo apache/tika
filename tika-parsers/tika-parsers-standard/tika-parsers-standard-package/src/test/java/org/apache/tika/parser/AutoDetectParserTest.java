@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -496,7 +496,7 @@ public class AutoDetectParserTest extends TikaTest {
      */
     @SuppressWarnings("serial")
     private static class MyDetector implements Detector {
-        public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+        public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
             return MY_MEDIA_TYPE;
         }
     }
@@ -509,7 +509,7 @@ public class AutoDetectParserTest extends TikaTest {
             return supportedTypes;
         }
 
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) {
             metadata.add("MyParser", "value");
         }

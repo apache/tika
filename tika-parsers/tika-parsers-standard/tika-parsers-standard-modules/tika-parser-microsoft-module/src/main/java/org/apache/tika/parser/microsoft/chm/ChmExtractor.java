@@ -19,7 +19,7 @@ package org.apache.tika.parser.microsoft.chm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.ArrayList;
 import java.util.List;
 

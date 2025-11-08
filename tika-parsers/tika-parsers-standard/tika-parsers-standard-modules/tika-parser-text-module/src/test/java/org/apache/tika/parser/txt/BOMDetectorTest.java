@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.Charset;
 
 import org.apache.commons.io.ByteOrderMark;

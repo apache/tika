@@ -17,7 +17,7 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,7 +71,7 @@ public class CompositeDetector implements Detector {
         this(Arrays.asList(detectors));
     }
 
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
         MediaType override = detectOverrides(metadata);
         if (override != null) {
             return override;

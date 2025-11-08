@@ -18,7 +18,7 @@ package org.apache.tika.parser.iwork.iwana;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
+
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;

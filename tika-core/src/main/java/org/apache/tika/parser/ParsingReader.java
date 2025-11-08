@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.Reader;
@@ -33,6 +32,7 @@ import java.util.concurrent.Executor;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.exception.ZeroByteFileException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
@@ -67,7 +67,7 @@ public class ParsingReader extends Reader {
     /**
      * The binary stream being parsed.
      */
-    private final InputStream stream;
+    private final TikaInputStream tis;
 
     /**
      * Metadata associated with the document being parsed.
@@ -87,11 +87,11 @@ public class ParsingReader extends Reader {
     /**
      * Creates a reader for the text content of the given binary stream.
      *
-     * @param stream binary stream
+     * @param tis binary stream
      * @throws IOException if the document can not be parsed
      */
-    public ParsingReader(InputStream stream) throws IOException {
-        this(new AutoDetectParser(), stream, new Metadata(), new ParseContext());
+    public ParsingReader(TikaInputStream tis) throws IOException {
+        this(new AutoDetectParser(), tis, new Metadata(), new ParseContext());
         context.set(Parser.class, parser);
     }
 
@@ -99,12 +99,12 @@ public class ParsingReader extends Reader {
      * Creates a reader for the text content of the given binary stream
      * with the given name.
      *
-     * @param stream binary stream
+     * @param tis binary stream
      * @param name   document name
      * @throws IOException if the document can not be parsed
      */
-    public ParsingReader(InputStream stream, String name) throws IOException {
-        this(new AutoDetectParser(), stream, getMetadata(name), new ParseContext());
+    public ParsingReader(TikaInputStream tis, String name) throws IOException {
+        this(new AutoDetectParser(), tis, getMetadata(name), new ParseContext());
         context.set(Parser.class, parser);
     }
 
@@ -116,7 +116,7 @@ public class ParsingReader extends Reader {
      * @throws IOException           if the document can not be parsed
      */
     public ParsingReader(Path path) throws IOException {
-        this(Files.newInputStream(path), path.getFileName().toString());
+        this(TikaInputStream.get(path), path.getFileName().toString());
     }
 
     /**
@@ -128,7 +128,7 @@ public class ParsingReader extends Reader {
      * @see #ParsingReader(Path)
      */
     public ParsingReader(File file) throws FileNotFoundException, IOException {
-        this(new FileInputStream(file), file.getName());
+        this(TikaInputStream.get(file), file.getName());
     }
 
     /**
@@ -145,7 +145,7 @@ public class ParsingReader extends Reader {
      * @param metadata document metadata
      * @throws IOException if the document can not be parsed
      */
-    public ParsingReader(Parser parser, InputStream stream, final Metadata metadata,
+    public ParsingReader(Parser parser, TikaInputStream stream, final Metadata metadata,
                          ParseContext context) throws IOException {
         this(parser, stream, metadata, context, command -> {
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
@@ -180,7 +180,7 @@ public class ParsingReader extends Reader {
      * @throws IOException if the document can not be parsed
      * @since Apache Tika 0.4
      */
-    public ParsingReader(Parser parser, InputStream stream, Metadata metadata, ParseContext context,
+    public ParsingReader(Parser parser, TikaInputStream tis, Metadata metadata, ParseContext context,
                          Executor executor) throws IOException {
         this.parser = parser;
         PipedReader pipedReader = new PipedReader();
@@ -190,7 +190,7 @@ public class ParsingReader extends Reader {
         } catch (IOException e) {
             throw new IllegalStateException(e); // Should never happen
         }
-        this.stream = stream;
+        this.tis = tis;
         this.metadata = metadata;
         this.context = context;
 
@@ -265,13 +265,13 @@ public class ParsingReader extends Reader {
         public void run() {
             try {
                 ContentHandler handler = new BodyContentHandler(writer);
-                parser.parse(stream, handler, metadata, context);
+                parser.parse(tis, handler, metadata, context);
             } catch (Throwable t) {
                 throwable = t;
             }
 
             try {
-                stream.close();
+                tis.close();
             } catch (Throwable t) {
                 if (throwable == null) {
                     throwable = t;

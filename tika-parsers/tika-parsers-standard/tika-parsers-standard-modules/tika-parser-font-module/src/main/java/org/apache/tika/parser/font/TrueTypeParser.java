@@ -17,7 +17,7 @@
 package org.apache.tika.parser.font;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -59,7 +59,7 @@ public class TrueTypeParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         TikaInputStream tis = TikaInputStream.cast(stream);
 

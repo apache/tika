@@ -19,7 +19,7 @@ package org.apache.tika.parser.netcdf;
 //JDK imports
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -77,7 +77,7 @@ public class NetCDFParser implements Parser {
      * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
      * org.apache.tika.parser.ParseContext)
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         TemporaryResources tmp =

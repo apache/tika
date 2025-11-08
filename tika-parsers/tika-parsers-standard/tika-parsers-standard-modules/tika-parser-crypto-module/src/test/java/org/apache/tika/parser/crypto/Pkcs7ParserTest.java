@@ -20,7 +20,7 @@ package org.apache.tika.parser.crypto;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.InputStream;
+
 
 import org.xml.sax.ContentHandler;
 

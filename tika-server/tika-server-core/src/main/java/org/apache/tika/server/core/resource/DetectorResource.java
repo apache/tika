@@ -18,7 +18,7 @@
 package org.apache.tika.server.core.resource;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.PUT;

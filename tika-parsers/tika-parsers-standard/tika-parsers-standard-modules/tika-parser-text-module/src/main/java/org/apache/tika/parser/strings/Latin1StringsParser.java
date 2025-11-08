@@ -17,7 +17,7 @@
 package org.apache.tika.parser.strings;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.Set;
@@ -193,7 +193,7 @@ public class Latin1StringsParser implements Parser {
      * org.apache.tika.parser.ParseContext)
      */
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException {
         /*
          * Creates a new instance because the object is not immutable.
@@ -217,7 +217,7 @@ public class Latin1StringsParser implements Parser {
      * @throws IOException  if an io error occurs
      * @throws SAXException if a sax error occurs
      */
-    private void doParse(InputStream stream, ContentHandler handler, Metadata metadata,
+    private void doparse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                          ParseContext context) throws IOException, SAXException {
 
         tmpPos = 0;

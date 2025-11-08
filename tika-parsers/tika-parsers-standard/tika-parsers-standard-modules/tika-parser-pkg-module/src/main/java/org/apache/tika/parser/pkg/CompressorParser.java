@@ -35,7 +35,7 @@ import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -167,7 +167,7 @@ public class CompressorParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // At the end we want to close the compression stream to release
         // any associated resources, but the underlying document stream

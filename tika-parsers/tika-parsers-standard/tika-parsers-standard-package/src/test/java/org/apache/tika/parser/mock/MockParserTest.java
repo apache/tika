@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.PrintStream;
 
 import org.apache.commons.io.IOUtils;

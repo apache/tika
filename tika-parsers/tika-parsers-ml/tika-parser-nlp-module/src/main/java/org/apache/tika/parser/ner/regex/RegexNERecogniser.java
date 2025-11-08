@@ -17,7 +17,7 @@
 
 package org.apache.tika.parser.ner.regex;
 
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;

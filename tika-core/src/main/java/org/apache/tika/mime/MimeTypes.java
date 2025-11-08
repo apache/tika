@@ -20,7 +20,7 @@ package org.apache.tika.mime;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -516,7 +516,7 @@ public final class MimeTypes implements Detector, Serializable {
      * @throws IOException if the document stream could not be read
      */
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
         List<MimeType> possibleTypes = null;
 
         // Get type based on magic prefix

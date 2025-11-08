@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.pdf;
 
-import java.io.InputStream;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;

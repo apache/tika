@@ -17,7 +17,7 @@
 package org.apache.tika.parser.mp3;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.PushbackInputStream;
 
 import org.apache.commons.io.IOUtils;

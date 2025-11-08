@@ -18,7 +18,7 @@ package org.apache.tika.parser.audio;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -67,7 +67,7 @@ public class AudioParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // AudioSystem expects the stream to support the mark feature
         if (!stream.markSupported()) {

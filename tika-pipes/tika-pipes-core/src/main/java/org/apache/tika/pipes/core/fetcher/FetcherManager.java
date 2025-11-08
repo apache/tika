@@ -17,7 +17,7 @@
 package org.apache.tika.pipes.core.fetcher;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;

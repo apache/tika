@@ -20,7 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -111,7 +111,7 @@ public class XMLTestBase extends TikaTest {
         }
 
         @Override
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
 
             TaggedContentHandler tagged = new TaggedContentHandler(handler);
@@ -136,7 +136,7 @@ public class XMLTestBase extends TikaTest {
         }
 
         @Override
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
 
             TaggedContentHandler tagged = new TaggedContentHandler(handler);

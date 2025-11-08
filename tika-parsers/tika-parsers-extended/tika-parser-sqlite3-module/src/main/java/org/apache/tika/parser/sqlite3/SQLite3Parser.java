@@ -18,7 +18,7 @@ package org.apache.tika.parser.sqlite3;
 
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -97,7 +97,7 @@ public class SQLite3Parser implements Parser, Initializable {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         SQLite3DBParser p = new SQLite3DBParser();
         p.parse(stream, handler, metadata, context);

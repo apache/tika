@@ -21,11 +21,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeDetectionTest;
@@ -89,35 +90,33 @@ public class MimeDetectionWithNNTest {
     }
 
     private void testUrl(String expected, String url, String file) throws IOException {
-        InputStream in = MimeDetectionTest.class.getResourceAsStream(file);
-        testStream(expected, url, in);
+        TikaInputStream tis = TikaInputStream.get(MimeDetectionTest.class.getResourceAsStream(file));
+        testStream(expected, url, tis);
     }
 
     private void testFile(String expected, String filename) throws IOException {
 
-        InputStream in = MimeDetectionTest.class.getResourceAsStream(filename);
-        testStream(expected, filename, in);
+        TikaInputStream tis = TikaInputStream.get(MimeDetectionTest.class.getResourceAsStream(filename));
+        testStream(expected, filename, tis);
     }
 
-    private void testStream(String expected, String urlOrFileName, InputStream in)
+    private void testStream(String expected, String urlOrFileName, TikaInputStream tis)
             throws IOException {
-        assertNotNull(in, "Test stream: [" + urlOrFileName + "] is null!");
-        if (!in.markSupported()) {
-            in = new java.io.BufferedInputStream(in);
-        }
+        assertNotNull(tis, "Test stream: [" + urlOrFileName + "] is null!");
+
         try {
             Metadata metadata = new Metadata();
-            String mime = this.detector.detect(in, metadata).toString();
+            String mime = this.detector.detect(tis, metadata).toString();
             assertEquals(expected, mime,
                     urlOrFileName + " is not properly detected: detected.");
 
             // Add resource name and test again
             // metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
-            mime = this.detector.detect(in, metadata).toString();
+            mime = this.detector.detect(tis, metadata).toString();
             assertEquals(expected, mime,
                     urlOrFileName + " is not properly detected after adding resource name.");
         } finally {
-            in.close();
+            tis.close();
         }
     }
 
@@ -127,7 +126,7 @@ public class MimeDetectionWithNNTest {
     @Test
     public void testEmptyDocument() throws IOException {
         assertEquals(MediaType.OCTET_STREAM,
-                detector.detect(new ByteArrayInputStream(new byte[0]), new Metadata()));
+                detector.detect(TikaInputStream.get(new byte[0]), new Metadata()));
 
     }
 

@@ -18,7 +18,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.file.Files;
 import java.util.Locale;
 
@@ -85,7 +85,7 @@ public class OOXMLExtractorFactory {
         ExtractorFactory.setAllThreadsPreferEventExtractors(true);
     }
 
-    public static void parse(InputStream stream, ContentHandler baseHandler, Metadata metadata,
+    public static void parse(TikaInputStream stream, ContentHandler baseHandler, Metadata metadata,
                              ParseContext context) throws IOException, SAXException, TikaException {
         Locale locale = context.get(Locale.class, LocaleUtil.getUserLocale());
 

@@ -18,7 +18,7 @@ package org.apache.tika.parser.html;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -99,7 +99,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
     @Field
     private int markLimit = DEFAULT_MARK_LIMIT;
 
-    public Charset detect(InputStream input, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream input, Metadata metadata) throws IOException {
         if (input == null) {
             return null;
         }

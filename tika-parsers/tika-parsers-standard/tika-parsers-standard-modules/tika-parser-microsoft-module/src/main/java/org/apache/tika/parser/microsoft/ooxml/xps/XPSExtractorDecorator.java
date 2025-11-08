@@ -18,7 +18,7 @@
 package org.apache.tika.parser.microsoft.ooxml.xps;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;

@@ -20,7 +20,7 @@ import static org.apache.tika.parser.strings.StringsParser.getStringsProg;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.InputStream;
+
 import java.util.Arrays;
 import java.util.Collections;
 

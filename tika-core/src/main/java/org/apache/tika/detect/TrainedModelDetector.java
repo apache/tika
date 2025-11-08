@@ -21,7 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.Writer;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -48,7 +48,7 @@ public abstract class TrainedModelDetector implements Detector {
         return Integer.MAX_VALUE;
     }
 
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
         // convert to byte-histogram
         if (input != null) {
             input.mark(getMinLength());
@@ -151,7 +151,7 @@ public abstract class TrainedModelDetector implements Detector {
     }
 
     public void loadDefaultModels(Path modelFile) {
-        try (InputStream in = Files.newInputStream(modelFile)) {
+        try (TikaInputStream in = Files.newInputStream(modelFile)) {
             loadDefaultModels(in);
         } catch (IOException e) {
             throw new RuntimeException("Unable to read the default media type registry", e);

@@ -19,7 +19,7 @@ package org.apache.tika.parser.html.charsetdetector;
 import static org.apache.tika.parser.html.charsetdetector.CharsetAliases.getCharsetByLabel;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.Charset;
 
 import org.apache.commons.io.input.BoundedInputStream;
@@ -74,7 +74,7 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
     }
 
     @Override
-    public Charset detect(InputStream input, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream input, Metadata metadata) throws IOException {
         int limit = getMarkLimit();
         input.mark(limit);
         // Never read more than the first META_TAG_BUFFER_SIZE bytes

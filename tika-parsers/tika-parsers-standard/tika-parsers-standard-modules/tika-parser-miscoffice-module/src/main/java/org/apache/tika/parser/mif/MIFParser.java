@@ -17,7 +17,7 @@
 package org.apache.tika.parser.mif;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,7 +59,7 @@ public class MIFParser extends AbstractEncodingDetectorParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),

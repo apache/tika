@@ -18,7 +18,7 @@ package org.apache.tika.parser.geopkg;
 
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -98,7 +98,7 @@ public class GeoPkgParser extends SQLite3Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         GeoPkgDBParser p = new GeoPkgDBParser(ignoreBlobColumns);
         p.parse(stream, handler, metadata, context);

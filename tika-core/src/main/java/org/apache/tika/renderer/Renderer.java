@@ -17,11 +17,12 @@
 package org.apache.tika.renderer;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.Serializable;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -45,7 +46,7 @@ public interface Renderer extends Serializable {
      */
     Set<MediaType> getSupportedTypes(ParseContext context);
 
-    RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext,
+    RenderResults render(TikaInputStream is, Metadata metadata, ParseContext parseContext,
                          RenderRequest ... requests) throws IOException,
             TikaException;
 

@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.NotSerializableException;
 import java.net.ServerSocket;
 import java.util.Arrays;
@@ -127,7 +127,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
 
         ParseContext context = new ParseContext();
         context.set(Detector.class, new Detector() {
-            public MediaType detect(InputStream input, Metadata metadata) {
+            public MediaType detect(TikaInputStream input, Metadata metadata) {
                 return MediaType.OCTET_STREAM;
             }
         });
@@ -335,7 +335,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             return new HashSet<>(Collections.singletonList(MediaType.TEXT_PLAIN));
         }
 
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
             if (re != null) {
                 throw re;

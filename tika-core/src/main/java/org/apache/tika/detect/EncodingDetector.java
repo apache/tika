@@ -17,7 +17,7 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.Serializable;
 import java.nio.charset.Charset;
 
@@ -53,6 +53,6 @@ public interface EncodingDetector extends Serializable {
      * @return detected character encoding, or <code>null</code>
      * @throws IOException if the document input stream could not be read
      */
-    Charset detect(InputStream input, Metadata metadata) throws IOException;
+    Charset detect(TikaInputStream input, Metadata metadata) throws IOException;
 
 }

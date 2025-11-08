@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;

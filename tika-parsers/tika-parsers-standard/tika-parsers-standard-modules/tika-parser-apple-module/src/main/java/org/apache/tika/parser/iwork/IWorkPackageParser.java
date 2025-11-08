@@ -18,7 +18,7 @@ package org.apache.tika.parser.iwork;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -83,7 +83,7 @@ public class IWorkPackageParser implements Parser {
         return supportedTypes;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         ZipArchiveInputStream zip = new ZipArchiveInputStream(stream);
         ZipArchiveEntry entry = zip.getNextEntry();

@@ -18,7 +18,7 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.apache.commons.io.IOUtils;
 
@@ -51,7 +51,7 @@ public class MatroskaDetector implements Detector {
      * @throws IOException if an I/O error occurs
      */
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
         if (input == null) {
             return MediaType.OCTET_STREAM;
         }

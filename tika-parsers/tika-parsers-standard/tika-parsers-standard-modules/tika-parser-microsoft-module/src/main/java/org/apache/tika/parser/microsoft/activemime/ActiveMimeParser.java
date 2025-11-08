@@ -17,7 +17,7 @@
 package org.apache.tika.parser.microsoft.activemime;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -53,7 +53,7 @@ public class ActiveMimeParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         //based on: https://mastodon.social/@Ange/110027138524274526
         IOUtils.skipFully(stream, 12); //header

@@ -18,7 +18,7 @@ package org.apache.tika.parser.html;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -126,7 +126,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
     }
 
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         EncodingDetector encodingDetector = getEncodingDetector(context);

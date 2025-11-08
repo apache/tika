@@ -21,7 +21,7 @@ package org.apache.tika.parser.microsoft;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.NumberFormat;

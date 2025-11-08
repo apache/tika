@@ -19,7 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml.xwpf;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;

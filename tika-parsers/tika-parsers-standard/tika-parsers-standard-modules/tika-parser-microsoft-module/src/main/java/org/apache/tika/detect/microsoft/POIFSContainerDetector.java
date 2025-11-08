@@ -21,7 +21,7 @@ import static org.apache.tika.mime.MediaType.application;
 import static org.apache.tika.mime.MediaType.image;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -550,7 +550,7 @@ public class POIFSContainerDetector implements Detector {
     }
 
     /**
-     * If a TikaInputStream is passed in to {@link #detect(InputStream, Metadata)},
+     * If a TikaInputStream is passed in to {@link #detect(TikaInputStream, Metadata)},
      * and there is not an underlying file, this detector will spool up to {@link #markLimit}
      * to disk.  If the stream was read in entirety (e.g. the spooled file is not truncated),
      * this detector will open the file with POI and perform detection.
@@ -599,7 +599,7 @@ public class POIFSContainerDetector implements Detector {
         }
     }
 
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
         // Check if we have access to the document
         if (input == null) {
             return MediaType.OCTET_STREAM;

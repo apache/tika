@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.FileFilter;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.net.URISyntaxException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -115,7 +115,7 @@ public class MultiThreadedTikaTest extends TikaTest {
         return baseline;
     }
 
-    private static List<Metadata> getRecursiveMetadata(InputStream is, Parser parser,
+    private static List<Metadata> getRecursiveMetadata(TikaInputStream tis, Parser parser,
                                                        ParseContext parseContext) throws Exception {
         //different from parent TikaTest in that this extracts text.
         //can't extract xhtml because "tmp" file names wind up in
@@ -353,7 +353,7 @@ public class MultiThreadedTikaTest extends TikaTest {
                 Path testFile = files[randIndex];
                 List<Metadata> metadataList = null;
                 boolean success = false;
-                try (InputStream is = TikaInputStream.get(testFile)) {
+                try (TikaInputStream tis = TikaInputStream.get(testFile)) {
                     metadataList = getRecursiveMetadata(is, parser, new ParseContext());
                     success = true;
                 } catch (Exception e) {

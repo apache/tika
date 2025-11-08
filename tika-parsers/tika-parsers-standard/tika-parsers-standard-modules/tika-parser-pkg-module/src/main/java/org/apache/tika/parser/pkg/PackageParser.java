@@ -28,7 +28,7 @@ import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Date;
@@ -246,7 +246,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         // Ensure that the stream supports the mark feature
@@ -262,7 +262,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         }
     }
 
-    private void _parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    private void _parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                 ParseContext context, TemporaryResources tmp)
             throws TikaException, IOException, SAXException {
         ArchiveInputStream ais = null;

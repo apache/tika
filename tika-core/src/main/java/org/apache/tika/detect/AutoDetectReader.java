@@ -19,7 +19,7 @@ package org.apache.tika.detect;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
@@ -53,7 +53,7 @@ public class AutoDetectReader extends BufferedReader {
 
     private final Charset charset;
 
-    private AutoDetectReader(InputStream stream, Charset charset) throws IOException {
+    private AutoDetectReader(TikaInputStream stream, Charset charset) throws IOException {
         super(new InputStreamReader(stream, charset));
         this.charset = charset;
 
@@ -72,35 +72,35 @@ public class AutoDetectReader extends BufferedReader {
      * @throws IOException
      * @throws TikaException
      */
-    private AutoDetectReader(InputStream stream, Metadata metadata,
+    private AutoDetectReader(TikaInputStream stream, Metadata metadata,
                              EncodingDetector detector, LoadErrorHandler handler)
             throws IOException, TikaException {
         this(stream, detect(stream, metadata, detector, handler));
     }
 
-    public AutoDetectReader(InputStream stream, Metadata metadata,
+    public AutoDetectReader(TikaInputStream stream, Metadata metadata,
                             EncodingDetector encodingDetector) throws IOException, TikaException {
         this(getBuffered(stream), metadata, encodingDetector,
                 DEFAULT_LOADER.getLoadErrorHandler());
     }
 
-    public AutoDetectReader(InputStream stream, Metadata metadata, ServiceLoader loader)
+    public AutoDetectReader(TikaInputStream stream, Metadata metadata, ServiceLoader loader)
             throws IOException, TikaException {
         this(getBuffered(stream), metadata,
                 new CompositeEncodingDetector(loader.loadServiceProviders(EncodingDetector.class)),
                 loader.getLoadErrorHandler());
     }
 
-    public AutoDetectReader(InputStream stream, Metadata metadata)
+    public AutoDetectReader(TikaInputStream stream, Metadata metadata)
             throws IOException, TikaException {
         this(stream, metadata, DEFAULT_DETECTOR);
     }
 
-    public AutoDetectReader(InputStream stream) throws IOException, TikaException {
+    public AutoDetectReader(TikaInputStream stream) throws IOException, TikaException {
         this(stream, new Metadata());
     }
 
-    private static Charset detect(InputStream input, Metadata metadata,
+    private static Charset detect(TikaInputStream input, Metadata metadata,
                                   EncodingDetector detector, LoadErrorHandler handler)
             throws IOException, TikaException {
         // Ask all given detectors for the character encoding
@@ -134,7 +134,7 @@ public class AutoDetectReader extends BufferedReader {
         throw new TikaException("Failed to detect the character encoding of a document");
     }
 
-    private static InputStream getBuffered(InputStream stream) {
+    private static InputStream getBuffered(TikaInputStream stream) {
         if (stream.markSupported()) {
             return stream;
         }

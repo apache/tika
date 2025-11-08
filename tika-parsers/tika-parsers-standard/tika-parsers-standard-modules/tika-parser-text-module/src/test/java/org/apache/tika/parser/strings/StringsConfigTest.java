@@ -19,7 +19,7 @@ package org.apache.tika.parser.strings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.io.InputStream;
+
 
 import org.junit.jupiter.api.Test;
 

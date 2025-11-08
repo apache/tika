@@ -19,7 +19,7 @@ package org.apache.tika.detect.zip;
 import static org.apache.tika.detect.zip.PackageConstants.KMZ;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Enumeration;
 import java.util.Locale;
 

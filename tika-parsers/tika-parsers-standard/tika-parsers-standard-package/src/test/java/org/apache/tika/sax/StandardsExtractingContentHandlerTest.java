@@ -20,7 +20,7 @@ package org.apache.tika.sax;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
+
 
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +43,7 @@ public class StandardsExtractingContentHandlerTest extends TikaTest {
         handler.setThreshold(0.25);
         InputStream inputStream = getResourceAsStream("/test-documents/testStandardsExtractor.txt");
 
-        AUTO_DETECT_PARSER.parse(inputStream, handler, metadata, new ParseContext());
+        AUTO_DETECT_PARSER.parse(TikaInputStream, handler, metadata, new ParseContext());
         String[] standardReferences =
                 metadata.getValues(StandardsExtractingContentHandler.STANDARD_REFERENCES);
 

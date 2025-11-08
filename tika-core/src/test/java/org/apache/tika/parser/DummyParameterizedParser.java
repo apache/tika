@@ -18,7 +18,7 @@ package org.apache.tika.parser;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -113,7 +113,7 @@ public class DummyParameterizedParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         metadata.add("testparam", testParam);

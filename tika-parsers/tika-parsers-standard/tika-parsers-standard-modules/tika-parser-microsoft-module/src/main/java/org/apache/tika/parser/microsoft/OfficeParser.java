@@ -18,7 +18,7 @@ package org.apache.tika.parser.microsoft;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
@@ -144,7 +144,7 @@ public class OfficeParser extends AbstractOfficeParser {
     /**
      * Extracts properties and text from an MS Document input stream
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         configure(context);

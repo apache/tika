@@ -17,7 +17,7 @@
 package org.apache.tika.io;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.apache.tika.exception.TikaException;
 

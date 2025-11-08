@@ -16,7 +16,7 @@
  */
 package org.apache.tika.server.standard.resource;
 
-import java.io.InputStream;
+
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;

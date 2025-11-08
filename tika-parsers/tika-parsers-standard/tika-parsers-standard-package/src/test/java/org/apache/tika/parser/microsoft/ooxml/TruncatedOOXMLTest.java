@@ -19,7 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.BufferedInputStream;
-import java.io.InputStream;
+
 import java.util.List;
 
 import org.junit.jupiter.api.Test;

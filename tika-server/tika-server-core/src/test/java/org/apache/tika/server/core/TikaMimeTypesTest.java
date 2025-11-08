@@ -17,7 +17,7 @@
 
 package org.apache.tika.server.core;
 
-import java.io.InputStream;
+
 
 import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;

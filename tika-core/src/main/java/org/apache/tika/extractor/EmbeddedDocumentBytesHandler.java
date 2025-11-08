@@ -18,14 +18,14 @@ package org.apache.tika.extractor;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
 public interface EmbeddedDocumentBytesHandler extends Closeable {
     //we need metadata for the emitter store...can we get away without it?
-    void add(int id, Metadata metadata, InputStream inputStream) throws IOException;
+    void add(int id, Metadata metadata, TikaInputStream tis) throws IOException;
 
     List<Integer> getIds();
 }

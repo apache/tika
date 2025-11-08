@@ -17,7 +17,6 @@
 package org.apache.tika.parser;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Set;
 
@@ -25,6 +24,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -63,7 +63,7 @@ public interface Parser extends Serializable {
      * @throws TikaException if the document could not be parsed
      * @since Apache Tika 0.5
      */
-    void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+    void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException;
 
 }

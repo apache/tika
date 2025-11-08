@@ -17,7 +17,7 @@
 package org.apache.tika.parser.txt;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.Charset;
 
 import org.apache.tika.config.Field;
@@ -32,7 +32,7 @@ public class UniversalEncodingDetector implements EncodingDetector {
 
     private int markLimit = DEFAULT_MARK_LIMIT;
 
-    public Charset detect(InputStream input, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream input, Metadata metadata) throws IOException {
         if (input == null) {
             return null;
         }

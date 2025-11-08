@@ -22,7 +22,7 @@ package org.apache.tika.parser.gdal;
 import static org.apache.tika.parser.external.ExternalParser.INPUT_FILE_TOKEN;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Arrays;
@@ -72,7 +72,7 @@ import org.apache.tika.utils.ProcessUtils;
  * <p/>
  * The output of the command is available from the provided
  * {@link ContentHandler} in the
- * {@link #parse(InputStream, ContentHandler, Metadata, ParseContext)} method.
+ * {@link #parse(TikaInputStream, ContentHandler, Metadata, ParseContext)} method.
  */
 public class GDALParser implements Parser {
 
@@ -183,7 +183,7 @@ public class GDALParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         if (!ExternalParser.check("gdalinfo")) {

@@ -17,7 +17,7 @@
 package org.apache.tika.parser.dbf;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -41,7 +41,7 @@ class DBFFileHeader {
     private short numBytesInRecord;
     private DBFColumnHeader[] cols;
 
-    public static DBFFileHeader parse(InputStream is) throws IOException, TikaException {
+    public static DBFFileHeader parse(TikaInputStream is) throws IOException, TikaException {
         DBFFileHeader header = new DBFFileHeader();
 
         int firstByte = is.read();

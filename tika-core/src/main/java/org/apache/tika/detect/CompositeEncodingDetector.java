@@ -17,7 +17,7 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -61,7 +61,7 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
      * @throws IOException
      */
     @Override
-    public Charset detect(InputStream input, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream input, Metadata metadata) throws IOException {
         for (EncodingDetector detector : getDetectors()) {
             Charset detected = detector.detect(input, metadata);
             if (detected != null) {

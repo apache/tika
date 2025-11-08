@@ -18,7 +18,7 @@ package org.apache.tika.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,7 +45,7 @@ public class RegexCaptureParserTest {
         regexes.put("title", "^Title: ([^\r\n]+)");
         parser.setCaptureMap(regexes);
 
-        try (InputStream stream =
+        try (TikaInputStream tis =
                      TikaInputStream.get(output.getBytes(StandardCharsets.UTF_8))) {
             parser.parse(stream, contentHandler, m, new ParseContext());
         }

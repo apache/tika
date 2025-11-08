@@ -17,7 +17,7 @@
 package org.apache.tika.parser.xml;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -87,7 +87,7 @@ public class XMLProfiler implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
                 new XMLProfileHandler(metadata), context);

@@ -22,7 +22,7 @@ import static org.apache.tika.server.core.resource.RecursiveMetadataResource.DEF
 import static org.apache.tika.server.core.resource.RecursiveMetadataResource.HANDLER_TYPE_PARAM;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
@@ -362,7 +362,7 @@ public class TikaResource {
 
         long taskId = SERVER_STATUS.start(ServerStatus.TASK.PARSE, fileName, timeoutMillis);
         try {
-            parser.parse(inputStream, handler, metadata, parseContext);
+            parser.parse(TikaInputStream, handler, metadata, parseContext);
         } catch (SAXException e) {
             throw new TikaServerParseException(e);
         } catch (EncryptedDocumentException e) {

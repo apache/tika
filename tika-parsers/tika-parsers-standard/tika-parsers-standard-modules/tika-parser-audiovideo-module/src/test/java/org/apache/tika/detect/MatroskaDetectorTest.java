@@ -20,7 +20,7 @@ package org.apache.tika.detect;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.junit.jupiter.api.Test;

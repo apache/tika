@@ -18,7 +18,7 @@
 package org.apache.tika.example;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.util.Collections;
@@ -38,7 +38,7 @@ import org.apache.tika.parser.Parser;
 public class EncryptedPrescriptionParser implements Parser {
     private static final long serialVersionUID = -7816987249611278541L;
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
         try {
             Key key = Pharmacy.getKey();
             Cipher cipher = Cipher.getInstance("RSA");

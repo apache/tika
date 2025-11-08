@@ -138,11 +138,6 @@ public class Tika {
      * in which case only the given document metadata is used for type
      * detection.
      * <p>
-     * If the document stream supports the
-     * {@link InputStream#markSupported() mark feature}, then the stream is
-     * marked and reset to the original position before this method returns.
-     * Only a limited number of bytes are read from the stream.
-     * <p>
      * The given document stream is <em>not</em> closed by this method.
      * <p>
      * Unlike in the {@link #parse(InputStream, Metadata)} method, the
@@ -153,12 +148,8 @@ public class Tika {
      * @return detected media type
      * @throws IOException if the stream can not be read
      */
-    public String detect(InputStream stream, Metadata metadata) throws IOException {
-        if (stream == null || stream.markSupported()) {
-            return detector.detect(stream, metadata).toString();
-        } else {
-            return detector.detect(new BufferedInputStream(stream), metadata).toString();
-        }
+    public String detect(TikaInputStream tis, Metadata metadata) throws IOException {
+        return detector.detect(tis, metadata).toString();
     }
 
     /**
@@ -179,7 +170,7 @@ public class Tika {
      * @throws IOException if the stream can not be read
      * @since Apache Tika 0.9
      */
-    public String detect(InputStream stream, String name) throws IOException {
+    public String detect(TikaInputStream stream, String name) throws IOException {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         return detect(stream, metadata);
@@ -200,7 +191,7 @@ public class Tika {
      * @return detected media type
      * @throws IOException if the stream can not be read
      */
-    public String detect(InputStream stream) throws IOException {
+    public String detect(TikaInputStream stream) throws IOException {
         return detect(stream, new Metadata());
     }
 
@@ -220,7 +211,7 @@ public class Tika {
      */
     public String detect(byte[] prefix, String name) {
         try {
-            try (InputStream stream = TikaInputStream.get(prefix)) {
+            try (TikaInputStream stream = TikaInputStream.get(prefix)) {
                 return detect(stream, name);
             }
         } catch (IOException e) {
@@ -243,7 +234,7 @@ public class Tika {
      */
     public String detect(byte[] prefix) {
         try {
-            try (InputStream stream = TikaInputStream.get(prefix)) {
+            try (TikaInputStream stream = TikaInputStream.get(prefix)) {
                 return detect(stream);
             }
         } catch (IOException e) {
@@ -265,7 +256,7 @@ public class Tika {
      */
     public String detect(Path path) throws IOException {
         Metadata metadata = new Metadata();
-        try (InputStream stream = TikaInputStream.get(path, metadata)) {
+        try (TikaInputStream stream = TikaInputStream.get(path, metadata)) {
             return detect(stream, metadata);
         }
     }
@@ -284,7 +275,7 @@ public class Tika {
      */
     public String detect(File file) throws IOException {
         Metadata metadata = new Metadata();
-        try (@SuppressWarnings("deprecation") InputStream stream = TikaInputStream
+        try (@SuppressWarnings("deprecation") TikaInputStream stream = TikaInputStream
                 .get(file, metadata)) {
             return detect(stream, metadata);
         }
@@ -304,7 +295,7 @@ public class Tika {
      */
     public String detect(URL url) throws IOException {
         Metadata metadata = new Metadata();
-        try (InputStream stream = TikaInputStream.get(url, metadata)) {
+        try (TikaInputStream stream = TikaInputStream.get(url, metadata)) {
             return detect(stream, metadata);
         }
     }
@@ -321,7 +312,7 @@ public class Tika {
      */
     public String detect(String name) {
         try {
-            return detect((InputStream) null, name);
+            return detect((TikaInputStream) null, name);
         } catch (IOException e) {
             throw new IllegalStateException("Unexpected IOException", e);
         }
@@ -379,7 +370,7 @@ public class Tika {
      * @return extracted text content
      * @throws IOException if the document can not be read or parsed
      */
-    public Reader parse(InputStream stream, Metadata metadata) throws IOException {
+    public Reader parse(TikaInputStream stream, Metadata metadata) throws IOException {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
         return new ParsingReader(parser, stream, metadata, context);
@@ -396,7 +387,7 @@ public class Tika {
      * @return extracted text content
      * @throws IOException if the document can not be read or parsed
      */
-    public Reader parse(InputStream stream) throws IOException {
+    public Reader parse(TikaInputStream stream) throws IOException {
         return parse(stream, new Metadata());
     }
 
@@ -412,7 +403,7 @@ public class Tika {
      * @throws IOException if the file can not be read or parsed
      */
     public Reader parse(Path path, Metadata metadata) throws IOException {
-        InputStream stream = TikaInputStream.get(path, metadata);
+        TikaInputStream stream = TikaInputStream.get(path, metadata);
         return parse(stream, metadata);
     }
 
@@ -440,7 +431,7 @@ public class Tika {
      * @see #parse(Path)
      */
     public Reader parse(File file, Metadata metadata) throws IOException {
-        @SuppressWarnings("deprecation") InputStream stream = TikaInputStream.get(file, metadata);
+        @SuppressWarnings("deprecation") TikaInputStream stream = TikaInputStream.get(file, metadata);
         return parse(stream, metadata);
     }
 
@@ -466,7 +457,7 @@ public class Tika {
      */
     public Reader parse(URL url) throws IOException {
         Metadata metadata = new Metadata();
-        InputStream stream = TikaInputStream.get(url, metadata);
+        TikaInputStream stream = TikaInputStream.get(url, metadata);
         return parse(stream, metadata);
     }
 
@@ -490,7 +481,7 @@ public class Tika {
      * @throws IOException   if the document can not be read
      * @throws TikaException if the document can not be parsed
      */
-    public String parseToString(InputStream stream, Metadata metadata)
+    public String parseToString(TikaInputStream stream, Metadata metadata)
             throws IOException, TikaException {
         return parseToString(stream, metadata, maxStringLength);
     }
@@ -505,7 +496,7 @@ public class Tika {
      * from the input document.
      * <p>
      * <strong>NOTE:</strong> Unlike most other Tika methods that take an
-     * {@link InputStream}, this method will close the given stream for
+     * {@link <></>InputStream}, this method will close the given stream for
      * you as a convenience. With other methods you are still responsible
      * for closing the stream or a wrapper instance returned by Tika.
      *
@@ -516,7 +507,7 @@ public class Tika {
      * @throws IOException   if the document can not be read
      * @throws TikaException if the document can not be parsed
      */
-    public String parseToString(InputStream stream, Metadata metadata, int maxLength)
+    public String parseToString(TikaInputStream stream, Metadata metadata, int maxLength)
             throws IOException, TikaException {
         WriteOutContentHandler handler = new WriteOutContentHandler(maxLength);
         ParseContext context = new ParseContext();
@@ -542,7 +533,7 @@ public class Tika {
      * method to adjust this limitation.
      * <p>
      * <strong>NOTE:</strong> Unlike most other Tika methods that take an
-     * {@link InputStream}, this method will close the given stream for
+     * {@link TikaInputStream}, this method will close the given stream for
      * you as a convenience. With other methods you are still responsible
      * for closing the stream or a wrapper instance returned by Tika.
      *
@@ -551,7 +542,7 @@ public class Tika {
      * @throws IOException   if the document can not be read
      * @throws TikaException if the document can not be parsed
      */
-    public String parseToString(InputStream stream) throws IOException, TikaException {
+    public String parseToString(TikaInputStream stream) throws IOException, TikaException {
         return parseToString(stream, new Metadata());
     }
 
@@ -570,7 +561,7 @@ public class Tika {
      */
     public String parseToString(Path path) throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        InputStream stream = TikaInputStream.get(path, metadata);
+        TikaInputStream stream = TikaInputStream.get(path, metadata);
         return parseToString(stream, metadata);
     }
 
@@ -590,7 +581,7 @@ public class Tika {
      */
     public String parseToString(File file) throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        @SuppressWarnings("deprecation") InputStream stream = TikaInputStream.get(file, metadata);
+        @SuppressWarnings("deprecation") TikaInputStream stream = TikaInputStream.get(file, metadata);
         return parseToString(stream, metadata);
     }
 
@@ -610,7 +601,7 @@ public class Tika {
      */
     public String parseToString(URL url) throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        InputStream stream = TikaInputStream.get(url, metadata);
+        TikaInputStream stream = TikaInputStream.get(url, metadata);
         return parseToString(stream, metadata);
     }
 

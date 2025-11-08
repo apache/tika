@@ -17,7 +17,7 @@
 
 package org.apache.tika.example;
 
-import java.io.InputStream;
+
 
 import org.apache.tika.Tika;
 import org.apache.tika.detect.CompositeDetector;
@@ -40,7 +40,7 @@ public class AdvancedTypeDetector {
         Detector custom = new Detector() {
             private static final long serialVersionUID = -5420638839201540749L;
 
-            public MediaType detect(InputStream input, Metadata metadata) {
+            public MediaType detect(TikaInputStream input, Metadata metadata) {
                 String type = metadata.get("my-custom-type-override");
                 if (type != null) {
                     return MediaType.parse(type);

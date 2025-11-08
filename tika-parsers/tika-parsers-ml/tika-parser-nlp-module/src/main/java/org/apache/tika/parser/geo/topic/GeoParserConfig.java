@@ -19,7 +19,7 @@ package org.apache.tika.parser.geo.topic;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;

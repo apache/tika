@@ -20,7 +20,7 @@ package org.apache.tika.parser.microsoft.rtf;
 import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.PushbackInputStream;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;

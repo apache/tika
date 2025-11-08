@@ -17,7 +17,7 @@
 package org.apache.tika.parser.executable;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.sql.Date;
 import java.util.Arrays;
 import java.util.Collections;
@@ -79,7 +79,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // We only do metadata, for now
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);

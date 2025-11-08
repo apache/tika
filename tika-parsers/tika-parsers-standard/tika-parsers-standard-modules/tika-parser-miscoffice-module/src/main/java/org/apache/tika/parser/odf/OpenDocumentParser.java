@@ -19,7 +19,7 @@ package org.apache.tika.parser.odf;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -122,7 +122,7 @@ public class OpenDocumentParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler baseHandler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler baseHandler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         EmbeddedDocumentUtil embeddedDocumentUtil = new EmbeddedDocumentUtil(context);

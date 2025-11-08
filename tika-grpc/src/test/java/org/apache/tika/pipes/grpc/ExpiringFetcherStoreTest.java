@@ -18,7 +18,7 @@ package org.apache.tika.pipes.grpc;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.io.InputStream;
+
 import java.time.Duration;
 
 import org.awaitility.Awaitility;

@@ -17,7 +17,7 @@
 package org.apache.tika.mime;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -121,7 +121,7 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
         threshold = 0.5001f;
     }
 
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
 
         List<MimeType> possibleTypes = new ArrayList<>();
 

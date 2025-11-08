@@ -19,7 +19,7 @@ package org.apache.tika.parser.iptc;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -94,7 +94,7 @@ public class IptcAnpaParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         HashMap<String, String> properties = this.loadProperties(stream);
@@ -116,7 +116,7 @@ public class IptcAnpaParser implements Parser {
      * @deprecated This method will be removed in Apache Tika 1.0.
      */
     @Deprecated
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata)
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
     }

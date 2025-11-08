@@ -17,7 +17,7 @@
 package org.apache.tika.parser.microsoft.libpst;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -77,7 +77,7 @@ public class LibPstParser implements Parser, Initializable {
     }
 
     @Override
-    public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, ParseContext parseContext) throws IOException, SAXException, TikaException {
+    public void parse(TikaInputStream inputStream, ContentHandler contentHandler, Metadata metadata, ParseContext parseContext) throws IOException, SAXException, TikaException {
         TikaInputStream tis = TikaInputStream.cast(inputStream);
         TemporaryResources tmp = null;
         if (tis == null) {

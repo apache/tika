@@ -18,7 +18,7 @@
 package org.apache.tika.parser.ner.opennlp;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;

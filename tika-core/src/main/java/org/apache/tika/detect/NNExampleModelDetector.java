@@ -22,7 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Path;
@@ -53,7 +53,7 @@ public class NNExampleModelDetector extends TrainedModelDetector {
     }
 
     @Override
-    public void loadDefaultModels(InputStream modelStream) {
+    public void loadDefaultModels(TikaInputStream modelStream) {
         BufferedReader bReader = new BufferedReader(new InputStreamReader(modelStream, UTF_8));
 
         NNTrainedModelBuilder nnBuilder = new NNTrainedModelBuilder();
@@ -93,7 +93,7 @@ public class NNExampleModelDetector extends TrainedModelDetector {
         URL modelURL = classLoader.getResource(classPrefix + EXAMPLE_NNMODEL_FILE);
         Objects.requireNonNull(modelURL,
                 "required resource " + classPrefix + EXAMPLE_NNMODEL_FILE + " not found");
-        try (InputStream stream = modelURL.openStream()) {
+        try (TikaInputStream stream = modelURL.openStream()) {
             loadDefaultModels(stream);
         } catch (IOException e) {
             throw new RuntimeException("Unable to read the default media type registry", e);

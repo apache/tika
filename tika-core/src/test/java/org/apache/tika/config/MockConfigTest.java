@@ -19,21 +19,23 @@ package org.apache.tika.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 
 public class MockConfigTest {
 
     @Test
     public void testBasic() throws Exception {
         MockConfig config;
-        try (InputStream is = getClass().getResourceAsStream("mockConfig.xml")) {
-            config = new MockConfig(is);
+        try (TikaInputStream tis = TikaInputStream.get(
+                MockConfigTest.class.getResourceAsStream("mockConfig.xml"))) {
+            config = new MockConfig(tis);
         }
         assertEquals("hello-world", config.getMyString());
         assertEquals(2, config.mappings.size());
@@ -55,8 +57,8 @@ public class MockConfigTest {
         private String myString;
         private float myFloat;
 
-        protected MockConfig(InputStream is) throws TikaException, IOException {
-            configure("mockConfig", is);
+        protected MockConfig(TikaInputStream tis) throws TikaException, IOException {
+            configure("mockConfig", tis);
         }
 
         public Map<String, String> getMappings() {

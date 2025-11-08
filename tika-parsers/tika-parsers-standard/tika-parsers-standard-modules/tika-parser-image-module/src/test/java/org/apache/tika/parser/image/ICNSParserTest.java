@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.image;
 
-import java.io.InputStream;
+
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;

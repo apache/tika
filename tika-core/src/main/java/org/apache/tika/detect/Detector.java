@@ -17,9 +17,9 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -38,14 +38,7 @@ public interface Detector extends Serializable {
      * can not be detected.
      * <p>
      * If the document input stream is not available, then the first
-     * argument may be <code>null</code>. Otherwise the detector may
-     * read bytes from the start of the stream to help in type detection.
-     * The given stream is guaranteed to support the
-     * {@link InputStream#markSupported() mark feature} and the detector
-     * is expected to {@link InputStream#mark(int) mark} the stream before
-     * reading any bytes from it, and to {@link InputStream#reset() reset}
-     * the stream before returning. The stream must not be closed by the
-     * detector.
+     * argument may be <code>null</code>.
      * <p>
      * The given input metadata is only read, not modified, by the detector.
      *
@@ -54,6 +47,6 @@ public interface Detector extends Serializable {
      * @return detected media type, or <code>application/octet-stream</code>
      * @throws IOException if the document input stream could not be read
      */
-    MediaType detect(InputStream input, Metadata metadata) throws IOException;
+    MediaType detect(TikaInputStream input, Metadata metadata) throws IOException;
 
 }

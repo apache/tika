@@ -17,7 +17,7 @@
 package org.apache.tika.parser.xliff;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -59,7 +59,7 @@ public class XLIFF12Parser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         metadata.set(Metadata.CONTENT_TYPE, XLF_CONTENT_TYPE.toString());

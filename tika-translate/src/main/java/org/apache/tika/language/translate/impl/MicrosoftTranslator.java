@@ -18,7 +18,7 @@
 package org.apache.tika.language.translate.impl;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Properties;
 
 import com.memetix.mst.language.Language;

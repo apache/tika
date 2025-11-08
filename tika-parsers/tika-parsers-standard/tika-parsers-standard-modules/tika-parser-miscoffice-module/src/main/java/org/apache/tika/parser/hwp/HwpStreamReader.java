@@ -18,7 +18,7 @@ package org.apache.tika.parser.hwp;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.util.LittleEndian;

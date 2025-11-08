@@ -17,7 +17,6 @@
 package org.apache.tika.parser;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -26,6 +25,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
@@ -148,7 +148,7 @@ public class ParserDecorator implements Parser {
      * override this method (and use <code>super.parse()</code> to invoke
      * the decorated parser) to implement extra decoration.
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         parser.parse(stream, handler, metadata, context);
     }

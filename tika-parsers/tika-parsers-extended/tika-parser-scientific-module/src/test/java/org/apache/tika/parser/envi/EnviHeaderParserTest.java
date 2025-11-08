@@ -21,7 +21,7 @@ import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;

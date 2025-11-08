@@ -19,7 +19,7 @@ package org.apache.tika.parser;
 
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,16 +52,15 @@ public class DigestingParser extends ParserDecorator {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
 
         if (! shouldDigest(metadata)) {
-            super.parse(stream, handler, metadata, context);
+            super.parse(tis, handler, metadata, context);
             return;
         }
         TemporaryResources tmp = new TemporaryResources();
-        TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
         try {
 
             if (embeddedStreamTranslator.shouldTranslate(tis, metadata)) {

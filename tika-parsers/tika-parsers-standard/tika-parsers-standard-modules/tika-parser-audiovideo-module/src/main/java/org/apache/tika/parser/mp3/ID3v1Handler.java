@@ -19,7 +19,7 @@ package org.apache.tika.parser.mp3;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.List;
 

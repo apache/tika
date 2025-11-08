@@ -17,7 +17,7 @@
 package org.apache.tika.pipes.core.emitter;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;

@@ -18,7 +18,7 @@ package org.apache.tika.parser.sas;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
+
 import java.text.DateFormatSymbols;
 import java.util.Arrays;
 import java.util.Locale;

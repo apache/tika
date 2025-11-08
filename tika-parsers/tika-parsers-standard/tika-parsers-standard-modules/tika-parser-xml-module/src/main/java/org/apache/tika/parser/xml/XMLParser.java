@@ -17,7 +17,7 @@
 package org.apache.tika.parser.xml;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -56,7 +56,7 @@ public class XMLParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         if (metadata.get(Metadata.CONTENT_TYPE) == null) {
             metadata.set(Metadata.CONTENT_TYPE, "application/xml");

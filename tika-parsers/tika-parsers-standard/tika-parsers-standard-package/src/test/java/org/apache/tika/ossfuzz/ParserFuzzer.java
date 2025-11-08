@@ -16,7 +16,7 @@
  */
 package org.apache.tika.ossfuzz;
 
-import java.io.InputStream;
+
 
 import org.xml.sax.ContentHandler;
 

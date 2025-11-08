@@ -17,7 +17,7 @@
 package org.apache.tika.parser.microsoft.ooxml.xwpf;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.HashSet;
 import java.util.Set;
 

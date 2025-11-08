@@ -30,7 +30,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 

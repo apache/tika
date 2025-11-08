@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
+
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;

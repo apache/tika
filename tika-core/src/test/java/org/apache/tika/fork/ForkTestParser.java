@@ -19,7 +19,7 @@ package org.apache.tika.fork;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -45,7 +45,7 @@ class ForkTestParser implements Parser {
         return Collections.singleton(MediaType.TEXT_PLAIN);
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         stream.read();
 
@@ -60,7 +60,7 @@ class ForkTestParser implements Parser {
 
     static class ForkTestParserAccessingPackage extends ForkTestParser {
         @Override
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
             assertNotNull(ClassInUnusedPackage.class.getPackage());
             super.parse(stream, handler, metadata, context);
@@ -69,7 +69,7 @@ class ForkTestParser implements Parser {
 
     static class ForkTestParserWaiting extends ForkTestParser {
         @Override
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
             try {
                 Thread.sleep(10_000);

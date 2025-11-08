@@ -17,7 +17,7 @@
 package org.apache.tika.parser.odf;
 
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -179,7 +179,7 @@ public class OpenDocumentMetaParser extends XMLParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         super.parse(stream, handler, metadata, context);
         // Copy subject to description for OO2
