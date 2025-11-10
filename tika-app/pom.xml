@@ -141,7 +141,7 @@
             <id>copy-plugins</id>
             <phase>generate-test-resources</phase>
             <goals>
-              <goal>copy</goal>
+              <goal>unpack</goal>
             </goals>
             <configuration>
               <outputDirectory>${project.build.directory}/plugins</outputDirectory>
@@ -150,21 +150,21 @@
                   <groupId>org.apache.tika</groupId>
                   <artifactId>tika-fetcher-file-system</artifactId>
                   <version>${project.version}</version>
-                  <type>jar</type>
+                  <type>zip</type>
                   <overWrite>true</overWrite>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.apache.tika</groupId>
                   <artifactId>tika-emitter-file-system</artifactId>
                   <version>${project.version}</version>
-                  <type>jar</type>
+                  <type>zip</type>
                   <overWrite>true</overWrite>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.apache.tika</groupId>
                   <artifactId>tika-pipes-iterator-file-system</artifactId>
                   <version>${project.version}</version>
-                  <type>jar</type>
+                  <type>zip</type>
                   <overWrite>true</overWrite>
                 </artifactItem>
               </artifactItems>
