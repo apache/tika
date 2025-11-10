@@ -17,26 +17,25 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.1.0 https://maven.apache.org/xsd/maven-4.1.0.xsd">
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parsers</artifactId>
     <version>4.0.0-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.1.0</modelVersion>
 
   <artifactId>tika-parsers-extended</artifactId>
   <packaging>pom</packaging>
   <name>Apache Tika extended parsers</name>
 
-  <modules>
-    <module>tika-parser-sqlite3-module</module>
-    <module>tika-parser-scientific-module</module>
-    <module>tika-parser-sqlite3-package</module>
-    <module>tika-parser-scientific-package</module>
-    <module>tika-parsers-extended-integration-tests</module>
-  </modules>
+  <subprojects>
+    <subproject>tika-parser-sqlite3-module</subproject>
+    <subproject>tika-parser-scientific-module</subproject>
+    <subproject>tika-parser-sqlite3-package</subproject>
+    <subproject>tika-parser-scientific-package</subproject>
+    <subproject>tika-parsers-extended-integration-tests</subproject>
+  </subprojects>
 
   <dependencies>
     <dependency>

@@ -17,16 +17,15 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.1.0 https://maven.apache.org/xsd/maven-4.1.0.xsd">
   <parent>
     <artifactId>tika-parsers-standard</artifactId>
     <groupId>org.apache.tika</groupId>
     <version>4.0.0-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
   </parent>
 
 
-  <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.1.0</modelVersion>
 
   <artifactId>tika-parsers-standard-modules</artifactId>
   <packaging>pom</packaging>
@@ -53,32 +52,32 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <modules>
-    <module>tika-parser-jdbc-commons</module>
-    <module>tika-parser-digest-commons</module>
-    <module>tika-parser-mail-commons</module>
-    <module>tika-parser-xmp-commons</module>
-    <module>tika-parser-zip-commons</module>
+  <subprojects>
+    <subproject>tika-parser-jdbc-commons</subproject>
+    <subproject>tika-parser-digest-commons</subproject>
+    <subproject>tika-parser-mail-commons</subproject>
+    <subproject>tika-parser-xmp-commons</subproject>
+    <subproject>tika-parser-zip-commons</subproject>
 
-    <module>tika-parser-ocr-module</module>
-    <module>tika-parser-audiovideo-module</module>
-    <module>tika-parser-code-module</module>
-    <module>tika-parser-html-module</module>
-    <module>tika-parser-image-module</module>
-    <module>tika-parser-text-module</module>
-    <module>tika-parser-font-module</module>
-    <module>tika-parser-microsoft-module</module>
-    <module>tika-parser-pkg-module</module>
-    <module>tika-parser-xml-module</module>
-    <module>tika-parser-pdf-module</module>
-    <module>tika-parser-apple-module</module>
-    <module>tika-parser-cad-module</module>
-    <module>tika-parser-mail-module</module>
-    <module>tika-parser-miscoffice-module</module>
-    <module>tika-parser-news-module</module>
-    <module>tika-parser-crypto-module</module>
-    <module>tika-parser-webarchive-module</module>
-  </modules>
+    <subproject>tika-parser-ocr-module</subproject>
+    <subproject>tika-parser-audiovideo-module</subproject>
+    <subproject>tika-parser-code-module</subproject>
+    <subproject>tika-parser-html-module</subproject>
+    <subproject>tika-parser-image-module</subproject>
+    <subproject>tika-parser-text-module</subproject>
+    <subproject>tika-parser-font-module</subproject>
+    <subproject>tika-parser-microsoft-module</subproject>
+    <subproject>tika-parser-pkg-module</subproject>
+    <subproject>tika-parser-xml-module</subproject>
+    <subproject>tika-parser-pdf-module</subproject>
+    <subproject>tika-parser-apple-module</subproject>
+    <subproject>tika-parser-cad-module</subproject>
+    <subproject>tika-parser-mail-module</subproject>
+    <subproject>tika-parser-miscoffice-module</subproject>
+    <subproject>tika-parser-news-module</subproject>
+    <subproject>tika-parser-crypto-module</subproject>
+    <subproject>tika-parser-webarchive-module</subproject>
+  </subprojects>
   <build>
     <plugins>
       <plugin>

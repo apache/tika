@@ -17,14 +17,13 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.1.0 https://maven.apache.org/xsd/maven-4.1.0.xsd">
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-pipes</artifactId>
     <version>4.0.0-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.1.0</modelVersion>
 
   <artifactId>tika-pipes-iterators</artifactId>
   <name>Apache Tika Pipes Iterators</name>
@@ -33,16 +32,16 @@
 
   <!-- see also org.apache.tika.pipes.pipesiterator.fs.FileSystemIterator
        in tika-core if you want a file system directory crawler -->
-  <modules>
-    <module>tika-pipes-iterator-csv</module>
-    <module>tika-pipes-iterator-json</module>
-    <module>tika-pipes-iterator-jdbc</module>
-    <module>tika-pipes-iterator-s3</module>
-    <module>tika-pipes-iterator-kafka</module>
-    <module>tika-pipes-iterator-solr</module>
-    <module>tika-pipes-iterator-gcs</module>
-    <module>tika-pipes-iterator-az-blob</module>
-  </modules>
+  <subprojects>
+    <subproject>tika-pipes-iterator-csv</subproject>
+    <subproject>tika-pipes-iterator-json</subproject>
+    <subproject>tika-pipes-iterator-jdbc</subproject>
+    <subproject>tika-pipes-iterator-s3</subproject>
+    <subproject>tika-pipes-iterator-kafka</subproject>
+    <subproject>tika-pipes-iterator-solr</subproject>
+    <subproject>tika-pipes-iterator-gcs</subproject>
+    <subproject>tika-pipes-iterator-az-blob</subproject>
+  </subprojects>
 
   <build>
     <plugins>
