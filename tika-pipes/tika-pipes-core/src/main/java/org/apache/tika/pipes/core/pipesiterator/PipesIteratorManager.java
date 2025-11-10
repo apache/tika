@@ -53,7 +53,7 @@ public class PipesIteratorManager {
 
     public static PipesIterator load(InputStream is) throws IOException, TikaConfigException {
         //this will throw a TikaConfigException if "fetchers" is not loaded
-        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(is, TikaPluginsManager.PLUGIN_TYPES.PIPES_ITERATOR);
+        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(is, true, TikaPluginsManager.PLUGIN_TYPES.PIPES_ITERATOR);
         return load(tikaPluginsManager);
     }
 

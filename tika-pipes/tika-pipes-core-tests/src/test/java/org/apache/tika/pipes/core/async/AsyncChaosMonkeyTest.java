@@ -34,9 +34,10 @@ import org.junit.jupiter.api.io.TempDir;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.core.PluginsTestHelper;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.PluginsTestHelper;
 import org.apache.tika.serialization.JsonMetadataList;
 
 public class AsyncChaosMonkeyTest {
@@ -148,7 +149,7 @@ public class AsyncChaosMonkeyTest {
             processor.offer(t, 1000);
         }
         for (int i = 0; i < 10; i++) {
-            processor.offer(PipesIteratorBase.COMPLETED_SEMAPHORE, 1000);
+            processor.offer(PipesIterator.COMPLETED_SEMAPHORE, 1000);
         }
         //TODO clean this up
         while (processor.checkActive()) {
@@ -172,7 +173,7 @@ public class AsyncChaosMonkeyTest {
             processor.offer(t, 1000);
         }
         for (int i = 0; i < 10; i++) {
-            processor.offer(PipesIteratorBase.COMPLETED_SEMAPHORE, 1000);
+            processor.offer(PipesIterator.COMPLETED_SEMAPHORE, 1000);
         }
         //TODO clean this up
         while (processor.checkActive()) {

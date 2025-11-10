@@ -35,12 +35,12 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.HandlerConfig;
-import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
 import org.apache.tika.pipes.core.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
-import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 
 public class PipesServerTest extends TikaTest {

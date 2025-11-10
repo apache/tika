@@ -156,7 +156,7 @@ public class ExtractProfileRunner {
                 if (result != null) {
                     //if the dir walker has finished
                     if (result == DIR_WALKER_COMPLETED_VALUE) {
-                        queue.put(PipesIteratorBase.COMPLETED_SEMAPHORE);
+                        queue.put(PipesIterator.COMPLETED_SEMAPHORE);
                         crawlerActive.set(false);
                     } else if (result == PROFILE_WORKER_COMPLETED_VALUE) {
                         activeWorkers.decrementAndGet();
@@ -230,11 +230,11 @@ public class ExtractProfileRunner {
                     LOG.info("ExtractProfileWorker waiting on queue");
                     continue;
                 }
-                if (t == PipesIteratorBase.COMPLETED_SEMAPHORE) {
+                if (t == PipesIterator.COMPLETED_SEMAPHORE) {
                     LOG.debug("worker hit semaphore and is stopping");
                     extractProfiler.closeWriter();
                     //hangs
-                    queue.put(PipesIteratorBase.COMPLETED_SEMAPHORE);
+                    queue.put(PipesIterator.COMPLETED_SEMAPHORE);
                     return PROFILE_WORKER_COMPLETED_VALUE;
                 }
                 extractProfiler.processFileResource(t.getFetchKey());

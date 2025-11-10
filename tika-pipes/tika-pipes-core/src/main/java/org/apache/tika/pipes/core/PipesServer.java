@@ -849,9 +849,14 @@ public class PipesServer implements Runnable {
     }
 
     protected void initializeResources() throws TikaException, IOException, SAXException {
-        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(
-                Files.newInputStream(pipesConfigPath), TikaPluginsManager.PLUGIN_TYPES.FETCHERS,
-                TikaPluginsManager.PLUGIN_TYPES.EMITTERS);
+        TikaPluginsManager tikaPluginsManager = null;
+
+        if (maxForEmitBatchBytes > -1) {
+            tikaPluginsManager = TikaPluginsManager.load(Files.newInputStream(pipesConfigPath), true, TikaPluginsManager.PLUGIN_TYPES.FETCHERS,
+                    TikaPluginsManager.PLUGIN_TYPES.EMITTERS);
+        } else {
+            tikaPluginsManager = TikaPluginsManager.load(Files.newInputStream(pipesConfigPath), true, TikaPluginsManager.PLUGIN_TYPES.FETCHERS);
+        }
 
         //TODO allowed named configurations in tika config
         this.tikaConfig = new TikaConfig(tikaConfigPath);

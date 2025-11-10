@@ -59,7 +59,7 @@ public class EmitterManager {
 
     public static EmitterManager load(InputStream is) throws IOException, TikaConfigException {
         //this will throw a TikaConfigException if "emitters" is not loaded
-        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(is, TikaPluginsManager.PLUGIN_TYPES.EMITTERS);
+        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(is, true, TikaPluginsManager.PLUGIN_TYPES.EMITTERS);
         return load(tikaPluginsManager);
     }
 

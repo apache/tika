@@ -25,8 +25,6 @@ import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.pipes.core.emitter.EmitterManager;
-
 public class PluginsTestHelper {
     private static final Logger LOG = LoggerFactory.getLogger(PluginsTestHelper.class);
 

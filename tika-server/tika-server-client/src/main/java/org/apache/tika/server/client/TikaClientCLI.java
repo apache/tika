@@ -47,8 +47,9 @@ public class TikaClientCLI {
 
     public static void main(String[] args) throws Exception {
         Path tikaConfigPath = Paths.get(args[0]);
+        Path pluginsConfigPath = Paths.get(args[1]);
         TikaClientCLI cli = new TikaClientCLI();
-        cli.execute(tikaConfigPath);
+        cli.execute(tikaConfigPath, pluginsConfigPath);
     }
 
     private void execute(Path tikaConfigPath, Path pluginsConfigPath) throws TikaException, IOException, SAXException {
@@ -130,9 +131,9 @@ public class TikaClientCLI {
                 if (t == null) {
                     throw new TimeoutException("exceeded maxWaitMs");
                 }
-                if (t == PipesIteratorBase.COMPLETED_SEMAPHORE) {
+                if (t == PipesIterator.COMPLETED_SEMAPHORE) {
                     //potentially blocks forever
-                    queue.put(PipesIteratorBase.COMPLETED_SEMAPHORE);
+                    queue.put(PipesIterator.COMPLETED_SEMAPHORE);
                     return 1l;
                 }
                 try {

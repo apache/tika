@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -56,17 +57,23 @@ public class TikaPluginsManager {
     public static JsonNode loadRoot(InputStream is) throws IOException {
         return new ObjectMapper().readTree(new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)));
     }
-
     public static TikaPluginsManager load(InputStream is, String ... items) throws IOException, TikaConfigException {
+        return load(is, true, items);
+    }
+
+    public static TikaPluginsManager load(InputStream is, boolean throwOnMissing, String ... items) throws IOException, TikaConfigException {
         JsonNode root = loadRoot(is);
         JsonNode plugins = root.get("plugins");
         if (plugins == null) {
-            throw new TikaConfigException("Couldn't find 'plugins' node");
+            if (throwOnMissing) {
+                throw new TikaConfigException("Couldn't find 'plugins' node");
+            }
+            return new TikaPluginsManager(Map.of(), List.of());
         }
 
         Map<String, PluginConfigs> pluginConfigsMap = new HashMap<>();
         for (String item : items) {
-            pluginConfigsMap.put(item, loadPluginConfigs(item, plugins));
+            pluginConfigsMap.put(item, loadPluginConfigs(item, plugins, throwOnMissing));
         }
         List<String> pluginsPaths = new ArrayList<>();
         if (root.has("pluginsPaths")) {
@@ -84,22 +91,26 @@ public class TikaPluginsManager {
         return new TikaPluginsManager(pluginConfigsMap, pluginsPaths);
     }
 
-    public static TikaPluginsManager load(InputStream is, PLUGIN_TYPES ... types) throws IOException, TikaConfigException {
+    public static TikaPluginsManager load(InputStream is, boolean throwOnMissing, PLUGIN_TYPES ... types) throws IOException, TikaConfigException {
         String[] args = new String[types.length];
         for (int i = 0; i < types.length; i++) {
             args[i] = types[i].name().toLowerCase(Locale.ROOT);
         }
-        return load(is, args);
+        return load(is, throwOnMissing, args);
     }
 
-    public static PluginConfigs loadPluginConfigs(PLUGIN_TYPES type, JsonNode plugins) throws TikaConfigException {
-        return loadPluginConfigs(type.name().toLowerCase(Locale.ROOT), plugins);
+    public static PluginConfigs loadPluginConfigs(PLUGIN_TYPES type, JsonNode plugins, boolean throwOnMissing) throws TikaConfigException {
+        return loadPluginConfigs(type.name().toLowerCase(Locale.ROOT), plugins, throwOnMissing);
     }
 
-    public static PluginConfigs loadPluginConfigs(String item, JsonNode plugins) throws TikaConfigException {
+    public static PluginConfigs loadPluginConfigs(String item, JsonNode plugins, boolean throwOnMissing) throws TikaConfigException {
         JsonNode itemNode = plugins.get(item);
         if (itemNode == null) {
-            throw new TikaConfigException("Couldn't find " + item + " under 'plugins'");
+            if (throwOnMissing) {
+                throw new TikaConfigException("Couldn't find " + item + " under 'plugins'");
+            } else {
+                return new PluginConfigs();
+            }
         }
         PluginConfigs pluginConfigs = new PluginConfigs();
         int configs = 0;

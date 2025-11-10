@@ -32,7 +32,7 @@ public class TikaPluginsManagerTest {
 
     @Test
     public void testBasic() throws Exception {
-        TikaPluginsManager manager = TikaPluginsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/test1.json"),
+        TikaPluginsManager manager = TikaPluginsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/test1.json"), true,
                 TikaPluginsManager.PLUGIN_TYPES.FETCHERS);
         Optional<PluginConfigs> pluginConfigsOpt = manager.get(TikaPluginsManager.PLUGIN_TYPES.FETCHERS);
         assertTrue(pluginConfigsOpt.isPresent());
@@ -45,7 +45,7 @@ public class TikaPluginsManagerTest {
 
     @Test
     public void testPath() throws Exception {
-        TikaPluginsManager manager = TikaPluginsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/test2.json"),
+        TikaPluginsManager manager = TikaPluginsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/test2.json"), true,
                 TikaPluginsManager.PLUGIN_TYPES.FETCHERS);
         List<Path> paths = manager.getPluginsPaths();
         assertEquals(1, paths.size());
@@ -54,7 +54,7 @@ public class TikaPluginsManagerTest {
 
     @Test
     public void testPaths() throws Exception {
-        TikaPluginsManager manager = TikaPluginsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/test3.json"),
+        TikaPluginsManager manager = TikaPluginsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/test3.json"), true,
                 TikaPluginsManager.PLUGIN_TYPES.FETCHERS);
         List<Path> paths = manager.getPluginsPaths();
         assertEquals(3, paths.size());
@@ -70,15 +70,15 @@ public class TikaPluginsManagerTest {
                 "qwerty")
         );
         assertThrows(TikaConfigException.class, () ->
-                TikaPluginsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/testEmpty.json"),
+                TikaPluginsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/testEmpty.json"), true,
                         TikaPluginsManager.PLUGIN_TYPES.FETCHERS)
         );
         assertThrows(TikaConfigException.class, () ->
-                TikaPluginsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/testEmpty2.json"),
+                TikaPluginsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/testEmpty2.json"), true,
                         TikaPluginsManager.PLUGIN_TYPES.FETCHERS)
         );
         assertThrows(TikaConfigException.class, () ->
-                TikaPluginsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/testNoPluginConfig.json"),
+                TikaPluginsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/testNoPluginConfig.json"), true,
                         TikaPluginsManager.PLUGIN_TYPES.FETCHERS)
         );
     }

@@ -54,13 +54,16 @@ public class ReporterManager {
     }
 
     public static PipesReporter load(InputStream is) throws IOException, TikaConfigException {
-        //this will throw a TikaConfigException if "fetchers" is not loaded
-        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(is, TikaPluginsManager.PLUGIN_TYPES.REPORTERS);
+
+        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(is, false, TikaPluginsManager.PLUGIN_TYPES.REPORTERS);
         return load(tikaPluginsManager);
     }
 
     public static PipesReporter load(TikaPluginsManager tikaPluginsManager) throws IOException, TikaConfigException {
         Optional<PluginConfigs> reporterPluginConfigsOpt = tikaPluginsManager.get(TikaPluginsManager.PLUGIN_TYPES.REPORTERS);
+        if (reporterPluginConfigsOpt.isEmpty()) {
+            return NoOpReporter.NO_OP;
+        }
 
         PluginManager pluginManager = null;
         if (! tikaPluginsManager.getPluginsPaths().isEmpty()) {
