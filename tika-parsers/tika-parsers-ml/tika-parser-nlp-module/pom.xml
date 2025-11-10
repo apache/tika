@@ -29,6 +29,10 @@
     <name>Apache Tika natural language process module</name>
 
 
+    <properties>
+        <!-- TIKA-4540 -->
+        <eclipseP2RepoId>http://something.com</eclipseP2RepoId>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
