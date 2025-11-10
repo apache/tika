@@ -310,8 +310,8 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.59.0</google.cloud.version>
-    <aws2.version>2.37.5</aws2.version>
+    <google.cloud.version>2.60.0</google.cloud.version>
+    <aws2.version>2.38.2</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -332,13 +332,13 @@
     <brotli.version>0.1.2</brotli.version>
     <c3p0.version>0.11.2</c3p0.version>
     <commons.cli.version>1.10.0</commons.cli.version>
-    <commons.codec.version>1.19.0</commons.codec.version>
+    <commons.codec.version>1.20.0</commons.codec.version>
     <commons.collections4.version>4.5.0</commons.collections4.version>
     <commons.compress.version>1.28.0</commons.compress.version>
     <commons.csv.version>1.14.1</commons.csv.version>
     <commons.exec.version>1.5.0</commons.exec.version>
     <commons.fileupload.version>1.6.0</commons.fileupload.version>
-    <commons.io.version>2.20.0</commons.io.version>
+    <commons.io.version>2.21.0</commons.io.version>
     <commons.lang3.version>3.19.0</commons.lang3.version>
     <commons.logging.version>1.3.5</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
@@ -430,15 +430,15 @@
     <poi.version>5.4.1</poi.version>
     <protobuf.version>3.25.8</protobuf.version>
     <quartz.version>2.5.1</quartz.version>
-    <reactor.core.version>3.8.0-RC1</reactor.core.version>
-    <reactor.netty.version>1.3.0-RC1</reactor.netty.version>
+    <reactor.core.version>3.8.0</reactor.core.version>
+    <reactor.netty.version>1.3.0</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <slf4j.version>2.0.17</slf4j.version>
     <sis.version>1.5</sis.version>
     <snappy.version>1.1.10.8</snappy.version>
-    <solrj.version>9.9.0</solrj.version>
+    <solrj.version>9.10.0</solrj.version>
     <spring.version>7.0.0-RC3</spring.version>
-    <sqlite.version>3.50.3.0</sqlite.version>
+    <sqlite.version>3.51.0.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.1</testcontainers.version>
     <testcontainersv1.version>1.21.3</testcontainersv1.version>
@@ -454,7 +454,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.4</zookeeper.version>
     <zstd.version>1.5.7-6</zstd.version>
-    <nimbus-jose-jwt.version>10.5</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>10.6</nimbus-jose-jwt.version>
     <javacpp.version>1.5.12</javacpp.version>
     <maven.exec.version>3.6.2</maven.exec.version>
 
@@ -698,7 +698,7 @@
       <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
-        <version>2.43.0</version>
+        <version>2.44.0</version>
       </dependency>
       <dependency>
         <groupId>com.googlecode.json-simple</groupId>
@@ -1370,7 +1370,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>3.1.1</version>
+        <version>3.2.0</version>
         <configuration>
           <autoVersionSubmodules>true</autoVersionSubmodules>
         </configuration>
