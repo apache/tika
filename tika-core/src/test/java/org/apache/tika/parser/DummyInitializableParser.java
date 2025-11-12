@@ -18,7 +18,6 @@
 package org.apache.tika.parser;
 
 import java.io.IOException;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +31,7 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 

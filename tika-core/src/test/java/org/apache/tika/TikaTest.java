@@ -26,7 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -531,7 +530,7 @@ public abstract class TikaTest {
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
 
         try (TikaInputStream tis = getResourceAsStream("/test-documents/" + filePath)) {
-            wrapper.parse(is, handler, new Metadata(), parseContext);
+            wrapper.parse(tis, handler, new Metadata(), parseContext);
         }
         return handler.getMetadataList();
     }

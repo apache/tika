@@ -17,17 +17,11 @@
 
 package org.apache.tika.parser.digest;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.BoundedInputStream;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -54,7 +48,7 @@ public class InputStreamDigester implements DigestingParser.Digester {
      * @param algorithm        name of the digest algorithm to retrieve from the Provider
      * @param algorithmKeyName name of the algorithm to store
      *                         as part of the key in the metadata
-     *                         when {@link #digest(InputStream, Metadata, ParseContext)} is called
+     *                         when {@link #digest(TikaInputStream, Metadata, ParseContext)} is called
      * @param encoder          encoder to convert the byte array returned from the digester to a
      *                         string
      */
@@ -73,7 +67,7 @@ public class InputStreamDigester implements DigestingParser.Digester {
     /**
      * Copied from commons-codec
      */
-    private static MessageDigest updateDigest(MessageDigest digest, InputStream data, Metadata metadata)
+    private static MessageDigest updateDigest(MessageDigest digest, TikaInputStream data, Metadata metadata)
             throws IOException {
         byte[] buffer = new byte[1024];
         long total = 0;
@@ -117,7 +111,7 @@ public class InputStreamDigester implements DigestingParser.Digester {
     }
 
     /**
-     * @param is           InputStream to digest. Best to use a TikaInputStream because
+     * @param tis           InputStream to digest. Best to use a TikaInputStream because
      *                     of potential need to spool to disk.  InputStream must
      *                     support mark/reset.
      * @param metadata     metadata in which to store the digest information
@@ -125,92 +119,19 @@ public class InputStreamDigester implements DigestingParser.Digester {
      * @throws IOException on IO problem or IllegalArgumentException if algorithm couldn't be found
      */
     @Override
-    public void digest(InputStream is, Metadata metadata, ParseContext parseContext)
+    public void digest(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
-        TikaInputStream tis = TikaInputStream.cast(is);
-        if (tis != null && tis.hasFile()) {
-            long sz = -1;
-            if (tis.hasFile()) {
-                sz = tis.getLength();
-            }
-            //if the inputstream has a file,
-            //and its size is greater than its mark limit,
-            //just digest the underlying file.
-            if (sz > markLimit) {
-                digestFile(tis.getFile(), sz, metadata);
-                return;
-            }
-        }
+        byte[] digestBytes;
+        MessageDigest messageDigest = newMessageDigest();
 
+        updateDigest(messageDigest, tis, metadata);
+        digestBytes = messageDigest.digest();
 
-        //try the usual mark/reset stuff.
-        //however, if you actually hit the bound,
-        //then stop and spool to file via TikaInputStream
-        BoundedInputStream bis = new BoundedInputStream(markLimit, is);
-        boolean finishedStream = false;
-        bis.mark(markLimit + 1);
-        finishedStream = digestStream(bis, metadata);
-        bis.reset();
-        if (finishedStream) {
-            return;
-        }
-        //if the stream wasn't finished -- if the stream was longer than the mark limit --
-        //spool to File and digest that.
-        if (tis != null) {
-            digestFile(tis.getFile(), -1, metadata);
-        } else {
-            TemporaryResources tmp = new TemporaryResources();
-            try {
-                TikaInputStream tmpTikaInputStream = TikaInputStream.get(is, tmp, metadata);
-                digestFile(tmpTikaInputStream.getFile(), -1, metadata);
-            } finally {
-                try {
-                    tmp.dispose();
-                } catch (TikaException e) {
-                    throw new IOException(e);
-                }
-            }
-        }
+        metadata.set(getMetadataKey(), encoder.encode(digestBytes));
     }
 
     private String getMetadataKey() {
         return TikaCoreProperties.TIKA_META_PREFIX + "digest" +
                 TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + algorithmKeyName;
     }
-
-    private void digestFile(File f, long sz, Metadata m) throws IOException {
-        //only add it if it hasn't been populated already
-        if (StringUtils.isBlank(m.get(Metadata.CONTENT_LENGTH))) {
-            if (sz < 0) {
-                sz = f.length();
-            }
-            setContentLength(sz, m);
-        }
-        try (InputStream is = new FileInputStream(f)) {
-            digestStream(is, m);
-        }
-    }
-
-    /**
-     * @param is       input stream to read from
-     * @param metadata metadata for reporting the digest
-     * @return whether or not this finished the input stream
-     * @throws IOException
-     */
-    private boolean digestStream(InputStream is, Metadata metadata) throws IOException {
-        byte[] digestBytes;
-        MessageDigest messageDigest = newMessageDigest();
-
-        updateDigest(messageDigest, is, metadata);
-        digestBytes = messageDigest.digest();
-
-        if (is instanceof BoundedInputStream) {
-            if (((BoundedInputStream) is).hasHitBound()) {
-                return false;
-            }
-        }
-        metadata.set(getMetadataKey(), encoder.encode(digestBytes));
-        return true;
-    }
-
 }

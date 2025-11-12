@@ -19,7 +19,7 @@ package org.apache.tika.fork;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Enumeration;
 
@@ -38,7 +38,7 @@ class ClassLoaderResource implements ForkResource {
      * when the last resource has been sent (code 2), a boolean
      * <code>false</code> value is sent instead.
      *
-     * @param name resource name
+     * @param input resource name
      * @throws IOException if the resource could not be sent
      */
     public Throwable process(DataInputStream input, DataOutputStream output) throws IOException {

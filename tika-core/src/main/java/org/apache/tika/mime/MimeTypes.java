@@ -20,7 +20,7 @@ package org.apache.tika.mime;
 
 import java.io.File;
 import java.io.IOException;
-
+import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -32,12 +32,11 @@ import java.util.Locale;
 import java.util.Map;
 import javax.xml.namespace.QName;
 
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-
 import org.apache.tika.Tika;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.TextDetector;
 import org.apache.tika.detect.XmlRootExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -292,9 +291,8 @@ public final class MimeTypes implements Detector, Serializable {
         // Finally, assume plain text if no control bytes are found
         try {
             TextDetector detector = new TextDetector(getMinLength());
-            UnsynchronizedByteArrayInputStream stream =
-                    UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get();
-            MimeType type = forName(detector.detect(stream, new Metadata()).toString());
+            TikaInputStream tis = TikaInputStream.get(data);
+            MimeType type = forName(detector.detect(tis, new Metadata()).toString());
             return Collections.singletonList(type);
         } catch (Exception e) {
             return rootMimeTypeL;

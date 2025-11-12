@@ -19,9 +19,6 @@ package org.apache.tika.parser.digest;
 
 import java.io.IOException;
 
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.DigestingParser;
@@ -37,19 +34,9 @@ public class CompositeDigester implements DigestingParser.Digester {
     }
 
     @Override
-    public void digest(InputStream is, Metadata m, ParseContext parseContext) throws IOException {
-        TemporaryResources tmp = new TemporaryResources();
-        TikaInputStream tis = TikaInputStream.get(is, tmp, m);
-        try {
-            for (DigestingParser.Digester digester : digesters) {
-                digester.digest(tis, m, parseContext);
-            }
-        } finally {
-            try {
-                tmp.dispose();
-            } catch (TikaException e) {
-                throw new IOException(e);
-            }
+    public void digest(TikaInputStream tis, Metadata m, ParseContext parseContext) throws IOException {
+        for (DigestingParser.Digester digester : digesters) {
+            digester.digest(tis, m, parseContext);
         }
     }
 }

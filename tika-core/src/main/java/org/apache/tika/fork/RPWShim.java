@@ -16,37 +16,29 @@
  */
 package org.apache.tika.fork;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-class InputStreamResource implements ForkResource {
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
-    private final InputStream stream;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
 
-    public InputStreamResource(InputStream stream) {
-        this.stream = stream;
+public class RPWShim extends RecursiveParserWrapper implements ParserShim {
+
+    public RPWShim(Parser wrappedParser) {
+        super(wrappedParser);
     }
 
-    public Throwable process(DataInputStream input, DataOutputStream output) throws IOException {
-        int n = input.readInt();
-        byte[] buffer = new byte[n];
-        int m;
-        try {
-            m = stream.read(buffer);
-        } catch (IOException e) {
-            // returning exception causes deadlock
-            // return e;
-            e.printStackTrace();
-            m = -1;
+    public void parseStream(InputStream is, ContentHandler recursiveParserWrapperHandler,
+                      Metadata metadata, ParseContext context) throws IOException, TikaException, SAXException {
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            super.parse(tis, recursiveParserWrapperHandler, metadata, context);
         }
-        output.writeInt(m);
-        if (m > 0) {
-            output.write(buffer, 0, m);
-        }
-        output.flush();
-        return null;
     }
-
 }

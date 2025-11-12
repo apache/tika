@@ -17,7 +17,7 @@
 package org.apache.tika.io;
 
 import java.io.IOException;
-
+import java.io.InputStream;
 
 /**
  * Stream wrapper that make it easy to read up to n bytes ahead from

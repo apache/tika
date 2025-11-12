@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -94,7 +94,7 @@ public class TikaInputStreamTest {
 
     @Test
     public void testInputStreamFactoryBased() throws IOException {
-        TikaInputStream stream = TikaInputStream.get(() -> IOUtils.toInputStream("Hello, World!", UTF_8));
+        TikaInputStream stream = TikaInputStream.get(() -> TikaInputStream.get("Hello, World!".getBytes(UTF_8)));
         assertFalse(stream.hasFile());
         assertNull(stream.getOpenContainer());
         assertNotNull(stream.getInputStreamFactory());
@@ -116,7 +116,7 @@ public class TikaInputStreamTest {
     }
 
     private String readStream(TikaInputStream tis) throws IOException {
-        return IOUtils.toString(stream, UTF_8);
+        return IOUtils.toString(tis, UTF_8);
     }
 
     @Test

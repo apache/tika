@@ -20,7 +20,6 @@ package org.apache.tika.parser.mock;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
-
 import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;

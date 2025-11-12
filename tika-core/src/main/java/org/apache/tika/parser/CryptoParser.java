@@ -95,8 +95,9 @@ public abstract class CryptoParser extends DelegatingParser {
             } else {
                 cipher.init(Cipher.DECRYPT_MODE, key);
             }
-
-            super.parse(new CipherInputStream(stream, cipher), handler, metadata, context);
+            try (TikaInputStream deciphered = TikaInputStream.get(new CipherInputStream(stream, cipher))) {
+                super.parse(deciphered, handler, metadata, context);
+            }
         } catch (GeneralSecurityException e) {
             throw new TikaException("Unable to decrypt document stream", e);
         }

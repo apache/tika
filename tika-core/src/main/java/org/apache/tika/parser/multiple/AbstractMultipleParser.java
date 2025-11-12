@@ -21,7 +21,6 @@ import static org.apache.tika.utils.ParserUtils.recordParserDetails;
 import static org.apache.tika.utils.ParserUtils.recordParserFailure;
 
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,6 +36,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -258,7 +258,7 @@ public abstract class AbstractMultipleParser implements Parser {
         parse(stream, null, handlers, metadata, context);
     }
 
-    private void parse(TikaInputStream stream, ContentHandler handler,
+    private void parse(TikaInputStream tis, ContentHandler handler,
                        ContentHandlerFactory handlerFactory, Metadata originalMetadata,
                        ParseContext context) throws IOException, SAXException, TikaException {
         // Track the metadata between parsers, so we can apply our policy
@@ -270,7 +270,7 @@ public abstract class AbstractMultipleParser implements Parser {
         try {
             // Ensure we'll be able to re-read safely, buffering to disk if so,
             //  to permit Parsers 2+ to be able to read the same data
-            InputStream taggedStream = ParserUtils.ensureStreamReReadable(stream, tmp, originalMetadata);
+            tis.getPath();
 
             for (Parser p : parsers) {
                 // Get a new handler for this parser, if we can
@@ -291,8 +291,9 @@ public abstract class AbstractMultipleParser implements Parser {
 
                 // Process if possible
                 Exception failure = null;
-                try {
-                    p.parse(taggedStream, handler, metadata, context);
+                //TODO -- figure out if we need to handle the open container
+                try (TikaInputStream tagged = TikaInputStream.get(tis.getFile())) {
+                    p.parse(tagged, handler, metadata, context);
                 } catch (Exception e) {
                     // Record the failure such that it can't get lost / overwritten
                     recordParserFailure(p, e, originalMetadata);
@@ -326,7 +327,6 @@ public abstract class AbstractMultipleParser implements Parser {
 
                 // Prepare for the next parser, if present
                 lastMetadata = cloneMetadata(metadata);
-                taggedStream = ParserUtils.streamResetForReRead(taggedStream, tmp);
             }
         } finally {
             tmp.dispose();

@@ -32,6 +32,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
 public class ParameterizedParserTest {
@@ -108,7 +109,9 @@ public class ParameterizedParserTest {
         TikaConfig tikaConfig = new TikaConfig(url);
         Tika tika = new Tika(tikaConfig);
         Metadata metadata = new Metadata();
-        tika.parse(url.openStream(), metadata);
+        try (TikaInputStream tis = TikaInputStream.get(url)) {
+            tika.parse(tis, metadata);
+        }
         return metadata;
     }
 }

@@ -19,7 +19,7 @@ package org.apache.tika.fork;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
-
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
@@ -28,13 +28,14 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.unusedpackage.ClassInUnusedPackage;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
-class ForkTestParser implements Parser {
+class ForkTestParser extends AbstractParser implements ParserShim  {
 
     /**
      * Serial version UID
@@ -45,8 +46,13 @@ class ForkTestParser implements Parser {
         return Collections.singleton(MediaType.TEXT_PLAIN);
     }
 
-    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    @Override
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+        parseStream(stream, handler, metadata, context);
+    }
+
+    public void parseStream(InputStream stream, ContentHandler handler, Metadata metadata,
+                            ParseContext context) throws IOException, SAXException, TikaException {
         stream.read();
 
         metadata.set(Metadata.CONTENT_TYPE, "text/plain");
@@ -60,23 +66,23 @@ class ForkTestParser implements Parser {
 
     static class ForkTestParserAccessingPackage extends ForkTestParser {
         @Override
-        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
+        public void parseStream(InputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
             assertNotNull(ClassInUnusedPackage.class.getPackage());
-            super.parse(stream, handler, metadata, context);
+            super.parseStream(stream, handler, metadata, context);
         }
     }
 
     static class ForkTestParserWaiting extends ForkTestParser {
         @Override
-        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
+        public void parseStream(InputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
             try {
                 Thread.sleep(10_000);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            super.parse(stream, handler, metadata, context);
+            super.parseStream(stream, handler, metadata, context);
         }
     }
 }

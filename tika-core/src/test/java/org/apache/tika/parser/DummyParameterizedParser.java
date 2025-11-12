@@ -18,7 +18,6 @@ package org.apache.tika.parser;
 
 import java.io.File;
 import java.io.IOException;
-
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -32,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 

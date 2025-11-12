@@ -20,7 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.File;
 import java.io.IOException;
-
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -332,7 +332,7 @@ public class ExternalEmbedder implements Embedder {
      * has been called to set arguments.
      */
     @Override
-    public void embed(final Metadata metadata, final InputStream inputStream,
+    public void embed(final Metadata metadata, final TikaInputStream tis,
                       final OutputStream outputStream, final ParseContext context)
             throws IOException, TikaException {
 
@@ -343,7 +343,6 @@ public class ExternalEmbedder implements Embedder {
         boolean serializeMetadataCommandArgumentsToken = false;
         boolean replacedMetadataCommandArgumentsToken = false;
 
-        TikaInputStream tikaInputStream = TikaInputStream.get(inputStream);
         File tempOutputFile = null;
 
         List<String> commandMetadataSegments = null;
@@ -357,7 +356,7 @@ public class ExternalEmbedder implements Embedder {
         for (String commandSegment : origCmd) {
             if (commandSegment.contains(ExternalParser.INPUT_FILE_TOKEN)) {
                 commandSegment = commandSegment.replace(ExternalParser.INPUT_FILE_TOKEN,
-                        tikaInputStream.getFile().toString());
+                        tis.getFile().toString());
                 inputToStdIn = false;
             }
             if (commandSegment.contains(ExternalParser.OUTPUT_FILE_TOKEN)) {
@@ -412,7 +411,7 @@ public class ExternalEmbedder implements Embedder {
             sendStdErrToOutputStream(process, stdErrOutputStream);
 
             if (inputToStdIn) {
-                sendInputStreamToStdIn(inputStream, process);
+                sendInputStreamToStdIn(tis, process);
             } else {
                 // We're not writing to std in this case so close
                 process.getOutputStream().close();
@@ -427,7 +426,7 @@ public class ExternalEmbedder implements Embedder {
                 } catch (InterruptedException ignore) {
                 }
                 // The command is finished, read the output file into the given output stream
-                InputStream tempOutputFileInputStream = TikaInputStream.get(tempOutputFile.toPath());
+                TikaInputStream tempOutputFileInputStream = TikaInputStream.get(tempOutputFile.toPath());
                 IOUtils.copy(tempOutputFileInputStream, outputStream);
             }
         } finally {
@@ -444,11 +443,7 @@ public class ExternalEmbedder implements Embedder {
                     //swallow
                 }
             }
-            if (!inputToStdIn) {
-                // Close input file (and delete if created by up
-                // TemporaryResources.createTemporaryFile)
-                IOUtils.closeQuietly(tikaInputStream);
-            }
+
             IOUtils.closeQuietly(outputStream);
             IOUtils.closeQuietly(stdErrOutputStream);
             if (process.exitValue() != 0) {
@@ -462,14 +457,14 @@ public class ExternalEmbedder implements Embedder {
     /**
      * Creates a new thread for copying a given input stream to a given output stream.
      *
-     * @param inputStream  the source input stream
+     * @param is  the source input stream
      * @param outputStream the target output stream
      */
-    private void multiThreadedStreamCopy(final InputStream inputStream,
+    private void multiThreadedStreamCopy(final InputStream is,
                                          final OutputStream outputStream) {
         new Thread(() -> {
             try {
-                IOUtils.copy(inputStream, outputStream);
+                IOUtils.copy(is, outputStream);
             } catch (IOException e) {
                 System.out.println("ERROR: " + e.getMessage());
             }
@@ -484,10 +479,10 @@ public class ExternalEmbedder implements Embedder {
      * Note that the given input stream is <em>not</em> closed by this method.
      *
      * @param process     the process
-     * @param inputStream the input stream to send to standard input of the process
+     * @param tis the input stream to send to standard input of the process
      */
-    private void sendInputStreamToStdIn(final InputStream inputStream, final Process process) {
-        multiThreadedStreamCopy(inputStream, process.getOutputStream());
+    private void sendInputStreamToStdIn(final TikaInputStream tis, final Process process) {
+        multiThreadedStreamCopy(tis, process.getOutputStream());
     }
 
     /**

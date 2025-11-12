@@ -18,7 +18,7 @@ package org.apache.tika.detect;
 
 import java.io.IOException;
 
-
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 

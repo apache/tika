@@ -18,11 +18,11 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
 /**

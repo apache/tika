@@ -19,7 +19,7 @@ package org.apache.tika.sax;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
-
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import javax.xml.parsers.ParserConfigurationException;
@@ -33,6 +33,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -80,9 +81,9 @@ public class CustomErrorHandlerTest extends TikaTest {
 
     private String extractTestData(String name)
             throws IOException, SAXException, TikaException, ParserConfigurationException {
-        try (TikaInputStream tis = getResourceAsStream("/test-documents/" + name)) {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/" + name))) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            extractXml(is, out);
+            extractXml(tis, out);
             return out.toString(StandardCharsets.UTF_8);
         }
     }

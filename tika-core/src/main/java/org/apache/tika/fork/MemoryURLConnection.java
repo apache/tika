@@ -17,7 +17,7 @@
 package org.apache.tika.fork;
 
 import java.io.ByteArrayInputStream;
-
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 

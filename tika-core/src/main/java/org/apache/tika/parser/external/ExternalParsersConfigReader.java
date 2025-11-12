@@ -17,7 +17,7 @@
 package org.apache.tika.parser.external;
 
 import java.io.IOException;
-
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;

@@ -18,6 +18,7 @@ package org.apache.tika.parser;
 
 import java.util.Collections;
 import java.util.Set;
+
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.exception.TikaException;

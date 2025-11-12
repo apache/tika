@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.FileFilter;
 import java.io.IOException;
-
 import java.net.URISyntaxException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -124,7 +123,7 @@ public class MultiThreadedTikaTest extends TikaTest {
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
                 -1);
-        parser.parse(is, handler, new Metadata(), parseContext);
+        parser.parse(tis, handler, new Metadata(), parseContext);
         return handler.getMetadataList();
     }
 
@@ -354,7 +353,7 @@ public class MultiThreadedTikaTest extends TikaTest {
                 List<Metadata> metadataList = null;
                 boolean success = false;
                 try (TikaInputStream tis = TikaInputStream.get(testFile)) {
-                    metadataList = getRecursiveMetadata(is, parser, new ParseContext());
+                    metadataList = getRecursiveMetadata(tis, parser, new ParseContext());
                     success = true;
                 } catch (Exception e) {
                     //swallow

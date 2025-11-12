@@ -18,7 +18,6 @@ package org.apache.tika.extractor;
 
 import java.io.File;
 import java.io.IOException;
-
 import java.util.Set;
 
 import org.xml.sax.ContentHandler;
@@ -29,7 +28,6 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -109,38 +107,27 @@ public class ParserContainerExtractor implements ContainerExtractor {
         }
 
         @Override
-        public void parse(
-                InputStream stream, ContentHandler ignored,
-                Metadata metadata, ParseContext context)
-                throws IOException, SAXException, TikaException {
-            TemporaryResources tmp = new TemporaryResources();
-            try {
-                TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
+        public void parse(TikaInputStream tis, ContentHandler ignored, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
 
-                // Figure out what we have to process
-                String filename = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-                MediaType type = detector.detect(tis, metadata);
+            // Figure out what we have to process
+            String filename = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+            MediaType type = detector.detect(tis, metadata);
 
-                if (extractor == null) {
-                    // Let the handler process the embedded resource 
-                    handler.handle(filename, type, tis);
-                } else {
-                    // Use a temporary file to process the stream twice
-                    File file = tis.getFile();
+            if (extractor == null) {
+                // Let the handler process the embedded resource
+                handler.handle(filename, type, tis);
+            } else {
+                // Use a temporary file to process the stream twice
+                File file = tis.getFile();
 
-                    // Let the handler process the embedded resource
-                    try (InputStream input = TikaInputStream.get(file.toPath())) {
-                        handler.handle(filename, type, input);
-                    }
-
-                    // Recurse
-                    extractor.extract(tis, extractor, handler);
+                // Let the handler process the embedded resource
+                try (TikaInputStream input = TikaInputStream.get(file.toPath())) {
+                    handler.handle(filename, type, input);
                 }
-            } finally {
-                tmp.dispose();
+                // Recurse
+                extractor.extract(tis, extractor, handler);
             }
         }
-
     }
 
 }

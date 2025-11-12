@@ -65,12 +65,12 @@ public class NetworkParser implements Parser {
         if ("telnet".equals(uri.getScheme())) {
             try (Socket socket = new Socket(uri.getHost(), uri.getPort())) {
                 try (TikaInputStream tis = TikaInputStream.get(socket.getInputStream())) {
-                new ParsingTask(stream, new FilterOutputStream(socket.getOutputStream()) {
-                    @Override
-                    public void close() throws IOException {
-                        socket.shutdownOutput();
-                    }
-                }).parse(tis), handler, metadata, context);
+                    new ParsingTask(stream, new FilterOutputStream(socket.getOutputStream()) {
+                        @Override
+                        public void close() throws IOException {
+                            socket.shutdownOutput();
+                        }
+                    }).parse(tis, handler, metadata, context);
                 }
             }
         } else {

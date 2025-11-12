@@ -19,7 +19,7 @@ package org.apache.tika.parser;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
+import java.io.InputStream;
 
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +36,7 @@ public class AutoDetectParserConfigTest {
     @Test
     public void testEmbeddedBytesSelector() throws Exception {
         TikaConfig config;
-        try (TikaInputStream tis = TikaConfig.class.getResourceAsStream(
+        try (InputStream is = TikaConfig.class.getResourceAsStream(
                 "TIKA-4207-embedded-bytes-config.xml")) {
             config = new TikaConfig(is);
         }

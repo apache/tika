@@ -16,7 +16,6 @@
  */
 package org.apache.tika;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -140,10 +139,10 @@ public class Tika {
      * <p>
      * The given document stream is <em>not</em> closed by this method.
      * <p>
-     * Unlike in the {@link #parse(InputStream, Metadata)} method, the
+     * Unlike in the {@link #parse(TikaInputStream, Metadata)} method, the
      * given document metadata is <em>not</em> modified by this method.
      *
-     * @param stream   the document stream, or <code>null</code>
+     * @param tis  the document stream, or <code>null</code>
      * @param metadata document metadata
      * @return detected media type
      * @throws IOException if the stream can not be read

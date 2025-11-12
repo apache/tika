@@ -18,14 +18,12 @@ package org.apache.tika.parser;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Executor;
 
@@ -173,7 +171,7 @@ public class ParsingReader extends Reader {
      * the time when the {@link #close()} method is called on this reader.
      *
      * @param parser   parser instance
-     * @param stream   binary stream
+     * @param tis   binary stream
      * @param metadata document metadata
      * @param context  parsing context
      * @param executor executor for the parsing task

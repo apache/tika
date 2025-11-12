@@ -19,20 +19,18 @@ package org.apache.tika.metadata.listfilter;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
-
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.io.TikaInputStream;
 
 public class MetadataListFilterTest {
 
     @Test
     public void testBasic() throws Exception {
         TikaConfig tikaConfig;
-        try (TikaInputStream tis = MetadataListFilterTest.class.getResourceAsStream(
-                "metadatalistfilter-config.xml")) {
-            tikaConfig = new TikaConfig(is);
+        try (TikaInputStream tis = TikaInputStream.get(MetadataListFilterTest.class.getResourceAsStream("metadatalistfilter-config.xml"))) {
+            tikaConfig = new TikaConfig(tis);
         }
         CompositeMetadataListFilter compositeMetadataListFilter = (CompositeMetadataListFilter) tikaConfig.getMetadataListFilter();
         assertEquals(1, compositeMetadataListFilter.getFilters().size());

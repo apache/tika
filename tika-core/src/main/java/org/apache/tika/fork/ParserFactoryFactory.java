@@ -23,7 +23,6 @@ import java.lang.reflect.Constructor;
 import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParserFactory;
 
 /**
  * Lightweight, easily serializable class that contains enough information

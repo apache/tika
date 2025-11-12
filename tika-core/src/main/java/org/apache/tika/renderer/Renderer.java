@@ -17,7 +17,6 @@
 package org.apache.tika.renderer;
 
 import java.io.IOException;
-
 import java.io.Serializable;
 import java.util.Set;
 

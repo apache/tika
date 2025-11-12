@@ -18,7 +18,6 @@ package org.apache.tika.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +46,7 @@ public class RegexCaptureParserTest {
 
         try (TikaInputStream tis =
                      TikaInputStream.get(output.getBytes(StandardCharsets.UTF_8))) {
-            parser.parse(stream, contentHandler, m, new ParseContext());
+            parser.parse(tis, contentHandler, m, new ParseContext());
         }
         assertEquals("the quick brown fox", m.get("title"));
     }

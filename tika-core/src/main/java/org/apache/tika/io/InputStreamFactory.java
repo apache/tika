@@ -18,17 +18,16 @@ package org.apache.tika.io;
 
 import java.io.IOException;
 
-
 /**
- * <p>A factory which returns a fresh {@link InputStream} for the <em>same</em>
+ * <p>A factory which returns a fresh {@link TikaInputStream} for the <em>same</em>
  * resource each time.</p>
  * <p>This is typically desired where it is easier / quicker / simpler to
- * fetch a fresh {@link InputStream} to re-read a given resource, rather
+ * fetch a fresh {@link TikaInputStream} to re-read a given resource, rather
  * than do any kind of buffering.</p>
  * <p>It is typically used with {@link TikaInputStream#get(InputStreamFactory)}
  * when combined with a Parser which needs to read the resource's stream
  * multiple times when processing.</p>
  */
 public interface InputStreamFactory {
-    InputStream getInputStream() throws IOException;
+    TikaInputStream getInputStream() throws IOException;
 }

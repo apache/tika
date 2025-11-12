@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
@@ -62,9 +62,10 @@ public class StandardWriteFilterTest extends TikaTest {
         mock += "<write element=\"p\" times=\"30\"> hello </write>\n";
         mock += "</mock>";
         Metadata metadata = new Metadata();
-        List<Metadata> metadataList =
-                getRecursiveMetadata(new ByteArrayInputStream(mock.getBytes(StandardCharsets.UTF_8)),
-                        parser, metadata, new ParseContext(), true);
+        List<Metadata> metadataList = null;
+        try (TikaInputStream tis = TikaInputStream.get(mock.getBytes(StandardCharsets.UTF_8))) {
+            metadataList = getRecursiveMetadata(tis, parser, metadata, new ParseContext(), true);
+        }
         assertEquals(1, metadataList.size());
         metadata = metadataList.get(0);
 
@@ -97,9 +98,10 @@ public class StandardWriteFilterTest extends TikaTest {
         Metadata metadata = new Metadata();
         metadata.add("dc:creator", "abcdefghijabcdefghij");
         metadata.add("not-allowed", "not-allowed");
-        List<Metadata> metadataList =
-                getRecursiveMetadata(new ByteArrayInputStream(mock.getBytes(StandardCharsets.UTF_8)),
-                        parser, metadata, new ParseContext(), true);
+        List<Metadata> metadataList = null;
+        try (TikaInputStream tis = TikaInputStream.get(mock.getBytes(StandardCharsets.UTF_8))) {
+            metadataList = getRecursiveMetadata(tis, parser, metadata, new ParseContext(), true);
+        }
         assertEquals(1, metadataList.size());
         metadata = metadataList.get(0);
         //test that this was removed during the filter existing stage
@@ -289,9 +291,10 @@ public class StandardWriteFilterTest extends TikaTest {
         mock += "<write element=\"p\" times=\"1\"> hello </write>\n";
         mock += "</mock>";
         Metadata metadata = new Metadata();
-        List<Metadata> metadataList =
-                getRecursiveMetadata(new ByteArrayInputStream(mock.getBytes(StandardCharsets.UTF_8)),
-                        parser, metadata, new ParseContext(), true);
+        List<Metadata> metadataList = null;
+        try (TikaInputStream tis = TikaInputStream.get(mock.getBytes(StandardCharsets.UTF_8))) {
+            metadataList = getRecursiveMetadata(tis, parser, metadata, new ParseContext(), true);
+        }
         assertEquals(1, metadataList.size());
         metadata = metadataList.get(0);
         assertEquals(9, metadata.names().length);

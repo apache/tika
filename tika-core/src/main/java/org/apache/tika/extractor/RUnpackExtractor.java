@@ -20,7 +20,6 @@ import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
 import java.io.File;
 import java.io.IOException;
-
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -164,15 +163,17 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         EmbeddedDocumentBytesHandler embeddedDocumentBytesHandler =
                 context.get(EmbeddedDocumentBytesHandler.class);
         int id = metadata.getInt(TikaCoreProperties.EMBEDDED_ID);
-        try (InputStream is = Files.newInputStream(p)) {
+        try (TikaInputStream tis = TikaInputStream.get(p)) {
             if (bytesExtracted >= maxEmbeddedBytesForExtraction) {
                 throw new IOException("Bytes extracted (" + bytesExtracted +
                         ") >= max allowed (" + maxEmbeddedBytesForExtraction + ")");
             }
             long maxToRead = maxEmbeddedBytesForExtraction - bytesExtracted;
 
-            try (BoundedInputStream boundedIs = new BoundedInputStream(maxToRead, is)) {
-                embeddedDocumentBytesHandler.add(id, metadata, boundedIs);
+            //TODO -- clean this up
+            try (BoundedInputStream boundedIs = new BoundedInputStream(maxToRead, tis);
+                    TikaInputStream boundedTis = TikaInputStream.get(boundedIs)) {
+                embeddedDocumentBytesHandler.add(id, metadata, boundedTis);
                 bytesExtracted += boundedIs.getPos();
                 if (boundedIs.hasHitBound()) {
                     throw new IOException("Bytes extracted (" + bytesExtracted +

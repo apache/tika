@@ -19,7 +19,6 @@ package org.apache.tika.detect;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import java.io.IOException;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -88,7 +87,7 @@ public class FileCommandDetector implements Detector {
      * @throws IOException
      */
     @Override
-    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
         if (hasFileCommand == null) {
             hasFileCommand = checkHasFile(this.fileCommandPath);
         }
@@ -99,20 +98,19 @@ public class FileCommandDetector implements Detector {
             }
             return MediaType.OCTET_STREAM;
         }
-        TikaInputStream tis = TikaInputStream.cast(input);
-        if (tis != null) {
-            //spool the full file to disk, if called with a TikaInputStream
-            //and there is no underlying file
+
+        if (tis.hasFile()) {
+            //spool the full file to disk, if there's an underlying file
             return detectOnPath(tis.getPath(), metadata);
         }
 
-        input.mark(maxBytes);
+        tis.mark(maxBytes);
         try (TemporaryResources tmp = new TemporaryResources()) {
             Path tmpFile = tmp.createTempFile(metadata);
-            Files.copy(new BoundedInputStream(maxBytes, input), tmpFile, REPLACE_EXISTING);
+            Files.copy(new BoundedInputStream(maxBytes, tis), tmpFile, REPLACE_EXISTING);
             return detectOnPath(tmpFile, metadata);
         } finally {
-            input.reset();
+            tis.reset();
         }
     }
 

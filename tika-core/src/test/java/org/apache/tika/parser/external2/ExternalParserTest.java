@@ -19,7 +19,7 @@ package org.apache.tika.parser.external2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class ExternalParserTest extends TikaTest {
         assumeTrue(org.apache.tika.parser.external.ExternalParser.check(new String[]{
                 "file", "--version"
         }));
-        try (TikaInputStream tis = TikaConfig.class.getResourceAsStream("TIKA-3557.xml")) {
+        try (InputStream is = TikaConfig.class.getResourceAsStream("TIKA-3557.xml")) {
 
             TikaConfig config = new TikaConfig(is);
             CompositeParser p = (CompositeParser) config.getParser();
@@ -60,9 +60,9 @@ public class ExternalParserTest extends TikaTest {
                     "Title: the quick brown fox\n" +
                     "Author: jumped over\n" +
                     "Created: 10/20/2024";
-            try (TikaInputStream tis =
+            try (TikaInputStream tis2 =
                          TikaInputStream.get(output.getBytes(StandardCharsets.UTF_8))) {
-                outputParser.parse(stream, contentHandler, m, new ParseContext());
+                outputParser.parse(tis2, contentHandler, m, new ParseContext());
             }
             assertEquals("the quick brown fox", m.get("title"));
         }
@@ -71,7 +71,7 @@ public class ExternalParserTest extends TikaTest {
     @Test
     public void testConfigBasic() throws Exception {
         assumeTrue(org.apache.tika.parser.external.ExternalParser.check(new String[]{"file", "--version"}));
-        try (TikaInputStream tis = TikaConfig.class.getResourceAsStream("TIKA-3557-no-output-parser.xml")) {
+        try (InputStream is = TikaConfig.class.getResourceAsStream("TIKA-3557-no-output-parser.xml")) {
             TikaConfig config = new TikaConfig(is);
             CompositeParser p = (CompositeParser) config.getParser();
             assertEquals(1, p.getAllComponentParsers().size());
@@ -86,7 +86,7 @@ public class ExternalParserTest extends TikaTest {
     public void testExifTool() throws Exception {
         assumeTrue(org.apache.tika.parser.external.ExternalParser.check(new String[]{"exiftool",
                 "-ver"}));
-        try (TikaInputStream tis =
+        try (InputStream is =
                      TikaConfig.class.getResourceAsStream("TIKA-3557-exiftool-example.xml")) {
             TikaConfig config = new TikaConfig(is);
             Parser p = new AutoDetectParser(config);

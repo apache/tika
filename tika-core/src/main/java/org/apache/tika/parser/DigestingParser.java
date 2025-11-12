@@ -19,7 +19,6 @@ package org.apache.tika.parser;
 
 
 import java.io.IOException;
-
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -114,10 +113,8 @@ public class DigestingParser extends ParserDecorator {
          * Digests an InputStream and sets the appropriate value(s) in the metadata.
          * The Digester is also responsible for marking and resetting the stream.
          * <p>
-         * The given stream is guaranteed to support the
-         * {@link InputStream#markSupported() mark feature} and the detector
-         * is expected to {@link InputStream#mark(int) mark} the stream before
-         * reading any bytes from it, and to {@link InputStream#reset() reset}
+         * The detector is expected to {@link TikaInputStream#mark(int) mark} the stream before
+         * reading any bytes from it, and to {@link TikaInputStream#reset() reset}
          * the stream before returning. The stream must not be closed by the
          * detector.
          *
@@ -126,7 +123,7 @@ public class DigestingParser extends ParserDecorator {
          * @param parseContext ParseContext
          * @throws IOException
          */
-        void digest(InputStream is, Metadata m, ParseContext parseContext) throws IOException;
+        void digest(TikaInputStream is, Metadata m, ParseContext parseContext) throws IOException;
     }
 
     /**

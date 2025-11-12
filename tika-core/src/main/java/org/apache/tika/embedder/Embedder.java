@@ -17,12 +17,12 @@
 package org.apache.tika.embedder;
 
 import java.io.IOException;
-
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -87,7 +87,7 @@ public interface Embedder extends Serializable {
      * @throws IOException   if the document stream could not be read
      * @throws TikaException if the document could not be parsed
      */
-    void embed(Metadata metadata, InputStream originalStream, OutputStream outputStream,
+    void embed(Metadata metadata, TikaInputStream originalStream, OutputStream outputStream,
                ParseContext context) throws IOException, TikaException;
 
 }

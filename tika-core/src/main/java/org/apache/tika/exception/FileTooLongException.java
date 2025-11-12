@@ -18,7 +18,6 @@
 package org.apache.tika.exception;
 
 import java.io.IOException;
-
 /*
  * Thrown when fetcher or similar has a maxLength set, but the
  * underlying file is too long.

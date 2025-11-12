@@ -14,39 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.fork;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.Map;
 
-class InputStreamResource implements ForkResource {
+import org.xml.sax.SAXException;
 
-    private final InputStream stream;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.Parser;
 
-    public InputStreamResource(InputStream stream) {
-        this.stream = stream;
+public abstract class ParserFactory {
+
+    final Map<String, String> args;
+
+    public ParserFactory(Map<String, String> args) {
+        this.args = args;
     }
 
-    public Throwable process(DataInputStream input, DataOutputStream output) throws IOException {
-        int n = input.readInt();
-        byte[] buffer = new byte[n];
-        int m;
-        try {
-            m = stream.read(buffer);
-        } catch (IOException e) {
-            // returning exception causes deadlock
-            // return e;
-            e.printStackTrace();
-            m = -1;
-        }
-        output.writeInt(m);
-        if (m > 0) {
-            output.write(buffer, 0, m);
-        }
-        output.flush();
-        return null;
-    }
+    public abstract Parser build() throws IOException, SAXException, TikaException;
 
 }

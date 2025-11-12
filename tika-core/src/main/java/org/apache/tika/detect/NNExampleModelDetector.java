@@ -22,7 +22,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Path;
@@ -31,6 +30,7 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
 public class NNExampleModelDetector extends TrainedModelDetector {
@@ -93,7 +93,7 @@ public class NNExampleModelDetector extends TrainedModelDetector {
         URL modelURL = classLoader.getResource(classPrefix + EXAMPLE_NNMODEL_FILE);
         Objects.requireNonNull(modelURL,
                 "required resource " + classPrefix + EXAMPLE_NNMODEL_FILE + " not found");
-        try (TikaInputStream stream = modelURL.openStream()) {
+        try (TikaInputStream stream = TikaInputStream.get(modelURL)) {
             loadDefaultModels(stream);
         } catch (IOException e) {
             throw new RuntimeException("Unable to read the default media type registry", e);

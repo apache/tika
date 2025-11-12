@@ -16,13 +16,12 @@
  */
 package org.apache.tika;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-
 import java.util.Locale;
 
 import org.apache.commons.io.IOUtils;
+
+import org.apache.tika.io.TikaInputStream;
 
 public class TypeDetectionBenchmark {
 
@@ -44,12 +43,12 @@ public class TypeDetectionBenchmark {
         if (file.isHidden()) {
             // ignore
         } else if (file.isFile()) {
-            try (InputStream input = new FileInputStream(file)) {
-                byte[] content = IOUtils.toByteArray(input);
-                String type = tika.detect(new ByteArrayInputStream(content));
+            try (TikaInputStream tis = TikaInputStream.get(file)) {
+                byte[] content = IOUtils.toByteArray(tis);
+                String type = tika.detect(TikaInputStream.get(content));
                 long start = System.currentTimeMillis();
                 for (int i = 0; i < 1000; i++) {
-                    tika.detect(new ByteArrayInputStream(content));
+                    tika.detect(TikaInputStream.get(content));
                 }
                 System.out.printf(Locale.ROOT, "%6dns per Tika.detect(%s) = %s%n",
                         System.currentTimeMillis() - start, file, type);

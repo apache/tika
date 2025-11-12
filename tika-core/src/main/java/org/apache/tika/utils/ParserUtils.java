@@ -19,7 +19,6 @@ package org.apache.tika.utils;
 import static org.apache.tika.metadata.TikaCoreProperties.EMBEDDED_EXCEPTION;
 
 import java.io.IOException;
-
 import java.io.InputStream;
 import java.util.Arrays;
 

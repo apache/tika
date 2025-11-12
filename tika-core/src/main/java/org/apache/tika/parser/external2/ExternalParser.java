@@ -18,7 +18,6 @@ package org.apache.tika.parser.external2;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -181,11 +180,11 @@ public class ExternalParser implements Parser, Initializable {
             }
         } else {
             if (outFile != null) {
-                try (InputStream is = TikaInputStream.get(outFile)) {
+                try (TikaInputStream is = TikaInputStream.get(outFile)) {
                     outputParser.parse(is, new BodyContentHandler(xhtml), metadata, parseContext);
                 }
             } else {
-                try (InputStream is = TikaInputStream.get(
+                try (TikaInputStream is = TikaInputStream.get(
                         result.getStdout().getBytes(StandardCharsets.UTF_8))) {
                     outputParser.parse(is, new BodyContentHandler(xhtml), metadata, parseContext);
                 }

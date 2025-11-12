@@ -21,7 +21,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.File;
 import java.io.IOException;
-
 import java.io.Writer;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -33,6 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -48,11 +48,11 @@ public abstract class TrainedModelDetector implements Detector {
         return Integer.MAX_VALUE;
     }
 
-    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
         // convert to byte-histogram
-        if (input != null) {
-            input.mark(getMinLength());
-            float[] histogram = readByteFrequencies(input);
+        if (tis != null) {
+            tis.mark(getMinLength());
+            float[] histogram = readByteFrequencies(tis);
             // writeHisto(histogram); //on testing purpose
 
             // threshold will be considered as
@@ -73,7 +73,7 @@ public abstract class TrainedModelDetector implements Detector {
                     maxType = key;
                 }
             }
-            input.reset();
+            tis.reset();
             return maxType;
         }
         return null;
@@ -86,7 +86,7 @@ public abstract class TrainedModelDetector implements Detector {
      * @return byte frequencies array
      * @throws IOException
      */
-    protected float[] readByteFrequencies(final InputStream input) throws IOException {
+    protected float[] readByteFrequencies(final TikaInputStream input) throws IOException {
         ReadableByteChannel inputChannel;
         // TODO: any reason to avoid closing of input & inputChannel?
         try {
@@ -151,7 +151,7 @@ public abstract class TrainedModelDetector implements Detector {
     }
 
     public void loadDefaultModels(Path modelFile) {
-        try (TikaInputStream in = Files.newInputStream(modelFile)) {
+        try (TikaInputStream in = TikaInputStream.get(modelFile)) {
             loadDefaultModels(in);
         } catch (IOException e) {
             throw new RuntimeException("Unable to read the default media type registry", e);
@@ -162,7 +162,7 @@ public abstract class TrainedModelDetector implements Detector {
         loadDefaultModels(modelFile.toPath());
     }
 
-    public abstract void loadDefaultModels(final InputStream modelStream);
+    public abstract void loadDefaultModels(final TikaInputStream modelStream);
 
     public abstract void loadDefaultModels(final ClassLoader classLoader);
 

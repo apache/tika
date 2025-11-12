@@ -543,13 +543,7 @@ public class TikaConfigSerializer {
     private static Method findGetter(MethodTuple setter, Object object) {
         Matcher m = Pattern.compile("\\A(?:get|is)([A-Z].+)\\Z").matcher("");
         for (Method method : object.getClass().getMethods()) {
-            if (object.getClass().getName().contains("PDF")) {
-                System.out.println(method.getName());
-            }
             if (m.reset(method.getName()).find()) {
-                if (object.getClass().getName().contains("PDF")) {
-                    System.out.println("2: " + method.getName());
-                }
                 String paramName = m.group(1);
                 if (setter.name.equals(paramName)) {
                     Class returnType = method.getReturnType();

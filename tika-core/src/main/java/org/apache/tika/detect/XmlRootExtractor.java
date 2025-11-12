@@ -17,16 +17,15 @@
 package org.apache.tika.detect;
 
 import java.io.CharConversionException;
-
 import java.util.Arrays;
 import javax.xml.namespace.QName;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -43,7 +42,7 @@ public class XmlRootExtractor {
         // this loop should be very rare
         while (true) {
             try {
-                return extractRootElement(new UnsynchronizedByteArrayInputStream(data), true);
+                return extractRootElement(TikaInputStream.get(data), true);
             } catch (MalformedCharException e) {
                 // see TIKA-3596, try to handle truncated/bad encoded XML files
                 int newLen = data.length / 2;
@@ -63,14 +62,14 @@ public class XmlRootExtractor {
     /**
      * @since Apache Tika 0.9
      */
-    public QName extractRootElement(TikaInputStream stream) {
-        return extractRootElement(stream, false);
+    public QName extractRootElement(TikaInputStream tis) {
+        return extractRootElement(tis, false);
     }
     
-    private QName extractRootElement(InputStream stream, boolean throwMalformed) {
+    private QName extractRootElement(TikaInputStream tis, boolean throwMalformed) {
         ExtractorHandler handler = new ExtractorHandler();
         try {
-            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
+            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(tis),
                     handler, EMPTY_CONTEXT);
         } catch (SecurityException e) {
             throw e;

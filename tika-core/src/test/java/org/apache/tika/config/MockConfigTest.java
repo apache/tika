@@ -19,7 +19,6 @@ package org.apache.tika.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-
 import java.util.List;
 import java.util.Map;
 

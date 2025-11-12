@@ -18,12 +18,12 @@ package org.apache.tika.detect;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;

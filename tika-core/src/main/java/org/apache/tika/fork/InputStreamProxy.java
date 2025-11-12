@@ -19,7 +19,7 @@ package org.apache.tika.fork;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-
+import java.io.InputStream;
 
 class InputStreamProxy extends InputStream implements ForkProxy {
 
