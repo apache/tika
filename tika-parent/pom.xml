@@ -304,14 +304,14 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.1</maven.shade.version>
     <maven.project.info.reports.version>3.9.0</maven.project.info.reports.version>
-    <puppycrawl.version>12.1.1</puppycrawl.version>
+    <puppycrawl.version>12.1.2</puppycrawl.version>
     <rat.version>0.17</rat.version>
     <scm.version>2.2.1</scm.version>
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.60.0</google.cloud.version>
-    <aws2.version>2.38.3</aws2.version>
+    <aws2.version>2.38.4</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
