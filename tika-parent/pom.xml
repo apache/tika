@@ -692,6 +692,16 @@
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
+        <exclusions>
+            <exclusion>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>com.google.j2objc</groupId>
+                <artifactId>j2objc-annotations</artifactId>
+            </exclusion>
+        </exclusions>
       </dependency>
       <!-- avoid dependency convergence error in tika-fetcher-microsoft-graph
            because guava uses 2.36.0 and gson uses 2.38.0 -->
