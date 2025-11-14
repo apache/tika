@@ -41,11 +41,11 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -76,7 +76,7 @@ import org.apache.tika.utils.StringUtils;
  *      <li>The 'emitKeyColumn' value is not added to the metadata.</li>
  *  </ul>
  */
-public class CSVPipesIterator extends PipesIterator implements Initializable {
+public class CSVPipesIterator extends PipesIteratorBase implements Initializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CSVPipesIterator.class);
 
@@ -113,8 +113,8 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        String fetcherName = getFetcherName();
-        String emitterName = getEmitterName();
+        String fetcherPluginId = getFetcherName();
+        String emitterName = getEmitterPluginId();
         try (Reader reader = Files.newBufferedReader(csvPath, charset)) {
             Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(reader);
             List<String> headers = new ArrayList<>();
@@ -125,7 +125,7 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
             }
 
             try {
-                checkFetchEmitValidity(fetcherName, emitterName, fetchEmitKeyIndices, headers);
+                checkFetchEmitValidity(fetcherPluginId, emitterName, fetchEmitKeyIndices, headers);
             } catch (TikaConfigException e) {
                 throw new IOException(e);
             }
@@ -134,8 +134,8 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
                 String id = record.get(fetchEmitKeyIndices.idIndex);
                 String fetchKey = record.get(fetchEmitKeyIndices.fetchKeyIndex);
                 String emitKey = record.get(fetchEmitKeyIndices.emitKeyIndex);
-                if (StringUtils.isBlank(fetchKey) && !StringUtils.isBlank(fetcherName)) {
-                    LOGGER.debug("Fetcher specified ({}), but no fetchkey was found in ({})", fetcherName, record);
+                if (StringUtils.isBlank(fetchKey) && !StringUtils.isBlank(fetcherPluginId)) {
+                    LOGGER.debug("Fetcher specified ({}), but no fetchkey was found in ({})", fetcherPluginId, record);
                 }
                 if (StringUtils.isBlank(emitKey)) {
                     throw new IOException("emitKey must not be blank in :" + record);
@@ -144,22 +144,22 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
                 Metadata metadata = loadMetadata(fetchEmitKeyIndices, headers, record);
                 ParseContext parseContext = new ParseContext();
                 parseContext.set(HandlerConfig.class, handlerConfig);
-                tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey), new EmitKey(emitterName, emitKey), metadata, parseContext, getOnParseException()));
+                tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherPluginId, fetchKey), new EmitKey(emitterName, emitKey), metadata, parseContext, getOnParseException()));
             }
         }
     }
 
-    private void checkFetchEmitValidity(String fetcherName, String emitterName, FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers) throws TikaConfigException {
+    private void checkFetchEmitValidity(String fetcherPluginId, String emitterName, FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers) throws TikaConfigException {
 
         if (StringUtils.isBlank(emitterName)) {
             throw new TikaConfigException("must specify at least an emitterName");
         }
 
-        if (StringUtils.isBlank(fetcherName) && !StringUtils.isBlank(fetchKeyColumn)) {
-            throw new TikaConfigException("If specifying a 'fetchKeyColumn', " + "you must also specify a 'fetcherName'");
+        if (StringUtils.isBlank(fetcherPluginId) && !StringUtils.isBlank(fetchKeyColumn)) {
+            throw new TikaConfigException("If specifying a 'fetchKeyColumn', " + "you must also specify a 'fetcherPluginId'");
         }
 
-        if (StringUtils.isBlank(fetcherName)) {
+        if (StringUtils.isBlank(fetcherPluginId)) {
             LOGGER.info("No fetcher specified. This will be metadata only");
         }
 

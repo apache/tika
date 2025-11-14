@@ -1,0 +1,69 @@
+{
+  "plugins": {
+    "fetchers" : {
+      "fsf": {
+        "file-system-fetcher": {
+          "basePath": "FETCHER_BASE_PATH"
+        }
+      }
+    },
+    "emitters" : {
+      "ose": {
+        "opensearch-emitter": {
+          "openSearchUrl": "OPEN_SEARCH_URL",
+          "updateStrategy": "UPDATE_STRATEGY",
+          "attachmentStrategy": "ATTACHMENT_STRATEGY",
+          "commitWithin": 10,
+          "idField": "_id",
+          "embeddedFileFieldName": "embedded",
+          "httpClientConfig" : {
+            "userName" : "USER_NAME",
+            "password" : "PASSWORD",
+            "authScheme" : "http",
+            "connectionTimeout" : 60,
+            "socketTimeout" : 60
+          }
+        }
+      }
+    },
+    "pipes_iterator": {
+      "fspi": {
+        "file-system-pipes-iterator": {
+          "basePath": "FETCHER_BASE_PATH",
+          "countTotal": true,
+          "baseConfig": {
+            "fetcherId": "fsf",
+            "emitterId": "ose",
+            "handlerConfig": {
+              "type": "TEXT",
+              "parseMode": "PARSE_MODE",
+              "writeLimit": -1,
+              "maxEmbeddedResources": -1,
+              "throwOnWriteLimitReached": true
+            },
+            "onParseException": "EMIT",
+            "maxWaitMs": 600000,
+            "queueSize": 10000
+          }
+        }
+      }
+    },
+    "reporters": {
+      "ospr": {
+        "opensearch-pipes-reporter": {
+          "openSearchUrl": "OPEN_SEARCH_URL",
+          "keyPrefix": "my_test_",
+          "includeRouting": INCLUDE_ROUTING,
+          "httpClientConfig" : {
+            "userName" : "USER_NAME",
+            "password" : "PASSWORD",
+            "authScheme" : "http",
+            "connectionTimeout" : 60,
+            "socketTimeout" : 60
+          }
+        }
+      }
+    }
+  },
+  "pluginsPaths": "target/plugins"
+}

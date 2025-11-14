@@ -30,15 +30,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.Initializable;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
 
 /**
  * Iterates through a UTF-8 text file with one FetchEmitTuple
  * json object per line.
  */
-public class JsonPipesIterator extends PipesIterator implements Initializable {
+public class JsonPipesIterator extends PipesIteratorBase implements Initializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonPipesIterator.class);
 

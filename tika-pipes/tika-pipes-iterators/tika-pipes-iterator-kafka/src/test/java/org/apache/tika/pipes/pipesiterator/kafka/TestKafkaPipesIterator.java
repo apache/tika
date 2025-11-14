@@ -32,8 +32,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 
 @Disabled("turn into an actual unit test")
 public class TestKafkaPipesIterator {
@@ -61,7 +61,7 @@ public class TestKafkaPipesIterator {
             queue.offer(t);
         }
         for (int i = 0; i < numConsumers; i++) {
-            queue.offer(PipesIterator.COMPLETED_SEMAPHORE);
+            queue.offer(PipesIteratorBase.COMPLETED_SEMAPHORE);
         }
         int finished = 0;
         int completed = 0;
@@ -89,7 +89,7 @@ public class TestKafkaPipesIterator {
         public Integer call() throws Exception {
             while (true) {
                 FetchEmitTuple t = queue.poll(1, TimeUnit.HOURS);
-                if (t == PipesIterator.COMPLETED_SEMAPHORE) {
+                if (t == PipesIteratorBase.COMPLETED_SEMAPHORE) {
                     return pairs.size();
                 }
                 pairs.add(t);

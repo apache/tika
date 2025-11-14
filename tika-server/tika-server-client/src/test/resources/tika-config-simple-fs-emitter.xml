@@ -26,7 +26,7 @@
   </parsers>
   <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
     <params>
-      <fetcherName>fs</fetcherName>
+      <fetcherId>fs</fetcherId>
       <emitterName>fs</emitterName>
       <basePath>UPDATE</basePath>
     </params>

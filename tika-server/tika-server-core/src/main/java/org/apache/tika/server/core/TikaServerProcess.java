@@ -17,11 +17,8 @@
 
 package org.apache.tika.server.core;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.BindException;
-import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +57,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.digestutils.BouncyCastleDigester;
@@ -103,7 +101,8 @@ public class TikaServerProcess {
         Options options = new Options();
         options.addOption("h", "host", true, "host name, use * for all)");
         options.addOption("p", "port", true, "listen port");
-        options.addOption("c", "config", true, "Tika Configuration file to override default config with.");
+        options.addOption("c", "config", true, "Tika Configuration xml file to override default config with.");
+        options.addOption("a", "pluginsConfig", true, "Tika Configuration json for pluginscomponents");
         options.addOption("i", "id", true, "id to use for server in server status endpoint");
         options.addOption("?", "help", false, "this help message");
         options.addOption("noFork", "noFork", false, "if launched in no fork mode");
@@ -154,30 +153,17 @@ public class TikaServerProcess {
             }
             System.exit(DO_NOT_RESTART_EXIT_VALUE);
         }
-
-        if (!tikaServerConfig.isNoFork()) {
-            //redirect
-            InputStream in = System.in;
-            System.setIn(new ByteArrayInputStream(new byte[0]));
-
-            String forkedStatusFile = tikaServerConfig.getForkedStatusFile();
-            Thread serverThread = new Thread(new ServerStatusWatcher(serverDetails.serverStatus, in, Paths.get(forkedStatusFile), tikaServerConfig));
-
-            serverThread.start();
-        }
-
+        Thread serverThread = new Thread(new ServerStatusWatcher(serverDetails.serverStatus, tikaServerConfig));
+        serverThread.setDaemon(true);
+        serverThread.start();
         LOG.info("Started Apache Tika server {} at {}", serverDetails.serverId, serverDetails.url);
     }
 
     //This returns the server, configured and ready to be started.
     private static ServerDetails initServer(TikaServerConfig tikaServerConfig) throws Exception {
         String host = tikaServerConfig.getHost();
-        int[] ports = tikaServerConfig.getPorts();
-        if (ports.length > 1) {
-            throw new IllegalArgumentException("there must be only one port here! " + "I see: " + tikaServerConfig.getPort());
-        }
+        int port = tikaServerConfig.getPort();
 
-        int port = ports[0];
         // The Tika Configuration to use throughout
         TikaConfig tika;
 
@@ -203,10 +189,12 @@ public class TikaServerProcess {
         }
 
         //TODO -- clean this up -- only load as necessary
+        //REALLY NEED TODO THIS
         FetcherManager fetcherManager = null;
         InputStreamFactory inputStreamFactory = null;
-        if (tikaServerConfig.isEnableUnsecureFeatures()) {
-            fetcherManager = FetcherManager.load(tikaServerConfig.getConfigPath());
+        if (tikaServerConfig.isEnableUnsecureFeatures() &&
+                tikaServerConfig.getPipesConfigPath().isPresent()) {
+            fetcherManager = FetcherManager.load(tikaServerConfig.getPipesConfigPath().get());
             inputStreamFactory = new FetcherStreamFactory(fetcherManager);
         } else {
             inputStreamFactory = new DefaultInputStreamFactory();
@@ -215,16 +203,9 @@ public class TikaServerProcess {
         //logFetchersAndEmitters(tikaServerConfig.isEnableUnsecureFeatures(), fetcherManager,
         //      emitterManager);
 
-        String serverId = tikaServerConfig.getId();
-        LOG.debug("SERVER ID:" + serverId);
         ServerStatus serverStatus;
 
-        if (tikaServerConfig.isNoFork()) {
-            serverStatus = new ServerStatus(serverId, 0, true);
-        } else {
-            serverStatus = new ServerStatus(serverId, tikaServerConfig.getNumRestarts(), false);
-            System.setOut(System.err);
-        }
+        serverStatus = new ServerStatus();
         TikaResource.init(tika, tikaServerConfig, digester, inputStreamFactory, serverStatus);
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
@@ -266,7 +247,6 @@ public class TikaServerProcess {
         ServerDetails details = new ServerDetails();
         details.sf = sf;
         details.url = url;
-        details.serverId = serverId;
         details.serverStatus = serverStatus;
         return details;
     }
@@ -410,7 +390,12 @@ public class TikaServerProcess {
         }
 
         if (addAsyncResource) {
-            final AsyncResource localAsyncResource = new AsyncResource(tikaServerConfig.getConfigPath(), tikaServerConfig.getSupportedFetchers());
+            if (tikaServerConfig.getPipesConfigPath().isEmpty()) {
+                throw new TikaConfigException("Must specify a pipes config on the commandline with the -a option");
+            }
+            final AsyncResource localAsyncResource = new AsyncResource(tikaServerConfig.getConfigPath(),
+                    tikaServerConfig.getPipesConfigPath().get(),
+                    tikaServerConfig.getSupportedFetchers());
             Runtime
                     .getRuntime()
                     .addShutdownHook(new Thread(() -> {
@@ -423,7 +408,10 @@ public class TikaServerProcess {
             resourceProviders.add(new SingletonResourceProvider(localAsyncResource));
         }
         if (addPipesResource) {
-            final PipesResource localPipesResource = new PipesResource(tikaServerConfig.getConfigPath());
+            if (tikaServerConfig.getPipesConfigPath().isEmpty()) {
+                throw new TikaConfigException("Must specify a pipes config on the commandline with the -a option");
+            }
+            final PipesResource localPipesResource = new PipesResource(tikaServerConfig.getConfigPath(), tikaServerConfig.getPipesConfigPath().get());
             Runtime
                     .getRuntime()
                     .addShutdownHook(new Thread(() -> {

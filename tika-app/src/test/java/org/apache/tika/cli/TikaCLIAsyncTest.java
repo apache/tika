@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -33,9 +34,86 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TikaCLIAsyncTest {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TikaCLI.class);
+
+    final static String JSON_TEMPLATE = """
+            {
+              "plugins" : {
+                "fetchers": {
+                  "fsf": {
+                    "file-system-fetcher": {
+                      "basePath": "FETCHER_BASE_PATH",
+                      "extractFileSystemMetadata": false
+                    }
+                  }
+                },
+                "emitters": {
+                  "fse": {
+                    "file-system-emitter": {
+                      "basePath": "EMITTER_BASE_PATH",
+                      "fileExtension": "jsn",
+                      "onExists":"EXCEPTION",
+                      "prettyPrint": true
+                    }
+                  }
+                },
+                "pipes_iterator": {
+                  "fspi": {
+                    "file-system-pipes-iterator": {
+                      "basePath": "FETCHER_BASE_PATH",
+                      "countTotal": true,
+                      "baseConfig": {
+                        "fetcherId": "fsf",
+                        "emitterId": "fse",
+                        "handlerConfig": {
+                          "type": "TEXT",
+                          "parseMode": "RMETA",
+                          "writeLimit": -1,
+                          "maxEmbeddedResources": -1,
+                          "throwOnWriteLimitReached": true
+                        },
+                        "onParseException": "EMIT",
+                        "maxWaitMs": 600000,
+                        "queueSize": 10000
+                      }
+                    }
+                  }
+                }
+              },
+              "pluginsPaths": "PLUGINS_PATHS"
+            }
+            """;
+
+    final static String JSON_TEMPLATE_FETCH_EMIT_ONLY = """
+            {
+              "plugins" : {
+                "fetchers": {
+                  "fsf": {
+                    "file-system-fetcher": {
+                      "basePath": "FETCHER_BASE_PATH",
+                      "extractFileSystemMetadata": false
+                    }
+                  }
+                },
+                "emitters": {
+                  "fse": {
+                    "file-system-emitter": {
+                      "basePath": "EMITTER_BASE_PATH",
+                      "fileExtension": "jsn",
+                      "onExists":"EXCEPTION",
+                      "prettyPrint": true
+                    }
+                  }
+                }
+              },
+              "pluginsPaths": "PLUGINS_PATHS"
+            }
+            """;
 
     static final File TEST_DATA_FILE = new File("src/test/resources/test-data");
 
@@ -46,20 +124,26 @@ public class TikaCLIAsyncTest {
     private PrintStream stderr = null;
 
     private static Path ASYNC_CONFIG;
+    private static Path ASYNC_PLUGINS_CONFIG;
+
     @TempDir
     private static Path ASYNC_OUTPUT_DIR;
 
     @BeforeAll
     public static void setUpClass() throws Exception {
         ASYNC_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "async-config-", ".xml");
-        String xml = "<properties>" + "<async>" + "<numClients>3</numClients>" + "<tikaConfig>" + ASYNC_CONFIG.toAbsolutePath() + "</tikaConfig>" + "</async>" + "<fetchers>" +
-                "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" + "<name>fsf</name>" + "<basePath>" + TEST_DATA_FILE.getAbsolutePath() +
-                "</basePath>" +
-                "</fetcher>" + "</fetchers>" + "<emitters>" + "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>fse</name>" + "<basePath>" +
-                ASYNC_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "<prettyPrint>true</prettyPrint>" + "</emitter>" + "</emitters>" +
-                "<pipesIterator class=\"org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator\">" + "<basePath>" + TEST_DATA_FILE.getAbsolutePath() + "</basePath>" +
-                "<fetcherName>fsf</fetcherName>" + "<emitterName>fse</emitterName>" + "</pipesIterator>" + "</properties>";
+        String xml = "<properties>" + "<async>" + "<numClients>3</numClients>" + "<tikaConfig>" + ASYNC_CONFIG.toAbsolutePath() + "</tikaConfig>" + "</async>" + "</properties>";
         Files.write(ASYNC_CONFIG, xml.getBytes(UTF_8));
+        ASYNC_PLUGINS_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "plugins-", ".json");
+
+        Path pluginsDir = Paths.get("target/plugins");
+        if (! Files.isDirectory(pluginsDir)) {
+            LOG.warn("CAN'T FIND PLUGINS DIR. pwd={}", Paths.get("").toAbsolutePath().toString());
+        }
+        String json = JSON_TEMPLATE.replace("FETCHER_BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString())
+                                   .replace("EMITTER_BASE_PATH", ASYNC_OUTPUT_DIR.toAbsolutePath().toString())
+                                   .replace("PLUGINS_PATHS", pluginsDir.toAbsolutePath().toString());
+        Files.writeString(ASYNC_PLUGINS_CONFIG, json, UTF_8);
     }
 
     /**
@@ -103,7 +187,10 @@ public class TikaCLIAsyncTest {
 
     @Test
     public void testAsync() throws Exception {
-        String content = getParamOutContent("-a", "-c", ASYNC_CONFIG.toAbsolutePath().toString());
+        //extension is "jsn" to avoid conflict with json config
+
+        String content = getParamOutContent("-c", ASYNC_CONFIG.toAbsolutePath().toString(),
+                "-a", ASYNC_PLUGINS_CONFIG.toAbsolutePath().toString());
 
         int json = 0;
         for (File f : ASYNC_OUTPUT_DIR
@@ -111,11 +198,11 @@ public class TikaCLIAsyncTest {
                 .listFiles()) {
             if (f
                     .getName()
-                    .endsWith(".json")) {
+                    .endsWith(".jsn")) {
                 //check one file for pretty print
                 if (f
                         .getName()
-                        .equals("coffee.xls.json")) {
+                        .equals("coffee.xls.jsn")) {
                     checkForPrettyPrint(f);
                 }
                 json++;

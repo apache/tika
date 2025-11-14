@@ -43,13 +43,13 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.async.OfferLargerThanQueueSize;
-import org.apache.tika.pipes.core.emitter.EmitData;
+import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
 
 @Path("/async")
@@ -62,10 +62,10 @@ public class AsyncResource {
     long maxQueuePauseMs = 60000;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
-    public AsyncResource(java.nio.file.Path tikaConfigPath, Set<String> supportedFetchers) throws TikaException, IOException, SAXException {
-        this.asyncProcessor = new AsyncProcessor(tikaConfigPath);
+    public AsyncResource(java.nio.file.Path tikaConfigPath, java.nio.file.Path pluginsConfig, Set<String> supportedFetchers) throws TikaException, IOException, SAXException {
+        this.asyncProcessor = new AsyncProcessor(tikaConfigPath, pluginsConfig);
         this.supportedFetchers = supportedFetchers;
-        this.emitterManager = EmitterManager.load(tikaConfigPath);
+        this.emitterManager = EmitterManager.load(pluginsConfig);
     }
 
     public ArrayBlockingQueue<FetchEmitTuple> getFetchEmitQueue(int queueSize) {
@@ -73,7 +73,7 @@ public class AsyncResource {
         return queue;
     }
 
-    public ArrayBlockingQueue<EmitData> getEmitDataQueue(int size) {
+    public ArrayBlockingQueue<EmitDataImpl> getEmitDataQueue(int size) {
         return new ArrayBlockingQueue<>(size);
     }
 
@@ -105,17 +105,17 @@ public class AsyncResource {
         for (FetchEmitTuple t : request.getTuples()) {
             if (!supportedFetchers.contains(t
                     .getFetchKey()
-                    .getFetcherName())) {
+                    .getFetcherId())) {
                 return badFetcher(t.getFetchKey());
             }
             if (!emitterManager
                     .getSupported()
                     .contains(t
                             .getEmitKey()
-                            .getEmitterName())) {
+                            .getEmitterId())) {
                 return badEmitter(t
                         .getEmitKey()
-                        .getEmitterName());
+                        .getEmitterId());
             }
             ParseContext parseContext = t.getParseContext();
             EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
@@ -177,7 +177,7 @@ public class AsyncResource {
     }
 
     private Map<String, Object> badFetcher(FetchKey fetchKey) {
-        throw new BadRequestException("can't find fetcher for " + fetchKey.getFetcherName());
+        throw new BadRequestException("can't find fetcher for " + fetchKey.getFetcherId());
     }
 
     private AsyncRequest deserializeASyncRequest(InputStream is) throws IOException {

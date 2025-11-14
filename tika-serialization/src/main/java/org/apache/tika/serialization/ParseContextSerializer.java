@@ -27,7 +27,6 @@ import org.apache.tika.parser.ParseContext;
 public class ParseContextSerializer extends JsonSerializer<ParseContext> {
     public static final String PARSE_CONTEXT = "parseContext";
 
-
     @Override
     public void serialize(ParseContext parseContext, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
         jsonGenerator.writeStartObject();

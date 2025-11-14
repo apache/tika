@@ -20,50 +20,102 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.tika.config.ConfigBase;
+import org.pf4j.DefaultPluginManager;
+import org.pf4j.PluginManager;
+import org.pf4j.PluginWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.fetcher.FetcherFactory;
+import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.PluginConfigs;
+import org.apache.tika.plugins.TikaPluginsManager;
 
 /**
  * Utility class to hold multiple fetchers.
  * <p>
- * This forbids multiple fetchers supporting the same name.
+ * This forbids multiple fetchers with the same pluginId
  */
-public class FetcherManager extends ConfigBase {
+public class FetcherManager {
 
-    public static FetcherManager load(Path p) throws IOException, TikaConfigException {
-        try (InputStream is =
-                     Files.newInputStream(p)) {
-            return FetcherManager.buildComposite("fetchers", FetcherManager.class,
-                    "fetcher", Fetcher.class, is);
+    private static final Logger LOG = LoggerFactory.getLogger(FetcherManager.class);
+
+    public static FetcherManager load(Path path) throws IOException, TikaConfigException {
+        try (InputStream is = Files.newInputStream(path)) {
+            return load(is);
         }
     }
+
+    public static FetcherManager load(InputStream is) throws IOException, TikaConfigException {
+        //this will throw a TikaConfigException if "fetchers" is not loaded
+        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(is, true, TikaPluginsManager.PLUGIN_TYPES.FETCHERS);
+        return load(tikaPluginsManager);
+    }
+
+    public static FetcherManager load(TikaPluginsManager tikaPluginsManager) throws IOException, TikaConfigException {
+        Optional<PluginConfigs> fetcherPluginConfigsOpt = tikaPluginsManager.get(TikaPluginsManager.PLUGIN_TYPES.FETCHERS);
+        if (fetcherPluginConfigsOpt.isEmpty()) {
+            throw new TikaConfigException("Forgot to load 'fetchers'?");
+        }
+        PluginConfigs fetcherPluginConfigs = fetcherPluginConfigsOpt.get();
+        PluginManager pluginManager = null;
+        if (! tikaPluginsManager.getPluginsPaths().isEmpty()) {
+            LOG.warn("LOADING WITH PLUGINS PATHS: {}", tikaPluginsManager.getPluginsPaths());
+            pluginManager = new DefaultPluginManager(tikaPluginsManager.getPluginsPaths());
+        } else {
+            LOG.warn("NOT LOADING WITH PLUGINS PATHS: {}", tikaPluginsManager.getPluginsPaths());
+            pluginManager = new DefaultPluginManager();
+        }
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+        Map<String, Fetcher> fetcherMap = new HashMap<>();
+        for (FetcherFactory fetcherFactory : pluginManager.getExtensions(FetcherFactory.class)) {
+            LOG.warn("Pf4j loaded plugin: " + fetcherFactory.getClass());
+            PluginWrapper pluginWrapper = pluginManager.whichPlugin(fetcherFactory.getClass());
+            if (pluginWrapper == null) {
+                LOG.warn("Couldn't find plugin wrapper for class={}", fetcherFactory.getClass());
+                continue;
+            }
+            String pluginId = pluginWrapper.getPluginId();
+            Set<String> ids = fetcherPluginConfigs.getIdsByPluginId(pluginId);
+            if (ids.isEmpty()) {
+                LOG.warn("Couldn't find config for class={} pluginId={}. Skipping", fetcherFactory.getClass(), pluginId);
+            }
+            for (String id : ids) {
+                Optional<PluginConfig> pluginConfigOpt = fetcherPluginConfigs.getById(id);
+                if (pluginConfigOpt.isEmpty()) {
+                    LOG.warn("Couldn't find config for id={}", id);
+                } else {
+                    PluginConfig pluginConfig = pluginConfigOpt.get();
+                    Fetcher fetcher = fetcherFactory.buildPlugin(pluginConfig);
+                    fetcherMap.put(pluginConfig.id(), fetcher);
+                }
+            }
+        }
+        return new FetcherManager(fetcherMap);
+    }
+
     private final Map<String, Fetcher> fetcherMap = new ConcurrentHashMap<>();
 
-    public FetcherManager(List<Fetcher> fetchers) throws TikaConfigException {
-        for (Fetcher fetcher : fetchers) {
-            String name = fetcher.getName();
-            if (name == null || name.isBlank()) {
-                throw new TikaConfigException("fetcher name must not be blank");
-            }
-            if (fetcherMap.containsKey(fetcher.getName())) {
-                throw new TikaConfigException(
-                        "Multiple fetchers cannot support the same prefix: " + fetcher.getName());
-            }
-            fetcherMap.put(fetcher.getName(), fetcher);
-        }
+    private FetcherManager(Map<String, Fetcher> fetcherMap) throws TikaConfigException {
+        this.fetcherMap.putAll(fetcherMap);
     }
 
-    public Fetcher getFetcher(String fetcherName) throws IOException, TikaException {
-        Fetcher fetcher = fetcherMap.get(fetcherName);
+
+    public Fetcher getFetcher(String id) throws IOException, TikaException {
+        Fetcher fetcher = fetcherMap.get(id);
         if (fetcher == null) {
             throw new IllegalArgumentException(
-                    "Can't find fetcher for fetcherName: " + fetcherName + ". I've loaded: " +
+                    "Can't find fetcher for id=" + id + ". I've loaded: " +
                             fetcherMap.keySet());
         }
         return fetcher;
@@ -80,11 +132,11 @@ public class FetcherManager extends ConfigBase {
      * @return
      */
     public Fetcher getFetcher() {
-        if (fetcherMap.size() == 0) {
+        if (fetcherMap.isEmpty()) {
             throw new IllegalArgumentException("fetchers size must == 1 for the no arg call");
         }
         if (fetcherMap.size() > 1) {
-            throw new IllegalArgumentException("need to specify 'fetcherName' if > 1 fetchers are" +
+            throw new IllegalArgumentException("need to specify 'fetcherId' if > 1 fetchers are" +
                     " available");
         }
         for (Fetcher fetcher : fetcherMap.values()) {

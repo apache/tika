@@ -41,7 +41,6 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 class TikaConfigAsyncWriter {
@@ -49,8 +48,8 @@ class TikaConfigAsyncWriter {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaAsyncCLI.class);
 
-    static final String FETCHER_NAME = "fsf";
-    static final String EMITTER_NAME = "fse";
+    protected static final String FETCHER_NAME = "fsf";
+    protected static final String EMITTER_NAME = "fse";
 
     private final SimpleAsyncConfig simpleAsyncConfig;
 
@@ -91,9 +90,6 @@ class TikaConfigAsyncWriter {
             }
         }
 
-        writePipesIterator(document, properties, baseInput);
-        writeFetchers(document, properties, baseInput);
-        writeEmitters(document, properties, baseOutput);
         writeAsync(document, properties, output);
         Transformer transformer = TransformerFactory
                 .newInstance().newTransformer();
@@ -105,69 +101,6 @@ class TikaConfigAsyncWriter {
             transformer.transform(source, result);
         }
 
-    }
-
-    private void writePipesIterator(Document document, Element properties, Path baseInput) {
-        Element pipesIterator = findChild("pipesIterator", properties);
-        if (pipesIterator != null) {
-            LOG.info("pipesIterator already exists in tika-config. Not overwriting with commandline");
-            return;
-        }
-        if (! StringUtils.isBlank(simpleAsyncConfig.getFileList())) {
-            writeFileListIterator(document, properties, baseInput);
-        } else {
-            writeFileSystemIterator(document, properties, baseInput);
-        }
-    }
-
-    private void writeFileSystemIterator(Document document, Element properties, Path baseInput) {
-        Element pipesIterator = createAndGetElement(document, properties, "pipesIterator",
-                "class", "org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator");
-        appendTextElement(document, pipesIterator, "basePath", baseInput.toAbsolutePath().toString());
-        appendTextElement(document, pipesIterator, "fetcherName", FETCHER_NAME);
-        appendTextElement(document, pipesIterator, "emitterName", EMITTER_NAME);
-    }
-
-    private void writeFileListIterator(Document document, Element properties, Path baseInput) {
-        Element pipesIterator = createAndGetElement(document, properties, "pipesIterator",
-                "class", "org.apache.tika.pipes.pipesiterator.filelist.FileListPipesIterator");
-        appendTextElement(document, pipesIterator, "fetcherName", FETCHER_NAME);
-        appendTextElement(document, pipesIterator, "emitterName", EMITTER_NAME);
-        appendTextElement(document, pipesIterator, "fileList",
-                baseInput.toAbsolutePath().toString());
-        appendTextElement(document, pipesIterator, "hasHeader", "false");
-    }
-
-    private void writeEmitters(Document document, Element properties, Path baseOutput) {
-        Element emitters = findChild("emitters", properties);
-        if (emitters != null) {
-            LOG.info("emitters already exist in tika-config. Not overwriting with commandline");
-            return;
-        }
-
-        emitters = createAndGetElement(document, properties, "emitters");
-        Element emitter = createAndGetElement( document, emitters, "emitter",
-                "class", "org.apache.tika.pipes.emitter.fs.FileSystemEmitter");
-        appendTextElement(document, emitter, "name", EMITTER_NAME);
-        appendTextElement(document, emitter, "basePath", baseOutput.toAbsolutePath().toString());
-    }
-
-    private void writeFetchers(Document document, Element properties, Path baseInput) {
-        Element fetchers = findChild("fetchers", properties);
-        if (fetchers != null) {
-            LOG.info("fetchers already exist in tika-config. Not overwriting with commandline");
-            return;
-        }
-
-        fetchers = createAndGetElement(document, properties, "fetchers");
-        Element fetcher = createAndGetElement(document, fetchers, "fetcher",
-                "class", "org.apache.tika.pipes.fetcher.fs.FileSystemFetcher");
-        appendTextElement(document, fetcher, "name", FETCHER_NAME);
-        if (!StringUtils.isBlank(simpleAsyncConfig.getInputDir())) {
-            appendTextElement(document, fetcher, "basePath", baseInput.toAbsolutePath().toString());
-        } else {
-            appendTextElement(document, fetcher, "basePath", "");
-        }
     }
 
     private void writeAsync(Document document, Element properties, Path thisTikaConfig) {

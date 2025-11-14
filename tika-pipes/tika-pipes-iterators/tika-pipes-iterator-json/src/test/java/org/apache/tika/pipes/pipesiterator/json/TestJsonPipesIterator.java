@@ -23,7 +23,7 @@ import java.util.Iterator;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 
 @Disabled("until we can write actual tests")
 public class TestJsonPipesIterator {

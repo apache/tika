@@ -43,7 +43,7 @@ import org.apache.tika.eval.core.tokens.TokenIntPair;
 import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
 
 public class ExtractComparer extends ProfilerBase {
 

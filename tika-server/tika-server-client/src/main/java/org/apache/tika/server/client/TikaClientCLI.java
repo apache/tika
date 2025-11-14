@@ -35,9 +35,10 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
 
 public class TikaClientCLI {
 
@@ -46,18 +47,19 @@ public class TikaClientCLI {
 
     public static void main(String[] args) throws Exception {
         Path tikaConfigPath = Paths.get(args[0]);
+        Path pluginsConfigPath = Paths.get(args[1]);
         TikaClientCLI cli = new TikaClientCLI();
-        cli.execute(tikaConfigPath);
+        cli.execute(tikaConfigPath, pluginsConfigPath);
     }
 
-    private void execute(Path tikaConfigPath) throws TikaException, IOException, SAXException {
+    private void execute(Path tikaConfigPath, Path pluginsConfigPath) throws TikaException, IOException, SAXException {
         TikaServerClientConfig clientConfig = TikaServerClientConfig.build(tikaConfigPath);
 
         ExecutorService executorService = Executors.newFixedThreadPool(clientConfig.getNumThreads() + 1);
 
         ExecutorCompletionService<Long> completionService = new ExecutorCompletionService<>(executorService);
 
-        final PipesIterator pipesIterator = PipesIterator.build(tikaConfigPath);
+        final PipesIterator pipesIterator = PipesIteratorManager.load(pluginsConfigPath);
 
         final ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(QUEUE_SIZE);
 

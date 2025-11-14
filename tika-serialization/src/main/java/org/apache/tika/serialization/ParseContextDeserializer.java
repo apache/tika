@@ -66,7 +66,7 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
         JsonNode valNode = jsonObj.get(key);
         if (valNode == null) {
             if (isRequired) {
-                throw new IOException("required value string, but see: " + key);
+                throw new IOException("Sorry, no value for key=" + key);
             }
             return defaultRet;
         }

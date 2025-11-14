@@ -23,7 +23,6 @@ import java.nio.file.Path;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.core.PipesConfigBase;
-import org.apache.tika.pipes.core.PipesReporter;
 
 public class AsyncConfig extends PipesConfigBase {
 
@@ -35,16 +34,17 @@ public class AsyncConfig extends PipesConfigBase {
 
     private boolean emitIntermediateResults = false;
 
-    private PipesReporter pipesReporter = PipesReporter.NO_OP_REPORTER;
-
-    public static AsyncConfig load(Path p) throws IOException, TikaConfigException {
+    public static AsyncConfig load(Path tikaConfig, Path pipesPluginsConfig) throws IOException, TikaConfigException {
         AsyncConfig asyncConfig = new AsyncConfig();
-        try (InputStream is = Files.newInputStream(p)) {
-            asyncConfig.configure("async", is);
+        if (tikaConfig != null) {
+            try (InputStream is = Files.newInputStream(tikaConfig)) {
+                asyncConfig.configure("async", is);
+            }
         }
         if (asyncConfig.getTikaConfig() == null) {
-            asyncConfig.setTikaConfig(p);
+            asyncConfig.setTikaConfig(tikaConfig);
         }
+        asyncConfig.setPipesPluginsConfig(pipesPluginsConfig);
         return asyncConfig;
     }
 
@@ -100,14 +100,6 @@ public class AsyncConfig extends PipesConfigBase {
      */
     public int getNumEmitters() {
         return numEmitters;
-    }
-
-    public PipesReporter getPipesReporter() {
-        return pipesReporter;
-    }
-
-    public void setPipesReporter(PipesReporter pipesReporter) {
-        this.pipesReporter = pipesReporter;
     }
 
     public void setEmitIntermediateResults(boolean emitIntermediateResults) {

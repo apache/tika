@@ -1,0 +1,20 @@
+{
+  "plugins": {
+    "fetchers": {
+      "fsf": {
+        "file-system-fetcher": {
+          "basePath": "FETCHER_BASE_PATH",
+          "extractFileSystemMetadata": false
+        }
+      }
+    },
+    "emitters": {
+      "fse": {
+        "file-system-emitter" : {
+          "basePath": "EMITTER_BASE_PATH",
+          "fileExtension": "json"
+        }
+      }
+    }
+  }
+}

@@ -53,14 +53,14 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
 import org.apache.tika.utils.StringUtils;
 
-public class S3PipesIterator extends PipesIterator implements Initializable {
+public class S3PipesIterator extends PipesIteratorBase implements Initializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PipesIterator.class);
     private String prefix = "";
@@ -196,8 +196,8 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        String fetcherName = getFetcherName();
-        String emitterName = getEmitterName();
+        String fetcherPluginId = getFetcherName();
+        String emitterName = getEmitterPluginId();
         long start = System.currentTimeMillis();
         int count = 0;
         HandlerConfig handlerConfig = getHandlerConfig();
@@ -207,7 +207,7 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
         } else {
             fileNameMatcher = null;
         }
-        
+
         ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).build();
         List<S3Object> s3ObjectList = s3Client.listObjectsV2Paginator(listObjectsV2Request).stream().
                 flatMap(resp -> resp.contents().stream()).toList();
@@ -221,7 +221,7 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
             //TODO -- allow user specified metadata as the "id"?
             ParseContext parseContext = new ParseContext();
             parseContext.set(HandlerConfig.class, handlerConfig);
-            tryToAdd(new FetchEmitTuple(key, new FetchKey(fetcherName, key), new EmitKey(emitterName, key), new Metadata(), parseContext,
+            tryToAdd(new FetchEmitTuple(summary.getKey(), new FetchKey(fetcherPluginId, summary.getKey()), new EmitKey(emitterName, summary.getKey()), new Metadata(), parseContext,
                     getOnParseException()));
             count++;
         }

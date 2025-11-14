@@ -68,47 +68,12 @@
     <emitWithinMillis>60000</emitWithinMillis>
     <numEmitters>1</numEmitters>
     <numClients>3</numClients>
-    <tikaConfig>{TIKA_CONFIG}</tikaConfig>
+    <tikaConfig>TIKA_CONFIG</tikaConfig>
     <forkedJvmArgs>
       <arg>-Xmx512m</arg>
       <arg>-XX:ParallelGCThreads=2</arg>
-      <arg>-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}</arg>
+      <arg>-Dlog4j.configurationFile=LOG4J_PROPERTIES_FILE</arg>
     </forkedJvmArgs>
     <timeoutMillis>60000</timeoutMillis>
-    <pipesReporter class="org.apache.tika.pipes.reporters.opensearch.OpenSearchPipesReporter">
-      <openSearchUrl>{OPENSEARCH_CONNECTION}</openSearchUrl>
-      <keyPrefix>my_test_</keyPrefix>
-      <connectionTimeout>10000</connectionTimeout>
-      <socketTimeout>60000</socketTimeout>
-      <includeRouting>{INCLUDE_ROUTING}</includeRouting>
-      <userName>{OPENSEARCH_USERNAME}</userName>
-      <password>{OPENSEARCH_PASSWORD}</password>
-    </pipesReporter>
   </async>
-  <fetchers>
-    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
-      <name>fsf</name>
-      <basePath>{PATH_TO_DOCS}</basePath>
-    </fetcher>
-  </fetchers>
-  <emitters>
-    <emitter class="org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter">
-      <name>ose</name>
-      <openSearchUrl>{OPENSEARCH_CONNECTION}</openSearchUrl>
-      <updateStrategy>{UPDATE_STRATEGY}</updateStrategy>
-      <attachmentStrategy>{ATTACHMENT_STRATEGY}</attachmentStrategy>
-      <commitWithin>10</commitWithin>
-      <idField>_id</idField>
-      <connectionTimeout>10000</connectionTimeout>
-      <socketTimeout>60000</socketTimeout>
-      <userName>{OPENSEARCH_USERNAME}</userName>
-      <password>{OPENSEARCH_PASSWORD}</password>
-    </emitter>
-  </emitters>
-  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
-    <basePath>{PATH_TO_DOCS}</basePath>
-    <fetcherName>fsf</fetcherName>
-    <emitterName>ose</emitterName>
-    <parseMode>{PARSE_MODE}</parseMode>
-  </pipesIterator>
 </properties>

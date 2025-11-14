@@ -22,16 +22,18 @@ import java.io.InputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.plugins.PluginConfig;
 
 public class EmptyFetcher implements Fetcher {
 
     @Override
-    public String getName() {
-        return "empty";
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+        return null;
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
-        return null;
+    public PluginConfig getPluginConfig() {
+        return new PluginConfig("empty", "empty-fetcher", "");
     }
 }

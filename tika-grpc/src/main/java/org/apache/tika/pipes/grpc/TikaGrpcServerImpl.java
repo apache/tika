@@ -70,15 +70,12 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesResult;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
-import org.apache.tika.pipes.core.fetcher.config.FetcherConfigContainer;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.utils.XMLReaderUtils;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
@@ -144,9 +141,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                     });
             Element fetcher = tikaConfigDoc.createElement("fetcher");
             fetcher.setAttribute("class", fetcherEntry.getValue().getClass().getName());
-            Element fetcherName = tikaConfigDoc.createElement("name");
-            fetcherName.setTextContent(fetcherObject.getName());
-            fetcher.appendChild(fetcherName);
+            Element fetcherPluginId = tikaConfigDoc.createElement("name");
+            fetcherPluginId.setTextContent(fetcherObject.getName());
+            fetcher.appendChild(fetcherPluginId);
             populateFetcherConfigs(fetcherConfigParams, tikaConfigDoc, fetcher);
             fetchersElement.appendChild(fetcher);
         }
@@ -414,7 +411,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         responseObserver.onCompleted();
     }
 
-    private boolean deleteFetcher(String fetcherName) {
+    private boolean deleteFetcher(String fetcherPluginId) {
         return expiringFetcherStore.deleteFetcher(fetcherName);
     }
 }

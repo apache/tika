@@ -35,7 +35,7 @@ import org.apache.http.util.EntityUtils;
 
 import org.apache.tika.pipes.emitter.opensearch.JsonResponse;
 import org.apache.tika.pipes.emitter.opensearch.OpenSearchClient;
-import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
+import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitterConfig;
 
 /**
  * This expands on the OpenSearchClient for testing purposes.
@@ -43,11 +43,8 @@ import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
  */
 public class OpensearchTestClient extends OpenSearchClient {
 
-    public OpensearchTestClient(String openSearchUrl, HttpClient httpClient,
-                                OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
-                                OpenSearchEmitter.UpdateStrategy updateStrategy,
-                                String embeddedFileFieldName) {
-        super(openSearchUrl, httpClient, attachmentStrategy, updateStrategy, embeddedFileFieldName);
+    public OpensearchTestClient(OpenSearchEmitterConfig config, HttpClient httpClient) {
+        super(config, httpClient);
     }
 
     public JsonResponse putJson(String url, String json) throws IOException {

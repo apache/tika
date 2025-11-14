@@ -44,7 +44,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
-import org.apache.tika.pipes.core.HandlerConfig;
 import org.apache.tika.pipes.emitter.solr.SolrEmitter;
 import org.apache.tika.utils.SystemUtils;
 
