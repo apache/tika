@@ -21,6 +21,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -103,7 +104,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             TransformerException, SAXException {
         File tikaConfigFile = new File(tikaConfigPath);
         if (!tikaConfigFile.canWrite()) {
-            File tmpTikaConfigFile = File.createTempFile("configCopy", tikaConfigFile.getName());
+            File tmpTikaConfigFile = Files.createTempFile("configCopy", tikaConfigFile.getName()).toFile();
             tmpTikaConfigFile.deleteOnExit();
             LOG.info("Tika config file {} is read-only. Making a temporary copy to {}", tikaConfigFile, tmpTikaConfigFile);
             String tikaConfigFileContents = FileUtils.readFileToString(tikaConfigFile, StandardCharsets.UTF_8);
