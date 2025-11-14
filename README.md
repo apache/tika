@@ -22,9 +22,7 @@ Tika jars can be fetched from Maven Central or your favourite Maven mirror.
 See [Tika Roadmap 2.x, 3.x and beyond](https://cwiki.apache.org/confluence/display/TIKA/Tika+Roadmap+--+2.x%2C+3.x+and+Beyond).** 
 
 Tika is based on **Java 17** and uses the [Maven 3](https://maven.apache.org) build system. 
-**N.B.** [Docker](https://www.docker.com/products/personal) is used for tests in tika-integration-tests.
-As of Tika 2.5.1, if Docker is not installed, those tests are skipped.  Docker is required for a successful
-build on earlier 2.x versions.
+**N.B.** [Docker](https://www.docker.com/products/personal) is used for tests in tika-integration-tests. If Docker is not installed, those tests are skipped.
 
 To build Tika from source, use the following command in the main directory:
 
