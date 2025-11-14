@@ -17,29 +17,28 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.1.0 https://maven.apache.org/xsd/maven-4.1.0.xsd">
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-pipes</artifactId>
     <version>4.0.0-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.1.0</modelVersion>
 
   <artifactId>tika-emitters</artifactId>
   <name>Apache Tika emitters</name>
   <url>https://tika.apache.org/</url>
   <packaging>pom</packaging>
 
-  <modules>
-    <module>tika-emitter-s3</module>
-    <module>tika-emitter-kafka</module>
-    <module>tika-emitter-solr</module>
-    <module>tika-emitter-opensearch</module>
-    <module>tika-emitter-gcs</module>
-    <module>tika-emitter-az-blob</module>
-    <module>tika-emitter-jdbc</module>
-  </modules>
+  <subprojects>
+    <subproject>tika-emitter-s3</subproject>
+    <subproject>tika-emitter-kafka</subproject>
+    <subproject>tika-emitter-solr</subproject>
+    <subproject>tika-emitter-opensearch</subproject>
+    <subproject>tika-emitter-gcs</subproject>
+    <subproject>tika-emitter-az-blob</subproject>
+    <subproject>tika-emitter-jdbc</subproject>
+  </subprojects>
 
   <build>
     <plugins>

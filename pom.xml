@@ -19,14 +19,13 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.1.0 https://maven.apache.org/xsd/maven-4.1.0.xsd">
+  <modelVersion>4.1.0</modelVersion>
 
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
     <version>4.0.0-SNAPSHOT</version>
-    <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
   <artifactId>tika</artifactId>
@@ -34,27 +33,27 @@
   <name>Apache Tika</name>
   <url>https://tika.apache.org</url>
 
-  <modules>
-    <module>tika-parent</module>
-    <module>tika-bom</module>
-    <module>tika-core</module>
-    <module>tika-serialization</module>
-    <module>tika-detectors</module>
-    <module>tika-parsers</module>
-    <module>tika-bundles</module>
-    <module>tika-xmp</module>
-    <module>tika-langdetect</module>
-    <module>tika-pipes</module>
-    <module>tika-grpc</module>
-    <module>tika-app</module>
-    <module>tika-server</module>
-    <module>tika-integration-tests</module>
-    <module>tika-eval</module>
-    <module>tika-translate</module>
-    <module>tika-example</module>
-    <module>tika-java7</module>
-    <module>tika-handlers</module>
-  </modules>
+  <subprojects>
+    <subproject>tika-parent</subproject>
+    <subproject>tika-bom</subproject>
+    <subproject>tika-core</subproject>
+    <subproject>tika-serialization</subproject>
+    <subproject>tika-detectors</subproject>
+    <subproject>tika-parsers</subproject>
+    <subproject>tika-bundles</subproject>
+    <subproject>tika-xmp</subproject>
+    <subproject>tika-langdetect</subproject>
+    <subproject>tika-pipes</subproject>
+    <subproject>tika-grpc</subproject>
+    <subproject>tika-app</subproject>
+    <subproject>tika-server</subproject>
+    <subproject>tika-integration-tests</subproject>
+    <subproject>tika-eval</subproject>
+    <subproject>tika-translate</subproject>
+    <subproject>tika-example</subproject>
+    <subproject>tika-java7</subproject>
+    <subproject>tika-handlers</subproject>
+  </subprojects>
 
   <profiles>
     <profile>
