@@ -86,7 +86,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaGrpcServerImpl.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     static {
-        OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        //TODO with Jackson 3.0 we'll have to use MapperBuilder
+        OBJECT_MAPPER.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
     }
     public static final JsonSchemaGenerator JSON_SCHEMA_GENERATOR = new JsonSchemaGenerator(OBJECT_MAPPER);
 
