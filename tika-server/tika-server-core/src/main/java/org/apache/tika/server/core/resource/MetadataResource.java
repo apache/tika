@@ -41,8 +41,10 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.server.core.TikaOpenTelemetry;
 
 
 @Path("/meta")
@@ -137,12 +139,44 @@ public class MetadataResource {
         //no need to parse embedded docs
         context.set(DocumentSelector.class, metadata1 -> false);
 
-        TikaResource.logRequest(LOG, "/meta", metadata);
-        TikaResource.parse(parser, LOG, info.getPath(), is, new LanguageHandler() {
-            public void endDocument() {
-                metadata.set("language", getLanguage().getLanguage());
+        String fileName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+
+        // Start OpenTelemetry span for metadata extraction operation
+        io.opentelemetry.api.trace.Span span = null;
+        if (TikaOpenTelemetry.isEnabled()) {
+            span = TikaOpenTelemetry.getTracer()
+                    .spanBuilder("tika.metadata.extract")
+                    .setAttribute("tika.resource_name", fileName != null ? fileName : "unknown")
+                    .setAttribute("tika.endpoint", "/meta")
+                    .startSpan();
+        }
+
+        try {
+            TikaResource.logRequest(LOG, "/meta", metadata);
+            TikaResource.parse(parser, LOG, info.getPath(), is, new LanguageHandler() {
+                public void endDocument() {
+                    metadata.set("language", getLanguage().getLanguage());
+                }
+            }, metadata, context);
+
+            // Add metadata count to span
+            if (span != null) {
+                span.setAttribute("tika.metadata_count", metadata.names().length);
+                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
             }
-        }, metadata, context);
-        return metadata;
+
+            return metadata;
+        } catch (IOException e) {
+            if (span != null) {
+                span.recordException(e);
+                span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR,
+                        "Metadata extraction error");
+            }
+            throw e;
+        } finally {
+            if (span != null) {
+                span.end();
+            }
+        }
     }
 }

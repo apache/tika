@@ -1,0 +1,47 @@
+# Docker Compose configuration for OpenTelemetry observability stack
+# This sets up Jaeger for trace collection and visualization
+version: '3.8'
+
+services:
+  # Jaeger all-in-one: collector, query service, and UI
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: tika-jaeger
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC receiver
+      - "4318:4318"    # OTLP HTTP receiver
+      - "14250:14250"  # Jaeger gRPC
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=info
+    networks:
+      - tika-otel
+    restart: unless-stopped
+
+  # Optional: Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tika-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - tika-otel
+    restart: unless-stopped
+    profiles:
+      - with-metrics
+
+networks:
+  tika-otel:
+    driver: bridge
+
+volumes:
+  prometheus-data:
