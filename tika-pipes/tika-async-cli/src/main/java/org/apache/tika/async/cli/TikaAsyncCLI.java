@@ -42,7 +42,7 @@ import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.utils.StringUtils;
 
@@ -340,7 +340,7 @@ public class TikaAsyncCLI {
         }
 
         @Override
-        public PluginConfig getPluginConfig() {
+        public ExtensionConfig getExtensionConfig() {
             return null;
         }
     }

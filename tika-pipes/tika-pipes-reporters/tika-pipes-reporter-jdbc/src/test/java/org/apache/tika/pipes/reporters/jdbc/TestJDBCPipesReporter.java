@@ -51,7 +51,7 @@ import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 
 public class TestJDBCPipesReporter {
@@ -86,7 +86,7 @@ public class TestJDBCPipesReporter {
         int numThreads = 10;
         int numIterations = 200;
         String json = JSON_TEMPLATE.replace("CONNECTION_STRING", connectionString);
-        JDBCPipesReporter reporter = JDBCPipesReporter.build(new PluginConfig("", "", json));
+        JDBCPipesReporter reporter = JDBCPipesReporter.build(new ExtensionConfig("", "", json));
 
         Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
         reporter.close();
@@ -110,7 +110,7 @@ public class TestJDBCPipesReporter {
 
 
         String json = JSON_TEMPLATE_INCLUDES.replace("CONNECTION_STRING", connectionString);
-        JDBCPipesReporter reporter = JDBCPipesReporter.build(new PluginConfig("", "", json));
+        JDBCPipesReporter reporter = JDBCPipesReporter.build(new ExtensionConfig("", "", json));
         int numThreads = 10;
         int numIterations = 200;
 
@@ -138,7 +138,7 @@ public class TestJDBCPipesReporter {
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
 
         String json = JSON_TEMPLATE_EXCLUDES.replace("CONNECTION_STRING", connectionString);
-        JDBCPipesReporter reporter = JDBCPipesReporter.build(new PluginConfig("", "", json));
+        JDBCPipesReporter reporter = JDBCPipesReporter.build(new ExtensionConfig("", "", json));
         int numThreads = 10;
         int numIterations = 200;
 

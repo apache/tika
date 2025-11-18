@@ -32,9 +32,9 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
-import org.apache.tika.plugins.PluginConfig;
-import org.apache.tika.plugins.PluginConfigs;
-import org.apache.tika.plugins.TikaPluginsManager;
+import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.ExtensionConfigs;
+import org.apache.tika.plugins.TikaExtensionConfigsManager;
 
 /**
  * Utility class to hold a single pipes iterator
@@ -53,22 +53,26 @@ public class PipesIteratorManager {
 
     public static PipesIterator load(InputStream is) throws IOException, TikaConfigException {
         //this will throw a TikaConfigException if "fetchers" is not loaded
-        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(is, true, TikaPluginsManager.PLUGIN_TYPES.PIPES_ITERATOR);
-        return load(tikaPluginsManager);
+        TikaExtensionConfigsManager tikaExtensionConfigsManager = TikaExtensionConfigsManager.load(is, true, TikaExtensionConfigsManager.EXTENSION_TYPES.PIPES_ITERATOR);
+        return load(tikaExtensionConfigsManager);
     }
 
-    public static PipesIterator load(TikaPluginsManager tikaPluginsManager) throws IOException, TikaConfigException {
-        Optional<PluginConfigs> pipesIteratorPluginConfigsOpt = tikaPluginsManager.get(TikaPluginsManager.PLUGIN_TYPES.PIPES_ITERATOR);
+    public static PipesIterator load(TikaExtensionConfigsManager tikaExtensionConfigsManager) throws IOException, TikaConfigException {
+        Optional<ExtensionConfigs> pipesIteratorPluginConfigsOpt = tikaExtensionConfigsManager.get(TikaExtensionConfigsManager.EXTENSION_TYPES.PIPES_ITERATOR);
+        return null;
+        /*
         if (pipesIteratorPluginConfigsOpt.isEmpty()) {
             throw new TikaConfigException("Forgot to load 'pipesIterator'?");
         }
-        PluginConfigs pipesIteratorConfig = pipesIteratorPluginConfigsOpt.get();
+        ExtensionConfigs pipesIteratorConfig = pipesIteratorPluginConfigsOpt.get();
         PluginManager pluginManager = null;
-        if (! tikaPluginsManager.getPluginsPaths().isEmpty()) {
-            LOG.warn("LOADING WITH PLUGINS PATHS: {}", tikaPluginsManager.getPluginsPaths());
-            pluginManager = new DefaultPluginManager(tikaPluginsManager.getPluginsPaths().toArray(new Path[0]));
+        if (! tikaExtensionConfigsManager
+                .getPluginRoots().isEmpty()) {
+            LOG.warn("LOADING WITH PLUGINS PATHS: {}", tikaExtensionConfigsManager.getPluginRoots());
+            pluginManager = new DefaultPluginManager(tikaExtensionConfigsManager
+                    .getPluginRoots().toArray(new Path[0]));
         } else {
-            LOG.warn("NOT LOADING WITH PLUGINS PATHS: {}", tikaPluginsManager.getPluginsPaths());
+            LOG.warn("NOT LOADING WITH PLUGINS PATHS: {}", tikaExtensionConfigsManager.getPluginRoots());
             pluginManager = new DefaultPluginManager();
         }
         pluginManager.loadPlugins();
@@ -92,17 +96,17 @@ public class PipesIteratorManager {
                 throw new TikaConfigException(msg);
             }
             for (String id : ids) {
-                Optional<PluginConfig> pluginConfigOpt = pipesIteratorConfig.getById(id);
+                Optional<ExtensionConfig> pluginConfigOpt = pipesIteratorConfig.getById(id);
                 if (pluginConfigOpt.isEmpty()) {
                     throw new TikaConfigException("Couldn't find config for id=" + id);
                 } else {
-                    PluginConfig pluginConfig = pluginConfigOpt.get();
+                    ExtensionConfig pluginConfig = pluginConfigOpt.get();
                     PipesIterator pipesIterator = pipesIteratorFactory.buildPlugin(pluginConfig);
                     return pipesIterator;
                 }
             }
         }
-        throw new TikaConfigException("Couldn't find a pipes_iterator plugin");
+        throw new TikaConfigException("Couldn't find a pipes_iterator plugin");*/
     }
 
 }

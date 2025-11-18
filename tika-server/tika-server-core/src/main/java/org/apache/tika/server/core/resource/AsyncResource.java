@@ -117,7 +117,7 @@ public class AsyncResource {
                         .getEmitKey()
                         .getEmitterId());
             }
-            ParseContext parseContext = t.getParseContext();
+            ParseContext parseContext = t.getParseConfigs();
             EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
             if (embeddedDocumentBytesConfig != null && embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
                     !StringUtils.isAllBlank(embeddedDocumentBytesConfig.getEmitter())) {

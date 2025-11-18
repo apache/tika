@@ -37,9 +37,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
 
-public class TikaPluginsManager {
+public class TikaExtensionConfigsManager {
 
-    public enum PLUGIN_TYPES {
+    public enum EXTENSION_TYPES {
         FETCHERS,
         EMITTERS,
         PIPES_ITERATOR,
@@ -56,23 +56,23 @@ public class TikaPluginsManager {
     public static JsonNode loadRoot(InputStream is) throws IOException {
         return new ObjectMapper().readTree(new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)));
     }
-    public static TikaPluginsManager load(InputStream is, String ... items) throws IOException, TikaConfigException {
+    public static TikaExtensionConfigsManager load(InputStream is, String ... items) throws IOException, TikaConfigException {
         return load(is, true, items);
     }
 
-    public static TikaPluginsManager load(InputStream is, boolean throwOnMissing, String ... items) throws IOException, TikaConfigException {
+    public static TikaExtensionConfigsManager load(InputStream is, boolean throwOnMissing, String ... items) throws IOException, TikaConfigException {
         JsonNode root = loadRoot(is);
         JsonNode plugins = root.get("plugins");
         if (plugins == null) {
             if (throwOnMissing) {
                 throw new TikaConfigException("Couldn't find 'plugins' node");
             }
-            return new TikaPluginsManager(Map.of(), List.of());
+            return new TikaExtensionConfigsManager(Map.of(), List.of());
         }
 
-        Map<String, PluginConfigs> pluginConfigsMap = new HashMap<>();
+        Map<String, ExtensionConfigs> pluginConfigsMap = new HashMap<>();
         for (String item : items) {
-            pluginConfigsMap.put(item, loadPluginConfigs(item, plugins, throwOnMissing));
+            pluginConfigsMap.put(item, loadExtensionConfigs(item, plugins, throwOnMissing));
         }
         List<String> pluginsPaths = new ArrayList<>();
         if (root.has("pluginsPaths")) {
@@ -87,10 +87,10 @@ public class TikaPluginsManager {
                 pluginsPaths.add(pluginsPathsNode.asText());
             }
         }
-        return new TikaPluginsManager(pluginConfigsMap, pluginsPaths);
+        return new TikaExtensionConfigsManager(pluginConfigsMap, pluginsPaths);
     }
 
-    public static TikaPluginsManager load(InputStream is, boolean throwOnMissing, PLUGIN_TYPES ... types) throws IOException, TikaConfigException {
+    public static TikaExtensionConfigsManager load(InputStream is, boolean throwOnMissing, EXTENSION_TYPES... types) throws IOException, TikaConfigException {
         String[] args = new String[types.length];
         for (int i = 0; i < types.length; i++) {
             args[i] = types[i].name().toLowerCase(Locale.ROOT);
@@ -98,36 +98,36 @@ public class TikaPluginsManager {
         return load(is, throwOnMissing, args);
     }
 
-    public static PluginConfigs loadPluginConfigs(PLUGIN_TYPES type, JsonNode plugins, boolean throwOnMissing) throws TikaConfigException {
-        return loadPluginConfigs(type.name().toLowerCase(Locale.ROOT), plugins, throwOnMissing);
+    public static ExtensionConfigs loadExtensionConfigs(EXTENSION_TYPES type, JsonNode plugins, boolean throwOnMissing) throws TikaConfigException {
+        return loadExtensionConfigs(type.name().toLowerCase(Locale.ROOT), plugins, throwOnMissing);
     }
 
-    public static PluginConfigs loadPluginConfigs(String item, JsonNode plugins, boolean throwOnMissing) throws TikaConfigException {
+    public static ExtensionConfigs loadExtensionConfigs(String item, JsonNode plugins, boolean throwOnMissing) throws TikaConfigException {
         JsonNode itemNode = plugins.get(item);
         if (itemNode == null) {
             if (throwOnMissing) {
                 throw new TikaConfigException("Couldn't find " + item + " under 'plugins'");
             } else {
-                return new PluginConfigs();
+                return new ExtensionConfigs();
             }
         }
-        PluginConfigs pluginConfigs = new PluginConfigs();
+        ExtensionConfigs extensionConfigs = new ExtensionConfigs();
         int configs = 0;
         for (Iterator<String> it = itemNode.fieldNames(); it.hasNext(); ) {
             String id = it.next();
-            JsonNode pluginNode = itemNode.get(id);
-            if (pluginNode == null) {
+            JsonNode extensionNode = itemNode.get(id);
+            if (extensionNode == null) {
                 throw new TikaConfigException("Couldn't find node for item=" + item + " id=" + id);
             }
             int cnt = 0;
-            for (Iterator<String> pluginIds = pluginNode.fieldNames(); pluginIds.hasNext(); ) {
-                String pluginId = pluginIds.next();
+            for (Iterator<String> extensionIds = extensionNode.fieldNames(); extensionIds.hasNext(); ) {
+                String extensionId = extensionIds.next();
                 if (++cnt > 1) {
-                    throw new TikaConfigException("Can only have one pluginId per id: id=" + id + " pluginId=" + pluginId);
+                    throw new TikaConfigException("Can only have one extensionId per id: id=" + id + " extensionId=" + extensionId);
                 }
-                JsonNode pluginConfigNode = pluginNode.get(pluginId);
-                PluginConfig pluginConfig = new PluginConfig(id, pluginId, pluginConfigNode.toString());
-                pluginConfigs.add(pluginConfig);
+                JsonNode pluginConfigNode = extensionNode.get(extensionId);
+                ExtensionConfig pluginConfig = new ExtensionConfig(id, extensionId, pluginConfigNode.toString());
+                extensionConfigs.add(pluginConfig);
             }
             if (cnt == 0) {
                 throw new TikaConfigException("need to have at least one plugin node for " + id);
@@ -137,29 +137,29 @@ public class TikaPluginsManager {
         if (configs == 0) {
             throw new TikaConfigException("Couldn't find any items for item=" + item);
         }
-        return pluginConfigs;
+        return extensionConfigs;
     }
 
-    private final List<String> pluginsPaths;
-    private final Map<String, PluginConfigs> pluginConfigsMap;
+    private final List<String> pluginRoots;
+    private final Map<String, ExtensionConfigs> extensionConfigsMap;
 
 
-    public TikaPluginsManager(Map<String, PluginConfigs> pluginConfigsMap, List<String> pluginsPaths) {
-        this.pluginConfigsMap = pluginConfigsMap;
-        this.pluginsPaths = pluginsPaths;
+    public TikaExtensionConfigsManager(Map<String, ExtensionConfigs> pluginConfigsMap, List<String> pluginRoots) {
+        this.extensionConfigsMap = pluginConfigsMap;
+        this.pluginRoots = pluginRoots;
     }
 
-    public Optional<PluginConfigs> get(PLUGIN_TYPES pluginType) {
-        return get(pluginType.name().toLowerCase(Locale.ROOT));
+    public Optional<ExtensionConfigs> get(EXTENSION_TYPES extensionType) {
+        return get(extensionType.name().toLowerCase(Locale.ROOT));
     }
 
-    private Optional<PluginConfigs> get(String lowerCase) {
-        return Optional.ofNullable(pluginConfigsMap.get(lowerCase));
+    private Optional<ExtensionConfigs> get(String lowerCase) {
+        return Optional.ofNullable(extensionConfigsMap.get(lowerCase));
     }
 
-    public List<Path> getPluginsPaths() {
+    public List<Path> getPluginRoots() {
         List<Path> ret = new ArrayList<>();
-        for (String p : pluginsPaths) {
+        for (String p : pluginRoots) {
             ret.add(Paths.get(p));
         }
         return ret;

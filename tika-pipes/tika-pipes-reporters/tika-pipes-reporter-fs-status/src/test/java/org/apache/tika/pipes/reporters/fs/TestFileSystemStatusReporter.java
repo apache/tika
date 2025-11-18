@@ -44,7 +44,7 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 public class TestFileSystemStatusReporter {
 
@@ -60,8 +60,8 @@ public class TestFileSystemStatusReporter {
 
         Path path = Files.createTempFile(tmpDir, "tika-fssr-", ".xml");
 
-        FileSystemStatusReporter reporter = new FileSystemReporterFactory().buildPlugin(
-                new PluginConfig("", "", JSON_TEMPLATE.replace("STATUS_FILE", path.toAbsolutePath().toString())));
+        FileSystemStatusReporter reporter = new FileSystemReporterFactory().buildExtension(
+                new ExtensionConfig("", "", JSON_TEMPLATE.replace("STATUS_FILE", path.toAbsolutePath().toString())));
         final ObjectMapper objectMapper = JsonMapper.builder()
                 .addModule(new JavaTimeModule())
                 .build();

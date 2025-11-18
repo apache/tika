@@ -21,7 +21,7 @@ import java.io.Closeable;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
-import org.apache.tika.plugins.TikaPlugin;
+import org.apache.tika.plugins.TikaExtension;
 
 /**
  * This is called asynchronously by the AsyncProcessor. This
@@ -33,7 +33,7 @@ import org.apache.tika.plugins.TikaPlugin;
  * Implementers do not have to worry about synchronizing across processes;
  * for example, one could use an in-memory h2 database as a target.
  */
-public interface PipesReporter extends Closeable, TikaPlugin {
+public interface PipesReporter extends Closeable, TikaExtension {
 
     //Implementers are responsible for preventing reporting after
     //crashes if that is the desired behavior.

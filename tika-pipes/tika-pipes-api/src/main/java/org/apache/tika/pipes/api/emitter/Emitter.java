@@ -21,9 +21,9 @@ import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.plugins.TikaPlugin;
+import org.apache.tika.plugins.TikaExtension;
 
-public interface Emitter extends TikaPlugin {
+public interface Emitter extends TikaExtension {
 
     void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException;
 

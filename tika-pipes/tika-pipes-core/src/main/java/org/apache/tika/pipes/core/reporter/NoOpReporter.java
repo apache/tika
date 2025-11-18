@@ -23,7 +23,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 public class NoOpReporter implements PipesReporter {
 
@@ -55,7 +55,7 @@ public class NoOpReporter implements PipesReporter {
     }
 
     @Override
-    public PluginConfig getPluginConfig() {
+    public ExtensionConfig getExtensionConfig() {
         return null;
     }
 

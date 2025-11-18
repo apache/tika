@@ -19,17 +19,26 @@ package org.apache.tika.pipes.fetcher.fs;
 import java.io.IOException;
 
 import org.pf4j.Extension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 @Extension
 public class FileSystemFetcherFactory implements FetcherFactory {
 
+    private static final String EXTENSION_NAME = "file-system-fetcher";
+
     @Override
-    public Fetcher buildPlugin(PluginConfig pluginConfig) throws IOException, TikaConfigException {
-        return FileSystemFetcher.build(pluginConfig);
+    public String getExtensionName() {
+        return EXTENSION_NAME;
+    }
+
+    @Override
+    public Fetcher buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        return new FileSystemFetcher(extensionConfig);
     }
 }

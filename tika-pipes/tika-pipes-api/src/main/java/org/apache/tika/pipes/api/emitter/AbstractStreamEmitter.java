@@ -19,12 +19,12 @@ package org.apache.tika.pipes.api.emitter;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.tika.plugins.AbstractTikaPlugin;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.AbstractTikaExtension;
+import org.apache.tika.plugins.ExtensionConfig;
 
-public abstract class AbstractStreamEmitter extends AbstractTikaPlugin implements StreamEmitter {
+public abstract class AbstractStreamEmitter extends AbstractTikaExtension implements StreamEmitter {
 
-    public AbstractStreamEmitter(PluginConfig pluginConfig) {
+    public AbstractStreamEmitter(ExtensionConfig pluginConfig) {
         super(pluginConfig);
     }
 

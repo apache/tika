@@ -30,7 +30,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.reporters.PipesReporterBase;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -47,7 +47,7 @@ public class OpenSearchPipesReporter extends PipesReporterBase {
 
 
 
-    public static OpenSearchPipesReporter build(PluginConfig pluginConfig) throws TikaConfigException, IOException {
+    public static OpenSearchPipesReporter build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
         OpenSearchReporterConfig config = OpenSearchReporterConfig.load(pluginConfig.jsonConfig());
         return new OpenSearchPipesReporter(pluginConfig, config);
     }
@@ -63,7 +63,7 @@ public class OpenSearchPipesReporter extends PipesReporterBase {
     private String exitValueKey = DEFAULT_EXIT_VALUE_KEY;
 
     private final OpenSearchReporterConfig config;
-    public OpenSearchPipesReporter(PluginConfig pluginConfig, OpenSearchReporterConfig config) throws TikaConfigException {
+    public OpenSearchPipesReporter(ExtensionConfig pluginConfig, OpenSearchReporterConfig config) throws TikaConfigException {
         super(pluginConfig, config.includes(), config.excludes());
         this.config = config;
         init();

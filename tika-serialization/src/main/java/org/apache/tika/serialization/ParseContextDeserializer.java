@@ -19,6 +19,7 @@ package org.apache.tika.serialization;
 import static org.apache.tika.serialization.ParseContextSerializer.PARSE_CONTEXT;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JacksonException;
@@ -27,6 +28,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.parser.ParseContext;
 
 public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
@@ -47,17 +49,34 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             contextNode = jsonNode;
         }
         ParseContext parseContext = new ParseContext();
-        for (Map.Entry<String, JsonNode> e : contextNode.properties()) {
-            String superClassName = e.getKey();
-            JsonNode obj = e.getValue();
-            String className = readVal(TikaJsonSerializer.INSTANTIATED_CLASS_KEY, obj, null, true);
-            try {
-                Class clazz = Class.forName(className);
-                Class superClazz = className.equals(superClassName) ? clazz : Class.forName(superClassName);
-                parseContext.set(superClazz, TikaJsonDeserializer.deserialize(clazz, obj));
-            } catch (ReflectiveOperationException ex) {
-                throw new IOException(ex);
+        if (contextNode.has("objects")) {
+            for (Map.Entry<String, JsonNode> e : contextNode
+                    .get("objects")
+                    .properties()) {
+                String superClassName = e.getKey();
+                JsonNode obj = e.getValue();
+                String className = readVal(TikaJsonSerializer.INSTANTIATED_CLASS_KEY, obj, null, true);
+                try {
+                    Class clazz = Class.forName(className);
+                    Class superClazz = className.equals(superClassName) ? clazz : Class.forName(superClassName);
+                    parseContext.set(superClazz, TikaJsonDeserializer.deserialize(clazz, obj));
+                } catch (ReflectiveOperationException ex) {
+                    throw new IOException(ex);
+                }
             }
+        }
+        ConfigContainer configContainer = null;
+        for (Iterator<String> it = contextNode.fieldNames(); it.hasNext(); ) {
+            String nodeName = it.next();
+            if (! "objects".equals(nodeName)) {
+                if (configContainer == null) {
+                    configContainer = new ConfigContainer();
+                }
+                configContainer.set(nodeName, contextNode.get(nodeName).toString());
+            }
+        }
+        if (configContainer != null) {
+            parseContext.set(ConfigContainer.class, configContainer);
         }
         return parseContext;
     }

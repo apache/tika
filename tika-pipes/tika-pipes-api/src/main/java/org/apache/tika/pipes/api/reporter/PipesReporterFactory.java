@@ -16,7 +16,7 @@
  */
 package org.apache.tika.pipes.api.reporter;
 
-import org.apache.tika.plugins.TikaPluginFactory;
+import org.apache.tika.plugins.TikaExtensionFactory;
 
-public interface PipesReporterFactory extends TikaPluginFactory<PipesReporter> {
+public interface PipesReporterFactory extends TikaExtensionFactory<PipesReporter> {
 }

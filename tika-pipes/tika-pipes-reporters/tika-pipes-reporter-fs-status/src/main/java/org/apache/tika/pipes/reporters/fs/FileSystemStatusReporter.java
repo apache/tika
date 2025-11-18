@@ -37,8 +37,8 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
-import org.apache.tika.plugins.AbstractTikaPlugin;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.AbstractTikaExtension;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.ExceptionUtils;
 
 /**
@@ -53,9 +53,9 @@ import org.apache.tika.utils.ExceptionUtils;
  *  the unit tests for how to deserialize AsyncStatus.
  *
  */
-public class FileSystemStatusReporter extends AbstractTikaPlugin implements PipesReporter {
+public class FileSystemStatusReporter extends AbstractTikaExtension implements PipesReporter {
 
-    public static FileSystemStatusReporter build(PluginConfig pluginConfig) throws TikaConfigException, IOException {
+    public static FileSystemStatusReporter build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
         FileSystemReporterConfig config = FileSystemReporterConfig.load(pluginConfig.jsonConfig());
 
         FileSystemStatusReporter fileSystemStatusReporter = new FileSystemStatusReporter(pluginConfig, config);
@@ -77,7 +77,7 @@ public class FileSystemStatusReporter extends AbstractTikaPlugin implements Pipe
     private TotalCountResult totalCountResult = new TotalCountResult(0,
             TotalCountResult.STATUS.NOT_COMPLETED);
 
-    private FileSystemStatusReporter(PluginConfig pluginConfig, FileSystemReporterConfig config) {
+    private FileSystemStatusReporter(ExtensionConfig pluginConfig, FileSystemReporterConfig config) {
         super(pluginConfig);
         this.config = config;
     }
@@ -190,7 +190,7 @@ public class FileSystemStatusReporter extends AbstractTikaPlugin implements Pipe
     }
 
     @Override
-    public PluginConfig getPluginConfig() {
+    public ExtensionConfig getExtensionConfig() {
         return null;
     }
 }

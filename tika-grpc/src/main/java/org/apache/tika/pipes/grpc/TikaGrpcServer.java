@@ -51,6 +51,9 @@ public class TikaGrpcServer {
     @Parameter(names = {"-c", "--config"}, description = "The grpc server port", help = true)
     private File tikaConfigXml;
 
+    @Parameter(names = {"-l", "--plugins"}, description = "The tika pipes plugins config file", help = true)
+    private File tikaPlugins;
+
     @Parameter(names = {"-s", "--secure"}, description = "Enable credentials required to access this grpc server")
     private boolean secure;
 
@@ -96,10 +99,11 @@ public class TikaGrpcServer {
             }
         }
         File tikaConfigFile = new File(tikaConfigXml.getAbsolutePath());
+        File pluginsConfig = new File(tikaPlugins.getAbsolutePath());
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);
         server = Grpc
                 .newServerBuilderForPort(port, creds)
-                .addService(new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath()))
+                .addService(new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath(), pluginsConfig.getAbsolutePath()))
                 .addService(healthStatusManager.getHealthService())
                 .addService(ProtoReflectionServiceV1.newInstance())
                 .build()

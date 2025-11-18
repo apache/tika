@@ -40,7 +40,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.reporters.PipesReporterBase;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -60,7 +60,7 @@ public class JDBCPipesReporter extends PipesReporterBase {
 
     private static final long MAX_WAIT_MILLIS = 120000;
 
-    public static JDBCPipesReporter build(PluginConfig pluginConfig) throws TikaConfigException, IOException {
+    public static JDBCPipesReporter build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
         JDBCPipesReporterConfig config = JDBCPipesReporterConfig.load(pluginConfig.jsonConfig());
         return new JDBCPipesReporter(pluginConfig, config);
     }
@@ -75,7 +75,7 @@ public class JDBCPipesReporter extends PipesReporterBase {
 
     CompletableFuture<Void> reportWorkerFuture;
 
-    public JDBCPipesReporter(PluginConfig pluginConfig, JDBCPipesReporterConfig config) throws TikaConfigException {
+    public JDBCPipesReporter(ExtensionConfig pluginConfig, JDBCPipesReporterConfig config) throws TikaConfigException {
         super(pluginConfig, config.includes(), config.excludes());
         this.config = config;
         init();

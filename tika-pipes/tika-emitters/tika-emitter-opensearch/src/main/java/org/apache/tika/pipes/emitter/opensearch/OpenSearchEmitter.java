@@ -32,7 +32,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractEmitter;
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 
 public class OpenSearchEmitter extends AbstractEmitter {
@@ -43,7 +43,7 @@ public class OpenSearchEmitter extends AbstractEmitter {
     public static String DEFAULT_EMBEDDED_FILE_FIELD_NAME = "embedded";
     private static final Logger LOG = LoggerFactory.getLogger(OpenSearchEmitter.class);
 
-    public static OpenSearchEmitter build(PluginConfig pluginConfig) throws TikaConfigException, IOException {
+    public static OpenSearchEmitter build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
         OpenSearchEmitterConfig config = OpenSearchEmitterConfig.load(pluginConfig.jsonConfig());
         return new OpenSearchEmitter(pluginConfig, config);
     }
@@ -51,7 +51,7 @@ public class OpenSearchEmitter extends AbstractEmitter {
     private OpenSearchClient openSearchClient;
     private final HttpClientFactory httpClientFactory;
     private final OpenSearchEmitterConfig config;
-    public OpenSearchEmitter(PluginConfig pluginConfig, OpenSearchEmitterConfig config) throws IOException, TikaConfigException {
+    public OpenSearchEmitter(ExtensionConfig pluginConfig, OpenSearchEmitterConfig config) throws IOException, TikaConfigException {
         super(pluginConfig);
         this.config = config;
         httpClientFactory = new HttpClientFactory();

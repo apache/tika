@@ -22,13 +22,13 @@ import org.pf4j.Extension;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 @Extension
 public class FileSystemPipesIteratorFactory implements PipesIteratorFactory {
 
     @Override
-    public FileSystemPipesIterator buildPlugin(PluginConfig pluginConfig) throws IOException, TikaConfigException {
-        return FileSystemPipesIterator.build(pluginConfig);
+    public FileSystemPipesIterator buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        return FileSystemPipesIterator.build(extensionConfig);
     }
 }

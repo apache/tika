@@ -24,7 +24,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 public class CompositePipesReporter implements PipesReporter {
 
@@ -105,7 +105,7 @@ public class CompositePipesReporter implements PipesReporter {
     }
 
     @Override
-    public PluginConfig getPluginConfig() {
+    public ExtensionConfig getExtensionConfig() {
         return null;
     }
 }

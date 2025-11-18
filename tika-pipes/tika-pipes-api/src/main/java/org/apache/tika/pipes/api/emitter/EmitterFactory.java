@@ -16,8 +16,8 @@
  */
 package org.apache.tika.pipes.api.emitter;
 
-import org.apache.tika.plugins.TikaPluginFactory;
+import org.apache.tika.plugins.TikaExtensionFactory;
 
-public interface EmitterFactory extends TikaPluginFactory<Emitter> {
+public interface EmitterFactory extends TikaExtensionFactory<Emitter> {
 
 }

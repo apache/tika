@@ -14,17 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.plugins;
+package org.apache.tika.pipes.fetcher.http;
 
-public class AbstractTikaPlugin implements TikaPlugin {
+import java.io.IOException;
 
-    protected final PluginConfig pluginConfig;
+import org.pf4j.Extension;
 
-    public AbstractTikaPlugin(PluginConfig pluginConfig) {
-        this.pluginConfig = pluginConfig;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.fetcher.FetcherFactory;
+import org.apache.tika.plugins.ExtensionConfig;
+
+@Extension
+public class HttpFetcherFactory implements FetcherFactory {
+    private static final String EXTENSION_NAME = "http-fetcher";
+
+    @Override
+    public String getExtensionName() {
+        return EXTENSION_NAME;
     }
 
-    public PluginConfig getPluginConfig() {
-        return pluginConfig;
+    @Override
+    public Fetcher buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        return HttpFetcher.build(extensionConfig);
     }
 }

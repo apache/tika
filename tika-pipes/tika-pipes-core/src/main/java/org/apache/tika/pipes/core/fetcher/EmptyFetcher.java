@@ -23,7 +23,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 public class EmptyFetcher implements Fetcher {
 
@@ -33,7 +33,7 @@ public class EmptyFetcher implements Fetcher {
     }
 
     @Override
-    public PluginConfig getPluginConfig() {
-        return new PluginConfig("empty", "empty-fetcher", "");
+    public ExtensionConfig getExtensionConfig() {
+        return new ExtensionConfig("empty", "empty-fetcher", "");
     }
 }

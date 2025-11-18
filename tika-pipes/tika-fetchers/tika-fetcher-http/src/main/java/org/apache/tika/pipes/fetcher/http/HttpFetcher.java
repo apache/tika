@@ -29,12 +29,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.PrivateKey;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -62,10 +62,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.HttpClientFactory;
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
+import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
@@ -75,28 +72,36 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.core.fetcher.config.FetcherConfigContainer;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.fetcher.RangeFetcher;
 import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
-import org.apache.tika.pipes.fetcher.http.config.HttpHeaders;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtPrivateKeyCreds;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtSecretCreds;
+import org.apache.tika.plugins.AbstractTikaExtension;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
  * Based on Apache httpclient
  */
-public class HttpFetcher extends AbstractFetcher implements Initializable, RangeFetcher {
-    public HttpFetcher() {
+public class HttpFetcher extends AbstractTikaExtension implements Fetcher, RangeFetcher {
 
+    public static HttpFetcher build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
+        System.out.println("json: " + pluginConfig.jsonConfig());
+        HttpFetcherConfig httpFetcherConfig = HttpFetcherConfig.load(pluginConfig.jsonConfig());
+        HttpFetcher fetcher = new HttpFetcher(pluginConfig, httpFetcherConfig);
+        fetcher.initialize();
+        return fetcher;
     }
+
 
     private static final ObjectMapper OM = new ObjectMapper();
     private HttpFetcherConfig httpFetcherConfig = new HttpFetcherConfig();
     private HttpClientFactory httpClientFactory = new HttpClientFactory();
 
-    public HttpFetcher(HttpFetcherConfig httpFetcherConfig) {
+    public HttpFetcher(ExtensionConfig pluginConfig, HttpFetcherConfig httpFetcherConfig) {
+        super(pluginConfig);
         this.httpFetcherConfig = httpFetcherConfig;
     }
 
@@ -201,9 +206,10 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
 
     private HttpFetcherConfig getAdditionalHttpFetcherConfig(ParseContext parseContext) throws JsonProcessingException {
         HttpFetcherConfig additionalHttpFetcherConfig = null;
-        FetcherConfigContainer fetcherConfigContainer = parseContext.get(FetcherConfigContainer.class);
-        if (fetcherConfigContainer != null) {
-            additionalHttpFetcherConfig = OM.readValue(fetcherConfigContainer.getJson(), HttpFetcherConfig.class);
+        ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
+        Optional<String> jsonOpt = configContainer.get(HttpFetcher.class);
+        if (jsonOpt.isPresent()) {
+            additionalHttpFetcherConfig = OM.readValue(jsonOpt.get(), HttpFetcherConfig.class);
         }
         return additionalHttpFetcherConfig;
     }
@@ -437,102 +443,6 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
 
     }
 
-    @Field
-    public void setUserName(String userName) {
-        httpFetcherConfig.setUserName(userName);
-    }
-
-    @Field
-    public void setPassword(String password) {
-        httpFetcherConfig.setPassword(password);
-    }
-
-    @Field
-    public void setNtDomain(String domain) {
-        httpFetcherConfig.setNtDomain(domain);
-    }
-
-    @Field
-    public void setAuthScheme(String authScheme) {
-        httpFetcherConfig.setAuthScheme(authScheme);
-    }
-
-    @Field
-    public void setProxyHost(String proxyHost) {
-        httpFetcherConfig.setProxyHost(proxyHost);
-    }
-
-    @Field
-    public void setProxyPort(int proxyPort) {
-        httpFetcherConfig.setProxyPort(proxyPort);
-    }
-
-    @Field
-    public void setConnectTimeout(int connectTimeout) {
-        httpFetcherConfig.setConnectTimeout(connectTimeout);
-    }
-
-    @Field
-    public void setRequestTimeout(int requestTimeout) {
-        httpFetcherConfig.setRequestTimeout(requestTimeout);
-    }
-
-    @Field
-    public void setSocketTimeout(int socketTimeout) {
-        httpFetcherConfig.setSocketTimeout(socketTimeout);
-    }
-
-    @Field
-    public void setMaxConnections(int maxConnections) {
-        httpFetcherConfig.setMaxConnections(maxConnections);
-    }
-
-    @Field
-    public void setMaxConnectionsPerRoute(int maxConnectionsPerRoute) {
-        httpFetcherConfig.setMaxConnectionsPerRoute(maxConnectionsPerRoute);
-    }
-
-    /**
-     * Set the maximum number of bytes to spool to a temp file.
-     * If this value is <code>-1</code>, the full stream will be spooled to a temp file
-     * <p>
-     * Default size is -1.
-     *
-     * @param maxSpoolSize
-     */
-    @Field
-    public void setMaxSpoolSize(long maxSpoolSize) {
-        httpFetcherConfig.setMaxSpoolSize(maxSpoolSize);
-    }
-
-    @Field
-    public void setMaxRedirects(int maxRedirects) {
-        httpFetcherConfig.setMaxRedirects(maxRedirects);
-    }
-
-    /**
-     * Which http request headers should we send in the http fetch requests.
-     *
-     * @param headers The headers to add to the HTTP GET requests.
-     */
-    @Field
-    public void setHttpRequestHeaders(List<String> headers) {
-        this.httpRequestHeaders.clear();
-        this.httpRequestHeaders.addAll(headers);
-
-        httpFetcherConfig.setHttpRequestHeaders(new HttpHeaders());
-        if (headers != null) {
-            Map<String, Collection<String>> allParsedHeaders = new HashMap<>();
-            for (String header : headers) {
-                Map<String, Collection<String>> parsedHeaders = parseHeaders(header);
-                allParsedHeaders.putAll(parsedHeaders);
-                // httpFetcherConfig.getHttpRequestHeaders().getMap() doesn't work:
-                // "The map does not support put or putAll, nor do its entries support setValue."
-            }
-            httpFetcherConfig.getHttpRequestHeaders().setMap(allParsedHeaders);
-        }
-    }
-
     public static Map<String, Collection<String>> parseHeaders(String headersString) {
         Map<String, Collection<String>> headersMap = new HashMap<>();
         String[] headers = headersString.split("\n");
@@ -547,76 +457,9 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         return headersMap;
     }
 
-    /**
-     * Which http headers should we capture in the metadata.
-     * Keys will be prepended with {@link HttpFetcher#HTTP_HEADER_PREFIX}
-     *
-     * @param headers
-     */
-    @Field
-    public void setHttpHeaders(List<String> headers) {
-        httpFetcherConfig.setHttpHeaders(new ArrayList<>());
-        if (headers != null) {
-            httpFetcherConfig
-                    .getHttpHeaders()
-                    .addAll(headers);
-        }
-    }
 
-    /**
-     * This sets an overall timeout on the request.  If a server is super slow
-     * or the file is very long, the other timeouts might not be triggered.
-     *
-     * @param overallTimeout
-     */
-    @Field
-    public void setOverallTimeout(long overallTimeout) {
-        httpFetcherConfig.setOverallTimeout(overallTimeout);
-    }
-
-    @Field
-    public void setMaxErrMsgSize(int maxErrMsgSize) {
-        httpFetcherConfig.setMaxErrMsgSize(maxErrMsgSize);
-    }
-
-    /**
-     * When making the request, what User-Agent is sent in the request.
-     * By default httpclient adds e.g. "Apache-HttpClient/4.5.13 (Java/x.y.z)"
-     *
-     * @param userAgent
-     */
-    @Field
-    public void setUserAgent(String userAgent) {
-        httpFetcherConfig.setUserAgent(userAgent);
-    }
-
-    @Field
-    public void setJwtIssuer(String jwtIssuer) {
-        httpFetcherConfig.setJwtIssuer(jwtIssuer);
-    }
-
-    @Field
-    public void setJwtSubject(String jwtSubject) {
-        httpFetcherConfig.setJwtSubject(jwtSubject);
-    }
-
-    @Field
-    public void setJwtExpiresInSeconds(int jwtExpiresInSeconds) {
-        httpFetcherConfig.setJwtExpiresInSeconds(jwtExpiresInSeconds);
-    }
-
-    @Field
-    public void setJwtSecret(String jwtSecret) {
-        httpFetcherConfig.setJwtSecret(jwtSecret);
-    }
-
-    @Field
-    public void setJwtPrivateKeyBase64(String jwtPrivateKeyBase64) {
-        httpFetcherConfig.setJwtPrivateKeyBase64(jwtPrivateKeyBase64);
-    }
-
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
+    //we should make this private. Try to fix test so we can.
+    void initialize() throws TikaConfigException {
         if (httpFetcherConfig.getSocketTimeout() != null) {
             httpClientFactory.setSocketTimeout(httpFetcherConfig.getSocketTimeout());
         }
@@ -658,32 +501,34 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                     .getJwtSecret()
                     .getBytes(StandardCharsets.UTF_8), httpFetcherConfig.getJwtIssuer(), httpFetcherConfig.getJwtSubject(), httpFetcherConfig.getJwtExpiresInSeconds()));
         }
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         if (!StringUtils.isBlank(httpFetcherConfig.getJwtSecret()) && !StringUtils.isBlank(httpFetcherConfig.getJwtPrivateKeyBase64())) {
             throw new TikaConfigException("Both JWT secret and JWT private key base 64 were " + "specified. Only one or the other is supported");
         }
     }
 
+    //These setters and the one getter are for testing only. We should figure out if we can
+    //can remove them.
     public void setHttpClientFactory(HttpClientFactory httpClientFactory) {
         this.httpClientFactory = httpClientFactory;
+    }
+
+    public void setHttpFetcherConfig(HttpFetcherConfig httpFetcherConfig) {
+        this.httpFetcherConfig = httpFetcherConfig;
     }
 
     public void setHttpClient(HttpClient httpClient) {
         this.httpClient = httpClient;
     }
 
-    public HttpClient getHttpClient() {
-        return httpClient;
-    }
-
     public HttpFetcherConfig getHttpFetcherConfig() {
         return httpFetcherConfig;
     }
 
-    public void setHttpFetcherConfig(HttpFetcherConfig httpFetcherConfig) {
-        this.httpFetcherConfig = httpFetcherConfig;
+    public void setJwtGenerator(JwtGenerator jwtGenerator) {
+        this.jwtGenerator = jwtGenerator;
+    }
+
+    public JwtGenerator getJwtGenerator() {
+        return jwtGenerator;
     }
 }

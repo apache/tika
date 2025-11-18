@@ -24,7 +24,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 //TODO -- figure out how to add this back in for the AsyncChaosMonkeyTest
 public final class MockReporter implements PipesReporter {
@@ -78,7 +78,7 @@ public final class MockReporter implements PipesReporter {
     }
 
     @Override
-    public PluginConfig getPluginConfig() {
+    public ExtensionConfig getExtensionConfig() {
         return null;
     }
 }

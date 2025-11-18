@@ -22,13 +22,13 @@ import org.pf4j.Extension;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.reporter.PipesReporterFactory;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 @Extension
 public class FileSystemReporterFactory implements PipesReporterFactory {
 
     @Override
-    public FileSystemStatusReporter buildPlugin(PluginConfig pluginConfig) throws IOException, TikaConfigException {
-        return FileSystemStatusReporter.build(pluginConfig);
+    public FileSystemStatusReporter buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        return FileSystemStatusReporter.build(extensionConfig);
     }
 }

@@ -16,8 +16,8 @@
  */
 package org.apache.tika.pipes.api.fetcher;
 
-import org.apache.tika.plugins.TikaPluginFactory;
+import org.apache.tika.plugins.TikaExtensionFactory;
 
-public interface FetcherFactory extends TikaPluginFactory<Fetcher> {
+public interface FetcherFactory extends TikaExtensionFactory<Fetcher> {
 
 }

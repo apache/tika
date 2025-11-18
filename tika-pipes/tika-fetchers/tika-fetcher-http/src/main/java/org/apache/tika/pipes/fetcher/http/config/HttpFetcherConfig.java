@@ -16,12 +16,27 @@
  */
 package org.apache.tika.pipes.fetcher.http.config;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class HttpFetcherConfig extends AbstractConfig {
+import org.apache.tika.exception.TikaConfigException;
+
+public class HttpFetcherConfig {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    public static HttpFetcherConfig load(String json) throws IOException, TikaConfigException {
+        try {
+            return OBJECT_MAPPER.readValue(json, HttpFetcherConfig.class);
+        } catch (JacksonException e) {
+            throw new TikaConfigException("problem w json", e);
+        }
+    }
+
     private String userName;
     private String password;
     private String ntDomain;

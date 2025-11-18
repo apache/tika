@@ -141,7 +141,7 @@
             <id>copy-plugins</id>
             <phase>generate-test-resources</phase>
             <goals>
-              <goal>unpack</goal>
+              <goal>copy</goal>
             </goals>
             <configuration>
               <outputDirectory>${project.build.directory}/plugins</outputDirectory>

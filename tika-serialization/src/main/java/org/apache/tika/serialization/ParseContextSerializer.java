@@ -17,11 +17,13 @@
 package org.apache.tika.serialization;
 
 import java.io.IOException;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
+import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.parser.ParseContext;
 
 public class ParseContextSerializer extends JsonSerializer<ParseContext> {
@@ -30,14 +32,29 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
     @Override
     public void serialize(ParseContext parseContext, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
         jsonGenerator.writeStartObject();
-        for (String className : parseContext.keySet()) {
-            try {
-                Class clazz = Class.forName(className);
-                TikaJsonSerializer.serialize(className, parseContext.get(clazz), jsonGenerator);
-            } catch (TikaSerializationException e) {
-                throw new IOException(e);
-            } catch (ClassNotFoundException e) {
-                throw new IllegalArgumentException(e);
+        Set<String> objectKeySet = parseContext.keySet();
+        ConfigContainer p = parseContext.get(ConfigContainer.class);
+        if ((p != null && objectKeySet.size() > 1) || (p == null && ! objectKeySet.isEmpty())) {
+            jsonGenerator.writeFieldName("objects");
+            jsonGenerator.writeStartObject();
+            for (String className : parseContext.keySet()) {
+                if (className.equals(ConfigContainer.class.getName())) {
+                    continue;
+                }
+                try {
+                    Class clazz = Class.forName(className);
+                    TikaJsonSerializer.serialize(className, parseContext.get(clazz), jsonGenerator);
+                } catch (TikaSerializationException e) {
+                    throw new IOException(e);
+                } catch (ClassNotFoundException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            }
+            jsonGenerator.writeEndObject();
+        }
+        if (p != null) {
+            for (String k : p.getKeys()) {
+                jsonGenerator.writeStringField(k, p.get(k).get());
             }
         }
         jsonGenerator.writeEndObject();

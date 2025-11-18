@@ -29,6 +29,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.DateNormalizingMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
@@ -36,12 +38,18 @@ import org.apache.tika.parser.ParseContext;
 
 public class TestParseContextSerialization {
 
+
     @Test
     public void testBasic() throws Exception {
         MetadataFilter metadataFilter = new CompositeMetadataFilter(List.of(new DateNormalizingMetadataFilter()));
         ParseContext pc = new ParseContext();
         pc.set(MetadataFilter.class, metadataFilter);
 
+        ConfigContainer configContainer = new ConfigContainer();
+        configContainer.set(EmbeddedDocumentBytesHandler.class, """
+                {"k1":1,"k2":"val3" }
+                """);
+        pc.set(ConfigContainer.class, configContainer);
         String json;
         try (Writer writer = new StringWriter()) {
             try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
@@ -50,6 +58,7 @@ public class TestParseContextSerialization {
             }
             json = writer.toString();
         }
+        System.out.println("json: " + json);
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ParseContext.class, new ParseContextDeserializer());

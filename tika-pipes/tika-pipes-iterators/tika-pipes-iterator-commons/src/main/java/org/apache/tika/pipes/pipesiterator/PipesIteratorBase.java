@@ -30,8 +30,8 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
-import org.apache.tika.plugins.AbstractTikaPlugin;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.AbstractTikaExtension;
+import org.apache.tika.plugins.ExtensionConfig;
 
 /**
  * Abstract class that handles the testing for timeouts/thread safety
@@ -40,7 +40,7 @@ import org.apache.tika.plugins.PluginConfig;
  * a RuntimeException.  It will throw an IllegalStateException if
  * next() is called after hasNext() has returned false.
  */
-public abstract class PipesIteratorBase extends AbstractTikaPlugin implements PipesIterator {
+public abstract class PipesIteratorBase extends AbstractTikaExtension implements PipesIterator {
 
     public static final long DEFAULT_MAX_WAIT_MS = 300_000;
     public static final int DEFAULT_QUEUE_SIZE = 1000;
@@ -54,7 +54,7 @@ public abstract class PipesIteratorBase extends AbstractTikaPlugin implements Pi
     private int added = 0;
     private FutureTask<Integer> futureTask;
 
-    public PipesIteratorBase(PluginConfig pluginConfig) {
+    public PipesIteratorBase(ExtensionConfig pluginConfig) {
         super(pluginConfig);
     }
 

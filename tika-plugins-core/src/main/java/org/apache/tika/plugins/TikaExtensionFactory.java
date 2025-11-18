@@ -16,9 +16,18 @@
  */
 package org.apache.tika.plugins;
 
-/**
- * This is an interface for plugins created by TikaPluginFactory
- */
-public interface TikaPlugin {
-    PluginConfig getPluginConfig();
+import java.io.IOException;
+
+import org.pf4j.ExtensionPoint;
+
+import org.apache.tika.exception.TikaConfigException;
+
+public interface TikaExtensionFactory<T extends TikaExtension> extends ExtensionPoint {
+
+    /**
+     *
+     * @return name of the extension in the config file
+     */
+    String getExtensionName();
+    T buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException;
 }

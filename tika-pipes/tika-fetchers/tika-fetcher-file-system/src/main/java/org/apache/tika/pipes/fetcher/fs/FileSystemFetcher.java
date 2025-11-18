@@ -27,6 +27,7 @@ import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import java.util.Optional;
 
+import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,9 +40,9 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
-import org.apache.tika.plugins.AbstractTikaPlugin;
-import org.apache.tika.plugins.PluginConfig;
-import org.apache.tika.plugins.PluginConfigs;
+import org.apache.tika.plugins.AbstractTikaExtension;
+import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.ExtensionConfigs;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -56,23 +57,22 @@ import org.apache.tika.utils.StringUtils;
  * </pre>
  */
 
-public class FileSystemFetcher extends AbstractTikaPlugin implements Fetcher {
+public class FileSystemFetcher extends AbstractTikaExtension implements Fetcher {
 
 
 
-    public static FileSystemFetcher build(PluginConfig pluginConfig) throws TikaConfigException, IOException {
+    public static FileSystemFetcher build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
         FileSystemFetcher fetcher = new FileSystemFetcher(pluginConfig);
         fetcher.configure();
         return fetcher;
     }
 
-    private static final String PLUGIN_ID = "file-system-fetcher";
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemFetcher.class);
 
     private FileSystemFetcherConfig defaultFileSystemFetcherConfig;
 
-    public FileSystemFetcher(PluginConfig pluginConfig) {
+    public FileSystemFetcher(ExtensionConfig pluginConfig) {
         super(pluginConfig);
     }
 
@@ -89,12 +89,11 @@ public class FileSystemFetcher extends AbstractTikaPlugin implements Fetcher {
                     "a file name with this character in it.");
         }
         FileSystemFetcherConfig config = defaultFileSystemFetcherConfig;
-        PluginConfigs pluginConfigManager = parseContext.get(PluginConfigs.class);
+        ExtensionConfigs pluginConfigManager = parseContext.get(ExtensionConfigs.class);
         if (pluginConfigManager != null) {
-            Optional<PluginConfig> pluginConfigOpt = pluginConfigManager.getById(getPluginConfig().id());
+            Optional<ExtensionConfig> pluginConfigOpt = pluginConfigManager.getById(getExtensionConfig().id());
             if (pluginConfigOpt.isPresent()) {
-                PluginConfig pluginConfig = pluginConfigOpt.get();
-                checkPluginId(pluginConfig.factoryPluginId());
+                ExtensionConfig pluginConfig = pluginConfigOpt.get();
                 config = FileSystemFetcherConfig.load(pluginConfig.jsonConfig());
                 checkConfig(config);
             }
@@ -122,11 +121,6 @@ public class FileSystemFetcher extends AbstractTikaPlugin implements Fetcher {
         return TikaInputStream.get(p, metadata);
     }
 
-    private void checkPluginId(String pluginId) {
-        if (! PLUGIN_ID.equals(pluginId)) {
-            throw new IllegalStateException("Plugin id=" + pluginId + " needs to =" + PLUGIN_ID);
-        }
-    }
 
     private void updateFileSystemMetadata(Path p, Metadata metadata, FileSystemFetcherConfig config) throws IOException {
         if (! config.isExtractFileSystemMetadata()) {
@@ -178,4 +172,8 @@ public class FileSystemFetcher extends AbstractTikaPlugin implements Fetcher {
                          .startsWith(root.toAbsolutePath().normalize());
     }
 
+    @Override
+    public String toString() {
+        return "FileSystemFetcher{" + "defaultFileSystemFetcherConfig=" + defaultFileSystemFetcherConfig + ", pluginConfig=" + pluginConfig + '}';
+    }
 }

@@ -34,9 +34,9 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
 import org.apache.tika.pipes.api.reporter.PipesReporterFactory;
-import org.apache.tika.plugins.PluginConfig;
-import org.apache.tika.plugins.PluginConfigs;
-import org.apache.tika.plugins.TikaPluginsManager;
+import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.ExtensionConfigs;
+import org.apache.tika.plugins.TikaExtensionConfigsManager;
 
 /**
  * Utility class to hold multiple fetchers.
@@ -55,22 +55,24 @@ public class ReporterManager {
 
     public static PipesReporter load(InputStream is) throws IOException, TikaConfigException {
 
-        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(is, false, TikaPluginsManager.PLUGIN_TYPES.REPORTERS);
-        return load(tikaPluginsManager);
+        TikaExtensionConfigsManager tikaExtensionConfigsManager = TikaExtensionConfigsManager.load(is, false, TikaExtensionConfigsManager.EXTENSION_TYPES.REPORTERS);
+        return load(tikaExtensionConfigsManager);
     }
 
-    public static PipesReporter load(TikaPluginsManager tikaPluginsManager) throws IOException, TikaConfigException {
-        Optional<PluginConfigs> reporterPluginConfigsOpt = tikaPluginsManager.get(TikaPluginsManager.PLUGIN_TYPES.REPORTERS);
+    public static PipesReporter load(TikaExtensionConfigsManager tikaExtensionConfigsManager) throws IOException, TikaConfigException {
+        Optional<ExtensionConfigs> reporterPluginConfigsOpt = tikaExtensionConfigsManager.get(TikaExtensionConfigsManager.EXTENSION_TYPES.REPORTERS);
         if (reporterPluginConfigsOpt.isEmpty()) {
             return NoOpReporter.NO_OP;
         }
-
+        return NoOpReporter.NO_OP;
+/*
         PluginManager pluginManager = null;
-        if (! tikaPluginsManager.getPluginsPaths().isEmpty()) {
-            LOG.warn("LOADING WITH PLUGINS PATHS: {}", tikaPluginsManager.getPluginsPaths());
-            pluginManager = new DefaultPluginManager(tikaPluginsManager.getPluginsPaths());
+        if (! tikaExtensionConfigsManager
+                .getPluginRoots().isEmpty()) {
+            LOG.warn("LOADING WITH PLUGINS PATHS: {}", tikaExtensionConfigsManager.getPluginRoots());
+            pluginManager = new DefaultPluginManager(tikaExtensionConfigsManager.getPluginRoots());
         } else {
-            LOG.warn("NOT LOADING WITH PLUGINS PATHS: {}", tikaPluginsManager.getPluginsPaths());
+            LOG.warn("NOT LOADING WITH PLUGINS PATHS: {}", tikaExtensionConfigsManager.getPluginRoots());
             pluginManager = new DefaultPluginManager();
         }
         pluginManager.loadPlugins();
@@ -85,17 +87,17 @@ public class ReporterManager {
             }
             String pluginId = pluginWrapper.getPluginId();
             if (reporterPluginConfigsOpt.isPresent()) {
-                PluginConfigs reporterPluginConfigs = reporterPluginConfigsOpt.get();
-                Set<String> ids = reporterPluginConfigs.getIdsByPluginId(pluginId);
+                ExtensionConfigs reporterExtensionConfigs = reporterPluginConfigsOpt.get();
+                Set<String> ids = reporterExtensionConfigs.getIdsByExtensionId(pluginId);
                 if (ids.isEmpty()) {
                     LOG.warn("Couldn't find config for class={} pluginId={}. Skipping", reporterFactory.getClass(), pluginId);
                 }
                 for (String id : ids) {
-                    Optional<PluginConfig> pluginConfigOpt = reporterPluginConfigs.getById(id);
+                    Optional<ExtensionConfig> pluginConfigOpt = reporterExtensionConfigs.getById(id);
                     if (pluginConfigOpt.isEmpty()) {
                         LOG.warn("Couldn't find config for id={}", id);
                     } else {
-                        PluginConfig pluginConfig = pluginConfigOpt.get();
+                        ExtensionConfig pluginConfig = pluginConfigOpt.get();
                         PipesReporter reporter = reporterFactory.buildPlugin(pluginConfig);
                         pipesReporterList.add(reporter);
                     }
@@ -111,5 +113,7 @@ public class ReporterManager {
         } else {
             return new CompositePipesReporter(pipesReporterList);
         }
+        */
+
     }
 }

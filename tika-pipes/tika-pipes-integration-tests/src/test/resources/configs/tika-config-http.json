@@ -1,0 +1,19 @@
+{
+  "plugins" : {
+    "fetchers": {
+      "http": {
+        "http-fetcher": {
+          "httpHeaders": [
+            "Connection",
+            "Expires",
+            "Content-Length"
+          ],
+          "httpRequestHeaders": {
+            "headerNameFromFetcherConfig": "headerValueFromFetcherConfig"
+          }
+        }
+      }
+    }
+  },
+  "pluginsPaths": "target/plugins"
+}

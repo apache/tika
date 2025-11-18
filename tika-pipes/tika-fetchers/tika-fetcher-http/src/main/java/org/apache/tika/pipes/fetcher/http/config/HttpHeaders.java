@@ -17,14 +17,18 @@
 package org.apache.tika.pipes.fetcher.http.config;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
 public class HttpHeaders {
+
     @JsonIgnore
     private Multimap<String, String> headers = ArrayListMultimap.create();
 
@@ -41,6 +45,8 @@ public class HttpHeaders {
         return headers.asMap();
     }
 
+
+    @JsonDeserialize
     public void setMap(Map<String, Collection<String>> map) {
         headers = ArrayListMultimap.create();
         map.forEach(headers::putAll);

@@ -19,9 +19,9 @@ package org.apache.tika.pipes.api.pipesiterator;
 import java.util.concurrent.Callable;
 
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.plugins.TikaPlugin;
+import org.apache.tika.plugins.TikaExtension;
 
-public interface PipesIterator extends TikaPlugin, Callable<Integer>, Iterable<FetchEmitTuple> {
+public interface PipesIterator extends TikaExtension, Callable<Integer>, Iterable<FetchEmitTuple> {
 
     FetchEmitTuple COMPLETED_SEMAPHORE =
             new FetchEmitTuple(null,null, null, null, null, null);

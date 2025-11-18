@@ -2,7 +2,7 @@
   "plugins": {
     "fetchers": {
       "fsf": {
-        "file-system-fetcher": {
+        "o.a.t.p.fetcher.fs.FileSystemFetcher": {
           "basePath": "FETCHER_BASE_PATH",
           "extractFileSystemMetadata": false
         }
@@ -10,7 +10,7 @@
     },
     "emitters": {
       "fse": {
-        "file-system-emitter" : {
+        "o.a.t.p.emitter.fs.FileSystemEmitter" : {
           "basePath": "EMITTER_BASE_PATH",
           "fileExtension": "json"
         }

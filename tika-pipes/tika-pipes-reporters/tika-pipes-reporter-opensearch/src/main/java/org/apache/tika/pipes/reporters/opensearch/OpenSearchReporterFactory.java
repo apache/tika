@@ -21,13 +21,13 @@ import org.pf4j.Extension;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.reporter.PipesReporterFactory;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 @Extension
 public class OpenSearchReporterFactory implements PipesReporterFactory {
 
     @Override
-    public OpenSearchPipesReporter buildPlugin(PluginConfig pluginConfig) throws IOException, TikaConfigException {
-        return OpenSearchPipesReporter.build(pluginConfig);
+    public OpenSearchPipesReporter buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        return OpenSearchPipesReporter.build(extensionConfig);
     }
 }

@@ -16,7 +16,7 @@
  */
 package org.apache.tika.pipes.api.pipesiterator;
 
-import org.apache.tika.plugins.TikaPluginFactory;
+import org.apache.tika.plugins.TikaExtensionFactory;
 
-public interface PipesIteratorFactory extends TikaPluginFactory<PipesIterator> {
+public interface PipesIteratorFactory extends TikaExtensionFactory<PipesIterator> {
 }

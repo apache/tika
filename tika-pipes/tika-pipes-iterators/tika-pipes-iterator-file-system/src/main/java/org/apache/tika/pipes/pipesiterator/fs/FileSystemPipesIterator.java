@@ -41,11 +41,11 @@ import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCounter;
 import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 public class FileSystemPipesIterator extends PipesIteratorBase implements TotalCounter, Closeable {
 
-    public static FileSystemPipesIterator build(PluginConfig pluginConfig) throws TikaConfigException, IOException {
+    public static FileSystemPipesIterator build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
         FileSystemPipesIterator pipesIterator = new FileSystemPipesIterator(pluginConfig);
         pipesIterator.configure();
         return pipesIterator;
@@ -67,7 +67,7 @@ public class FileSystemPipesIterator extends PipesIteratorBase implements TotalC
 
     private FileCountWorker fileCountWorker;
 
-    private FileSystemPipesIterator(PluginConfig pluginConfig) {
+    private FileSystemPipesIterator(ExtensionConfig pluginConfig) {
         super(pluginConfig);
     }
 

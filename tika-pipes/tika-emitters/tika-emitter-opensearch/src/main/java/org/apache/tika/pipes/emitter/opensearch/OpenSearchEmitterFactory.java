@@ -23,13 +23,13 @@ import org.pf4j.Extension;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 @Extension
 public class OpenSearchEmitterFactory implements EmitterFactory {
 
     @Override
-    public Emitter buildPlugin(PluginConfig pluginConfig) throws IOException, TikaConfigException {
-        return OpenSearchEmitter.build(pluginConfig);
+    public Emitter buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        return OpenSearchEmitter.build(extensionConfig);
     }
 }

@@ -23,13 +23,19 @@ import org.pf4j.Extension;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 @Extension
 public class FileSystemEmitterFactory implements EmitterFactory {
 
+    private static final String EXTENSION_NAME = "file-system-emitter";
+
     @Override
-    public Emitter buildPlugin(PluginConfig pluginConfig) throws IOException, TikaConfigException {
-        return FileSystemEmitter.build(pluginConfig);
+    public String getExtensionName() {
+        return EXTENSION_NAME;
+    }
+    @Override
+    public Emitter buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        return FileSystemEmitter.build(extensionConfig);
     }
 }

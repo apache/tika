@@ -36,8 +36,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractStreamEmitter;
-import org.apache.tika.plugins.PluginConfig;
-import org.apache.tika.plugins.PluginConfigs;
+import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.ExtensionConfigs;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.StringUtils;
 
@@ -54,7 +54,7 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemEmitter.class);
 
-    public static FileSystemEmitter build(PluginConfig pluginConfig) throws TikaConfigException, IOException {
+    public static FileSystemEmitter build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
         FileSystemEmitter emitter = new FileSystemEmitter(pluginConfig);
         emitter.configure();
         return emitter;
@@ -62,7 +62,7 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
 
     private FileSystemEmitterConfig fileSystemEmitterConfig;
 
-    public FileSystemEmitter(PluginConfig pluginConfig) {
+    public FileSystemEmitter(ExtensionConfig pluginConfig) {
         super(pluginConfig);
     }
 
@@ -154,9 +154,9 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
 
     private FileSystemEmitterConfig getConfig(ParseContext parseContext) throws IOException {
         FileSystemEmitterConfig config = fileSystemEmitterConfig;
-        PluginConfigs pluginConfigs = parseContext.get(PluginConfigs.class);
-        if (pluginConfigs != null) {
-            Optional<PluginConfig> pluginConfigOpt = pluginConfigs.getById(getPluginConfig().id());
+        ExtensionConfigs extensionConfigs = parseContext.get(ExtensionConfigs.class);
+        if (extensionConfigs != null) {
+            Optional<ExtensionConfig> pluginConfigOpt = extensionConfigs.getById(getExtensionConfig().id());
             if (pluginConfigOpt.isPresent()) {
                 config = FileSystemEmitterConfig.load(pluginConfigOpt.get().jsonConfig());
                 checkConfig(config);

@@ -26,16 +26,16 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
-import org.apache.tika.plugins.AbstractTikaPlugin;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.AbstractTikaExtension;
+import org.apache.tika.plugins.ExtensionConfig;
 
 /**
  * Simple PipesReporter that logs everything at the debug level.
  */
-public class LoggingPipesReporter extends AbstractTikaPlugin implements PipesReporter {
+public class LoggingPipesReporter extends AbstractTikaExtension implements PipesReporter {
     Logger LOGGER = LoggerFactory.getLogger(LoggingPipesReporter.class);
 
-    public LoggingPipesReporter(PluginConfig pluginConfig) {
+    public LoggingPipesReporter(ExtensionConfig pluginConfig) {
         super(pluginConfig);
     }
 

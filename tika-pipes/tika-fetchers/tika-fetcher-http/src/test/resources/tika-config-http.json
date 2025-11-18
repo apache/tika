@@ -1,0 +1,16 @@
+{
+  "plugins" : {
+    "fetchers": {
+      "http": {
+        "http-fetcher": {
+          "httpHeaders": [
+            "Connection",
+            "Expires",
+            "Content-Length"
+          ]
+        }
+      }
+    }
+  },
+  "pluginsPaths": "target/classes"
+}

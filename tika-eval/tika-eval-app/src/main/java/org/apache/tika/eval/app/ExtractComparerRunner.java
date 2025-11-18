@@ -62,7 +62,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.ExtensionConfig;
 
 public class ExtractComparerRunner {
 
@@ -189,7 +189,7 @@ public class ExtractComparerRunner {
         json = json.replace("FETCHER_BASE_PATH", inputDir.toAbsolutePath().toString());
 
         try {
-            return FileSystemPipesIterator.build(new PluginConfig("", "", json));
+            return FileSystemPipesIterator.build(new ExtensionConfig("", "", json));
         } catch (TikaConfigException e) {
             throw new IOException(e);
         }

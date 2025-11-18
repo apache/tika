@@ -26,7 +26,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-pipes-core-tests</artifactId>
+  <artifactId>tika-pipes-integration-tests</artifactId>
 
   <name>Apache Tika pipes core tests</name>
   <url>https://tika.apache.org/</url>
@@ -58,8 +58,19 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>tika-fetcher-http</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-serialization</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -105,14 +116,21 @@
                   <groupId>org.apache.tika</groupId>
                   <artifactId>tika-fetcher-file-system</artifactId>
                   <version>${project.version}</version>
-                  <type>jar</type>
+                  <type>zip</type>
                   <overWrite>true</overWrite>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.apache.tika</groupId>
                   <artifactId>tika-emitter-file-system</artifactId>
                   <version>${project.version}</version>
-                  <type>jar</type>
+                  <type>zip</type>
+                  <overWrite>true</overWrite>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.apache.tika</groupId>
+                  <artifactId>tika-fetcher-http</artifactId>
+                  <version>${project.version}</version>
+                  <type>zip</type>
                   <overWrite>true</overWrite>
                 </artifactItem>
               </artifactItems>

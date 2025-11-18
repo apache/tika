@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.plugins.TikaPluginsManager;
+import org.apache.tika.plugins.TikaExtensionConfigsManager;
 
 public class TikaServerConfig extends ConfigBase {
 
@@ -185,7 +185,7 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         if (pluginsConfigPath == null) {
             return;
         }
-        JsonNode root = TikaPluginsManager.loadRoot(pluginsConfigPath);
+        JsonNode root = TikaExtensionConfigsManager.loadRoot(pluginsConfigPath);
         JsonNode plugins = root.get("plugins");
         JsonNode fetchers = plugins.get("fetchers");
         Iterator<String> fieldNames = fetchers.fieldNames();

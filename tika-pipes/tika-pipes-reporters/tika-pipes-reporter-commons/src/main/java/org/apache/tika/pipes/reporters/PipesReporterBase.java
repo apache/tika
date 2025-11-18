@@ -22,18 +22,18 @@ import java.util.Set;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
-import org.apache.tika.plugins.AbstractTikaPlugin;
-import org.apache.tika.plugins.PluginConfig;
+import org.apache.tika.plugins.AbstractTikaExtension;
+import org.apache.tika.plugins.ExtensionConfig;
 
 /**
  * Base class that includes filtering by {@link PipesResult.STATUS}
  */
-public abstract class PipesReporterBase extends AbstractTikaPlugin implements PipesReporter {
+public abstract class PipesReporterBase extends AbstractTikaExtension implements PipesReporter {
 
 
     private StatusFilter statusFilter;
 
-    public PipesReporterBase(PluginConfig pluginConfig, Set<String> includes, Set<String> excludes) throws TikaConfigException {
+    public PipesReporterBase(ExtensionConfig pluginConfig, Set<String> includes, Set<String> excludes) throws TikaConfigException {
         super(pluginConfig);
         statusFilter = buildStatusFilter(includes, excludes);
     }

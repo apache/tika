@@ -35,9 +35,9 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
-import org.apache.tika.plugins.PluginConfig;
-import org.apache.tika.plugins.PluginConfigs;
-import org.apache.tika.plugins.TikaPluginsManager;
+import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.ExtensionConfigs;
+import org.apache.tika.plugins.TikaExtensionConfigsManager;
 
 /**
  * Utility class that will apply the appropriate emitter
@@ -59,20 +59,22 @@ public class EmitterManager {
 
     public static EmitterManager load(InputStream is) throws IOException, TikaConfigException {
         //this will throw a TikaConfigException if "emitters" is not loaded
-        TikaPluginsManager tikaPluginsManager = TikaPluginsManager.load(is, true, TikaPluginsManager.PLUGIN_TYPES.EMITTERS);
-        return load(tikaPluginsManager);
+        TikaExtensionConfigsManager tikaExtensionConfigsManager = TikaExtensionConfigsManager.load(is, true, TikaExtensionConfigsManager.EXTENSION_TYPES.EMITTERS);
+        return load(tikaExtensionConfigsManager);
     }
 
-    public static EmitterManager load(TikaPluginsManager tikaPluginsManager) throws IOException, TikaConfigException {
-        Optional<PluginConfigs> emitterPluginConfigsOpt = tikaPluginsManager.get(TikaPluginsManager.PLUGIN_TYPES.EMITTERS);
-        if (emitterPluginConfigsOpt.isEmpty()) {
+    public static EmitterManager load(TikaExtensionConfigsManager tikaExtensionConfigsManager) throws IOException, TikaConfigException {
+        Optional<ExtensionConfigs> emitterPluginConfigsOpt = tikaExtensionConfigsManager.get(TikaExtensionConfigsManager.EXTENSION_TYPES.EMITTERS);
+        return null;
+/*        if (emitterPluginConfigsOpt.isEmpty()) {
             throw new TikaConfigException("Forgot to load 'fetchers'?");
         }
-        PluginConfigs emitterPluginConfigs = emitterPluginConfigsOpt.get();
+        ExtensionConfigs emitterExtensionConfigs = emitterPluginConfigsOpt.get();
 
         PluginManager pluginManager = null;
-        if (! tikaPluginsManager.getPluginsPaths().isEmpty()) {
-            pluginManager = new DefaultPluginManager(tikaPluginsManager.getPluginsPaths());
+        if (! tikaExtensionConfigsManager
+                .getPluginRoots().isEmpty()) {
+            pluginManager = new DefaultPluginManager(tikaExtensionConfigsManager.getPluginRoots());
         } else {
             pluginManager = new DefaultPluginManager();
         }
@@ -87,22 +89,22 @@ public class EmitterManager {
                 continue;
             }
             String pluginId = pluginManager.whichPlugin(emitterFactory.getClass()).getPluginId();
-            Set<String> ids = emitterPluginConfigs.getIdsByPluginId(pluginId);
+            Set<String> ids = emitterExtensionConfigs.getIdsByPluginId(pluginId);
             if (ids.isEmpty()) {
                 LOG.warn("Couldn't find config for class={} pluginId={}. Skipping", emitterFactory.getClass(), pluginId);
             }
             for (String id : ids) {
-                Optional<PluginConfig> pluginConfigOpt = emitterPluginConfigs.getById(id);
+                Optional<ExtensionConfig> pluginConfigOpt = emitterExtensionConfigs.getById(id);
                 if (pluginConfigOpt.isEmpty()) {
                     LOG.warn("Couldn't find config for id={}. Skipping", id);
                 } else {
-                    PluginConfig pluginConfig = pluginConfigOpt.get();
+                    ExtensionConfig pluginConfig = pluginConfigOpt.get();
                     Emitter emitter = emitterFactory.buildPlugin(pluginConfig);
                     emitterMap.put(pluginConfig.id(), emitter);
                 }
             }
         }
-        return new EmitterManager(emitterMap);
+        return new EmitterManager(emitterMap);*/
     }
 
     private EmitterManager() {
