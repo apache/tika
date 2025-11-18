@@ -304,14 +304,14 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.1</maven.shade.version>
     <maven.project.info.reports.version>3.9.0</maven.project.info.reports.version>
-    <puppycrawl.version>12.1.1</puppycrawl.version>
+    <puppycrawl.version>12.1.2</puppycrawl.version>
     <rat.version>0.17</rat.version>
     <scm.version>2.2.1</scm.version>
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.60.0</google.cloud.version>
-    <aws2.version>2.38.2</aws2.version>
+    <aws2.version>2.38.6</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -331,7 +331,7 @@
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <c3p0.version>0.11.2</c3p0.version>
-    <commons.cli.version>1.10.0</commons.cli.version>
+    <commons.cli.version>1.11.0</commons.cli.version>
     <commons.codec.version>1.20.0</commons.codec.version>
     <commons.collections4.version>4.5.0</commons.collections4.version>
     <commons.compress.version>1.28.0</commons.compress.version>
@@ -440,7 +440,7 @@
     <spring.version>7.0.0-RC3</spring.version>
     <sqlite.version>3.51.0.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
-    <testcontainers.version>2.0.1</testcontainers.version>
+    <testcontainers.version>2.0.2</testcontainers.version>
     <testcontainersv1.version>1.21.3</testcontainersv1.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.10</tukaani.version>
