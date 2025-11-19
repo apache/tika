@@ -51,21 +51,20 @@ import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
+import org.apache.tika.plugins.TikaPluginManager;
 
 @Path("/async")
 public class AsyncResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncResource.class);
     private final AsyncProcessor asyncProcessor;
-    private final Set<String> supportedFetchers;
     private final EmitterManager emitterManager;
     long maxQueuePauseMs = 60000;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
-    public AsyncResource(java.nio.file.Path tikaConfigPath, java.nio.file.Path pluginsConfig, Set<String> supportedFetchers) throws TikaException, IOException, SAXException {
+    public AsyncResource(java.nio.file.Path tikaConfigPath, java.nio.file.Path pluginsConfig) throws TikaException, IOException, SAXException {
         this.asyncProcessor = new AsyncProcessor(tikaConfigPath, pluginsConfig);
-        this.supportedFetchers = supportedFetchers;
-        this.emitterManager = EmitterManager.load(pluginsConfig);
+        this.emitterManager = EmitterManager.load(TikaPluginManager.load(pluginsConfig));
     }
 
     public ArrayBlockingQueue<FetchEmitTuple> getFetchEmitQueue(int queueSize) {
@@ -103,11 +102,6 @@ public class AsyncResource {
         //the requested fetchers and emitters
         //throw early
         for (FetchEmitTuple t : request.getTuples()) {
-            if (!supportedFetchers.contains(t
-                    .getFetchKey()
-                    .getFetcherId())) {
-                return badFetcher(t.getFetchKey());
-            }
             if (!emitterManager
                     .getSupported()
                     .contains(t
@@ -117,7 +111,7 @@ public class AsyncResource {
                         .getEmitKey()
                         .getEmitterId());
             }
-            ParseContext parseContext = t.getParseConfigs();
+            ParseContext parseContext = t.getParseContext();
             EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
             if (embeddedDocumentBytesConfig != null && embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
                     !StringUtils.isAllBlank(embeddedDocumentBytesConfig.getEmitter())) {

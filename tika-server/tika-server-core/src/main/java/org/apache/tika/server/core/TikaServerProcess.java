@@ -64,6 +64,7 @@ import org.apache.tika.parser.digestutils.BouncyCastleDigester;
 import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.server.core.resource.AsyncResource;
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.LanguageResource;
@@ -194,7 +195,7 @@ public class TikaServerProcess {
         InputStreamFactory inputStreamFactory = null;
         if (tikaServerConfig.isEnableUnsecureFeatures() &&
                 tikaServerConfig.getPipesConfigPath().isPresent()) {
-            fetcherManager = FetcherManager.load(tikaServerConfig.getPipesConfigPath().get());
+            fetcherManager = FetcherManager.load(TikaPluginManager.load(tikaServerConfig.getPipesConfigPath().get()));
             inputStreamFactory = new FetcherStreamFactory(fetcherManager);
         } else {
             inputStreamFactory = new DefaultInputStreamFactory();
@@ -342,17 +343,8 @@ public class TikaServerProcess {
             resourceProviders.add(new SingletonResourceProvider(new TikaParsers()));
             resourceProviders.add(new SingletonResourceProvider(new TikaVersion()));
             if (tikaServerConfig.isEnableUnsecureFeatures()) {
-                //check to make sure there are both fetchers and emitters
-                //specified.  It is possible that users may only specify fetchers
-                //for legacy endpoints.
-                if (tikaServerConfig
-                        .getSupportedFetchers()
-                        .size() > 0 && tikaServerConfig
-                        .getSupportedEmitters()
-                        .size() > 0) {
-                    addAsyncResource = true;
-                    addPipesResource = true;
-                }
+                addAsyncResource = true;
+                addPipesResource = true;
                 resourceProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
             }
         } else {
@@ -394,8 +386,7 @@ public class TikaServerProcess {
                 throw new TikaConfigException("Must specify a pipes config on the commandline with the -a option");
             }
             final AsyncResource localAsyncResource = new AsyncResource(tikaServerConfig.getConfigPath(),
-                    tikaServerConfig.getPipesConfigPath().get(),
-                    tikaServerConfig.getSupportedFetchers());
+                    tikaServerConfig.getPipesConfigPath().get());
             Runtime
                     .getRuntime()
                     .addShutdownHook(new Thread(() -> {

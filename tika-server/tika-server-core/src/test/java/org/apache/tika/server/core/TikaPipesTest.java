@@ -48,6 +48,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -58,6 +59,7 @@ import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
+import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.resource.PipesResource;
@@ -118,7 +120,7 @@ public class TikaPipesTest extends CXFTestBase {
         CXFTestBase.createPluginsConfig(TIKA_PIPES_CONFIG_PATH, inputDir, TMP_OUTPUT_DIR, null);
 
         try (InputStream is = Files.newInputStream(TIKA_PIPES_CONFIG_PATH)) {
-            FETCHER_MANAGER = FetcherManager.load(is);
+            FETCHER_MANAGER = FetcherManager.load(TikaPluginManager.load(is));
         }
     }
 

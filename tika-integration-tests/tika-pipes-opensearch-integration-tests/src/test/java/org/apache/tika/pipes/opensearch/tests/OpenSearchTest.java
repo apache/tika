@@ -57,6 +57,7 @@ import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.opensearch.HttpClientConfig;
 import org.apache.tika.pipes.emitter.opensearch.JsonResponse;
 import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitterConfig;
+import org.apache.tika.plugins.TikaPluginManager;
 
 @Testcontainers(disabledWithoutDocker = true)
 public class OpenSearchTest {
@@ -360,7 +361,7 @@ public class OpenSearchTest {
                         OpenSearchEmitterConfig.UpdateStrategy.UPSERT, HandlerConfig.PARSE_MODE.RMETA,
                         endpoint, testDocDirectory);
         Emitter emitter = EmitterManager
-                .load(pluginsConfigFile).getEmitter();
+                .load(TikaPluginManager.load(pluginsConfigFile)).getEmitter();
         Metadata metadata = new Metadata();
         metadata.set("mime", "mimeA");
         metadata.set("title", "titleA");

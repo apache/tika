@@ -63,6 +63,7 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
+import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
@@ -127,7 +128,7 @@ public class TikaPipesTest extends CXFTestBase {
         CXFTestBase.createPluginsConfig(PLUGINS_CONFIG_PATH, inputDir, OUTPUT_JSON_DIR, OUTPUT_BYTES_DIR);
 
         try (InputStream is = Files.newInputStream(PLUGINS_CONFIG_PATH)) {
-            FETCHER_MANAGER = FetcherManager.load(is);
+            FETCHER_MANAGER = FetcherManager.load(TikaPluginManager.load(is));
         }
 
     }

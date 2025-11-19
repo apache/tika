@@ -71,12 +71,6 @@ public class TikaServerConfigTest {
         assertEquals(54321, config.getTaskTimeoutMillis());
         assertEquals(true, config.isEnableUnsecureFeatures());
 
-        assertEquals(1, config
-                .getSupportedEmitters()
-                .size());
-        assertTrue(config
-                .getSupportedEmitters()
-                .contains(CXFTestBase.EMITTER_JSON_ID));
     }
 
     @Test

@@ -28,6 +28,13 @@ import org.apache.tika.plugins.ExtensionConfig;
 @Extension
 public class OpenSearchEmitterFactory implements EmitterFactory {
 
+    public static final String EXTENSION_NAME = "opensearch-emitter";
+
+    @Override
+    public String getExtensionName() {
+        return EXTENSION_NAME;
+    }
+
     @Override
     public Emitter buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
         return OpenSearchEmitter.build(extensionConfig);

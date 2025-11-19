@@ -99,8 +99,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     private boolean enableUnsecureFeatures = false;
     private String cors = "";
     private boolean returnStackTrace = false;
-    private Set<String> supportedFetchers = new HashSet<>();
-    private Set<String> supportedEmitters = new HashSet<>();
     private String idBase = UUID
             .randomUUID()
             .toString();
@@ -168,7 +166,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
                         .toString());
             }
             config.setPipesConfigPath(pluginsConfigPath);
-            loadSupportedFetchersEmitters(config, pluginsConfigPath);
             return config;
         }
     }
@@ -181,24 +178,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         return tikaServerConfig;
     }
 
-    private static void loadSupportedFetchersEmitters(TikaServerConfig tikaServerConfig, Path pluginsConfigPath) throws IOException, TikaConfigException {
-        if (pluginsConfigPath == null) {
-            return;
-        }
-        JsonNode root = TikaConfigs.loadRoot(pluginsConfigPath);
-        JsonNode plugins = root.get("plugins");
-        JsonNode fetchers = plugins.get("fetchers");
-        Iterator<String> fieldNames = fetchers.fieldNames();
-        while (fieldNames.hasNext()) {
-            tikaServerConfig.supportedFetchers.add(fieldNames.next());
-        }
-
-        JsonNode emitters = plugins.get("emitters");
-        fieldNames = emitters.fieldNames();
-        while (fieldNames.hasNext()) {
-            tikaServerConfig.supportedEmitters.add(fieldNames.next());
-        }
-    }
 
     public int getPort() {
         return port;
@@ -377,14 +356,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
     private void addEndPoints(List<String> endPoints) {
         this.endpoints.addAll(endPoints);
-    }
-
-    public Set<String> getSupportedFetchers() {
-        return supportedFetchers;
-    }
-
-    public Set<String> getSupportedEmitters() {
-        return supportedEmitters;
     }
 
 }

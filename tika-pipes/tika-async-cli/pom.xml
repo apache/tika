@@ -95,7 +95,7 @@
       <executions>
       <execution>
         <id>copy-plugins</id>
-        <phase>generate-test-resources</phase>
+        <phase>process-test-resources</phase>
         <goals>
           <goal>copy</goal>
         </goals>

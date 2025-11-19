@@ -26,6 +26,13 @@ import org.apache.tika.plugins.ExtensionConfig;
 @Extension
 public class OpenSearchReporterFactory implements PipesReporterFactory {
 
+    public static final String EXTENSION_NAME = "opensearch-pipes-reporter";
+
+    @Override
+    public String getExtensionName() {
+        return EXTENSION_NAME;
+    }
+
     @Override
     public OpenSearchPipesReporter buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
         return OpenSearchPipesReporter.build(extensionConfig);

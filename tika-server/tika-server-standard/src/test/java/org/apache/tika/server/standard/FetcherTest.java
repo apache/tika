@@ -38,6 +38,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.FetcherStreamFactory;
@@ -75,7 +76,7 @@ public class FetcherTest extends CXFTestBase {
     @Override
     protected InputStreamFactory getInputStreamFactory(InputStream tikaConfigInputStream) {
         try (TikaInputStream tis = TikaInputStream.get(tikaConfigInputStream)) {
-            FetcherManager fetcherManager = FetcherManager.load(tis.getPath());
+            FetcherManager fetcherManager = FetcherManager.load(TikaPluginManager.load(tis.getPath()));
             return new FetcherStreamFactory(fetcherManager);
         } catch (Exception e) {
             throw new RuntimeException(e);

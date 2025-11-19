@@ -71,30 +71,24 @@ public abstract class CXFTestBase {
 
     public final static String JSON_TEMPLATE = """
             {
-              "plugins" : {
-                "fetchers": {
-                  "fsf":{
-                    "file-system-fetcher": {
-                      "basePath": "FETCHER_BASE_PATH",
-                      "extractFileSystemMetadata": false
-                    }
-                  }
-                },
-                "emitters": {
-                  "fse-json": {
-                    "file-system-emitter": {
-                      "basePath": "JSON_EMITTER_BASE_PATH",
-                      "fileExtension": "json",
-                      "onExists":"EXCEPTION"
-                    }
-                  },
-                  "fse-bytes": {
-                    "file-system-emitter": {
-                      "basePath": "BYTES_EMITTER_BASE_PATH",
-                      "fileExtension": "",
-                      "onExists":"EXCEPTION"
-                    }
-                  }
+              "fsf":{
+                "file-system-fetcher": {
+                  "basePath": "FETCHER_BASE_PATH",
+                  "extractFileSystemMetadata": false
+                }
+              },
+              "fse-json": {
+                "file-system-emitter": {
+                  "basePath": "JSON_EMITTER_BASE_PATH",
+                  "fileExtension": "json",
+                   "onExists":"EXCEPTION"
+                 }
+              },
+              "fse-bytes": {
+                "file-system-emitter": {
+                  "basePath": "BYTES_EMITTER_BASE_PATH",
+                  "fileExtension": "",
+                  "onExists":"EXCEPTION"
                 }
               },
               "pluginsPaths": "PLUGINS_PATHS"

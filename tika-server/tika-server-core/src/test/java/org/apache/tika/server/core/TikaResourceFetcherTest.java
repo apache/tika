@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 
@@ -91,7 +92,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     @Override
     protected InputStreamFactory getInputStreamFactory(InputStream is) {
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            FetcherManager fetcherManager = FetcherManager.load(tis.getPath());
+            FetcherManager fetcherManager = FetcherManager.load(TikaPluginManager.load(tis.getPath()));
             return new FetcherStreamFactory(fetcherManager);
         } catch (IOException | TikaConfigException e) {
             throw new RuntimeException(e);
