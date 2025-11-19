@@ -31,9 +31,9 @@
   <properties>
     <microsoft-graph.version>6.56.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
-    <msal4j.version>1.20.1</msal4j.version>
-    <kotlin-stdlib.version>2.2.20</kotlin-stdlib.version>
-    <microsoft-kiota.version>1.8.11</microsoft-kiota.version>
+    <msal4j.version>1.23.1</msal4j.version>
+    <kotlin-stdlib.version>2.2.21</kotlin-stdlib.version>
+    <microsoft-kiota.version>1.8.12</microsoft-kiota.version>
   </properties>
 
   <dependencyManagement>
