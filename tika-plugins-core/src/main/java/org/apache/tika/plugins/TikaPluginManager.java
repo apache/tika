@@ -3,6 +3,7 @@ package org.apache.tika.plugins;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -16,6 +17,7 @@ import org.pf4j.PluginDescriptor;
 import org.pf4j.PluginFactory;
 import org.pf4j.PluginLoader;
 import org.pf4j.PluginManager;
+import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,12 +57,21 @@ public class TikaPluginManager extends DefaultPluginManager {
 
     private void unzip(Path root) throws IOException {
         long start = System.currentTimeMillis();
+        if (!Files.isDirectory(root)) {
+            return;
+        }
+
         for (File f : root.toFile().listFiles()) {
             if (f.getName().endsWith(".zip")) {
                 ThreadSafeUnzipper.unzipPlugin(f.toPath());
             }
         }
-        LOG.info("took {} ms to unzip/check for unzipped plugins", System.currentTimeMillis() - start);
+        LOG.debug("took {} ms to unzip/check for unzipped plugins", System.currentTimeMillis() - start);
+    }
+
+    @Override
+    protected boolean isPluginValid(PluginWrapper pluginWrapper) {
+        return super.isPluginValid(pluginWrapper);
     }
 
     @Override
