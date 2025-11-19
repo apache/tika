@@ -27,6 +27,14 @@ import org.apache.tika.plugins.ExtensionConfig;
 @Extension
 public class JDBCPipesReporterFactory implements PipesReporterFactory {
 
+    public static final String EXTENSION_NAME = "jdbc-reporter";
+
+    @Override
+    public String getExtensionName() {
+        return EXTENSION_NAME;
+    }
+
+
     @Override
     public JDBCPipesReporter buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
         return JDBCPipesReporter.build(extensionConfig);

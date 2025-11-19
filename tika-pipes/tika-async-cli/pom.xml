@@ -52,24 +52,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-emitter-file-system</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-fetcher-file-system</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pipes-iterator-file-system</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
@@ -106,21 +88,21 @@
               <groupId>org.apache.tika</groupId>
               <artifactId>tika-fetcher-file-system</artifactId>
               <version>${project.version}</version>
-              <type>jar</type>
+              <type>zip</type>
               <overWrite>true</overWrite>
             </artifactItem>
             <artifactItem>
               <groupId>org.apache.tika</groupId>
               <artifactId>tika-emitter-file-system</artifactId>
               <version>${project.version}</version>
-              <type>jar</type>
+              <type>zip</type>
               <overWrite>true</overWrite>
             </artifactItem>
             <artifactItem>
               <groupId>org.apache.tika</groupId>
               <artifactId>tika-pipes-iterator-file-system</artifactId>
               <version>${project.version}</version>
-              <type>jar</type>
+              <type>zip</type>
               <overWrite>true</overWrite>
             </artifactItem>
           </artifactItems>

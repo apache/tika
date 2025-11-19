@@ -39,6 +39,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
+import org.apache.tika.plugins.TikaPluginManager;
 
 public class TikaClientCLI {
 
@@ -59,7 +60,7 @@ public class TikaClientCLI {
 
         ExecutorCompletionService<Long> completionService = new ExecutorCompletionService<>(executorService);
 
-        final PipesIterator pipesIterator = PipesIteratorManager.load(pluginsConfigPath);
+        final PipesIterator pipesIterator = PipesIteratorManager.load(TikaPluginManager.load(pluginsConfigPath));
 
         final ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(QUEUE_SIZE);
 

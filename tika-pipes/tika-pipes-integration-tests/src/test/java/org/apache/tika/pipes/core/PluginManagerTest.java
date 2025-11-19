@@ -12,8 +12,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
-import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
-import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 
 public class PluginManagerTest {
@@ -23,11 +21,13 @@ public class PluginManagerTest {
         Path config = PluginsTestHelper.getFileSystemFetcherConfig(tmpDir);
         try (InputStream is = Files.newInputStream(config)) {
             TikaPluginManager tikaPluginManager = TikaPluginManager.load(is);
+            tikaPluginManager.loadPlugins();
+            tikaPluginManager.startPlugins();
             List<Fetcher> fetchers = tikaPluginManager.buildConfiguredExtensions(FetcherFactory.class);
             assertEquals(1, fetchers.size());
             Fetcher f = fetchers.get(0);
             assertEquals("fsf", f.getExtensionConfig().id());
-            assertEquals(FileSystemFetcher.class, f.getClass());
+            assertEquals("org.apache.tika.pipes.fetcher.fs.FileSystemFetcher", f.getClass().getName());
         }
     }
 }

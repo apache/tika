@@ -27,6 +27,13 @@ import org.apache.tika.plugins.ExtensionConfig;
 @Extension
 public class FileSystemReporterFactory implements PipesReporterFactory {
 
+    public static final String EXTENSION_NAME = "file-system-reporter";
+
+    @Override
+    public String getExtensionName() {
+        return EXTENSION_NAME;
+    }
+
     @Override
     public FileSystemStatusReporter buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
         return FileSystemStatusReporter.build(extensionConfig);
