@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mbox;
 
@@ -22,11 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.TypeDetector;
 import org.apache.tika.metadata.Metadata;
@@ -35,6 +28,9 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class MboxParserTest extends TikaTest {
 
@@ -74,12 +70,12 @@ public class MboxParserTest extends TikaTest {
         Metadata mail1 = mailsMetadata.get(0);
         assertEquals("message/rfc822", mail1.get(Metadata.CONTENT_TYPE));
         assertEquals("envelope-sender-mailbox-name Mon Jun 01 10:00:00 2009",
-                mail1.get("MboxParser-from"));
+                        mail1.get("MboxParser-from"));
 
         Metadata mail2 = mailsMetadata.get(1);
         assertEquals("message/rfc822", mail2.get(Metadata.CONTENT_TYPE));
         assertEquals("envelope-sender-mailbox-name Mon Jun 01 11:00:00 2010",
-                mail2.get("MboxParser-from"));
+                        mail2.get("MboxParser-from"));
     }
 
     @Test
@@ -121,7 +117,7 @@ public class MboxParserTest extends TikaTest {
 
     @Test
     public void testMultilineHeader2() throws Exception {
-        //make sure that we aren't injecting body content into headers
+        // make sure that we aren't injecting body content into headers
         for (Metadata m : getRecursiveMetadata("multiline2.mbox")) {
             for (String mime : m.getValues(Metadata.CONTENT_TYPE)) {
                 assertFalse("something".equals(mime));
@@ -155,13 +151,13 @@ public class MboxParserTest extends TikaTest {
 
         Metadata firstMail = mboxParser.getTrackingMetadata().get(0);
         assertEquals("Re: question about when shuffle/sort start working",
-                firstMail.get(TikaCoreProperties.SUBJECT));
+                        firstMail.get(TikaCoreProperties.SUBJECT));
         assertEquals("Re: question about when shuffle/sort start working",
-                firstMail.get(TikaCoreProperties.TITLE));
+                        firstMail.get(TikaCoreProperties.TITLE));
         assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>",
-                firstMail.get(TikaCoreProperties.CREATOR));
+                        firstMail.get(TikaCoreProperties.CREATOR));
         assertEquals("core-user@hadoop.apache.org",
-                firstMail.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
+                        firstMail.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
 
         assertContains("When a Mapper completes", handler.toString());
     }

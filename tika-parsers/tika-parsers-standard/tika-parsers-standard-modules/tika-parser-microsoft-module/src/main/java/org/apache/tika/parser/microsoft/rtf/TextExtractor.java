@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.rtf;
@@ -36,12 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
 import java.util.TimeZone;
-
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.DublinCore;
@@ -53,13 +46,17 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.CharsetUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
-/* Tokenizes and performs a "shallow" parse of the RTF
- * document, just enough to properly decode the text.
+/*
+ * Tokenizes and performs a "shallow" parse of the RTF document, just enough to properly decode the
+ * text.
  *
- * TODO: we should cutover to a "real" tokenizer (eg JFlex);
- * it should give better perf, by replacing the excessive
- * "else if" string compares with FSA traversal. */
+ * TODO: we should cutover to a "real" tokenizer (eg JFlex); it should give better perf, by
+ * replacing the excessive "else if" string compares with FSA traversal.
+ */
 
 final class TextExtractor {
 
@@ -140,7 +137,7 @@ final class TextExtractor {
     private static final Charset MS949 = getCharset("ms949");
     // The RTF doc has a "font table" that assigns ords
     // (f0, f1, f2, etc.) to fonts and charsets, using the
-    // \fcharsetN control word.  This mapping maps from the
+    // \fcharsetN control word. This mapping maps from the
     // N to corresponding Java charset:
     private static final Map<Integer, Charset> FCHARSET_MAP = new HashMap<>();
     // The RTF may specify the \ansicpgN charset in the
@@ -190,62 +187,62 @@ final class TextExtractor {
     }
 
     static {
-        ANSICPG_MAP.put(437, CP4372);   // US IBM
-        ANSICPG_MAP.put(708, ISO_8859_6);   // Arabic (ASMO 708)
+        ANSICPG_MAP.put(437, CP4372); // US IBM
+        ANSICPG_MAP.put(708, ISO_8859_6); // Arabic (ASMO 708)
 
-        ANSICPG_MAP.put(709, WINDOWS_709);  // Arabic (ASMO 449+, BCON V4)
-        ANSICPG_MAP.put(710, WINDOWS_710);  // Arabic (transparent Arabic)
-        ANSICPG_MAP.put(710, WINDOWS_711);  // Arabic (Nafitha Enhanced)
-        ANSICPG_MAP.put(710, WINDOWS_720);  // Arabic (transparent ASMO)
-        ANSICPG_MAP.put(819, CP819);  // Windows 3.1 (US & Western Europe)
-        ANSICPG_MAP.put(819, CP819);  // Windows 3.1 (US & Western Europe)
+        ANSICPG_MAP.put(709, WINDOWS_709); // Arabic (ASMO 449+, BCON V4)
+        ANSICPG_MAP.put(710, WINDOWS_710); // Arabic (transparent Arabic)
+        ANSICPG_MAP.put(710, WINDOWS_711); // Arabic (Nafitha Enhanced)
+        ANSICPG_MAP.put(710, WINDOWS_720); // Arabic (transparent ASMO)
+        ANSICPG_MAP.put(819, CP819); // Windows 3.1 (US & Western Europe)
+        ANSICPG_MAP.put(819, CP819); // Windows 3.1 (US & Western Europe)
 
-        ANSICPG_MAP.put(819, CP819);  // Windows 3.1 (US & Western Europe)
-        ANSICPG_MAP.put(850, CP8502);  // IBM Multilingual
-        ANSICPG_MAP.put(852, CP852);  // Eastern European
-        ANSICPG_MAP.put(860, CP860);  // Portuguese
-        ANSICPG_MAP.put(862, CP862);  // Hebrew
-        ANSICPG_MAP.put(863, CP863);  // French Canadian
-        ANSICPG_MAP.put(864, CP864);  // Arabic
-        ANSICPG_MAP.put(865, CP865);  // Norwegian
-        ANSICPG_MAP.put(866, CP866);  // Soviet Union
-        ANSICPG_MAP.put(874, MS8742);  // Thai
-        ANSICPG_MAP.put(932, MS932);  // Japanese
-        ANSICPG_MAP.put(936, MS9362);  // Simplified Chinese
-        ANSICPG_MAP.put(949, CP949);  // Korean
-        ANSICPG_MAP.put(950, CP950);  // Traditional Chinese
-        ANSICPG_MAP.put(1250, CP12502);  // Eastern European
-        ANSICPG_MAP.put(1251, CP12512);  // Cyrillic
-        ANSICPG_MAP.put(1252, CP1252);  // Western European
-        ANSICPG_MAP.put(1253, CP12532);  // Greek
-        ANSICPG_MAP.put(1254, CP12542);  // Turkish
-        ANSICPG_MAP.put(1255, CP12552);  // Hebrew
-        ANSICPG_MAP.put(1256, CP12562);  // Arabic
-        ANSICPG_MAP.put(1257, CP12572);  // Baltic
-        ANSICPG_MAP.put(1258, CP12582);  // Vietnamese
-        ANSICPG_MAP.put(1361, X_JOHAB);  // Johab
-        ANSICPG_MAP.put(10000, MAC_ROMAN);  // Mac Roman
-        ANSICPG_MAP.put(10001, SHIFT_JIS);  // Mac Japan
-        ANSICPG_MAP.put(10004, MAC_ARABIC);  // Mac Arabic
-        ANSICPG_MAP.put(10005, MAC_HEBREW);  // Mac Hebrew
-        ANSICPG_MAP.put(10006, MAC_GREEK);  // Mac Hebrew
-        ANSICPG_MAP.put(10007, MAC_CYRILLIC);  // Mac Cyrillic
-        ANSICPG_MAP.put(10029, X_MAC_CENTRAL_EUROPE);  // MAC Latin2
-        ANSICPG_MAP.put(10081, MAC_TURKISH);  // Mac Turkish
-        ANSICPG_MAP.put(57002, X_ISCII91);   // Devanagari
+        ANSICPG_MAP.put(819, CP819); // Windows 3.1 (US & Western Europe)
+        ANSICPG_MAP.put(850, CP8502); // IBM Multilingual
+        ANSICPG_MAP.put(852, CP852); // Eastern European
+        ANSICPG_MAP.put(860, CP860); // Portuguese
+        ANSICPG_MAP.put(862, CP862); // Hebrew
+        ANSICPG_MAP.put(863, CP863); // French Canadian
+        ANSICPG_MAP.put(864, CP864); // Arabic
+        ANSICPG_MAP.put(865, CP865); // Norwegian
+        ANSICPG_MAP.put(866, CP866); // Soviet Union
+        ANSICPG_MAP.put(874, MS8742); // Thai
+        ANSICPG_MAP.put(932, MS932); // Japanese
+        ANSICPG_MAP.put(936, MS9362); // Simplified Chinese
+        ANSICPG_MAP.put(949, CP949); // Korean
+        ANSICPG_MAP.put(950, CP950); // Traditional Chinese
+        ANSICPG_MAP.put(1250, CP12502); // Eastern European
+        ANSICPG_MAP.put(1251, CP12512); // Cyrillic
+        ANSICPG_MAP.put(1252, CP1252); // Western European
+        ANSICPG_MAP.put(1253, CP12532); // Greek
+        ANSICPG_MAP.put(1254, CP12542); // Turkish
+        ANSICPG_MAP.put(1255, CP12552); // Hebrew
+        ANSICPG_MAP.put(1256, CP12562); // Arabic
+        ANSICPG_MAP.put(1257, CP12572); // Baltic
+        ANSICPG_MAP.put(1258, CP12582); // Vietnamese
+        ANSICPG_MAP.put(1361, X_JOHAB); // Johab
+        ANSICPG_MAP.put(10000, MAC_ROMAN); // Mac Roman
+        ANSICPG_MAP.put(10001, SHIFT_JIS); // Mac Japan
+        ANSICPG_MAP.put(10004, MAC_ARABIC); // Mac Arabic
+        ANSICPG_MAP.put(10005, MAC_HEBREW); // Mac Hebrew
+        ANSICPG_MAP.put(10006, MAC_GREEK); // Mac Hebrew
+        ANSICPG_MAP.put(10007, MAC_CYRILLIC); // Mac Cyrillic
+        ANSICPG_MAP.put(10029, X_MAC_CENTRAL_EUROPE); // MAC Latin2
+        ANSICPG_MAP.put(10081, MAC_TURKISH); // Mac Turkish
+        ANSICPG_MAP.put(57002, X_ISCII91); // Devanagari
 
         // TODO: in theory these other charsets are simple
         // shifts off of Devanagari, so we could impl that
         // here:
-        ANSICPG_MAP.put(57003, WINDOWS_57003);   // Bengali
-        ANSICPG_MAP.put(57004, WINDOWS_57004);   // Tamil
-        ANSICPG_MAP.put(57005, WINDOWS_57005);   // Telugu
-        ANSICPG_MAP.put(57006, WINDOWS_57006);   // Assamese
-        ANSICPG_MAP.put(57007, WINDOWS_57007);   // Oriya
-        ANSICPG_MAP.put(57008, WINDOWS_57008);   // Kannada
-        ANSICPG_MAP.put(57009, WINDOWS_57009);   // Malayalam
-        ANSICPG_MAP.put(57010, WINDOWS_57010);   // Gujariti
-        ANSICPG_MAP.put(57011, WINDOWS_57011);   // Punjabi
+        ANSICPG_MAP.put(57003, WINDOWS_57003); // Bengali
+        ANSICPG_MAP.put(57004, WINDOWS_57004); // Tamil
+        ANSICPG_MAP.put(57005, WINDOWS_57005); // Telugu
+        ANSICPG_MAP.put(57006, WINDOWS_57006); // Assamese
+        ANSICPG_MAP.put(57007, WINDOWS_57007); // Oriya
+        ANSICPG_MAP.put(57008, WINDOWS_57008); // Kannada
+        ANSICPG_MAP.put(57009, WINDOWS_57009); // Malayalam
+        ANSICPG_MAP.put(57010, WINDOWS_57010); // Gujariti
+        ANSICPG_MAP.put(57011, WINDOWS_57011); // Punjabi
     }
 
     // Used when we decode bytes -> chars using CharsetDecoder:
@@ -291,9 +288,9 @@ final class TextExtractor {
     // immediately open the top group (start with {):
     private GroupState groupState = new GroupState();
     private boolean inHeader = true;
-    //0 not yet in font table, 1 in font table, 2 have processed font table
+    // 0 not yet in font table, 1 in font table, 2 have processed font table
     private int fontTableState = 0;
-    //depth at which the font table started
+    // depth at which the font table started
     private int fontTableDepth;
     // Non null if we are processing metadata (title,
     // keywords, etc.) inside the info group:
@@ -318,24 +315,23 @@ final class TextExtractor {
     // Used when extracting CREATION date:
     private int year, month, day, hour, minute;
 
-    //This keeps track of the following elements as they are
-    //written to the handler: p, li, ol, ul
-    //This tries to prevent malformed tag orders in the RTF
-    //e.g. <p></li></ol></p>
-    //from generating malformed xml tags. (TIKA-2899)
-    //This may conceal problems with our parser.
-    //TODO:
+    // This keeps track of the following elements as they are
+    // written to the handler: p, li, ol, ul
+    // This tries to prevent malformed tag orders in the RTF
+    // e.g. <p></li></ol></p>
+    // from generating malformed xml tags. (TIKA-2899)
+    // This may conceal problems with our parser.
+    // TODO:
     // 1) do we need to add all elements, a, b, i, etc.
     // 2) are we doing the right thing by ignoring an element
-    //    if its match doesn't pop off the stack...or should
-    //    we pop all at the first failure.
+    // if its match doesn't pop off the stack...or should
+    // we pop all at the first failure.
     private Stack<String> paragraphStack = new Stack<>();
-    //this is an arbitrary limit on the size of the stack
-    //to defend against DoS with memory consumption
+    // this is an arbitrary limit on the size of the stack
+    // to defend against DoS with memory consumption
     private int maxStackSize = 1000;
 
-    public TextExtractor(ContentHandler out, Metadata metadata,
-                         RTFEmbObjHandler embObjHandler) {
+    public TextExtractor(ContentHandler out, Metadata metadata, RTFEmbObjHandler embObjHandler) {
         this.metadata = metadata;
         this.out = out;
         this.embObjHandler = embObjHandler;
@@ -450,20 +446,20 @@ final class TextExtractor {
     // Shallow parses the entire doc, writing output to
     // this.out and this.metadata
     public void extract(InputStream in) throws IOException, SAXException, TikaException {
-//        in = new FilterInputStream(in) {
-//            public int read() throws IOException {
-//                int r = super.read();
-//                System.out.write(r);
-//                System.out.flush();
-//                return r;
-//            }
-//            public int read(byte b[], int off, int len) throws IOException {
-//                int r = super.read(b, off, len);
-//                System.out.write(b, off, r);
-//                System.out.flush();
-//                return r;
-//            }
-//        };
+        // in = new FilterInputStream(in) {
+        // public int read() throws IOException {
+        // int r = super.read();
+        // System.out.write(r);
+        // System.out.flush();
+        // return r;
+        // }
+        // public int read(byte b[], int off, int len) throws IOException {
+        // int r = super.read(b, off, len);
+        // System.out.write(b, off, r);
+        // System.out.flush();
+        // return r;
+        // }
+        // };
         extract(new PushbackInputStream(in, 2));
     }
 
@@ -487,9 +483,8 @@ final class TextExtractor {
                 }
             } else if (groupState.objdata == true || groupState.pictDepth == 1) {
                 embObjHandler.writeHexChar(b);
-            } else if (b != '\r' && b != '\n' &&
-                    (!groupState.ignore || nextMetaData != null || groupState.sn == true ||
-                            groupState.sv == true)) {
+            } else if (b != '\r' && b != '\n' && (!groupState.ignore || nextMetaData != null
+                            || groupState.sn == true || groupState.sv == true)) {
                 // Linefeed and carriage return are not
                 // significant
                 if (ansiSkip != 0) {
@@ -502,14 +497,14 @@ final class TextExtractor {
 
         endParagraph(false);
 
-        //close out whatever tags were left
+        // close out whatever tags were left
         while (paragraphStack.size() > 0) {
             end(paragraphStack.pop());
         }
     }
 
     private void parseControlToken(PushbackInputStream in)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         int b = in.read();
         if (b == '\'') {
             // escaped hex char
@@ -527,10 +522,10 @@ final class TextExtractor {
     }
 
     private void parseHexChar(PushbackInputStream in)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         int hex1 = in.read();
         if (!isHexChar(hex1)) {
-            // DOC ERROR (malformed hex escape): ignore 
+            // DOC ERROR (malformed hex escape): ignore
             in.unread(hex1);
             return;
         }
@@ -556,7 +551,7 @@ final class TextExtractor {
     }
 
     private void parseControlWord(int firstChar, PushbackInputStream in)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         addControl(firstChar);
 
         int b = in.read();
@@ -631,14 +626,14 @@ final class TextExtractor {
         if (paragraphStack.size() < maxStackSize) {
             paragraphStack.push(tag);
         } else {
-            //ignore.  Something is very, very wrong...
+            // ignore. Something is very, very wrong...
         }
     }
 
     private void endParagraph(boolean preserveStyles)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         pushText();
-        //maintain consecutive new lines
+        // maintain consecutive new lines
         if (!inParagraph) {
             lazyStartParagraph();
         }
@@ -662,7 +657,7 @@ final class TextExtractor {
                         badTagAlignment = true;
                     }
                 } else {
-                    //there should have been a starting li
+                    // there should have been a starting li
                 }
             } else {
                 if (paragraphStack.size() > 0) {
@@ -675,8 +670,8 @@ final class TextExtractor {
                     }
                 }
             }
-            //if there was a failure in tag alignment,
-            //dump all tags and start fresh.
+            // if there was a failure in tag alignment,
+            // dump all tags and start fresh.
             if (badTagAlignment) {
                 while (paragraphStack.size() > 0) {
                     end(paragraphStack.pop());
@@ -726,7 +721,7 @@ final class TextExtractor {
                 // complete sequence of characters for this
                 // charset:
                 final CoderResult result = decoder.decode((ByteBuffer) pendingByteBuffer,
-                        (CharBuffer) outputCharBuffer, true);
+                                (CharBuffer) outputCharBuffer, true);
 
                 final int pos = outputCharBuffer.position();
                 if (pos > 0) {
@@ -849,27 +844,18 @@ final class TextExtractor {
 
     // Handle control word that takes a parameter:
     private void processControlWord(int param, PushbackInputStream in)
-            throws IOException, SAXException, TikaException {
-        // TODO: afN?  (associated font number)
+                    throws IOException, SAXException, TikaException {
+        // TODO: afN? (associated font number)
 
         // TODO: do these alter text output...?
         /*
-            } else if (equals("stshfdbch")) {
-                // font to be used by default in
-                // style sheet for East Asian chars
-                // arg N is font table entry
-            } else if (equals("stshfloch")) {
-                // font to be used by default in
-                // style sheet for ASCII chars
-                // arg N is font table entry
-            } else if (equals("stshfhich")) {
-                // font to be used by default in
-                // style sheet for High Ansi chars
-                // arg N is font table entry
-            } else if (equals("stshfbi")) {
-                // style sheet for Complex Scripts (BIDI) chars
-                // arg N is font table entry
-                */
+         * } else if (equals("stshfdbch")) { // font to be used by default in // style sheet for
+         * East Asian chars // arg N is font table entry } else if (equals("stshfloch")) { // font
+         * to be used by default in // style sheet for ASCII chars // arg N is font table entry }
+         * else if (equals("stshfhich")) { // font to be used by default in // style sheet for High
+         * Ansi chars // arg N is font table entry } else if (equals("stshfbi")) { // style sheet
+         * for Complex Scripts (BIDI) chars // arg N is font table entry
+         */
 
         // TODO: inefficient that we check equals N times;
         // we'd get better perf w/ real lexer (eg
@@ -921,9 +907,9 @@ final class TextExtractor {
                     }
                 }
             }
-            //if you've already seen the font table,
-            //you aren't in another header item (e.g. styles)
-            //and you see an fX, you're out of the header
+            // if you've already seen the font table,
+            // you aren't in another header item (e.g. styles)
+            // and you see an fX, you're out of the header
             if (fontTableState == 2 && !groupState.ignore && equals("f")) {
                 inHeader = false;
             }
@@ -935,7 +921,7 @@ final class TextExtractor {
                 } else if (equals("listtemplateid")) {
                     currentList.templateID = param;
                 } else if (equals("levelnfc") || equals("levelnfcn")) {
-                    //check to make sure list information isn't corrupt
+                    // check to make sure list information isn't corrupt
                     if (listTableLevel > -1 && listTableLevel < currentList.numberType.length) {
                         currentList.numberType[listTableLevel] = param;
                     }
@@ -946,7 +932,7 @@ final class TextExtractor {
             if (equals("b")) {
                 // b0
                 assert param == 0;
-                //only modify styles if we're not in a hyperlink
+                // only modify styles if we're not in a hyperlink
                 if (fieldState == 0) {
                     if (groupState.bold) {
                         pushText();
@@ -963,7 +949,7 @@ final class TextExtractor {
             } else if (equals("i")) {
                 // i0
                 assert param == 0;
-                //only modify styles if we're not in a hyperlink
+                // only modify styles if we're not in a hyperlink
                 if (fieldState == 0) {
                     if (groupState.italic) {
                         pushText();
@@ -984,7 +970,7 @@ final class TextExtractor {
                 } else {
                     // DOC ERROR: font change referenced a
                     // non-table'd font number
-                    // TODO: log a warning?  Throw an exc?
+                    // TODO: log a warning? Throw an exc?
                     groupState.fontCharset = null;
                 }
             } else if (equals("ls")) {
@@ -1036,8 +1022,8 @@ final class TextExtractor {
     }
 
     /**
-     * Marks the current list as pending to end. This is done to be able to merge list items of
-     * the same list within the same enclosing list tag (ie. either <code>"ul"</code>, or
+     * Marks the current list as pending to end. This is done to be able to merge list items of the
+     * same list within the same enclosing list tag (ie. either <code>"ul"</code>, or
      * <code>"ol"</code>).
      */
     private void pendingListEnd() {
@@ -1046,8 +1032,8 @@ final class TextExtractor {
     }
 
     /**
-     * Emits the end tag of a list. Uses {@link #isUnorderedList(int)} to determine the list
-     * type for the given <code>listID</code>.
+     * Emits the end tag of a list. Uses {@link #isUnorderedList(int)} to determine the list type
+     * for the given <code>listID</code>.
      *
      * @param listID The ID of the list.
      * @throws IOException
@@ -1063,14 +1049,14 @@ final class TextExtractor {
                     end(xl);
                 }
             } else {
-                //stack as empty, the list was never started
+                // stack as empty, the list was never started
             }
         }
     }
 
     /**
-     * Emits the start tag of a list. Uses {@link #isUnorderedList(int)} to determine the list
-     * type for the given <code>listID</code>.
+     * Emits the start tag of a list. Uses {@link #isUnorderedList(int)} to determine the list type
+     * for the given <code>listID</code>.
      *
      * @param listID The ID of the list.
      * @throws IOException
@@ -1175,14 +1161,13 @@ final class TextExtractor {
                 }
             }
 
-            if (!groupState.ignore &&
-                    (equals("par") || equals("pard") || equals("sect") || equals("sectd") ||
-                            equals("plain") || equals("ltrch") || equals("rtlch") ||
-                            equals("htmlrtf") || equals("line"))) {
+            if (!groupState.ignore && (equals("par") || equals("pard") || equals("sect")
+                            || equals("sectd") || equals("plain") || equals("ltrch")
+                            || equals("rtlch") || equals("htmlrtf") || equals("line"))) {
                 inHeader = false;
             }
         } else {
-            //only modify styles if we're not in a hyperlink
+            // only modify styles if we're not in a hyperlink
             if (fieldState == 0) {
                 if (equals("b")) {
                     if (!groupState.bold) {
@@ -1196,7 +1181,7 @@ final class TextExtractor {
                         startStyles(groupState);
                     }
                 } else if (equals("i")) {
-                    //START I
+                    // START I
                     if (!groupState.italic) {
                         pushText();
                         lazyStartParagraph();
@@ -1256,7 +1241,7 @@ final class TextExtractor {
             groupState.ignore = true;
         } else if (equals("cell")) {
             // TODO: we should produce a table output here?
-            //addOutputChar(' ');
+            // addOutputChar(' ');
             endParagraph(true);
         } else if (equals("sp")) {
             groupState.sp = true;
@@ -1275,7 +1260,7 @@ final class TextExtractor {
             embObjHandler.startObjData();
         } else if (equals("pict")) {
             pushText();
-            // TODO: create img tag?  but can that support
+            // TODO: create img tag? but can that support
             // embedded image data?
             groupState.pictDepth = 1;
             embObjHandler.startPict();
@@ -1381,8 +1366,8 @@ final class TextExtractor {
     }
 
     private void startStyles(GroupState groupState)
-            throws TikaException, IOException, SAXException {
-        //don't change styles within a <a > element
+                    throws TikaException, IOException, SAXException {
+        // don't change styles within a <a > element
         if (fieldState != 0) {
             return;
         }
@@ -1394,8 +1379,9 @@ final class TextExtractor {
             start("i");
         }
     }
+
     private void endStyles(GroupState groupState) throws TikaException, IOException, SAXException {
-        //don't change styles within a <a > element
+        // don't change styles within a <a > element
         if (fieldState != 0) {
             return;
         }
@@ -1418,8 +1404,8 @@ final class TextExtractor {
 
         // Make new GroupState
         groupState = new GroupState(groupState);
-        assert groupStates.size() == groupState.depth :
-                "size=" + groupStates.size() + " depth=" + groupState.depth;
+        assert groupStates.size() == groupState.depth
+                        : "size=" + groupStates.size() + " depth=" + groupState.depth;
 
         if (uprState == 0) {
             uprState = 1;
@@ -1492,7 +1478,7 @@ final class TextExtractor {
         if (groupStates.size() > 0) {
             // Restore group state:
             final GroupState outerGroupState = groupStates.removeLast();
-            //only modify styles if we're not in a hyperlink
+            // only modify styles if we're not in a hyperlink
             if (fieldState == 0) {
                 // Close italic, if outer does not have italic or
                 // bold changed:
@@ -1544,7 +1530,7 @@ final class TextExtractor {
             }
 
             // TODO: we could process the other known field
-            // types.  Right now, we will extract their text
+            // types. Right now, we will extract their text
             // inlined, but fail to record them in metadata
             // as a field value.
         } else if (fieldState == 3) {

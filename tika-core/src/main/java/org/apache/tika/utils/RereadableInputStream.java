@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.utils;
 
@@ -25,14 +23,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
-
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 
 /**
- * Wraps an input stream, reading it only once, but making it available
- * for rereading an arbitrary number of times.  The stream's bytes are
- * stored in memory up to a user specified maximum, and then stored in a
- * temporary file which is deleted when this class's close() method is called.
+ * Wraps an input stream, reading it only once, but making it available for rereading an arbitrary
+ * number of times. The stream's bytes are stored in memory up to a user specified maximum, and then
+ * stored in a temporary file which is deleted when this class's close() method is called.
  */
 public class RereadableInputStream extends InputStream {
 
@@ -48,31 +44,29 @@ public class RereadableInputStream extends InputStream {
     private final InputStream originalInputStream;
 
     /**
-     * The inputStream currently being used by this object to read contents;
-     * may be the original stream passed in, or a stream that reads
-     * the saved copy from a memory buffer or file.
+     * The inputStream currently being used by this object to read contents; may be the original
+     * stream passed in, or a stream that reads the saved copy from a memory buffer or file.
      */
     private InputStream inputStream;
 
     /**
-     * Maximum number of bytes that can be stored in memory before
-     * storage will be moved to a temporary file.
+     * Maximum number of bytes that can be stored in memory before storage will be moved to a
+     * temporary file.
      */
     private final int maxBytesInMemory;
 
     /**
-     * Whether or not we are currently reading from the byte buffer in memory
-     * Bytes are read until we've exhausted the buffered bytes and then we proceed to read from
-     * the original input stream. If the numbers of bytes read from the original stream
-     * eventually exceed maxBytesInMemory, then we'll switch to reading from a file.
+     * Whether or not we are currently reading from the byte buffer in memory Bytes are read until
+     * we've exhausted the buffered bytes and then we proceed to read from the original input
+     * stream. If the numbers of bytes read from the original stream eventually exceed
+     * maxBytesInMemory, then we'll switch to reading from a file.
      */
     private boolean readingFromBuffer;
 
 
     /**
-     * The buffer used to store the stream's content; this storage is moved
-     * to a file when the stored data's size exceeds maxBytesInMemory.
-     * Set to null once we start writing to a file.
+     * The buffer used to store the stream's content; this storage is moved to a file when the
+     * stored data's size exceeds maxBytesInMemory. Set to null once we start writing to a file.
      */
     private byte[] byteBuffer;
 
@@ -87,8 +81,8 @@ public class RereadableInputStream extends InputStream {
     private int bufferHighWaterMark;
 
     /**
-     * File used to store the stream's contents; is null until the stored
-     * content's size exceeds maxBytesInMemory.
+     * File used to store the stream's contents; is null until the stored content's size exceeds
+     * maxBytesInMemory.
      */
     private File storeFile;
 
@@ -98,23 +92,22 @@ public class RereadableInputStream extends InputStream {
     private boolean closed;
 
     /**
-     * OutputStream used to save the content of the input stream in a
-     * temporary file.
+     * OutputStream used to save the content of the input stream in a temporary file.
      */
     private OutputStream storeOutputStream;
 
 
     /**
-     * Specifies whether or not to close the original input stream
-     * when close() is called.  Defaults to true.
+     * Specifies whether or not to close the original input stream when close() is called. Defaults
+     * to true.
      */
     private final boolean closeOriginalStreamOnClose;
 
 
     /**
-     * Creates a rereadable input stream  with defaults of 512*1024*1024 bytes (500M) for
-     * maxBytesInMemory and both readToEndOfStreamOnFirstRewind and closeOriginalStreamOnClose
-     * set to true
+     * Creates a rereadable input stream with defaults of 512*1024*1024 bytes (500M) for
+     * maxBytesInMemory and both readToEndOfStreamOnFirstRewind and closeOriginalStreamOnClose set
+     * to true
      *
      * @param inputStream stream containing the source of data
      */
@@ -133,16 +126,14 @@ public class RereadableInputStream extends InputStream {
     }
 
     /**
-     * Creates a rereadable input stream  with closeOriginalStreamOnClose set to true
+     * Creates a rereadable input stream with closeOriginalStreamOnClose set to true
      *
-     * @param inputStream      stream containing the source of data
-     * @param maxBytesInMemory maximum number of bytes to use to store
-     *                         the stream's contents in memory before switching to disk; note that
-     *                         the instance will preallocate a byte array whose size is
-     *                         maxBytesInMemory.  This byte array will be made available for
-     *                         garbage collection (i.e. its reference set to null) when the
-     *                         content size exceeds the array's size, when close() is called, or
-     *                         when there are no more references to the instance.
+     * @param inputStream stream containing the source of data
+     * @param maxBytesInMemory maximum number of bytes to use to store the stream's contents in
+     *        memory before switching to disk; note that the instance will preallocate a byte array
+     *        whose size is maxBytesInMemory. This byte array will be made available for garbage
+     *        collection (i.e. its reference set to null) when the content size exceeds the array's
+     *        size, when close() is called, or when there are no more references to the instance.
      */
     public RereadableInputStream(InputStream inputStream, int maxBytesInMemory) {
         this(inputStream, maxBytesInMemory, true);
@@ -151,17 +142,15 @@ public class RereadableInputStream extends InputStream {
     /**
      * Creates a rereadable input stream.
      *
-     * @param inputStream      stream containing the source of data
-     * @param maxBytesInMemory maximum number of bytes to use to store
-     *                         the stream's contents in memory before switching to disk; note that
-     *                         the instance will preallocate a byte array whose size is
-     *                         maxBytesInMemory.  This byte array will be made available for
-     *                         garbage collection (i.e. its reference set to null) when the
-     *                         content size exceeds the array's size, when close() is called, or
-     *                         when there are no more references to the instance.
+     * @param inputStream stream containing the source of data
+     * @param maxBytesInMemory maximum number of bytes to use to store the stream's contents in
+     *        memory before switching to disk; note that the instance will preallocate a byte array
+     *        whose size is maxBytesInMemory. This byte array will be made available for garbage
+     *        collection (i.e. its reference set to null) when the content size exceeds the array's
+     *        size, when close() is called, or when there are no more references to the instance.
      */
     public RereadableInputStream(InputStream inputStream, int maxBytesInMemory,
-                                 boolean closeOriginalStreamOnClose) {
+                    boolean closeOriginalStreamOnClose) {
         this.inputStream = inputStream;
         this.originalInputStream = inputStream;
         this.maxBytesInMemory = maxBytesInMemory;
@@ -170,9 +159,8 @@ public class RereadableInputStream extends InputStream {
     }
 
     /**
-     * Reads a byte from the stream, saving it in the store if it is being
-     * read from the original stream.  Implements the abstract
-     * InputStream.read().
+     * Reads a byte from the stream, saving it in the store if it is being read from the original
+     * stream. Implements the abstract InputStream.read().
      *
      * @return the read byte, or -1 on end of stream.
      * @throws IOException
@@ -188,9 +176,9 @@ public class RereadableInputStream extends InputStream {
             // the next byte from there instead
             if (readingFromBuffer) {
                 readingFromBuffer = false;
-                inputStream.close();  // Close the input byte stream
+                inputStream.close(); // Close the input byte stream
             } else {
-                inputStream.close();  // Close the input file stream
+                inputStream.close(); // Close the input file stream
                 // start appending to the file
                 storeOutputStream = new BufferedOutputStream(new FileOutputStream(storeFile, true));
             }
@@ -257,8 +245,8 @@ public class RereadableInputStream extends InputStream {
             // If we have a buffer, then we'll read from it
             if (byteBuffer != null) {
                 readingFromBuffer = true;
-                inputStream = UnsynchronizedByteArrayInputStream.builder().
-                        setByteArray(byteBuffer).setOffset(0).setLength(bufferHighWaterMark).get();
+                inputStream = UnsynchronizedByteArrayInputStream.builder().setByteArray(byteBuffer)
+                                .setOffset(0).setLength(bufferHighWaterMark).get();
             } else {
                 // No buffer, which means we've switched to a file
                 inputStream = new BufferedInputStream(new FileInputStream(storeFile));
@@ -269,8 +257,8 @@ public class RereadableInputStream extends InputStream {
     }
 
     /**
-     * Closes the input stream currently used for reading (may either be
-     * the original stream or a memory or file stream after the first pass).
+     * Closes the input stream currently used for reading (may either be the original stream or a
+     * memory or file stream after the first pass).
      *
      * @throws IOException
      */
@@ -286,8 +274,7 @@ public class RereadableInputStream extends InputStream {
     }
 
     /**
-     * Closes the input stream and removes the temporary file if one was
-     * created.
+     * Closes the input stream and removes the temporary file if one was created.
      *
      * @throws IOException
      */

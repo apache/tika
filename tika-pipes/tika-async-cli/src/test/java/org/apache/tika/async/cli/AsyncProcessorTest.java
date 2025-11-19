@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.async.cli;
 
@@ -26,12 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -44,12 +37,15 @@ import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.serialization.JsonMetadataList;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * This should be in tika-core, but we want to avoid a dependency mess with tika-serialization
  */
 public class AsyncProcessorTest extends TikaTest {
-    //TODO -- integrate json pipes iterator and run with AyncProcessor.main
+    // TODO -- integrate json pipes iterator and run with AyncProcessor.main
     @TempDir
     private Path basedir;
     private Path inputDir;
@@ -75,17 +71,12 @@ public class AsyncProcessorTest extends TikaTest {
         Files.createDirectories(configDir);
         Files.createDirectories(inputDir);
 
-        String xml = IOUtils.toString(AsyncProcessorTest.class.getResourceAsStream("/configs/TIKA-4207-emitter.xml"), StandardCharsets.UTF_8);
-        //do stuff to xml
-        xml = xml.replace("BASE_PATH", inputDir
-                .toAbsolutePath()
-                .toString());
-        xml = xml.replace("JSON_PATH", jsonDir
-                .toAbsolutePath()
-                .toString());
-        xml = xml.replace("BYTES_PATH", bytesDir
-                .toAbsolutePath()
-                .toString());
+        String xml = IOUtils.toString(AsyncProcessorTest.class.getResourceAsStream(
+                        "/configs/TIKA-4207-emitter.xml"), StandardCharsets.UTF_8);
+        // do stuff to xml
+        xml = xml.replace("BASE_PATH", inputDir.toAbsolutePath().toString());
+        xml = xml.replace("JSON_PATH", jsonDir.toAbsolutePath().toString());
+        xml = xml.replace("BYTES_PATH", bytesDir.toAbsolutePath().toString());
 
         Files.writeString(tikaConfig, xml, StandardCharsets.UTF_8);
 
@@ -97,27 +88,31 @@ public class AsyncProcessorTest extends TikaTest {
 
     @Test
     public void testBasic() throws Exception {
-//        TikaAsyncCLI cli = new TikaAsyncCLI();
-        //      cli.main(new String[]{ configDir.resolve("tika-config.xml").toAbsolutePath().toString()});
+        // TikaAsyncCLI cli = new TikaAsyncCLI();
+        // cli.main(new String[]{
+        // configDir.resolve("tika-config.xml").toAbsolutePath().toString()});
         AsyncProcessor processor = new AsyncProcessor(configDir.resolve("tika-config.xml"));
 
-        EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = new EmbeddedDocumentBytesConfig(true);
+        EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig =
+                        new EmbeddedDocumentBytesConfig(true);
         embeddedDocumentBytesConfig.setIncludeOriginal(true);
         embeddedDocumentBytesConfig.setEmitter("bytes");
-        embeddedDocumentBytesConfig.setSuffixStrategy(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.NONE);
+        embeddedDocumentBytesConfig
+                        .setSuffixStrategy(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.NONE);
         embeddedDocumentBytesConfig.setEmbeddedIdPrefix("-");
         ParseContext parseContext = new ParseContext();
         parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
         parseContext.set(EmbeddedDocumentBytesConfig.class, embeddedDocumentBytesConfig);
-        FetchEmitTuple t =
-                new FetchEmitTuple("myId-1", new FetchKey("fs", "mock.xml"), new EmitKey("json", "emit-1"), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+        FetchEmitTuple t = new FetchEmitTuple("myId-1", new FetchKey("fs", "mock.xml"),
+                        new EmitKey("json", "emit-1"), new Metadata(), parseContext,
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
 
         processor.offer(t, 1000);
 
         for (int i = 0; i < 10; i++) {
             processor.offer(PipesIterator.COMPLETED_SEMAPHORE, 1000);
         }
-        //TODO clean this up
+        // TODO clean this up
         while (processor.checkActive()) {
             Thread.sleep(100);
         }
@@ -135,11 +130,8 @@ public class AsyncProcessorTest extends TikaTest {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(2, metadataList.size());
-        assertContains("main_content", metadataList
-                .get(0)
-                .get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("some_embedded_content", metadataList
-                .get(1)
-                .get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("main_content", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("some_embedded_content",
+                        metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
 }

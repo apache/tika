@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.chm;
 
@@ -20,11 +18,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
-
+import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.tika.exception.TikaException;
 
 public class ChmCommons {
 
@@ -38,8 +34,7 @@ public class ChmCommons {
     private static final Logger LOG = LoggerFactory.getLogger(ChmCommons.class);
 
     /* Prevents initialization */
-    private ChmCommons() {
-    }
+    private ChmCommons() {}
 
     public static void assertByteArrayNotNull(byte[] data) throws TikaException {
         if (data == null) {
@@ -48,8 +43,7 @@ public class ChmCommons {
     }
 
     /**
-     * LZX supports window sizes of 2^15 (32Kb) through 2^21 (2Mb) Returns X,
-     * i.e 2^X
+     * LZX supports window sizes of 2^15 (32Kb) through 2^21 (2Mb) Returns X, i.e 2^X
      *
      * @param window chmLzxControlData.getWindowSize()
      * @return window size
@@ -64,27 +58,28 @@ public class ChmCommons {
     }
 
     public static byte[] getChmBlockSegment(byte[] data, ChmLzxcResetTable resetTable,
-                                            int blockNumber, int lzxcBlockOffset,
-                                            int lzxcBlockLength) throws TikaException {
+                    int blockNumber, int lzxcBlockOffset, int lzxcBlockLength)
+                    throws TikaException {
         ChmAssert.assertChmBlockSegment(data, resetTable, blockNumber, lzxcBlockOffset,
-                lzxcBlockLength);
+                        lzxcBlockLength);
         int blockLength = -1;
         // TODO add int_max_value checking
         if (blockNumber < (resetTable.getBlockAddress().length - 1)) {
-            blockLength = (int) (resetTable.getBlockAddress()[blockNumber + 1] -
-                    resetTable.getBlockAddress()[blockNumber]);
+            blockLength = (int) (resetTable.getBlockAddress()[blockNumber + 1]
+                            - resetTable.getBlockAddress()[blockNumber]);
         } else {
             /* new code */
             if (blockNumber >= resetTable.getBlockAddress().length) {
                 blockLength = 0;
             } else
-                /* end new code */ {
+            /* end new code */ {
                 blockLength = (int) (lzxcBlockLength - resetTable.getBlockAddress()[blockNumber]);
             }
         }
         byte[] t = ChmCommons.copyOfRange(data,
-                (int) (lzxcBlockOffset + resetTable.getBlockAddress()[blockNumber]),
-                (int) (lzxcBlockOffset + resetTable.getBlockAddress()[blockNumber] + blockLength));
+                        (int) (lzxcBlockOffset + resetTable.getBlockAddress()[blockNumber]),
+                        (int) (lzxcBlockOffset + resetTable.getBlockAddress()[blockNumber]
+                                        + blockLength));
         return (t != null) ? t : new byte[1];
     }
 
@@ -221,19 +216,20 @@ public class ChmCommons {
      * @throws ChmParsingException
      */
     public static final int indexOfResetTableBlock(byte[] text, byte[] pattern)
-            throws ChmParsingException {
+                    throws ChmParsingException {
         return (indexOfDataSpaceStorageElement(text, pattern)) - 4;
     }
 
     /**
      * Searches some pattern in byte[]
      *
-     * @param text    byte[]
+     * @param text byte[]
      * @param pattern byte[]
      * @return an index, if nothing found returns -1
      * @throws ChmParsingException
      */
-    public static int indexOfDataSpaceStorageElement(byte[] text, byte[] pattern) throws ChmParsingException {
+    public static int indexOfDataSpaceStorageElement(byte[] text, byte[] pattern)
+                    throws ChmParsingException {
         int[] next = null;
         int i = 0, j = -1;
 
@@ -280,19 +276,19 @@ public class ChmCommons {
     }
 
     /**
-     * Searches for some pattern in the directory listing entry list
-     * This requires that the entry name start with "::DataSpaceStorage"
-     * See TIKA-4204
+     * Searches for some pattern in the directory listing entry list This requires that the entry
+     * name start with "::DataSpaceStorage" See TIKA-4204
      *
      * @param list
      * @param pattern
      * @return an index, if nothing found returns -1
      */
-    public static int indexOfDataSpaceStorageElement(List<DirectoryListingEntry> list, String pattern) {
+    public static int indexOfDataSpaceStorageElement(List<DirectoryListingEntry> list,
+                    String pattern) {
         int place = 0;
         for (DirectoryListingEntry directoryListingEntry : list) {
-            if (directoryListingEntry.getName().startsWith("::DataSpace/Storage") &&
-                    directoryListingEntry.getName().contains(pattern)) {
+            if (directoryListingEntry.getName().startsWith("::DataSpace/Storage")
+                            && directoryListingEntry.getName().contains(pattern)) {
                 return place;
             }
             ++place;

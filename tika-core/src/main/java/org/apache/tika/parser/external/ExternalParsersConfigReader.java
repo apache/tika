@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.external;
 
@@ -27,7 +25,10 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilder;
-
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -35,16 +36,9 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.utils.XMLReaderUtils;
-
 /**
- * Builds up ExternalParser instances based on XML file(s)
- * which define what to run, for what, and how to process
- * any output metadata.
- * Typically used to configure up a series of external programs
+ * Builds up ExternalParser instances based on XML file(s) which define what to run, for what, and
+ * how to process any output metadata. Typically used to configure up a series of external programs
  * (like catdoc or pdf2txt) to extract text content from documents.
  *
  * <pre>
@@ -86,16 +80,15 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
             }
         } else {
             throw new MimeTypeException(
-                    "Not a <" + EXTERNAL_PARSERS_TAG + "/> configuration document: " +
-                            (element != null ? element.getTagName() : "n/a"));
+                            "Not a <" + EXTERNAL_PARSERS_TAG + "/> configuration document: "
+                                            + (element != null ? element.getTagName() : "n/a"));
         }
 
         return parsers;
     }
 
     /**
-     * Builds and Returns an ExternalParser, or null if a check
-     * command was given that didn't match.
+     * Builds and Returns an ExternalParser, or null if a check command was given that didn't match.
      */
     private static ExternalParser readParser(Element parserDef) throws TikaException {
         ExternalParser parser = new ExternalParser();
@@ -122,7 +115,8 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
                         parser.setMetadataExtractionPatterns(readMetadataPatterns(child));
                         break;
                     default:
-                        throw new IllegalArgumentException("reaction not defined for " + child.getTagName());
+                        throw new IllegalArgumentException(
+                                        "reaction not defined for " + child.getTagName());
                 }
             }
         }
@@ -186,7 +180,7 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
                             String s = st.nextToken();
                             errorVals.add(Integer.parseInt(s));
                         } catch (NumberFormatException e) {
-                            //swallow
+                            // swallow
                         }
                     }
                 }

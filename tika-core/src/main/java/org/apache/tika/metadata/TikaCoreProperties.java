@@ -1,36 +1,32 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.metadata;
 
 /**
- * Contains a core set of basic Tika metadata properties, which all parsers
- * will attempt to supply (where the file format permits). These are all
- * defined in terms of other standard namespaces.
+ * Contains a core set of basic Tika metadata properties, which all parsers will attempt to supply
+ * (where the file format permits). These are all defined in terms of other standard namespaces.
  * <p>
- * Users of Tika who wish to have consistent metadata across file formats
- * can make use of these Properties, knowing that where present they will
- * have consistent semantic meaning between different file formats. (No
- * matter if one file format calls it Title, another Long-Title and another
- * Long-Name, if they all mean the same thing as defined by
- * {@link DublinCore#TITLE} then they will all be present as such)
+ * Users of Tika who wish to have consistent metadata across file formats can make use of these
+ * Properties, knowing that where present they will have consistent semantic meaning between
+ * different file formats. (No matter if one file format calls it Title, another Long-Title and
+ * another Long-Name, if they all mean the same thing as defined by {@link DublinCore#TITLE} then
+ * they will all be present as such)
  * <p>
- * For now, most of these properties are composite ones including the deprecated
- * non-prefixed String properties from the Metadata class. In Tika 2.0, most
- * of these will revert back to simple assignments.
+ * For now, most of these properties are composite ones including the deprecated non-prefixed String
+ * properties from the Metadata class. In Tika 2.0, most of these will revert back to simple
+ * assignments.
  *
  * @since Apache Tika 1.2
  */
@@ -43,62 +39,58 @@ public interface TikaCoreProperties {
     String NAMESPACE_PREFIX_DELIMITER = ":";
 
     /**
-     * Use this to prefix metadata properties that store information
-     * about the parsing process.  Users should be able to distinguish
-     * between metadata that was contained within the document and
-     * metadata about the parsing process.
+     * Use this to prefix metadata properties that store information about the parsing process.
+     * Users should be able to distinguish between metadata that was contained within the document
+     * and metadata about the parsing process.
      */
     String TIKA_META_PREFIX = "X-TIKA" + NAMESPACE_PREFIX_DELIMITER;
     Property EMBEDDED_DEPTH = Property.internalInteger(TIKA_META_PREFIX + "embedded_depth");
 
     /**
-     * This tracks the embedded file paths based on the name of embedded files
-     * where available.
+     * This tracks the embedded file paths based on the name of embedded files where available.
      * <p/>
-     * This field should be treated with great care and should NOT
-     * be used for creating a directory structure to write out attachments
-     * because: there may be path collisions or illegal characters or other mayhem.
+     * This field should be treated with great care and should NOT be used for creating a directory
+     * structure to write out attachments because: there may be path collisions or illegal
+     * characters or other mayhem.
      * <p/>
      * For a more robust path, see {@link TikaCoreProperties#EMBEDDED_ID_PATH}.
      */
     Property EMBEDDED_RESOURCE_PATH =
-            Property.internalText(TIKA_META_PREFIX + "embedded_resource_path");
+                    Property.internalText(TIKA_META_PREFIX + "embedded_resource_path");
 
 
     /**
-     * This is calculated in {@link org.apache.tika.sax.RecursiveParserWrapperHandler}.
-     * It differs from {@link TikaCoreProperties#EMBEDDED_RESOURCE_PATH} in that
-     * it is calculated at the end of the full parse of a file. {@link TikaCoreProperties#EMBEDDED_RESOURCE_PATH}
-     * is calculated during the parse, and, for some parsers, an embedded file's name isn't known until
-     * after its child files have been parsed.
+     * This is calculated in {@link org.apache.tika.sax.RecursiveParserWrapperHandler}. It differs
+     * from {@link TikaCoreProperties#EMBEDDED_RESOURCE_PATH} in that it is calculated at the end of
+     * the full parse of a file. {@link TikaCoreProperties#EMBEDDED_RESOURCE_PATH} is calculated
+     * during the parse, and, for some parsers, an embedded file's name isn't known until after its
+     * child files have been parsed.
      * <p/>
-     * Note that the unknown file count may differ between {@link TikaCoreProperties#EMBEDDED_RESOURCE_PATH}
-     * because there should be fewer unknown files when this is calculated. More simply,
-     * there is no connection between "embedded-1" in this field and "embedded-1" in
-     * {@link TikaCoreProperties#EMBEDDED_RESOURCE_PATH}.
+     * Note that the unknown file count may differ between
+     * {@link TikaCoreProperties#EMBEDDED_RESOURCE_PATH} because there should be fewer unknown files
+     * when this is calculated. More simply, there is no connection between "embedded-1" in this
+     * field and "embedded-1" in {@link TikaCoreProperties#EMBEDDED_RESOURCE_PATH}.
      * <p/>
-     * This field should be treated with great care and should NOT
-     * be used for creating a directory structure to write out attachments
-     * because: there may be path collisions or illegal characters or other mayhem.
+     * This field should be treated with great care and should NOT be used for creating a directory
+     * structure to write out attachments because: there may be path collisions or illegal
+     * characters or other mayhem.
      * <p/>
      *
      * For a more robust path, see {@link TikaCoreProperties#EMBEDDED_ID_PATH}.
      */
     Property FINAL_EMBEDDED_RESOURCE_PATH =
-            Property.internalText(TIKA_META_PREFIX + "final_embedded_resource_path");
+                    Property.internalText(TIKA_META_PREFIX + "final_embedded_resource_path");
 
     /**
      * This tracks the embedded file paths based on the embedded file's
      * {@link TikaCoreProperties#EMBEDDED_ID}.
      */
-    Property EMBEDDED_ID_PATH =
-            Property.internalText(TIKA_META_PREFIX + "embedded_id_path");
+    Property EMBEDDED_ID_PATH = Property.internalText(TIKA_META_PREFIX + "embedded_id_path");
 
     /**
      * This is a 1-index counter for embedded files, used by the RecursiveParserWrapper
      */
-    Property EMBEDDED_ID =
-            Property.internalInteger(TIKA_META_PREFIX + "embedded_id");
+    Property EMBEDDED_ID = Property.internalInteger(TIKA_META_PREFIX + "embedded_id");
 
     Property PARSE_TIME_MILLIS = Property.internalText(TIKA_META_PREFIX + "parse_time_millis");
     /**
@@ -116,103 +108,100 @@ public interface TikaCoreProperties {
      */
     String TIKA_META_WARN_PREFIX = TIKA_META_PREFIX + "WARN" + NAMESPACE_PREFIX_DELIMITER;
 
-    //exception in main file
+    // exception in main file
     Property CONTAINER_EXCEPTION =
-            Property.internalText(TIKA_META_EXCEPTION_PREFIX + "container_exception");
+                    Property.internalText(TIKA_META_EXCEPTION_PREFIX + "container_exception");
 
-    //exception in an embedded file
+    // exception in an embedded file
     Property EMBEDDED_EXCEPTION =
-            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_exception");
+                    Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_exception");
 
-    //exception handling the raw bytes of an embedded file by an EmbeddedDocumentByteStore
-    Property EMBEDDED_BYTES_EXCEPTION =
-            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_bytes_exception");
+    // exception handling the raw bytes of an embedded file by an EmbeddedDocumentByteStore
+    Property EMBEDDED_BYTES_EXCEPTION = Property
+                    .internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_bytes_exception");
 
-    //warning while parsing in an embedded file
+    // warning while parsing in an embedded file
     Property EMBEDDED_WARNING =
-            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_warning");
+                    Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_warning");
 
     Property WRITE_LIMIT_REACHED =
-            Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "write_limit_reached");
+                    Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "write_limit_reached");
     /**
-     * Use this to store exceptions caught during a parse that are
-     * non-fatal, e.g. if a parser is in lenient mode and more
-     * content can be extracted if we ignore an exception thrown by
-     * a dependency.
+     * Use this to store exceptions caught during a parse that are non-fatal, e.g. if a parser is in
+     * lenient mode and more content can be extracted if we ignore an exception thrown by a
+     * dependency.
      */
     Property TIKA_META_EXCEPTION_WARNING =
-            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "warn");
+                    Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "warn");
 
     /**
-     * This means that metadata keys or metadata values were truncated.
-     * If there is an "include" filter, this should not be set if
-     * a field is not in the "include" set.
+     * This means that metadata keys or metadata values were truncated. If there is an "include"
+     * filter, this should not be set if a field is not in the "include" set.
      */
     Property TRUNCATED_METADATA =
-            Property.internalBoolean(TIKA_META_WARN_PREFIX + "truncated_metadata");
+                    Property.internalBoolean(TIKA_META_WARN_PREFIX + "truncated_metadata");
 
     /**
-     * Use this to store exceptions caught while trying to read the
-     * stream of an embedded resource.  Do not use this if there is
-     * a parse exception on the embedded resource.
+     * Use this to store exceptions caught while trying to read the stream of an embedded resource.
+     * Do not use this if there is a parse exception on the embedded resource.
      */
-    Property TIKA_META_EXCEPTION_EMBEDDED_STREAM =
-            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_stream_exception");
+    Property TIKA_META_EXCEPTION_EMBEDDED_STREAM = Property
+                    .internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_stream_exception");
     Property TIKA_PARSED_BY = Property.internalTextBag(TIKA_META_PREFIX + "Parsed-By");
 
     /**
-     * Use this to store a record of all parsers that touched a given file
-     * in the container file's metadata.
+     * Use this to store a record of all parsers that touched a given file in the container file's
+     * metadata.
      */
-    Property TIKA_PARSED_BY_FULL_SET = Property.internalTextBag(TIKA_META_PREFIX + "Parsed-By-Full-Set");
+    Property TIKA_PARSED_BY_FULL_SET =
+                    Property.internalTextBag(TIKA_META_PREFIX + "Parsed-By-Full-Set");
 
-    Property TIKA_DETECTED_LANGUAGE = Property.externalTextBag(TIKA_META_PREFIX +
-            "detected_language");
+    Property TIKA_DETECTED_LANGUAGE =
+                    Property.externalTextBag(TIKA_META_PREFIX + "detected_language");
 
-    Property TIKA_DETECTED_LANGUAGE_CONFIDENCE = Property.externalTextBag(TIKA_META_PREFIX +
-            "detected_language_confidence");
+    Property TIKA_DETECTED_LANGUAGE_CONFIDENCE =
+                    Property.externalTextBag(TIKA_META_PREFIX + "detected_language_confidence");
 
-    Property TIKA_DETECTED_LANGUAGE_CONFIDENCE_RAW = Property.externalRealSeq(TIKA_META_PREFIX +
-            "detected_language_confidence_raw");
+    Property TIKA_DETECTED_LANGUAGE_CONFIDENCE_RAW =
+                    Property.externalRealSeq(TIKA_META_PREFIX + "detected_language_confidence_raw");
 
     Property RESOURCE_NAME_KEY = Property.internalText(TIKA_META_PREFIX + "resourceName");
-    Property EMBEDDED_RELATIONSHIP_ID = Property.internalText(TIKA_META_PREFIX + "embeddedRelationshipId");
+    Property EMBEDDED_RELATIONSHIP_ID =
+                    Property.internalText(TIKA_META_PREFIX + "embeddedRelationshipId");
 
     String EMBEDDED_RESOURCE_TYPE_KEY = "embeddedResourceType";
     /**
-     * Some file formats can store information about their original
-     * file name/location or about their attachment's original file name/location
-     * within the file.
+     * Some file formats can store information about their original file name/location or about
+     * their attachment's original file name/location within the file.
      */
     Property ORIGINAL_RESOURCE_NAME =
-            Property.internalTextBag(TIKA_META_PREFIX + "origResourceName");
+                    Property.internalTextBag(TIKA_META_PREFIX + "origResourceName");
     /**
-     * This should be used to store the path (relative or full)
-     * of the source file, including the file name,
-     * e.g. doc/path/to/my_pdf.pdf
+     * This should be used to store the path (relative or full) of the source file, including the
+     * file name, e.g. doc/path/to/my_pdf.pdf
      * <p>
      * This can also be used for a primary key within a database.
      */
     Property SOURCE_PATH = Property.internalText(TIKA_META_PREFIX + "sourcePath");
     /**
-     * This is currently used to identify Content-Type that may be
-     * included within a document, such as in html documents
-     * (e.g. <meta http-equiv="content-type" content="text/html; charset=UTF-8">)
-     * , or the value might come from outside the document.  This information
-     * may be faulty and should be treated only as a hint.
+     * This is currently used to identify Content-Type that may be included within a document, such
+     * as in html documents (e.g.
+     * <meta http-equiv="content-type" content="text/html; charset=UTF-8">) , or the value might
+     * come from outside the document. This information may be faulty and should be treated only as
+     * a hint.
      */
     Property CONTENT_TYPE_HINT = Property.internalText(HttpHeaders.CONTENT_TYPE + "-Hint");
     /**
      * This is used by users to override detection with the override detector.
      */
     Property CONTENT_TYPE_USER_OVERRIDE =
-            Property.internalText(HttpHeaders.CONTENT_TYPE + "-Override");
+                    Property.internalText(HttpHeaders.CONTENT_TYPE + "-Override");
     /**
-     * This is used by parsers to override detection of embedded resources
-     * with the override detector.
+     * This is used by parsers to override detection of embedded resources with the override
+     * detector.
      */
     Property CONTENT_TYPE_PARSER_OVERRIDE =
-            Property.internalText(HttpHeaders.CONTENT_TYPE + "-Parser-Override");
+                    Property.internalText(HttpHeaders.CONTENT_TYPE + "-Parser-Override");
     /**
      * @see DublinCore#FORMAT
      */
@@ -276,9 +265,8 @@ public interface TikaCoreProperties {
      */
     Property DESCRIPTION = DublinCore.DESCRIPTION;
     /**
-     * {@link DublinCore#SUBJECT}; should include both subject and keywords
-     * if a document format has both.  See also {@link Office#KEYWORDS}
-     * and {@link OfficeOpenXMLCore#SUBJECT}.
+     * {@link DublinCore#SUBJECT}; should include both subject and keywords if a document format has
+     * both. See also {@link Office#KEYWORDS} and {@link OfficeOpenXMLCore#SUBJECT}.
      */
     Property SUBJECT = DublinCore.SUBJECT;
     /**
@@ -321,9 +309,9 @@ public interface TikaCoreProperties {
     Property RATING = XMP.RATING;
 
     /**
-     * This is the number of images (as in a multi-frame gif) returned by
-     * Java's {@link javax.imageio.ImageReader#getNumImages(boolean)}.  See
-     * the javadocs for known limitations.
+     * This is the number of images (as in a multi-frame gif) returned by Java's
+     * {@link javax.imageio.ImageReader#getNumImages(boolean)}. See the javadocs for known
+     * limitations.
      */
     Property NUM_IMAGES = Property.internalInteger("imagereader:NumImages");
 
@@ -336,9 +324,11 @@ public interface TikaCoreProperties {
      * Embedded resource type property
      */
     Property EMBEDDED_RESOURCE_TYPE = Property.internalClosedChoise(EMBEDDED_RESOURCE_TYPE_KEY,
-            EmbeddedResourceType.ATTACHMENT.toString(), EmbeddedResourceType.INLINE.toString(),
-            EmbeddedResourceType.METADATA.toString(), EmbeddedResourceType.MACRO.toString(),
-            EmbeddedResourceType.THUMBNAIL.toString(), EmbeddedResourceType.RENDERING.toString());
+                    EmbeddedResourceType.ATTACHMENT.toString(),
+                    EmbeddedResourceType.INLINE.toString(),
+                    EmbeddedResourceType.METADATA.toString(), EmbeddedResourceType.MACRO.toString(),
+                    EmbeddedResourceType.THUMBNAIL.toString(),
+                    EmbeddedResourceType.RENDERING.toString());
     Property HAS_SIGNATURE = Property.internalBoolean("hasSignature");
 
     Property SIGNATURE_NAME = Property.internalTextBag("signature:name");
@@ -348,69 +338,68 @@ public interface TikaCoreProperties {
     Property SIGNATURE_FILTER = Property.internalTextBag("signature:filter");
     Property SIGNATURE_CONTACT_INFO = Property.internalTextBag("signature:contact-info");
 
-    //is the file encrypted
+    // is the file encrypted
     Property IS_ENCRYPTED = Property.internalBoolean(TIKA_META_PREFIX + "encrypted");
 
     /**
      * When an EncodingDetector detects an encoding, the encoding should be stored in this field.
      * This is different from {@link Metadata#CONTENT_ENCODING} because that is what a parser
-     * chooses to use for processing a file. If an EncodingDetector returns "null", a parser
-     * may choose to use a default encoding. We want to differentiate between a parser using a
-     * default encoding and the output of an EncodingDetector.
+     * chooses to use for processing a file. If an EncodingDetector returns "null", a parser may
+     * choose to use a default encoding. We want to differentiate between a parser using a default
+     * encoding and the output of an EncodingDetector.
      */
     Property DETECTED_ENCODING = Property.externalText(TIKA_META_PREFIX + "detectedEncoding");
 
 
     /**
-     * This should be the simple class name for the EncodingDetectors whose detected encoding
-     * was used in the parse.
+     * This should be the simple class name for the EncodingDetectors whose detected encoding was
+     * used in the parse.
      */
     Property ENCODING_DETECTOR = Property.externalText(TIKA_META_PREFIX + "encodingDetector");
 
     /**
-     * General metadata key for the count of non-final versions available within a file.  This
-     * was added initially to support generalizing incremental updates in PDF.
+     * General metadata key for the count of non-final versions available within a file. This was
+     * added initially to support generalizing incremental updates in PDF.
      */
     Property VERSION_COUNT = Property.externalInteger(TIKA_META_PREFIX + "versionCount");
 
     /**
-     * General metadata key for the version number of a given file that contains
-     * earlier versions within it.  This number is 0-indexed for the earliest version.
-     * The latest version does not have this metadata value.  This was added initially
-     * to support generalizing incremental updates in PDF.
+     * General metadata key for the version number of a given file that contains earlier versions
+     * within it. This number is 0-indexed for the earliest version. The latest version does not
+     * have this metadata value. This was added initially to support generalizing incremental
+     * updates in PDF.
      */
     Property VERSION_NUMBER = Property.externalInteger(TIKA_META_PREFIX + "versionNumber");
 
     Property PIPES_RESULT = Property.externalText(TIKA_META_PREFIX + "pipes_result");
+
     /**
-     * A file might contain different types of embedded documents.
-     * The most common is the ATTACHMENT.
+     * A file might contain different types of embedded documents. The most common is the
+     * ATTACHMENT.
      * <p>
-     * An INLINE embedded resource should be used for embedded image
-     * files that are used to render the page image (as in PDXObjImages in PDF files).
+     * An INLINE embedded resource should be used for embedded image files that are used to render
+     * the page image (as in PDXObjImages in PDF files).
      * <p>
-     * A MACRO is code that is embedded in the document and is intended
-     * to be executable within the application that opens the document.  This
-     * includes traditional macros within Microsoft Office files and
-     * javascript within PDFActions.  This would not include, e.g., an
-     * .exe file embedded in a .zip file.
+     * A MACRO is code that is embedded in the document and is intended to be executable within the
+     * application that opens the document. This includes traditional macros within Microsoft Office
+     * files and javascript within PDFActions. This would not include, e.g., an .exe file embedded
+     * in a .zip file.
      * <p>
-     * A VERSION is an earlier version of the file as in incremental updates.
-     * The initial use case for this is incremental updates in PDFs, but
-     * it could be applied to other file formats as well where earlier versions
-     * are recoverable. See also {@link PDF#INCREMENTAL_UPDATE_NUMBER}
+     * A VERSION is an earlier version of the file as in incremental updates. The initial use case
+     * for this is incremental updates in PDFs, but it could be applied to other file formats as
+     * well where earlier versions are recoverable. See also {@link PDF#INCREMENTAL_UPDATE_NUMBER}
      * <p>
      * Not all parsers have yet implemented this.
      */
     enum EmbeddedResourceType {
-        INLINE, //image that is intended to be displayed in a rendering of the file
-        ATTACHMENT,//standard attachment as in email
-        MACRO, //any code that is intended to be run by the application
-        METADATA, //e.g. xmp, xfa
-        FONT,//embedded font files
-        THUMBNAIL, //TODO: set this in parsers that handle thumbnails
-        RENDERING, //if a file has been rendered
-        VERSION, //an earlier version of a file
-        ALTERNATE_FORMAT_CHUNK //OOXML inline alternate format chunk
+        INLINE, // image that is intended to be displayed in a rendering of the file
+        ATTACHMENT, // standard attachment as in email
+        MACRO, // any code that is intended to be run by the application
+        METADATA, // e.g. xmp, xfa
+        FONT, // embedded font files
+        THUMBNAIL, // TODO: set this in parsers that handle thumbnails
+        RENDERING, // if a file has been rendered
+        VERSION, // an earlier version of a file
+        ALTERNATE_FORMAT_CHUNK // OOXML inline alternate format chunk
     }
 }

@@ -1,24 +1,25 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.reporters.fs;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,18 +34,13 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
 import org.apache.tika.pipes.core.PipesReporter;
 import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.pipes.core.async.AsyncStatus;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class TestFileSystemStatusReporter {
 
@@ -55,23 +51,22 @@ public class TestFileSystemStatusReporter {
         reporter.setStatusFile(path.toAbsolutePath().toString());
         reporter.setReportUpdateMillis(100);
         reporter.initialize(new HashMap<>());
-        final ObjectMapper objectMapper = JsonMapper.builder()
-                .addModule(new JavaTimeModule())
-                .build();
+        final ObjectMapper objectMapper =
+                        JsonMapper.builder().addModule(new JavaTimeModule()).build();
         Thread readerThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (true) {
                     try {
                         AsyncStatus asyncStatus =
-                                objectMapper.readValue(path.toFile(), AsyncStatus.class);
+                                        objectMapper.readValue(path.toFile(), AsyncStatus.class);
                         assertEquals(TotalCountResult.STATUS.NOT_COMPLETED,
-                                asyncStatus.getTotalCountResult().getStatus());
+                                        asyncStatus.getTotalCountResult().getStatus());
 
                     } catch (IOException e) {
-                        //there will be problems reading from the file
-                        //before it is originally written, etc.  Ignore these
-                        //problems
+                        // there will be problems reading from the file
+                        // before it is originally written, etc. Ignore these
+                        // problems
                     }
                     try {
                         Thread.sleep(50);
@@ -99,16 +94,16 @@ public class TestFileSystemStatusReporter {
         }
         assertEquals(AsyncStatus.ASYNC_STATUS.COMPLETED, asyncStatus.getAsyncStatus());
         assertEquals(30000, asyncStatus.getTotalCountResult().getTotalCount());
-        assertEquals(TotalCountResult.STATUS.COMPLETED, asyncStatus.getTotalCountResult().getStatus());
+        assertEquals(TotalCountResult.STATUS.COMPLETED,
+                        asyncStatus.getTotalCountResult().getStatus());
     }
 
     private Map<PipesResult.STATUS, Long> runBatch(FileSystemStatusReporter reporter,
-                                                   int numThreads,
-                                                   int numIterations)
-            throws ExecutionException, InterruptedException {
+                    int numThreads, int numIterations)
+                    throws ExecutionException, InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
         ExecutorCompletionService executorCompletionService =
-                new ExecutorCompletionService(executorService);
+                        new ExecutorCompletionService(executorService);
         List<ReportWorker> workerList = new ArrayList<>();
         for (int i = 0; i < numThreads; i++) {
             ReportWorker reportWorker = new ReportWorker(reporter, numIterations);
@@ -145,10 +140,12 @@ public class TestFileSystemStatusReporter {
 
         private final PipesReporter reporter;
         private final int numIterations;
+
         private ReportWorker(PipesReporter reporter, int numIterations) {
             this.reporter = reporter;
             this.numIterations = numIterations;
         }
+
         @Override
         public Integer call() throws Exception {
             PipesResult.STATUS[] statuses = PipesResult.STATUS.values();
@@ -167,8 +164,9 @@ public class TestFileSystemStatusReporter {
                 }
                 if (i % 100 == 0) {
                     Thread.sleep(94);
-                    reporter.report(new TotalCountResult(Math.round((100 + (double) i / (double) 1000)),
-                            TotalCountResult.STATUS.NOT_COMPLETED));
+                    reporter.report(new TotalCountResult(
+                                    Math.round((100 + (double) i / (double) 1000)),
+                                    TotalCountResult.STATUS.NOT_COMPLETED));
                 }
             }
             return 1;

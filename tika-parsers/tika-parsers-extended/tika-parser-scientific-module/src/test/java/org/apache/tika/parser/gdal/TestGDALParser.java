@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.gdal;
@@ -24,14 +22,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test harness for the GDAL parser.
@@ -57,7 +53,7 @@ public class TestGDALParser extends TikaTest {
 
         GDALParser parser = new GDALParser();
         InputStream stream = TestGDALParser.class
-                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc");
+                        .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc");
         Metadata met = new Metadata();
         BodyContentHandler handler = new BodyContentHandler();
         try {
@@ -71,10 +67,10 @@ public class TestGDALParser extends TikaTest {
         assertNotNull(met.get("Driver"));
         assertEquals(expectedDriver, met.get("Driver"));
         assumeTrue(met.get("Files") != null);
-        //recent version of gdalinfo doesn't include "Coordinate System":
+        // recent version of gdalinfo doesn't include "Coordinate System":
         // GDAL 3.7.1, released 2023/07/06
-        //assertNotNull(met.get("Coordinate System"));
-        //assertEquals(expectedCoordinateSystem, met.get("Coordinate System"));
+        // assertNotNull(met.get("Coordinate System"));
+        // assertEquals(expectedCoordinateSystem, met.get("Coordinate System"));
         assertNotNull(met.get("Size"));
         assertEquals(expectedSize, met.get("Size"));
         assertNotNull(met.get("Upper Right"));
@@ -92,7 +88,7 @@ public class TestGDALParser extends TikaTest {
     public void testParseMetadata() {
         assumeTrue(canRun());
         final String expectedNcInst =
-                "NCAR (National Center for Atmospheric Research, Boulder, CO, USA)";
+                        "NCAR (National Center for Atmospheric Research, Boulder, CO, USA)";
         final String expectedModelNameEnglish = "NCAR CCSM";
         final String expectedProgramId = "Source file unknown Version unknown Date unknown";
         final String expectedProjectId = "IPCC Fourth Assessment";
@@ -103,7 +99,7 @@ public class TestGDALParser extends TikaTest {
 
         GDALParser parser = new GDALParser();
         InputStream stream = TestGDALParser.class
-                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc");
+                        .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc");
         Metadata met = new Metadata();
         BodyContentHandler handler = new BodyContentHandler();
         try {

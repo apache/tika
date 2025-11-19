@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft;
@@ -21,13 +19,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 public class XML2003ParserTest extends TikaTest {
 
@@ -35,14 +31,13 @@ public class XML2003ParserTest extends TikaTest {
     public void testBasicWord() throws Exception {
         List<Metadata> list = getRecursiveMetadata("testWORD2003.xml");
         assertEquals(8, list.size());
-        Metadata m = list.get(0);//container doc
+        Metadata m = list.get(0);// container doc
         String xml = m.get(TikaCoreProperties.TIKA_CONTENT);
         xml = xml.replaceAll("\\s+", " ");
-        //make sure that metadata gets dumped to xml
+        // make sure that metadata gets dumped to xml
         assertContains("<meta name=\"meta:character-count-with-spaces\" content=\"256\"", xml);
-        //do not allow nested <p> elements
-        assertContains(
-                "<img href=\"02000003.jpg\" />", xml);
+        // do not allow nested <p> elements
+        assertContains("<img href=\"02000003.jpg\" />", xml);
         assertContains("<table><tbody>", xml);
         assertContains("</tbody></table>", xml);
         assertContains("<td><p>R1 c1</p> </td>", xml);
@@ -66,16 +61,16 @@ public class XML2003ParserTest extends TikaTest {
         assertEquals("2016-04-27T17:49:00Z", m.get(TikaCoreProperties.CREATED));
         assertEquals("application/vnd.ms-wordml", m.get(Metadata.CONTENT_TYPE));
 
-        //make sure embedded docs were properly processed
+        // make sure embedded docs were properly processed
         assertContains("moscow-birds",
-                Arrays.asList(list.get(7).getValues(TikaCoreProperties.SUBJECT)));
+                        Arrays.asList(list.get(7).getValues(TikaCoreProperties.SUBJECT)));
 
         assertEquals("testJPEG_EXIF.jpg",
-                list.get(7).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+                        list.get(7).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
 
-        //check that text is extracted with breaks between elements
+        // check that text is extracted with breaks between elements
         String txt = getText(getResourceAsStream("/test-documents/testWORD2003.xml"),
-                AUTO_DETECT_PARSER);
+                        AUTO_DETECT_PARSER);
         txt = txt.replaceAll("\\s+", " ");
         assertNotContained("beforeR1", txt);
         assertContains("R1 c1 R1 c2", txt);

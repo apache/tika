@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.eval.app;
 
@@ -30,13 +28,12 @@ import org.apache.tika.eval.app.io.IDBWriter;
 
 public class MockDBWriter implements IDBWriter {
     public Map<String, Integer> mimes = new HashMap<>();
-    //Map of tableName and tables
-    //each table consists of a list of rows.
-    //Each row consists of a map of columns/values
+    // Map of tableName and tables
+    // each table consists of a list of rows.
+    // Each row consists of a map of columns/values
     Map<String, List<Map<Cols, String>>> db = new HashMap<>();
 
-    public MockDBWriter() throws Exception {
-    }
+    public MockDBWriter() throws Exception {}
 
     @Override
     public void writeRow(TableInfo tableInfo, Map<Cols, String> row) throws IOException {
@@ -50,7 +47,7 @@ public class MockDBWriter implements IDBWriter {
 
     @Override
     public void close() throws IOException {
-        //no-op
+        // no-op
     }
 
     @Override

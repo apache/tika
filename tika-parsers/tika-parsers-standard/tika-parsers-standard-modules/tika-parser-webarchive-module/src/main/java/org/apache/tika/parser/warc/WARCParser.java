@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.warc;
 
@@ -25,15 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import org.netpreserve.jwarc.HttpResponse;
-import org.netpreserve.jwarc.WarcPayload;
-import org.netpreserve.jwarc.WarcReader;
-import org.netpreserve.jwarc.WarcRecord;
-import org.netpreserve.jwarc.WarcResponse;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -48,17 +37,23 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.netpreserve.jwarc.HttpResponse;
+import org.netpreserve.jwarc.WarcPayload;
+import org.netpreserve.jwarc.WarcReader;
+import org.netpreserve.jwarc.WarcRecord;
+import org.netpreserve.jwarc.WarcResponse;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * This uses jwarc to parse warc files and arc files
  */
 public class WARCParser implements Parser {
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(MediaType.application("warc"),
-                    MediaType.application("warc+gz"),
-                    MediaType.application("x-internet-archive"),
-                    MediaType.application("arc+gz"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
+                    Arrays.asList(MediaType.application("warc"), MediaType.application("warc+gz"),
+                                    MediaType.application("x-internet-archive"),
+                                    MediaType.application("arc+gz"))));
 
     public static String WARC_PREFIX = "warc:";
     public static String WARC_HTTP_PREFIX = WARC_PREFIX + "http:";
@@ -77,14 +72,14 @@ public class WARCParser implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+                        EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         try (WarcReader warcreader = new WarcReader(stream)) {
-            //TODO: record warnings in metadata: warcreader.onWarning();
+            // TODO: record warnings in metadata: warcreader.onWarning();
             for (WarcRecord record : warcreader) {
                 processRecord(record, xhtml, metadata, context, embeddedDocumentExtractor);
             }
@@ -94,9 +89,8 @@ public class WARCParser implements Parser {
     }
 
     private void processRecord(WarcRecord record, XHTMLContentHandler xhtml, Metadata metadata,
-                               ParseContext context,
-                               EmbeddedDocumentExtractor embeddedDocumentExtractor)
-            throws SAXException {
+                    ParseContext context, EmbeddedDocumentExtractor embeddedDocumentExtractor)
+                    throws SAXException {
         if (RESPONSE.equals(record.type())) {
             try {
                 processResponse((WarcResponse) record, xhtml, context, embeddedDocumentExtractor);
@@ -112,22 +106,21 @@ public class WARCParser implements Parser {
         } else if (WARCINFO.equals(record.type())) {
             processWarcInfo(record, xhtml, context);
         }
-        //TODO - other warc record types
+        // TODO - other warc record types
 
     }
 
     private void processWarcInfo(WarcRecord record, XHTMLContentHandler xhtml,
-                                 ParseContext context) {
-        //NO-OP for now
+                    ParseContext context) {
+        // NO-OP for now
     }
 
     private void processResponse(WarcResponse warcResponse, XHTMLContentHandler xhtml,
-                                 ParseContext context,
-                                 EmbeddedDocumentExtractor embeddedDocumentExtractor)
-            throws IOException, SAXException, TikaException {
+                    ParseContext context, EmbeddedDocumentExtractor embeddedDocumentExtractor)
+                    throws IOException, SAXException, TikaException {
         Optional<WarcPayload> optionalPayload = warcResponse.payload();
         if (!optionalPayload.isPresent()) {
-            //TODO handle missing payload?  Report or ignore?
+            // TODO handle missing payload? Report or ignore?
             return;
         }
         Metadata metadata = new Metadata();
@@ -144,8 +137,8 @@ public class WARCParser implements Parser {
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(payload.body().size()));
 
         if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
-            //TODO check Content-Encoding on the warcResponse.http.headers and wrap the stream.
-            //May need to sniff first few bytes to confirm accuracy, e.g. gzip compression ?
+            // TODO check Content-Encoding on the warcResponse.http.headers and wrap the stream.
+            // May need to sniff first few bytes to confirm accuracy, e.g. gzip compression ?
             try (TikaInputStream tis = TikaInputStream.get(payload.body().stream())) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, metadata, true);
             }
@@ -174,7 +167,7 @@ public class WARCParser implements Parser {
     }
 
     private void setNotNull(Property key, org.netpreserve.jwarc.MediaType contentType,
-                            Metadata metadata) {
+                    Metadata metadata) {
         if (contentType == null) {
             return;
         }

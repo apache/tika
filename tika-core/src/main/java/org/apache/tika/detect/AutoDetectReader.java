@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.detect;
 
@@ -22,9 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-
-import org.xml.sax.InputSource;
-
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
@@ -32,23 +27,24 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
+import org.xml.sax.InputSource;
 
 /**
- * An input stream reader that automatically detects the character encoding
- * to be used for converting bytes to characters.
+ * An input stream reader that automatically detects the character encoding to be used for
+ * converting bytes to characters.
  *
  * @since Apache Tika 1.2
  */
 public class AutoDetectReader extends BufferedReader {
 
     private static final ServiceLoader DEFAULT_LOADER =
-            new ServiceLoader(AutoDetectReader.class.getClassLoader());
+                    new ServiceLoader(AutoDetectReader.class.getClassLoader());
 
     private static final EncodingDetector DEFAULT_DETECTOR;
 
     static {
         DEFAULT_DETECTOR = new CompositeEncodingDetector(
-                DEFAULT_LOADER.loadServiceProviders(EncodingDetector.class));
+                        DEFAULT_LOADER.loadServiceProviders(EncodingDetector.class));
     }
 
     private final Charset charset;
@@ -65,34 +61,33 @@ public class AutoDetectReader extends BufferedReader {
     }
 
     /**
-     * @param stream    stream from which to read -- make sure that it supports mark!
+     * @param stream stream from which to read -- make sure that it supports mark!
      * @param metadata
      * @param detector
      * @param handler
      * @throws IOException
      * @throws TikaException
      */
-    private AutoDetectReader(InputStream stream, Metadata metadata,
-                             EncodingDetector detector, LoadErrorHandler handler)
-            throws IOException, TikaException {
+    private AutoDetectReader(InputStream stream, Metadata metadata, EncodingDetector detector,
+                    LoadErrorHandler handler) throws IOException, TikaException {
         this(stream, detect(stream, metadata, detector, handler));
     }
 
     public AutoDetectReader(InputStream stream, Metadata metadata,
-                            EncodingDetector encodingDetector) throws IOException, TikaException {
-        this(getBuffered(stream), metadata, encodingDetector,
-                DEFAULT_LOADER.getLoadErrorHandler());
+                    EncodingDetector encodingDetector) throws IOException, TikaException {
+        this(getBuffered(stream), metadata, encodingDetector, DEFAULT_LOADER.getLoadErrorHandler());
     }
 
     public AutoDetectReader(InputStream stream, Metadata metadata, ServiceLoader loader)
-            throws IOException, TikaException {
+                    throws IOException, TikaException {
         this(getBuffered(stream), metadata,
-                new CompositeEncodingDetector(loader.loadServiceProviders(EncodingDetector.class)),
-                loader.getLoadErrorHandler());
+                        new CompositeEncodingDetector(
+                                        loader.loadServiceProviders(EncodingDetector.class)),
+                        loader.getLoadErrorHandler());
     }
 
     public AutoDetectReader(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
+                    throws IOException, TikaException {
         this(stream, metadata, DEFAULT_DETECTOR);
     }
 
@@ -100,9 +95,8 @@ public class AutoDetectReader extends BufferedReader {
         this(stream, new Metadata());
     }
 
-    private static Charset detect(InputStream input, Metadata metadata,
-                                  EncodingDetector detector, LoadErrorHandler handler)
-            throws IOException, TikaException {
+    private static Charset detect(InputStream input, Metadata metadata, EncodingDetector detector,
+                    LoadErrorHandler handler) throws IOException, TikaException {
         // Ask all given detectors for the character encoding
         try {
             Charset charset = detector.detect(input, metadata);
@@ -123,7 +117,7 @@ public class AutoDetectReader extends BufferedReader {
                     Charset cs = CharsetUtils.forName(charset);
                     metadata.set(TikaCoreProperties.DETECTED_ENCODING, cs.name());
                     metadata.set(TikaCoreProperties.ENCODING_DETECTOR,
-                            "AutoDetectReader-charset-metadata-fallback");
+                                    "AutoDetectReader-charset-metadata-fallback");
                     return cs;
                 } catch (IllegalArgumentException e) {
                     // ignore

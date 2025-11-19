@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.metadata.filter;
@@ -24,14 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.AbstractTikaConfigTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.junit.jupiter.api.Test;
 
 public class TestMetadataFilter extends AbstractTikaConfigTest {
 
@@ -111,7 +107,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
     @Test
     public void testConfigIncludeAndUCFilter() throws Exception {
         TikaConfig config = getConfig("TIKA-3137-include-uc.xml");
-        String[] expectedTitles = new String[]{"TITLE1", "TITLE2", "TITLE3"};
+        String[] expectedTitles = new String[] {"TITLE1", "TITLE2", "TITLE3"};
         Metadata metadata = new Metadata();
         metadata.add("title", "title1");
         metadata.add("title", "title2");
@@ -182,8 +178,8 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
 
     @Test
     public void testDateNormalizingFilter() throws Exception {
-        //test that a Date lacking a timezone, if interpreted as Los Angeles, for example,
-        //yields a UTC string that is properly +7 hours.
+        // test that a Date lacking a timezone, if interpreted as Los Angeles, for example,
+        // yields a UTC string that is properly +7 hours.
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.CREATED, "2021-07-23T01:02:24");
         DateNormalizingMetadataFilter filter = new DateNormalizingMetadataFilter();
@@ -248,7 +244,8 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
     public void testAttachmentTypeMetadataFilter() throws Exception {
         TikaConfig config = getConfig("TIKA-4261-clear-by-embedded-type.xml");
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.INLINE.name());
+        metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                        TikaCoreProperties.EmbeddedResourceType.INLINE.name());
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
 
         MetadataFilter filter = config.getMetadataFilter();
@@ -256,8 +253,8 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         assertEquals(0, metadata.names().length);
 
         metadata = new Metadata();
-        metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ALTERNATE_FORMAT_CHUNK
-                .name());
+        metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                        TikaCoreProperties.EmbeddedResourceType.ALTERNATE_FORMAT_CHUNK.name());
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
         filter.filter(metadata);
         assertEquals(2, metadata.names().length);

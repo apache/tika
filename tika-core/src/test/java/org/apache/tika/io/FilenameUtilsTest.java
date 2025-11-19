@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.io;
@@ -22,24 +20,22 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
+import org.junit.jupiter.api.Test;
 
 public class FilenameUtilsTest {
 
     /**
-     * Different filesystems and operating systems have different restrictions
-     * on the name that can be used for files and directories.
-     * FilenameUtils.normalize() returns a cross platform file name that turns
-     * special characters in a HEX based code convention. This is %<code>.
-     * For example why?.zip will be converted into why%3F.zip
+     * Different filesystems and operating systems have different restrictions on the name that can
+     * be used for files and directories. FilenameUtils.normalize() returns a cross platform file
+     * name that turns special characters in a HEX based code convention. This is %<code>. For
+     * example why?.zip will be converted into why%3F.zip
      *
      * @see http://en.wikipedia.org/wiki/Filename#Comparison_of_filename_limitations
-     * <p>
-     * Reserved chars are the ones in FilenameUtils.RESERVED_FILENAME_CHARACTERS:
+     *      <p>
+     *      Reserved chars are the ones in FilenameUtils.RESERVED_FILENAME_CHARACTERS:
      */
     @Test
     public void normalizeNothingTodo() throws Exception {
@@ -63,10 +59,10 @@ public class FilenameUtilsTest {
     public void normalizeWithReservedChar() throws Exception {
         final String[] TEST_NAMES = {"test?.txt", "?test.txt", "test.txt?", "?test?txt?"};
         final String[] EXPECTED_NAMES =
-                {"test%3F.txt", "%3Ftest.txt", "test.txt%3F", "%3Ftest%3Ftxt%3F"};
+                        {"test%3F.txt", "%3Ftest.txt", "test.txt%3F", "%3Ftest%3Ftxt%3F"};
 
         for (int i = 0; i < TEST_NAMES.length; ++i) {
-            //System.out.println("checking " + TEST_NAMES[i]);
+            // System.out.println("checking " + TEST_NAMES[i]);
             assertEquals(EXPECTED_NAMES[i], FilenameUtils.normalize(TEST_NAMES[i]));
         }
     }
@@ -81,11 +77,11 @@ public class FilenameUtilsTest {
 
     @Test
     public void normalizeWithNotPrintableChars() throws Exception {
-        final String TEST_NAME = new String(
-                new char[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, '.', 16, 17, 18,
-                        19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31});
-        final String EXPECTED_NAME = "%00%01%02%03%04%05%06%07%08%09%0A%0B%0C%0D%0E%0F" + "." +
-                "%10%11%12%13%14%15%16%17%18%19%1A%1B%1C%1D%1E%1F";
+        final String TEST_NAME = new String(new char[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+                        13, 14, 15, '.', 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+                        31});
+        final String EXPECTED_NAME = "%00%01%02%03%04%05%06%07%08%09%0A%0B%0C%0D%0E%0F" + "."
+                        + "%10%11%12%13%14%15%16%17%18%19%1A%1B%1C%1D%1E%1F";
 
         assertEquals(EXPECTED_NAME, FilenameUtils.normalize(TEST_NAME));
     }
@@ -121,11 +117,11 @@ public class FilenameUtilsTest {
         String n = "the quick brown fox.docx";
         assertEquals(n, sanitizeFilename(n));
         assertEquals(n, sanitizeFilename(n.substring(0, n.length() - 5),
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
 
         assertEquals(n, sanitizeFilename("the quick\u0000brown fox.docx"));
         assertEquals(n, sanitizeFilename(n.substring(0, n.length() - 5),
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
 
         assertEquals("the quick brown fox.bin", sanitizeFilename(n.substring(0, n.length() - 5)));
         assertEquals("brown fox.docx", sanitizeFilename("the quick..\\brown fox.docx"));
@@ -139,18 +135,23 @@ public class FilenameUtilsTest {
         assertEquals("_brown fox.docx", sanitizeFilename("....brown fox.docx"));
         assertEquals("_brown fox.docx", sanitizeFilename(".brown fox.docx"));
         assertEquals("abcdefghijklmnopqrstuvwxyz_abcdefghijklmno....docx", sanitizeFilename(
-                "abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz.docx"));
+                        "abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz.docx"));
 
         assertEquals("the quick brown fox.xlsx", sanitizeFilename("C:\\the quick brown fox.xlsx"));
         assertEquals("the quick brown fox.xlsx", sanitizeFilename("/the quick brown fox.xlsx"));
         assertEquals("the quick brown fox.xlsx", sanitizeFilename("~/the quick brown fox.xlsx"));
-        assertEquals("the quick brown fox.xlsx", sanitizeFilename("https://the quick brown fox.xlsx"));
-        assertEquals("the quick brown fox.xlsx", sanitizeFilename("https://tika.apache.org/the quick brown fox.xlsx"));
-        assertEquals("the quick brown fox.xlsx", sanitizeFilename("file:///tika.apache.org/the quick brown fox.xlsx"));
+        assertEquals("the quick brown fox.xlsx",
+                        sanitizeFilename("https://the quick brown fox.xlsx"));
+        assertEquals("the quick brown fox.xlsx",
+                        sanitizeFilename("https://tika.apache.org/the quick brown fox.xlsx"));
+        assertEquals("the quick brown fox.xlsx",
+                        sanitizeFilename("file:///tika.apache.org/the quick brown fox.xlsx"));
 
         assertEquals("brown fox.xlsx", sanitizeFilename("a:/the quick:brown fox.xlsx"));
-        assertEquals("_the quick brown fox.xlsx", sanitizeFilename("C:\\a/b/c/..the quick brown fox.xlsx"));
-        assertEquals("_the quick brown fox.xlsx", sanitizeFilename("~/a/b/c/.the quick brown fox.xlsx"));
+        assertEquals("_the quick brown fox.xlsx",
+                        sanitizeFilename("C:\\a/b/c/..the quick brown fox.xlsx"));
+        assertEquals("_the quick brown fox.xlsx",
+                        sanitizeFilename("~/a/b/c/.the quick brown fox.xlsx"));
         assertEquals("the quick%3Ebrown fox.xlsx", sanitizeFilename("the quick>brown fox.xlsx"));
         assertEquals("the quick%22brown fox.xlsx", sanitizeFilename("the quick\"brown fox.xlsx"));
         assertEquals("the quick brown fox.xlsx", sanitizeFilename("\"the quick brown fox.xlsx\""));
@@ -173,7 +174,7 @@ public class FilenameUtilsTest {
         String n = "the quick brown fox.docx";
         assertEquals(n, sanitizePath(n));
         assertEquals(n, sanitizePath(n.substring(0, n.length() - 5),
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
         assertEquals(n, sanitizeFilename("the quick\u0000brown fox.docx"));
 
         assertEquals("the quick brown fox.bin", sanitizePath(n.substring(0, n.length() - 5)));
@@ -188,18 +189,22 @@ public class FilenameUtilsTest {
         assertEquals("_brown fox.docx", sanitizePath("....brown fox.docx"));
         assertEquals("_brown fox.docx", sanitizePath(".brown fox.docx"));
         assertEquals("abcdefghijklmnopqrstuvwxyz_abcdefghijklmno....docx", sanitizePath(
-                "abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz.docx"));
+                        "abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz.docx"));
 
         assertEquals("the quick brown fox.xlsx", sanitizePath("C:\\the quick brown fox.xlsx"));
         assertEquals("the quick brown fox.xlsx", sanitizePath("/the quick brown fox.xlsx"));
         assertEquals("the quick brown fox.xlsx", sanitizePath("~/the quick brown fox.xlsx"));
         assertEquals("the quick brown fox.xlsx", sanitizePath("https://the quick brown fox.xlsx"));
-        assertEquals("tika.apache.org/the quick brown fox.xlsx", sanitizePath("https://tika.apache.org/the quick brown fox.xlsx"));
-        assertEquals("tika.apache.org/the quick brown fox.xlsx", sanitizePath("file:///tika.apache.org/the quick brown fox.xlsx"));
+        assertEquals("tika.apache.org/the quick brown fox.xlsx",
+                        sanitizePath("https://tika.apache.org/the quick brown fox.xlsx"));
+        assertEquals("tika.apache.org/the quick brown fox.xlsx",
+                        sanitizePath("file:///tika.apache.org/the quick brown fox.xlsx"));
 
         assertEquals("the quick/brown fox.xlsx", sanitizePath("a:/the quick:brown fox.xlsx"));
-        assertEquals("a/b/c/_the quick brown fox.xlsx", sanitizePath("C:\\a/b/c/..the quick brown fox.xlsx"));
-        assertEquals("a/b/c/_the quick brown fox.xlsx", sanitizePath("~/a/b/c/.the quick brown fox.xlsx"));
+        assertEquals("a/b/c/_the quick brown fox.xlsx",
+                        sanitizePath("C:\\a/b/c/..the quick brown fox.xlsx"));
+        assertEquals("a/b/c/_the quick brown fox.xlsx",
+                        sanitizePath("~/a/b/c/.the quick brown fox.xlsx"));
 
         assertEquals(".docx", sanitizePath("..................docx"));
         assertEquals(".docx", sanitizePath("..docx"));

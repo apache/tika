@@ -1,23 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.chm;
 
 import java.util.concurrent.CancellationException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.chm.ChmCommons.IntelState;
 import org.apache.tika.parser.microsoft.chm.ChmCommons.LzxState;
@@ -65,7 +62,7 @@ public class ChmLzxState implements Cloneable {
             } else {
                 position_slots = win << 1;
             }
-            //TODO: position_slots is not used ?
+            // TODO: position_slots is not used ?
             setR0(1);
             setR1(1);
             setR2(1);
@@ -145,57 +142,40 @@ public class ChmLzxState implements Cloneable {
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("actual decoding window:=")
-                .append(getWindow())
-                .append(System.getProperty("line.separator"));
-        sb.append("window size (32Kb through 2Mb):=")
-                .append(getWindowSize())
-                .append(System.getProperty("line.separator"));
-        sb.append("current offset within the window:=")
-                .append(getWindowPosition())
-                .append(System.getProperty("line.separator"));
-        sb.append("number of main tree elements:=")
-                .append(getMainTreeElements())
-                .append(System.getProperty("line.separator"));
-        sb.append("have we started decoding at all yet?:=")
-                .append(getHadStarted())
-                .append(System.getProperty("line.separator"));
-        sb.append("type of this block:=")
-                .append(getBlockType())
-                .append(System.getProperty("line.separator"));
-        sb.append("uncompressed length of this block:=")
-                .append(getBlockLength())
-                .append(System.getProperty("line.separator"));
-        sb.append("uncompressed bytes still left to decode:=")
-                .append(getBlockRemaining())
-                .append(System.getProperty("line.separator"));
-        sb.append("the number of CFDATA blocks processed:=")
-                .append(getFramesRead())
-                .append(System.getProperty("line.separator"));
-        sb.append("magic header value used for transform:=")
-                .append(getIntelFileSize())
-                .append(System.getProperty("line.separator"));
-        sb.append("current offset in transform space:=")
-                .append(getIntelCurrentPossition())
-                .append(System.getProperty("line.separator"));
-        sb.append("have we seen any translatable data yet?:=")
-                .append(getIntelState())
-                .append(System.getProperty("line.separator"));
-        sb.append("R0 for the LRU offset system:=")
-                .append(getR0())
-                .append(System.getProperty("line.separator"));
-        sb.append("R1 for the LRU offset system:=")
-                .append(getR1())
-                .append(System.getProperty("line.separator"));
-        sb.append("R2 for the LRU offset system:=")
-                .append(getR2())
-                .append(System.getProperty("line.separator"));
-        sb.append("main tree length:=")
-                .append(getMainTreeLengtsTable().length)
-                .append(System.getProperty("line.separator"));
-        sb.append("secondary tree length:=")
-                .append(getLengthTreeLengtsTable().length)
-                .append(System.getProperty("line.separator"));
+        sb.append("actual decoding window:=").append(getWindow())
+                        .append(System.getProperty("line.separator"));
+        sb.append("window size (32Kb through 2Mb):=").append(getWindowSize())
+                        .append(System.getProperty("line.separator"));
+        sb.append("current offset within the window:=").append(getWindowPosition())
+                        .append(System.getProperty("line.separator"));
+        sb.append("number of main tree elements:=").append(getMainTreeElements())
+                        .append(System.getProperty("line.separator"));
+        sb.append("have we started decoding at all yet?:=").append(getHadStarted())
+                        .append(System.getProperty("line.separator"));
+        sb.append("type of this block:=").append(getBlockType())
+                        .append(System.getProperty("line.separator"));
+        sb.append("uncompressed length of this block:=").append(getBlockLength())
+                        .append(System.getProperty("line.separator"));
+        sb.append("uncompressed bytes still left to decode:=").append(getBlockRemaining())
+                        .append(System.getProperty("line.separator"));
+        sb.append("the number of CFDATA blocks processed:=").append(getFramesRead())
+                        .append(System.getProperty("line.separator"));
+        sb.append("magic header value used for transform:=").append(getIntelFileSize())
+                        .append(System.getProperty("line.separator"));
+        sb.append("current offset in transform space:=").append(getIntelCurrentPossition())
+                        .append(System.getProperty("line.separator"));
+        sb.append("have we seen any translatable data yet?:=").append(getIntelState())
+                        .append(System.getProperty("line.separator"));
+        sb.append("R0 for the LRU offset system:=").append(getR0())
+                        .append(System.getProperty("line.separator"));
+        sb.append("R1 for the LRU offset system:=").append(getR1())
+                        .append(System.getProperty("line.separator"));
+        sb.append("R2 for the LRU offset system:=").append(getR2())
+                        .append(System.getProperty("line.separator"));
+        sb.append("main tree length:=").append(getMainTreeLengtsTable().length)
+                        .append(System.getProperty("line.separator"));
+        sb.append("secondary tree length:=").append(getLengthTreeLengtsTable().length)
+                        .append(System.getProperty("line.separator"));
         return sb.toString();
     }
 

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser;
 
@@ -33,13 +31,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import org.gagravarr.tika.FlacParser;
-import org.gagravarr.tika.OpusParser;
-import org.gagravarr.tika.VorbisParser;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
@@ -57,6 +48,11 @@ import org.apache.tika.parser.external.CompositeExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
+import org.gagravarr.tika.FlacParser;
+import org.gagravarr.tika.OpusParser;
+import org.gagravarr.tika.VorbisParser;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class AutoDetectParserTest extends TikaTest {
     // Easy to read constants for the MIME types:
@@ -105,40 +101,39 @@ public class AutoDetectParserTest extends TikaTest {
             new AutoDetectParser(tika).parse(input, handler, metadata);
 
             assertEquals(tp.realType, metadata.get(Metadata.CONTENT_TYPE),
-                    "Bad content type: " + tp);
+                            "Bad content type: " + tp);
 
             if (tp.expectedContentFragment != null) {
                 assertTrue(handler.toString().contains(tp.expectedContentFragment),
-                        "Expected content not found: " + tp);
+                                "Expected content not found: " + tp);
             }
         }
     }
 
     /**
-     * Convenience method -- its sole purpose of existence is to make the
-     * call to it more readable than it would be if a TestParams instance
-     * would need to be instantiated there.
+     * Convenience method -- its sole purpose of existence is to make the call to it more readable
+     * than it would be if a TestParams instance would need to be instantiated there.
      *
-     * @param resourceRealName        real name of resource
-     * @param resourceStatedName      stated name -- will a bad name fool us?
-     * @param realType                - the real MIME type
-     * @param statedType              - stated MIME type - will a wrong one fool us?
+     * @param resourceRealName real name of resource
+     * @param resourceStatedName stated name -- will a bad name fool us?
+     * @param realType - the real MIME type
+     * @param statedType - stated MIME type - will a wrong one fool us?
      * @param expectedContentFragment - something expected in the text
      * @throws Exception
      */
     private void assertAutoDetect(String resourceRealName, String resourceStatedName,
-                                  String realType, String statedType,
-                                  String expectedContentFragment) throws Exception {
+                    String realType, String statedType, String expectedContentFragment)
+                    throws Exception {
 
         assertAutoDetect(new TestParams(resourceRealName, resourceStatedName, realType, statedType,
-                expectedContentFragment));
+                        expectedContentFragment));
     }
 
     private void assertAutoDetect(String resource, String type, String content) throws Exception {
 
         resource = "/test-documents/" + resource;
 
-        // TODO !!!!  The disabled tests below should work!
+        // TODO !!!! The disabled tests below should work!
         // The correct MIME type should be determined regardless of the
         // stated type (ContentType hint) and the stated URL name.
 
@@ -177,13 +172,13 @@ public class AutoDetectParserTest extends TikaTest {
     @Test
     public void testChm() throws Exception {
         assertAutoDetect("testChm.chm", CHM,
-                "If you do not specify a window type or a window name, the main window is used.");
+                        "If you do not specify a window type or a window name, the main window is used.");
     }
 
     @Test
     public void testEpub() throws Exception {
         assertAutoDetect("testEPUB.epub", "application/epub+zip",
-                "The previous headings were subchapters");
+                        "The previous headings were subchapters");
     }
 
     @Test
@@ -199,7 +194,7 @@ public class AutoDetectParserTest extends TikaTest {
     @Test
     public void testOpenOffice() throws Exception {
         assertAutoDetect("testOpenOffice2.odt", OPENOFFICE,
-                "This is a sample Open Office document");
+                        "This is a sample Open Office document");
     }
 
     @Test
@@ -231,7 +226,7 @@ public class AutoDetectParserTest extends TikaTest {
     @Test
     public void testTextNonASCIIUTF8() throws Exception {
         assertAutoDetect("testTXTNonASCIIUTF8.txt", UTF8TEXT,
-                "The quick brown fox jumps over the lazy dog");
+                        "The quick brown fox jumps over the lazy dog");
     }
 
     @Test
@@ -247,7 +242,7 @@ public class AutoDetectParserTest extends TikaTest {
     @Test
     public void testRss() throws Exception {
         assertAutoDetect("/test-documents/rsstest_091.rss", "feed", RSS, "application/rss+xml",
-                "Sample RSS File for Junit test");
+                        "Sample RSS File for Junit test");
     }
 
     @Test
@@ -291,39 +286,38 @@ public class AutoDetectParserTest extends TikaTest {
         }
         zos.finish();
         zos.close();
-        new AutoDetectParser(tika)
-                .parse(new ByteArrayInputStream(baos.toByteArray()), new BodyContentHandler(-1),
-                        new Metadata());
+        new AutoDetectParser(tika).parse(new ByteArrayInputStream(baos.toByteArray()),
+                        new BodyContentHandler(-1), new Metadata());
     }
 
     /**
-     * Test to ensure that the Ogg Audio parsers (Vorbis, Opus, Flac etc)
-     * have been correctly included, and are available
+     * Test to ensure that the Ogg Audio parsers (Vorbis, Opus, Flac etc) have been correctly
+     * included, and are available
      */
     @SuppressWarnings("deprecation")
     @Test
     public void testOggFlacAudio() throws Exception {
         // The three test files should all have similar test data
-        String[] testFiles =
-                new String[]{"testVORBIS.ogg", "testFLAC.flac", "testFLAC.oga", "testOPUS.opus"};
+        String[] testFiles = new String[] {"testVORBIS.ogg", "testFLAC.flac", "testFLAC.oga",
+                        "testOPUS.opus"};
         MediaType[] mediaTypes =
-                new MediaType[]{MediaType.parse(OGG_VORBIS), MediaType.parse(FLAC_NATIVE),
-                        MediaType.parse(OGG_FLAC), MediaType.parse(OGG_OPUS)};
+                        new MediaType[] {MediaType.parse(OGG_VORBIS), MediaType.parse(FLAC_NATIVE),
+                                        MediaType.parse(OGG_FLAC), MediaType.parse(OGG_OPUS)};
 
         // Check we can load the parsers, and they claim to do the right things
         VorbisParser vParser = new VorbisParser();
         assertNotNull(vParser.getSupportedTypes(new ParseContext()),
-                "Parser not found for " + mediaTypes[0]);
+                        "Parser not found for " + mediaTypes[0]);
 
         FlacParser fParser = new FlacParser();
         assertNotNull(fParser.getSupportedTypes(new ParseContext()),
-                "Parser not found for " + mediaTypes[1]);
+                        "Parser not found for " + mediaTypes[1]);
         assertNotNull(fParser.getSupportedTypes(new ParseContext()),
-                "Parser not found for " + mediaTypes[2]);
+                        "Parser not found for " + mediaTypes[2]);
 
         OpusParser oParser = new OpusParser();
         assertNotNull(oParser.getSupportedTypes(new ParseContext()),
-                "Parser not found for " + mediaTypes[3]);
+                        "Parser not found for " + mediaTypes[3]);
 
         // Check we found the parser
         CompositeParser parser = (CompositeParser) tika.getParser();
@@ -343,7 +337,7 @@ public class AutoDetectParserTest extends TikaTest {
                 new AutoDetectParser(tika).parse(input, handler, metadata);
 
                 assertEquals(mediaTypes[i].toString(), metadata.get(Metadata.CONTENT_TYPE),
-                        "Incorrect content type for " + file);
+                                "Incorrect content type for " + file);
 
                 // Check some of the common metadata
                 // Old style metadata
@@ -370,8 +364,8 @@ public class AutoDetectParserTest extends TikaTest {
     }
 
     /**
-     * Test case for TIKA-514. Provide constructor for AutoDetectParser that has explicit
-     * list of supported parsers.
+     * Test case for TIKA-514. Provide constructor for AutoDetectParser that has explicit list of
+     * supported parsers.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-514">TIKA-514</a>
      */
@@ -388,9 +382,9 @@ public class AutoDetectParserTest extends TikaTest {
 
     @Test
     public void testZeroByteFileException() throws Exception {
-        String[] exts = new String[]{"xls", "doc", "pdf", "rtf"};
+        String[] exts = new String[] {"xls", "doc", "pdf", "rtf"};
 
-        String[] mimes = new String[]{EXCEL, WORD, PDF, RTF};
+        String[] mimes = new String[] {EXCEL, WORD, PDF, RTF};
 
         for (int i = 0; i < exts.length; i++) {
             Metadata m = new Metadata();
@@ -399,7 +393,7 @@ public class AutoDetectParserTest extends TikaTest {
                 getXML(TikaInputStream.get(new byte[0]), AUTO_DETECT_PARSER, m);
                 fail("should have thrown zero byte exception");
             } catch (ZeroByteFileException e) {
-                //expected
+                // expected
             }
             assertEquals(mimes[i], m.get(Metadata.CONTENT_TYPE));
         }
@@ -417,39 +411,39 @@ public class AutoDetectParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
         try (InputStream stream =
-                    getResourceAsStream("/test-documents/test_recursive_embedded.docx")) {
+                        getResourceAsStream("/test-documents/test_recursive_embedded.docx")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, parseContext);
             fail("write limit reached should have percolated to here");
         } catch (WriteLimitReachedException e) {
-            //expected
+            // expected
         }
         String txt = handler.toString();
-        //test that the writelimit does intervene between these two
-        //pieces of text and that the first is there, but the second isn't
+        // test that the writelimit does intervene between these two
+        // pieces of text and that the first is there, but the second isn't
         assertContains("assume among the powers", txt);
         assertNotContained("unalienable Rights", txt);
-        //test that text from other embedded files after this one are not processed
+        // test that text from other embedded files after this one are not processed
         assertNotContained("embed_4", txt);
     }
 
     @Test
     public void testWriteLimitNoThrow() throws Exception {
         ParseContext parseContext = new ParseContext();
-        ContentHandler handler = new WriteOutContentHandler(new ToXMLContentHandler(),
-                500, false, parseContext);
+        ContentHandler handler = new WriteOutContentHandler(new ToXMLContentHandler(), 500, false,
+                        parseContext);
         Metadata metadata = new Metadata();
         try (InputStream stream =
-                    getResourceAsStream("/test-documents/test_recursive_embedded.docx")) {
+                        getResourceAsStream("/test-documents/test_recursive_embedded.docx")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, parseContext);
         }
         String txt = handler.toString();
         assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
-        //test that the writelimit does intervene between these two
-        //pieces of text and that the first is there, but the second isn't
+        // test that the writelimit does intervene between these two
+        // pieces of text and that the first is there, but the second isn't
         assertContains("assume among the powers", txt);
         assertNotContained("unalienable Rights", txt);
-        //test that text from other embedded files after this one are not processed,
-        //but that the entry is there for the embedded file, i.e. the parse continued
+        // test that text from other embedded files after this one are not processed,
+        // but that the entry is there for the embedded file, i.e. the parse continued
         assertContains("id=\"embed4.txt\"", txt);
         assertNotContained("embed_4", txt);
     }
@@ -457,8 +451,7 @@ public class AutoDetectParserTest extends TikaTest {
     @Test
     public void testEmbeddedNPE() throws Exception {
         Metadata metadata = new Metadata();
-        getXML("mock/null_pointer.xml.gz",
-                AUTO_DETECT_PARSER, metadata);
+        getXML("mock/null_pointer.xml.gz", AUTO_DETECT_PARSER, metadata);
         String embExString = metadata.get(TikaCoreProperties.EMBEDDED_EXCEPTION);
         assertContains("another null pointer", embExString);
     }
@@ -466,15 +459,14 @@ public class AutoDetectParserTest extends TikaTest {
     @Test
     public void testEmbeddedMetadataPercolatingToMainMetadata() throws Exception {
         Metadata metadata = new Metadata();
-        getXML("mock/embedded_to_parent_metadata.xml.gz",
-                AUTO_DETECT_PARSER, metadata);
+        getXML("mock/embedded_to_parent_metadata.xml.gz", AUTO_DETECT_PARSER, metadata);
         assertEquals("Nikolai Lobachevsky", metadata.get("embedded:dc:creator"));
         assertEquals("application/gzip", metadata.get(Metadata.CONTENT_TYPE));
     }
 
 
-    //This is not the complete/correct way to look for parsers within another parser
-    //However, it is good enough for this unit test for now.
+    // This is not the complete/correct way to look for parsers within another parser
+    // However, it is good enough for this unit test for now.
     private Parser find(CompositeParser parser, Class clazz) {
         for (Parser child : parser.getAllComponentParsers()) {
             if (child.getClass().equals(clazz)) {
@@ -491,8 +483,7 @@ public class AutoDetectParserTest extends TikaTest {
     }
 
     /**
-     * A test detector which always returns the type supported
-     * by the test parser
+     * A test detector which always returns the type supported by the test parser
      */
     @SuppressWarnings("serial")
     private static class MyDetector implements Detector {
@@ -510,15 +501,15 @@ public class AutoDetectParserTest extends TikaTest {
         }
 
         public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                          ParseContext context) {
+                        ParseContext context) {
             metadata.add("MyParser", "value");
         }
 
     }
 
     /**
-     * Minimal class to encapsulate all parameters -- the main reason for
-     * its existence is to aid in debugging via its toString() method.
+     * Minimal class to encapsulate all parameters -- the main reason for its existence is to aid in
+     * debugging via its toString() method.
      * <p>
      * Getters and setters intentionally not provided.
      */
@@ -532,7 +523,7 @@ public class AutoDetectParserTest extends TikaTest {
 
 
         private TestParams(String resourceRealName, String resourceStatedName, String realType,
-                           String statedType, String expectedContentFragment) {
+                        String statedType, String expectedContentFragment) {
             this.resourceRealName = resourceRealName;
             this.resourceStatedName = resourceStatedName;
             this.realType = realType;
@@ -554,42 +545,46 @@ public class AutoDetectParserTest extends TikaTest {
          * </pre>
          */
         public String toString() {
-            return "Test parameters:\n" + "  resourceRealName        = " + resourceRealName + "\n" +
-                    "  resourceStatedName      = " + resourceStatedName + "\n" +
-                    "  realType                = " + realType + "\n" +
-                    "  statedType              = " + statedType + "\n" +
-                    "  expectedContentFragment = " + expectedContentFragment + "\n";
+            return "Test parameters:\n" + "  resourceRealName        = " + resourceRealName + "\n"
+                            + "  resourceStatedName      = " + resourceStatedName + "\n"
+                            + "  realType                = " + realType + "\n"
+                            + "  statedType              = " + statedType + "\n"
+                            + "  expectedContentFragment = " + expectedContentFragment + "\n";
         }
     }
 
     @Test
     public void testDigestingOpenContainers() throws Exception {
-        //TIKA-4533 -- this tests both that a very large embedded OLE doc doesn't cause a zip bomb
-        //exception AND that the sha for the embedded OLE doc is not the sha for a zero-byte file
+        // TIKA-4533 -- this tests both that a very large embedded OLE doc doesn't cause a zip bomb
+        // exception AND that the sha for the embedded OLE doc is not the sha for a zero-byte file
         String expectedSha = "bbc2057a1ff8fe859a296d2fbb493fc0c3e5796749ba72507c0e13f7a3d81f78";
         TikaConfig tikaConfig = null;
-        try (InputStream is = AutoDetectParserTest.class.getResourceAsStream("/configs/tika-4533.xml")) {
+        try (InputStream is =
+                        AutoDetectParserTest.class.getResourceAsStream("/configs/tika-4533.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         AutoDetectParser autoDetectParser = new AutoDetectParser(tikaConfig);
-        //this models what happens in tika-pipes
+        // this models what happens in tika-pipes
         if (autoDetectParser.getAutoDetectParserConfig()
-                    .getEmbeddedDocumentExtractorFactory() == null) {
+                        .getEmbeddedDocumentExtractorFactory() == null) {
             autoDetectParser.getAutoDetectParserConfig()
-                                                     .setEmbeddedDocumentExtractorFactory(new RUnpackExtractorFactory());
+                            .setEmbeddedDocumentExtractorFactory(new RUnpackExtractorFactory());
         }
-        List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", autoDetectParser, new ParseContext());
+        List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", autoDetectParser,
+                        new ParseContext());
         assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256"));
         assertNull(metadataList.get(2).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
         assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(Metadata.CONTENT_LENGTH)));
 
         DigestingParser.Digester digester = new CommonsDigester(10000, "SHA256");
 
-        //now test that we get the same digest if we wrap the auto detect parser vs configuring it
+        // now test that we get the same digest if we wrap the auto detect parser vs configuring it
         autoDetectParser = new AutoDetectParser();
         Parser digestingParser = new DigestingParser(autoDetectParser, digester, true);
-        metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", digestingParser, new ParseContext());
-        assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256").toLowerCase(Locale.US));
+        metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", digestingParser,
+                        new ParseContext());
+        assertEquals(expectedSha,
+                        metadataList.get(2).get("X-TIKA:digest:SHA256").toLowerCase(Locale.US));
         assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(Metadata.CONTENT_LENGTH)));
 
     }

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.xmp;
 
@@ -23,16 +21,12 @@ import java.io.InputStream;
 import java.util.Calendar;
 import java.util.List;
 import java.util.StringJoiner;
-
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.jempbox.xmp.ResourceEvent;
 import org.apache.jempbox.xmp.ResourceRef;
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.jempbox.xmp.XMPSchemaDublinCore;
 import org.apache.jempbox.xmp.XMPSchemaMediaManagement;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -41,10 +35,12 @@ import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.DateUtils;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 public class JempboxExtractor {
 
-    //TODO: change signature to require parsecontext from parse
+    // TODO: change signature to require parsecontext from parse
     private static final ParseContext EMPTY_PARSE_CONTEXT = new ParseContext();
     // The XMP spec says it must be unicode, but for most file formats it specifies
     // "must be encoded in UTF-8"
@@ -58,11 +54,11 @@ public class JempboxExtractor {
     }
 
     /**
-     * Tries to extract Dublin Core schema from XMP.  If XMPMetadata is null
-     * or if the DC schema is null, this will return without throwing an exception.
+     * Tries to extract Dublin Core schema from XMP. If XMPMetadata is null or if the DC schema is
+     * null, this will return without throwing an exception.
      *
      * @param xmpMetadata XMPMetadata to process
-     * @param metadata    Tika's metadata to write to
+     * @param metadata Tika's metadata to write to
      */
     public static void extractDublinCore(XMPMetadata xmpMetadata, Metadata metadata) {
         if (xmpMetadata == null) {
@@ -72,7 +68,7 @@ public class JempboxExtractor {
         try {
             dc = xmpMetadata.getDublinCoreSchema();
         } catch (IOException e) {
-            //swallow
+            // swallow
         }
         if (dc == null) {
             return;
@@ -126,32 +122,32 @@ public class JempboxExtractor {
         try {
             mmSchema = xmp.getMediaManagementSchema();
         } catch (IOException e) {
-            //swallow
+            // swallow
             return;
         }
         if (mmSchema != null) {
             addMetadata(metadata, XMPMM.DOCUMENTID, mmSchema.getDocumentID());
-            //not currently supported by JempBox...
-//          metadata.set(XMPMM.INSTANCEID, mmSchema.getInstanceID());
+            // not currently supported by JempBox...
+            // metadata.set(XMPMM.INSTANCEID, mmSchema.getInstanceID());
 
             ResourceRef derivedFrom = mmSchema.getDerivedFrom();
             if (derivedFrom != null) {
                 try {
                     addMetadata(metadata, XMPMM.DERIVED_FROM_DOCUMENTID,
-                            derivedFrom.getDocumentID());
+                                    derivedFrom.getDocumentID());
                 } catch (NullPointerException e) {
-                    //swallow
+                    // swallow
                 }
 
                 try {
                     addMetadata(metadata, XMPMM.DERIVED_FROM_INSTANCEID,
-                            derivedFrom.getInstanceID());
+                                    derivedFrom.getInstanceID());
                 } catch (NullPointerException e) {
-                    //swallow
+                    // swallow
                 }
 
-                //TODO: not yet supported by XMPBox...extract OriginalDocumentID
-                //in DerivedFrom section
+                // TODO: not yet supported by XMPBox...extract OriginalDocumentID
+                // in DerivedFrom section
             }
             if (mmSchema.getHistory() != null) {
                 int eventsAdded = 0;
@@ -169,14 +165,14 @@ public class JempboxExtractor {
                         when = stevt.getWhen();
                         softwareAgent = stevt.getSoftwareAgent();
 
-                        //instanceid can throw npe; getWhen can throw IOException
+                        // instanceid can throw npe; getWhen can throw IOException
                     } catch (NullPointerException | IOException e) {
-                        //swallow
+                        // swallow
                     }
                     if (instanceId != null && !instanceId.isBlank()) {
-                        //for absent data elements, pass in empty strings so
-                        //that parallel arrays will have matching offsets
-                        //for absent data
+                        // for absent data elements, pass in empty strings so
+                        // that parallel arrays will have matching offsets
+                        // for absent data
 
                         action = (action == null) ? "" : action;
                         String dateString = (when == null) ? "" : DateUtils.formatDate(when);
@@ -209,10 +205,9 @@ public class JempboxExtractor {
     }
 
     /**
-     * Maximum number of events to extract from the
-     * event history in the XMP Media Management (XMPMM) section.
-     * The extractor will silently stop adding events after it
-     * has reached this threshold.
+     * Maximum number of events to extract from the event history in the XMP Media Management
+     * (XMPMM) section. The extractor will silently stop adding events after it has reached this
+     * threshold.
      * <p>
      * The default is 1024.
      */
@@ -221,7 +216,8 @@ public class JempboxExtractor {
     }
 
     public void parse(InputStream file) throws IOException, TikaException {
-        UnsynchronizedByteArrayOutputStream xmpraw = UnsynchronizedByteArrayOutputStream.builder().get();
+        UnsynchronizedByteArrayOutputStream xmpraw =
+                        UnsynchronizedByteArrayOutputStream.builder().get();
         if (!scanner.parse(file, xmpraw)) {
             return;
         }

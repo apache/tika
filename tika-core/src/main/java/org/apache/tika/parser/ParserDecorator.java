@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser;
 
@@ -21,24 +19,23 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.multiple.AbstractMultipleParser.MetadataPolicy;
 import org.apache.tika.parser.multiple.FallbackParser;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Decorator base class for the {@link Parser} interface.
- * <p>This class simply delegates all parsing calls to an underlying decorated
- * parser instance. Subclasses can provide extra decoration by overriding the
- * parse method.
- * <p>To decorate several different parsers at the same time, wrap them in
- * a {@link CompositeParser} instance first.
+ * <p>
+ * This class simply delegates all parsing calls to an underlying decorated parser instance.
+ * Subclasses can provide extra decoration by overriding the parse method.
+ * <p>
+ * To decorate several different parsers at the same time, wrap them in a {@link CompositeParser}
+ * instance first.
  */
 public class ParserDecorator implements Parser {
 
@@ -61,11 +58,11 @@ public class ParserDecorator implements Parser {
     }
 
     /**
-     * Decorates the given parser so that it always claims to support
-     * parsing of the given media types.
+     * Decorates the given parser so that it always claims to support parsing of the given media
+     * types.
      *
      * @param parser the parser to be decorated
-     * @param types  supported media types
+     * @param types supported media types
      * @return the decorated parser
      */
     public static final Parser withTypes(Parser parser, final Set<MediaType> types) {
@@ -85,10 +82,10 @@ public class ParserDecorator implements Parser {
     }
 
     /**
-     * Decorates the given parser so that it never claims to support
-     * parsing of the given media types, but will work for all others.
+     * Decorates the given parser so that it never claims to support parsing of the given media
+     * types, but will work for all others.
      *
-     * @param parser       the parser to be decorated
+     * @param parser the parser to be decorated
      * @param excludeTypes excluded/ignored media types
      * @return the decorated parser
      */
@@ -99,8 +96,7 @@ public class ParserDecorator implements Parser {
             @Override
             public Set<MediaType> getSupportedTypes(ParseContext context) {
                 // Get our own, writable copy of the types the parser supports
-                Set<MediaType> parserTypes =
-                        new HashSet<>(super.getSupportedTypes(context));
+                Set<MediaType> parserTypes = new HashSet<>(super.getSupportedTypes(context));
                 // Remove anything on our excludes list
                 parserTypes.removeAll(excludeTypes);
                 // Return whatever is left
@@ -115,14 +111,14 @@ public class ParserDecorator implements Parser {
     }
 
     /**
-     * Decorates the given parsers into a virtual parser, where they'll
-     * be tried in preference order until one works without error.
+     * Decorates the given parsers into a virtual parser, where they'll be tried in preference order
+     * until one works without error.
      *
      * @deprecated This has been replaced by {@link FallbackParser}
      */
     @Deprecated
     public static final Parser withFallbacks(final Collection<? extends Parser> parsers,
-                                             final Set<MediaType> types) {
+                    final Set<MediaType> types) {
         // Delegate to the new FallbackParser for now, until people upgrade
         // Keep old behaviour on metadata, which was to preseve all
         MediaTypeRegistry registry = MediaTypeRegistry.getDefaultRegistry();
@@ -135,21 +131,21 @@ public class ParserDecorator implements Parser {
     }
 
     /**
-     * Delegates the method call to the decorated parser. Subclasses should
-     * override this method (and use <code>super.getSupportedTypes()</code>
-     * to invoke the decorated parser) to implement extra decoration.
+     * Delegates the method call to the decorated parser. Subclasses should override this method
+     * (and use <code>super.getSupportedTypes()</code> to invoke the decorated parser) to implement
+     * extra decoration.
      */
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return parser.getSupportedTypes(context);
     }
 
     /**
-     * Delegates the method call to the decorated parser. Subclasses should
-     * override this method (and use <code>super.parse()</code> to invoke
-     * the decorated parser) to implement extra decoration.
+     * Delegates the method call to the decorated parser. Subclasses should override this method
+     * (and use <code>super.parse()</code> to invoke the decorated parser) to implement extra
+     * decoration.
      */
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         parser.parse(stream, handler, metadata, context);
     }
 

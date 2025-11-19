@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.sax;
 
@@ -22,11 +20,9 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Locale;
-
+import org.apache.tika.parser.ParseContext;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.parser.ParseContext;
 
 /**
  * Basic factory for creating common types of ContentHandlers
@@ -42,9 +38,10 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
 
     /**
      * Create a BasicContentHandlerFactory with {@link #throwOnWriteLimitReached} is true
-     * @param type       basic type of handler
-     * @param writeLimit max number of characters to store; if < 0,
-     *                   the handler will store all characters
+     * 
+     * @param type basic type of handler
+     * @param writeLimit max number of characters to store; if < 0, the handler will store all
+     *        characters
      */
     public BasicContentHandlerFactory(HANDLER_TYPE type, int writeLimit) {
         this(type, writeLimit, true, null);
@@ -55,32 +52,31 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
      * @param type basic type of handler
      * @param writeLimit maximum number of characters to store
      * @param throwOnWriteLimitReached whether or not to throw a
-     *          {@link org.apache.tika.exception.WriteLimitReachedException}
-     *                                 when the write limit has been reached
-     * @param parseContext to store the writelimitreached warning if
-     *                 throwOnWriteLimitReached is set to <code>false</code>
+     *        {@link org.apache.tika.exception.WriteLimitReachedException} when the write limit has
+     *        been reached
+     * @param parseContext to store the writelimitreached warning if throwOnWriteLimitReached is set
+     *        to <code>false</code>
      */
     public BasicContentHandlerFactory(HANDLER_TYPE type, int writeLimit,
-                                      boolean throwOnWriteLimitReached, ParseContext parseContext) {
+                    boolean throwOnWriteLimitReached, ParseContext parseContext) {
         this.type = type;
         this.writeLimit = writeLimit;
         this.throwOnWriteLimitReached = throwOnWriteLimitReached;
         this.parseContext = parseContext;
         if (throwOnWriteLimitReached == false && parseContext == null) {
-            throw new IllegalArgumentException("parse context must not be null if " +
-                    "throwOnWriteLimitReached is false");
+            throw new IllegalArgumentException("parse context must not be null if "
+                            + "throwOnWriteLimitReached is false");
         }
 
     }
 
     /**
-     * Tries to parse string into handler type.  Returns default if string is null or
-     * parse fails.
+     * Tries to parse string into handler type. Returns default if string is null or parse fails.
      * <p/>
      * Options: xml, html, text, body, ignore (no content)
      *
      * @param handlerTypeName string to parse
-     * @param defaultType     type to return if parse fails
+     * @param defaultType type to return if parse fails
      * @return handler type
      */
     public static HANDLER_TYPE parseHandlerType(String handlerTypeName, HANDLER_TYPE defaultType) {
@@ -111,9 +107,8 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
     public ContentHandler getNewContentHandler() {
 
         if (type == HANDLER_TYPE.BODY) {
-            return new BodyContentHandler(
-                    new WriteOutContentHandler(new ToTextContentHandler(), writeLimit,
-                    throwOnWriteLimitReached, parseContext));
+            return new BodyContentHandler(new WriteOutContentHandler(new ToTextContentHandler(),
+                            writeLimit, throwOnWriteLimitReached, parseContext));
         } else if (type == HANDLER_TYPE.IGNORE) {
             return new DefaultHandler();
         }
@@ -122,7 +117,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
             return formatHandler;
         }
         return new WriteOutContentHandler(formatHandler, writeLimit, throwOnWriteLimitReached,
-                parseContext);
+                        parseContext);
     }
 
     private ContentHandler getFormatHandler() {
@@ -149,20 +144,20 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
                 switch (type) {
                     case BODY:
                         return new WriteOutContentHandler(
-                                new BodyContentHandler(new OutputStreamWriter(os, charset)),
-                                writeLimit);
+                                        new BodyContentHandler(new OutputStreamWriter(os, charset)),
+                                        writeLimit);
                     case TEXT:
                         return new WriteOutContentHandler(
-                                new ToTextContentHandler(os, charset.name()), writeLimit);
+                                        new ToTextContentHandler(os, charset.name()), writeLimit);
                     case HTML:
                         return new WriteOutContentHandler(
-                                new ToHTMLContentHandler(os, charset.name()), writeLimit);
+                                        new ToHTMLContentHandler(os, charset.name()), writeLimit);
                     case XML:
                         return new WriteOutContentHandler(
-                                new ToXMLContentHandler(os, charset.name()), writeLimit);
+                                        new ToXMLContentHandler(os, charset.name()), writeLimit);
                     default:
                         return new WriteOutContentHandler(
-                                new ToTextContentHandler(os, charset.name()), writeLimit);
+                                        new ToTextContentHandler(os, charset.name()), writeLimit);
                 }
             } else {
                 switch (type) {
@@ -195,7 +190,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
      * Common handler types for content.
      */
     public enum HANDLER_TYPE {
-        BODY, IGNORE, //don't store content
+        BODY, IGNORE, // don't store content
         TEXT, HTML, XML
     }
 

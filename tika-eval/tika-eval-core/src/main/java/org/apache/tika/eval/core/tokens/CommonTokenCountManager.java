@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.eval.core.tokens;
@@ -32,7 +30,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -44,8 +41,8 @@ public class CommonTokenCountManager {
     private static final Charset COMMON_TOKENS_CHARSET = StandardCharsets.UTF_8;
     private static final String TERM_FREQS = "#SUM_TERM_FREQS\t";
     private final Path commonTokensDir;
-    //if we have no model or if no langid is passed in
-    //make this configurable
+    // if we have no model or if no langid is passed in
+    // make this configurable
     private final String defaultLangCode;
     Map<String, LangModel> commonTokenMap = new ConcurrentHashMap<>();
     Set<String> alreadyTriedToLoad = new HashSet<>();
@@ -63,8 +60,8 @@ public class CommonTokenCountManager {
         this.commonTokensDir = commonTokensDir;
         if (!"".equals(defaultLangCode)) {
             tryToLoad(defaultLangCode);
-            //if you couldn't load it, make sure to add an empty
-            //set to prevent npes later
+            // if you couldn't load it, make sure to add an empty
+            // set to prevent npes later
             LangModel langModel = commonTokenMap.get(defaultLangCode);
             if (langModel == null) {
                 LOG.warn("No common tokens for default language: '" + defaultLangCode + "'");
@@ -78,7 +75,7 @@ public class CommonTokenCountManager {
 
     public Set<String> getTokens(String lang) {
         return Collections.unmodifiableSet(
-                new HashSet(commonTokenMap.get(getActualLangCode(lang)).getTokens()));
+                        new HashSet(commonTokenMap.get(getActualLangCode(lang)).getTokens()));
     }
 
     public Set<String> getLangs() {
@@ -87,16 +84,15 @@ public class CommonTokenCountManager {
 
     /**
      * @param lang
-     * @return pair of actual language code used and a set of common
-     * tokens for that language
+     * @return pair of actual language code used and a set of common tokens for that language
      */
     public Pair<String, LangModel> getLangTokens(String lang) {
         String actualLangCode = getActualLangCode(lang);
         return Pair.of(actualLangCode, commonTokenMap.get(actualLangCode));
     }
 
-    //return langcode for lang that you are actually using
-    //lazily load the appropriate model
+    // return langcode for lang that you are actually using
+    // lazily load the appropriate model
     private String getActualLangCode(String langCode) {
         if (langCode == null || "".equals(langCode)) {
             return defaultLangCode;
@@ -121,8 +117,8 @@ public class CommonTokenCountManager {
         if (alreadyTriedToLoad.contains(langCode)) {
             return;
         }
-        //check once more now that we're in a
-        //synchronized block
+        // check once more now that we're in a
+        // synchronized block
         if (commonTokenMap.get(langCode) != null) {
             return;
         }
@@ -141,17 +137,17 @@ public class CommonTokenCountManager {
 
 
             if (is == null) {
-                String path = (p == null) ? "resource on class path: /common_tokens/" + langCode :
-                        p.toAbsolutePath().toString();
-                LOG.warn("Couldn't find common tokens file for: '" + langCode + "' tried here: " +
-                        path);
+                String path = (p == null) ? "resource on class path: /common_tokens/" + langCode
+                                : p.toAbsolutePath().toString();
+                LOG.warn("Couldn't find common tokens file for: '" + langCode + "' tried here: "
+                                + path);
                 alreadyTriedToLoad.add(langCode);
                 return;
             }
 
             LangModel model = null;
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(is, COMMON_TOKENS_CHARSET))) {
+            try (BufferedReader reader =
+                            new BufferedReader(new InputStreamReader(is, COMMON_TOKENS_CHARSET))) {
                 alreadyTriedToLoad.add(langCode);
                 String line = reader.readLine();
                 while (line != null) {
@@ -166,18 +162,18 @@ public class CommonTokenCountManager {
                         line = reader.readLine();
                         continue;
                     }
-                    //allow language models with, e.g. tab-delimited counts after the term
+                    // allow language models with, e.g. tab-delimited counts after the term
                     String[] cols = line.split("\t");
                     String t = cols[0].trim();
                     if (t.length() > 0 && cols.length > 2) {
                         if (model == null) {
                             throw new IllegalArgumentException(
-                                    "Common tokens file must have included comment line " +
-                                            " with " + TERM_FREQS);
+                                            "Common tokens file must have included comment line "
+                                                            + " with " + TERM_FREQS);
                         }
-                        //document frequency
+                        // document frequency
                         String df = cols[1];
-                        //token frequency
+                        // token frequency
                         long tf = Long.parseLong(cols[2]);
                         model.add(t, tf);
                     }

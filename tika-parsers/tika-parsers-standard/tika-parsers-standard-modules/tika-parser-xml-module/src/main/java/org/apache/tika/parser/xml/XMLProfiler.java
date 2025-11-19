@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.xml;
 
@@ -26,13 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -40,46 +32,45 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 
 /**
  * <p>
  * <p>
- * This parser enables profiling of XML.  It captures the root entity as well as
- * entity uris/namespaces and entity local names in parallel arrays.
+ * This parser enables profiling of XML. It captures the root entity as well as entity
+ * uris/namespaces and entity local names in parallel arrays.
  * </p>
  * <p>
  * <p>
- * This parser is not part of the default set of parsers and must be "turned on"
- * via a tika config:
+ * This parser is not part of the default set of parsers and must be "turned on" via a tika config:
  * <p>
- * &lt;properties&gt;
- * &lt;parsers&gt;
- * &lt;parser class="org.apache.tika.parser.DefaultParser"/&gt;
- * &lt;parser class="org.apache.tika.parser.xml.XMLProfiler"/&gt;
- * &lt;/parsers&gt;
+ * &lt;properties&gt; &lt;parsers&gt; &lt;parser class="org.apache.tika.parser.DefaultParser"/&gt;
+ * &lt;parser class="org.apache.tika.parser.xml.XMLProfiler"/&gt; &lt;/parsers&gt;
  * &lt;/properties&gt;
  * </p>
  * <p>
- * This was initially designed to profile xmp and xfa in PDFs.  Further
- * work would need to be done to extract other types of xml and/or
- * xmp in other file formats.  Please open a ticket.
+ * This was initially designed to profile xmp and xfa in PDFs. Further work would need to be done to
+ * extract other types of xml and/or xmp in other file formats. Please open a ticket.
  * </p>
  */
 public class XMLProfiler implements Parser {
 
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(MediaType.application("xml"),
-                    //https://wwwimages2.adobe.com/content/dam/acom/en/devnet/xmp/pdfs/XMP%20SDK%20Release%20cc-2016-08/XMPSpecificationPart3.pdf
-                    //"If a MIME type is needed, use application/rdf+xml."
-                    MediaType.application("rdf+xml"),//xmp
-                    //xfa: https://en.wikipedia.org/wiki/XFA
-                    MediaType.application("vnd.adobe.xdp+xml"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+                    .unmodifiableSet(new HashSet<>(Arrays.asList(MediaType.application("xml"),
+                                    // https://wwwimages2.adobe.com/content/dam/acom/en/devnet/xmp/pdfs/XMP%20SDK%20Release%20cc-2016-08/XMPSpecificationPart3.pdf
+                                    // "If a MIME type is needed, use application/rdf+xml."
+                                    MediaType.application("rdf+xml"), // xmp
+                                    // xfa: https://en.wikipedia.org/wiki/XFA
+                                    MediaType.application("vnd.adobe.xdp+xml"))));
     public static Property ROOT_ENTITY = Property.internalText("xmlprofiler:root_entity");
     public static Property ENTITY_URIS = Property.internalTextBag("xmlprofiler:entity_uris");
     public static Property ENTITY_LOCAL_NAMES =
-            Property.internalTextBag("xmlprofiler:entity_local_names");
+                    Property.internalTextBag("xmlprofiler:entity_local_names");
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -88,9 +79,9 @@ public class XMLProfiler implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
-                new XMLProfileHandler(metadata), context);
+                        new XMLProfileHandler(metadata), context);
     }
 
     private static class XMLProfileHandler extends DefaultHandler {
@@ -119,7 +110,7 @@ public class XMLProfiler implements Parser {
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes atts)
-                throws SAXException {
+                        throws SAXException {
             if (starts == 0) {
                 metadata.set(ROOT_ENTITY, qName);
             }

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.pipesiterator.kafka;
 
@@ -21,15 +19,11 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeoutException;
-
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -43,6 +37,8 @@ import org.apache.tika.pipes.core.HandlerConfig;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class KafkaPipesIterator extends PipesIterator implements Initializable {
 
@@ -102,8 +98,8 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     }
 
     /**
-     * If the kafka pipe iterator will keep polling for more documents until it returns an empty result.
-     * If you set emitMax is set to > 0, it will stop polling if the number of documents you
+     * If the kafka pipe iterator will keep polling for more documents until it returns an empty
+     * result. If you set emitMax is set to > 0, it will stop polling if the number of documents you
      * have emitted so far > emitMax.
      */
     @Field
@@ -121,8 +117,10 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     public void initialize(Map<String, Param> params) {
         props = new Properties();
         safePut(props, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        safePut(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, serializerClass(keySerializer, StringDeserializer.class));
-        safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, serializerClass(valueSerializer, StringDeserializer.class));
+        safePut(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+                        serializerClass(keySerializer, StringDeserializer.class));
+        safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+                        serializerClass(valueSerializer, StringDeserializer.class));
         safePut(props, ConsumerConfig.GROUP_ID_CONFIG, groupId);
         safePut(props, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
         safePut(props, "group.inital.rebalance.delay.ms", groupInitialRebalanceDelayMs);
@@ -140,7 +138,8 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+                    throws TikaConfigException {
         super.checkInitialization(problemHandler);
         TikaConfig.mustNotBeEmpty("bootstrapServers", this.bootstrapServers);
         TikaConfig.mustNotBeEmpty("topic", this.topic);
@@ -164,7 +163,9 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
                 }
                 ParseContext parseContext = new ParseContext();
                 parseContext.set(HandlerConfig.class, handlerConfig);
-                tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherName, r.key()), new EmitKey(emitterName, r.key()), new Metadata(), parseContext, getOnParseException()));
+                tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherName, r.key()),
+                                new EmitKey(emitterName, r.key()), new Metadata(), parseContext,
+                                getOnParseException()));
                 ++count;
             }
         } while ((emitMax > 0 || count < emitMax) && !records.isEmpty());

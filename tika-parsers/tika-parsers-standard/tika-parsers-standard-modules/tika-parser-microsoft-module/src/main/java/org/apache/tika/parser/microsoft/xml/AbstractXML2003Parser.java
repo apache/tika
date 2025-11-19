@@ -1,30 +1,22 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.xml;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.metadata.Metadata;
@@ -41,6 +33,10 @@ import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 
 public abstract class AbstractXML2003Parser implements Parser {
@@ -73,17 +69,17 @@ public abstract class AbstractXML2003Parser implements Parser {
     final static String HLINK_DEST = "dest";
     final static String NAME_ATTR = "name";
 
-    final static char[] NEWLINE = new char[]{'\n'};
+    final static char[] NEWLINE = new char[] {'\n'};
 
 
     private static ContentHandler getMSPropertiesHandler(Metadata metadata, Property property,
-                                                         String element) {
+                    String element) {
         return new ElementMetadataHandler(MS_DOC_PROPERTIES_URN, element, metadata, property);
     }
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         setContentType(metadata);
 
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -91,12 +87,12 @@ public abstract class AbstractXML2003Parser implements Parser {
 
         TaggedContentHandler tagged = new TaggedContentHandler(xhtml);
         try {
-            //need to get new SAXParser because
-            //an attachment might require another SAXParser
-            //mid-parse
+            // need to get new SAXParser because
+            // an attachment might require another SAXParser
+            // mid-parse
             XMLReaderUtils.getSAXParser().parse(CloseShieldInputStream.wrap(stream),
-                    new EmbeddedContentHandler(
-                            getContentHandler(tagged, metadata, context)));
+                            new EmbeddedContentHandler(
+                                            getContentHandler(tagged, metadata, context)));
         } catch (SAXException e) {
             WriteLimitReachedException.throwIfWriteLimitReached(e);
             throw new TikaException("XML parse error", e);
@@ -106,25 +102,25 @@ public abstract class AbstractXML2003Parser implements Parser {
     }
 
     protected ContentHandler getContentHandler(ContentHandler ch, Metadata md,
-                                               ParseContext context) {
-        //ContentHandler is not currently used, but leave that as an option for
-        //potential future additions
+                    ParseContext context) {
+        // ContentHandler is not currently used, but leave that as an option for
+        // potential future additions
         return new TeeContentHandler(getMSPropertiesHandler(md, TikaCoreProperties.TITLE, "Title"),
-                getMSPropertiesHandler(md, TikaCoreProperties.CREATOR, "Author"),
-                getMSPropertiesHandler(md, Office.LAST_AUTHOR, "LastAuthor"),
-                getMSPropertiesHandler(md, OfficeOpenXMLCore.REVISION, "Revision"),
-                getMSPropertiesHandler(md, OfficeOpenXMLExtended.TOTAL_TIME, "TotalTime"),
-                getMSPropertiesHandler(md, TikaCoreProperties.CREATED, "Created"),
-                getMSPropertiesHandler(md, Office.SAVE_DATE, "LastSaved"),
-                getMSPropertiesHandler(md, Office.PAGE_COUNT, "Pages"),
-                getMSPropertiesHandler(md, Office.WORD_COUNT, "Words"),
-                getMSPropertiesHandler(md, Office.CHARACTER_COUNT, "Characters"),
-                getMSPropertiesHandler(md, Office.CHARACTER_COUNT_WITH_SPACES,
-                        "CharactersWithSpaces"),
-                getMSPropertiesHandler(md, OfficeOpenXMLExtended.COMPANY, "Company"),
-                getMSPropertiesHandler(md, Office.LINE_COUNT, "Lines"),
-                getMSPropertiesHandler(md, Office.PARAGRAPH_COUNT, "Paragraphs"),
-                getMSPropertiesHandler(md, OfficeOpenXMLCore.VERSION, "Version"));
+                        getMSPropertiesHandler(md, TikaCoreProperties.CREATOR, "Author"),
+                        getMSPropertiesHandler(md, Office.LAST_AUTHOR, "LastAuthor"),
+                        getMSPropertiesHandler(md, OfficeOpenXMLCore.REVISION, "Revision"),
+                        getMSPropertiesHandler(md, OfficeOpenXMLExtended.TOTAL_TIME, "TotalTime"),
+                        getMSPropertiesHandler(md, TikaCoreProperties.CREATED, "Created"),
+                        getMSPropertiesHandler(md, Office.SAVE_DATE, "LastSaved"),
+                        getMSPropertiesHandler(md, Office.PAGE_COUNT, "Pages"),
+                        getMSPropertiesHandler(md, Office.WORD_COUNT, "Words"),
+                        getMSPropertiesHandler(md, Office.CHARACTER_COUNT, "Characters"),
+                        getMSPropertiesHandler(md, Office.CHARACTER_COUNT_WITH_SPACES,
+                                        "CharactersWithSpaces"),
+                        getMSPropertiesHandler(md, OfficeOpenXMLExtended.COMPANY, "Company"),
+                        getMSPropertiesHandler(md, Office.LINE_COUNT, "Lines"),
+                        getMSPropertiesHandler(md, Office.PARAGRAPH_COUNT, "Paragraphs"),
+                        getMSPropertiesHandler(md, OfficeOpenXMLCore.VERSION, "Version"));
     }
 
     abstract protected void setContentType(Metadata contentType);

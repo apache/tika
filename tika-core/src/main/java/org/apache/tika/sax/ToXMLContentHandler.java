@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.sax;
 
@@ -21,15 +19,13 @@ import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 /**
- * SAX event handler that serializes the XML document to a character stream.
- * The incoming SAX events are expected to be well-formed (properly nested,
- * etc.) and to explicitly include namespace declaration attributes and
- * corresponding namespace prefixes in element and attribute names.
+ * SAX event handler that serializes the XML document to a character stream. The incoming SAX events
+ * are expected to be well-formed (properly nested, etc.) and to explicitly include namespace
+ * declaration attributes and corresponding namespace prefixes in element and attribute names.
  *
  * @since Apache Tika 0.10
  */
@@ -42,15 +38,15 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     private ElementInfo currentElement;
 
     /**
-     * Creates an XML serializer that writes to the given byte stream
-     * using the given character encoding.
+     * Creates an XML serializer that writes to the given byte stream using the given character
+     * encoding.
      *
-     * @param stream   output stream
+     * @param stream output stream
      * @param encoding output encoding
      * @throws UnsupportedEncodingException if the encoding is unsupported
      */
     public ToXMLContentHandler(OutputStream stream, String encoding)
-            throws UnsupportedEncodingException {
+                    throws UnsupportedEncodingException {
         super(stream, encoding);
         this.encoding = encoding;
     }
@@ -93,7 +89,7 @@ public class ToXMLContentHandler extends ToTextContentHandler {
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+                    throws SAXException {
         lazyCloseStartElement();
 
         currentElement = new ElementInfo(currentElement, namespaces);
@@ -168,7 +164,7 @@ public class ToXMLContentHandler extends ToTextContentHandler {
      * @throws SAXException if the character could not be written
      */
     protected void write(char ch) throws SAXException {
-        super.characters(new char[]{ch}, 0, 1);
+        super.characters(new char[] {ch}, 0, 1);
     }
 
     /**
@@ -184,16 +180,15 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     /**
      * Writes the given characters as-is followed by the given entity.
      *
-     * @param ch     character array
-     * @param from   start position in the array
-     * @param to     end position in the array
+     * @param ch character array
+     * @param from start position in the array
+     * @param to end position in the array
      * @param entity entity code
-     * @return next position in the array,
-     * after the characters plus one entity
+     * @return next position in the array, after the characters plus one entity
      * @throws SAXException if the characters could not be written
      */
     private int writeCharsAndEntity(char[] ch, int from, int to, String entity)
-            throws SAXException {
+                    throws SAXException {
         super.characters(ch, from, to - from);
         write('&');
         write(entity);
@@ -204,11 +199,11 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     /**
      * Writes the given characters with XML meta characters escaped.
      *
-     * @param ch        character array
-     * @param from      start position in the array
-     * @param to        end position in the array
-     * @param attribute whether the characters should be escaped as
-     *                  an attribute value or normal character content
+     * @param ch character array
+     * @param from start position in the array
+     * @param to end position in the array
+     * @param attribute whether the characters should be escaped as an attribute value or normal
+     *        character content
      * @throws SAXException if the characters could not be written
      */
     private void writeEscaped(char[] ch, int from, int to, boolean attribute) throws SAXException {

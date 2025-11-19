@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.ooxml;
@@ -20,22 +18,20 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.math.BigInteger;
 import java.util.Date;
-
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 public class OOXMLTikaBodyPartHandler
-        implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
+                implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
 
     private static final String P = "p";
 
-    private static final char[] NEWLINE = new char[]{'\n'};
+    private static final char[] NEWLINE = new char[] {'\n'};
 
     private final XHTMLContentHandler xhtml;
     private final XWPFListManager listManager;
@@ -43,8 +39,8 @@ public class OOXMLTikaBodyPartHandler
     private final boolean includeMoveFromText;
     private final XWPFStylesShim styles;
 
-    private int pDepth = 0; //paragraph depth
-    private int tableDepth = 0;//table depth
+    private int pDepth = 0; // paragraph depth
+    private int tableDepth = 0;// table depth
     private int sdtDepth = 0;//
     private boolean isItalics = false;
     private boolean isBold = false;
@@ -52,16 +48,16 @@ public class OOXMLTikaBodyPartHandler
     private boolean isStrikeThrough = false;
     private boolean wroteHyperlinkStart = false;
 
-    //TODO: fix this
-    //pWithinCell should be an array/stack of given cell depths
-    //so that when you get to the end of an embedded table, e.g.,
-    //you know what your paragraph count was in the parent cell.
-    //<tc><p/><p/><table><tr><tc></p></p></tc></tr></table>...
+    // TODO: fix this
+    // pWithinCell should be an array/stack of given cell depths
+    // so that when you get to the end of an embedded table, e.g.,
+    // you know what your paragraph count was in the parent cell.
+    // <tc><p/><p/><table><tr><tc></p></p></tc></tr></table>...
     private int tableCellDepth = 0;
     private int pWithinCell = 0;
 
-    //will need to replace this with a stack
-    //if we're marking more that the first level <p/> element
+    // will need to replace this with a stack
+    // if we're marking more that the first level <p/> element
     private String paragraphTag = null;
 
     public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml) {
@@ -73,7 +69,7 @@ public class OOXMLTikaBodyPartHandler
     }
 
     public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles,
-                                    XWPFListManager listManager, OfficeParserConfig parserConfig) {
+                    XWPFListManager listManager, OfficeParserConfig parserConfig) {
         this.xhtml = xhtml;
         this.styles = styles;
         this.listManager = listManager;
@@ -170,8 +166,8 @@ public class OOXMLTikaBodyPartHandler
     @Override
     public void startParagraph(ParagraphProperties paragraphProperties) throws SAXException {
 
-        //if you're in a table cell and your after the first paragraph
-        //make sure to prepend a \n
+        // if you're in a table cell and your after the first paragraph
+        // make sure to prepend a \n
         if (tableCellDepth > 0 && pWithinCell > 0) {
             xhtml.characters(NEWLINE, 0, 1);
         }
@@ -179,12 +175,12 @@ public class OOXMLTikaBodyPartHandler
         if (pDepth == 0 && tableDepth == 0 && sdtDepth == 0) {
             paragraphTag = P;
             String styleClass = null;
-            //TIKA-2144 check that styles is not null
+            // TIKA-2144 check that styles is not null
             if (paragraphProperties.getStyleID() != null && styles != null) {
                 String styleName = styles.getStyleName(paragraphProperties.getStyleID());
                 if (styleName != null) {
                     WordExtractor.TagAndStyle tas =
-                            WordExtractor.buildParagraphTagAndStyle(styleName, false);
+                                    WordExtractor.buildParagraphTagAndStyle(styleName, false);
                     paragraphTag = tas.getTag();
                     styleClass = tas.getStyleClass();
                 }
@@ -199,7 +195,7 @@ public class OOXMLTikaBodyPartHandler
         }
 
         writeParagraphNumber(paragraphProperties.getNumId(), paragraphProperties.getIlvl(),
-                listManager, xhtml);
+                        listManager, xhtml);
         pDepth++;
     }
 
@@ -273,13 +269,13 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void startEditedSection(String editor, Date date,
-                                   OOXMLWordAndPowerPointTextHandler.EditType editType) {
-        //no-op
+                    OOXMLWordAndPowerPointTextHandler.EditType editType) {
+        // no-op
     }
 
     @Override
     public void endEditedSection() {
-        //no-op
+        // no-op
     }
 
     @Override
@@ -341,7 +337,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void startBookmark(String id, String name) throws SAXException {
-        //skip bookmarks within hyperlinks
+        // skip bookmarks within hyperlinks
         if (name != null && !wroteHyperlinkStart) {
             xhtml.startElement("a", "name", name);
             xhtml.endElement("a");
@@ -350,7 +346,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void endBookmark(String id) {
-        //no-op
+        // no-op
     }
 
     private void closeStyleTags() throws SAXException {
@@ -377,7 +373,7 @@ public class OOXMLTikaBodyPartHandler
     }
 
     private void writeParagraphNumber(int numId, int ilvl, XWPFListManager listManager,
-                                      XHTMLContentHandler xhtml) throws SAXException {
+                    XHTMLContentHandler xhtml) throws SAXException {
 
         if (ilvl < 0 || numId < 0 || listManager == null) {
             return;

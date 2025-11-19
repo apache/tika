@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.jdbc;
 
@@ -23,10 +21,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -36,6 +30,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Abstract class that handles iterating through tables within a database.
@@ -53,7 +49,7 @@ public abstract class AbstractDBParser implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         connection = getConnection(stream, metadata, context);
         XHTMLContentHandler xHandler = null;
         List<String> tableNames = null;
@@ -64,18 +60,18 @@ public abstract class AbstractDBParser implements Parser {
             try {
                 close();
             } catch (SQLException sqlE) {
-                //swallow
+                // swallow
             }
-            if (e.getClass().toString().contains("SQLiteException") && e.getMessage() != null &&
-                    (e.getMessage().contains("[SQLITE_ERROR]") ||
-                            e.getMessage().contains("[SQLITE_CORRUPT]"))) {
+            if (e.getClass().toString().contains("SQLiteException") && e.getMessage() != null
+                            && (e.getMessage().contains("[SQLITE_ERROR]")
+                                            || e.getMessage().contains("[SQLITE_CORRUPT]"))) {
                 throw new CorruptedFileException("Corrupt SQLITE", e);
             }
 
             throw new IOException(e);
         }
         for (String tableName : tableNames) {
-            //add table names to parent metadata
+            // add table names to parent metadata
             metadata.add(Database.TABLE_NAME, tableName);
         }
 
@@ -87,7 +83,7 @@ public abstract class AbstractDBParser implements Parser {
         try {
             for (String tableName : tableNames) {
                 JDBCTableReader tableReader =
-                        getTableReader(connection, tableName, embeddedDocumentUtil);
+                                getTableReader(connection, tableName, embeddedDocumentUtil);
                 xHandler.startElement("table", "name", tableReader.getTableName());
                 xHandler.startElement("thead");
                 xHandler.startElement("tr");
@@ -100,7 +96,7 @@ public abstract class AbstractDBParser implements Parser {
                 xHandler.endElement("thead");
                 xHandler.startElement("tbody");
                 while (tableReader.nextRow(xHandler, context)) {
-                    //no-op
+                    // no-op
                 }
                 xHandler.endElement("tbody");
                 xHandler.endElement("table");
@@ -109,7 +105,7 @@ public abstract class AbstractDBParser implements Parser {
             try {
                 close();
             } catch (IOException | SQLException e) {
-                //swallow
+                // swallow
             }
             if (xHandler != null) {
                 xHandler.endDocument();
@@ -118,8 +114,8 @@ public abstract class AbstractDBParser implements Parser {
     }
 
     /**
-     * This is called before parsing the tables to extract metadata from the db, if any.
-     * Override this for db specific metadata. This implementation is a no-op
+     * This is called before parsing the tables to extract metadata from the db, if any. Override
+     * this for db specific metadata. This implementation is a no-op
      *
      * @param connection
      * @param metadata
@@ -139,18 +135,18 @@ public abstract class AbstractDBParser implements Parser {
     }
 
     /**
-     * Override this for special configuration of the connection, such as limiting
-     * the number of rows to be held in memory.
+     * Override this for special configuration of the connection, such as limiting the number of
+     * rows to be held in memory.
      *
-     * @param stream   stream to use
+     * @param stream stream to use
      * @param metadata metadata that could be used in parameterizing the connection
-     * @param context  parsecontext that could be used in parameterizing the connection
+     * @param context parsecontext that could be used in parameterizing the connection
      * @return connection
      * @throws java.io.IOException
      * @throws org.apache.tika.exception.TikaException
      */
     protected Connection getConnection(InputStream stream, Metadata metadata, ParseContext context)
-            throws IOException, TikaException {
+                    throws IOException, TikaException {
         String connectionString = getConnectionString(stream, metadata, context);
 
         Connection connection = null;
@@ -173,14 +169,14 @@ public abstract class AbstractDBParser implements Parser {
      * Include any optimization settings, user name, password, etc.
      * <p/>
      *
-     * @param stream       stream for processing
-     * @param metadata     metadata might be useful in determining connection info
+     * @param stream stream for processing
+     * @param metadata metadata might be useful in determining connection info
      * @param parseContext context to use to help create connectionString
      * @return connection string to be used by {@link #getConnection}.
      * @throws java.io.IOException
      */
     abstract protected String getConnectionString(InputStream stream, Metadata metadata,
-                                                  ParseContext parseContext) throws IOException;
+                    ParseContext parseContext) throws IOException;
 
     /**
      * JDBC class name, e.g. org.sqlite.JDBC
@@ -193,13 +189,13 @@ public abstract class AbstractDBParser implements Parser {
      * Returns the names of the tables to process
      *
      * @param connection Connection to use to make the sql call(s) to get the names of the tables
-     * @param metadata   Metadata to use (potentially) in decision about which tables to extract
-     * @param context    ParseContext to use (potentially) in decision about which tables to extract
+     * @param metadata Metadata to use (potentially) in decision about which tables to extract
+     * @param context ParseContext to use (potentially) in decision about which tables to extract
      * @return
      * @throws java.sql.SQLException
      */
     abstract protected List<String> getTableNames(Connection connection, Metadata metadata,
-                                                  ParseContext context) throws SQLException;
+                    ParseContext context) throws SQLException;
 
     /**
      * Given a connection and a table name, return the JDBCTableReader for this db.
@@ -211,7 +207,7 @@ public abstract class AbstractDBParser implements Parser {
      */
     @Deprecated
     abstract protected JDBCTableReader getTableReader(Connection connection, String tableName,
-                                                      ParseContext parseContext);
+                    ParseContext parseContext);
 
     /**
      * Given a connection and a table name, return the JDBCTableReader for this db.
@@ -222,6 +218,6 @@ public abstract class AbstractDBParser implements Parser {
      * @return
      */
     abstract protected JDBCTableReader getTableReader(Connection connection, String tableName,
-                                                      EmbeddedDocumentUtil embeddedDocumentUtil);
+                    EmbeddedDocumentUtil embeddedDocumentUtil);
 
 }

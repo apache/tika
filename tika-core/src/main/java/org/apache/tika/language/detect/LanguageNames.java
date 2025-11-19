@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.language.detect;
 
@@ -21,18 +19,16 @@ import java.util.Locale;
 /**
  * Support for language tags (as defined by https://tools.ietf.org/html/bcp47)
  * <p>
- * See https://en.wikipedia.org/wiki/List_of_ISO_639-3_codes for a list of
- * three character language codes.
+ * See https://en.wikipedia.org/wiki/List_of_ISO_639-3_codes for a list of three character language
+ * codes.
  * <p>
- * TODO change to LanguageTag, and use these vs. strings everywhere in the
- * language detector API?
+ * TODO change to LanguageTag, and use these vs. strings everywhere in the language detector API?
  */
 public class LanguageNames {
 
     public static String makeName(String language, String script, String region) {
-        Locale locale =
-                new Locale.Builder().setLanguage(language).setScript(script).setRegion(region)
-                        .build();
+        Locale locale = new Locale.Builder().setLanguage(language).setScript(script)
+                        .setRegion(region).build();
         return locale.toLanguageTag();
     }
 
@@ -74,7 +70,7 @@ public class LanguageNames {
         // e.g. zh-CN => zh-Hans-CN, zh-TW => zh-Hant-TW.
 
         // TODO Treat missing script == present script, if present script is default
-        //  (suppressed) for the language. So "en-Latn" == "en"
+        // (suppressed) for the language. So "en-Latn" == "en"
 
         // TODO probably OK to ignore extensions
 

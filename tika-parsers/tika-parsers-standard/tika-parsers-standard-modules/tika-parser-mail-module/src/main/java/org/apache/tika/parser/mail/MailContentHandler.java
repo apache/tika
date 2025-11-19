@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mail;
 
@@ -24,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Stack;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.james.mime4j.MimeException;
@@ -43,8 +40,6 @@ import org.apache.james.mime4j.message.MaximalBodyDescriptor;
 import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.stream.BodyDescriptor;
 import org.apache.james.mime4j.stream.Field;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -66,15 +61,15 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.xml.sax.SAXException;
 
 /**
- * Bridge between mime4j's content handler and the generic Sax content handler
- * used by Tika. See
+ * Bridge between mime4j's content handler and the generic Sax content handler used by Tika. See
  * http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/ContentHandler.html
  */
 class MailContentHandler implements ContentHandler {
 
-    //TODO -- specific handling for other multipart subtypes?  mixed, parallel, digest
+    // TODO -- specific handling for other multipart subtypes? mixed, parallel, digest
     private static final String MULTIPART_ALTERNATIVE = "multipart/alternative";
 
     private final XHTMLContentHandler handler;
@@ -84,13 +79,13 @@ class MailContentHandler implements ContentHandler {
     private final EmbeddedDocumentExtractor extractor;
     private final Detector detector;
     private boolean strictParsing = false;
-    //this is used to buffer a multipart body that
-    //keeps track of multipart/alternative and its children
+    // this is used to buffer a multipart body that
+    // keeps track of multipart/alternative and its children
     private Stack<Part> alternativePartBuffer = new Stack<>();
     private Stack<BodyDescriptor> parts = new Stack<>();
+
     MailContentHandler(XHTMLContentHandler xhtml, Detector detector, Metadata metadata,
-                       ParseContext context, boolean strictParsing,
-                       boolean extractAllAlternatives) {
+                    ParseContext context, boolean strictParsing, boolean extractAllAlternatives) {
         this.handler = xhtml;
         this.metadata = metadata;
         this.parseContext = context;
@@ -98,7 +93,7 @@ class MailContentHandler implements ContentHandler {
         this.extractAllAlternatives = extractAllAlternatives;
 
         // Fetch / Build an EmbeddedDocumentExtractor with which
-        //  to handle/process the parts/attachments
+        // to handle/process the parts/attachments
 
         // Was an EmbeddedDocumentExtractor explicitly supplied?
         this.extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
@@ -121,32 +116,34 @@ class MailContentHandler implements ContentHandler {
             submd.set(Message.MULTIPART_BOUNDARY, parts.peek().getBoundary());
         }
         if (body instanceof MaximalBodyDescriptor) {
-            handleMaximalBodyDescriptor((MaximalBodyDescriptor)body, submd);
+            handleMaximalBodyDescriptor((MaximalBodyDescriptor) body, submd);
         }
-        //if we're in a multipart/alternative or any one of its children
-        //add the bodypart to the latest that was added
+        // if we're in a multipart/alternative or any one of its children
+        // add the bodypart to the latest that was added
         if (!extractAllAlternatives && alternativePartBuffer.size() > 0) {
-            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
+            UnsynchronizedByteArrayOutputStream bos =
+                            UnsynchronizedByteArrayOutputStream.builder().get();
             IOUtils.copy(is, bos);
             alternativePartBuffer.peek().children.add(new BodyContents(submd, bos.toByteArray()));
         } else if (!extractAllAlternatives && parts.size() < 2) {
-            //if you're at the first level of embedding
-            //and you're not in an alternative part block
-            //and you're text/html, put that in the body of the email
-            //otherwise treat as a regular attachment
-            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
+            // if you're at the first level of embedding
+            // and you're not in an alternative part block
+            // and you're text/html, put that in the body of the email
+            // otherwise treat as a regular attachment
+            UnsynchronizedByteArrayOutputStream bos =
+                            UnsynchronizedByteArrayOutputStream.builder().get();
             IOUtils.copy(is, bos);
             final byte[] bytes = bos.toByteArray();
             if (detectInlineTextOrHtml(submd, bytes)) {
                 handleInlineBodyPart(new BodyContents(submd, bytes));
             } else {
-                //else handle as you would any other embedded content
+                // else handle as you would any other embedded content
                 try (TikaInputStream tis = TikaInputStream.get(bytes)) {
                     handleEmbedded(tis, submd);
                 }
             }
         } else {
-            //else handle as you would any other embedded content
+            // else handle as you would any other embedded content
             try (TikaInputStream tis = TikaInputStream.get(is)) {
                 handleEmbedded(tis, submd);
             }
@@ -159,29 +156,29 @@ class MailContentHandler implements ContentHandler {
             StringBuilder contentDisposition = new StringBuilder(contentDispositionType);
             if ("attachment".equalsIgnoreCase(contentDispositionType)) {
                 submd.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                        TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
+                                TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
             } else if ("inline".equalsIgnoreCase(contentDispositionType)) {
                 submd.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                        TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+                                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
             }
             Map<String, String> contentDispositionParameters =
-                    body.getContentDispositionParameters();
+                            body.getContentDispositionParameters();
             for (Entry<String, String> param : contentDispositionParameters.entrySet()) {
                 contentDisposition.append("; ").append(param.getKey()).append("=\"")
-                        .append(param.getValue()).append('"');
+                                .append(param.getValue()).append('"');
                 if ("creation-date".equalsIgnoreCase(param.getKey())) {
                     tryToAddDate(param.getValue(), TikaCoreProperties.CREATED, submd);
                 } else if ("modification-date".equalsIgnoreCase(param.getKey())) {
                     tryToAddDate(param.getValue(), TikaCoreProperties.MODIFIED, submd);
                 }
-                //do anything with "size"?
+                // do anything with "size"?
             }
 
-            //the embedded file name can be in the content disposition field
-            //or a parameter on the content type field as in:
+            // the embedded file name can be in the content disposition field
+            // or a parameter on the content type field as in:
             // Content-Type: application/pdf; name=blah.pdf
-            //Or it can be in both
-            //not sure we need this defensive null check?
+            // Or it can be in both
+            // not sure we need this defensive null check?
             if (body.getContentTypeParameters() != null) {
                 String contentTypeName = body.getContentTypeParameters().get("name");
                 if (!StringUtils.isBlank(contentTypeName)) {
@@ -190,7 +187,8 @@ class MailContentHandler implements ContentHandler {
             }
             String contentDispositionFileName = body.getContentDispositionFilename();
             if (!StringUtils.isBlank(contentDispositionFileName)) {
-                //prefer the content disposition file name over the "name" param in the content-type
+                // prefer the content disposition file name over the "name" param in the
+                // content-type
                 submd.set(TikaCoreProperties.RESOURCE_NAME_KEY, contentDispositionFileName);
             }
             submd.set(Metadata.CONTENT_DISPOSITION, contentDisposition.toString());
@@ -222,30 +220,30 @@ class MailContentHandler implements ContentHandler {
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             MediaType mediaType = detector.detect(tis, submd);
             if (mediaType != null) {
-                //detect only once
+                // detect only once
                 submd.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, mediaType.toString());
                 if (mediaType.toString().startsWith("text")) {
                     return true;
                 }
             }
         } catch (IOException e) {
-            //swallow
+            // swallow
         }
         return false;
     }
 
     private void handleEmbedded(TikaInputStream tis, Metadata metadata)
-            throws MimeException, IOException {
+                    throws MimeException, IOException {
 
         if (metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE) == null) {
             metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                    TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
+                            TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
         }
 
         try {
             if (extractor.shouldParseEmbedded(metadata)) {
                 // Wrap the InputStream before passing on, as the James provided
-                //  one misses many features we might want eg mark/reset
+                // one misses many features we might want eg mark/reset
                 extractor.parseEmbedded(tis, handler, metadata, false);
             }
         } catch (SAXException e) {
@@ -256,8 +254,8 @@ class MailContentHandler implements ContentHandler {
 
     @Override
     public void endBodyPart() throws MimeException {
-        //if we're buffering for a multipart/alternative
-        //don't write </p></div>
+        // if we're buffering for a multipart/alternative
+        // don't write </p></div>
         if (alternativePartBuffer.size() > 0) {
             return;
         }
@@ -270,16 +268,13 @@ class MailContentHandler implements ContentHandler {
     }
 
     @Override
-    public void endHeader() throws MimeException {
-    }
+    public void endHeader() throws MimeException {}
 
     @Override
-    public void startMessage() throws MimeException {
-    }
+    public void startMessage() throws MimeException {}
 
     @Override
-    public void endMessage() throws MimeException {
-    }
+    public void endMessage() throws MimeException {}
 
     @Override
     public void endMultipart() throws MimeException {
@@ -294,25 +289,23 @@ class MailContentHandler implements ContentHandler {
         } else if (alternativePartBuffer.size() > 1) {
             alternativePartBuffer.pop();
         }
-        //test that parts has something
-        //if it doesn't, there's a problem with the file
-        //e.g. more endMultiPart than startMultipart
-        //we're currently silently swallowing this
+        // test that parts has something
+        // if it doesn't, there's a problem with the file
+        // e.g. more endMultiPart than startMultipart
+        // we're currently silently swallowing this
         if (parts.size() > 0) {
             parts.pop();
         }
     }
 
     @Override
-    public void epilogue(InputStream is) throws MimeException, IOException {
-    }
+    public void epilogue(InputStream is) throws MimeException, IOException {}
 
     /**
      * Header for the whole message or its parts
      *
      * @see <a href="http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/">
-     * http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/</a>
-     * Field.html
+     *      http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/</a> Field.html
      */
     public void field(Field field) throws MimeException {
         // if we're in a part, skip.
@@ -325,7 +318,7 @@ class MailContentHandler implements ContentHandler {
             String fieldname = field.getName();
 
             ParsedField parsedField =
-                    LenientFieldParser.getParser().parse(field, DecodeMonitor.SILENT);
+                            LenientFieldParser.getParser().parse(field, DecodeMonitor.SILENT);
             if (fieldname.equalsIgnoreCase("From")) {
                 MailboxListField fromField = (MailboxListField) parsedField;
                 MailboxList mailboxList = fromField.getMailboxList();
@@ -333,14 +326,14 @@ class MailContentHandler implements ContentHandler {
                     for (Address address : mailboxList) {
                         String from = getDisplayString(address);
                         MailUtil.setPersonAndEmail(from, Message.MESSAGE_FROM_NAME,
-                                Message.MESSAGE_FROM_EMAIL, metadata);
+                                        Message.MESSAGE_FROM_EMAIL, metadata);
                         metadata.add(Metadata.MESSAGE_FROM, from);
                         metadata.add(TikaCoreProperties.CREATOR, from);
                     }
                 } else {
                     String from = stripOutFieldPrefix(field, "From:");
                     MailUtil.setPersonAndEmail(from, Message.MESSAGE_FROM_NAME,
-                            Message.MESSAGE_FROM_EMAIL, metadata);
+                                    Message.MESSAGE_FROM_EMAIL, metadata);
 
                     if (from.startsWith("<")) {
                         from = from.substring(1);
@@ -368,10 +361,10 @@ class MailContentHandler implements ContentHandler {
                 if (contentType.getType().equalsIgnoreCase("multipart")) {
                     metadata.set(Message.MULTIPART_SUBTYPE, contentType.getSubtype());
                     metadata.set(Message.MULTIPART_BOUNDARY,
-                            contentType.getParameters().get("boundary"));
+                                    contentType.getParameters().get("boundary"));
                 } else {
                     metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + parsedField.getName(),
-                            field.getBody());
+                                    field.getBody());
                 }
             } else if (fieldname.equalsIgnoreCase("Date")) {
                 String dateBody = parsedField.getBody();
@@ -382,11 +375,11 @@ class MailContentHandler implements ContentHandler {
                 } catch (SecurityException e) {
                     throw e;
                 } catch (Exception e) {
-                    //swallow
+                    // swallow
                 }
             } else {
                 metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + parsedField.getName(),
-                        field.getBody());
+                                field.getBody());
             }
         } catch (RuntimeException me) {
             if (strictParsing) {
@@ -396,7 +389,7 @@ class MailContentHandler implements ContentHandler {
     }
 
     private void processAddressList(ParsedField field, String addressListType, String metadataField)
-            throws MimeException {
+                    throws MimeException {
         AddressListField toField = (AddressListField) field;
         if (toField.isValidField()) {
             AddressList addressList = toField.getAddressList();
@@ -427,17 +420,15 @@ class MailContentHandler implements ContentHandler {
     }
 
     @Override
-    public void preamble(InputStream is) throws MimeException, IOException {
-    }
+    public void preamble(InputStream is) throws MimeException, IOException {}
 
     @Override
-    public void raw(InputStream is) throws MimeException, IOException {
-    }
+    public void raw(InputStream is) throws MimeException, IOException {}
 
     @Override
     public void startBodyPart() throws MimeException {
-        //if we're buffering for a multipart/alternative
-        //don't write <div><p>
+        // if we're buffering for a multipart/alternative
+        // don't write <div><p>
         if (alternativePartBuffer.size() > 0) {
             return;
         }
@@ -459,12 +450,12 @@ class MailContentHandler implements ContentHandler {
     public void startMultipart(BodyDescriptor descr) throws MimeException {
         parts.push(descr);
         if (!extractAllAlternatives) {
-            if (alternativePartBuffer.size() == 0 &&
-                    MULTIPART_ALTERNATIVE.equalsIgnoreCase(descr.getMimeType())) {
+            if (alternativePartBuffer.size() == 0
+                            && MULTIPART_ALTERNATIVE.equalsIgnoreCase(descr.getMimeType())) {
                 Part part = new Part(descr);
                 alternativePartBuffer.push(part);
             } else if (alternativePartBuffer.size() > 0) {
-                //add the part to the stack
+                // add the part to the stack
                 Part parent = alternativePartBuffer.peek();
                 Part part = new Part(descr);
                 alternativePartBuffer.push(part);
@@ -518,36 +509,36 @@ class MailContentHandler implements ContentHandler {
         Parser parser = null;
         boolean inlineText = false;
         if (MediaType.TEXT_HTML.toString().equalsIgnoreCase(contentType)) {
-            parser = EmbeddedDocumentUtil
-                    .tryToFindExistingLeafParser(JSoupParser.class, parseContext);
+            parser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(JSoupParser.class,
+                            parseContext);
         } else if (MediaType.TEXT_PLAIN.toString().equalsIgnoreCase(contentType)) {
-            parser =
-                    EmbeddedDocumentUtil.tryToFindExistingLeafParser(TXTParser.class, parseContext);
+            parser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(TXTParser.class,
+                            parseContext);
             if (parser == null) {
-                parser = EmbeddedDocumentUtil
-                        .tryToFindExistingLeafParser(TextAndCSVParser.class, parseContext);
+                parser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(TextAndCSVParser.class,
+                                parseContext);
                 inlineText = true;
             }
         }
 
 
         if (parser == null) {
-            //back off and treat it as an embedded chunk
+            // back off and treat it as an embedded chunk
             try (TikaInputStream tis = TikaInputStream.get(part.bytes)) {
                 handleEmbedded(tis, part.metadata);
             }
         } else {
 
-            //parse inline
+            // parse inline
             try {
                 Metadata inlineMetadata = new Metadata();
                 if (inlineText) {
                     inlineMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
-                            MediaType.TEXT_PLAIN.toString());
+                                    MediaType.TEXT_PLAIN.toString());
                 }
                 try (TikaInputStream tis = TikaInputStream.get(part.bytes)) {
-                    parser.parse(tis,
-                            new EmbeddedContentHandler(new BodyContentHandler(handler)), inlineMetadata, parseContext);
+                    parser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(handler)),
+                                    inlineMetadata, parseContext);
                 }
             } catch (SAXException | TikaException e) {
                 throw new MimeException(e);
@@ -566,7 +557,7 @@ class MailContentHandler implements ContentHandler {
             } else if (contentType.equalsIgnoreCase(MediaType.TEXT_PLAIN.toString())) {
                 return 1;
             } else if (contentType.equalsIgnoreCase("application/rtf")) {
-                //TODO -- is this the right definition in rfc822 for rich text?!
+                // TODO -- is this the right definition in rfc822 for rich text?!
                 return 2;
             } else if (contentType.equalsIgnoreCase(MediaType.TEXT_HTML.toString())) {
                 return 3;

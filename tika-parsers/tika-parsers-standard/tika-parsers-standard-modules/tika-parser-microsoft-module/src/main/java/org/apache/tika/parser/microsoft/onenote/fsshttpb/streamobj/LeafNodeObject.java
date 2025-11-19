@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
@@ -23,7 +21,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryItem;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.DataNodeObjectData;
@@ -59,8 +56,8 @@ public class LeafNodeObject extends NodeObject {
             }
         } else {
             throw new TikaException(
-                    "The DataNodeObjectData and IntermediateNodeObjectList properties in " +
-                            "LeafNodeObjectData cannot be null at the same time.");
+                            "The DataNodeObjectData and IntermediateNodeObjectList properties in "
+                                            + "LeafNodeObjectData cannot be null at the same time.");
         }
 
         return content;
@@ -69,18 +66,17 @@ public class LeafNodeObject extends NodeObject {
     /**
      * Used to de-serialize the element.
      *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
+     * @param byteArray A Byte array
+     * @param currentIndex Start position
      * @param lengthOfItems The length of the items
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems)
-            throws TikaException, IOException {
+                    int lengthOfItems) throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         if (lengthOfItems != 0) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "LeafNodeObjectData",
-                    "Stream Object over-parse error", null);
+                            "Stream Object over-parse error", null);
         }
 
         this.signature = StreamObject.getCurrent(byteArray, index, SignatureObject.class);
@@ -115,25 +111,26 @@ public class LeafNodeObject extends NodeObject {
      */
     public static class IntermediateNodeObjectBuilder {
         /**
-         * This method is used to build intermediate node object from an list of object group data element
+         * This method is used to build intermediate node object from an list of object group data
+         * element
          *
-         * @param objectGroupList  Specify the list of object group data elements.
-         * @param dataObj          Specify the object group object.
+         * @param objectGroupList Specify the list of object group data elements.
+         * @param dataObj Specify the object group object.
          * @param intermediateGuid Specify the intermediate extended GUID.
          * @return Return the intermediate node object.
          */
         public LeafNodeObject Build(List<ObjectGroupDataElementData> objectGroupList,
-                                    ObjectGroupObjectData dataObj,
-                                    ExGuid intermediateGuid) throws TikaException, IOException {
+                        ObjectGroupObjectData dataObj, ExGuid intermediateGuid)
+                        throws TikaException, IOException {
             AtomicReference<LeafNodeObject> node = new AtomicReference<>();
             AtomicReference<IntermediateNodeObject> rootNode = new AtomicReference<>();
 
             AtomicInteger index = new AtomicInteger(0);
             if (StreamObject.tryGetCurrent(ByteUtil.toByteArray(dataObj.data.content), index, node,
-                    LeafNodeObject.class)) {
+                            LeafNodeObject.class)) {
                 if (dataObj.objectExGUIDArray == null) {
                     throw new TikaException(
-                            "Failed to build intermediate node because the object extend GUID array does not exist.");
+                                    "Failed to build intermediate node because the object extend GUID array does not exist.");
                 }
 
                 node.get().exGuid = intermediateGuid;
@@ -141,14 +138,14 @@ public class LeafNodeObject extends NodeObject {
                 // Contain a single Data Node Object.
                 if (dataObj.objectExGUIDArray.count.getDecodedValue() == 1) {
                     AtomicReference<ObjectGroupObjectDeclare> dataNodeDeclare =
-                            new AtomicReference<>();
+                                    new AtomicReference<>();
                     ObjectGroupObjectData dataNodeData = this.FindByExGuid(objectGroupList,
-                            dataObj.objectExGUIDArray.content.get(0), dataNodeDeclare);
+                                    dataObj.objectExGUIDArray.content.get(0), dataNodeDeclare);
                     BinaryItem data = dataNodeData.data;
 
                     node.get().dataNodeObjectData =
-                            new DataNodeObjectData(ByteUtil.toByteArray(data.content), 0,
-                                    (int) data.length.getDecodedValue());
+                                    new DataNodeObjectData(ByteUtil.toByteArray(data.content), 0,
+                                                    (int) data.length.getDecodedValue());
                     node.get().dataNodeObjectData.exGuid = dataObj.objectExGUIDArray.content.get(0);
                     node.get().intermediateNodeObjectList = null;
                 } else {
@@ -157,18 +154,20 @@ public class LeafNodeObject extends NodeObject {
                     node.get().dataNodeObjectData = null;
                     for (ExGuid extGuid : dataObj.objectExGUIDArray.content) {
                         AtomicReference<ObjectGroupObjectDeclare> intermediateDeclare =
-                                new AtomicReference<>();
-                        ObjectGroupObjectData intermediateData =
-                                this.FindByExGuid(objectGroupList, extGuid, intermediateDeclare);
+                                        new AtomicReference<>();
+                        ObjectGroupObjectData intermediateData = this.FindByExGuid(objectGroupList,
+                                        extGuid, intermediateDeclare);
                         node.get().intermediateNodeObjectList.add(
-                                new IntermediateNodeObjectBuilder().Build(objectGroupList,
-                                        intermediateData, extGuid));
+                                        new IntermediateNodeObjectBuilder().Build(objectGroupList,
+                                                        intermediateData, extGuid));
                     }
                 }
             } else if (StreamObject.tryGetCurrent(ByteUtil.toByteArray(dataObj.data.content), index,
-                    rootNode, IntermediateNodeObject.class)) {
-                // In Sub chunking for larger than 1MB zip file, MOSS2010 could return IntermediateNodeObject.
-                // For easy further process, the rootNode will be replaced by intermediate node instead.
+                            rootNode, IntermediateNodeObject.class)) {
+                // In Sub chunking for larger than 1MB zip file, MOSS2010 could return
+                // IntermediateNodeObject.
+                // For easy further process, the rootNode will be replaced by intermediate node
+                // instead.
                 node.set(new LeafNodeObject());
                 node.get().intermediateNodeObjectList = new ArrayList<LeafNodeObject>();
                 node.get().dataSize = rootNode.get().dataSize;
@@ -177,17 +176,15 @@ public class LeafNodeObject extends NodeObject {
                 node.get().dataNodeObjectData = null;
                 for (ExGuid extGuid : dataObj.objectExGUIDArray.content) {
                     AtomicReference<ObjectGroupObjectDeclare> intermediateDeclare =
-                            new AtomicReference<>();
-                    ObjectGroupObjectData intermediateData =
-                            this.FindByExGuid(objectGroupList, extGuid, intermediateDeclare);
-                    node.get().intermediateNodeObjectList.add(
-                            new IntermediateNodeObjectBuilder().Build(objectGroupList,
-                                    intermediateData, extGuid));
+                                    new AtomicReference<>();
+                    ObjectGroupObjectData intermediateData = this.FindByExGuid(objectGroupList,
+                                    extGuid, intermediateDeclare);
+                    node.get().intermediateNodeObjectList.add(new IntermediateNodeObjectBuilder()
+                                    .Build(objectGroupList, intermediateData, extGuid));
                 }
             } else {
-                throw new TikaException(
-                        "In the ObjectGroupDataElement cannot only contain the " +
-                                "IntermediateNodeObject or IntermediateNodeObject.");
+                throw new TikaException("In the ObjectGroupDataElement cannot only contain the "
+                                + "IntermediateNodeObject or IntermediateNodeObject.");
             }
 
             return node.get();
@@ -196,7 +193,7 @@ public class LeafNodeObject extends NodeObject {
         /**
          * This method is used to build intermediate node object from a byte array with a signature
          *
-         * @param array     Specify the byte array.
+         * @param array Specify the byte array.
          * @param signature Specify the signature.
          * @return Return the intermediate node object.
          */
@@ -206,36 +203,38 @@ public class LeafNodeObject extends NodeObject {
             nodeObject.dataSize.dataSize = array.length;
 
             nodeObject.signature = signature;
-            nodeObject.exGuid =
-                    new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
+            nodeObject.exGuid = new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(),
+                            UUID.randomUUID());
 
             nodeObject.dataNodeObjectData = new DataNodeObjectData(array, 0, array.length);
             nodeObject.intermediateNodeObjectList = null;
 
-            // Now in the current implementation, one intermediate node only contain one single data object node.
+            // Now in the current implementation, one intermediate node only contain one single data
+            // object node.
             return nodeObject;
         }
 
         /**
-         * This method is used to find the object group data element using the specified extended GUID
+         * This method is used to find the object group data element using the specified extended
+         * GUID
          *
          * @param objectGroupList Specify the object group data element list.
-         * @param extendedGuid    Specify the extended GUID.
-         * @param declare         Specify the output of ObjectGroupObjectDeclare.
+         * @param extendedGuid Specify the extended GUID.
+         * @param declare Specify the output of ObjectGroupObjectDeclare.
          * @return Return the object group data element if found.
          */
 
         private ObjectGroupObjectData FindByExGuid(List<ObjectGroupDataElementData> objectGroupList,
-                                                   ExGuid extendedGuid,
-                                                   AtomicReference<ObjectGroupObjectDeclare> declare)
-                throws TikaException {
+                        ExGuid extendedGuid, AtomicReference<ObjectGroupObjectDeclare> declare)
+                        throws TikaException {
             for (ObjectGroupDataElementData objectGroup : objectGroupList) {
 
                 int findIndex = -1;
-                for (int i = 0;
-                        i < objectGroup.objectGroupDeclarations.objectDeclarationList.size(); ++i) {
+                for (int i = 0; i < objectGroup.objectGroupDeclarations.objectDeclarationList
+                                .size(); ++i) {
                     ObjectGroupObjectDeclare objDeclare =
-                            objectGroup.objectGroupDeclarations.objectDeclarationList.get(i);
+                                    objectGroup.objectGroupDeclarations.objectDeclarationList
+                                                    .get(i);
                     if (objDeclare.objectExtendedGUID.equals(extendedGuid)) {
                         findIndex = i;
                         break;
@@ -246,8 +245,8 @@ public class LeafNodeObject extends NodeObject {
                     continue;
                 }
 
-                declare.set(
-                        objectGroup.objectGroupDeclarations.objectDeclarationList.get(findIndex));
+                declare.set(objectGroup.objectGroupDeclarations.objectDeclarationList
+                                .get(findIndex));
                 return objectGroup.objectGroupData.objectGroupObjectDataList.get(findIndex);
             }
 

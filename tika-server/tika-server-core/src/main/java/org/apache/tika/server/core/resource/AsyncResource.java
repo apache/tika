@@ -1,22 +1,27 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.server.core.resource;
 
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -26,19 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
-
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -51,6 +44,9 @@ import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 @Path("/async")
 public class AsyncResource {
@@ -62,7 +58,8 @@ public class AsyncResource {
     long maxQueuePauseMs = 60000;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
-    public AsyncResource(java.nio.file.Path tikaConfigPath, Set<String> supportedFetchers) throws TikaException, IOException, SAXException {
+    public AsyncResource(java.nio.file.Path tikaConfigPath, Set<String> supportedFetchers)
+                    throws TikaException, IOException, SAXException {
         this.asyncProcessor = new AsyncProcessor(tikaConfigPath);
         this.supportedFetchers = supportedFetchers;
         this.emitterManager = EmitterManager.load(tikaConfigPath);
@@ -78,14 +75,12 @@ public class AsyncResource {
     }
 
     /**
-     * The client posts a json request.  At a minimum, this must be a
-     * json object that contains an emitter and a fetcherString key with
-     * the key to fetch the inputStream. Optionally, it may contain a metadata
-     * object that will be used to populate the metadata key for pass
-     * through of metadata from the client.
+     * The client posts a json request. At a minimum, this must be a json object that contains an
+     * emitter and a fetcherString key with the key to fetch the inputStream. Optionally, it may
+     * contain a metadata object that will be used to populate the metadata key for pass through of
+     * metadata from the client.
      * <p>
-     * The extracted text content is stored with the key
-     * {@link TikaCoreProperties#TIKA_CONTENT}
+     * The extracted text content is stored with the key {@link TikaCoreProperties#TIKA_CONTENT}
      * <p>
      * Must specify a fetcherString and an emitter in the posted json.
      *
@@ -95,65 +90,49 @@ public class AsyncResource {
      */
     @POST
     @Produces("application/json")
-    public Map<String, Object> post(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Map<String, Object> post(InputStream is, @Context HttpHeaders httpHeaders,
+                    @Context UriInfo info) throws Exception {
 
         AsyncRequest request = deserializeASyncRequest(is);
 
-        //make sure that there are no problems with
-        //the requested fetchers and emitters
-        //throw early
+        // make sure that there are no problems with
+        // the requested fetchers and emitters
+        // throw early
         for (FetchEmitTuple t : request.getTuples()) {
-            if (!supportedFetchers.contains(t
-                    .getFetchKey()
-                    .getFetcherName())) {
+            if (!supportedFetchers.contains(t.getFetchKey().getFetcherName())) {
                 return badFetcher(t.getFetchKey());
             }
-            if (!emitterManager
-                    .getSupported()
-                    .contains(t
-                            .getEmitKey()
-                            .getEmitterName())) {
-                return badEmitter(t
-                        .getEmitKey()
-                        .getEmitterName());
+            if (!emitterManager.getSupported().contains(t.getEmitKey().getEmitterName())) {
+                return badEmitter(t.getEmitKey().getEmitterName());
             }
             ParseContext parseContext = t.getParseContext();
-            EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
-            if (embeddedDocumentBytesConfig != null && embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
-                    !StringUtils.isAllBlank(embeddedDocumentBytesConfig.getEmitter())) {
+            EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig =
+                            parseContext.get(EmbeddedDocumentBytesConfig.class);
+            if (embeddedDocumentBytesConfig != null
+                            && embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes()
+                            && !StringUtils.isAllBlank(embeddedDocumentBytesConfig.getEmitter())) {
                 String bytesEmitter = embeddedDocumentBytesConfig.getEmitter();
-                if (!emitterManager
-                        .getSupported()
-                        .contains(bytesEmitter)) {
+                if (!emitterManager.getSupported().contains(bytesEmitter)) {
                     return badEmitter(bytesEmitter);
                 }
             }
         }
-        //Instant start = Instant.now();
+        // Instant start = Instant.now();
         try {
             boolean offered = asyncProcessor.offer(request.getTuples(), maxQueuePauseMs);
             if (offered) {
-                LOG.info("accepted {} tuples, capacity={}", request
-                        .getTuples()
-                        .size(), asyncProcessor.getCapacity());
-                return ok(request
-                        .getTuples()
-                        .size());
+                LOG.info("accepted {} tuples, capacity={}", request.getTuples().size(),
+                                asyncProcessor.getCapacity());
+                return ok(request.getTuples().size());
             } else {
-                LOG.info("throttling {} tuples, capacity={}", request
-                        .getTuples()
-                        .size(), asyncProcessor.getCapacity());
-                return throttle(request
-                        .getTuples()
-                        .size());
+                LOG.info("throttling {} tuples, capacity={}", request.getTuples().size(),
+                                asyncProcessor.getCapacity());
+                return throttle(request.getTuples().size());
             }
         } catch (OfferLargerThanQueueSize e) {
-            LOG.info("throttling {} tuples, capacity={}", request
-                    .getTuples()
-                    .size(), asyncProcessor.getCapacity());
-            return throttle(request
-                    .getTuples()
-                    .size());
+            LOG.info("throttling {} tuples, capacity={}", request.getTuples().size(),
+                            asyncProcessor.getCapacity());
+            return throttle(request.getTuples().size());
         }
     }
 

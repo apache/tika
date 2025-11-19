@@ -1,31 +1,27 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.xmp.convert;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 import com.adobe.internal.xmp.XMPException;
 import com.adobe.internal.xmp.XMPMeta;
 import com.adobe.internal.xmp.XMPMetaFactory;
 import com.adobe.internal.xmp.XMPSchemaRegistry;
 import com.adobe.internal.xmp.options.PropertyOptions;
-
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
@@ -58,9 +54,9 @@ public class GenericConverter extends AbstractConverter {
 
                 if (uri != null) {
                     // Tika properties where the type differs from the XMP specification
-                    if (key.equals(DublinCore.TITLE.getName()) ||
-                            key.equals(DublinCore.DESCRIPTION.getName()) ||
-                            key.equals(XMPRights.USAGE_TERMS.getName())) {
+                    if (key.equals(DublinCore.TITLE.getName())
+                                    || key.equals(DublinCore.DESCRIPTION.getName())
+                                    || key.equals(XMPRights.USAGE_TERMS.getName())) {
                         createLangAltProperty(key, uri, keyParts[1]);
                     } else if (key.equals(DublinCore.CREATOR.getName())) {
                         createArrayProperty(key, uri, keyParts[1], PropertyOptions.ARRAY_ORDERED);
@@ -73,15 +69,15 @@ public class GenericConverter extends AbstractConverter {
                                     break;
                                 case BAG:
                                     createArrayProperty(key, uri, keyParts[1],
-                                            PropertyOptions.ARRAY);
+                                                    PropertyOptions.ARRAY);
                                     break;
                                 case SEQ:
                                     createArrayProperty(key, uri, keyParts[1],
-                                            PropertyOptions.ARRAY_ORDERED);
+                                                    PropertyOptions.ARRAY_ORDERED);
                                     break;
                                 case ALT:
                                     createArrayProperty(key, uri, keyParts[1],
-                                            PropertyOptions.ARRAY_ALTERNATE);
+                                                    PropertyOptions.ARRAY_ALTERNATE);
                                     break;
                                 // TODO Add support for structs and lang-alts, but those types are
                                 // currently not used in Tika

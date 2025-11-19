@@ -1,33 +1,29 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.detect.zip;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
-
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
 /**
- * This detector detects JAR files and file type variants of zip subtypes
- * that may contain a MANIFEST.MF
+ * This detector detects JAR files and file type variants of zip subtypes that may contain a
+ * MANIFEST.MF
  */
 public class JarDetector implements ZipContainerDetector {
 
@@ -69,7 +65,7 @@ public class JarDetector implements ZipContainerDetector {
 
     @Override
     public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
-                                           StreamingDetectContext detectContext) {
+                    StreamingDetectContext detectContext) {
 
         String name = zae.getName();
 
@@ -81,7 +77,7 @@ public class JarDetector implements ZipContainerDetector {
             // It's a Jar file, or something based on Jar
             detectContext.set(SeenManifest.class, SEEN_MANIFEST);
         }
-        
+
         SeenManifest seenManifest = detectContext.get(SeenManifest.class);
 
         if (seenManifest != null) {

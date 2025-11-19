@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.core.extractor;
 
@@ -30,7 +28,7 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
     public static EmbeddedDocumentBytesConfig SKIP = new EmbeddedDocumentBytesConfig(false);
 
     public enum SUFFIX_STRATEGY {
-            NONE, EXISTING, DETECTED;
+        NONE, EXISTING, DETECTED;
 
         public static SUFFIX_STRATEGY parse(String s) {
             if (s.equalsIgnoreCase("none")) {
@@ -45,9 +43,7 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
     }
 
     public enum KEY_BASE_STRATEGY {
-        CONTAINER_NAME_NUMBERED,
-        CONTAINER_NAME_AS_IS,
-        CUSTOM_BASE;
+        CONTAINER_NAME_NUMBERED, CONTAINER_NAME_AS_IS, CUSTOM_BASE;
 
         public static KEY_BASE_STRATEGY parse(String s) {
             if (s.equalsIgnoreCase(CONTAINER_NAME_NUMBERED.name())) {
@@ -60,7 +56,8 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
             throw new IllegalArgumentException("can't parse " + s);
         }
     }
-    //for our current custom serialization, this can't be final. :(
+
+    // for our current custom serialization, this can't be final. :(
     private boolean extractEmbeddedDocumentBytes;
 
     private int zeroPadName = 0;
@@ -74,15 +71,14 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
     private boolean includeOriginal = false;
 
     private KEY_BASE_STRATEGY keyBaseStrategy = KEY_BASE_STRATEGY.CONTAINER_NAME_NUMBERED;
-    //This should be set per file. This allows a custom
-    //emit key base that bypasses the algorithmic generation of the emitKey
-    //from the primary json emitKey when keyBase Strategy is CUSTOM_BASE
+    // This should be set per file. This allows a custom
+    // emit key base that bypasses the algorithmic generation of the emitKey
+    // from the primary json emitKey when keyBase Strategy is CUSTOM_BASE
     private String emitKeyBase = "";
 
     /**
      * Create an EmbeddedDocumentBytesConfig with
-     * {@link EmbeddedDocumentBytesConfig#extractEmbeddedDocumentBytes}
-     * set to <code>true</code>
+     * {@link EmbeddedDocumentBytesConfig#extractEmbeddedDocumentBytes} set to <code>true</code>
      */
     public EmbeddedDocumentBytesConfig() {
         this.extractEmbeddedDocumentBytes = true;
@@ -170,9 +166,12 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
 
     @Override
     public String toString() {
-        return "EmbeddedDocumentBytesConfig{" + "extractEmbeddedDocumentBytes=" + extractEmbeddedDocumentBytes + ", zeroPadName=" + zeroPadName + ", suffixStrategy=" +
-                suffixStrategy + ", embeddedIdPrefix='" + embeddedIdPrefix + '\'' + ", emitter='" + emitter + '\'' + ", includeOriginal=" + includeOriginal + ", keyBaseStrategy=" +
-                keyBaseStrategy + ", emitKeyBase='" + emitKeyBase + '\'' + '}';
+        return "EmbeddedDocumentBytesConfig{" + "extractEmbeddedDocumentBytes="
+                        + extractEmbeddedDocumentBytes + ", zeroPadName=" + zeroPadName
+                        + ", suffixStrategy=" + suffixStrategy + ", embeddedIdPrefix='"
+                        + embeddedIdPrefix + '\'' + ", emitter='" + emitter + '\''
+                        + ", includeOriginal=" + includeOriginal + ", keyBaseStrategy="
+                        + keyBaseStrategy + ", emitKeyBase='" + emitKeyBase + '\'' + '}';
     }
 
     @Override
@@ -181,9 +180,14 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
             return false;
         }
 
-        return extractEmbeddedDocumentBytes == config.extractEmbeddedDocumentBytes && zeroPadName == config.zeroPadName && includeOriginal == config.includeOriginal &&
-                suffixStrategy == config.suffixStrategy && Objects.equals(embeddedIdPrefix, config.embeddedIdPrefix) && Objects.equals(emitter, config.emitter) &&
-                keyBaseStrategy == config.keyBaseStrategy && Objects.equals(emitKeyBase, config.emitKeyBase);
+        return extractEmbeddedDocumentBytes == config.extractEmbeddedDocumentBytes
+                        && zeroPadName == config.zeroPadName
+                        && includeOriginal == config.includeOriginal
+                        && suffixStrategy == config.suffixStrategy
+                        && Objects.equals(embeddedIdPrefix, config.embeddedIdPrefix)
+                        && Objects.equals(emitter, config.emitter)
+                        && keyBaseStrategy == config.keyBaseStrategy
+                        && Objects.equals(emitKeyBase, config.emitKeyBase);
     }
 
     @Override

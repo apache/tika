@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.reporters.opensearch;
 
@@ -23,10 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.client.TikaClientException;
 import org.apache.tika.config.Field;
@@ -40,10 +34,11 @@ import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.PipesReporter;
 import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * As of the 2.5.0 release, this is ALPHA version.  There may be breaking changes
- * in the future.
+ * As of the 2.5.0 release, this is ALPHA version. There may be breaking changes in the future.
  */
 public class OpenSearchPipesReporter extends PipesReporter implements Initializable {
 
@@ -72,33 +67,31 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
 
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-        if (! shouldReport(result)) {
+        if (!shouldReport(result)) {
             return;
         }
 
         Metadata metadata = new Metadata();
         metadata.set(parseStatusKey, result.getStatus().name());
         metadata.set(parseTimeKey, Long.toString(elapsed));
-        if (result.getEmitData() != null && result.getEmitData().getMetadataList() != null &&
-                result.getEmitData().getMetadataList().size() > 0) {
+        if (result.getEmitData() != null && result.getEmitData().getMetadataList() != null
+                        && result.getEmitData().getMetadataList().size() > 0) {
             Metadata m = result.getEmitData().getMetadataList().get(0);
             if (m.get(ExternalProcess.EXIT_VALUE) != null) {
                 metadata.set(exitValueKey, m.get(ExternalProcess.EXIT_VALUE));
             }
         }
-        //TODO -- we're not currently doing anything with the message
+        // TODO -- we're not currently doing anything with the message
         try {
             if (includeRouting) {
                 openSearchClient.emitDocument(t.getEmitKey().getEmitKey(),
-                        t.getEmitKey().getEmitKey(), metadata);
+                                t.getEmitKey().getEmitKey(), metadata);
             } else {
-                openSearchClient.emitDocument(t.getEmitKey().getEmitKey(),
-                        null, metadata);
+                openSearchClient.emitDocument(t.getEmitKey().getEmitKey(), null, metadata);
 
             }
         } catch (IOException | TikaClientException e) {
-            LOG.warn("failed to report status for '" +
-                    t.getId() + "'", e);
+            LOG.warn("failed to report status for '" + t.getId() + "'", e);
         }
     }
 
@@ -135,7 +128,7 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
         httpClientFactory.setSocketTimeout(socketTimeout);
     }
 
-    //this is the full url, including the collection, e.g. https://localhost:9200/my-collection
+    // this is the full url, including the collection, e.g. https://localhost:9200/my-collection
     @Field
     public void setOpenSearchUrl(String openSearchUrl) {
         this.openSearchUrl = openSearchUrl;
@@ -180,10 +173,11 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
     public void setIncludeRouting(boolean includeRouting) {
         this.includeRouting = includeRouting;
     }
+
     /**
-     * This prefixes the keys before sending them to OpenSearch.
-     * For example, "pdfinfo_", would have this reporter sending
-     * "pdfinfo_status" and "pdfinfo_parse_time" to OpenSearch.
+     * This prefixes the keys before sending them to OpenSearch. For example, "pdfinfo_", would have
+     * this reporter sending "pdfinfo_status" and "pdfinfo_parse_time" to OpenSearch.
+     * 
      * @param keyPrefix
      */
     @Field
@@ -198,20 +192,18 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
         if (StringUtils.isBlank(openSearchUrl)) {
             throw new TikaConfigException("Must specify an open search url!");
         } else {
-            openSearchClient =
-                    new OpenSearchClient(openSearchUrl,
-                            httpClientFactory.build());
+            openSearchClient = new OpenSearchClient(openSearchUrl, httpClientFactory.build());
         }
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+                    throws TikaConfigException {
         mustNotBeEmpty("openSearchUrl", this.openSearchUrl);
         for (String status : includeStatus) {
             if (excludeStatus.contains(status)) {
-                throw new TikaConfigException("Can't have a status in both include and exclude: " +
-                        status);
+                throw new TikaConfigException(
+                                "Can't have a status in both include and exclude: " + status);
             }
         }
         Set<String> statuses = new HashSet<>();
@@ -226,17 +218,15 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
             sb.append(status.name());
         }
         for (String include : includeStatus) {
-            if (! statuses.contains(include)) {
-                throw new TikaConfigException("I regret I don't recognize '" +
-                        include + "' in the include list. " +
-                        "I recognize: " + sb.toString());
+            if (!statuses.contains(include)) {
+                throw new TikaConfigException("I regret I don't recognize '" + include
+                                + "' in the include list. " + "I recognize: " + sb.toString());
             }
         }
         for (String exclude : excludeStatus) {
-            if (! statuses.contains(exclude)) {
-                throw new TikaConfigException("I regret I don't recognize '" +
-                        exclude + "' in the exclude list. " +
-                        "I recognize: " + sb.toString());
+            if (!statuses.contains(exclude)) {
+                throw new TikaConfigException("I regret I don't recognize '" + exclude
+                                + "' in the exclude list. " + "I recognize: " + sb.toString());
             }
         }
     }

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.detect.microsoft.ooxml;
 
@@ -26,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
-
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.IOUtils;
@@ -41,10 +38,6 @@ import org.apache.poi.xdgf.usermodel.XDGFRelation;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.detect.zip.StreamingDetectContext;
 import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.io.TikaInputStream;
@@ -53,57 +46,60 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.OPCPackageWrapper;
 import org.apache.tika.sax.StoppingEarlyException;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class OPCPackageDetector implements ZipContainerDetector {
 
 
     static final MediaType TIKA_OOXML = MediaType.application("x-tika-ooxml");
-    static final MediaType DOCX =
-            MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
+    static final MediaType DOCX = MediaType
+                    .application("vnd.openxmlformats-officedocument.wordprocessingml.document");
     static final MediaType DOCM = MediaType.application("vnd.ms-word.document.macroEnabled.12");
     static final MediaType DOTM = MediaType.application("vnd.ms-word.template.macroenabled.12");
-    static final MediaType DOTX =
-            MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.template");
-    static final MediaType PPTX =
-            MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation");
+    static final MediaType DOTX = MediaType
+                    .application("vnd.openxmlformats-officedocument.wordprocessingml.template");
+    static final MediaType PPTX = MediaType
+                    .application("vnd.openxmlformats-officedocument.presentationml.presentation");
     static final MediaType PPSM =
-            MediaType.application("vnd.ms-powerpoint.slideshow.macroEnabled.12");
-    static final MediaType PPSX =
-            MediaType.application("vnd.openxmlformats-officedocument.presentationml.slideshow");
+                    MediaType.application("vnd.ms-powerpoint.slideshow.macroEnabled.12");
+    static final MediaType PPSX = MediaType
+                    .application("vnd.openxmlformats-officedocument.presentationml.slideshow");
     static final MediaType PPTM =
-            MediaType.application("vnd.ms-powerpoint.presentation.macroEnabled.12");
+                    MediaType.application("vnd.ms-powerpoint.presentation.macroEnabled.12");
     static final MediaType POTM =
-            MediaType.application("vnd.ms-powerpoint.template.macroenabled.12");
-    static final MediaType POTX =
-            MediaType.application("vnd.openxmlformats-officedocument.presentationml.template");
+                    MediaType.application("vnd.ms-powerpoint.template.macroenabled.12");
+    static final MediaType POTX = MediaType
+                    .application("vnd.openxmlformats-officedocument.presentationml.template");
     static final MediaType THMX = MediaType.application("vnd.openxmlformats-officedocument");
     static final MediaType XLSB =
-            MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12");
+                    MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12");
     static final MediaType XLSX =
-            MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                    MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     static final MediaType XLSM = MediaType.application("vnd.ms-excel.sheet.macroEnabled.12");
     static final MediaType XLTM = MediaType.application("vnd.ms-excel.template.macroenabled.12");
-    static final MediaType XLTX =
-            MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.template");
+    static final MediaType XLTX = MediaType
+                    .application("vnd.openxmlformats-officedocument.spreadsheetml.template");
     static final MediaType XLAM = MediaType.application("vnd.ms-excel.addin.macroEnabled.12");
     static final MediaType XPS = MediaType.application("vnd.ms-xpsdocument");
 
-    static final MediaType THREE_MF = MediaType.application("vnd.ms-package.3dmanufacturing-3dmodel+xml");
+    static final MediaType THREE_MF =
+                    MediaType.application("vnd.ms-package.3dmanufacturing-3dmodel+xml");
 
-    static final Set<String> OOXML_HINTS =
-            fillSet("word/document.xml", "_rels/.rels", "[Content_Types].xml",
-                    "ppt/presentation.xml", "ppt/slides/slide1.xml", "xl/workbook.xml",
-                    "xl/sharedStrings.xml", "xl/worksheets/sheet1.xml");
+    static final Set<String> OOXML_HINTS = fillSet("word/document.xml", "_rels/.rels",
+                    "[Content_Types].xml", "ppt/presentation.xml", "ppt/slides/slide1.xml",
+                    "xl/workbook.xml", "xl/sharedStrings.xml", "xl/worksheets/sheet1.xml");
     private static final Pattern MACRO_TEMPLATE_PATTERN =
-            Pattern.compile("macroenabledtemplate$", Pattern.CASE_INSENSITIVE);
+                    Pattern.compile("macroenabledtemplate$", Pattern.CASE_INSENSITIVE);
     private static final String XPS_DOCUMENT =
-            "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation";
+                    "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation";
     private static final String OPEN_XPS_DOCUMENT =
-            "http://schemas.openxps.org/oxps/v1.0/fixedrepresentation";
+                    "http://schemas.openxps.org/oxps/v1.0/fixedrepresentation";
     private static final String STAR_OFFICE_6_WRITER = "application/vnd.sun.xml.writer";
 
     private static final String THREE_MF_DOCUMENT =
-            "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel";
+                    "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel";
     static Map<String, MediaType> OOXML_CONTENT_TYPES = new ConcurrentHashMap<>();
 
     static {
@@ -129,17 +125,17 @@ public class OPCPackageDetector implements ZipContainerDetector {
         OOXML_CONTENT_TYPES.put(XSLFRelation.THEME_MANAGER.getContentType(), THMX);
 
         OOXML_CONTENT_TYPES.put("application/vnd.ms-visio.drawing.macroEnabled.main+xml",
-                MediaType.application("vnd.ms-visio.drawing.macroEnabled.12"));
+                        MediaType.application("vnd.ms-visio.drawing.macroEnabled.12"));
         OOXML_CONTENT_TYPES.put(XDGFRelation.DOCUMENT.getContentType(),
-                MediaType.application("vnd.ms-visio.drawing"));
+                        MediaType.application("vnd.ms-visio.drawing"));
         OOXML_CONTENT_TYPES.put("application/vnd.ms-visio.stencil.macroEnabled.main+xml",
-                MediaType.application("vnd.ms-visio.stencil.macroenabled.12"));
+                        MediaType.application("vnd.ms-visio.stencil.macroenabled.12"));
         OOXML_CONTENT_TYPES.put("application/vnd.ms-visio.stencil.main+xml",
-                MediaType.application("vnd.ms-visio.stencil"));
+                        MediaType.application("vnd.ms-visio.stencil"));
         OOXML_CONTENT_TYPES.put("application/vnd.ms-visio.template.macroEnabled.main+xml",
-                MediaType.application("vnd.ms-visio.template.macroenabled.12"));
+                        MediaType.application("vnd.ms-visio.template.macroenabled.12"));
         OOXML_CONTENT_TYPES.put("application/vnd.ms-visio.template.main+xml",
-                MediaType.application("vnd.ms-visio.template"));
+                        MediaType.application("vnd.ms-visio.template"));
 
         OOXML_CONTENT_TYPES.put("application/vnd.ms-package.xps-fixeddocumentsequence+xml", XPS);
 
@@ -150,13 +146,12 @@ public class OPCPackageDetector implements ZipContainerDetector {
     }
 
     /**
-     * Detects the type of an OfficeOpenXML (OOXML) file from
-     * opened Package
+     * Detects the type of an OfficeOpenXML (OOXML) file from opened Package
      */
     public static MediaType detectOfficeOpenXML(OPCPackage pkg) {
         // Check for the normal Office core document
         PackageRelationshipCollection core =
-                pkg.getRelationshipsByType(PackageRelationshipTypes.CORE_DOCUMENT);
+                        pkg.getRelationshipsByType(PackageRelationshipTypes.CORE_DOCUMENT);
 
         // Otherwise check for some other Office core document types
         if (core.size() == 0) {
@@ -178,7 +173,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
 
             if (core.size() == 0) {
                 core = pkg.getRelationshipsByType(
-                        "http://schemas.autodesk.com/dwfx/2007/relationships/documentsequence");
+                                "http://schemas.autodesk.com/dwfx/2007/relationships/documentsequence");
                 if (core.size() == 1) {
                     return MediaType.parse("model/vnd.dwfx+xps");
                 }
@@ -230,7 +225,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            //swallow
+            // swallow
         }
         return relsHandler.rels;
     }
@@ -242,7 +237,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            //swallow
+            // swallow
         }
         return contentTypeHandler.mediaType;
     }
@@ -252,45 +247,44 @@ public class OPCPackageDetector implements ZipContainerDetector {
         MediaType type = null;
 
 
-        //as of 4.x, POI throws an exception for non-POI OPC file types
-        //unless we change POI, we can't rely on POI for non-POI files
-        ZipEntrySource zipEntrySource =
-                new CloseShieldZipFileZipEntrySource(zipFile);
+        // as of 4.x, POI throws an exception for non-POI OPC file types
+        // unless we change POI, we can't rely on POI for non-POI files
+        ZipEntrySource zipEntrySource = new CloseShieldZipFileZipEntrySource(zipFile);
 
-        //in POI 5.2.0, if there's an exception during detection,
-        //close() is called on the pkg instead of revert(), which leads
-        //to needless logging. Do a preliminary test for OPC now.
+        // in POI 5.2.0, if there's an exception during detection,
+        // close() is called on the pkg instead of revert(), which leads
+        // to needless logging. Do a preliminary test for OPC now.
         if (zipEntrySource.getEntry("[Content_Types].xml") == null) {
             return type;
         }
         // Use POI to open and investigate it for us
-        //Unfortunately, POI can throw a RuntimeException...so we
-        //have to catch that.
+        // Unfortunately, POI can throw a RuntimeException...so we
+        // have to catch that.
         OPCPackage pkg = null;
         try {
             pkg = OPCPackage.open(zipEntrySource);
             type = detectOfficeOpenXML(pkg);
         } catch (SecurityException e) {
             IOUtils.closeQuietly(zipEntrySource);
-            //TIKA-2571
+            // TIKA-2571
             throw e;
         } catch (InvalidFormatException | RuntimeException e) {
-            //no need to close zipEntrySource because it
-            //only closes the underlying zipFile, not any other resources
-            //as of this writing.... :'(
+            // no need to close zipEntrySource because it
+            // only closes the underlying zipFile, not any other resources
+            // as of this writing.... :'(
             return null;
         }
-        //this will now be closed eventually when the wrapper closes
-        //the pkg which will close this
-        ((CloseShieldZipFileZipEntrySource)zipEntrySource).allowClose();
-        //only set the open container if we made it here
+        // this will now be closed eventually when the wrapper closes
+        // the pkg which will close this
+        ((CloseShieldZipFileZipEntrySource) zipEntrySource).allowClose();
+        // only set the open container if we made it here
         stream.setOpenContainer(new OPCPackageWrapper(pkg));
         return type;
     }
 
     @Override
     public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
-                                           StreamingDetectContext detectContext) {
+                    StreamingDetectContext detectContext) {
         String name = zae.getName();
         if (name.equals("[Content_Types].xml")) {
             MediaType mt = parseOOXMLContentTypes(zis);
@@ -307,13 +301,13 @@ public class OPCPackageDetector implements ZipContainerDetector {
                 detectContext.set(OOXMLHintCounter.class, cnt);
             }
             cnt.increment();
-            //we used to short-circuit, but ooxml files that are
-            //not created by actual microsoft products do not tend to
-            //put [Content_Types.xml] as the first physical entry in the zip file
-            //so we need to read through the full file
-            /*if (cnt.getCount() > 2) {
-                return TIKA_OOXML;
-            }*/
+            // we used to short-circuit, but ooxml files that are
+            // not created by actual microsoft products do not tend to
+            // put [Content_Types.xml] as the first physical entry in the zip file
+            // so we need to read through the full file
+            /*
+             * if (cnt.getCount() > 2) { return TIKA_OOXML; }
+             */
         }
         return null;
     }
@@ -333,7 +327,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
 
         @Override
         public void startElement(String uri, String localName, String name, Attributes attrs)
-                throws SAXException {
+                        throws SAXException {
             for (int i = 0; i < attrs.getLength(); i++) {
                 String attrName = attrs.getLocalName(i);
                 if (attrName.equals("Type")) {
@@ -353,7 +347,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
 
         @Override
         public void startElement(String uri, String localName, String name, Attributes attrs)
-                throws SAXException {
+                        throws SAXException {
             for (int i = 0; i < attrs.getLength(); i++) {
                 String attrName = attrs.getLocalName(i);
                 if (attrName.equals("ContentType")) {
@@ -382,6 +376,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
 
     private static class CloseShieldZipFileZipEntrySource extends ZipFileZipEntrySource {
         private boolean allowClose = false;
+
         public CloseShieldZipFileZipEntrySource(ZipFile zipFile) {
             super(zipFile);
         }
@@ -391,7 +386,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
             if (allowClose) {
                 super.close();
             }
-            //no-op, do not close the underlying zipFile
+            // no-op, do not close the underlying zipFile
         }
 
         public void allowClose() {

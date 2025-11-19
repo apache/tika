@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.wacz;
 
@@ -24,16 +22,12 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
-
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -44,11 +38,13 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class WACZParser implements Parser {
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(MediaType.application("x-wacz"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+                    .unmodifiableSet(new HashSet<>(Arrays.asList(MediaType.application("x-wacz"))));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -57,15 +53,15 @@ public class WACZParser implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+                        EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (stream instanceof TikaInputStream) {
             ZipFile zip = (ZipFile) ((TikaInputStream) stream).getOpenContainer();
-            if (zip == null && ((TikaInputStream)stream).hasFile()) {
+            if (zip == null && ((TikaInputStream) stream).hasFile()) {
                 zip = ZipFile.builder().setFile(((TikaInputStream) stream).getFile()).get();
             }
             if (zip != null) {
@@ -84,9 +80,9 @@ public class WACZParser implements Parser {
     }
 
     private void processStream(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
-                               EmbeddedDocumentExtractor ex) throws SAXException, IOException {
-        try (ZipArchiveInputStream zais = new ZipArchiveInputStream(
-                CloseShieldInputStream.wrap(stream))) {
+                    EmbeddedDocumentExtractor ex) throws SAXException, IOException {
+        try (ZipArchiveInputStream zais =
+                        new ZipArchiveInputStream(CloseShieldInputStream.wrap(stream))) {
             ZipArchiveEntry zae = zais.getNextEntry();
             while (zae != null) {
                 String name = zae.getName();
@@ -94,29 +90,29 @@ public class WACZParser implements Parser {
                     name = name.substring(8);
                     processWARC(zais, zae, name, xhtml, metadata, ex);
                 } else if ("datapackage.json".equals(name)) {
-                    //no-op
+                    // no-op
                     processDataPackage(zais, zae, xhtml, metadata);
                 }
-                //TODO -- process pages (jsonl); process indexes?!
+                // TODO -- process pages (jsonl); process indexes?!
 
                 zae = zais.getNextEntry();
             }
         }
     }
 
-    private void processDataPackage(InputStream is, ZipArchiveEntry zae,
-                                    XHTMLContentHandler xhtml, Metadata metadata)
-            throws IOException {
-        //no-op
+    private void processDataPackage(InputStream is, ZipArchiveEntry zae, XHTMLContentHandler xhtml,
+                    Metadata metadata) throws IOException {
+        // no-op
     }
 
-    private void processWARC(InputStream zais, ZipArchiveEntry zae,
-                             String name, XHTMLContentHandler xhtml, Metadata parentMetadata,
-                             EmbeddedDocumentExtractor ex) throws IOException, SAXException {
+    private void processWARC(InputStream zais, ZipArchiveEntry zae, String name,
+                    XHTMLContentHandler xhtml, Metadata parentMetadata,
+                    EmbeddedDocumentExtractor ex) throws IOException, SAXException {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(zae.getSize()));
-        try (TikaInputStream tis = TikaInputStream.get(getMaybeGzipInputStream(TikaInputStream.get(zais)))) {
+        try (TikaInputStream tis =
+                        TikaInputStream.get(getMaybeGzipInputStream(TikaInputStream.get(zais)))) {
             if (ex.shouldParseEmbedded(metadata)) {
                 ex.parseEmbedded(tis, xhtml, metadata, true);
             }
@@ -140,7 +136,7 @@ public class WACZParser implements Parser {
     }
 
     private void processZip(ZipFile zip, XHTMLContentHandler xhtml, Metadata metadata,
-                            EmbeddedDocumentExtractor ex) throws IOException, SAXException {
+                    EmbeddedDocumentExtractor ex) throws IOException, SAXException {
 
         Enumeration<ZipArchiveEntry> zaeEnum = zip.getEntries();
         while (zaeEnum.hasMoreElements()) {
@@ -149,11 +145,11 @@ public class WACZParser implements Parser {
             if (name.startsWith("archive/")) {
                 name = name.substring(8);
                 processWARC(TikaInputStream.get(zip.getInputStream(zae)), zae, name, xhtml,
-                        metadata, ex);
+                                metadata, ex);
             } else if ("datapackage.json".equals(name)) {
-                //no-op
+                // no-op
                 processDataPackage(TikaInputStream.get(zip.getInputStream(zae)), zae, xhtml,
-                        metadata);
+                                metadata);
             }
         }
     }

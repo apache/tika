@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.example;
@@ -23,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+
 import javax.jcr.Item;
 
 import org.apache.jackrabbit.server.io.DefaultIOListener;
@@ -30,13 +29,12 @@ import org.apache.jackrabbit.server.io.IOListener;
 import org.apache.jackrabbit.server.io.IOUtil;
 import org.apache.jackrabbit.server.io.ImportContext;
 import org.apache.jackrabbit.webdav.io.InputContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <code>ImportContextImpl</code>...
@@ -53,22 +51,22 @@ public class ImportContextImpl implements ImportContext {
     private boolean completed;
 
     /**
-     * Creates a new item import context. The specified InputStream is written
-     * to a temporary file in order to avoid problems with multiple IOHandlers
-     * that try to run the import but fail. The temporary file is deleted as
-     * soon as this context is informed that the import has been completed and
-     * it will not be used any more.
+     * Creates a new item import context. The specified InputStream is written to a temporary file
+     * in order to avoid problems with multiple IOHandlers that try to run the import but fail. The
+     * temporary file is deleted as soon as this context is informed that the import has been
+     * completed and it will not be used any more.
      *
      * @param importRoot
      * @param systemId
-     * @param ctx        input context, or <code>null</code>
-     * @param stream     document input stream, or <code>null</code>
+     * @param ctx input context, or <code>null</code>
+     * @param stream document input stream, or <code>null</code>
      * @param ioListener
-     * @param detector   content type detector
+     * @param detector content type detector
      * @throws IOException
      * @see ImportContext#informCompleted(boolean)
      */
-    public ImportContextImpl(Item importRoot, String systemId, InputContext ctx, InputStream stream, IOListener ioListener, Detector detector) throws IOException {
+    public ImportContextImpl(Item importRoot, String systemId, InputContext ctx, InputStream stream,
+                    IOListener ioListener, Detector detector) throws IOException {
         this.importRoot = importRoot;
         this.systemId = systemId;
         this.inputCtx = ctx;
@@ -111,9 +109,8 @@ public class ImportContextImpl implements ImportContext {
     }
 
     /**
-     * Returns a new <code>InputStream</code> to the temporary file created
-     * during instanciation or <code>null</code>, if this context does not
-     * provide a stream.
+     * Returns a new <code>InputStream</code> to the temporary file created during instanciation or
+     * <code>null</code>, if this context does not provide a stream.
      *
      * @see ImportContext#getInputStream()
      * @see #hasStream()
@@ -164,7 +161,8 @@ public class ImportContextImpl implements ImportContext {
             length = inputFile.length();
         }
         if (length < 0) {
-            LOG.debug("Unable to determine content length -> default value = {}", IOUtil.UNDEFINED_LENGTH);
+            LOG.debug("Unable to determine content length -> default value = {}",
+                            IOUtil.UNDEFINED_LENGTH);
         }
         return length;
     }

@@ -1,21 +1,21 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.ner.nltk;
 
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -24,21 +24,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.parser.ner.NERecogniser;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.parser.ner.NERecogniser;
-
 /**
- * This class offers an implementation of {@link NERecogniser} based on
- * ne_chunk() module of NLTK. This NER requires additional setup,
- * due to Http requests to an endpoint server that runs NLTK.
+ * This class offers an implementation of {@link NERecogniser} based on ne_chunk() module of NLTK.
+ * This NER requires additional setup, due to Http requests to an endpoint server that runs NLTK.
  * See <a href="http://wiki.apache.org/tika/TikaAndNLTK">
  */
 public class NLTKNERecogniser implements NERecogniser {
@@ -95,8 +90,8 @@ public class NLTKNERecogniser implements NERecogniser {
     }
 
     /**
-     * @return {@code true} if server endpoint is available.
-     * returns {@code false} if server endpoint is not avaliable for service.
+     * @return {@code true} if server endpoint is available. returns {@code false} if server
+     *         endpoint is not avaliable for service.
      */
     public boolean isAvailable() {
         return available;
@@ -132,7 +127,7 @@ public class NLTKNERecogniser implements NERecogniser {
                     if (!key.equals("result")) {
                         ENTITY_TYPES.add(key);
                         entities.put(key.toUpperCase(Locale.ENGLISH),
-                                new HashSet((Collection) j.get(key)));
+                                        new HashSet((Collection) j.get(key)));
                     }
                 }
             }

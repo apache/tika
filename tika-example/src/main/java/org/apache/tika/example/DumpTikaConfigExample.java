@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.example;
@@ -30,14 +28,13 @@ import org.apache.tika.config.TikaConfigSerializer;
 
 
 /**
- * This class shows how to dump a TikaConfig object to a configuration file.
- * This allows users to easily dump the default TikaConfig as a base from which
- * to start if they want to modify the default configuration file.
+ * This class shows how to dump a TikaConfig object to a configuration file. This allows users to
+ * easily dump the default TikaConfig as a base from which to start if they want to modify the
+ * default configuration file.
  * <p>
  * For those who want to modify the mimes file, take a look at
- * tika-core/src/main/resources/org/apache/tika/mime/tika-mimetypes.xml
- * for inspiration.  Consider adding org/apache/tika/mime/custom-mimetypes.xml
- * for your custom mime types.
+ * tika-core/src/main/resources/org/apache/tika/mime/tika-mimetypes.xml for inspiration. Consider
+ * adding org/apache/tika/mime/custom-mimetypes.xml for your custom mime types.
  */
 public class DumpTikaConfigExample {
 
@@ -60,7 +57,8 @@ public class DumpTikaConfigExample {
                     mode = TikaConfigSerializer.Mode.STATIC;
                 } else {
                     System.out.println("Use:");
-                    System.out.println("  DumpTikaConfig [--dump-minimal] [--dump-current] [--dump-static] [filename] [encoding]");
+                    System.out.println(
+                                    "  DumpTikaConfig [--dump-minimal] [--dump-current] [--dump-static] [filename] [encoding]");
                     System.out.println("");
                     System.out.println("--dump-minimal    Produce the minimal config file");
                     System.out.println("--dump-current    The current (with defaults) config file");

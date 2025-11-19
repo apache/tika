@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.fork;
 
@@ -32,11 +30,10 @@ class ClassLoaderResource implements ForkResource {
     }
 
     /**
-     * Processes a request for one (code 1) or many (code 2) class loader
-     * resources. The requested resources are sent preceded with a boolean
-     * <code>true</code> value. If the resource was not found (code 1) or
-     * when the last resource has been sent (code 2), a boolean
-     * <code>false</code> value is sent instead.
+     * Processes a request for one (code 1) or many (code 2) class loader resources. The requested
+     * resources are sent preceded with a boolean <code>true</code> value. If the resource was not
+     * found (code 1) or when the last resource has been sent (code 2), a boolean <code>false</code>
+     * value is sent instead.
      *
      * @param name resource name
      * @throws IOException if the resource could not be sent
@@ -66,20 +63,18 @@ class ClassLoaderResource implements ForkResource {
     }
 
     /**
-     * Sends the contents of the given input stream to the given output.
-     * The stream is sent in chunks of less than 64kB, each preceded by
-     * a 16-bit integer value that indicates the length of the following
-     * chunk. A zero short value is sent at the end to signify the end of
-     * the stream.
+     * Sends the contents of the given input stream to the given output. The stream is sent in
+     * chunks of less than 64kB, each preceded by a 16-bit integer value that indicates the length
+     * of the following chunk. A zero short value is sent at the end to signify the end of the
+     * stream.
      * <p>
-     * The stream is guaranteed to be closed by this method, regardless of
-     * the way it returns.
+     * The stream is guaranteed to be closed by this method, regardless of the way it returns.
      *
      * @param stream the stream to be sent
      * @throws IOException if the stream could not be sent
      */
     private void writeAndCloseStream(DataOutputStream output, InputStream stream)
-            throws IOException {
+                    throws IOException {
         try {
             byte[] buffer = new byte[0x10000 - 1];
             int n;

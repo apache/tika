@@ -1,25 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.fetchers.microsoftgraph;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 
 import com.microsoft.graph.drives.DrivesRequestBuilder;
 import com.microsoft.graph.drives.item.DriveItemRequestBuilder;
@@ -27,7 +20,15 @@ import com.microsoft.graph.drives.item.items.ItemsRequestBuilder;
 import com.microsoft.graph.drives.item.items.item.DriveItemItemRequestBuilder;
 import com.microsoft.graph.drives.item.items.item.content.ContentRequestBuilder;
 import com.microsoft.graph.serviceclient.GraphServiceClient;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.fetchers.microsoftgraph.config.ClientCertificateCredentialsConfig;
+import org.apache.tika.pipes.fetchers.microsoftgraph.config.MicrosoftGraphFetcherConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,11 +40,6 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.fetchers.microsoftgraph.config.ClientCertificateCredentialsConfig;
-import org.apache.tika.pipes.fetchers.microsoftgraph.config.MicrosoftGraphFetcherConfig;
 
 @ExtendWith(MockitoExtension.class)
 class MicrosoftGraphFetcherTest {
@@ -60,10 +56,11 @@ class MicrosoftGraphFetcherTest {
     @Spy
     @SuppressWarnings("unused")
     MicrosoftGraphFetcherConfig microsoftGraphFetcherConfig = new MicrosoftGraphFetcherConfig()
-            .setClientCertificateCredentialsConfig(new ClientCertificateCredentialsConfig().setCertificateBytes(certificateBytes)
-                    .setCertificatePassword(certificatePassword).setClientId(clientId)
-                    .setTenantId(tenantId))
-            .setScopes(Collections.singletonList(".default"));
+                    .setClientCertificateCredentialsConfig(new ClientCertificateCredentialsConfig()
+                                    .setCertificateBytes(certificateBytes)
+                                    .setCertificatePassword(certificatePassword)
+                                    .setClientId(clientId).setTenantId(tenantId))
+                    .setScopes(Collections.singletonList(".default"));
 
     @Mock
     DrivesRequestBuilder drivesRequestBuilder;
@@ -88,18 +85,18 @@ class MicrosoftGraphFetcherTest {
         try (AutoCloseable ignored = MockitoAnnotations.openMocks(this)) {
             Mockito.when(graphClient.drives()).thenReturn(drivesRequestBuilder);
             Mockito.when(drivesRequestBuilder.byDriveId(siteDriveId))
-                    .thenReturn(driveItemRequestBuilder);
+                            .thenReturn(driveItemRequestBuilder);
             Mockito.when(driveItemRequestBuilder.items()).thenReturn(itemsRequestBuilder);
             Mockito.when(itemsRequestBuilder.byDriveItemId(driveItemid))
-                    .thenReturn(driveItemItemRequestBuilder);
+                            .thenReturn(driveItemItemRequestBuilder);
             Mockito.when(driveItemItemRequestBuilder.content()).thenReturn(contentRequestBuilder);
             String content = "content";
-            Mockito.when(contentRequestBuilder.get())
-                    .thenReturn(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
-            InputStream resultingInputStream =
-                    microsoftGraphFetcher.fetch(siteDriveId + "," + driveItemid, new Metadata(), new ParseContext());
+            Mockito.when(contentRequestBuilder.get()).thenReturn(
+                            new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+            InputStream resultingInputStream = microsoftGraphFetcher.fetch(
+                            siteDriveId + "," + driveItemid, new Metadata(), new ParseContext());
             Assertions.assertEquals(content,
-                    IOUtils.toString(resultingInputStream, StandardCharsets.UTF_8));
+                            IOUtils.toString(resultingInputStream, StandardCharsets.UTF_8));
         }
     }
 }

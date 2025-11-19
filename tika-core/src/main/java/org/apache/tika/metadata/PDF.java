@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.metadata;
 
@@ -29,24 +27,23 @@ public interface PDF {
 
 
     /**
-     * Number of %%EOF as extracted by the StartXRefScanner. See
-     * that class for limitations.
+     * Number of %%EOF as extracted by the StartXRefScanner. See that class for limitations.
      *
-     * This includes the final %%EOF, which may or may not be at the literal
-     * end of the file.  This does not include an %%EOF
-     * if the startxref=0, as would happen in a dummy %%EOF in a linearized PDF.
+     * This includes the final %%EOF, which may or may not be at the literal end of the file. This
+     * does not include an %%EOF if the startxref=0, as would happen in a dummy %%EOF in a
+     * linearized PDF.
      */
     Property EOF_OFFSETS = Property.externalRealSeq(PDF_PREFIX + "eofOffsets");
 
     /**
-     * Prefix to be used for properties that record what was stored
-     * in the docinfo section (as opposed to XMP)
+     * Prefix to be used for properties that record what was stored in the docinfo section (as
+     * opposed to XMP)
      */
     String PDF_DOC_INFO_PREFIX =
-            PDF_PREFIX + "docinfo" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+                    PDF_PREFIX + "docinfo" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     String PDF_DOC_INFO_CUSTOM_PREFIX =
-            PDF_DOC_INFO_PREFIX + "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+                    PDF_DOC_INFO_PREFIX + "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     Property DOC_INFO_CREATED = Property.internalDate(PDF_DOC_INFO_PREFIX + "created");
 
@@ -92,16 +89,15 @@ public interface PDF {
     Property PRODUCER = Property.internalText(PDF_PREFIX + "producer");
 
     /**
-     * This specifies where an action or destination would be found/triggered
-     * in the document: on document open, before close, etc.
+     * This specifies where an action or destination would be found/triggered in the document: on
+     * document open, before close, etc.
      *
      * This is included in the embedded document (js only for now?), not the container PDF.
      */
     Property ACTION_TRIGGER = Property.internalText(PDF_PREFIX + "actionTrigger");
 
     /**
-     * This is a list of all action or destination triggers contained
-     * within a given PDF.
+     * This is a list of all action or destination triggers contained within a given PDF.
      */
     Property ACTION_TRIGGERS = Property.internalTextBag(PDF_PREFIX + "actionTriggers");
 
@@ -110,25 +106,24 @@ public interface PDF {
     Property CHARACTERS_PER_PAGE = Property.internalIntegerSequence(PDF_PREFIX + "charsPerPage");
 
     Property UNMAPPED_UNICODE_CHARS_PER_PAGE =
-            Property.internalIntegerSequence(PDF_PREFIX + "unmappedUnicodeCharsPerPage");
+                    Property.internalIntegerSequence(PDF_PREFIX + "unmappedUnicodeCharsPerPage");
 
     Property TOTAL_UNMAPPED_UNICODE_CHARS =
-            Property.internalInteger(PDF_PREFIX + "totalUnmappedUnicodeChars");
+                    Property.internalInteger(PDF_PREFIX + "totalUnmappedUnicodeChars");
 
     Property OVERALL_PERCENTAGE_UNMAPPED_UNICODE_CHARS =
-            Property.internalReal(PDF_PREFIX + "overallPercentageUnmappedUnicodeChars");
+                    Property.internalReal(PDF_PREFIX + "overallPercentageUnmappedUnicodeChars");
 
     /**
      * Contains at least one damaged font for at least one character
      */
-    Property CONTAINS_DAMAGED_FONT =
-            Property.internalBoolean(PDF_PREFIX + "containsDamagedFont");
+    Property CONTAINS_DAMAGED_FONT = Property.internalBoolean(PDF_PREFIX + "containsDamagedFont");
 
     /**
      * Contains at least one font that is not embedded
      */
     Property CONTAINS_NON_EMBEDDED_FONT =
-            Property.internalBoolean(PDF_PREFIX + "containsNonEmbeddedFont");
+                    Property.internalBoolean(PDF_PREFIX + "containsNonEmbeddedFont");
 
     /**
      * Has XFA
@@ -141,8 +136,8 @@ public interface PDF {
     Property HAS_XMP = Property.internalBoolean(PDF_PREFIX + "hasXMP");
 
     /**
-     * If xmp is extracted by, e.g. the XMLProfiler, where did it come from?
-     * The document's document catalog or a specific page...or?
+     * If xmp is extracted by, e.g. the XMLProfiler, where did it come from? The document's document
+     * catalog or a specific page...or?
      */
     Property XMP_LOCATION = Property.internalText(PDF_PREFIX + "xmpLocation");
 
@@ -154,25 +149,24 @@ public interface PDF {
     Property HAS_MARKED_CONTENT = Property.internalBoolean(PDF_PREFIX + "hasMarkedContent");
 
     /**
-     * Has a collection element in the root.  If true, this is likely a PDF Portfolio.
+     * Has a collection element in the root. If true, this is likely a PDF Portfolio.
      */
     Property HAS_COLLECTION = Property.internalBoolean(PDF_PREFIX + "hasCollection");
 
-    Property EMBEDDED_FILE_DESCRIPTION = Property.externalText(PDF_PREFIX +
-            "embeddedFileDescription");
+    Property EMBEDDED_FILE_DESCRIPTION =
+                    Property.externalText(PDF_PREFIX + "embeddedFileDescription");
 
     /**
      * If the file came from an annotation and there was a type
      */
-    Property EMBEDDED_FILE_ANNOTATION_TYPE = Property.internalText(PDF_PREFIX +
-            "embeddedFileAnnotationType");
+    Property EMBEDDED_FILE_ANNOTATION_TYPE =
+                    Property.internalText(PDF_PREFIX + "embeddedFileAnnotationType");
 
     /**
-     *     literal string from the PDEmbeddedFile#getSubtype(), should be what the PDF
-     *     alleges is the embedded file's mime type
+     * literal string from the PDEmbeddedFile#getSubtype(), should be what the PDF alleges is the
+     * embedded file's mime type
      */
-    Property EMBEDDED_FILE_SUBTYPE = Property.internalText(PDF_PREFIX +
-            "embeddedFileSubtype");
+    Property EMBEDDED_FILE_SUBTYPE = Property.internalText(PDF_PREFIX + "embeddedFileSubtype");
     /**
      * If the PDF has an annotation of type 3D
      */
@@ -183,42 +177,41 @@ public interface PDF {
     Property ANNOTATION_SUBTYPES = Property.internalTextBag(PDF_PREFIX + "annotationSubtypes");
 
     /**
-     * Number of 3D annotations a PDF contains.  This makes {@link PDF#HAS_3D} redundant.
+     * Number of 3D annotations a PDF contains. This makes {@link PDF#HAS_3D} redundant.
      */
     Property NUM_3D_ANNOTATIONS = Property.internalInteger(PDF_PREFIX + "num3DAnnotations");
 
-    Property ASSOCIATED_FILE_RELATIONSHIP = Property.internalText(PDF_PREFIX +
-            "associatedFileRelationship");
+    Property ASSOCIATED_FILE_RELATIONSHIP =
+                    Property.internalText(PDF_PREFIX + "associatedFileRelationship");
     /**
-     * This is a zero-based number for incremental updates within a PDF -- 0 is the first
-     * update, 1 is the second, etc.  The final version of the PDF (e.g. the last update)
-     * does not have an incremental update number.
+     * This is a zero-based number for incremental updates within a PDF -- 0 is the first update, 1
+     * is the second, etc. The final version of the PDF (e.g. the last update) does not have an
+     * incremental update number.
      *
-     * This value is populated with the parse incremental updates feature is selected
-     * in the PDFParser.
+     * This value is populated with the parse incremental updates feature is selected in the
+     * PDFParser.
      */
-    Property INCREMENTAL_UPDATE_NUMBER =
-            Property.composite(Property.internalInteger(PDF_PREFIX + "incrementalUpdateNumber"),
-                new Property[]{ TikaCoreProperties.VERSION_NUMBER });
+    Property INCREMENTAL_UPDATE_NUMBER = Property.composite(
+                    Property.internalInteger(PDF_PREFIX + "incrementalUpdateNumber"),
+                    new Property[] {TikaCoreProperties.VERSION_NUMBER});
 
     /**
-     * Incremental updates as extracted by the StartXRefScanner.  See
-     * that class for limitations.
+     * Incremental updates as extracted by the StartXRefScanner. See that class for limitations.
      */
-    Property PDF_INCREMENTAL_UPDATE_COUNT =
-            Property.composite( Property.externalInteger(PDF_PREFIX + "incrementalUpdateCount"),
-                    new Property[]{ TikaCoreProperties.VERSION_COUNT });
+    Property PDF_INCREMENTAL_UPDATE_COUNT = Property.composite(
+                    Property.externalInteger(PDF_PREFIX + "incrementalUpdateCount"),
+                    new Property[] {TikaCoreProperties.VERSION_COUNT});
 
     /**
-     * This counts the number of pages that would have been OCR'd or were OCR'd depending
-     * on the OCR settings. If NO_OCR is selected, this will
+     * This counts the number of pages that would have been OCR'd or were OCR'd depending on the OCR
+     * settings. If NO_OCR is selected, this will
      */
     Property OCR_PAGE_COUNT = Property.externalInteger(PDF_PREFIX + "ocrPageCount");
 
     /**
-     * When javascript is stored in the names tree, there's a name associated with that script.
-     * This is that name. When javascript is stored in an action, there is no name, and this
-     * metadata will not be populated.
+     * When javascript is stored in the names tree, there's a name associated with that script. This
+     * is that name. When javascript is stored in an action, there is no name, and this metadata
+     * will not be populated.
      */
     Property JS_NAME = Property.internalText(PDF_PREFIX + "jsName");
 }

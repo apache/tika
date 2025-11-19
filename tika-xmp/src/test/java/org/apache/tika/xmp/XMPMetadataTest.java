@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.xmp;
 
@@ -23,17 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Date;
-import java.util.Properties;
-
 import com.adobe.internal.xmp.XMPConst;
 import com.adobe.internal.xmp.XMPException;
 import com.adobe.internal.xmp.XMPMeta;
 import com.adobe.internal.xmp.XMPUtils;
 import com.adobe.internal.xmp.properties.XMPProperty;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
+import java.util.Date;
+import java.util.Properties;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
@@ -41,6 +35,8 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.PropertyTypeException;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPRights;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class XMPMetadataTest {
     private static final String GENERIC_MIMETYPE = "generic/mimetype";
@@ -51,7 +47,7 @@ public class XMPMetadataTest {
     @BeforeEach
     public void setUp() throws Exception {
         XMPMetadata.registerNamespace(DublinCore.NAMESPACE_URI_DC_TERMS,
-                DublinCore.PREFIX_DC_TERMS);
+                        DublinCore.PREFIX_DC_TERMS);
         xmpMeta = new XMPMetadata();
         tikaMetadata = new Metadata();
         setupMetadata(tikaMetadata);
@@ -63,7 +59,7 @@ public class XMPMetadataTest {
         // language alternative
         metadata.set(TikaCoreProperties.TITLE, "title");
         // array
-        metadata.set(TikaCoreProperties.SUBJECT, new String[]{"keyword1", "keyword2"});
+        metadata.set(TikaCoreProperties.SUBJECT, new String[] {"keyword1", "keyword2"});
         // date
         metadata.set(TikaCoreProperties.MODIFIED, "2001-01-01T01:01");
         // int simple property
@@ -232,7 +228,7 @@ public class XMPMetadataTest {
 
     @Test
     public void set_arrayProperty_ok() {
-        xmpMeta.set(TikaCoreProperties.SUBJECT, new String[]{"keyword1", "keyword2"});
+        xmpMeta.set(TikaCoreProperties.SUBJECT, new String[] {"keyword1", "keyword2"});
 
         String[] values = xmpMeta.getValues(TikaCoreProperties.SUBJECT);
         assertEquals(2, values.length);
@@ -243,7 +239,7 @@ public class XMPMetadataTest {
     @Test
     public void set_simplePropWithMultipleValues_throw() {
         assertThrows(PropertyTypeException.class, () -> {
-            xmpMeta.set(TikaCoreProperties.FORMAT, new String[]{"value1", "value2"});
+            xmpMeta.set(TikaCoreProperties.FORMAT, new String[] {"value1", "value2"});
         });
     }
 

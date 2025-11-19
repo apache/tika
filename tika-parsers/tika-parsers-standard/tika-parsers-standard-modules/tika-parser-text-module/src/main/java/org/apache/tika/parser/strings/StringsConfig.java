@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.strings;
 
@@ -62,8 +60,8 @@ public class StringsConfig implements Serializable {
     /**
      * Returns the character encoding of the strings that are to be found.
      *
-     * @return {@link StringsEncoding} enum that represents the character
-     * encoding of the strings that are to be found.
+     * @return {@link StringsEncoding} enum that represents the character encoding of the strings
+     *         that are to be found.
      */
     public StringsEncoding getEncoding() {
         return this.encoding;
@@ -72,30 +70,27 @@ public class StringsConfig implements Serializable {
     /**
      * Sets the character encoding of the strings that are to be found.
      *
-     * @param encoding {@link StringsEncoding} enum that represents the character
-     *                 encoding of the strings that are to be found.
+     * @param encoding {@link StringsEncoding} enum that represents the character encoding of the
+     *        strings that are to be found.
      */
     public void setEncoding(StringsEncoding encoding) {
         this.encoding = encoding;
     }
 
     /**
-     * Returns the maximum time (in seconds) to wait for the "strings" command
-     * to terminate.
+     * Returns the maximum time (in seconds) to wait for the "strings" command to terminate.
      *
-     * @return the maximum time (in seconds) to wait for the "strings" command
-     * to terminate.
+     * @return the maximum time (in seconds) to wait for the "strings" command to terminate.
      */
     public int getTimeoutSeconds() {
         return this.timeoutSeconds;
     }
 
     /**
-     * Sets the maximum time (in seconds) to wait for the "strings" command to
-     * terminate.
+     * Sets the maximum time (in seconds) to wait for the "strings" command to terminate.
      *
-     * @param timeoutSeconds the maximum time (in seconds) to wait for the "strings"
-     *                       command to terminate.
+     * @param timeoutSeconds the maximum time (in seconds) to wait for the "strings" command to
+     *        terminate.
      */
     public void setTimeoutSeconds(int timeoutSeconds) {
         if (timeoutSeconds < 1) {

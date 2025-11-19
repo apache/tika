@@ -1,37 +1,32 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.sax;
 
 import java.io.InputStream;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.junit.jupiter.api.Test;
 
 /**
- * Test class for the {@link org.apache.tika.sax.PhoneExtractingContentHandler}
- * class. This demonstrates how to parse a document and retrieve any phone numbers
- * found within.
+ * Test class for the {@link org.apache.tika.sax.PhoneExtractingContentHandler} class. This
+ * demonstrates how to parse a document and retrieve any phone numbers found within.
  * <p>
- * The phone numbers are added to a multivalued Metadata object under the key, "phonenumbers".
- * You can get an array of phone numbers by calling metadata.getValues("phonenumber").
+ * The phone numbers are added to a multivalued Metadata object under the key, "phonenumbers". You
+ * can get an array of phone numbers by calling metadata.getValues("phonenumber").
  */
 public class PhoneExtractingContentHandlerTest extends TikaTest {
 
@@ -43,9 +38,9 @@ public class PhoneExtractingContentHandlerTest extends TikaTest {
         // before passing them
         // to the underlying Handler.
         PhoneExtractingContentHandler handler =
-                new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
-        try (InputStream stream = getResourceAsStream(
-                "/test-documents/testPhoneNumberExtractor.odt")) {
+                        new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
+        try (InputStream stream =
+                        getResourceAsStream("/test-documents/testPhoneNumberExtractor.odt")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
         String[] phoneNumbers = metadata.getValues("phonenumbers");

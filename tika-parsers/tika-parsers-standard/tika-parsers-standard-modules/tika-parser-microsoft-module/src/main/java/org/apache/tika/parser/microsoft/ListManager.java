@@ -1,23 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft;
 
 import java.util.NoSuchElementException;
-
 import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.model.ListData;
 import org.apache.poi.hwpf.model.ListFormatOverrideLevel;
@@ -28,11 +25,17 @@ import org.apache.poi.hwpf.usermodel.Paragraph;
 /**
  * Computes the number text which goes at the beginning of each list paragraph
  * <p/>
- * <p><em>Note:</em> This class only handles the raw number text and does not apply any further
- * formatting as described in [MS-DOC], v20140721, 2.4.6.3, Part 3 to it.<p>
- * <p><em>Note 2:</em> The {@code tplc}, a visual override for the appearance of list levels, as
- * defined in [MS-DOC], v20140721, 2.9.328 is not taken care of in this class.</p>
- * <p>Further, this class does not yet handle overrides</p>
+ * <p>
+ * <em>Note:</em> This class only handles the raw number text and does not apply any further
+ * formatting as described in [MS-DOC], v20140721, 2.4.6.3, Part 3 to it.
+ * <p>
+ * <p>
+ * <em>Note 2:</em> The {@code tplc}, a visual override for the appearance of list levels, as
+ * defined in [MS-DOC], v20140721, 2.9.328 is not taken care of in this class.
+ * </p>
+ * <p>
+ * Further, this class does not yet handle overrides
+ * </p>
  */
 public class ListManager extends AbstractListManager {
     private final ListTables listTables;
@@ -49,16 +52,16 @@ public class ListManager extends AbstractListManager {
     /**
      * Get the formatted number for a given paragraph
      * <p/>
-     * <p><em>Note:</em> This only works correctly if called subsequently for <em>all</em>
-     * paragraphs in a valid selection (main document, text field, ...) which are part of a list
-     * .</p>
+     * <p>
+     * <em>Note:</em> This only works correctly if called subsequently for <em>all</em> paragraphs
+     * in a valid selection (main document, text field, ...) which are part of a list .
+     * </p>
      *
      * @param paragraph list paragraph to process
-     * @return String which represents the numbering of this list paragraph; never {@code null},
-     * can be empty string, though,
-     * if something goes wrong in getList()
-     * @throws IllegalArgumentException If the given paragraph is {@code null} or is not part of
-     * a list
+     * @return String which represents the numbering of this list paragraph; never {@code null}, can
+     *         be empty string, though, if something goes wrong in getList()
+     * @throws IllegalArgumentException If the given paragraph is {@code null} or is not part of a
+     *         list
      */
     public String getFormattedNumber(final Paragraph paragraph) {
         if (paragraph == null) {
@@ -67,13 +70,13 @@ public class ListManager extends AbstractListManager {
         if (!paragraph.isInList()) {
             throw new IllegalArgumentException("Can only process list paragraphs.");
         }
-        //lsid is equivalent to docx's abnum
-        //ilfo is equivalent to docx's num
+        // lsid is equivalent to docx's abnum
+        // ilfo is equivalent to docx's num
         int currAbNumId = -1;
         try {
             currAbNumId = paragraph.getList().getLsid();
         } catch (NoSuchElementException e) {
-            //somewhat frequent exception when initializing HWPFList
+            // somewhat frequent exception when initializing HWPFList
             return "";
         } catch (IllegalArgumentException | NullPointerException e) {
             return "";
@@ -86,7 +89,7 @@ public class ListManager extends AbstractListManager {
         if (lc == null) {
             ListData listData = listTables.getListData(paragraph.getList().getLsid());
             if (listData == null) {
-                //silently skip
+                // silently skip
                 return "";
             }
             LevelTuple[] levelTuples = new LevelTuple[listData.getLevels().length];
@@ -117,7 +120,7 @@ public class ListManager extends AbstractListManager {
         isLegal = listLevel.isLegalNumbering();
         numFmt = convertToNewNumFormat(listLevel.getNumberFormat());
         lvlText = convertToNewNumberText(listLevel.getNumberText(),
-                listLevel.getLevelNumberingPlaceholderOffsets());
+                        listLevel.getLevelNumberingPlaceholderOffsets());
         return new LevelTuple(start, restart, lvlText, numFmt, isLegal);
     }
 
@@ -153,14 +156,14 @@ public class ListManager extends AbstractListManager {
                 break;
             }
             if (offset - 1 < last || offset > numberText.length()) {
-                //something went wrong.
-                //silently stop
+                // something went wrong.
+                // silently stop
                 break;
             }
             sb.append(numberText, last, offset - 1);
-            //need to add one because newer format
-            //adds one.  In .doc, this was the array index;
-            //but in .docx, this is the level number
+            // need to add one because newer format
+            // adds one. In .doc, this was the array index;
+            // but in .docx, this is the level number
             int lvlNum = (int) numberText.charAt(offset - 1) + 1;
             sb.append("%").append(lvlNum);
             last = offset;
@@ -194,8 +197,8 @@ public class ListManager extends AbstractListManager {
             case 47:
                 return "none";
             default:
-                //do we really want to silently swallow these uncovered cases?
-                //throw new RuntimeException("NOT COVERED: " + numberFormat);
+                // do we really want to silently swallow these uncovered cases?
+                // throw new RuntimeException("NOT COVERED: " + numberFormat);
                 return "decimal";
         }
     }

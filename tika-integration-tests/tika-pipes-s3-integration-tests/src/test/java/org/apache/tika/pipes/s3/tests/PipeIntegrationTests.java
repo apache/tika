@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.pipes.s3.tests;
@@ -32,17 +30,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.S3Object;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.core.FetchEmitTuple;
@@ -53,6 +40,15 @@ import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.emitter.s3.S3Emitter;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 // To enable these tests, fill OUTDIR and bucket, and adjust profile and region if needed.
 @Disabled("turn these into actual tests with mock s3")
@@ -62,22 +58,26 @@ public class PipeIntegrationTests {
 
     /**
      * This downloads files from a specific bucket.
-     * @throws Exception 
+     * 
+     * @throws Exception
      */
     @Test
     public void testBruteForce() throws Exception {
         String region = "us-east-1";
         String profile = "default";
         String bucket = "";
-        AwsCredentialsProvider provider = ProfileCredentialsProvider.builder().profileName(profile).build();
-        S3Client s3Client = S3Client.builder().credentialsProvider(provider).region(Region.of(region)).build();
+        AwsCredentialsProvider provider =
+                        ProfileCredentialsProvider.builder().profileName(profile).build();
+        S3Client s3Client = S3Client.builder().credentialsProvider(provider)
+                        .region(Region.of(region)).build();
 
         int cnt = 0;
         long sz = 0;
 
-        ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder().bucket(bucket).prefix("").build();
-        List<S3Object> s3ObjectList = s3Client.listObjectsV2Paginator(listObjectsV2Request).stream().
-                flatMap(resp -> resp.contents().stream()).toList();
+        ListObjectsV2Request listObjectsV2Request =
+                        ListObjectsV2Request.builder().bucket(bucket).prefix("").build();
+        List<S3Object> s3ObjectList = s3Client.listObjectsV2Paginator(listObjectsV2Request).stream()
+                        .flatMap(resp -> resp.contents().stream()).toList();
         for (S3Object s3Object : s3ObjectList) {
             String key = s3Object.key();
             Path targ = OUTDIR.resolve(key);
@@ -88,7 +88,8 @@ public class PipeIntegrationTests {
                 Files.createDirectories(targ.getParent());
             }
             System.out.println("id: " + cnt + " :: " + key + " : " + s3Object.size());
-            GetObjectRequest objectRequest = GetObjectRequest.builder().bucket(bucket).key(key).build();
+            GetObjectRequest objectRequest =
+                            GetObjectRequest.builder().bucket(bucket).key(key).build();
             s3Client.getObject(objectRequest, targ);
             cnt++;
             sz += s3Object.size();
@@ -108,7 +109,7 @@ public class PipeIntegrationTests {
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
 
         completionService.submit(
-                new CallablePipesIterator(pipesIterator, queue, 60000, numConsumers));
+                        new CallablePipesIterator(pipesIterator, queue, 60000, numConsumers));
         for (int i = 0; i < numConsumers; i++) {
             completionService.submit(new FSFetcherEmitter(queue, fetcher, null));
         }
@@ -137,8 +138,8 @@ public class PipeIntegrationTests {
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
         ExecutorCompletionService<Long> completionService = new ExecutorCompletionService<>(es);
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
-        completionService.submit(new CallablePipesIterator(pipesIterator,
-                queue, 60000, numConsumers));
+        completionService.submit(
+                        new CallablePipesIterator(pipesIterator, queue, 60000, numConsumers));
         for (int i = 0; i < numConsumers; i++) {
             completionService.submit(new S3FetcherEmitter(queue, fetcher, (S3Emitter) emitter));
         }
@@ -183,7 +184,7 @@ public class PipeIntegrationTests {
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
 
         FSFetcherEmitter(ArrayBlockingQueue<FetchEmitTuple> queue, Fetcher fetcher,
-                         Emitter emitter) {
+                        Emitter emitter) {
             this.queue = queue;
             this.fetcher = fetcher;
             this.emitter = emitter;
@@ -209,7 +210,8 @@ public class PipeIntegrationTests {
             if (Files.isRegularFile(targ)) {
                 return;
             }
-            try (InputStream is = fetcher.fetch(t.getFetchKey().getFetchKey(), t.getMetadata(), t.getParseContext())) {
+            try (InputStream is = fetcher.fetch(t.getFetchKey().getFetchKey(), t.getMetadata(),
+                            t.getParseContext())) {
                 System.out.println(counter.getAndIncrement() + " : " + t);
                 Files.createDirectories(targ.getParent());
                 Files.copy(is, targ);
@@ -225,7 +227,7 @@ public class PipeIntegrationTests {
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
 
         S3FetcherEmitter(ArrayBlockingQueue<FetchEmitTuple> queue, Fetcher fetcher,
-                         S3Emitter emitter) {
+                        S3Emitter emitter) {
             this.queue = queue;
             this.fetcher = fetcher;
             this.emitter = emitter;
@@ -250,7 +252,8 @@ public class PipeIntegrationTests {
             Metadata userMetadata = t.getMetadata();
             userMetadata.set("project", "my-project");
 
-            try (InputStream is = fetcher.fetch(t.getFetchKey().getFetchKey(), t.getMetadata(), t.getParseContext())) {
+            try (InputStream is = fetcher.fetch(t.getFetchKey().getFetchKey(), t.getMetadata(),
+                            t.getParseContext())) {
                 emitter.emit(t.getEmitKey().getEmitKey(), is, userMetadata, t.getParseContext());
             }
         }

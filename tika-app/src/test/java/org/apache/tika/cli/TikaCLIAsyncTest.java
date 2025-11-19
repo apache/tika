@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.cli;
 
@@ -26,7 +24,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -52,21 +49,26 @@ public class TikaCLIAsyncTest {
     @BeforeAll
     public static void setUpClass() throws Exception {
         ASYNC_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "async-config-", ".xml");
-        String xml = "<properties>" + "<async>" + "<numClients>3</numClients>" + "<tikaConfig>" + ASYNC_CONFIG.toAbsolutePath() + "</tikaConfig>" + "</async>" + "<fetchers>" +
-                "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" + "<name>fsf</name>" + "<basePath>" + TEST_DATA_FILE.getAbsolutePath() +
-                "</basePath>" +
-                "</fetcher>" + "</fetchers>" + "<emitters>" + "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>fse</name>" + "<basePath>" +
-                ASYNC_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "<prettyPrint>true</prettyPrint>" + "</emitter>" + "</emitters>" +
-                "<pipesIterator class=\"org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator\">" + "<basePath>" + TEST_DATA_FILE.getAbsolutePath() + "</basePath>" +
-                "<fetcherName>fsf</fetcherName>" + "<emitterName>fse</emitterName>" + "</pipesIterator>" + "</properties>";
+        String xml = "<properties>" + "<async>" + "<numClients>3</numClients>" + "<tikaConfig>"
+                        + ASYNC_CONFIG.toAbsolutePath() + "</tikaConfig>" + "</async>"
+                        + "<fetchers>"
+                        + "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">"
+                        + "<name>fsf</name>" + "<basePath>" + TEST_DATA_FILE.getAbsolutePath()
+                        + "</basePath>" + "</fetcher>" + "</fetchers>" + "<emitters>"
+                        + "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">"
+                        + "<name>fse</name>" + "<basePath>" + ASYNC_OUTPUT_DIR.toAbsolutePath()
+                        + "</basePath>" + "<prettyPrint>true</prettyPrint>" + "</emitter>"
+                        + "</emitters>"
+                        + "<pipesIterator class=\"org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator\">"
+                        + "<basePath>" + TEST_DATA_FILE.getAbsolutePath() + "</basePath>"
+                        + "<fetcherName>fsf</fetcherName>" + "<emitterName>fse</emitterName>"
+                        + "</pipesIterator>" + "</properties>";
         Files.write(ASYNC_CONFIG, xml.getBytes(UTF_8));
     }
 
     /**
-     * reset resourcePrefix
-     * save original System.out and System.err
-     * clear outContent and errContent if they are not empty
-     * set outContent and errContent as System.out and System.err
+     * reset resourcePrefix save original System.out and System.err clear outContent and errContent
+     * if they are not empty set outContent and errContent as System.out and System.err
      */
     @BeforeEach
     public void setUp() throws Exception {
@@ -85,8 +87,8 @@ public class TikaCLIAsyncTest {
     }
 
     /**
-     * clear outContent and errContent if they are not empty by create a new one.
-     * set outContent and errContent as System.out and System.err
+     * clear outContent and errContent if they are not empty by create a new one. set outContent and
+     * errContent as System.out and System.err
      */
     private void resetContent() throws Exception {
         if (outContent == null || outContent.size() > 0) {
@@ -106,16 +108,10 @@ public class TikaCLIAsyncTest {
         String content = getParamOutContent("-a", "-c", ASYNC_CONFIG.toAbsolutePath().toString());
 
         int json = 0;
-        for (File f : ASYNC_OUTPUT_DIR
-                .toFile()
-                .listFiles()) {
-            if (f
-                    .getName()
-                    .endsWith(".json")) {
-                //check one file for pretty print
-                if (f
-                        .getName()
-                        .equals("coffee.xls.json")) {
+        for (File f : ASYNC_OUTPUT_DIR.toFile().listFiles()) {
+            if (f.getName().endsWith(".json")) {
+                // check one file for pretty print
+                if (f.getName().equals("coffee.xls.json")) {
                     checkForPrettyPrint(f);
                 }
                 json++;
@@ -128,7 +124,8 @@ public class TikaCLIAsyncTest {
         String json = FileUtils.readFileToString(f, UTF_8);
         int previous = json.indexOf("Content-Length");
         assertTrue(previous > -1);
-        for (String k : new String[]{"Content-Type", "dc:creator", "dcterms:created", "dcterms:modified", "X-TIKA:content\""}) {
+        for (String k : new String[] {"Content-Type", "dc:creator", "dcterms:created",
+                        "dcterms:modified", "X-TIKA:content\""}) {
             int i = json.indexOf(k);
             assertTrue(i > -1, "should have found " + k);
             assertTrue(i > previous, "bad order: " + k + " at " + i + " not less than " + previous);
@@ -137,8 +134,8 @@ public class TikaCLIAsyncTest {
     }
 
     /**
-     * reset outContent and errContent if they are not empty
-     * run given params in TikaCLI and return outContent String with UTF-8
+     * reset outContent and errContent if they are not empty run given params in TikaCLI and return
+     * outContent String with UTF-8
      */
     String getParamOutContent(String... params) throws Exception {
         resetContent();

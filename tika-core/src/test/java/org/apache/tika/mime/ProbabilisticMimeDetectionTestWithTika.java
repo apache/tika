@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.mime;
 
@@ -27,16 +25,14 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.DefaultProbDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.ProbabilisticMimeDetectionSelector.Builder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ProbabilisticMimeDetectionTestWithTika {
 
@@ -54,13 +50,11 @@ public class ProbabilisticMimeDetectionTestWithTika {
         registry = types.getMediaTypeRegistry();
 
         /*
-         * here is an example with the use of the builder to
-         * instantiate the object.
+         * here is an example with the use of the builder to instantiate the object.
          */
         Builder builder = new ProbabilisticMimeDetectionSelector.Builder();
-        proSelector = new ProbabilisticMimeDetectionSelector(types,
-                builder.priorMagicFileType(0.5f).priorExtensionFileType(0.5f)
-                        .priorMetaFileType(0.5f));
+        proSelector = new ProbabilisticMimeDetectionSelector(types, builder.priorMagicFileType(0.5f)
+                        .priorExtensionFileType(0.5f).priorMetaFileType(0.5f));
         DefaultProbDetector detector = new DefaultProbDetector(proSelector, loader);
 
         // Use a default Tika, except for our different detector
@@ -81,7 +75,7 @@ public class ProbabilisticMimeDetectionTestWithTika {
         testFile("application/xml", "test-long-comment.xml");
         testFile("application/xslt+xml", "stylesheet.xsl");
         testUrl("application/rdf+xml", "http://www.ai.sri.com/daml/services/owl-s/1.2/Process.owl",
-                "test-difficult-rdf1.xml");
+                        "test-difficult-rdf1.xml");
         testUrl("application/rdf+xml", "http://www.w3.org/2002/07/owl#", "test-difficult-rdf2.xml");
         // add evil test from TIKA-327
         testFile("text/html", "test-tika-327.html");
@@ -98,43 +92,40 @@ public class ProbabilisticMimeDetectionTestWithTika {
 
     @Test
     public void testByteOrderMark() throws Exception {
-        assertEquals(MediaType.TEXT_PLAIN.toString(),
-                tika.detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_16LE)),
-                        new Metadata()));
-        assertEquals(MediaType.TEXT_PLAIN.toString(),
-                tika.detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_16BE)),
-                        new Metadata()));
+        assertEquals(MediaType.TEXT_PLAIN.toString(), tika.detect(
+                        new ByteArrayInputStream("\ufefftest".getBytes(UTF_16LE)), new Metadata()));
+        assertEquals(MediaType.TEXT_PLAIN.toString(), tika.detect(
+                        new ByteArrayInputStream("\ufefftest".getBytes(UTF_16BE)), new Metadata()));
 
-        assertEquals(MediaType.TEXT_PLAIN.toString(),
-                tika.detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_8)),
-                        new Metadata()));
+        assertEquals(MediaType.TEXT_PLAIN.toString(), tika.detect(
+                        new ByteArrayInputStream("\ufefftest".getBytes(UTF_8)), new Metadata()));
     }
 
     @Test
     public void testSuperTypes() {
 
         assertTrue(registry.isSpecializationOf(MediaType.parse("text/something; charset=UTF-8"),
-                MediaType.parse("text/something")));
+                        MediaType.parse("text/something")));
 
         assertTrue(registry.isSpecializationOf(MediaType.parse("text/something; charset=UTF-8"),
-                MediaType.TEXT_PLAIN));
+                        MediaType.TEXT_PLAIN));
 
         assertTrue(registry.isSpecializationOf(MediaType.parse("text/something; charset=UTF-8"),
-                MediaType.OCTET_STREAM));
+                        MediaType.OCTET_STREAM));
 
         assertTrue(registry.isSpecializationOf(MediaType.parse("text/something"),
-                MediaType.TEXT_PLAIN));
+                        MediaType.TEXT_PLAIN));
 
         assertTrue(registry.isSpecializationOf(MediaType.parse("application/something+xml"),
-                MediaType.APPLICATION_XML));
+                        MediaType.APPLICATION_XML));
 
         assertTrue(registry.isSpecializationOf(MediaType.parse("application/something+zip"),
-                MediaType.APPLICATION_ZIP));
+                        MediaType.APPLICATION_ZIP));
 
         assertTrue(registry.isSpecializationOf(MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN));
 
         assertTrue(registry.isSpecializationOf(MediaType.parse("application/vnd.apple.iwork"),
-                MediaType.APPLICATION_ZIP));
+                        MediaType.APPLICATION_ZIP));
     }
 
     @SuppressWarnings("unused")
@@ -156,7 +147,7 @@ public class ProbabilisticMimeDetectionTestWithTika {
     }
 
     private void testStream(String expected, String urlOrFileName, InputStream in)
-            throws IOException {
+                    throws IOException {
         assertNotNull(in, "Test stream: [" + urlOrFileName + "] is null!");
         if (!in.markSupported()) {
             in = new java.io.BufferedInputStream(in);
@@ -165,15 +156,14 @@ public class ProbabilisticMimeDetectionTestWithTika {
             Metadata metadata = new Metadata();
             // String mime = this.proDetector.detect(in, metadata).toString();
             String mime = tika.detect(in, metadata);
-            assertEquals(expected, mime,
-                    urlOrFileName + " is not properly detected: detected.");
+            assertEquals(expected, mime, urlOrFileName + " is not properly detected: detected.");
 
             // Add resource name and test again
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
             // mime = this.proDetector.detect(in, metadata).toString();
             mime = tika.detect(in, metadata);
-            assertEquals(expected, mime,
-                    urlOrFileName + " is not properly detected after adding resource name.");
+            assertEquals(expected, mime, urlOrFileName
+                            + " is not properly detected after adding resource name.");
         } finally {
             in.close();
         }
@@ -182,44 +172,40 @@ public class ProbabilisticMimeDetectionTestWithTika {
     /**
      * Test for type detection of empty documents.
      *
-     * @see <a
-     * href="https://issues.apache.org/jira/browse/TIKA-483">TIKA-483</a>
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-483">TIKA-483</a>
      */
     @Test
     public void testEmptyDocument() throws IOException {
         assertEquals(MediaType.OCTET_STREAM.toString(),
-                tika.detect(new ByteArrayInputStream(new byte[0]), new Metadata()));
+                        tika.detect(new ByteArrayInputStream(new byte[0]), new Metadata()));
 
         Metadata namehint = new Metadata();
         namehint.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.txt");
         assertEquals(MediaType.TEXT_PLAIN.toString(),
-                tika.detect(new ByteArrayInputStream(new byte[0]), namehint));
+                        tika.detect(new ByteArrayInputStream(new byte[0]), namehint));
 
         Metadata typehint = new Metadata();
         typehint.set(Metadata.CONTENT_TYPE, "text/plain");
         assertEquals(MediaType.TEXT_PLAIN.toString(),
-                tika.detect(new ByteArrayInputStream(new byte[0]), typehint));
+                        tika.detect(new ByteArrayInputStream(new byte[0]), typehint));
 
     }
 
     /**
-     * Test for things like javascript files whose content is enclosed in XML
-     * comment delimiters, but that aren't actually XML.
+     * Test for things like javascript files whose content is enclosed in XML comment delimiters,
+     * but that aren't actually XML.
      *
-     * @see <a
-     * href="https://issues.apache.org/jira/browse/TIKA-426">TIKA-426</a>
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-426">TIKA-426</a>
      */
     @Test
     public void testNotXML() throws IOException {
-        assertEquals(MediaType.TEXT_PLAIN.toString(),
-                tika.detect(new ByteArrayInputStream("<!-- test -->".getBytes(UTF_8)),
-                        new Metadata()));
+        assertEquals(MediaType.TEXT_PLAIN.toString(), tika.detect(
+                        new ByteArrayInputStream("<!-- test -->".getBytes(UTF_8)), new Metadata()));
     }
 
     /**
-     * Tests that when we repeatedly test the detection of a document that can
-     * be detected with Mime Magic, that we consistently detect it correctly.
-     * See TIKA-391 for more details.
+     * Tests that when we repeatedly test the detection of a document that can be detected with Mime
+     * Magic, that we consistently detect it correctly. See TIKA-391 for more details.
      */
     @Test
     public void testMimeMagicStability() throws IOException {
@@ -229,9 +215,9 @@ public class ProbabilisticMimeDetectionTestWithTika {
     }
 
     /**
-     * Tests that when two magic matches both apply, and both have the same
-     * priority, we use the name to pick the right one based on the glob, or the
-     * first one we come across if not. See TIKA-1292 for more details.
+     * Tests that when two magic matches both apply, and both have the same priority, we use the
+     * name to pick the right one based on the glob, or the first one we come across if not. See
+     * TIKA-1292 for more details.
      */
     @Test
     public void testMimeMagicClashSamePriority() throws IOException {
@@ -244,17 +230,17 @@ public class ProbabilisticMimeDetectionTestWithTika {
         metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.hello.world");
         assertEquals(helloType.toString(),
-                tika.detect(new ByteArrayInputStream(helloWorld), metadata));
+                        tika.detect(new ByteArrayInputStream(helloWorld), metadata));
 
         metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.x-hello-world");
         assertEquals(helloXType.toString(),
-                tika.detect(new ByteArrayInputStream(helloWorld), metadata));
+                        tika.detect(new ByteArrayInputStream(helloWorld), metadata));
 
         // Without, goes for the one that sorts last
         metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testingTESTINGtesting");
         assertEquals(helloXType.toString(),
-                tika.detect(new ByteArrayInputStream(helloWorld), metadata));
+                        tika.detect(new ByteArrayInputStream(helloWorld), metadata));
     }
 }

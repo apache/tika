@@ -1,30 +1,26 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 public class EMFParserTest extends TikaTest {
 
@@ -35,35 +31,35 @@ public class EMFParserTest extends TikaTest {
         Metadata emfMetadata = metadataList.get(2);
         assertEquals("image/emf", emfMetadata.get(Metadata.CONTENT_TYPE));
         assertContains("is a toolkit for detecting",
-                emfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
-        //test that a space was inserted before url
+                        emfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
+        // test that a space was inserted before url
         assertContains("Tika http://incubator.apache.org/tika/",
-                emfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
+                        emfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
     public void testIconOnly() throws Exception {
         String fullFileName = "some word doc with a very long name that should be wrapped.docx";
-        //test file contributed by Ross Spencer on TIKA-3968
+        // test file contributed by Ross Spencer on TIKA-3968
         List<Metadata> metadataList = getRecursiveMetadata("testEMF_iconOnlyLongFilename.emf");
         assertEquals("true", metadataList.get(0).get(EMFParser.EMF_ICON_ONLY));
         assertEquals(fullFileName, metadataList.get(0).get(EMFParser.EMF_ICON_STRING));
         assertContains("some word doc", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("a very long name that should be wrapped.docx",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+                        metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
     public void testMissingCoords() throws Exception {
-        //TIKA-4432
+        // TIKA-4432
         List<Metadata> metadataList = getRecursiveMetadata("testEMF_zero_coords.emf");
         String txt = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertNotContained("title13At", txt);
         assertContains("Presentation title 13", txt);
         assertContains("<p>At Contoso", txt);
-        assertContains("next-generation", txt);//this is stored in three records -- test that no spaces are interpolated
+        assertContains("next-generation", txt);// this is stored in three records -- test that no
+                                               // spaces are interpolated
     }
 
 
 }
-

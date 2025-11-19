@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.eval.app.db;
@@ -47,7 +45,8 @@ public class AbstractBufferTest {
     @Timeout(30000)
     public void runTest() throws InterruptedException, ExecutionException {
         List<String> keys = new ArrayList<>();
-        Collections.addAll(keys, new String[]{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"});
+        Collections.addAll(keys,
+                        new String[] {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"});
 
         int numGets = 100;
         int numTesters = 20;
@@ -66,15 +65,8 @@ public class AbstractBufferTest {
             Future<MyTestResult> futureResult = completionService.poll(1, TimeUnit.SECONDS);
             if (futureResult != null) {
                 results++;
-                assertEquals(keys.size(), futureResult
-                        .get()
-                        .getMap()
-                        .keySet()
-                        .size());
-                for (Map.Entry<String, Integer> e : futureResult
-                        .get()
-                        .getMap()
-                        .entrySet()) {
+                assertEquals(keys.size(), futureResult.get().getMap().keySet().size());
+                for (Map.Entry<String, Integer> e : futureResult.get().getMap().entrySet()) {
                     if (!combined.containsKey(e.getKey())) {
                         combined.put(e.getKey(), e.getValue());
                     } else {
@@ -121,9 +113,9 @@ public class AbstractBufferTest {
                 m.put(k, val);
             }
 
-            //now add the val for every key
-            //just in case the rand() process didn't hit
-            //all indices
+            // now add the val for every key
+            // just in case the rand() process didn't hit
+            // all indices
             for (String k : keys) {
                 Integer val = dbBuffer.getId(k);
                 m.put(k, val);
@@ -161,7 +153,7 @@ public class AbstractBufferTest {
 
         @Override
         public void close() throws SQLException {
-            //no-op
+            // no-op
         }
     }
 }

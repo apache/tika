@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser;
 
@@ -41,10 +39,9 @@ public class ParseContext implements Serializable {
     private final Map<String, Object> context = new HashMap<>();
 
     /**
-     * Adds the given value to the context as an implementation of the given
-     * interface.
+     * Adds the given value to the context as an implementation of the given interface.
      *
-     * @param key   the interface implemented by the given value
+     * @param key the interface implemented by the given value
      * @param value the value to be added, or <code>null</code> to remove
      */
     public <T> void set(Class<T> key, T value) {
@@ -59,8 +56,7 @@ public class ParseContext implements Serializable {
      * Returns the object in this context that implements the given interface.
      *
      * @param key the interface implemented by the requested object
-     * @return the object that implements the given interface,
-     * or <code>null</code> if not found
+     * @return the object that implements the given interface, or <code>null</code> if not found
      */
     @SuppressWarnings("unchecked")
     public <T> T get(Class<T> key) {
@@ -68,13 +64,13 @@ public class ParseContext implements Serializable {
     }
 
     /**
-     * Returns the object in this context that implements the given interface,
-     * or the given default value if such an object is not found.
+     * Returns the object in this context that implements the given interface, or the given default
+     * value if such an object is not found.
      *
-     * @param key          the interface implemented by the requested object
+     * @param key the interface implemented by the requested object
      * @param defaultValue value to return if the requested object is not found
-     * @return the object that implements the given interface,
-     * or the given default value if not found
+     * @return the object that implements the given interface, or the given default value if not
+     *         found
      */
     public <T> T get(Class<T> key, T defaultValue) {
         T value = get(key);
@@ -89,10 +85,9 @@ public class ParseContext implements Serializable {
         return context.size() == 0;
     }
 
-    //this should really only be used for serialization
+    // this should really only be used for serialization
     public Set<String> keySet() {
-        return Collections
-                .unmodifiableSet(context.keySet());
+        return Collections.unmodifiableSet(context.keySet());
     }
 
     @Override

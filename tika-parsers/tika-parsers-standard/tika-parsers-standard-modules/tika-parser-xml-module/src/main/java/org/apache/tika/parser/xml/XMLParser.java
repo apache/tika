@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.xml;
 
@@ -22,11 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -37,6 +31,8 @@ import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * XML parser.
@@ -48,8 +44,7 @@ public class XMLParser implements Parser {
      */
     private static final long serialVersionUID = -6028836725280212837L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
                     Arrays.asList(MediaType.application("xml"), MediaType.image("svg+xml"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -57,7 +52,7 @@ public class XMLParser implements Parser {
     }
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         if (metadata.get(Metadata.CONTENT_TYPE) == null) {
             metadata.set(Metadata.CONTENT_TYPE, "application/xml");
         }
@@ -68,10 +63,8 @@ public class XMLParser implements Parser {
 
         TaggedContentHandler tagged = new TaggedContentHandler(handler);
         try {
-            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
-                            new EmbeddedContentHandler(
-                                    getContentHandler(tagged, metadata, context)),
-                    context);
+            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream), new EmbeddedContentHandler(
+                            getContentHandler(tagged, metadata, context)), context);
         } catch (SAXException e) {
             tagged.throwIfCauseOf(e);
             throw new TikaException("XML parse error", e);
@@ -82,7 +75,7 @@ public class XMLParser implements Parser {
     }
 
     protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata,
-                                               ParseContext context) {
+                    ParseContext context) {
         return new TextContentHandler(handler, true);
     }
 }

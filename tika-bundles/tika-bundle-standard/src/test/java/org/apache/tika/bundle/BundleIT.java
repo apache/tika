@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.bundle;
 
@@ -26,6 +24,7 @@ import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.systemPackages;
 
+import jakarta.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,22 +40,6 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
-import jakarta.inject.Inject;
-
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.Configuration;
-import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.junit.PaxExam;
-import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
-import org.ops4j.pax.exam.spi.reactors.PerMethod;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.Tika;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -75,6 +58,19 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.internal.Activator;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.ops4j.pax.exam.Configuration;
+import org.ops4j.pax.exam.Option;
+import org.ops4j.pax.exam.junit.PaxExam;
+import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
+import org.ops4j.pax.exam.spi.reactors.PerMethod;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerMethod.class)
@@ -95,16 +91,16 @@ public class BundleIT {
     public Option[] configuration() throws IOException, URISyntaxException, ClassNotFoundException {
         File base = new File(TARGET, "test-bundles");
         return options(systemPackages("javax.xml.bind"),
-                bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
-                //I couldn't find a way to get the build of bundle to work via imports
-                //for this one
-                mavenBundle("commons-io", "commons-io", "2.11.0"),
-                mavenBundle("org.apache.logging.log4j", "log4j-core", "2.17.1"),
-                mavenBundle("org.apache.logging.log4j", "log4j-api", "2.17.1"),
-                mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.8.5"),
-                mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.8.5"),
-                junitBundles(),
-                bundle(new File(base, "tika-bundle-standard.jar").toURI().toURL().toString()));
+                        bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
+                        // I couldn't find a way to get the build of bundle to work via imports
+                        // for this one
+                        mavenBundle("commons-io", "commons-io", "2.11.0"),
+                        mavenBundle("org.apache.logging.log4j", "log4j-core", "2.17.1"),
+                        mavenBundle("org.apache.logging.log4j", "log4j-api", "2.17.1"),
+                        mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.8.5"),
+                        mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.8.5"),
+                        junitBundles(), bundle(new File(base, "tika-bundle-standard.jar").toURI()
+                                        .toURL().toString()));
     }
 
     @Test
@@ -158,8 +154,7 @@ public class BundleIT {
     @Test
     public void testForkParser() throws Exception {
         try (ForkParser parser = new ForkParser(Activator.class.getClassLoader(), defaultParser)) {
-            String data =
-                    "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
+            String data = "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
             InputStream stream = new ByteArrayInputStream(data.getBytes(UTF_8));
             Writer writer = new StringWriter();
             ContentHandler contentHandler = new BodyContentHandler(writer);
@@ -187,11 +182,11 @@ public class BundleIT {
 
     @Test
     public void testBundleDetectors() throws Exception {
-        //For some reason, the detector created by OSGi has a flat
-        //list of detectors, whereas the detector created by the traditional
-        //service loading method has children: DefaultDetector, MimeTypes.
-        //We have to flatten the service loaded DefaultDetector to get equivalence.
-        //Detection behavior should all be the same.
+        // For some reason, the detector created by OSGi has a flat
+        // list of detectors, whereas the detector created by the traditional
+        // service loading method has children: DefaultDetector, MimeTypes.
+        // We have to flatten the service loaded DefaultDetector to get equivalence.
+        // Detection behavior should all be the same.
 
         // Get the classes found within OSGi
         ServiceReference<Detector> detectorRef = bc.getServiceReference(Detector.class);
@@ -204,7 +199,7 @@ public class BundleIT {
 
         // Check we did get a few, just in case...
         assertTrue("Should have several Detector names, found " + osgiDetectors.size(),
-                osgiDetectors.size() > 3);
+                        osgiDetectors.size() > 3);
 
         // Get the raw detectors list from the traditional service loading mechanism
         DefaultDetector detector = new DefaultDetector();
@@ -215,7 +210,7 @@ public class BundleIT {
                     rawDetectors.add(dChild.getClass().getName());
                 }
             } else {
-                //TODO: figure out how to get this loaded correctly from tika-core
+                // TODO: figure out how to get this loaded correctly from tika-core
                 if (!d.getClass().getName().equals("org.apache.tika.detect.OverrideDetector")) {
                     rawDetectors.add(d.getClass().getName());
                 }
@@ -237,7 +232,7 @@ public class BundleIT {
 
         // Check we did get a few, just in case...
         assertTrue("Should have lots Parser names, found " + osgiParsers.size(),
-                osgiParsers.size() > 15);
+                        osgiParsers.size() > 15);
 
         // Get the raw parsers list from the traditional service loading mechanism
         CompositeParser parser = (CompositeParser) defaultParser;
@@ -274,8 +269,8 @@ public class BundleIT {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
 
-        try (InputStream stream = TikaInputStream.get(
-                Paths.get("src/test/resources/test-documents.zip"))) {
+        try (InputStream stream =
+                        TikaInputStream.get(Paths.get("src/test/resources/test-documents.zip"))) {
             parser.parse(stream, handler, new Metadata(), context);
         }
 
@@ -310,8 +305,8 @@ public class BundleIT {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
 
-        try (InputStream stream = TikaInputStream.get(
-                Paths.get("src/test/resources/testPPT.pptx"))) {
+        try (InputStream stream =
+                        TikaInputStream.get(Paths.get("src/test/resources/testPPT.pptx"))) {
             parser.parse(stream, handler, new Metadata(), context);
         }
 
@@ -329,7 +324,7 @@ public class BundleIT {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
         Set<String> needToFix = new HashSet<>();
-        //needToFix.add("testAccess2_encrypted.accdb");
+        // needToFix.add("testAccess2_encrypted.accdb");
         System.out.println(getTestDir());
         for (File f : getTestDir().listFiles()) {
             if (f.isDirectory()) {
@@ -343,15 +338,15 @@ public class BundleIT {
             try (InputStream is = TikaInputStream.get(f.toPath())) {
                 parser.parse(is, handler, metadata, context);
             } catch (EncryptedDocumentException e) {
-                //swallow
+                // swallow
             } catch (SAXException e) {
-                //swallow
+                // swallow
             } catch (TikaException e) {
                 System.err.println("tika Exception " + f.getName());
                 e.printStackTrace();
             }
             System.out.println(
-                    Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+                            Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
         }
     }
 

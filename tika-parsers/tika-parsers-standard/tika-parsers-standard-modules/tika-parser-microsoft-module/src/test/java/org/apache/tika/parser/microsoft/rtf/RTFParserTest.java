@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.rtf;
 
@@ -27,9 +25,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -43,6 +38,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Test;
 
 /**
  * Junit test class for the Tika {@link RTFParser}
@@ -113,7 +109,7 @@ public class RTFParserTest extends TikaTest {
         String s1 = getText("testRTFWordPadCzechCharacters.rtf");
         assertTrue(s1.contains("\u010Cl\u00E1nek t\u00FDdne"));
         assertTrue(s1.contains(
-                "starov\u011Bk\u00E9 \u017Eidovsk\u00E9 n\u00E1bo\u017Eensk\u00E9 texty"));
+                        "starov\u011Bk\u00E9 \u017Eidovsk\u00E9 n\u00E1bo\u017Eensk\u00E9 texty"));
     }
 
     @Test
@@ -121,7 +117,7 @@ public class RTFParserTest extends TikaTest {
         String s1 = getText("testRTFWord2010CzechCharacters.rtf");
         assertTrue(s1.contains("\u010Cl\u00E1nek t\u00FDdne"));
         assertTrue(s1.contains(
-                "starov\u011Bk\u00E9 \u017Eidovsk\u00E9 n\u00E1bo\u017Eensk\u00E9 texty"));
+                        "starov\u011Bk\u00E9 \u017Eidovsk\u00E9 n\u00E1bo\u017Eensk\u00E9 texty"));
     }
 
     @Test
@@ -143,7 +139,7 @@ public class RTFParserTest extends TikaTest {
     public void testGothic() throws Exception {
         String content = getText("testRTFUnicodeGothic.rtf");
         assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A",
-                content);
+                        content);
     }
 
     @Test
@@ -153,9 +149,8 @@ public class RTFParserTest extends TikaTest {
 
         // Verify title -- this title uses upr escape inside
         // title info field:
-        assertEquals(
-                "\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f\u3000",
-                r.metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f\u3000",
+                        r.metadata.get(TikaCoreProperties.TITLE));
         assertEquals("VMazel", r.metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("StarWriter", r.metadata.get(TikaCoreProperties.COMMENTS));
 
@@ -176,7 +171,7 @@ public class RTFParserTest extends TikaTest {
         Tika localTika = new Tika();
         String content = localTika.parseToString(stream, metadata);
         // parseToString closes for convenience:
-        //stream.close();
+        // stream.close();
         assertTrue(content.length() > 500);
 
         // Test setting max length on the instance:
@@ -185,14 +180,14 @@ public class RTFParserTest extends TikaTest {
         content = localTika.parseToString(stream, metadata);
 
         // parseToString closes for convenience:
-        //stream.close();
+        // stream.close();
         assertTrue(content.length() <= 200);
 
         // Test setting max length per-call:
         stream = TikaInputStream.get(file.toPath(), metadata);
         content = localTika.parseToString(stream, metadata, 100);
         // parseToString closes for convenience:
-        //stream.close();
+        // stream.close();
         assertTrue(content.length() <= 100);
     }
 
@@ -243,11 +238,11 @@ public class RTFParserTest extends TikaTest {
 
         // Table
         assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3",
-                content.replaceAll("\\s+", " "));
+                        content.replaceAll("\\s+", " "));
 
         // 2-columns
         assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2",
-                content.replaceAll("\\s+", " "));
+                        content.replaceAll("\\s+", " "));
         assertContains("This is a hyperlink", content);
         assertContains("Here is a list:", content);
         for (int row = 1; row <= 3; row++) {
@@ -275,11 +270,11 @@ public class RTFParserTest extends TikaTest {
         assertContains("\uff08\uff27\uff28\uff31\uff09", content);
         // 6 other characters
         assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f",
-                content);
+                        content);
 
         assertContains("And then some Gothic text:", content);
         assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A",
-                content);
+                        content);
     }
 
     @Test
@@ -303,34 +298,31 @@ public class RTFParserTest extends TikaTest {
     @Test
     public void testHyperlink() throws Exception {
         String content = getXML("testRTFHyperlink.rtf").xml;
-        assertContains(
-                "our most <a href=\"" +
-                        "http://r.office.microsoft.com/r/rlidwelcomeFAQ?clid=1033\">" +
-                        "frequently asked questions</a>",
-                content);
+        assertContains("our most <a href=\""
+                        + "http://r.office.microsoft.com/r/rlidwelcomeFAQ?clid=1033\">"
+                        + "frequently asked questions</a>", content);
         assertEquals(-1, content.indexOf("<p>\t\t</p>"));
     }
 
     @Test
     public void testHyperLinkAndStyles() throws Exception {
         String content = getXML("testRTFHyperlinkAndStyles.rtf").xml;
-        String needle = "<b><i>DIP</i>: " +
-                "<a href=\"..\\\\..\\\\SAUCES\\\\Dips\\\\Dip, Caesar.doc\">Dip, Caesar.doc</a></b>";
+        String needle = "<b><i>DIP</i>: "
+                        + "<a href=\"..\\\\..\\\\SAUCES\\\\Dips\\\\Dip, Caesar.doc\">Dip, Caesar.doc</a></b>";
         assertContains(needle, content);
     }
 
     @Test
     public void testIgnoredControlWord() throws Exception {
         assertContains("<p>The quick brown fox jumps over the lazy dog</p>",
-                getXML("testRTFIgnoredControlWord.rtf").xml);
+                        getXML("testRTFIgnoredControlWord.rtf").xml);
     }
 
     @Test
     public void testFontAfterBufferedText() throws Exception {
-        assertContains(
-                "\u0423\u0432\u0430\u0436\u0430\u0435\u043c\u044b\u0439" +
-                        " \u043a\u043b\u0438\u0435\u043d\u0442!",
-                getXML("testFontAfterBufferedText.rtf").xml);
+        assertContains("\u0423\u0432\u0430\u0436\u0430\u0435\u043c\u044b\u0439"
+                        + " \u043a\u043b\u0438\u0435\u043d\u0442!",
+                        getXML("testFontAfterBufferedText.rtf").xml);
     }
 
     @Test
@@ -345,7 +337,7 @@ public class RTFParserTest extends TikaTest {
     @Test
     public void testTurningOffList() throws Exception {
         try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/parser/microsoft/rtf/ignoreListMarkup-tika-config.xml")) {
+                        "/org/apache/tika/parser/microsoft/rtf/ignoreListMarkup-tika-config.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             Parser p = new AutoDetectParser(tikaConfig);
@@ -370,7 +362,7 @@ public class RTFParserTest extends TikaTest {
     public void testBinControlWord() throws Exception {
         ByteCopyingHandler embHandler = new ByteCopyingHandler();
         try (TikaInputStream tis = TikaInputStream
-                .get(getResourceAsStream("/test-documents/testBinControlWord.rtf"))) {
+                        .get(getResourceAsStream("/test-documents/testBinControlWord.rtf"))) {
             ContainerExtractor ex = new ParserContainerExtractor();
             assertEquals(true, ex.isSupported(tis));
             ex.extract(tis, ex, embHandler);
@@ -379,9 +371,9 @@ public class RTFParserTest extends TikaTest {
 
         byte[] bytes = embHandler.bytes.get(0);
         assertEquals(10, bytes.length);
-        //}
+        // }
         assertEquals(125, (int) bytes[4]);
-        //make sure that at least the last value is correct
+        // make sure that at least the last value is correct
         assertEquals(-1, (int) bytes[9]);
     }
 
@@ -392,8 +384,8 @@ public class RTFParserTest extends TikaTest {
         assertEquals("1", xml.metadata.get(Office.PAGE_COUNT));
         assertEquals("70", xml.metadata.get(Office.WORD_COUNT));
         assertEquals("401", xml.metadata.get(Office.CHARACTER_COUNT));
-        //RTFParser's legacy behavior is to apply local timezone to dates/times.
-        //This needs to be flexible enough to pass in various time-zones TIKA-4043
+        // RTFParser's legacy behavior is to apply local timezone to dates/times.
+        // This needs to be flexible enough to pass in various time-zones TIKA-4043
         assertTrue(xml.metadata.get(TikaCoreProperties.CREATED).startsWith("2010-10-"));
     }
 
@@ -414,11 +406,12 @@ public class RTFParserTest extends TikaTest {
     public void testMultipleNewlines() throws Exception {
         String content = getXML("testRTFNewlines.rtf").xml;
         content = content.replaceAll("[\r\n]+", " ");
-        assertContains("<body><p>one</p> " + "<p /> " + "<p>two</p> " + "<p /> " + "<p /> " +
-                "<p>three</p> " + "<p /> " + "<p /> " + "<p /> " + "<p>four</p>", content);
+        assertContains("<body><p>one</p> " + "<p /> " + "<p>two</p> " + "<p /> " + "<p /> "
+                        + "<p>three</p> " + "<p /> " + "<p /> " + "<p /> " + "<p>four</p>",
+                        content);
     }
 
-    //TIKA-1010 test linked embedded doc
+    // TIKA-1010 test linked embedded doc
     @Test
     public void testEmbeddedLinkedDocument() throws Exception {
         Set<MediaType> skipTypes = new HashSet<>();
@@ -427,45 +420,45 @@ public class RTFParserTest extends TikaTest {
 
         TrackingHandler tracker = new TrackingHandler(skipTypes);
         try (TikaInputStream tis = TikaInputStream
-                .get(getResourceAsStream("/test-documents/testRTFEmbeddedLink.rtf"))) {
+                        .get(getResourceAsStream("/test-documents/testRTFEmbeddedLink.rtf"))) {
             ContainerExtractor ex = new ParserContainerExtractor();
             assertEquals(true, ex.isSupported(tis));
             ex.extract(tis, ex, tracker);
         }
-        //should gracefully skip link and not throw NPE, IOEx, etc
+        // should gracefully skip link and not throw NPE, IOEx, etc
         assertEquals(0, tracker.filenames.size());
 
         tracker = new TrackingHandler();
         try (TikaInputStream tis = TikaInputStream
-                .get(getResourceAsStream("/test-documents/testRTFEmbeddedLink.rtf"))) {
+                        .get(getResourceAsStream("/test-documents/testRTFEmbeddedLink.rtf"))) {
             ContainerExtractor ex = new ParserContainerExtractor();
             assertEquals(true, ex.isSupported(tis));
             ex.extract(tis, ex, tracker);
         }
-        //should gracefully skip link and not throw NPE, IOEx, etc
+        // should gracefully skip link and not throw NPE, IOEx, etc
         assertEquals(2, tracker.filenames.size());
     }
 
     @Test
     public void testConfig() throws Exception {
-        //test that memory allocation of the bin element is limited
-        //via the config file.  Unfortunately, this test file's bin embedding contains 10 bytes
-        //so we had to set the config to 0.
+        // test that memory allocation of the bin element is limited
+        // via the config file. Unfortunately, this test file's bin embedding contains 10 bytes
+        // so we had to set the config to 0.
         try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/parser/microsoft/rtf/tika-config.xml")) {
+                        "/org/apache/tika/parser/microsoft/rtf/tika-config.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             Parser p = new AutoDetectParser(tikaConfig);
             List<Metadata> metadataList = getRecursiveMetadata("testBinControlWord.rtf", p);
             assertEquals(1, metadataList.size());
             assertContains("TikaMemoryLimitException", metadataList.get(0)
-                    .get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
+                            .get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
         }
     }
 
     @Test
     public void testBoldPlain() throws Exception {
-        //TIKA-2410 -- bold should be turned off by "plain"
+        // TIKA-2410 -- bold should be turned off by "plain"
         XMLResult r = getXML("testRTFBoldPlain.rtf");
         assertContains("<b>Hank</b>", r.xml);
         assertNotContained("<b>Anna Smith", r.xml);
@@ -473,9 +466,9 @@ public class RTFParserTest extends TikaTest {
 
     @Test
     public void testSpacingInAnnotations() throws Exception {
-        //TIKA-2838
+        // TIKA-2838
         assertContains("supercali ATB Allison, Timothy B.  This is a comment fragilistic",
-                getXML("testRTF_annotation_spacing.rtf").xml);
+                        getXML("testRTF_annotation_spacing.rtf").xml);
     }
 
     @Test

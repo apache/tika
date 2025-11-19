@@ -1,33 +1,29 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.io;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
 import org.apache.commons.io.IOUtils;
 
 /**
- * Very slight modification of Commons' BoundedInputStream
- * so that we can figure out if this hit the bound or not.
+ * Very slight modification of Commons' BoundedInputStream so that we can figure out if this hit the
+ * bound or not.
  * <p>
- * This relies on IOUtils' skip and read to try to fully
- * read/skip inputstream.
+ * This relies on IOUtils' skip and read to try to fully read/skip inputstream.
  */
 public class BoundedInputStream extends InputStream {
 
@@ -56,8 +52,7 @@ public class BoundedInputStream extends InputStream {
      * Invokes the delegate's <code>read(byte[])</code> method.
      *
      * @param b the buffer to read the bytes into
-     * @return the number of bytes read or -1 if the end of stream or
-     * the limit has been reached.
+     * @return the number of bytes read or -1 if the end of stream or the limit has been reached.
      * @throws IOException if an I/O error occurs
      */
     @Override
@@ -70,11 +65,10 @@ public class BoundedInputStream extends InputStream {
      * <p>
      * This does not have the same guarantees as IOUtil's readFully()...be careful.
      *
-     * @param b   the buffer to read the bytes into
+     * @param b the buffer to read the bytes into
      * @param off The start offset
      * @param len The number of bytes to read
-     * @return the number of bytes read or -1 if the end of stream or
-     * the limit has been reached.
+     * @return the number of bytes read or -1 if the end of stream or the limit has been reached.
      * @throws IOException if an I/O error occurs
      */
     @Override
@@ -94,9 +88,8 @@ public class BoundedInputStream extends InputStream {
     }
 
     /**
-     * Invokes the delegate's <code>skip(long)</code> method.
-     * As with InputStream generally, this does not guarantee reading n bytes.
-     * Use IOUtils' skipFully for that functionality.
+     * Invokes the delegate's <code>skip(long)</code> method. As with InputStream generally, this
+     * does not guarantee reading n bytes. Use IOUtils' skipFully for that functionality.
      *
      * @param n the number of bytes to skip
      * @return the actual number of bytes skipped

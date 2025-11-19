@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.eval.app;
@@ -28,10 +26,9 @@ import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.eval.core.tokens.AlphaIdeographFilterFactory;
 import org.apache.tika.eval.core.tokens.AnalyzerManager;
+import org.junit.jupiter.api.Test;
 
 public class AnalyzerManagerTest {
 
@@ -66,7 +63,8 @@ public class AnalyzerManagerTest {
         Set<String> seen = new HashSet<>();
         while (ts.incrementToken()) {
             String t = termAtt.toString();
-            if (AlphaIdeographFilterFactory.isAlphabetic(t.toCharArray(), t.length()) && t.contains("5")) {
+            if (AlphaIdeographFilterFactory.isAlphabetic(t.toCharArray(), t.length())
+                            && t.contains("5")) {
                 fail("Shouldn't have found a numeric");
             }
             seen.add(termAtt.toString());
@@ -86,9 +84,7 @@ public class AnalyzerManagerTest {
         for (int i = 0; i < 1001000; i++) {
             sb.append("the ");
         }
-        TokenStream ts = analyzerManager
-                .getGeneralAnalyzer()
-                .tokenStream("f", sb.toString());
+        TokenStream ts = analyzerManager.getGeneralAnalyzer().tokenStream("f", sb.toString());
         ts.reset();
         CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
         int tokens = 0;

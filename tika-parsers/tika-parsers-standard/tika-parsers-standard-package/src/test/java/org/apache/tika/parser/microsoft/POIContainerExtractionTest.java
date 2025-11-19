@@ -1,44 +1,34 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
+import org.junit.jupiter.api.Test;
 
 public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTest {
 
     /**
-     * Office files which have other office files
-     * embedded into them. The embedded office files
-     * will sometimes have images in them.
+     * Office files which have other office files embedded into them. The embedded office files will
+     * sometimes have images in them.
      * <p/>
-     * eg xls
-     * -> word
-     * -> image
-     * -> image
-     * -> powerpoint
-     * -> excel
-     * -> image
+     * eg xls -> word -> image -> image -> powerpoint -> excel -> image
      */
     @Test
     public void testEmbeddedOfficeFiles() throws Exception {
@@ -151,12 +141,12 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(TYPE_EMF, handler.mediaTypes.get(4)); // Icon of embedded office doc
         assertEquals(TYPE_EMF, handler.mediaTypes.get(5)); // Icon of embedded office doc
         assertEquals(TYPE_DOCX, handler.mediaTypes.get(6)); // Embedded office doc
-        assertEquals(TYPE_PNG, handler.mediaTypes.get(7));  //    PNG inside .docx
-        assertEquals(TYPE_JPG, handler.mediaTypes.get(8));  //    JPG inside .docx
-        assertEquals(TYPE_PNG, handler.mediaTypes.get(9));  //    PNG inside .docx
+        assertEquals(TYPE_PNG, handler.mediaTypes.get(7)); // PNG inside .docx
+        assertEquals(TYPE_JPG, handler.mediaTypes.get(8)); // JPG inside .docx
+        assertEquals(TYPE_PNG, handler.mediaTypes.get(9)); // PNG inside .docx
         assertEquals(TYPE_PPT, handler.mediaTypes.get(10)); // Embedded office doc
         assertEquals(TYPE_XLS, handler.mediaTypes.get(14)); // Embedded office doc
-        assertEquals(TYPE_PNG, handler.mediaTypes.get(15)); //    PNG inside .xls
+        assertEquals(TYPE_PNG, handler.mediaTypes.get(15)); // PNG inside .xls
 
 
         // PowerPoint with excel and word
@@ -199,11 +189,11 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(null, handler.filenames.get(10));
 
         assertEquals(TYPE_XLS, handler.mediaTypes.get(0)); // Embedded office doc
-        assertEquals(TYPE_PNG, handler.mediaTypes.get(1)); //    PNG inside .xls
+        assertEquals(TYPE_PNG, handler.mediaTypes.get(1)); // PNG inside .xls
         assertEquals(TYPE_DOC, handler.mediaTypes.get(2)); // Embedded office doc
-        assertEquals(TYPE_PNG, handler.mediaTypes.get(3));  //    PNG inside .docx
-        assertEquals(TYPE_JPG, handler.mediaTypes.get(4));  //    JPG inside .docx
-        assertEquals(TYPE_PNG, handler.mediaTypes.get(5));  //    PNG inside .docx
+        assertEquals(TYPE_PNG, handler.mediaTypes.get(3)); // PNG inside .docx
+        assertEquals(TYPE_JPG, handler.mediaTypes.get(4)); // JPG inside .docx
+        assertEquals(TYPE_PNG, handler.mediaTypes.get(5)); // PNG inside .docx
         assertEquals(TYPE_EMF, handler.mediaTypes.get(6)); // Icon of embedded office doc
         assertEquals(TYPE_EMF, handler.mediaTypes.get(7)); // Icon of embedded office doc
         assertEquals(TYPE_PNG, handler.mediaTypes.get(8)); // Embedded image

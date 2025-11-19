@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.metadata;
 
@@ -33,7 +31,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.TimeZone;
-
 import org.apache.tika.metadata.Property.PropertyType;
 import org.apache.tika.metadata.writefilter.MetadataWriteFilter;
 import org.apache.tika.utils.DateUtils;
@@ -41,15 +38,14 @@ import org.apache.tika.utils.DateUtils;
 /**
  * A multi-valued metadata container.
  */
-public class Metadata
-        implements CreativeCommons, Geographic, HttpHeaders, Message, ClimateForcast, TIFF,
-        TikaMimeKeys, Serializable {
+public class Metadata implements CreativeCommons, Geographic, HttpHeaders, Message, ClimateForcast,
+                TIFF, TikaMimeKeys, Serializable {
 
 
     private static final MetadataWriteFilter ACCEPT_ALL = new MetadataWriteFilter() {
         @Override
         public void filterExisting(Map<String, String[]> data) {
-            //no-op
+            // no-op
         }
 
         @Override
@@ -62,11 +58,11 @@ public class Metadata
             }
         }
 
-        //legacy behavior -- remove the field if value is null
+        // legacy behavior -- remove the field if value is null
         @Override
         public void set(String field, String value, Map<String, String[]> data) {
             if (value != null) {
-                data.put(field, new String[]{ value });
+                data.put(field, new String[] {value});
             } else {
                 data.remove(field);
             }
@@ -88,8 +84,8 @@ public class Metadata
      */
     private static final long serialVersionUID = 5623926545693153182L;
     /**
-     * Some parsers will have the date as a ISO-8601 string
-     * already, and will set that into the Metadata object.
+     * Some parsers will have the date as a ISO-8601 string already, and will set that into the
+     * Metadata object.
      */
     private static final DateUtils DATE_UTILS = new DateUtils();
     /**
@@ -99,6 +95,7 @@ public class Metadata
 
 
     private MetadataWriteFilter writeFilter = ACCEPT_ALL;
+
     /**
      * Constructs a new, empty metadata.
      */
@@ -115,8 +112,8 @@ public class Metadata
     }
 
     /**
-     * Parses the given date string. This method is synchronized to prevent
-     * concurrent access to the thread-unsafe date formats.
+     * Parses the given date string. This method is synchronized to prevent concurrent access to the
+     * thread-unsafe date formats.
      *
      * @param date date string
      * @return parsed date, or <code>null</code> if the date can't be parsed
@@ -133,8 +130,8 @@ public class Metadata
      * @return true is named value is multivalued, false if single value or null
      */
     public boolean isMultiValued(final Property property) {
-        return metadata.get(property.getName()) != null &&
-                metadata.get(property.getName()).length > 1;
+        return metadata.get(property.getName()) != null
+                        && metadata.get(property.getName()).length > 1;
     }
 
     /**
@@ -174,12 +171,11 @@ public class Metadata
 
     /**
      * Sets the writeFilter that is called before {@link #set(String, String)}
-     * {@link #set(String, String[])}, {@link #add(String, String)},
-     * {@link #add(String, String[])}.  The default is {@link #ACCEPT_ALL}.
+     * {@link #set(String, String[])}, {@link #add(String, String)}, {@link #add(String, String[])}.
+     * The default is {@link #ACCEPT_ALL}.
      *
-     * This is intended for expert use only.  Some parsers rely on metadata
-     * during the parse, and if the metadata they need is excluded, they
-     * will not function properly.
+     * This is intended for expert use only. Some parsers rely on metadata during the parse, and if
+     * the metadata they need is excluded, they will not function properly.
      *
      * @param writeFilter
      * @since 2.4.0
@@ -206,8 +202,8 @@ public class Metadata
      * associated to the specified property, then the first one is returned.
      *
      * @param property simple integer property definition
-     * @return property value as a Integer, or <code>null</code> if the property is not set, or
-     * not a valid Integer
+     * @return property value as a Integer, or <code>null</code> if the property is not set, or not
+     *         a valid Integer
      * @since Apache Tika 0.8
      */
     public Integer getInt(Property property) {
@@ -234,8 +230,8 @@ public class Metadata
      * associated to the specified property, then the first one is returned.
      *
      * @param property simple date property definition
-     * @return property value as a Date, or <code>null</code> if the property is not set, or not
-     * a valid Date
+     * @return property value as a Date, or <code>null</code> if the property is not set, or not a
+     *         valid Date
      * @since Apache Tika 0.8
      */
     public Date getDate(Property property) {
@@ -283,10 +279,10 @@ public class Metadata
     }
 
     /**
-     * Add a metadata name/value mapping. Add the specified value to the list of
-     * values associated to the specified metadata name.
+     * Add a metadata name/value mapping. Add the specified value to the list of values associated
+     * to the specified metadata name.
      *
-     * @param name  the metadata name.
+     * @param name the metadata name.
      * @param value the metadata value.
      */
     public void add(final String name, final String value) {
@@ -294,10 +290,10 @@ public class Metadata
     }
 
     /**
-     * Add a metadata name/value mapping. Add the specified value to the list of
-     * values associated to the specified metadata name.
+     * Add a metadata name/value mapping. Add the specified value to the list of values associated
+     * to the specified metadata name.
      *
-     * @param name  the metadata name.
+     * @param name the metadata name.
      * @param newValues the metadata values
      */
     protected void add(final String name, final String[] newValues) {
@@ -312,11 +308,11 @@ public class Metadata
     }
 
     /**
-     * Add a metadata property/value mapping. Add the specified value to the list of
-     * values associated to the specified metadata property.
+     * Add a metadata property/value mapping. Add the specified value to the list of values
+     * associated to the specified metadata property.
      *
      * @param property the metadata property.
-     * @param value    the metadata value.
+     * @param value the metadata value.
      */
     public void add(final Property property, final String value) {
 
@@ -340,7 +336,7 @@ public class Metadata
                     add(property.getName(), value);
                 } else {
                     throw new PropertyTypeException(
-                            property.getName() + " : " + property.getPropertyType());
+                                    property.getName() + " : " + property.getPropertyType());
                 }
             }
         }
@@ -356,17 +352,16 @@ public class Metadata
         Enumeration<String> names = (Enumeration<String>) properties.propertyNames();
         while (names.hasMoreElements()) {
             String name = names.nextElement();
-            metadata.put(name, new String[]{properties.getProperty(name)});
+            metadata.put(name, new String[] {properties.getProperty(name)});
         }
     }
 
     /**
-     * Set metadata name/value. Associate the specified value to the specified
-     * metadata name. If some previous values were associated to this name,
-     * they are removed. If the given value is <code>null</code>, then the
-     * metadata entry is removed.
+     * Set metadata name/value. Associate the specified value to the specified metadata name. If
+     * some previous values were associated to this name, they are removed. If the given value is
+     * <code>null</code>, then the metadata entry is removed.
      *
-     * @param name  the metadata name.
+     * @param name the metadata name.
      * @param value the metadata value, or <code>null</code>
      */
     public void set(String name, String value) {
@@ -374,8 +369,8 @@ public class Metadata
     }
 
     protected void set(String name, String[] values) {
-        //TODO: optimize this to not copy if all
-        //values are to be included "as is"
+        // TODO: optimize this to not copy if all
+        // values are to be included "as is"
         if (values != null) {
             metadata.remove(name);
             for (String v : values) {
@@ -390,7 +385,7 @@ public class Metadata
      * Sets the value of the identified metadata property.
      *
      * @param property property definition
-     * @param value    property value
+     * @param value property value
      * @since Apache Tika 0.7
      */
     public void set(Property property, String value) {
@@ -413,7 +408,7 @@ public class Metadata
      * Sets the values of the identified metadata property.
      *
      * @param property property definition
-     * @param values   property values
+     * @param values property values
      * @since Apache Tika 1.2
      */
     public void set(Property property, String[] values) {
@@ -436,17 +431,17 @@ public class Metadata
      * Sets the integer value of the identified metadata property.
      *
      * @param property simple integer property definition
-     * @param value    property value
+     * @param value property value
      * @since Apache Tika 0.8
      */
     public void set(Property property, int value) {
         if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
             throw new PropertyTypeException(Property.PropertyType.SIMPLE,
-                    property.getPrimaryProperty().getPropertyType());
+                            property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
             throw new PropertyTypeException(Property.ValueType.INTEGER,
-                    property.getPrimaryProperty().getValueType());
+                            property.getPrimaryProperty().getValueType());
         }
         set(property, Integer.toString(value));
     }
@@ -455,35 +450,36 @@ public class Metadata
      * Sets the integer value of the identified metadata property.
      *
      * @param property simple integer property definition
-     * @param value    property value
+     * @param value property value
      * @since Apache Tika 0.8
      */
     public void set(Property property, long value) {
         if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
             throw new PropertyTypeException(Property.PropertyType.SIMPLE,
-                    property.getPrimaryProperty().getPropertyType());
+                            property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL) {
             throw new PropertyTypeException(Property.ValueType.REAL,
-                    property.getPrimaryProperty().getValueType());
+                            property.getPrimaryProperty().getValueType());
         }
         set(property, Long.toString(value));
     }
+
     /**
      * Sets the integer value of the identified metadata property.
      *
      * @param property simple integer property definition
-     * @param value    property value
+     * @param value property value
      * @since Apache Tika 2.1.1
      */
     public void set(Property property, boolean value) {
         if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
             throw new PropertyTypeException(Property.PropertyType.SIMPLE,
-                    property.getPrimaryProperty().getPropertyType());
+                            property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.BOOLEAN) {
             throw new PropertyTypeException(Property.ValueType.BOOLEAN,
-                    property.getPrimaryProperty().getValueType());
+                            property.getPrimaryProperty().getValueType());
         }
         set(property, Boolean.toString(value));
     }
@@ -492,17 +488,17 @@ public class Metadata
      * Adds the integer value of the identified metadata property.
      *
      * @param property seq integer property definition
-     * @param value    property value
+     * @param value property value
      * @since Apache Tika 1.21
      */
     public void add(Property property, int value) {
         if (property.getPrimaryProperty().getPropertyType() != PropertyType.SEQ) {
             throw new PropertyTypeException(PropertyType.SEQ,
-                    property.getPrimaryProperty().getPropertyType());
+                            property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
             throw new PropertyTypeException(Property.ValueType.INTEGER,
-                    property.getPrimaryProperty().getValueType());
+                            property.getPrimaryProperty().getValueType());
         }
         add(property, Integer.toString(value));
     }
@@ -517,11 +513,11 @@ public class Metadata
     public int[] getIntValues(Property property) {
         if (property.getPrimaryProperty().getPropertyType() != PropertyType.SEQ) {
             throw new PropertyTypeException(PropertyType.SEQ,
-                    property.getPrimaryProperty().getPropertyType());
+                            property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
             throw new PropertyTypeException(Property.ValueType.INTEGER,
-                    property.getPrimaryProperty().getValueType());
+                            property.getPrimaryProperty().getValueType());
         }
         String[] vals = getValues(property);
         int[] ret = new int[vals.length];
@@ -541,11 +537,11 @@ public class Metadata
     public long[] getLongValues(Property property) {
         if (property.getPrimaryProperty().getPropertyType() != PropertyType.SEQ) {
             throw new PropertyTypeException(PropertyType.SEQ,
-                    property.getPrimaryProperty().getPropertyType());
+                            property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL) {
             throw new PropertyTypeException(Property.ValueType.REAL,
-                    property.getPrimaryProperty().getValueType());
+                            property.getPrimaryProperty().getValueType());
         }
         String[] vals = getValues(property);
         long[] ret = new long[vals.length];
@@ -559,14 +555,14 @@ public class Metadata
      * Sets the real or rational value of the identified metadata property.
      *
      * @param property simple real or simple rational property definition
-     * @param value    property value
+     * @param value property value
      * @since Apache Tika 0.8
      */
     public void set(Property property, double value) {
-        if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL &&
-                property.getPrimaryProperty().getValueType() != Property.ValueType.RATIONAL) {
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL && property
+                        .getPrimaryProperty().getValueType() != Property.ValueType.RATIONAL) {
             throw new PropertyTypeException(Property.ValueType.REAL,
-                    property.getPrimaryProperty().getValueType());
+                            property.getPrimaryProperty().getValueType());
         }
         set(property, Double.toString(value));
     }
@@ -575,17 +571,17 @@ public class Metadata
      * Sets the date value of the identified metadata property.
      *
      * @param property simple integer property definition
-     * @param date     property value
+     * @param date property value
      * @since Apache Tika 0.8
      */
     public void set(Property property, Date date) {
         if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
             throw new PropertyTypeException(Property.PropertyType.SIMPLE,
-                    property.getPrimaryProperty().getPropertyType());
+                            property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
             throw new PropertyTypeException(Property.ValueType.DATE,
-                    property.getPrimaryProperty().getValueType());
+                            property.getPrimaryProperty().getValueType());
         }
         String dateString = null;
         if (date != null) {
@@ -598,17 +594,17 @@ public class Metadata
      * Sets the date value of the identified metadata property.
      *
      * @param property simple integer property definition
-     * @param date     property value
+     * @param date property value
      * @since Apache Tika 0.8
      */
     public void set(Property property, Calendar date) {
         if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
             throw new PropertyTypeException(Property.PropertyType.SIMPLE,
-                    property.getPrimaryProperty().getPropertyType());
+                            property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
             throw new PropertyTypeException(Property.ValueType.DATE,
-                    property.getPrimaryProperty().getValueType());
+                            property.getPrimaryProperty().getValueType());
         }
         String dateString = null;
         if (date != null) {
@@ -621,13 +617,13 @@ public class Metadata
      * Adds the date value of the identified metadata property.
      *
      * @param property simple calendar property definition
-     * @param date     property value
+     * @param date property value
      * @since Apache Tika 2.5.0
      */
     public void add(Property property, Calendar date) {
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
             throw new PropertyTypeException(Property.ValueType.DATE,
-                    property.getPrimaryProperty().getValueType());
+                            property.getPrimaryProperty().getValueType());
         }
         String dateString = null;
         if (date != null) {

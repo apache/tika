@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.server.client;
 
@@ -23,7 +21,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.config.Initializable;
@@ -40,7 +37,8 @@ public class TikaServerClientConfig extends ConfigBase implements Initializable 
     private List<String> tikaEndpoints = new ArrayList<>();
     private long maxWaitMillis = 60000;
 
-    public static TikaServerClientConfig build(Path configFile) throws IOException, TikaConfigException {
+    public static TikaServerClientConfig build(Path configFile)
+                    throws IOException, TikaConfigException {
         try (InputStream is = Files.newInputStream(configFile)) {
             return buildSingle("serverClientConfig", TikaServerClientConfig.class, is);
         }
@@ -51,9 +49,8 @@ public class TikaServerClientConfig extends ConfigBase implements Initializable 
     }
 
     /**
-     * maximum time in milliseconds to wait for a new fetchemittuple to be
-     * available from the queue.  The client will end if no tuple is available
-     * within this amount of time.
+     * maximum time in milliseconds to wait for a new fetchemittuple to be available from the queue.
+     * The client will end if no tuple is available within this amount of time.
      *
      * @param maxWaitMs
      */
@@ -86,7 +83,8 @@ public class TikaServerClientConfig extends ConfigBase implements Initializable 
             this.mode = MODE.PIPES;
             return;
         }
-        throw new IllegalArgumentException("I regret that we have not yet implemented: '" + mode + "'");
+        throw new IllegalArgumentException(
+                        "I regret that we have not yet implemented: '" + mode + "'");
     }
 
     public List<String> getTikaEndpoints() {
@@ -103,7 +101,8 @@ public class TikaServerClientConfig extends ConfigBase implements Initializable 
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+                    throws TikaConfigException {
         if (tikaEndpoints.size() == 0) {
             throw new TikaConfigException("tikaEndpoints must not be empty");
         }

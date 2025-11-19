@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.emitter.jdbc;
 
@@ -40,10 +38,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -56,15 +50,16 @@ import org.apache.tika.pipes.core.emitter.EmitData;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is only an initial, basic implementation of an emitter for JDBC.
  * <p>
- * It is currently NOT thread safe because of the shared prepared statement,
- * and depending on the jdbc implementation because of the shared connection.
+ * It is currently NOT thread safe because of the shared prepared statement, and depending on the
+ * jdbc implementation because of the shared connection.
  * <p>
- * As of the 2.5.0 release, this is ALPHA version.  There may be breaking changes
- * in the future.
+ * As of the 2.5.0 release, this is ALPHA version. There may be breaking changes in the future.
  */
 public class JDBCEmitter extends AbstractEmitter implements Initializable, Closeable {
 
@@ -72,24 +67,24 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
 
     public enum AttachmentStrategy {
         FIRST_ONLY, ALL
-        //anything else?
+        // anything else?
     }
 
     public enum MultivaluedFieldStrategy {
         FIRST_ONLY, CONCATENATE
-        //anything else?
+        // anything else?
     }
 
-    //some file formats do not have time zones...
-    //try both
+    // some file formats do not have time zones...
+    // try both
     private static final String[] TIKA_DATE_PATTERNS =
-            new String[] {"yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss"};
-    //the "write" lock is used for creating the table
+                    new String[] {"yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss"};
+    // the "write" lock is used for creating the table
     private static ReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
-    //this keeps track of which table + connection string have been created
-    //so that only one table is created per table + connection string.
-    //This is necessary for testing and if someone specifies multiple
-    //different jdbc emitters.
+    // this keeps track of which table + connection string have been created
+    // so that only one table is created per table + connection string.
+    // This is necessary for testing and if someone specifies multiple
+    // different jdbc emitters.
     private static Set<String> TABLES_CREATED = new HashSet<>();
     private String connectionString;
 
@@ -100,8 +95,8 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
 
     private int maxRetries = 0;
 
-    //used only for specification of column name/string definition of
-    //keys
+    // used only for specification of column name/string definition of
+    // keys
     private Map<String, String> keys;
 
     private List<ColumnDefinition> columns;
@@ -110,17 +105,17 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.FIRST_ONLY;
 
     private MultivaluedFieldStrategy multivaluedFieldStrategy =
-            MultivaluedFieldStrategy.CONCATENATE;
+                    MultivaluedFieldStrategy.CONCATENATE;
 
     private String multivaluedFieldDelimiter = ", ";
 
-    //emitters are run in a single thread.  If we ever start running them
-    //multithreaded, this will be a big problem.
+    // emitters are run in a single thread. If we ever start running them
+    // multithreaded, this will be a big problem.
     private final DateFormat[] dateFormats;
 
     private int maxStringLength = 64000;
 
-    //this is set during the initialize phase
+    // this is set during the initialize phase
     private StringNormalizer stringNormalizer;
 
     public JDBCEmitter() {
@@ -132,9 +127,8 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     /**
-     * This is called immediately after the table is created.
-     * The purpose of this is to allow for adding a complex primary key or
-     * other constraint on the table after it is created.
+     * This is called immediately after the table is created. The purpose of this is to allow for
+     * adding a complex primary key or other constraint on the table after it is created.
      *
      * @param alterTable
      */
@@ -158,9 +152,8 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     /**
-     * Set the maximum string length in characters (not bytes).
-     * This is applies only to fields with name &quot;string&quot;
-     * not to &quot;varchar&quot;.
+     * Set the maximum string length in characters (not bytes). This is applies only to fields with
+     * name &quot;string&quot; not to &quot;varchar&quot;.
      *
      * @param maxStringLength
      */
@@ -174,10 +167,9 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     /**
-     * This sql will be called immediately after the connection is made. This was
-     * initially added for setting pragmas on sqlite3, but may be used for other
-     * connection configuration in other dbs. Note: This is called before the table is
-     * created if it needs to be created.
+     * This sql will be called immediately after the connection is made. This was initially added
+     * for setting pragmas on sqlite3, but may be used for other connection configuration in other
+     * dbs. Note: This is called before the table is created if it needs to be created.
      *
      * @param postConnection
      */
@@ -187,13 +179,12 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     /**
-     * This applies to fields of type 'string' or 'varchar'.  If there's
-     * a multivalued field in a metadata object, do you want the first value only
-     * or should we concatenate these with the
+     * This applies to fields of type 'string' or 'varchar'. If there's a multivalued field in a
+     * metadata object, do you want the first value only or should we concatenate these with the
      * {@link JDBCEmitter#setMultivaluedFieldDelimiter(String)}.
      * <p>
-     * The default values as of 2.6.1 are {@link MultivaluedFieldStrategy#CONCATENATE}
-     * and the default delimiter is &quot;, &quot;
+     * The default values as of 2.6.1 are {@link MultivaluedFieldStrategy#CONCATENATE} and the
+     * default delimiter is &quot;, &quot;
      *
      * @param strategy
      * @throws TikaConfigException
@@ -206,8 +197,8 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         } else if (lc.equals("concatenate")) {
             setMultivaluedFieldStrategy(MultivaluedFieldStrategy.CONCATENATE);
         } else {
-            throw new TikaConfigException("I'm sorry, I only recogize 'first_only' and " +
-                    "'concatenate'. I don't mind '" + strategy + "'");
+            throw new TikaConfigException("I'm sorry, I only recogize 'first_only' and "
+                            + "'concatenate'. I don't mind '" + strategy + "'");
         }
     }
 
@@ -226,11 +217,10 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     /**
-     * The implementation of keys should be a LinkedHashMap because
-     * order matters!
+     * The implementation of keys should be a LinkedHashMap because order matters!
      * <p>
-     * Key is the name of the metadata field, value is the type of column:
-     * boolean, string, int, long
+     * Key is the name of the metadata field, value is the type of column: boolean, string, int,
+     * long
      *
      * @param keys
      */
@@ -255,17 +245,17 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     /**
-     * This executes the emit with each call.  For more efficient
-     * batch execution use {@link #emit(List)}.
+     * This executes the emit with each call. For more efficient batch execution use
+     * {@link #emit(List)}.
      *
-     * @param emitKey      emit key
+     * @param emitKey emit key
      * @param metadataList list of metadata per file
      * @throws IOException
      * @throws TikaEmitterException
      */
     @Override
     public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
-            throws IOException, TikaEmitterException {
+                    throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.size() < 1) {
             return;
         }
@@ -310,7 +300,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
             insertStatement.executeBatch();
             connection.commit();
             LOGGER.debug("took {}ms to insert {} rows ", System.currentTimeMillis() - start,
-                    emitData.size());
+                            emitData.size());
         } else {
             insertStatement.executeBatch();
             connection.commit();
@@ -387,9 +377,8 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     private void updateValue(String emitKey, PreparedStatement insertStatement, int i,
-                             ColumnDefinition columnDefinition, int metadataListIndex,
-                             List<Metadata> metadataList)
-            throws SQLException {
+                    ColumnDefinition columnDefinition, int metadataListIndex,
+                    List<Metadata> metadataList) throws SQLException {
         Metadata metadata = metadataList.get(metadataListIndex);
         String val = getVal(metadata, columnDefinition);
         switch (columnDefinition.getType()) {
@@ -415,12 +404,10 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
                 updateTimestamp(insertStatement, i, val, dateFormats);
                 break;
             default:
-                throw new IllegalArgumentException(
-                        "Can only process:" + getHandledTypes() +
-                                " types so far.  " +
-                                "Please open a ticket to request: " +
-                                columnDefinition.getType() + " for " +
-                                columnDefinition.getColumnName());
+                throw new IllegalArgumentException("Can only process:" + getHandledTypes()
+                                + " types so far.  " + "Please open a ticket to request: "
+                                + columnDefinition.getType() + " for "
+                                + columnDefinition.getColumnName());
         }
     }
 
@@ -454,7 +441,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     private void updateDouble(PreparedStatement insertStatement, int i, String val)
-            throws SQLException {
+                    throws SQLException {
         if (StringUtils.isBlank(val)) {
             insertStatement.setNull(i, Types.DOUBLE);
             return;
@@ -463,20 +450,19 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         insertStatement.setDouble(i, d);
     }
 
-    private void updateVarchar(String emitKey, ColumnDefinition columnDefinition, PreparedStatement insertStatement,
-                               int i,
-                               String val) throws SQLException {
+    private void updateVarchar(String emitKey, ColumnDefinition columnDefinition,
+                    PreparedStatement insertStatement, int i, String val) throws SQLException {
         if (val == null) {
             insertStatement.setNull(i, Types.VARCHAR);
             return;
         }
-        String normalized = stringNormalizer.normalize(emitKey,
-                columnDefinition.getColumnName(), val, columnDefinition.getPrecision());
+        String normalized = stringNormalizer.normalize(emitKey, columnDefinition.getColumnName(),
+                        val, columnDefinition.getPrecision());
         insertStatement.setString(i, normalized);
     }
 
     private void updateTimestamp(PreparedStatement insertStatement, int i, String val,
-                                 DateFormat[] dateFormats) throws SQLException {
+                    DateFormat[] dateFormats) throws SQLException {
         if (StringUtils.isBlank(val)) {
             insertStatement.setNull(i, Types.TIMESTAMP);
             return;
@@ -488,7 +474,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
                 insertStatement.setTimestamp(i, new Timestamp(d.getTime()));
                 return;
             } catch (ParseException e) {
-                //ignore
+                // ignore
             }
         }
         LOGGER.warn("Couldn't parse {}" + val);
@@ -496,7 +482,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     private void updateFloat(PreparedStatement insertStatement, int i, String val)
-            throws SQLException {
+                    throws SQLException {
         if (StringUtils.isBlank(val)) {
             insertStatement.setNull(i, Types.FLOAT);
         } else {
@@ -505,7 +491,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     private void updateLong(PreparedStatement insertStatement, int i, String val)
-            throws SQLException {
+                    throws SQLException {
         if (StringUtils.isBlank(val)) {
             insertStatement.setNull(i, Types.BIGINT);
         } else {
@@ -514,7 +500,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     private void updateInteger(PreparedStatement insertStatement, int i, String val)
-            throws SQLException {
+                    throws SQLException {
         if (StringUtils.isBlank(val)) {
             insertStatement.setNull(i, Types.INTEGER);
         } else {
@@ -523,7 +509,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     private void updateBoolean(PreparedStatement insertStatement, int i, String val)
-            throws SQLException {
+                    throws SQLException {
         if (StringUtils.isBlank(val)) {
             insertStatement.setNull(i, Types.BOOLEAN);
         } else {
@@ -542,7 +528,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
             throw new TikaConfigException("couldn't open connection: " + connectionString, e);
         }
         if (!StringUtils.isBlank(createTable)) {
-            //synchronize table creation
+            // synchronize table creation
             READ_WRITE_LOCK.writeLock().lock();
             try {
                 String tableCreationString = connectionString + " " + createTable;
@@ -585,8 +571,8 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-        //require
+                    throws TikaConfigException {
+        // require
     }
 
     /**
@@ -607,8 +593,8 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     private static String getHandledTypes() {
-        return "'string', 'varchar', " +
-                "'boolean', 'int', 'long', 'float', 'double' and 'timestamp'";
+        return "'string', 'varchar', "
+                        + "'boolean', 'int', 'long', 'float', 'double' and 'timestamp'";
     }
 
     private static class StringNormalizer {
@@ -617,8 +603,8 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
             if (maxLength < 0 || s.length() <= maxLength) {
                 return s;
             }
-            LOGGER.warn("truncating {}->'{}' from {} chars to {} chars",
-                    emitKey, columnName, s.length(), maxLength);
+            LOGGER.warn("truncating {}->'{}' from {} chars to {} chars", emitKey, columnName,
+                            s.length(), maxLength);
 
             return s.substring(0, maxLength);
         }
@@ -635,20 +621,20 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
 
     private static class ColumnDefinition {
         private static final Matcher VARCHAR_MATCHER =
-                Pattern.compile("varchar\\((\\d+)\\)").matcher("");
+                        Pattern.compile("varchar\\((\\d+)\\)").matcher("");
 
         private final String columnName;
 
         private final int type;
-        //this is only used (so far) for varchar.  It is currently
-        //ignored for other data types
+        // this is only used (so far) for varchar. It is currently
+        // ignored for other data types
         private final int precision;
 
         private static ColumnDefinition parse(String name, String type, int maxStringLength) {
             String lcType = type.toLowerCase(Locale.US);
             if (VARCHAR_MATCHER.reset(lcType).find()) {
-                return new ColumnDefinition(name,
-                        Types.VARCHAR, Integer.parseInt(VARCHAR_MATCHER.group(1)));
+                return new ColumnDefinition(name, Types.VARCHAR,
+                                Integer.parseInt(VARCHAR_MATCHER.group(1)));
             }
 
             switch (lcType) {
@@ -672,10 +658,9 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
                     return new ColumnDefinition(name, Types.TIMESTAMP, -1);
 
                 default:
-                    throw new IllegalArgumentException(
-                            "Can only process: " + getHandledTypes() +
-                                    " types so far.  Please open a ticket to request " +
-                                    type + " for column: " + name);
+                    throw new IllegalArgumentException("Can only process: " + getHandledTypes()
+                                    + " types so far.  Please open a ticket to request " + type
+                                    + " for column: " + name);
             }
         }
 

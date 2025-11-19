@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mp3;
 
@@ -21,18 +19,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
-
+import org.apache.tika.exception.TikaException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaException;
-
 /**
- * This is used to parse Lyrics3 tag information
- * from an MP3 file, if available.
- * Handles lyrics tags of up to 10kb in size.
- * Will process any ID3v1 tag data if present.
- * Ignores extended ID3v1 data in the lyrics block
+ * This is used to parse Lyrics3 tag information from an MP3 file, if available. Handles lyrics tags
+ * of up to 10kb in size. Will process any ID3v1 tag data if present. Ignores extended ID3v1 data in
+ * the lyrics block
  *
  * @see <a href="http://www.id3.org/Lyrics3v2">Lyrics3 v2.0 specification</a>
  */
@@ -42,17 +36,14 @@ public class LyricsHandler {
     ID3v1Handler id3v1 = null;
 
     public LyricsHandler(InputStream stream, ContentHandler handler)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         this(getSuffix(stream, 10240 + 128));
     }
 
     /**
-     * Looks for the Lyrics data, which will be
-     * just before the ID3v1 data (if present),
-     * and process it.
-     * Also sets things up for the ID3v1
-     * processing if required.
-     * Creates from the last 128 bytes of a stream.
+     * Looks for the Lyrics data, which will be just before the ID3v1 data (if present), and process
+     * it. Also sets things up for the ID3v1 processing if required. Creates from the last 128 bytes
+     * of a stream.
      */
     protected LyricsHandler(byte[] tagData) throws IOException, SAXException, TikaException {
         if (tagData.length < 128) {
@@ -69,21 +60,20 @@ public class LyricsHandler {
         }
 
         // Are there lyrics? Look for the closing Lyrics tag
-        //  at the end to decide if there is any
+        // at the end to decide if there is any
         int lookat = tagData.length - 9;
         if (id3v1.found) {
             lookat -= 128;
         }
-        if (tagData[lookat + 0] == 'L' && tagData[lookat + 1] == 'Y' &&
-                tagData[lookat + 2] == 'R' && tagData[lookat + 3] == 'I' &&
-                tagData[lookat + 4] == 'C' && tagData[lookat + 5] == 'S' &&
-                tagData[lookat + 6] == '2' && tagData[lookat + 7] == '0' &&
-                tagData[lookat + 8] == '0') {
+        if (tagData[lookat + 0] == 'L' && tagData[lookat + 1] == 'Y' && tagData[lookat + 2] == 'R'
+                        && tagData[lookat + 3] == 'I' && tagData[lookat + 4] == 'C'
+                        && tagData[lookat + 5] == 'S' && tagData[lookat + 6] == '2'
+                        && tagData[lookat + 7] == '0' && tagData[lookat + 8] == '0') {
             foundLyrics = true;
 
             // The length (6 bytes) comes just before LYRICS200, and is the
-            //  size including the LYRICSBEGIN but excluding the 
-            //  length+LYRICS200 at the end.
+            // size including the LYRICSBEGIN but excluding the
+            // length+LYRICS200 at the end.
             int length = Integer.parseInt(new String(tagData, lookat - 6, 6, UTF_8));
 
             String lyrics = new String(tagData, lookat - length + 5, length - 11, US_ASCII);
@@ -94,7 +84,7 @@ public class LyricsHandler {
                 String tagName = lyrics.substring(pos, pos + 3);
                 int tagLen = Integer.parseInt(lyrics.substring(pos + 3, pos + 8));
                 if (tagLen < 1 || tagLen > lyrics.length()) {
-                    //something went wrong
+                    // something went wrong
                     break;
                 }
                 int startPos = pos + 8;
@@ -110,8 +100,7 @@ public class LyricsHandler {
     }
 
     /**
-     * Reads and returns the last <code>length</code> bytes from the
-     * given stream.
+     * Reads and returns the last <code>length</code> bytes from the given stream.
      *
      * @param stream input stream
      * @param length number of bytes from the end to read and return

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.executable;
 
@@ -23,11 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.MachineMetadata;
@@ -37,6 +31,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for executable files. Currently supports ELF and PE
@@ -64,23 +60,22 @@ public class ExecutableParser implements Parser, MachineMetadata {
     private static final MediaType MACH_O_BUNDLE = MediaType.application("x-mach-o-bundle");
     private static final MediaType MACH_O_DYLIB_STUB = MediaType.application("x-mach-o-dylib-stub");
     private static final MediaType MACH_O_DSYM = MediaType.application("x-mach-o-dsym");
-    private static final MediaType MACH_O_KEXT_BUNDLE = MediaType.application(
-            "x-mach-o-kext-bundle");
+    private static final MediaType MACH_O_KEXT_BUNDLE =
+                    MediaType.application("x-mach-o-kext-bundle");
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(
-                    Arrays.asList(PE_EXE, ELF_GENERAL, ELF_OBJECT, ELF_EXECUTABLE, ELF_SHAREDLIB,
-                            ELF_COREDUMP, MACH_O, MACH_O_OBJECT, MACH_O_EXECUTABLE,
-                            MACH_O_FVMLIB, MACH_O_CORE, MACH_O_PRELOAD, MACH_O_DYLIB,
-                            MACH_O_DYLINKER, MACH_O_BUNDLE, MACH_O_DYLIB_STUB, MACH_O_DSYM,
-                            MACH_O_KEXT_BUNDLE)));
+    private static final Set<MediaType> SUPPORTED_TYPES =
+                    Collections.unmodifiableSet(new HashSet<>(Arrays.asList(PE_EXE, ELF_GENERAL,
+                                    ELF_OBJECT, ELF_EXECUTABLE, ELF_SHAREDLIB, ELF_COREDUMP, MACH_O,
+                                    MACH_O_OBJECT, MACH_O_EXECUTABLE, MACH_O_FVMLIB, MACH_O_CORE,
+                                    MACH_O_PRELOAD, MACH_O_DYLIB, MACH_O_DYLINKER, MACH_O_BUNDLE,
+                                    MACH_O_DYLIB_STUB, MACH_O_DSYM, MACH_O_KEXT_BUNDLE)));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         // We only do metadata, for now
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
@@ -90,15 +85,15 @@ public class ExecutableParser implements Parser, MachineMetadata {
 
         if (first4[0] == (byte) 'M' && first4[1] == (byte) 'Z') {
             parsePE(xhtml, metadata, stream, first4);
-        } else if (first4[0] == (byte) 0x7f && first4[1] == (byte) 'E' && first4[2] == (byte) 'L' &&
-                first4[3] == (byte) 'F') {
+        } else if (first4[0] == (byte) 0x7f && first4[1] == (byte) 'E' && first4[2] == (byte) 'L'
+                        && first4[3] == (byte) 'F') {
             parseELF(xhtml, metadata, stream, first4);
-        } else if ((first4[0] == (byte) 0xCF || first4[0] == (byte) 0xCE) &&
-                first4[1] == (byte) 0xFA && first4[2] == (byte) 0xED && first4[3] == (byte) 0xFE) {
+        } else if ((first4[0] == (byte) 0xCF || first4[0] == (byte) 0xCE)
+                        && first4[1] == (byte) 0xFA && first4[2] == (byte) 0xED
+                        && first4[3] == (byte) 0xFE) {
             parseMachO(xhtml, metadata, stream, first4);
-        } else if (first4[0] == (byte) 0xFE && first4[1] == (byte) 0xED &&
-                first4[2] == (byte) 0xFA &&
-                (first4[3] == (byte) 0xCF || first4[3] == (byte) 0xCE)) {
+        } else if (first4[0] == (byte) 0xFE && first4[1] == (byte) 0xED && first4[2] == (byte) 0xFA
+                        && (first4[3] == (byte) 0xCF || first4[3] == (byte) 0xCE)) {
             parseMachO(xhtml, metadata, stream, first4);
         }
 
@@ -111,7 +106,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
      * Parses a DOS or Windows PE file
      */
     public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, InputStream stream,
-                        byte[] first4) throws TikaException, IOException {
+                    byte[] first4) throws TikaException, IOException {
         metadata.set(Metadata.CONTENT_TYPE, PE_EXE.toString());
         metadata.set(PLATFORM, PLATFORM_WINDOWS);
 
@@ -128,7 +123,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
         }
 
         // Skip the rest of the MS-DOS stub (if PE), until we reach what should
-        //  be the PE header (if this is a PE executable)
+        // be the PE header (if this is a PE executable)
         stream.skip(peOffset - 0x40);
 
         // Read the PE header
@@ -257,7 +252,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
      * Parses a Unix ELF file
      */
     public void parseELF(XHTMLContentHandler xhtml, Metadata metadata, InputStream stream,
-                         byte[] first4) throws TikaException, IOException {
+                    byte[] first4) throws TikaException, IOException {
         // Byte 5 is the architecture
         int architecture = stream.read();
         if (architecture == 1) {
@@ -433,7 +428,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
      * Parses a Mach-O file
      */
     public void parseMachO(XHTMLContentHandler xhtml, Metadata metadata, InputStream stream,
-                           byte[] first4) throws TikaException, IOException {
+                    byte[] first4) throws TikaException, IOException {
         var isLE = first4[3] == (byte) 0xFE;
         if (isLE) {
             metadata.set(ENDIAN, Endian.LITTLE.getName());
@@ -442,9 +437,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
         }
 
         // Bytes 5-8 are the CPU type and architecture bits
-        var cpuType = isLE
-                ? EndianUtils.readIntLE(stream)
-                : EndianUtils.readIntBE(stream);
+        var cpuType = isLE ? EndianUtils.readIntLE(stream) : EndianUtils.readIntBE(stream);
         if ((cpuType >> 24) == 1) {
             metadata.set(ARCHITECTURE_BITS, "64");
         }
@@ -480,14 +473,10 @@ public class ExecutableParser implements Parser, MachineMetadata {
         }
 
         // Bytes 9-12 are the CPU subtype
-        var cpuSubtype = isLE
-                ? EndianUtils.readIntLE(stream)
-                : EndianUtils.readIntBE(stream);
+        var cpuSubtype = isLE ? EndianUtils.readIntLE(stream) : EndianUtils.readIntBE(stream);
 
         // Bytes 13-16 are the file type
-        var fileType = isLE
-                ? EndianUtils.readIntLE(stream)
-                : EndianUtils.readIntBE(stream);
+        var fileType = isLE ? EndianUtils.readIntLE(stream) : EndianUtils.readIntBE(stream);
         switch (fileType) {
             case 0x1:
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O_OBJECT.toString());

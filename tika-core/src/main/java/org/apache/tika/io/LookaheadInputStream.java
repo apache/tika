@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.io;
 
@@ -20,24 +18,23 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Stream wrapper that make it easy to read up to n bytes ahead from
- * a stream that supports the mark feature. This class insulates the
- * underlying stream from things like possible mark(), reset() and close()
- * calls by external components that might otherwise invalidate the marked
- * state of a stream.
+ * Stream wrapper that make it easy to read up to n bytes ahead from a stream that supports the mark
+ * feature. This class insulates the underlying stream from things like possible mark(), reset() and
+ * close() calls by external components that might otherwise invalidate the marked state of a
+ * stream.
  * <p>
  * The recommended usage pattern of this class is:
+ * 
  * <pre>
- *     try (InputStream lookahead = new LookaheadInputStream(stream, n)) {
- *         processStream(lookahead);
- *     }
+ * try (InputStream lookahead = new LookaheadInputStream(stream, n)) {
+ *     processStream(lookahead);
+ * }
  * </pre>
  * <p>
- * This usage pattern guarantees that only up to n bytes from the original
- * stream can ever be read, and that the stream will have been marked and
- * then reset to its original state once the above code block exits. No
- * code in the fictional processStream() method can affect the the state of
- * the original stream.
+ * This usage pattern guarantees that only up to n bytes from the original stream can ever be read,
+ * and that the stream will have been marked and then reset to its original state once the above
+ * code block exits. No code in the fictional processStream() method can affect the the state of the
+ * original stream.
  *
  * @since Apache Tika 0.10
  */
@@ -52,14 +49,13 @@ public class LookaheadInputStream extends InputStream {
     private int mark = 0;
 
     /**
-     * Creates a lookahead wrapper for the given input stream.
-     * The given input stream should support the mark feature,
-     * as otherwise the state of that stream will be undefined
-     * after the lookahead wrapper has been closed. As a special
-     * case a <code>null</code> stream is treated as an empty stream.
+     * Creates a lookahead wrapper for the given input stream. The given input stream should support
+     * the mark feature, as otherwise the state of that stream will be undefined after the lookahead
+     * wrapper has been closed. As a special case a <code>null</code> stream is treated as an empty
+     * stream.
      *
      * @param stream input stream, can be <code>null</code>
-     * @param n      maximum number of bytes to look ahead
+     * @param n maximum number of bytes to look ahead
      */
     public LookaheadInputStream(InputStream stream, int n) {
         this.stream = stream;

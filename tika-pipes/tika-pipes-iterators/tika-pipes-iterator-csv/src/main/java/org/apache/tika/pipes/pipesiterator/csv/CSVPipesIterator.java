@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.pipesiterator.csv;
 
@@ -28,12 +26,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
-
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -47,34 +41,31 @@ import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Iterates through a UTF-8 CSV file. This adds all columns
- * (except for the 'fetchKeyColumn' and 'emitKeyColumn', if specified)
- * to the metadata object.
+ * Iterates through a UTF-8 CSV file. This adds all columns (except for the 'fetchKeyColumn' and
+ * 'emitKeyColumn', if specified) to the metadata object.
  * <p>
- *  <ul>
- *      <li>If an 'idColumn' is specified, this will use that
- *      column's value as the id.</li>
- *      <li>If no 'idColumn' is specified, but a 'fetchKeyColumn' is specified,
- *          the string in the 'fetchKeyColumn' will be used as the 'id'.</li>
- *      <li>The 'idColumn' value is not added to the metadata.</li>
- *  </ul>
- *  <ul>
- *      <li>If a 'fetchKeyColumn' is specified, this will use that
- *      column's value as the fetchKey.</li>
- *      <li>If no 'fetchKeyColumn' is specified, this will send the
- *      metadata from the other columns.</li>
- *      <li>The 'fetchKeyColumn' value is not added to the metadata.</li>
- *  </ul>
+ * <ul>
+ * <li>If an 'idColumn' is specified, this will use that column's value as the id.</li>
+ * <li>If no 'idColumn' is specified, but a 'fetchKeyColumn' is specified, the string in the
+ * 'fetchKeyColumn' will be used as the 'id'.</li>
+ * <li>The 'idColumn' value is not added to the metadata.</li>
+ * </ul>
+ * <ul>
+ * <li>If a 'fetchKeyColumn' is specified, this will use that column's value as the fetchKey.</li>
+ * <li>If no 'fetchKeyColumn' is specified, this will send the metadata from the other columns.</li>
+ * <li>The 'fetchKeyColumn' value is not added to the metadata.</li>
+ * </ul>
  * <p>
- *  <ul>
- *      <li>If an 'emitKeyColumn' is specified, this will use that
- *      column's value as the emit key.</li>
- *      <li>If an 'emitKeyColumn' is not specified, this will use
- *      the value from the 'fetchKeyColumn'.</li>
- *      <li>The 'emitKeyColumn' value is not added to the metadata.</li>
- *  </ul>
+ * <ul>
+ * <li>If an 'emitKeyColumn' is specified, this will use that column's value as the emit key.</li>
+ * <li>If an 'emitKeyColumn' is not specified, this will use the value from the
+ * 'fetchKeyColumn'.</li>
+ * <li>The 'emitKeyColumn' value is not added to the metadata.</li>
+ * </ul>
  */
 public class CSVPipesIterator extends PipesIterator implements Initializable {
 
@@ -135,7 +126,8 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
                 String fetchKey = record.get(fetchEmitKeyIndices.fetchKeyIndex);
                 String emitKey = record.get(fetchEmitKeyIndices.emitKeyIndex);
                 if (StringUtils.isBlank(fetchKey) && !StringUtils.isBlank(fetcherName)) {
-                    LOGGER.debug("Fetcher specified ({}), but no fetchkey was found in ({})", fetcherName, record);
+                    LOGGER.debug("Fetcher specified ({}), but no fetchkey was found in ({})",
+                                    fetcherName, record);
                 }
                 if (StringUtils.isBlank(emitKey)) {
                     throw new IOException("emitKey must not be blank in :" + record);
@@ -144,19 +136,24 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
                 Metadata metadata = loadMetadata(fetchEmitKeyIndices, headers, record);
                 ParseContext parseContext = new ParseContext();
                 parseContext.set(HandlerConfig.class, handlerConfig);
-                tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey), new EmitKey(emitterName, emitKey), metadata, parseContext, getOnParseException()));
+                tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey),
+                                new EmitKey(emitterName, emitKey), metadata, parseContext,
+                                getOnParseException()));
             }
         }
     }
 
-    private void checkFetchEmitValidity(String fetcherName, String emitterName, FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers) throws TikaConfigException {
+    private void checkFetchEmitValidity(String fetcherName, String emitterName,
+                    FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers)
+                    throws TikaConfigException {
 
         if (StringUtils.isBlank(emitterName)) {
             throw new TikaConfigException("must specify at least an emitterName");
         }
 
         if (StringUtils.isBlank(fetcherName) && !StringUtils.isBlank(fetchKeyColumn)) {
-            throw new TikaConfigException("If specifying a 'fetchKeyColumn', " + "you must also specify a 'fetcherName'");
+            throw new TikaConfigException("If specifying a 'fetchKeyColumn', "
+                            + "you must also specify a 'fetcherName'");
         }
 
         if (StringUtils.isBlank(fetcherName)) {
@@ -166,28 +163,34 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
         if (StringUtils.isBlank(fetchKeyColumn)) {
             throw new TikaConfigException("must specify fetchKeyColumn");
         }
-        //if a fetchkeycolumn is specified, make sure that it was found
+        // if a fetchkeycolumn is specified, make sure that it was found
         if (!StringUtils.isBlank(fetchKeyColumn) && fetchEmitKeyIndices.fetchKeyIndex < 0) {
-            throw new TikaConfigException("Couldn't find fetchKeyColumn (" + fetchKeyColumn + " in header.\n" + "These are the headers I see: " + headers);
+            throw new TikaConfigException("Couldn't find fetchKeyColumn (" + fetchKeyColumn
+                            + " in header.\n" + "These are the headers I see: " + headers);
         }
 
-        //if an emitkeycolumn is specified, make sure that it was found
+        // if an emitkeycolumn is specified, make sure that it was found
         if (!StringUtils.isBlank(emitKeyColumn) && fetchEmitKeyIndices.emitKeyIndex < 0) {
-            throw new TikaConfigException("Couldn't find emitKeyColumn (" + emitKeyColumn + " in header.\n" + "These are the headers I see: " + headers);
+            throw new TikaConfigException("Couldn't find emitKeyColumn (" + emitKeyColumn
+                            + " in header.\n" + "These are the headers I see: " + headers);
         }
 
-        //if an idcolumn is specified, make sure that it was found
+        // if an idcolumn is specified, make sure that it was found
         if (!StringUtils.isBlank(idColumn) && fetchEmitKeyIndices.idIndex < 0) {
-            throw new TikaConfigException("Couldn't find idColumn (" + idColumn + " in header.\n" + "These are the headers I see: " + headers);
+            throw new TikaConfigException("Couldn't find idColumn (" + idColumn + " in header.\n"
+                            + "These are the headers I see: " + headers);
         }
 
         if (StringUtils.isBlank(emitKeyColumn)) {
-            LOGGER.warn("No emitKeyColumn specified. " + "Will use fetchKeyColumn ({}) for both the fetch key and emit key", fetchKeyColumn);
+            LOGGER.warn("No emitKeyColumn specified. "
+                            + "Will use fetchKeyColumn ({}) for both the fetch key and emit key",
+                            fetchKeyColumn);
         }
 
     }
 
-    private Metadata loadMetadata(FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers, CSVRecord record) {
+    private Metadata loadMetadata(FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers,
+                    CSVRecord record) {
         Metadata metadata = new Metadata();
         for (int i = 0; i < record.size(); i++) {
             if (fetchEmitKeyIndices.shouldSkip(i)) {
@@ -199,14 +202,16 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
     }
 
 
-    private FetchEmitKeyIndices loadHeaders(CSVRecord record, List<String> headers) throws IOException {
+    private FetchEmitKeyIndices loadHeaders(CSVRecord record, List<String> headers)
+                    throws IOException {
         int fetchKeyColumnIndex = -1;
         int emitKeyColumnIndex = -1;
         int idIndex = -1;
         for (int col = 0; col < record.size(); col++) {
             String header = record.get(col);
             if (StringUtils.isBlank(header)) {
-                throw new IOException(new TikaException("Header in column (" + col + ") must not be empty"));
+                throw new IOException(new TikaException(
+                                "Header in column (" + col + ") must not be empty"));
             }
             headers.add(header);
             if (header.equals(fetchKeyColumn)) {
@@ -231,7 +236,8 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+                    throws TikaConfigException {
         super.checkInitialization(problemHandler);
         mustNotBeEmpty("csvPath", this.csvPath);
     }

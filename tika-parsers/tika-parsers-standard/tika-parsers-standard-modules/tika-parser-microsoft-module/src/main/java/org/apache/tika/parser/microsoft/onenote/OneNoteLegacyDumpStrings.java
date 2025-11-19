@@ -1,38 +1,31 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * OneNote versions before OneNote 2010 do not have a published OpenSpec document, and the older
- * formats are drastically
- * incompatible with the later OpenSpecs.
- * Therefore, we resort to scraping out useful ASCII and UTF16LE strings using a similar
- * algorithm used by the GNU "strings"
- * program.
+ * formats are drastically incompatible with the later OpenSpecs. Therefore, we resort to scraping
+ * out useful ASCII and UTF16LE strings using a similar algorithm used by the GNU "strings" program.
  * <p>
  * This is only needed for OneNote versions prior to 2010.
  */
@@ -48,7 +41,7 @@ class OneNoteLegacyDumpStrings {
     XHTMLContentHandler xhtml;
 
     public OneNoteLegacyDumpStrings(OneNoteDirectFileResource oneNoteDirectFileResource,
-                                    XHTMLContentHandler xhtml) {
+                    XHTMLContentHandler xhtml) {
         this.oneNoteDirectFileResource = oneNoteDirectFileResource;
         this.xhtml = xhtml;
     }
@@ -65,13 +58,14 @@ class OneNoteLegacyDumpStrings {
     }
 
     /**
-     * Based on GNU "strings" implementation. Pulls out ascii text segments and writes them to
-     * the XHTMLContentHandler.
+     * Based on GNU "strings" implementation. Pulls out ascii text segments and writes them to the
+     * XHTMLContentHandler.
      */
     private void dumpAscii() throws SAXException, TikaException {
         try {
             oneNoteDirectFileResource.position(0);
-            UnsynchronizedByteArrayOutputStream os = UnsynchronizedByteArrayOutputStream.builder().get();
+            UnsynchronizedByteArrayOutputStream os =
+                            UnsynchronizedByteArrayOutputStream.builder().get();
             long sz = oneNoteDirectFileResource.size();
             long pos;
             while ((pos = oneNoteDirectFileResource.position()) != sz) {
@@ -108,7 +102,8 @@ class OneNoteLegacyDumpStrings {
     private void dumpUtf16LE() throws SAXException, TikaException {
         try {
             oneNoteDirectFileResource.position(0);
-            UnsynchronizedByteArrayOutputStream os = UnsynchronizedByteArrayOutputStream.builder().get();
+            UnsynchronizedByteArrayOutputStream os =
+                            UnsynchronizedByteArrayOutputStream.builder().get();
             long sz = oneNoteDirectFileResource.size();
             long bufSize = BUFFER_SIZE;
             // Make sure the buffer size is a multiple of 2.
@@ -149,8 +144,7 @@ class OneNoteLegacyDumpStrings {
 
     /**
      * Writes a buffer of output characters if the (num alpha chars in the buffer) / (number of
-     * chars in the buffer) >
-     * ACCEPTABLE_ALPHA_TO_OTHER_CHAR_RATIO.
+     * chars in the buffer) > ACCEPTABLE_ALPHA_TO_OTHER_CHAR_RATIO.
      *
      * @param os Byte array output stream containing the buffer.
      */

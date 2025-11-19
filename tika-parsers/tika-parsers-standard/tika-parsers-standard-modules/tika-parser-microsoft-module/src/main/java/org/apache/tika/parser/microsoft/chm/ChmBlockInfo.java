@@ -1,27 +1,24 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.chm;
 
 /**
- * A container that contains chm block information such as: i. initial block is
- * using to reset main tree ii. start block is using for knowing where to start
- * iii. end block is using for knowing where to stop iv. start offset is using
- * for knowing where to start reading v. end offset is using for knowing where
- * to stop reading
+ * A container that contains chm block information such as: i. initial block is using to reset main
+ * tree ii. start block is using for knowing where to start iii. end block is using for knowing
+ * where to stop iv. start offset is using for knowing where to start reading v. end offset is using
+ * for knowing where to stop reading
  */
 public class ChmBlockInfo {
     /* class members */
@@ -37,16 +34,13 @@ public class ChmBlockInfo {
 
     @Deprecated
     public static ChmBlockInfo getChmBlockInfoInstance(DirectoryListingEntry dle, int bytesPerBlock,
-                                                       ChmLzxcControlData clcd)
-            throws ChmParsingException {
+                    ChmLzxcControlData clcd) throws ChmParsingException {
         return getChmBlockInfoInstance(dle, bytesPerBlock, clcd, new ChmBlockInfo());
     }
 
 
     public static ChmBlockInfo getChmBlockInfoInstance(DirectoryListingEntry dle, int bytesPerBlock,
-                                                       ChmLzxcControlData clcd,
-                                                       ChmBlockInfo chmBlockInfo)
-            throws ChmParsingException {
+                    ChmLzxcControlData clcd, ChmBlockInfo chmBlockInfo) throws ChmParsingException {
         if (chmBlockInfo == null) {
             chmBlockInfo = new ChmBlockInfo();
         }
@@ -60,15 +54,15 @@ public class ChmBlockInfo {
         chmBlockInfo.setStartOffset(dle.getOffset() % bytesPerBlock);
         chmBlockInfo.setEndOffset((dle.getOffset() + dle.getLength()) % bytesPerBlock);
         // potential problem with casting long to int
-        chmBlockInfo.setIniBlock(
-                chmBlockInfo.startBlock - chmBlockInfo.startBlock % (int) clcd.getResetInterval());
-//                (getChmBlockInfo().startBlock - getChmBlockInfo().startBlock)
-//                        % (int) clcd.getResetInterval());
+        chmBlockInfo.setIniBlock(chmBlockInfo.startBlock
+                        - chmBlockInfo.startBlock % (int) clcd.getResetInterval());
+        // (getChmBlockInfo().startBlock - getChmBlockInfo().startBlock)
+        // % (int) clcd.getResetInterval());
         return chmBlockInfo;
     }
 
     private static boolean validateParameters(DirectoryListingEntry dle, int bytesPerBlock,
-                                              ChmLzxcControlData clcd, ChmBlockInfo chmBlockInfo) {
+                    ChmLzxcControlData clcd, ChmBlockInfo chmBlockInfo) {
         int goodParameter = 0;
         if (dle != null) {
             ++goodParameter;
@@ -85,8 +79,7 @@ public class ChmBlockInfo {
         return (goodParameter == 4);
     }
 
-    public static void main(String[] args) {
-    }
+    public static void main(String[] args) {}
 
     /**
      * Returns textual representation of ChmBlockInfo
@@ -97,7 +90,8 @@ public class ChmBlockInfo {
         sb.append("startBlock:=").append(getStartBlock()).append(", ");
         sb.append("endBlock:=").append(getEndBlock()).append(", ");
         sb.append("startOffset:=").append(getStartOffset()).append(", ");
-        sb.append("endOffset:=").append(getEndOffset()).append(System.getProperty("line.separator"));
+        sb.append("endOffset:=").append(getEndOffset())
+                        .append(System.getProperty("line.separator"));
         return sb.toString();
     }
 

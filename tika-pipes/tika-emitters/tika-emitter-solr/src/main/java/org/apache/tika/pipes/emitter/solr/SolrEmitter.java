@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.emitter.solr;
 
@@ -26,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.solr.client.solrj.impl.Http2SolrClient;
@@ -34,9 +31,6 @@ import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -49,6 +43,8 @@ import org.apache.tika.pipes.core.emitter.AbstractEmitter;
 import org.apache.tika.pipes.core.emitter.EmitData;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class SolrEmitter extends AbstractEmitter implements Initializable {
@@ -60,7 +56,8 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     private UpdateStrategy updateStrategy = UpdateStrategy.ADD;
     private String solrCollection;
     /**
-     * You can specify solrUrls, or you can specify solrZkHosts and use use zookeeper to determine the solr server urls.
+     * You can specify solrUrls, or you can specify solrZkHosts and use use zookeeper to determine
+     * the solr server urls.
      */
     private List<String> solrUrls;
     private List<String> solrZkHosts;
@@ -78,7 +75,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
 
     @Override
     public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
-            throws IOException, TikaEmitterException {
+                    throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.size() == 0) {
             LOG.warn("metadataList is null or empty");
             return;
@@ -89,8 +86,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     }
 
     private void addMetadataAsSolrInputDocuments(String emitKey, List<Metadata> metadataList,
-                                                 List<SolrInputDocument> docsToUpdate)
-            throws IOException, TikaEmitterException {
+                    List<SolrInputDocument> docsToUpdate) throws IOException, TikaEmitterException {
         SolrInputDocument solrInputDocument = new SolrInputDocument();
         solrInputDocument.setField(idField, emitKey);
         if (updateStrategy == UpdateStrategy.UPDATE_MUST_EXIST) {
@@ -107,8 +103,8 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
             for (int i = 1; i < metadataList.size(); i++) {
                 SolrInputDocument childSolrInputDocument = new SolrInputDocument();
                 Metadata m = metadataList.get(i);
-                childSolrInputDocument
-                        .setField(idField, emitKey + "-" + UUID.randomUUID().toString());
+                childSolrInputDocument.setField(idField,
+                                emitKey + "-" + UUID.randomUUID().toString());
                 addMetadataToSolrInputDocument(m, childSolrInputDocument, updateStrategy);
                 children.add(childSolrInputDocument);
             }
@@ -120,14 +116,14 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
             for (int i = 1; i < metadataList.size(); i++) {
                 SolrInputDocument childSolrInputDocument = new SolrInputDocument();
                 Metadata m = metadataList.get(i);
-                childSolrInputDocument.setField(idField,
-                        solrInputDocument.get(idField).getValue() + "-" + UUID.randomUUID().toString());
+                childSolrInputDocument.setField(idField, solrInputDocument.get(idField).getValue()
+                                + "-" + UUID.randomUUID().toString());
                 addMetadataToSolrInputDocument(m, childSolrInputDocument, updateStrategy);
                 docsToUpdate.add(childSolrInputDocument);
             }
         } else {
             throw new IllegalArgumentException(
-                    "I don't yet support this attachment strategy: " + attachmentStrategy);
+                            "I don't yet support this attachment strategy: " + attachmentStrategy);
         }
     }
 
@@ -140,13 +136,13 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         List<SolrInputDocument> docsToUpdate = new ArrayList<>();
         for (EmitData d : batch) {
             addMetadataAsSolrInputDocuments(d.getEmitKey().getEmitKey(), d.getMetadataList(),
-                    docsToUpdate);
+                            docsToUpdate);
         }
         emitSolrBatch(docsToUpdate);
     }
 
     private void emitSolrBatch(List<SolrInputDocument> docsToUpdate)
-            throws IOException, TikaEmitterException {
+                    throws IOException, TikaEmitterException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Emitting solr doc batch: {}", docsToUpdate);
         }
@@ -168,8 +164,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     }
 
     private void addMetadataToSolrInputDocument(Metadata metadata,
-                                                SolrInputDocument solrInputDocument,
-                                                UpdateStrategy updateStrategy) {
+                    SolrInputDocument solrInputDocument, UpdateStrategy updateStrategy) {
         for (String n : metadata.names()) {
             String[] vals = metadata.getValues(n);
             if (vals.length == 0) {
@@ -199,14 +194,13 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     }
 
     /**
-     * Options: SKIP, CONCATENATE_CONTENT, PARENT_CHILD. Default is "PARENT_CHILD".
-     * If set to "SKIP", this will index only the main file and ignore all info
-     * in the attachments.  If set to "CONCATENATE_CONTENT", this will concatenate the
-     * content extracted from the attachments into the main document and
-     * then index the main document with the concatenated content _and_ the
-     * main document's metadata (metadata from attachments will be thrown away).
-     * If set to "PARENT_CHILD", this will index the attachments as children
-     * of the parent document via Solr's parent-child relationship.
+     * Options: SKIP, CONCATENATE_CONTENT, PARENT_CHILD. Default is "PARENT_CHILD". If set to
+     * "SKIP", this will index only the main file and ignore all info in the attachments. If set to
+     * "CONCATENATE_CONTENT", this will concatenate the content extracted from the attachments into
+     * the main document and then index the main document with the concatenated content _and_ the
+     * main document's metadata (metadata from attachments will be thrown away). If set to
+     * "PARENT_CHILD", this will index the attachments as children of the parent document via Solr's
+     * parent-child relationship.
      */
     @Field
     public void setAttachmentStrategy(String attachmentStrategy) {
@@ -238,8 +232,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     }
 
     /**
-     * Specify the field in the first Metadata that should be
-     * used as the id field for the document.
+     * Specify the field in the first Metadata that should be used as the id field for the document.
      *
      * @param idField
      */
@@ -268,7 +261,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         this.solrZkChroot = solrZkChroot;
     }
 
-    //TODO -- add other httpclient configurations??
+    // TODO -- add other httpclient configurations??
     @Field
     public void setUserName(String userName) {
         httpClientFactory.setUserName(userName);
@@ -295,10 +288,9 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     }
 
     /**
-     * If using the {@link AttachmentStrategy#PARENT_CHILD}, this is the field name
-     * used to store the child documents.  Note that we artificially flatten all embedded
-     * documents, no matter how nested in the container document, into direct children
-     * of the root document.
+     * If using the {@link AttachmentStrategy#PARENT_CHILD}, this is the field name used to store
+     * the child documents. Note that we artificially flatten all embedded documents, no matter how
+     * nested in the container document, into direct children of the root document.
      *
      * @param embeddedFileFieldName
      */
@@ -310,48 +302,51 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         if (solrUrls == null || solrUrls.isEmpty()) {
-            //TODO -- there's more that we need to pass through, including ssl etc.
+            // TODO -- there's more that we need to pass through, including ssl etc.
             Http2SolrClient.Builder http2SolrClientBuilder = new Http2SolrClient.Builder();
             if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
-                http2SolrClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
+                http2SolrClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(),
+                                httpClientFactory.getPassword());
             }
             http2SolrClientBuilder
-                    .withRequestTimeout(httpClientFactory.getRequestTimeout(), TimeUnit.MILLISECONDS)
-                    .withConnectionTimeout(connectionTimeout, TimeUnit.MILLISECONDS);
+                            .withRequestTimeout(httpClientFactory.getRequestTimeout(),
+                                            TimeUnit.MILLISECONDS)
+                            .withConnectionTimeout(connectionTimeout, TimeUnit.MILLISECONDS);
 
 
             Http2SolrClient http2SolrClient = http2SolrClientBuilder.build();
             solrClient = new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(solrZkChroot))
-                    .withHttpClient(http2SolrClient)
-                    .build();
+                            .withHttpClient(http2SolrClient).build();
 
         } else {
-            solrClient = new LBHttpSolrClient.Builder().withConnectionTimeout(connectionTimeout, TimeUnit.MILLISECONDS)
-                    .withSocketTimeout(socketTimeout, TimeUnit.MILLISECONDS).withHttpClient(httpClientFactory.build())
-                    .withBaseEndpoints(solrUrls.toArray(new String[]{})).build();
+            solrClient = new LBHttpSolrClient.Builder()
+                            .withConnectionTimeout(connectionTimeout, TimeUnit.MILLISECONDS)
+                            .withSocketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
+                            .withHttpClient(httpClientFactory.build())
+                            .withBaseEndpoints(solrUrls.toArray(new String[] {})).build();
         }
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+                    throws TikaConfigException {
         mustNotBeEmpty("solrCollection", this.solrCollection);
         mustNotBeEmpty("urlFieldName", this.idField);
-        if ((this.solrUrls == null || this.solrUrls.isEmpty()) &&
-                (this.solrZkHosts == null || this.solrZkHosts.isEmpty())) {
+        if ((this.solrUrls == null || this.solrUrls.isEmpty())
+                        && (this.solrZkHosts == null || this.solrZkHosts.isEmpty())) {
             throw new IllegalArgumentException(
-                    "expected either param solrUrls or param solrZkHosts, but neither was specified");
+                            "expected either param solrUrls or param solrZkHosts, but neither was specified");
         }
-        if (this.solrUrls != null && !this.solrUrls.isEmpty() && this.solrZkHosts != null &&
-                !this.solrZkHosts.isEmpty()) {
+        if (this.solrUrls != null && !this.solrUrls.isEmpty() && this.solrZkHosts != null
+                        && !this.solrZkHosts.isEmpty()) {
             throw new IllegalArgumentException(
-                    "expected either param solrUrls or param solrZkHosts, but both were specified");
+                            "expected either param solrUrls or param solrZkHosts, but both were specified");
         }
     }
 
     public enum AttachmentStrategy {
         SEPARATE_DOCUMENTS, PARENT_CHILD,
-        //anything else?
+        // anything else?
     }
 
     public enum UpdateStrategy {

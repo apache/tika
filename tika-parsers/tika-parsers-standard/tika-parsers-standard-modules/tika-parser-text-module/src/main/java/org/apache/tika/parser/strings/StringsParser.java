@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.strings;
 
@@ -30,11 +28,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -51,12 +45,13 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.SystemUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * Parser that uses the "strings" (or strings-alternative) command to find the
- * printable strings in a object, or other binary, file
- * (application/octet-stream). Useful as "best-effort" parser for files detected
- * as application/octet-stream.
+ * Parser that uses the "strings" (or strings-alternative) command to find the printable strings in
+ * a object, or other binary, file (application/octet-stream). Useful as "best-effort" parser for
+ * files detected as application/octet-stream.
  *
  * @author gtotaro
  */
@@ -67,7 +62,7 @@ public class StringsParser implements Parser, Initializable {
     private static final long serialVersionUID = 802566634661575025L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.OCTET_STREAM);
+                    Collections.singleton(MediaType.OCTET_STREAM);
 
     private final StringsConfig defaultStringsConfig = new StringsConfig();
 
@@ -76,7 +71,7 @@ public class StringsParser implements Parser, Initializable {
     private FileCommandDetector fileCommandDetector;
 
     private boolean stringsPresent = false;
-    private boolean hasEncodingOption = false;//whether or not the strings app allows -e
+    private boolean hasEncodingOption = false;// whether or not the strings app allows -e
 
     private String stringsPath = "";
 
@@ -91,7 +86,7 @@ public class StringsParser implements Parser, Initializable {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
 
         if (!stringsPresent) {
             return;
@@ -146,11 +141,10 @@ public class StringsParser implements Parser, Initializable {
             }
             // Check if the -e option (encoding) is supported
             if (!SystemUtils.IS_OS_WINDOWS) {
-                String[] checkOpt =
-                        {stringsProg, "-e", "" + defaultStringsConfig.getEncoding().get(),
-                                "/dev/null"};
-                int[] errorValues =
-                        {1, 2}; // Exit status code: 1 = general error; 2 = incorrect usage.
+                String[] checkOpt = {stringsProg, "-e",
+                                "" + defaultStringsConfig.getEncoding().get(), "/dev/null"};
+                int[] errorValues = {1, 2}; // Exit status code: 1 = general error; 2 = incorrect
+                                            // usage.
                 hasEncodingOption = ExternalParser.check(checkOpt, errorValues);
             }
         } catch (NoClassDefFoundError ncdfe) {
@@ -163,17 +157,16 @@ public class StringsParser implements Parser, Initializable {
     /**
      * Runs the "strings" command on the given file.
      *
-     * @param input  {@see File} object that represents the file to parse.
-     * @param config {@see StringsConfig} object including the strings
-     *               configuration.
-     * @param xhtml  {@see XHTMLContentHandler} object.
+     * @param input {@see File} object that represents the file to parse.
+     * @param config {@see StringsConfig} object including the strings configuration.
+     * @param xhtml {@see XHTMLContentHandler} object.
      * @return the total number of bytes read using the strings command.
-     * @throws IOException   if any I/O error occurs.
+     * @throws IOException if any I/O error occurs.
      * @throws TikaException if the parsing process has been interrupted.
      * @throws SAXException
      */
     private int doStrings(File input, StringsConfig config, XHTMLContentHandler xhtml)
-            throws IOException, TikaException, SAXException {
+                    throws IOException, TikaException, SAXException {
 
         String stringsProg = getStringsPath() + getStringsProg();
 
@@ -215,7 +208,7 @@ public class StringsParser implements Parser, Initializable {
     }
 
     private Thread logStream(final InputStream stream, final ContentHandler handler,
-                             final AtomicInteger totalBytes) {
+                    final AtomicInteger totalBytes) {
         return new Thread(() -> {
             Reader reader = new InputStreamReader(stream, UTF_8);
             char[] buffer = new char[1024];
@@ -225,7 +218,7 @@ public class StringsParser implements Parser, Initializable {
                     totalBytes.addAndGet(n);
                 }
             } catch (SAXException | IOException e) {
-                //swallow
+                // swallow
             } finally {
                 IOUtils.closeQuietly(stream);
             }
@@ -286,6 +279,5 @@ public class StringsParser implements Parser, Initializable {
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-    }
+                    throws TikaConfigException {}
 }

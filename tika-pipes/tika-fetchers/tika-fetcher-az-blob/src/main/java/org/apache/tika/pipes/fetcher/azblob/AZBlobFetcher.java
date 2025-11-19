@@ -1,27 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.fetcher.azblob;
 
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.util.Map;
 
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobClientBuilder;
@@ -29,9 +22,10 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.azure.storage.blob.models.BlobProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.util.Map;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -45,21 +39,22 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.azblob.config.AZBlobFetcherConfig;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Fetches files from Azure blob storage.
  * <p>
- * There are two modes:
- * 1) If you are only using one endpoint and one sas token and one container,
- * configure those in the config file.  In this case, your fetchKey will
- * be the path in the container to the blob.
- * 2) If you have different endpoints or sas tokens or containers across
- * your requests, your fetchKey will be the complete SAS url pointing to the blob.
+ * There are two modes: 1) If you are only using one endpoint and one sas token and one container,
+ * configure those in the config file. In this case, your fetchKey will be the path in the container
+ * to the blob. 2) If you have different endpoints or sas tokens or containers across your requests,
+ * your fetchKey will be the complete SAS url pointing to the blob.
  */
 public class AZBlobFetcher extends AbstractFetcher implements Initializable {
     public AZBlobFetcher() {
 
     }
+
     public AZBlobFetcher(AZBlobFetcherConfig azBlobFetcherConfig) {
         setContainer(azBlobFetcherConfig.getContainer());
         setEndpoint(azBlobFetcherConfig.getEndpoint());
@@ -80,7 +75,8 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
     private boolean spoolToTemp = true;
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+                    throws TikaException, IOException {
 
         LOGGER.debug("about to fetch fetchkey={} from endpoint ({})", fetchKey, endpoint);
 
@@ -90,9 +86,7 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
             if (extractUserMetadata) {
                 BlobProperties properties = blobClient.getProperties();
                 if (properties.getMetadata() != null) {
-                    for (Map.Entry<String, String> e : properties
-                            .getMetadata()
-                            .entrySet()) {
+                    for (Map.Entry<String, String> e : properties.getMetadata().entrySet()) {
                         metadata.add(PREFIX + ":" + e.getKey(), e.getValue());
                     }
                 }
@@ -163,9 +157,11 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
-        //if the user has set one of these, they need to have set all of them
-        if (!StringUtils.isBlank(this.sasToken) || !StringUtils.isBlank(this.endpoint) || !StringUtils.isBlank(this.container)) {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+                    throws TikaConfigException {
+        // if the user has set one of these, they need to have set all of them
+        if (!StringUtils.isBlank(this.sasToken) || !StringUtils.isBlank(this.endpoint)
+                        || !StringUtils.isBlank(this.container)) {
             mustNotBeEmpty("sasToken", this.sasToken);
             mustNotBeEmpty("endpoint", this.endpoint);
             mustNotBeEmpty("container", this.container);
@@ -180,11 +176,9 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
         private final BlobContainerClient blobContainerClient;
 
         private SingleBlobContainerFactory(String endpoint, String sasToken, String container) {
-            //TODO -- allow authentication via other methods
-            BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
-                    .endpoint(endpoint)
-                    .sasToken(sasToken)
-                    .buildClient();
+            // TODO -- allow authentication via other methods
+            BlobServiceClient blobServiceClient = new BlobServiceClientBuilder().endpoint(endpoint)
+                            .sasToken(sasToken).buildClient();
             blobContainerClient = blobServiceClient.getBlobContainerClient(container);
         }
 
@@ -198,9 +192,7 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
 
         @Override
         public BlobClient getClient(String fetchKey) {
-            return new BlobClientBuilder()
-                    .connectionString(fetchKey)
-                    .buildClient();
+            return new BlobClientBuilder().connectionString(fetchKey).buildClient();
         }
     }
 }

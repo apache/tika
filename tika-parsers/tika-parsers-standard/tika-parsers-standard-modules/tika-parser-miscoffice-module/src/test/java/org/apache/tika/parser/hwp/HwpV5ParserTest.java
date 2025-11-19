@@ -1,39 +1,36 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.hwp;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.commons.io.filefilter.RegexFileFilter;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.junit.jupiter.api.Test;
 
 
 public class HwpV5ParserTest extends MultiThreadedTikaTest {
 
     @Test
     public void testHwpV5Parser() throws Exception {
-        for (Parser parser : new Parser[]{new HwpV5Parser(), AUTO_DETECT_PARSER}) {
+        for (Parser parser : new Parser[] {new HwpV5Parser(), AUTO_DETECT_PARSER}) {
             XMLResult result = getXML("testHWP-v5b.hwp", parser);
             assertContains("<p>Apache Tika - \uCEE8\uD150\uCE20", result.xml);
             Metadata metadata = result.metadata;
@@ -69,12 +66,12 @@ public class HwpV5ParserTest extends MultiThreadedTikaTest {
 
     @Test
     public void testMultiThreadedSkipFully() throws Exception {
-        //TIKA-3092
+        // TIKA-3092
         int numThreads = 2;
         int numIterations = 50;
         ParseContext[] parseContexts = new ParseContext[numThreads];
 
         testMultiThreaded(new RecursiveParserWrapper(AUTO_DETECT_PARSER), parseContexts, numThreads,
-                numIterations, new RegexFileFilter(".*\\.hwp"));
+                        numIterations, new RegexFileFilter(".*\\.hwp"));
     }
 }

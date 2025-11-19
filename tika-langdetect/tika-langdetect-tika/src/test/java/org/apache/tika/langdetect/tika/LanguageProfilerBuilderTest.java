@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.langdetect.tika;
@@ -29,12 +27,10 @@ import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
+import org.apache.tika.exception.TikaException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import org.apache.tika.exception.TikaException;
 
 public class LanguageProfilerBuilderTest {
     private final String corpusName = "langbuilder/welsh_corpus.txt";
@@ -49,7 +45,7 @@ public class LanguageProfilerBuilderTest {
         tmpProfileModel = Files.createTempFile("tika-lang", ".ngp");
         try (InputStream is = LanguageProfilerBuilderTest.class.getResourceAsStream(corpusName)) {
             LanguageProfilerBuilder ngramProfileBuilder =
-                    LanguageProfilerBuilder.create(profileName, is, UTF_8.name());
+                            LanguageProfilerBuilder.create(profileName, is, UTF_8.name());
             try (OutputStream os = Files.newOutputStream(tmpProfileModel)) {
                 ngramProfileBuilder.save(os);;
                 assertEquals(maxlen, ngramProfileBuilder.getSorted().size());
@@ -87,7 +83,7 @@ public class LanguageProfilerBuilderTest {
                     // header/comment
                     int space = line.indexOf(' ');
                     langProfile.add(line.substring(0, space),
-                            Long.parseLong(line.substring(space + 1)));
+                                    Long.parseLong(line.substring(space + 1)));
                 }
                 line = reader.readLine();
             }

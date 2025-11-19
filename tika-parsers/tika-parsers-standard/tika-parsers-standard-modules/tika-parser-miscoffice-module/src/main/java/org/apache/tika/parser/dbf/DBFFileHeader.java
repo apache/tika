@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.dbf;
 
@@ -26,9 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
-
 import org.apache.commons.io.IOUtils;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 
@@ -54,8 +50,8 @@ class DBFFileHeader {
         int lastModDay = is.read();
         Calendar now = GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
 
-        //if this was last modified after the current year, assume
-        //the file was created in 1900
+        // if this was last modified after the current year, assume
+        // the file was created in 1900
         if (lastModYear + 2000 > now.get(Calendar.YEAR)) {
             lastModYear += 1900;
         } else {
@@ -68,9 +64,9 @@ class DBFFileHeader {
         header.numRecords = EndianUtils.readIntLE(is);
         header.numBytesInHeader = EndianUtils.readShortLE(is);
         header.numBytesInRecord = EndianUtils.readShortLE(is);
-        IOUtils.skipFully(is, 20);//TODO: can get useful info out of here
+        IOUtils.skipFully(is, 20);// TODO: can get useful info out of here
 
-        int numCols = 0;//(header.numBytesInHeader - 32) / 32;
+        int numCols = 0;// (header.numBytesInHeader - 32) / 32;
         List<DBFColumnHeader> headers = new LinkedList<>();
         int bytesAccountedFor = 0;
         while (true) {
@@ -90,7 +86,7 @@ class DBFFileHeader {
             throw new TikaException("Expected new line at end of header");
         }
         long totalReadSoFar = 32 + (numCols * 32) + 1;
-        //there can be extra bytes in the header
+        // there can be extra bytes in the header
         long extraHeaderBytes = header.numBytesInHeader - totalReadSoFar;
         IOUtils.skipFully(is, extraHeaderBytes);
         return header;
@@ -111,13 +107,12 @@ class DBFFileHeader {
         col.setType(colType);
         col.fieldLength = fieldRecord[16] & 0xFF;
         if (col.fieldLength < 0) {
-            throw new TikaException(
-                    "Field length for column " + col.getName(StandardCharsets.US_ASCII) +
-                            " is < 0");
+            throw new TikaException("Field length for column "
+                            + col.getName(StandardCharsets.US_ASCII) + " is < 0");
         } else if (col.fieldLength > DBFReader.MAX_FIELD_LENGTH) {
-            throw new TikaException("Field length (" + col.fieldLength +
-                    ") is greater than DBReader.MAX_FIELD_LENGTH (" + DBFReader.MAX_FIELD_LENGTH +
-                    ")");
+            throw new TikaException("Field length (" + col.fieldLength
+                            + ") is greater than DBReader.MAX_FIELD_LENGTH ("
+                            + DBFReader.MAX_FIELD_LENGTH + ")");
         }
         col.decimalCount = fieldRecord[17] & 0xFF;
         return col;
@@ -141,8 +136,8 @@ class DBFFileHeader {
 
     @Override
     public String toString() {
-        return "DBFFileHeader{" + "lastModified=" + lastModified + ", numRecords=" + numRecords +
-                ", numBytesInHeader=" + numBytesInHeader + ", numBytesInRecord=" +
-                numBytesInRecord + ", cols=" + Arrays.toString(cols) + '}';
+        return "DBFFileHeader{" + "lastModified=" + lastModified + ", numRecords=" + numRecords
+                        + ", numBytesInHeader=" + numBytesInHeader + ", numBytesInRecord="
+                        + numBytesInRecord + ", cols=" + Arrays.toString(cols) + '}';
     }
 }

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.io;
 
@@ -20,7 +18,6 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MimeTypeException;
@@ -35,10 +32,10 @@ public class FilenameUtils {
     /**
      * Reserved characters
      */
-    public final static char[] RESERVED_FILENAME_CHARACTERS =
-            {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
-                    0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A,
-                    0x1B, 0x1C, 0x1D, 0x1E, 0x1F, '?', ':', '*', '<', '>', '|', '"', '\''};
+    public final static char[] RESERVED_FILENAME_CHARACTERS = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
+                    0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12,
+                    0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
+                    '?', ':', '*', '<', '>', '|', '"', '\''};
 
     private final static HashSet<Character> RESERVED = new HashSet<>(38);
 
@@ -52,9 +49,9 @@ public class FilenameUtils {
     private final static Pattern ASCII_NUMERIC = Pattern.compile("\\A\\.(?i)[a-z0-9]{1,5}\\Z");
 
     /**
-     * Scans the given file name for reserved characters on different OSs and
-     * file systems and returns a sanitized version of the name with the
-     * reserved chars replaced by their hexadecimal value.
+     * Scans the given file name for reserved characters on different OSs and file systems and
+     * returns a sanitized version of the name with the reserved chars replaced by their hexadecimal
+     * value.
      * <p>
      * For example <code>why?.zip</code> will be converted into <code>why%3F.zip</code>
      *
@@ -72,7 +69,7 @@ public class FilenameUtils {
         for (char c : name.toCharArray()) {
             if (RESERVED.contains(c)) {
                 sb.append('%').append((c < 16) ? "0" : "")
-                        .append(Integer.toHexString(c).toUpperCase(Locale.ROOT));
+                                .append(Integer.toHexString(c).toUpperCase(Locale.ROOT));
             } else {
                 sb.append(c);
             }
@@ -82,18 +79,15 @@ public class FilenameUtils {
     }
 
     /**
-     * This is a duplication of the algorithm and functionality
-     * available in commons io FilenameUtils.  If Java's File were
-     * able handle Windows file paths correctly in linux,
-     * we wouldn't need this.
+     * This is a duplication of the algorithm and functionality available in commons io
+     * FilenameUtils. If Java's File were able handle Windows file paths correctly in linux, we
+     * wouldn't need this.
      * <p>
-     * The goal of this is to get a filename from a path.
-     * The package parsers and some other embedded doc
-     * extractors could put anything into TikaCoreProperties.RESOURCE_NAME_KEY.
+     * The goal of this is to get a filename from a path. The package parsers and some other
+     * embedded doc extractors could put anything into TikaCoreProperties.RESOURCE_NAME_KEY.
      * <p>
-     * If a careless client used that filename as if it were a
-     * filename and not a path when writing embedded files,
-     * bad things could happen.  Consider: "../../../my_ppt.ppt".
+     * If a careless client used that filename as if it were a filename and not a path when writing
+     * embedded files, bad things could happen. Consider: "../../../my_ppt.ppt".
      * <p>
      * Consider using this in combination with {@link #normalize(String)}.
      *
@@ -107,8 +101,8 @@ public class FilenameUtils {
         }
         int unix = path.lastIndexOf("/");
         int windows = path.lastIndexOf("\\");
-        //some macintosh file names are stored with : as the delimiter
-        //also necessary to properly handle C:somefilename
+        // some macintosh file names are stored with : as the delimiter
+        // also necessary to properly handle C:somefilename
         int colon = path.lastIndexOf(":");
         String cand = path.substring(Math.max(colon, Math.max(unix, windows)) + 1);
         if (cand.equals("..") || cand.equals(".")) {
@@ -118,16 +112,16 @@ public class FilenameUtils {
     }
 
     /**
-     * This includes the period, e.g. ".pdf".
-     * This requires that an extension contain only ascii alphanumerics
-     * and it requires that an extension length be 5 or less.
+     * This includes the period, e.g. ".pdf". This requires that an extension contain only ascii
+     * alphanumerics and it requires that an extension length be 5 or less.
+     * 
      * @param path
      * @return the suffix or an empty string if one could not be found
      */
     public static String getSuffixFromPath(String path) {
         String n = getName(path);
         int i = n.lastIndexOf(".");
-        //arbitrarily sets max extension length
+        // arbitrarily sets max extension length
         if (i > -1 && n.length() - i < 6) {
             String suffix = n.substring(i);
             if (ASCII_NUMERIC.matcher(suffix).matches()) {
@@ -137,10 +131,10 @@ public class FilenameUtils {
         return StringUtils.EMPTY;
     }
 
-    public static String getSanitizedEmbeddedFileName(Metadata metadata,
-                                                      String defaultExtension, int maxLength) {
+    public static String getSanitizedEmbeddedFileName(Metadata metadata, String defaultExtension,
+                    int maxLength) {
         String path = getEmbeddedName(metadata);
-        //fName could be a full path or null
+        // fName could be a full path or null
         if (StringUtils.isBlank(path)) {
             return null;
         }
@@ -170,9 +164,9 @@ public class FilenameUtils {
         if (StringUtils.isBlank(namePart)) {
             return null;
         }
-        //remove all initial .
+        // remove all initial .
         namePart = namePart.replaceAll("\\A\\.+", "_");
-        //defense in depth. We shouldn't need this
+        // defense in depth. We shouldn't need this
         namePart = namePart.replaceAll("(\\.\\.)+", "_");
         namePart = namePart.replaceAll("[/\\\\]+", "_");
         namePart = namePart.replaceAll(":+", "_");
@@ -182,7 +176,7 @@ public class FilenameUtils {
             return null;
         }
 
-        //if path is > max length, return only the name part
+        // if path is > max length, return only the name part
         if (namePart.length() > maxLength) {
             return namePart.substring(0, maxLength - extension.length() - 3) + "..." + extension;
         }
@@ -191,19 +185,19 @@ public class FilenameUtils {
     }
 
     /**
-     * This tries to sanitize dangerous user generated embedded file paths.
-     * If trusting these paths for writing files, users should run checks to make
-     * sure that the generated file path does not zipslip out of the target directory.
+     * This tries to sanitize dangerous user generated embedded file paths. If trusting these paths
+     * for writing files, users should run checks to make sure that the generated file path does not
+     * zipslip out of the target directory.
      *
      * @param metadata
      * @param defaultExtension
      * @param maxLength
      * @return
      */
-    public static String getSanitizedEmbeddedFilePath(Metadata metadata,
-                                                      String defaultExtension, int maxLength) {
+    public static String getSanitizedEmbeddedFilePath(Metadata metadata, String defaultExtension,
+                    int maxLength) {
         String path = getEmbeddedPath(metadata);
-        //fName could be a full path or null
+        // fName could be a full path or null
         if (StringUtils.isBlank(path)) {
             return null;
         }
@@ -246,21 +240,23 @@ public class FilenameUtils {
         if (StringUtils.isBlank(namePart)) {
             return null;
         }
-        //remove all initial .
+        // remove all initial .
         namePart = namePart.replaceAll("\\A\\.+", "_");
-        //defense in depth. We shouldn't need this
+        // defense in depth. We shouldn't need this
         namePart = namePart.replaceAll("\\.{2,}", ".");
         namePart = namePart.replaceAll("[/\\\\]+", "_");
 
         if (StringUtils.isBlank(namePart)) {
             return null;
         }
-        String retPath = StringUtils.isBlank(relPath) ? namePart + extension : relPath + "/" + namePart + extension;
+        String retPath = StringUtils.isBlank(relPath) ? namePart + extension
+                        : relPath + "/" + namePart + extension;
 
-        //if path is > max length, return only the name part
+        // if path is > max length, return only the name part
         if (retPath.length() > maxLength) {
             if (namePart.length() > maxLength) {
-                return namePart.substring(0, maxLength - extension.length() - 3) + "..." + extension;
+                return namePart.substring(0, maxLength - extension.length() - 3) + "..."
+                                + extension;
             }
             return namePart + extension;
         }
@@ -272,7 +268,8 @@ public class FilenameUtils {
         if (prefixLength > 0) {
             return prefixLength;
         }
-        if (path.length() == 2 && path.charAt(0) >= 'A' && path.charAt(0) <= 'Z' && path.charAt(1) == ':') {
+        if (path.length() == 2 && path.charAt(0) >= 'A' && path.charAt(0) <= 'Z'
+                        && path.charAt(1) == ':') {
             return 2;
         }
         return 0;
@@ -290,40 +287,40 @@ public class FilenameUtils {
         return path;
     }
 
-    //may return null
+    // may return null
     private static String getEmbeddedPath(Metadata metadata) {
-        //potentially look for other values in embedded path or original file name, etc...
-        //maybe different fallback order?
+        // potentially look for other values in embedded path or original file name, etc...
+        // maybe different fallback order?
         String path = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
-        if (! StringUtils.isBlank(path)) {
+        if (!StringUtils.isBlank(path)) {
             return path;
         }
         path = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        if (! StringUtils.isBlank(path)) {
+        if (!StringUtils.isBlank(path)) {
             return path;
         }
         path = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
-        if (! StringUtils.isBlank(path)) {
+        if (!StringUtils.isBlank(path)) {
             return path;
         }
         return metadata.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME);
     }
 
-    //this tries for resource name first, and then backs off to path
+    // this tries for resource name first, and then backs off to path
     private static String getEmbeddedName(Metadata metadata) {
-        //potentially look for other values in embedded path or original file name, etc...
-        //maybe different fallback order?
+        // potentially look for other values in embedded path or original file name, etc...
+        // maybe different fallback order?
         String path = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        if (! StringUtils.isBlank(path)) {
+        if (!StringUtils.isBlank(path)) {
             return path;
         }
         path = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
-        if (! StringUtils.isBlank(path)) {
+        if (!StringUtils.isBlank(path)) {
             return path;
         }
 
         path = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
-        if (! StringUtils.isBlank(path)) {
+        if (!StringUtils.isBlank(path)) {
             return path;
         }
 
@@ -331,8 +328,8 @@ public class FilenameUtils {
     }
 
     /**
-     * Calculate the extension based on the {@link Metadata#CONTENT_TYPE} value.
-     * On parse exception or null value, return the default value.
+     * Calculate the extension based on the {@link Metadata#CONTENT_TYPE} value. On parse exception
+     * or null value, return the default value.
      *
      * @param metadata
      * @param defaultValue
@@ -344,16 +341,14 @@ public class FilenameUtils {
             return defaultValue;
         }
         try {
-            String ext = MIME_TYPES
-                    .forName(mime)
-                    .getExtension();
+            String ext = MIME_TYPES.forName(mime).getExtension();
             if (ext == null) {
                 return ".bin";
             } else {
                 return ext;
             }
         } catch (MimeTypeException e) {
-            //swallow
+            // swallow
         }
         return ".bin";
     }

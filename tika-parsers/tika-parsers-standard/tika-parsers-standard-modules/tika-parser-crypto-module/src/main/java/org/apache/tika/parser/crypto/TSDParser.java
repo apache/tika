@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.crypto;
 
@@ -32,7 +30,17 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.RereadableInputStream;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -49,18 +57,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.exception.WriteLimitReachedException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.RereadableInputStream;
 
 /**
  * Tika parser for Time Stamped Data Envelope (application/timestamped-data)
@@ -81,7 +77,7 @@ public class TSDParser implements Parser {
     private static final String TSD_TSA = "TSA";
     private static final String TSD_ALGORITHM = "Algorithm";
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("timestamped-data"));
+                    Collections.singleton(MediaType.application("timestamped-data"));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -90,21 +86,22 @@ public class TSDParser implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
 
-        //Try to parse TSD file
+        // Try to parse TSD file
         try (RereadableInputStream ris = new RereadableInputStream(stream, 2048, true)) {
             Metadata TSDAndEmbeddedMetadata = new Metadata();
 
             List<TSDMetas> tsdMetasList = this.extractMetas(ris);
             this.buildMetas(tsdMetasList,
-                    metadata != null && metadata.size() > 0 ? TSDAndEmbeddedMetadata : metadata);
+                            metadata != null && metadata.size() > 0 ? TSDAndEmbeddedMetadata
+                                            : metadata);
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
             ris.rewind();
 
-            //Try to parse embedded file in TSD file
+            // Try to parse embedded file in TSD file
             this.parseTSDContent(ris, xhtml, TSDAndEmbeddedMetadata, context);
             xhtml.endDocument();
         }
@@ -120,10 +117,10 @@ public class TSDParser implements Parser {
 
             for (TimeStampToken token : tokens) {
                 TSDMetas tsdMetas = new TSDMetas(true, token.getTimeStampInfo().getGenTime(),
-                        token.getTimeStampInfo().getPolicy().getId(),
-                        token.getTimeStampInfo().getSerialNumber(),
-                        token.getTimeStampInfo().getTsa(),
-                        token.getTimeStampInfo().getHashAlgorithm().getAlgorithm().getId());
+                                token.getTimeStampInfo().getPolicy().getId(),
+                                token.getTimeStampInfo().getSerialNumber(),
+                                token.getTimeStampInfo().getTsa(),
+                                token.getTimeStampInfo().getHashAlgorithm().getAlgorithm().getId());
 
                 tsdMetasList.add(tsdMetas);
             }
@@ -145,16 +142,16 @@ public class TSDParser implements Parser {
         for (TSDMetas tsdm : tsdMetasList) {
             metadata.set(TSD_LOOP_LABEL + count + " - " + Metadata.CONTENT_TYPE, TSD_MIME_TYPE);
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DESCRIPTION_LABEL,
-                    TSD_DESCRIPTION_VALUE);
+                            TSD_DESCRIPTION_VALUE);
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_LABEL,
-                    tsdm.getParseBuiltStr());
+                            tsdm.getParseBuiltStr());
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_DATE,
-                    tsdm.getParsedDateStr() + " " + TSD_DATE_FORMAT);
+                            tsdm.getParsedDateStr() + " " + TSD_DATE_FORMAT);
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DATE,
-                    tsdm.getEmitDateStr() + " " + TSD_DATE_FORMAT);
+                            tsdm.getEmitDateStr() + " " + TSD_DATE_FORMAT);
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_POLICY_ID, tsdm.getPolicyId());
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_SERIAL_NUMBER,
-                    tsdm.getSerialNumberFormatted());
+                            tsdm.getSerialNumberFormatted());
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_TSA, tsdm.getTsaStr());
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_ALGORITHM, tsdm.getAlgorithmName());
             count++;
@@ -162,7 +159,7 @@ public class TSDParser implements Parser {
     }
 
     private void parseTSDContent(InputStream stream, ContentHandler handler, Metadata metadata,
-                                 ParseContext context) throws SAXException {
+                    ParseContext context) throws SAXException {
 
         CMSTimeStampedDataParser cmsTimeStampedDataParser = null;
         EmbeddedDocumentExtractor edx = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
@@ -171,7 +168,8 @@ public class TSDParser implements Parser {
             try {
                 cmsTimeStampedDataParser = new CMSTimeStampedDataParser(stream);
 
-                try (TikaInputStream tis = TikaInputStream.get(cmsTimeStampedDataParser.getContent())) {
+                try (TikaInputStream tis =
+                                TikaInputStream.get(cmsTimeStampedDataParser.getContent())) {
                     edx.parseEmbedded(tis, handler, metadata, true);
                 }
 
@@ -206,8 +204,8 @@ public class TSDParser implements Parser {
             encryptionAlgs.put(OIWObjectIdentifiers.dsaWithSHA1.getId(), "DSA");
             encryptionAlgs.put(PKCSObjectIdentifiers.rsaEncryption.getId(), "RSA");
             encryptionAlgs.put(PKCSObjectIdentifiers.sha1WithRSAEncryption.getId(), "RSA");
-            encryptionAlgs
-                    .put(TeleTrusTObjectIdentifiers.teleTrusTRSAsignatureAlgorithm.getId(), "RSA");
+            encryptionAlgs.put(TeleTrusTObjectIdentifiers.teleTrusTRSAsignatureAlgorithm.getId(),
+                            "RSA");
             encryptionAlgs.put(X509ObjectIdentifiers.id_ea_rsa.getId(), "RSA");
             encryptionAlgs.put(CMSSignedDataGenerator.ENCRYPTION_ECDSA, "ECDSA");
             encryptionAlgs.put(X9ObjectIdentifiers.ecdsa_with_SHA2.getId(), "ECDSA");
@@ -260,7 +258,7 @@ public class TSDParser implements Parser {
         }
 
         public static MessageDigest getDigestInstance(String algorithm, String provider)
-                throws NoSuchProviderException, NoSuchAlgorithmException {
+                        throws NoSuchProviderException, NoSuchAlgorithmException {
             if (provider != null) {
                 try {
                     return MessageDigest.getInstance(algorithm, provider);
@@ -386,9 +384,9 @@ public class TSDParser implements Parser {
 
         @Override
         public String toString() {
-            return "TSDMetas [parseBuilt=" + parseBuilt + ", emitDate=" + emitDate + ", policyId=" +
-                    policyId + ", serialNumber=" + serialNumber + ", tsa=" + tsa + ", algorithm=" +
-                    algorithm + ", parsedDate=" + parsedDate + "]";
+            return "TSDMetas [parseBuilt=" + parseBuilt + ", emitDate=" + emitDate + ", policyId="
+                            + policyId + ", serialNumber=" + serialNumber + ", tsa=" + tsa
+                            + ", algorithm=" + algorithm + ", parsedDate=" + parsedDate + "]";
         }
     }
 }

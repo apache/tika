@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.eval.core.textstats;
 
@@ -21,13 +19,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.util.BytesRef;
-
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
 import org.apache.tika.eval.core.tokens.AnalyzerManager;
 import org.apache.tika.eval.core.tokens.TokenCounts;
@@ -38,22 +34,22 @@ public class CompositeTextStatsCalculator {
 
     private static final String FIELD = "f";
     private static final int DEFAULT_MAX_TOKENS = 10_000_000;
-    private final byte[] whitespace = new byte[]{' '};
+    private final byte[] whitespace = new byte[] {' '};
     private final Analyzer analyzer;
     private final LanguageIDWrapper languageIDWrapper;
     private final List<LanguageAwareTokenCountStats> languageAwareTokenCountStats =
-            new ArrayList<>();
+                    new ArrayList<>();
     private final List<TokenCountStatsCalculator> tokenCountStatCalculators = new ArrayList<>();
     private final List<StringStatsCalculator> stringStatCalculators = new ArrayList<>();
     private final List<BytesRefCalculator> bytesRefCalculators = new ArrayList<>();
 
     public CompositeTextStatsCalculator(List<TextStatsCalculator> calculators) {
         this(calculators, AnalyzerManager.newInstance(DEFAULT_MAX_TOKENS).getGeneralAnalyzer(),
-                new LanguageIDWrapper());
+                        new LanguageIDWrapper());
     }
 
     public CompositeTextStatsCalculator(List<TextStatsCalculator> calculators, Analyzer analyzer,
-                                        LanguageIDWrapper languageIDWrapper) {
+                    LanguageIDWrapper languageIDWrapper) {
         this.analyzer = analyzer;
         this.languageIDWrapper = languageIDWrapper;
         for (TextStatsCalculator t : calculators) {
@@ -62,22 +58,21 @@ public class CompositeTextStatsCalculator {
             } else if (t instanceof LanguageAwareTokenCountStats) {
                 languageAwareTokenCountStats.add((LanguageAwareTokenCountStats) t);
                 if (languageIDWrapper == null) {
-                    throw new IllegalArgumentException("Must specify a LanguageIdWrapper " +
-                            "if you want to calculate languageAware stats: " + t.getClass());
+                    throw new IllegalArgumentException("Must specify a LanguageIdWrapper "
+                                    + "if you want to calculate languageAware stats: "
+                                    + t.getClass());
                 }
             } else if (t instanceof TokenCountStatsCalculator) {
                 tokenCountStatCalculators.add((TokenCountStatsCalculator) t);
                 if (analyzer == null) {
-                    throw new IllegalArgumentException(
-                            "Analyzer must not be null if you are using " + "a TokenCountStats: " +
-                                    t.getClass());
+                    throw new IllegalArgumentException("Analyzer must not be null if you are using "
+                                    + "a TokenCountStats: " + t.getClass());
                 }
             } else if (t instanceof BytesRefCalculator) {
                 bytesRefCalculators.add((BytesRefCalculator) t);
                 if (analyzer == null) {
-                    throw new IllegalArgumentException(
-                            "Analyzer must not be null if you are using " +
-                                    "a BytesRefCalculator: " + t.getClass());
+                    throw new IllegalArgumentException("Analyzer must not be null if you are using "
+                                    + "a BytesRefCalculator: " + t.getClass());
                 }
             } else {
                 throw new IllegalArgumentException("I regret I don't yet handle: " + t.getClass());
@@ -92,8 +87,8 @@ public class CompositeTextStatsCalculator {
         }
 
         TokenCounts tokenCounts = null;
-        if (tokenCountStatCalculators.size() > 0 || languageAwareTokenCountStats.size() > 0 ||
-                bytesRefCalculators.size() > 0) {
+        if (tokenCountStatCalculators.size() > 0 || languageAwareTokenCountStats.size() > 0
+                        || bytesRefCalculators.size() > 0) {
             try {
                 tokenCounts = tokenize(txt, results);
             } catch (IOException e) {
@@ -102,8 +97,9 @@ public class CompositeTextStatsCalculator {
         }
 
         if (languageAwareTokenCountStats.size() > 0) {
-            List<LanguageResult> langs = results.containsKey(LanguageIDWrapper.class) ?
-                    (List) results.get(LanguageIDWrapper.class) : languageIDWrapper.calculate(txt);
+            List<LanguageResult> langs = results.containsKey(LanguageIDWrapper.class)
+                            ? (List) results.get(LanguageIDWrapper.class)
+                            : languageIDWrapper.calculate(txt);
             results.put(LanguageIDWrapper.class, langs);
             for (LanguageAwareTokenCountStats calc : languageAwareTokenCountStats) {
                 results.put(calc.getClass(), calc.calculate(langs, tokenCounts));

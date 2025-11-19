@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika;
 
@@ -25,11 +23,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
+import org.apache.tika.utils.RereadableInputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
-import org.apache.tika.utils.RereadableInputStream;
 
 public class TestRereadableInputStream {
 
@@ -56,25 +52,25 @@ public class TestRereadableInputStream {
         readEntireStream((TEST_SIZE_MEMORY));
     }
 
-//    @Test
-//    public void testInFile() throws IOException {
-//        readData(TEST_SIZE_FILE);
-//    }
-//
-//    @Test
-//    public void testMemoryThreshold() throws IOException {
-//        readData(TEST_SIZE_MAX);
-//    }
-//
-//    @Test
-//    public void testInMemory2() throws IOException {
-//        readData2((TEST_SIZE_MEMORY));
-//    }
-//
-//    @Test
-//    public void testInFile2() throws IOException {
-//        readData2(TEST_SIZE_FILE);
-//    }
+    // @Test
+    // public void testInFile() throws IOException {
+    // readData(TEST_SIZE_FILE);
+    // }
+    //
+    // @Test
+    // public void testMemoryThreshold() throws IOException {
+    // readData(TEST_SIZE_MAX);
+    // }
+    //
+    // @Test
+    // public void testInMemory2() throws IOException {
+    // readData2((TEST_SIZE_MEMORY));
+    // }
+    //
+    // @Test
+    // public void testInFile2() throws IOException {
+    // readData2(TEST_SIZE_FILE);
+    // }
 
     @Test
     public void testMemoryThreshold2() throws IOException {
@@ -90,21 +86,20 @@ public class TestRereadableInputStream {
             for (int pass = 0; pass < NUM_PASSES; pass++) {
                 for (int byteNum = 0; byteNum < testSize; byteNum++) {
                     int byteRead = ris.read();
-                    assertEquals(byteNum, byteRead,
-                            "Pass = " + pass + ", byte num should be " + byteNum + " but is " +
-                                    byteRead + ".");
+                    assertEquals(byteNum, byteRead, "Pass = " + pass + ", byte num should be "
+                                    + byteNum + " but is " + byteRead + ".");
                 }
                 int eof = ris.read();
-                assertEquals(-1, eof,
-                        "Pass = " + pass + ", byte num should be " + -1 + " but is " + eof + ".");
+                assertEquals(-1, eof, "Pass = " + pass + ", byte num should be " + -1 + " but is "
+                                + eof + ".");
                 ris.rewind();
             }
         }
     }
 
     /**
-     * Read increasingly more of the stream, but not all, with each pass before rewinding to
-     * make sure we pick up at the correct point
+     * Read increasingly more of the stream, but not all, with each pass before rewinding to make
+     * sure we pick up at the correct point
      */
     private void readPartialStream(int testSize) throws IOException {
         InputStream is = createTestInputStream(20);
@@ -114,8 +109,8 @@ public class TestRereadableInputStream {
             for (int pass = 0; pass < NUM_PASSES; pass++) {
                 for (int byteNum = 0; byteNum < iterations; byteNum++) {
                     int byteRead = ris.read();
-                    assertEquals(byteNum, byteRead,
-                            "Pass = " + pass + ", byte num should be " + byteNum + " but is " + byteRead + ".");
+                    assertEquals(byteNum, byteRead, "Pass = " + pass + ", byte num should be "
+                                    + byteNum + " but is " + byteRead + ".");
                 }
                 ris.rewind();
                 iterations++;
@@ -128,10 +123,11 @@ public class TestRereadableInputStream {
     public void testRewind() throws IOException {
         InputStream is = createTestInputStream(DEFAULT_TEST_SIZE);
         try (RereadableInputStream ris = new RereadableInputStream(is, MEMORY_THRESHOLD, true)) {
-            ris.rewind();  // rewind before we've done anything
+            ris.rewind(); // rewind before we've done anything
             for (int byteNum = 0; byteNum < 1; byteNum++) {
                 int byteRead = ris.read();
-                assertEquals(byteNum, byteRead, "Byte num should be " + byteNum + " but is " + byteRead + ".");
+                assertEquals(byteNum, byteRead,
+                                "Byte num should be " + byteNum + " but is " + byteRead + ".");
             }
         }
     }
@@ -139,7 +135,7 @@ public class TestRereadableInputStream {
 
     private TestInputStream createTestInputStream(int testSize) throws IOException {
         return new TestInputStream(
-                new BufferedInputStream(Files.newInputStream(createTestFile(testSize))));
+                        new BufferedInputStream(Files.newInputStream(createTestFile(testSize))));
     }
 
     private Path createTestFile(int testSize) throws IOException {

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.html;
 
@@ -28,8 +26,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import javax.xml.XMLConstants;
-
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.tika.config.Field;
+import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
+import org.apache.tika.parser.ParseContext;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.DataNode;
@@ -45,19 +49,10 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractEncodingDetectorParser;
-import org.apache.tika.parser.ParseContext;
-
 
 /**
- * HTML parser. Uses JSoup to turn the input document to HTML SAX events,
- * and post-processes the events to produce XHTML and metadata expected by
- * Tika clients.
+ * HTML parser. Uses JSoup to turn the input document to HTML SAX events, and post-processes the
+ * events to produce XHTML and metadata expected by Tika clients.
  */
 public class JSoupParser extends AbstractEncodingDetectorParser {
 
@@ -72,14 +67,16 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
     private static final MediaType WAP_XHTML = MediaType.application("vnd.wap.xhtml+xml");
     private static final MediaType X_ASP = MediaType.application("x-asp");
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(MediaType.text("html"), XHTML, WAP_XHTML, X_ASP)));
+    private static final Set<MediaType> SUPPORTED_TYPES =
+                    Collections.unmodifiableSet(new HashSet<MediaType>(Arrays
+                                    .asList(MediaType.text("html"), XHTML, WAP_XHTML, X_ASP)));
 
     private static final TagSet SELF_CLOSEABLE_TAGS = TagSet.Html();
 
     static {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                JSoupParser.class.getResourceAsStream("self-closeable-tags.txt"), StandardCharsets.UTF_8))) {
+                        JSoupParser.class.getResourceAsStream("self-closeable-tags.txt"),
+                        StandardCharsets.UTF_8))) {
             String line = reader.readLine();
             while (line != null) {
                 if (line.startsWith("#") || line.trim().isEmpty()) {
@@ -115,8 +112,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
     }
 
     /**
-     * Whether or not to extract contents in script entities.
-     * Default is <code>false</code>
+     * Whether or not to extract contents in script entities. Default is <code>false</code>
      *
      * @param extractScripts
      */
@@ -127,7 +123,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
 
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
 
         EncodingDetector encodingDetector = getEncodingDetector(context);
         Charset charset = encodingDetector.detect(stream, metadata);
@@ -153,19 +149,17 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         HtmlMapper mapper = context.get(HtmlMapper.class, new DefaultHtmlMapper());
 
         TagSet tagSet = new TagSet(SELF_CLOSEABLE_TAGS);
-        /* TODO -- when we upgrade jsoup to 1.21.1
-                .onNewTag(tag -> {
-            if (!tag.isKnownTag())
-                tag.set(Tag.SelfClose);
-        });
-        */
+        /*
+         * TODO -- when we upgrade jsoup to 1.21.1 .onNewTag(tag -> { if (!tag.isKnownTag())
+         * tag.set(Tag.SelfClose); });
+         */
 
-        //do better with baseUri?
+        // do better with baseUri?
         Document document = Jsoup.parse(CloseShieldInputStream.wrap(stream), charset.name(), "",
-                Parser.htmlParser().tagSet(tagSet));
+                        Parser.htmlParser().tagSet(tagSet));
         document.quirksMode(Document.QuirksMode.quirks);
         ContentHandler xhtml = new XHTMLDowngradeHandler(
-                new HtmlHandler(mapper, handler, metadata, context, extractScripts));
+                        new HtmlHandler(mapper, handler, metadata, context, extractScripts));
         xhtml.startDocument();
         try {
             NodeTraversor.filter(new TikaNodeFilter(xhtml), document);
@@ -176,15 +170,16 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         }
     }
 
-    public void parseString(String html, ContentHandler handler, Metadata metadata, ParseContext context) throws SAXException {
+    public void parseString(String html, ContentHandler handler, Metadata metadata,
+                    ParseContext context) throws SAXException {
         // Get the HTML mapper from the parse context
         HtmlMapper mapper = context.get(HtmlMapper.class, new DefaultHtmlMapper());
 
-        //do better with baseUri?
+        // do better with baseUri?
         Document document = Jsoup.parse(html, Parser.htmlParser().tagSet(SELF_CLOSEABLE_TAGS));
         document.quirksMode(Document.QuirksMode.quirks);
         ContentHandler xhtml = new XHTMLDowngradeHandler(
-                new HtmlHandler(mapper, handler, metadata, context, extractScripts));
+                        new HtmlHandler(mapper, handler, metadata, context, extractScripts));
         xhtml.startDocument();
         try {
             NodeTraversor.filter(new TikaNodeFilter(xhtml), document);
@@ -219,8 +214,8 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
                 }
                 return FilterResult.CONTINUE;
             } else if (node instanceof DataNode) {
-                //maybe handle script data directly here instead of
-                //passing it through to the HTMLHandler?
+                // maybe handle script data directly here instead of
+                // passing it through to the HTMLHandler?
                 String txt = ((DataNode) node).getWholeData();
                 if (txt != null) {
                     char[] chars = txt.toCharArray();
@@ -239,11 +234,11 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
             while (jsoupAttrs.hasNext()) {
                 Attribute jsoupAttr = jsoupAttrs.next();
                 attributes.addAttribute("", jsoupAttr.getKey(), jsoupAttr.getKey(), "",
-                        jsoupAttr.getValue());
+                                jsoupAttr.getValue());
             }
             try {
                 handler.startElement(XMLConstants.NULL_NS_URI, node.nodeName(), node.nodeName(),
-                        attributes);
+                                attributes);
             } catch (SAXException e) {
                 throw new RuntimeSAXException(e);
             }
@@ -277,8 +272,8 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
     }
 
     /**
-     * Look for an EncodingDetetor in the ParseContext.  If it hasn't been
-     * passed in, use the original EncodingDetector from initialization.
+     * Look for an EncodingDetetor in the ParseContext. If it hasn't been passed in, use the
+     * original EncodingDetector from initialization.
      *
      * @param parseContext
      * @return

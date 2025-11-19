@@ -1,23 +1,25 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.emitter.gcs;
 
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -26,16 +28,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
-
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -51,6 +45,8 @@ import org.apache.tika.pipes.core.emitter.StreamEmitter;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class GCSEmitter extends AbstractEmitter implements Initializable, StreamEmitter {
@@ -70,13 +66,13 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
      * @throws TikaException
      */
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException, TikaEmitterException {
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
+                    throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.size() == 0) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
         }
-        try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
-                .builder()
-                .get()) {
+        try (UnsynchronizedByteArrayOutputStream bos =
+                        UnsynchronizedByteArrayOutputStream.builder().get()) {
             try (Writer writer = new OutputStreamWriter(bos, StandardCharsets.UTF_8)) {
                 JsonMetadataList.toJson(metadataList, writer);
             } catch (IOException e) {
@@ -89,20 +85,20 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
     }
 
     /**
-     * @param path         -- object path, not including the bucket
-     * @param is           inputStream to copy
+     * @param path -- object path, not including the bucket
+     * @param is inputStream to copy
      * @param userMetadata this will be written to the s3 ObjectMetadata's userMetadata
      * @throws TikaEmitterException or IOexception if there is a Runtime s3 client exception
      */
     @Override
-    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext) throws IOException, TikaEmitterException {
+    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext)
+                    throws IOException, TikaEmitterException {
 
         if (is instanceof TikaInputStream && ((TikaInputStream) is).hasFile()) {
             write(path, userMetadata, Files.readAllBytes(((TikaInputStream) is).getPath()));
         } else {
-            try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
-                    .builder()
-                    .get()) {
+            try (UnsynchronizedByteArrayOutputStream bos =
+                            UnsynchronizedByteArrayOutputStream.builder().get()) {
                 IOUtils.copy(is, bos);
                 write(path, userMetadata, bos.toByteArray());
             }
@@ -120,18 +116,15 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
 
         LOGGER.debug("about to emit to target bucket: ({}) path:({})", bucket, path);
         BlobId blobId = BlobId.of(bucket, path);
-        BlobInfo blobInfo = BlobInfo
-                .newBuilder(blobId)
-                .build();
+        BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
 
         for (String n : userMetadata.names()) {
             String[] vals = userMetadata.getValues(n);
             if (vals.length > 1) {
-                LOGGER.warn("Can only write the first value for key {}. I see {} values.", n, vals.length);
+                LOGGER.warn("Can only write the first value for key {}. I see {} values.", n,
+                                vals.length);
             }
-            blobInfo
-                    .getMetadata()
-                    .put(n, vals[0]);
+            blobInfo.getMetadata().put(n, vals[0]);
         }
         storage.create(blobInfo, bytes);
     }
@@ -149,7 +142,7 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
 
     @Field
     public void setPrefix(String prefix) {
-        //strip final "/" if it exists
+        // strip final "/" if it exists
         if (prefix.endsWith("/")) {
             this.prefix = prefix.substring(0, prefix.length() - 1);
         } else {
@@ -158,8 +151,7 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
     }
 
     /**
-     * If you want to customize the output file's file extension.
-     * Do not include the "."
+     * If you want to customize the output file's file extension. Do not include the "."
      *
      * @param fileExtension
      */
@@ -177,17 +169,14 @@ public class GCSEmitter extends AbstractEmitter implements Initializable, Stream
      */
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //params have already been set...ignore them
-        //TODO -- add other params to the builder as needed
-        storage = StorageOptions
-                .newBuilder()
-                .setProjectId(projectId)
-                .build()
-                .getService();
+        // params have already been set...ignore them
+        // TODO -- add other params to the builder as needed
+        storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+                    throws TikaConfigException {
         mustNotBeEmpty("bucket", this.bucket);
         mustNotBeEmpty("projectId", this.projectId);
     }

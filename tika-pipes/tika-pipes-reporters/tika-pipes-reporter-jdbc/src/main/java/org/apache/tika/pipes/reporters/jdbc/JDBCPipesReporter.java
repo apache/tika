@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.reporters.jdbc;
 
@@ -33,10 +31,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -46,11 +40,12 @@ import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.PipesReporterBase;
 import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This is an initial draft of a JDBCPipesReporter.  This will drop
- * the tika_status table with each run.  If you'd like different behavior,
- * please open a ticket on our JIRA!
+ * This is an initial draft of a JDBCPipesReporter. This will drop the tika_status table with each
+ * run. If you'd like different behavior, please open a ticket on our JIRA!
  */
 public class JDBCPipesReporter extends PipesReporterBase implements Initializable {
 
@@ -79,7 +74,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
 
     private Optional<String> postConnectionString = Optional.empty();
     private final ArrayBlockingQueue<IdStatusPair> queue =
-            new ArrayBlockingQueue(ARRAY_BLOCKING_QUEUE_SIZE);
+                    new ArrayBlockingQueue(ARRAY_BLOCKING_QUEUE_SIZE);
     CompletableFuture<Void> reportWorkerFuture;
 
     @Override
@@ -97,8 +92,8 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         if (reportSql == null) {
             reportSql = "insert into " + getTableName() + " (id, status, timestamp) values (?,?,?)";
         }
-        ReportWorker reportWorker = new ReportWorker(connectionString, postConnectionString,
-                queue, cacheSize, reportWithinMs);
+        ReportWorker reportWorker = new ReportWorker(connectionString, postConnectionString, queue,
+                        cacheSize, reportWithinMs);
         reportWorker.init();
         reportWorkerFuture = CompletableFuture.runAsync(reportWorker);
     }
@@ -106,7 +101,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+                    throws TikaConfigException {
 
     }
 
@@ -120,9 +115,9 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
      * <p/>
      * Default is {@link JDBCPipesReporter#DEFAULT_CACHE_SIZE}.
      * <p/>
-     * The reports will be committed if the cache size
-     * triggers reporting or if the amount of time since
-     * last reported ({@link JDBCPipesReporter#reportWithinMs}) triggers reporting.
+     * The reports will be committed if the cache size triggers reporting or if the amount of time
+     * since last reported ({@link JDBCPipesReporter#reportWithinMs}) triggers reporting.
+     * 
      * @param cacheSize
      */
     @Field
@@ -131,13 +126,12 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
     }
 
     /**
-     * The default is true. In a distributed setting with multiple
-     * servers, this should be set to false, and you'll need to set up
-     * the table on your own.
+     * The default is true. In a distributed setting with multiple servers, this should be set to
+     * false, and you'll need to set up the table on your own.
      * <p/>
-     * <b>NOTE</b> The default behavior is to drop the table if it exists and
-     * then create it. Make sure to set this to false if you do not want
-     * to drop the table.
+     * <b>NOTE</b> The default behavior is to drop the table if it exists and then create it. Make
+     * sure to set this to false if you do not want to drop the table.
+     * 
      * @param createTable
      */
     @Field
@@ -147,6 +141,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
 
     /**
      * The default is {@link JDBCPipesReporter#TABLE_NAME}
+     * 
      * @param tableName
      */
     @Field
@@ -155,14 +150,14 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
     }
 
     /**
-     * This is the sql for the prepared statement to execute
-     * to store the report record. the default is:
-     * <code>insert into tika_status (id, status, timestamp) values (?,?,?)</code>
+     * This is the sql for the prepared statement to execute to store the report record. the default
+     * is: <code>insert into tika_status (id, status, timestamp) values (?,?,?)</code>
      *
      * This can be modified for specific dialects of SQL or to run an upsert, merge or update
      * instead of the default insert.
      *
      * Users need to coordinate this with {@link #setReportVariables(List)}
+     * 
      * @param reportSql
      */
     @Field
@@ -185,14 +180,16 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
     public boolean isCreateTable() {
         return createTable;
     }
+
     /**
-     * ADVANCED: This is used to set the variables in the prepared statement for
-     * the report. This needs to be coordinated with {@link #setReportSql(String)}.
-     * The available variables are "id, status, timestamp". If you're modifying to an update
-     * statement like "update table tika_status set status=?, timestamp=? where id = ?"
-     * then the values for this would be ["status", "timestamp", "id"].
+     * ADVANCED: This is used to set the variables in the prepared statement for the report. This
+     * needs to be coordinated with {@link #setReportSql(String)}. The available variables are "id,
+     * status, timestamp". If you're modifying to an update statement like "update table tika_status
+     * set status=?, timestamp=? where id = ?" then the values for this would be ["status",
+     * "timestamp", "id"].
      * <p/>
      * The default for the insert is ["id", "status", "timestamp"]
+     * 
      * @param variables
      */
 
@@ -202,13 +199,14 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
     }
 
     /**
-     * Commit the reports if the amount of time elapsed since the last report commit
-     * exceeds this value.
+     * Commit the reports if the amount of time elapsed since the last report commit exceeds this
+     * value.
      * <p/>
      * Default is {@link JDBCPipesReporter#DEFAULT_REPORT_WITHIN_MS}.
      * <p/>
-     * The reports will be committed if the cache size triggers reporting or if the amount of
-     * time since last reported triggers reporting.
+     * The reports will be committed if the cache size triggers reporting or if the amount of time
+     * since last reported triggers reporting.
+     * 
      * @param reportWithinMs
      */
     @Field
@@ -217,10 +215,9 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
     }
 
     /**
-     * This sql will be called immediately after the connection is made. This was
-     * initially added for setting pragmas on sqlite3, but may be used for other
-     * connection configuration in other dbs. Note: This is called before the table is
-     * created if it needs to be created.
+     * This sql will be called immediately after the connection is made. This was initially added
+     * for setting pragmas on sqlite3, but may be used for other connection configuration in other
+     * dbs. Note: This is called before the table is created if it needs to be created.
      *
      * @param postConnection
      */
@@ -231,14 +228,14 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
 
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-        if (! accept(result.getStatus())) {
+        if (!accept(result.getStatus())) {
             return;
         }
         try {
-            queue.offer(new IdStatusPair(t.getId(), result.getStatus()),
-                    MAX_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+            queue.offer(new IdStatusPair(t.getId(), result.getStatus()), MAX_WAIT_MILLIS,
+                            TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            //swallow
+            // swallow
         }
 
     }
@@ -306,10 +303,9 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         private PreparedStatement insert;
 
 
-        public ReportWorker(String connectionString,
-                            Optional<String> postConnectionString,
-                            ArrayBlockingQueue<IdStatusPair> queue, int cacheSize,
-                            long reportWithinMs) {
+        public ReportWorker(String connectionString, Optional<String> postConnectionString,
+                        ArrayBlockingQueue<IdStatusPair> queue, int cacheSize,
+                        long reportWithinMs) {
             this.connectionString = connectionString;
             this.postConnectionString = postConnectionString;
             this.queue = queue;
@@ -323,7 +319,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                 if (isCreateTable()) {
                     createTable();
                 }
-                //table must exist for this to work
+                // table must exist for this to work
                 createPreparedStatement();
             } catch (SQLException e) {
                 throw new TikaConfigException("Problem creating connection, etc", e);
@@ -405,10 +401,9 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
             }
         }
 
-        private void updateInsert(PreparedStatement insert, String id,
-                                  String status,
-                                  Timestamp timestamp) throws SQLException {
-            //there has to be a more efficient way than this
+        private void updateInsert(PreparedStatement insert, String id, String status,
+                        Timestamp timestamp) throws SQLException {
+            // there has to be a more efficient way than this
             for (int i = 0; i < reportVariables.size(); i++) {
                 String name = reportVariables.get(i);
                 if (name.equals("timestamp")) {
@@ -418,8 +413,8 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                 } else if (name.equals("status")) {
                     insert.setString(i + 1, status);
                 } else {
-                    throw new IllegalArgumentException("I expected one of (id, status, timestamp)" +
-                            ", but I got: " + name);
+                    throw new IllegalArgumentException("I expected one of (id, status, timestamp)"
+                                    + ", but I got: " + name);
                 }
             }
 
@@ -429,8 +424,8 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
             try (Statement st = connection.createStatement()) {
                 String sql = "drop table if exists " + getTableName();
                 st.execute(sql);
-                sql = "create table " + getTableName() + " (id varchar(1024), status varchar(32), " +
-                        "timestamp timestamp with time zone)";
+                sql = "create table " + getTableName() + " (id varchar(1024), status varchar(32), "
+                                + "timestamp timestamp with time zone)";
                 st.execute(sql);
             }
         }
@@ -447,8 +442,8 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                     return;
                 } catch (SQLException e) {
                     LOG.warn("problem reconnecting", e);
-                    //if there's a failure, wait 30 seconds
-                    //and hope the db is back up.
+                    // if there's a failure, wait 30 seconds
+                    // and hope the db is back up.
                     Thread.sleep(30000);
                     ex = e;
                 }

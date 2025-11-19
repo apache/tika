@@ -1,39 +1,34 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.sax;
 
 import java.io.IOException;
 import java.util.LinkedList;
-
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
-
 /**
- * Content handler decorator that attempts to prevent denial of service
- * attacks against Tika parsers.
+ * Content handler decorator that attempts to prevent denial of service attacks against Tika
+ * parsers.
  * <p>
- * Currently this class simply compares the number of output characters
- * to to the number of input bytes and keeps track of the XML nesting levels.
- * An exception gets thrown if the output seems excessive compared to the
- * input document. This is a strong indication of a zip bomb.
+ * Currently this class simply compares the number of output characters to to the number of input
+ * bytes and keeps track of the XML nesting levels. An exception gets thrown if the output seems
+ * excessive compared to the input document. This is a strong indication of a zip bomb.
  *
  * @see <a href="https://issues.apache.org/jira/browse/TIKA-216">TIKA-216</a>
  * @since Apache Tika 0.4
@@ -77,13 +72,12 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     private int maxPackageEntryDepth = 10;
 
     /**
-     * Decorates the given content handler with zip bomb prevention based
-     * on the count of bytes read from the given counting input stream.
-     * The resulting decorator can be passed to a Tika parser along with
-     * the given counting input stream.
+     * Decorates the given content handler with zip bomb prevention based on the count of bytes read
+     * from the given counting input stream. The resulting decorator can be passed to a Tika parser
+     * along with the given counting input stream.
      *
      * @param handler the content handler to be decorated
-     * @param stream  the input stream to be parsed
+     * @param stream the input stream to be parsed
      */
     public SecureContentHandler(ContentHandler handler, TikaInputStream stream) {
         super(handler);
@@ -101,10 +95,9 @@ public class SecureContentHandler extends ContentHandlerDecorator {
 
 
     /**
-     * Sets the threshold for output characters before the zip bomb prevention
-     * is activated. This avoids false positives in cases where an otherwise
-     * normal document for some reason starts with a highly compressible
-     * sequence of bytes.
+     * Sets the threshold for output characters before the zip bomb prevention is activated. This
+     * avoids false positives in cases where an otherwise normal document for some reason starts
+     * with a highly compressible sequence of bytes.
      *
      * @param threshold new output threshold
      */
@@ -124,9 +117,8 @@ public class SecureContentHandler extends ContentHandlerDecorator {
 
 
     /**
-     * Sets the ratio between output characters and input bytes. If this
-     * ratio is exceeded (after the output threshold has been reached) then
-     * an exception gets thrown.
+     * Sets the ratio between output characters and input bytes. If this ratio is exceeded (after
+     * the output threshold has been reached) then an exception gets thrown.
      *
      * @param ratio new maximum compression ratio
      */
@@ -144,8 +136,8 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Sets the maximum XML element nesting level. If this depth level is
-     * exceeded then an exception gets thrown.
+     * Sets the maximum XML element nesting level. If this depth level is exceeded then an exception
+     * gets thrown.
      *
      * @param depth maximum XML element nesting level
      */
@@ -163,8 +155,8 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Sets the maximum package entry nesting level. If this depth level is
-     * exceeded then an exception gets thrown.
+     * Sets the maximum package entry nesting level. If this depth level is exceeded then an
+     * exception gets thrown.
      *
      * @param depth maximum package entry nesting level
      */
@@ -173,9 +165,8 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Converts the given {@link SAXException} to a corresponding
-     * {@link TikaException} if it's caused by this instance detecting
-     * a zip bomb.
+     * Converts the given {@link SAXException} to a corresponding {@link TikaException} if it's
+     * caused by this instance detecting a zip bomb.
      *
      * @param e SAX exception
      * @throws TikaException zip bomb exception
@@ -199,9 +190,9 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Records the given number of output characters (or more accurately
-     * UTF-16 code units). Throws an exception if the recorded number of
-     * characters highly exceeds the number of input bytes read.
+     * Records the given number of output characters (or more accurately UTF-16 code units). Throws
+     * an exception if the recorded number of characters highly exceeds the number of input bytes
+     * read.
      *
      * @param length number of new output characters produced
      * @throws SAXException if a zip bomb is detected
@@ -211,25 +202,26 @@ public class SecureContentHandler extends ContentHandlerDecorator {
         if (characterCount > threshold) {
             long byteCount = getByteCount();
             if (characterCount > byteCount * ratio) {
-                throw new SecureSAXException("Suspected zip bomb: " + byteCount + " input bytes produced " + characterCount + " output characters");
+                throw new SecureSAXException("Suspected zip bomb: " + byteCount
+                                + " input bytes produced " + characterCount + " output characters");
             }
         }
     }
 
     @Override
     public void startElement(String uri, String localName, String name, Attributes atts)
-            throws SAXException {
+                    throws SAXException {
         currentDepth++;
         if (currentDepth >= maxDepth) {
-            throw new SecureSAXException(
-                    "Suspected zip bomb: " + currentDepth + " levels of XML element nesting");
+            throw new SecureSAXException("Suspected zip bomb: " + currentDepth
+                            + " levels of XML element nesting");
         }
 
         if ("div".equals(name) && "package-entry".equals(atts.getValue("class"))) {
             packageEntryDepths.addLast(currentDepth);
             if (packageEntryDepths.size() >= maxPackageEntryDepth) {
-                throw new SecureSAXException("Suspected zip bomb: " + packageEntryDepths.size() +
-                        " levels of package entry nesting");
+                throw new SecureSAXException("Suspected zip bomb: " + packageEntryDepths.size()
+                                + " levels of package entry nesting");
             }
         }
 

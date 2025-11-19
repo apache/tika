@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mp4;
 
@@ -20,21 +18,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.drew.metadata.mp4.Mp4Directory;
+import com.drew.metadata.mp4.media.Mp4MetaDirectory;
+import com.drew.metadata.mp4.media.Mp4SoundDirectory;
+import com.drew.metadata.mp4.media.Mp4VideoDirectory;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import com.drew.metadata.mp4.Mp4Directory;
-import com.drew.metadata.mp4.media.Mp4MetaDirectory;
-import com.drew.metadata.mp4.media.Mp4SoundDirectory;
-import com.drew.metadata.mp4.media.Mp4VideoDirectory;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -43,6 +36,9 @@ import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.xml.sax.ContentHandler;
 
 
 /**
@@ -54,24 +50,17 @@ public class MP4ParserTest extends TikaTest {
     Set<String> skipKeysB = new HashSet<>();
 
     /*
-    @Before
-    public void setUp() {
-
-        skipKeysB.add("X-TIKA:Parsed-By");
-        skipKeysA.add("X-TIKA:parse_time_millis");
-        skipKeysB.add("X-TIKA:content_handler");
-        skipKeysA.add("X-TIKA:content_handler");
-        skipKeysB.add("X-TIKA:parse_time_millis");
-        skipKeysB.add("xmpDM:videoCompressor");
-        //skipKeysB.add("xmpDM:audioChannelType");
-        //skipKeysB.add("xmpDM:audioChannelType");
-        skipKeysA.add("X-TIKA:content");
-        skipKeysB.add("X-TIKA:content");
-        skipKeysB.add("xmpDM:copyright");
-    }*/
+     * @Before public void setUp() {
+     * 
+     * skipKeysB.add("X-TIKA:Parsed-By"); skipKeysA.add("X-TIKA:parse_time_millis");
+     * skipKeysB.add("X-TIKA:content_handler"); skipKeysA.add("X-TIKA:content_handler");
+     * skipKeysB.add("X-TIKA:parse_time_millis"); skipKeysB.add("xmpDM:videoCompressor");
+     * //skipKeysB.add("xmpDM:audioChannelType"); //skipKeysB.add("xmpDM:audioChannelType");
+     * skipKeysA.add("X-TIKA:content"); skipKeysB.add("X-TIKA:content");
+     * skipKeysB.add("xmpDM:copyright"); }
+     */
     /**
-     * Test that we can extract information from
-     * a M4A MP4 Audio file
+     * Test that we can extract information from a M4A MP4 Audio file
      */
     @Test
     public void testMP4ParsingAudio() throws Exception {
@@ -114,11 +103,11 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("iTunes 10.5.3.3", metadata.get(XMP.CREATOR_TOOL));
 
         assertContains("org.apache.tika.parser.mp4.MP4Parser",
-                Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+                        Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
 
         // Check again by file, rather than stream
         TikaInputStream tstream =
-                TikaInputStream.get(getResourceAsStream("/test-documents/testMP4.m4a"));
+                        TikaInputStream.get(getResourceAsStream("/test-documents/testMP4.m4a"));
         tstream.getFile();
         ContentHandler handler = new BodyContentHandler();
         try {
@@ -126,7 +115,7 @@ public class MP4ParserTest extends TikaTest {
         } finally {
             tstream.close();
         }
-        //TODO: why don't we check the output here?
+        // TODO: why don't we check the output here?
     }
 
     // TODO Test a MP4 Video file
@@ -159,8 +148,8 @@ public class MP4ParserTest extends TikaTest {
 
     @Test
     public void testVideoDirectoriesNotConsideredAudio() {
-        final Collection<Mp4Directory> directories =
-                List.of(new Mp4VideoDirectory(), new Mp4VideoDirectory(), new Mp4SoundDirectory());
+        final Collection<Mp4Directory> directories = List.of(new Mp4VideoDirectory(),
+                        new Mp4VideoDirectory(), new Mp4SoundDirectory());
 
         assertFalse(MP4Parser.isAudioOnly(directories));
     }
@@ -170,115 +159,49 @@ public class MP4ParserTest extends TikaTest {
         assertFalse(MP4Parser.isAudioOnly(Collections.emptyList()));
     }
 
-/*
-
-    @Test
-    public void compareMetadata() throws Exception {
-        Path dir = Paths.get("/data/mp4s");
-        processDir(dir);
-
-    }
-
-    private void processDir(Path dir) {
-        for (File f : dir.toFile().listFiles()) {
-            if (f.isDirectory()) {
-                processDir(f.toPath());
-            } else {
-
-                if (! f.getName().contains("MB3EOKALN337SEYQE6WXIGMY5VQ2ZU7M")) {
-                   // continue;
-                }
-                System.out.println(f);
-                processFile(f.toPath());
-                System.out.println("");
-            }
-        }
-    }
-
-    private void processFile(Path p) {
-
-        Metadata a;
-        Metadata b;
-        try {
-            List<Metadata> metadataList = getRecursiveMetadata(p, new LegacyMP4Parser(), true);
-            if (metadataList.size() > 0) {
-                a = metadataList.get(0);
-            } else {
-                System.out.println("a is empty");
-                return;
-            }
-        } catch (AssertionError | Exception e) {
-            e.printStackTrace();
-            return;
-        }
-
-        try {
-            List<Metadata> metadataList = getRecursiveMetadata(p);
-            if (metadataList.size() > 0) {
-                b = metadataList.get(0);
-            } else {
-                System.out.println("b is empty");
-                return;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
-        compare(p, a, b);
-    }
-
-    private void compare(Path p, Metadata a, Metadata b) {
-       /* System.out.println("A");
-        debug(a);
-        System.out.println("B");
-        debug(b);
-        Set<String> aKeys = getKeys(a, skipKeysA);
-        Set<String> bKeys = getKeys(b, skipKeysB);
-        for (String k : aKeys) {
-            if (! bKeys.contains(k)) {
-                System.out.println("not in b: " + k + " : " + a.get(k) + " : " +
-                                p.getFileName().toString());
-            }
-        }
-        for (String k : bKeys) {
-            if (!aKeys.contains(k)) {
-                System.out.println("not in a: " + k + " : " + b.get(k) + " : " +
-                        p.getFileName().toString());
-            }
-        }
-        for (String k : aKeys) {
-            if (! bKeys.contains(k)) {
-                continue;
-            }
-            Set<String> aVals = getVals(a, k);
-            Set<String> bVals = getVals(b, k);
-            for (String v : aVals) {
-                if (!bVals.contains(v)) {
-                    System.out.println("b missing value: " + v + " for key " + k + " in " + p.getFileName().toString());
-                    for (String bVal : bVals) {
-                        System.out.println("\tb has " + bVal);
-                    }
-                }
-            }
-        }
-    }
-
-    private Set<String> getKeys(Metadata m, Set<String> skipFields) {
-        Set<String> keys = new HashSet<>();
-        for (String n : m.names()) {
-            if (! skipFields.contains(n)) {
-                keys.add(n);
-            }
-        }
-        return keys;
-
-    }
-
-    private Set<String> getVals(Metadata m, String k) {
-        Set<String> vals = new HashSet<>();
-        for (String v : m.getValues(k)) {
-            vals.add(v);
-        }
-        return vals;
-    } */
+    /*
+     * 
+     * @Test public void compareMetadata() throws Exception { Path dir = Paths.get("/data/mp4s");
+     * processDir(dir);
+     * 
+     * }
+     * 
+     * private void processDir(Path dir) { for (File f : dir.toFile().listFiles()) { if
+     * (f.isDirectory()) { processDir(f.toPath()); } else {
+     * 
+     * if (! f.getName().contains("MB3EOKALN337SEYQE6WXIGMY5VQ2ZU7M")) { // continue; }
+     * System.out.println(f); processFile(f.toPath()); System.out.println(""); } } }
+     * 
+     * private void processFile(Path p) {
+     * 
+     * Metadata a; Metadata b; try { List<Metadata> metadataList = getRecursiveMetadata(p, new
+     * LegacyMP4Parser(), true); if (metadataList.size() > 0) { a = metadataList.get(0); } else {
+     * System.out.println("a is empty"); return; } } catch (AssertionError | Exception e) {
+     * e.printStackTrace(); return; }
+     * 
+     * try { List<Metadata> metadataList = getRecursiveMetadata(p); if (metadataList.size() > 0) { b
+     * = metadataList.get(0); } else { System.out.println("b is empty"); return; } } catch
+     * (Exception e) { e.printStackTrace(); return; } compare(p, a, b); }
+     * 
+     * private void compare(Path p, Metadata a, Metadata b) { /* System.out.println("A"); debug(a);
+     * System.out.println("B"); debug(b); Set<String> aKeys = getKeys(a, skipKeysA); Set<String>
+     * bKeys = getKeys(b, skipKeysB); for (String k : aKeys) { if (! bKeys.contains(k)) {
+     * System.out.println("not in b: " + k + " : " + a.get(k) + " : " + p.getFileName().toString());
+     * } } for (String k : bKeys) { if (!aKeys.contains(k)) { System.out.println("not in a: " + k +
+     * " : " + b.get(k) + " : " + p.getFileName().toString()); } } for (String k : aKeys) { if (!
+     * bKeys.contains(k)) { continue; } Set<String> aVals = getVals(a, k); Set<String> bVals =
+     * getVals(b, k); for (String v : aVals) { if (!bVals.contains(v)) {
+     * System.out.println("b missing value: " + v + " for key " + k + " in " +
+     * p.getFileName().toString()); for (String bVal : bVals) { System.out.println("\tb has " +
+     * bVal); } } } } }
+     * 
+     * private Set<String> getKeys(Metadata m, Set<String> skipFields) { Set<String> keys = new
+     * HashSet<>(); for (String n : m.names()) { if (! skipFields.contains(n)) { keys.add(n); } }
+     * return keys;
+     * 
+     * }
+     * 
+     * private Set<String> getVals(Metadata m, String k) { Set<String> vals = new HashSet<>(); for
+     * (String v : m.getValues(k)) { vals.add(v); } return vals; }
+     */
 }

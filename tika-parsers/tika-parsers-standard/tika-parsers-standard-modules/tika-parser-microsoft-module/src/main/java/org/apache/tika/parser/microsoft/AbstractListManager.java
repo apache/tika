@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft;
 
@@ -22,21 +20,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.poi.hwpf.converter.NumberFormatter;
 
 public abstract class AbstractListManager {
     private final static String BULLET = "\u00b7";
 
-    protected Map<Integer, ParagraphLevelCounter> listLevelMap =
-            new HashMap<>();
+    protected Map<Integer, ParagraphLevelCounter> listLevelMap = new HashMap<>();
     protected Map<Integer, LevelTuple[]> overrideTupleMap = new HashMap<>();
 
-    //helper class that is docx/doc format agnostic
+    // helper class that is docx/doc format agnostic
     protected static class ParagraphLevelCounter {
 
-        //counts can == 0 if the format is decimal, make sure
-        //that flag values are < 0
+        // counts can == 0 if the format is decimal, make sure
+        // that flag values are < 0
         private final Integer NOT_SEEN_YET = -1;
         private final Integer FIRST_SKIPPED = -2;
         private final LevelTuple[] levelTuples;
@@ -97,20 +93,21 @@ public abstract class AbstractListManager {
          */
         private String format(int level, LevelTuple[] overrideLevelTuples) {
             if (level < 0 || level >= levelTuples.length) {
-                //log?
+                // log?
                 return "";
             }
-            boolean isLegal = (overrideLevelTuples != null) ? overrideLevelTuples[level].isLegal :
-                    levelTuples[level].isLegal;
-            //short circuit bullet
+            boolean isLegal = (overrideLevelTuples != null) ? overrideLevelTuples[level].isLegal
+                            : levelTuples[level].isLegal;
+            // short circuit bullet
             String numFmt = getNumFormat(level, isLegal, overrideLevelTuples);
             if ("bullet".equals(numFmt)) {
                 return BULLET + " ";
             }
 
-            String lvlText =
-                    (overrideLevelTuples == null || overrideLevelTuples[level].lvlText == null) ?
-                            levelTuples[level].lvlText : overrideLevelTuples[level].lvlText;
+            String lvlText = (overrideLevelTuples == null
+                            || overrideLevelTuples[level].lvlText == null)
+                                            ? levelTuples[level].lvlText
+                                            : overrideLevelTuples[level].lvlText;
             StringBuilder sb = new StringBuilder();
             Matcher m = LEVEL_INTERPOLATOR.matcher(lvlText);
             int last = 0;
@@ -121,11 +118,11 @@ public abstract class AbstractListManager {
                 try {
                     lvlNum = Integer.parseInt(lvlString);
                 } catch (NumberFormatException e) {
-                    //swallow
+                    // swallow
                 }
                 String numString = "";
-                //need to subtract 1 because, e.g. %1 is the format
-                //for the number at array offset 0
+                // need to subtract 1 because, e.g. %1 is the format
+                // for the number at array offset 0
                 numString = formatNum(lvlNum - 1, isLegal, overrideLevelTuples);
 
                 sb.append(numString);
@@ -133,13 +130,13 @@ public abstract class AbstractListManager {
             }
             sb.append(lvlText.substring(last));
             if (sb.length() > 0) {
-                //TODO: add in character after number
+                // TODO: add in character after number
                 sb.append(" ");
             }
             return sb.toString();
         }
 
-        //actual level number; can return empty string if numberformatter fails
+        // actual level number; can return empty string if numberformatter fails
         private String formatNum(int lvlNum, boolean isLegal, LevelTuple[] overrideLevelTuples) {
 
             int numFmtStyle = 0;
@@ -161,7 +158,7 @@ public abstract class AbstractListManager {
                 numFmtStyle = 1;
             } else if ("bullet".equals(numFmt)) {
                 return "";
-                //not yet handled by NumberFormatter...TODO: add to NumberFormatter?
+                // not yet handled by NumberFormatter...TODO: add to NumberFormatter?
             } else if ("ordinal".equals(numFmt)) {
                 return ordinalize(count);
             } else if ("decimalZero".equals(numFmt)) {
@@ -177,7 +174,7 @@ public abstract class AbstractListManager {
         }
 
         private String ordinalize(int count) {
-            //this is only good for locale == English
+            // this is only good for locale == English
             String countString = Integer.toString(count);
             if (countString.endsWith("1")) {
                 return countString + "st";
@@ -191,48 +188,49 @@ public abstract class AbstractListManager {
 
         private String getNumFormat(int lvlNum, boolean isLegal, LevelTuple[] overrideLevelTuples) {
             if (lvlNum < 0 || lvlNum >= levelTuples.length) {
-                //log?
+                // log?
                 return "decimal";
             }
             if (isLegal) {
-                //return decimal no matter the level if isLegal is true
+                // return decimal no matter the level if isLegal is true
                 return "decimal";
             }
-            return (overrideLevelTuples == null || overrideLevelTuples[lvlNum].numFmt == null) ?
-                    levelTuples[lvlNum].numFmt : overrideLevelTuples[lvlNum].numFmt;
+            return (overrideLevelTuples == null || overrideLevelTuples[lvlNum].numFmt == null)
+                            ? levelTuples[lvlNum].numFmt
+                            : overrideLevelTuples[lvlNum].numFmt;
         }
 
         private int getCount(int lvlNum) {
             if (lvlNum < 0 || lvlNum >= counts.size()) {
-                //log?
+                // log?
                 return 1;
             }
             return counts.get(lvlNum);
         }
 
         private void resetAfter(int startlevelNumber, LevelTuple[] overrideLevelTuples) {
-            for (int levelNumber = startlevelNumber + 1; levelNumber < counts.size();
-                    levelNumber++) {
+            for (int levelNumber = startlevelNumber + 1; levelNumber < counts
+                            .size(); levelNumber++) {
                 int cnt = counts.get(levelNumber);
                 if (cnt == NOT_SEEN_YET) {
-                    //do nothing
+                    // do nothing
                 } else if (cnt == FIRST_SKIPPED) {
-                    //do nothing
+                    // do nothing
                 } else if (levelTuples.length > levelNumber) {
-                    //never reset if restarts == 0
-                    int restart = (overrideLevelTuples == null ||
-                            overrideLevelTuples[levelNumber].restart < 0) ?
-                            levelTuples[levelNumber].restart :
-                            overrideLevelTuples[levelNumber].restart;
+                    // never reset if restarts == 0
+                    int restart = (overrideLevelTuples == null
+                                    || overrideLevelTuples[levelNumber].restart < 0)
+                                                    ? levelTuples[levelNumber].restart
+                                                    : overrideLevelTuples[levelNumber].restart;
                     if (restart == 0) {
                         return;
                     } else if (restart == -1 || startlevelNumber <= restart - 1) {
                         counts.set(levelNumber, NOT_SEEN_YET);
                     } else {
-                        //do nothing/don't reset
+                        // do nothing/don't reset
                     }
                 } else {
-                    //reset!
+                    // reset!
                     counts.set(levelNumber, NOT_SEEN_YET);
                 }
             }
@@ -242,8 +240,9 @@ public abstract class AbstractListManager {
             if (levelNumber >= levelTuples.length) {
                 return 1;
             } else {
-                return (overrideLevelTuples == null || overrideLevelTuples[levelNumber].start < 0) ?
-                        levelTuples[levelNumber].start : overrideLevelTuples[levelNumber].start;
+                return (overrideLevelTuples == null || overrideLevelTuples[levelNumber].start < 0)
+                                ? levelTuples[levelNumber].start
+                                : overrideLevelTuples[levelNumber].start;
             }
         }
     }

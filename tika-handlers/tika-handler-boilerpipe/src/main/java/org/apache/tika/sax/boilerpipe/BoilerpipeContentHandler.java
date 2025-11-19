@@ -1,28 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.sax.boilerpipe;
-
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 
 import de.l3s.boilerpipe.BoilerpipeExtractor;
 import de.l3s.boilerpipe.BoilerpipeProcessingException;
@@ -31,28 +21,33 @@ import de.l3s.boilerpipe.document.TextDocument;
 import de.l3s.boilerpipe.extractors.ArticleExtractor;
 import de.l3s.boilerpipe.extractors.DefaultExtractor;
 import de.l3s.boilerpipe.sax.BoilerpipeHTMLContentHandler;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.WriteOutContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.WriteOutContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
-
 /**
- * Uses the <a href="http://code.google.com/p/boilerpipe/">boilerpipe</a>
- * library to automatically extract the main content from a web page.
+ * Uses the <a href="http://code.google.com/p/boilerpipe/">boilerpipe</a> library to automatically
+ * extract the main content from a web page.
  * <p/>
  * Use this as a {@link ContentHandler} object passed to
- * {@link HtmlParser#parse(java.io.InputStream, ContentHandler, Metadata,
- * org.apache.tika.parser.ParseContext)}
+ * {@link HtmlParser#parse(java.io.InputStream, ContentHandler, Metadata, org.apache.tika.parser.ParseContext)}
  */
 public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
     /**
      * The newline character that gets inserted after block elements.
      */
-    private static final char[] NL = new char[]{'\n'};
+    private static final char[] NL = new char[] {'\n'};
     private static Set<Character> ALLOWABLE_CHARS;
 
     static {
@@ -72,8 +67,8 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
     private TextDocument td;
 
     /**
-     * Creates a new boilerpipe-based content extractor, using the
-     * {@link DefaultExtractor} extraction rules and "delegate" as the content handler.
+     * Creates a new boilerpipe-based content extractor, using the {@link DefaultExtractor}
+     * extraction rules and "delegate" as the content handler.
      *
      * @param delegate The {@link ContentHandler} object
      */
@@ -82,8 +77,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
     }
 
     /**
-     * Creates a content handler that writes XHTML body character events to
-     * the given writer.
+     * Creates a content handler that writes XHTML body character events to the given writer.
      *
      * @param writer writer
      */
@@ -92,11 +86,10 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
     }
 
     /**
-     * Creates a new boilerpipe-based content extractor, using the given
-     * extraction rules. The extracted main content will be passed to the
-     * <delegate> content handler.
+     * Creates a new boilerpipe-based content extractor, using the given extraction rules. The
+     * extracted main content will be passed to the <delegate> content handler.
      *
-     * @param delegate  The {@link ContentHandler} object
+     * @param delegate The {@link ContentHandler} object
      * @param extractor Extraction rules to use, e.g. {@link ArticleExtractor}
      */
     public BoilerpipeContentHandler(ContentHandler delegate, BoilerpipeExtractor extractor) {
@@ -145,7 +138,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+                    throws SAXException {
         super.startElement(uri, localName, qName, atts);
 
         if (inHeader) {
@@ -231,7 +224,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
                 switch (element.getElementType()) {
                     case START:
                         delegate.startElement(element.getUri(), element.getLocalName(),
-                                element.getQName(), element.getAttrs());
+                                        element.getQName(), element.getAttrs());
                         // Fall through
 
                     case CONTINUE:
@@ -245,14 +238,14 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
 
                             // https://issues.apache.org/jira/projects/TIKA/issues/TIKA-2683
                             // Allow exempted characters to be written
-                            if (isValidCharacterRun ||
-                                    (chars.length == 1 && ALLOWABLE_CHARS.contains(chars[0]))) {
+                            if (isValidCharacterRun || (chars.length == 1
+                                            && ALLOWABLE_CHARS.contains(chars[0]))) {
                                 delegate.characters(chars, 0, chars.length);
                             }
 
                             // https://issues.apache.org/jira/browse/TIKA-961
-                            if (isValidCharacterRun && i == element.getCharacters().size() - 1 &&
-                                    !Character.isWhitespace(chars[chars.length - 1])) {
+                            if (isValidCharacterRun && i == element.getCharacters().size() - 1
+                                            && !Character.isWhitespace(chars[chars.length - 1])) {
                                 // Only add whitespace for certain elements
                                 if (XHTMLContentHandler.ENDLINE.contains(element.getLocalName())) {
                                     delegate.ignorableWhitespace(NL, 0, NL.length);
@@ -263,12 +256,12 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
 
                     case END:
                         delegate.endElement(element.getUri(), element.getLocalName(),
-                                element.getQName());
+                                        element.getQName());
                         break;
 
                     default:
                         throw new RuntimeException(
-                                "Unhandled element type: " + element.getElementType());
+                                        "Unhandled element type: " + element.getElementType());
                 }
 
 
@@ -316,7 +309,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
         }
 
         protected RecordedElement(String uri, String localName, String qName, Attributes attrs,
-                                  RecordedElement.ElementType elementType) {
+                        RecordedElement.ElementType elementType) {
             this.uri = uri;
             this.localName = localName;
             this.qName = qName;

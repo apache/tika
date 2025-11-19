@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.pdf.updates;
 
@@ -20,22 +18,18 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.pdfbox.io.RandomAccessRead;
 
 /**
- * This is a first draft of a scanner to extract incremental updates
- * out of PDFs.  It effectively scans the bytestream looking
- * for startxref\\s*(\\d+)\\s*(%%EOF\n?)?  It does not validate that the
+ * This is a first draft of a scanner to extract incremental updates out of PDFs. It effectively
+ * scans the bytestream looking for startxref\\s*(\\d+)\\s*(%%EOF\n?)? It does not validate that the
  * startxrefs point to actual xrefs.
  * <p>
- * If the number component ends at the literal end of the file
- * (e.g. the file is truncated or malformed), the startxref
- * will not be reported.
+ * If the number component ends at the literal end of the file (e.g. the file is truncated or
+ * malformed), the startxref will not be reported.
  * <p>
- * There may be false positives, especially in adversarial settings.
- * For example, there may be a startxref string in a comment
- * or inside a stream or object.
+ * There may be false positives, especially in adversarial settings. For example, there may be a
+ * startxref string in a comment or inside a stream or object.
  *
  * <p>
  * The good parts come directly from PDFBox.
@@ -44,9 +38,10 @@ public class StartXRefScanner {
 
     static final int MAX_LENGTH_LONG = Long.toString(Long.MAX_VALUE).length();
 
-    private static final char[] STARTXREF = new char[]{'s', 't', 'a', 'r', 't', 'x', 'r', 'e', 'f'};
+    private static final char[] STARTXREF =
+                    new char[] {'s', 't', 'a', 'r', 't', 'x', 'r', 'e', 'f'};
 
-    private static final char[] EOF_MARKER = new char[]{'%', '%', 'E', 'O', 'F'};
+    private static final char[] EOF_MARKER = new char[] {'%', '%', 'E', 'O', 'F'};
 
 
     /**
@@ -78,8 +73,8 @@ public class StartXRefScanner {
             if (source.getPosition() >= Integer.MAX_VALUE) {
                 throw new IOException("read more than " + Integer.MAX_VALUE + " bytes");
             }
-            //TODO: if we're opening a new file for the source
-            //we shouldn't bother with this.
+            // TODO: if we're opening a new file for the source
+            // we shouldn't bother with this.
             source.rewind((int) source.getPosition());
         }
         return offsets;
@@ -99,10 +94,10 @@ public class StartXRefScanner {
                         boolean hasEof = readEOF();
                         long endOfEOFOffset = source.getPosition();
                         offsets.add(new StartXRefOffset(startxref, startXREFOffset, endOfEOFOffset,
-                                hasEof));
+                                        hasEof));
                         return;
                     } catch (IOException e) {
-                        //swallow
+                        // swallow
                         return;
                     }
                 }
@@ -115,9 +110,9 @@ public class StartXRefScanner {
     }
 
     private boolean readEOF() throws IOException {
-        //this expects %%EOF, with possibly some white space before it
-        //it will fail if there's a comment before %%EOF
-        //TODO -- make this more robust
+        // this expects %%EOF, with possibly some white space before it
+        // it will fail if there's a comment before %%EOF
+        // TODO -- make this more robust
         skipWhiteSpaces();
         int c = source.read();
         int i = 0;
@@ -126,19 +121,19 @@ public class StartXRefScanner {
         }
 
         if (i == EOF_MARKER.length) {
-            //now look for a single new line following the eof
+            // now look for a single new line following the eof
             c = source.read();
             if (c == -1) {
-                //do nothing
+                // do nothing
             } else if (isEOL(c)) {
-                //do nothing
+                // do nothing
             } else {
                 source.rewind(1);
             }
             return true;
         }
-        //did not match, we need to rewind some
-        //read = i+1
+        // did not match, we need to rewind some
+        // read = i+1
         i++;
         if (c == -1) {
             source.rewind(i - 1);
@@ -174,8 +169,8 @@ public class StartXRefScanner {
             retval = Long.parseLong(longBuffer.toString());
         } catch (NumberFormatException e) {
             source.rewind(longBuffer.toString().getBytes(StandardCharsets.ISO_8859_1).length);
-            throw new IOException("Error: Expected a long type at offset " + source.getPosition() +
-                    ", instead got '" + longBuffer + "'", e);
+            throw new IOException("Error: Expected a long type at offset " + source.getPosition()
+                            + ", instead got '" + longBuffer + "'", e);
         }
         return retval;
     }
@@ -205,8 +200,8 @@ public class StartXRefScanner {
     }
 
     /**
-     * This method is used to read a token by the {@linkplain #readLong()} method. Valid
-     * delimiters are any non digit values.
+     * This method is used to read a token by the {@linkplain #readLong()} method. Valid delimiters
+     * are any non digit values.
      *
      * @return the token to parse as integer or long by the calling method.
      * @throws IOException throws by the {@link #source} methods.
@@ -217,9 +212,9 @@ public class StartXRefScanner {
         while ((lastByte = source.read()) >= '0' && lastByte <= '9') {
             buffer.append((char) lastByte);
             if (buffer.length() > MAX_LENGTH_LONG) {
-                throw new IOException(
-                        "Number '" + buffer + "' is getting too long, stop reading at offset " +
-                                source.getPosition());
+                throw new IOException("Number '" + buffer
+                                + "' is getting too long, stop reading at offset "
+                                + source.getPosition());
             }
         }
         if (lastByte == -1) {
@@ -249,4 +244,3 @@ public class StartXRefScanner {
         return ASCII_CR == c;
     }
 }
-

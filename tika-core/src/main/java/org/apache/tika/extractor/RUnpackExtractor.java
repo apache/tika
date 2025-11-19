@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.extractor;
 
@@ -24,13 +22,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -41,6 +32,11 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Recursive Unpacker and text and metadata extractor.
@@ -50,13 +46,14 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(ParsingEmbeddedDocumentExtractor.class);
+                    LoggerFactory.getLogger(ParsingEmbeddedDocumentExtractor.class);
 
     private static final File ABSTRACT_PATH = new File("");
 
     private EmbeddedBytesSelector embeddedBytesSelector = EmbeddedBytesSelector.ACCEPT_ALL;
 
-    private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
+    private final EmbeddedStreamTranslator embeddedStreamTranslator =
+                    new DefaultEmbeddedStreamTranslator();
     private long bytesExtracted = 0;
     private final long maxEmbeddedBytesForExtraction;
 
@@ -67,9 +64,8 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
 
     @Override
-    public void parseEmbedded(
-            TikaInputStream tis, ContentHandler handler, Metadata metadata, boolean outputHtml)
-            throws SAXException, IOException {
+    public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                    boolean outputHtml) throws SAXException, IOException {
         if (outputHtml) {
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "class", "class", "CDATA", "package-entry");
@@ -86,7 +82,8 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
         // Use the delegate parser to parse this entry
         try {
-            EmbeddedDocumentBytesHandler bytesHandler = context.get(EmbeddedDocumentBytesHandler.class);
+            EmbeddedDocumentBytesHandler bytesHandler =
+                            context.get(EmbeddedDocumentBytesHandler.class);
             tis.setCloseShield();
             if (bytesHandler != null) {
                 parseWithBytes(tis, handler, metadata);
@@ -96,8 +93,8 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         } catch (EncryptedDocumentException ede) {
             recordException(ede, context);
         } catch (CorruptedFileException e) {
-            //necessary to stop the parse to avoid infinite loops
-            //on corrupt sqlite3 files
+            // necessary to stop the parse to avoid infinite loops
+            // on corrupt sqlite3 files
             throw new IOException(e);
         } catch (TikaException e) {
             recordException(e, context);
@@ -110,15 +107,16 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         }
     }
 
-    private void parseWithBytes(TikaInputStream tis, ContentHandler handler, Metadata metadata) throws TikaException, IOException, SAXException {
+    private void parseWithBytes(TikaInputStream tis, ContentHandler handler, Metadata metadata)
+                    throws TikaException, IOException, SAXException {
 
-        //trigger spool to disk
+        // trigger spool to disk
         Path rawBytes = tis.getPath();
 
-        //There may be a "translated" path for OLE2 etc
+        // There may be a "translated" path for OLE2 etc
         Path translated = null;
         try {
-            //translate the stream or not
+            // translate the stream or not
             if (embeddedStreamTranslator.shouldTranslate(tis, metadata)) {
                 translated = Files.createTempFile("tika-tmp-", ".bin");
                 try (OutputStream os = Files.newOutputStream(translated)) {
@@ -142,10 +140,10 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
     }
 
     private void parse(InputStream stream, ContentHandler handler, Metadata metadata)
-            throws TikaException, IOException, SAXException {
+                    throws TikaException, IOException, SAXException {
         getDelegatingParser().parse(stream,
-                new EmbeddedContentHandler(new BodyContentHandler(handler)),
-                metadata, context);
+                        new EmbeddedContentHandler(new BodyContentHandler(handler)), metadata,
+                        context);
     }
 
     private void storeEmbeddedBytes(Path p, Metadata metadata) {
@@ -153,21 +151,21 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
             return;
         }
 
-        if (! embeddedBytesSelector.select(metadata)) {
+        if (!embeddedBytesSelector.select(metadata)) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("skipping embedded bytes {} <-> {}",
-                        metadata.get(Metadata.CONTENT_TYPE),
-                        metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+                                metadata.get(Metadata.CONTENT_TYPE),
+                                metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
             }
             return;
         }
         EmbeddedDocumentBytesHandler embeddedDocumentBytesHandler =
-                context.get(EmbeddedDocumentBytesHandler.class);
+                        context.get(EmbeddedDocumentBytesHandler.class);
         int id = metadata.getInt(TikaCoreProperties.EMBEDDED_ID);
         try (InputStream is = Files.newInputStream(p)) {
             if (bytesExtracted >= maxEmbeddedBytesForExtraction) {
-                throw new IOException("Bytes extracted (" + bytesExtracted +
-                        ") >= max allowed (" + maxEmbeddedBytesForExtraction + ")");
+                throw new IOException("Bytes extracted (" + bytesExtracted + ") >= max allowed ("
+                                + maxEmbeddedBytesForExtraction + ")");
             }
             long maxToRead = maxEmbeddedBytesForExtraction - bytesExtracted;
 
@@ -175,19 +173,19 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
                 embeddedDocumentBytesHandler.add(id, metadata, boundedIs);
                 bytesExtracted += boundedIs.getPos();
                 if (boundedIs.hasHitBound()) {
-                    throw new IOException("Bytes extracted (" + bytesExtracted +
-                            ") >= max allowed (" + maxEmbeddedBytesForExtraction + "). Truncated " +
-                            "bytes");
+                    throw new IOException("Bytes extracted (" + bytesExtracted
+                                    + ") >= max allowed (" + maxEmbeddedBytesForExtraction
+                                    + "). Truncated " + "bytes");
                 }
             }
         } catch (IOException e) {
             LOGGER.warn("problem writing out embedded bytes", e);
-            //info in metadata doesn't actually make it back to the metadata list
-            //because we're filtering and cloning the metadata at the end of the parse
-            //which happens before we try to copy out the files.
-            //TODO fix this
-            //metadata.set(TikaCoreProperties.EMBEDDED_BYTES_EXCEPTION,
-              //      ExceptionUtils.getStackTrace(e));
+            // info in metadata doesn't actually make it back to the metadata list
+            // because we're filtering and cloning the metadata at the end of the parse
+            // which happens before we try to copy out the files.
+            // TODO fix this
+            // metadata.set(TikaCoreProperties.EMBEDDED_BYTES_EXCEPTION,
+            // ExceptionUtils.getStackTrace(e));
         }
     }
 

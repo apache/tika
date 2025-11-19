@@ -1,28 +1,22 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.extractor;
 
 
 import java.io.IOException;
 import java.io.Serializable;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
@@ -40,21 +34,23 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.StatefulParser;
 import org.apache.tika.utils.ExceptionUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Utility class to handle common issues with embedded documents.
  * <p/>
- * Use statically if all that is needed is getting the EmbeddedDocumentExtractor.
- * Otherwise, instantiate an instance.
+ * Use statically if all that is needed is getting the EmbeddedDocumentExtractor. Otherwise,
+ * instantiate an instance.
  * <p/>
- * Note: This is not thread safe.  Make sure to instantiate one per thread.
+ * Note: This is not thread safe. Make sure to instantiate one per thread.
  */
 public class EmbeddedDocumentUtil implements Serializable {
 
 
     private final ParseContext context;
     private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
-    //these are lazily initialized and can be null
+    // these are lazily initialized and can be null
     private TikaConfig tikaConfig;
     private MimeTypes mimeTypes;
     private Detector detector;
@@ -65,12 +61,12 @@ public class EmbeddedDocumentUtil implements Serializable {
     }
 
     /**
-     * This offers a uniform way to get an EmbeddedDocumentExtractor from a ParseContext.
-     * As of Tika 1.15, an AutoDetectParser will automatically be added to parse
-     * embedded documents if no Parser.class is specified in the ParseContext.
+     * This offers a uniform way to get an EmbeddedDocumentExtractor from a ParseContext. As of Tika
+     * 1.15, an AutoDetectParser will automatically be added to parse embedded documents if no
+     * Parser.class is specified in the ParseContext.
      * <p/>
-     * If you'd prefer not to parse embedded documents, set Parser.class
-     * to {@link org.apache.tika.parser.EmptyParser} in the ParseContext.
+     * If you'd prefer not to parse embedded documents, set Parser.class to
+     * {@link org.apache.tika.parser.EmptyParser} in the ParseContext.
      *
      * @param context
      * @return EmbeddedDocumentExtractor
@@ -80,8 +76,8 @@ public class EmbeddedDocumentUtil implements Serializable {
         if (extractor != null) {
             return extractor;
         }
-        //ensure that an AutoDetectParser is
-        //available for parsing embedded docs TIKA-2096
+        // ensure that an AutoDetectParser is
+        // available for parsing embedded docs TIKA-2096
         Parser embeddedParser = context.get(Parser.class);
         if (embeddedParser == null) {
             TikaConfig tikaConfig = context.get(TikaConfig.class);
@@ -97,9 +93,8 @@ public class EmbeddedDocumentUtil implements Serializable {
     }
 
     /**
-     * Utility function to get the Parser that was sent in to the
-     * ParseContext to handle embedded documents.  If it is stateful,
-     * unwrap it to get its stateless delegating parser.
+     * Utility function to get the Parser that was sent in to the ParseContext to handle embedded
+     * documents. If it is stateful, unwrap it to get its stateless delegating parser.
      * <p>
      * If there is no Parser in the parser context, this will return null.
      *
@@ -122,7 +117,7 @@ public class EmbeddedDocumentUtil implements Serializable {
     }
 
     public Detector getDetector() {
-        //be as lazy as possible and cache
+        // be as lazy as possible and cache
         Detector localDetector = context.get(Detector.class);
         if (localDetector != null) {
             return localDetector;
@@ -137,7 +132,7 @@ public class EmbeddedDocumentUtil implements Serializable {
 
     public MimeTypes getMimeTypes() {
         MimeTypes localMimeTypes = context.get(MimeTypes.class);
-        //be as lazy as possible and cache the mimeTypes
+        // be as lazy as possible and cache the mimeTypes
         if (localMimeTypes != null) {
             return localMimeTypes;
         }
@@ -149,13 +144,13 @@ public class EmbeddedDocumentUtil implements Serializable {
     }
 
     /**
-     * @return Returns a {@link TikaConfig} -- trying to find it first in the ParseContext
-     * that was included during initialization, and then creating a new one from
-     * via {@link TikaConfig#getDefaultConfig()} if it can't find one in the
-     * ParseContext. This caches the default config so that it only has to be created once.
+     * @return Returns a {@link TikaConfig} -- trying to find it first in the ParseContext that was
+     *         included during initialization, and then creating a new one from via
+     *         {@link TikaConfig#getDefaultConfig()} if it can't find one in the ParseContext. This
+     *         caches the default config so that it only has to be created once.
      */
     public TikaConfig getTikaConfig() {
-        //be as lazy as possible and cache the TikaConfig
+        // be as lazy as possible and cache the TikaConfig
         if (tikaConfig == null) {
             tikaConfig = context.get(TikaConfig.class);
             if (tikaConfig == null) {
@@ -168,7 +163,7 @@ public class EmbeddedDocumentUtil implements Serializable {
     public String getExtension(TikaInputStream is, Metadata metadata) {
         String mimeString = metadata.get(Metadata.CONTENT_TYPE);
 
-        //use the buffered mimetypes as default
+        // use the buffered mimetypes as default
         MimeTypes localMimeTypes = getMimeTypes();
 
         MimeType mimeType = null;
@@ -177,7 +172,7 @@ public class EmbeddedDocumentUtil implements Serializable {
             try {
                 mimeType = localMimeTypes.forName(mimeString);
             } catch (MimeTypeException e) {
-                //swallow
+                // swallow
             }
         }
         if (mimeType == null) {
@@ -187,12 +182,12 @@ public class EmbeddedDocumentUtil implements Serializable {
                 detected = true;
                 is.reset();
             } catch (IOException | MimeTypeException e) {
-                //swallow
+                // swallow
             }
         }
         if (mimeType != null) {
             if (detected) {
-                //set or correct the mime type
+                // set or correct the mime type
                 metadata.set(Metadata.CONTENT_TYPE, mimeType.toString());
             }
             return mimeType.getExtension();
@@ -219,20 +214,19 @@ public class EmbeddedDocumentUtil implements Serializable {
     }
 
     public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                              boolean outputHtml) throws IOException, SAXException {
+                    boolean outputHtml) throws IOException, SAXException {
         embeddedDocumentExtractor.parseEmbedded(tis, handler, metadata, outputHtml);
     }
 
     /**
-     * Tries to find an existing parser within the ParseContext.
-     * It looks inside of CompositeParsers and ParserDecorators.
-     * The use case is when a parser needs to parse an internal stream
-     * that is _part_ of the document, e.g. rtf body inside an msg.
+     * Tries to find an existing parser within the ParseContext. It looks inside of CompositeParsers
+     * and ParserDecorators. The use case is when a parser needs to parse an internal stream that is
+     * _part_ of the document, e.g. rtf body inside an msg.
      * <p/>
-     * Can return <code>null</code> if the context contains no parser or
-     * the correct parser can't be found.
+     * Can return <code>null</code> if the context contains no parser or the correct parser can't be
+     * found.
      *
-     * @param clazz   parser class to search for
+     * @param clazz parser class to search for
      * @param context
      * @return
      */

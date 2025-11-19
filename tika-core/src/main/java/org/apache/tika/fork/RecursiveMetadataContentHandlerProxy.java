@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.fork;
 
@@ -23,25 +21,24 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * <p>This class calls #toString() on the ContentHandler, inserts it into the Metadata object
- * and serializes the Metadata object.
+ * <p>
+ * This class calls #toString() on the ContentHandler, inserts it into the Metadata object and
+ * serializes the Metadata object.
  * </p>
- * Ideally, this would serialize the ContentHandler and the Metadata object as separate objects,
- * but we can't guarantee that the ContentHandler is Serializable (e.g. the StringWriter in
- * the WriteOutContentHandler).
+ * Ideally, this would serialize the ContentHandler and the Metadata object as separate objects, but
+ * we can't guarantee that the ContentHandler is Serializable (e.g. the StringWriter in the
+ * WriteOutContentHandler).
  */
 class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
-        implements ForkProxy {
+                implements ForkProxy {
 
     public static final byte EMBEDDED_DOCUMENT = 1;
     public static final byte MAIN_DOCUMENT = 2;
@@ -59,7 +56,7 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
     private transient DataOutputStream output;
 
     public RecursiveMetadataContentHandlerProxy(int resource,
-                                                ContentHandlerFactory contentHandlerFactory) {
+                    ContentHandlerFactory contentHandlerFactory) {
         super(contentHandlerFactory);
         this.resource = resource;
     }
@@ -70,7 +67,7 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
 
     @Override
     public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata)
-            throws SAXException {
+                    throws SAXException {
         proxyBackToClient(EMBEDDED_DOCUMENT, contentHandler, metadata);
         decrementEmbeddedDepth();
     }
@@ -84,7 +81,7 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
     }
 
     private void proxyBackToClient(int embeddedOrMainDocument, ContentHandler contentHandler,
-                                   Metadata metadata) throws SAXException {
+                    Metadata metadata) throws SAXException {
         try {
             output.write(ForkServer.RESOURCE);
             output.writeByte(resource);
@@ -96,7 +93,7 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
                     bytes = serialize(contentHandler);
                     success = true;
                 } catch (NotSerializableException e) {
-                    //object lied
+                    // object lied
                 }
                 if (success) {
 
@@ -107,9 +104,9 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
                     return;
                 }
             }
-            //if contenthandler is not allegedly or actually Serializable
-            //fall back to adding contentHandler.toString() to the metadata object
-            //and send that.
+            // if contenthandler is not allegedly or actually Serializable
+            // fall back to adding contentHandler.toString() to the metadata object
+            // and send that.
             metadata.set(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
             output.writeByte(METADATA_ONLY);
             send(metadata);
@@ -133,9 +130,9 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
     }
 
     private byte[] serialize(Object object) throws IOException {
-        //can't figure out why I'm getting an IllegalAccessException
-        //when I try to use ForkedObjectInputStream, but
-        //not when I do this manually ?!
+        // can't figure out why I'm getting an IllegalAccessException
+        // when I try to use ForkedObjectInputStream, but
+        // not when I do this manually ?!
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
             oos.writeObject(object);

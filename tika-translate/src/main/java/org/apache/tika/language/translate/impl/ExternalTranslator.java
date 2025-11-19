@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.language.translate.impl;
@@ -23,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
-
 import org.apache.tika.exception.TikaException;
 
 /**
@@ -37,30 +34,29 @@ public abstract class ExternalTranslator extends AbstractTranslator {
     /**
      * Run the given command and return the output written to standard out.
      *
-     * @param command          The complete command to run.
-     * @param env              The environment to pass along to the Runtime.
+     * @param command The complete command to run.
+     * @param env The environment to pass along to the Runtime.
      * @param workingDirectory The directory from which to run the command.
      * @return The output of the command written to standard out.
      * @throws IOException
      * @throws InterruptedException
      */
     public Reader runAndGetOutput(String command, String[] env, File workingDirectory)
-            throws IOException, InterruptedException {
+                    throws IOException, InterruptedException {
         Process process = Runtime.getRuntime().exec(command, env, workingDirectory);
         InputStreamReader reader =
-                new InputStreamReader(process.getInputStream(), Charset.defaultCharset());
+                        new InputStreamReader(process.getInputStream(), Charset.defaultCharset());
         BufferedReader bufferedReader = new BufferedReader(reader);
         process.waitFor();
         return bufferedReader;
     }
 
     /**
-     * Checks to see if the command can be run. Typically used with
-     * something like "myapp --version" to check to see if "myapp"
-     * is installed and on the path.
+     * Checks to see if the command can be run. Typically used with something like "myapp --version"
+     * to check to see if "myapp" is installed and on the path.
      *
      * @param checkCommandString The command to run and check the return code of.
-     * @param successCodes       Return codes that signify success.
+     * @param successCodes Return codes that signify success.
      */
     public boolean checkCommand(String checkCommandString, int... successCodes) {
         try {
@@ -87,7 +83,7 @@ public abstract class ExternalTranslator extends AbstractTranslator {
     /**
      * Default translate method which uses built Tika language identification.
      *
-     * @param text           The text to translate.
+     * @param text The text to translate.
      * @param targetLanguage The desired language to translate to (for example, "hi").
      * @return The translated text.
      * @throws Exception

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.sax;
 
@@ -25,11 +23,6 @@ import javax.xml.transform.OutputKeys;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
-
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -37,6 +30,9 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class BoilerpipeHandlerTest extends TikaTest {
     /**
@@ -50,11 +46,8 @@ public class BoilerpipeHandlerTest extends TikaTest {
 
         Metadata metadata = new Metadata();
         BodyContentHandler handler = new BodyContentHandler();
-        new JSoupParser()
-                .parse(TikaInputStream.get(getResourceAsStream(path)),
-                        new BoilerpipeContentHandler(handler),
-                        metadata,
-                        new ParseContext());
+        new JSoupParser().parse(TikaInputStream.get(getResourceAsStream(path)),
+                        new BoilerpipeContentHandler(handler), metadata, new ParseContext());
 
         String content = handler.toString();
         assertTrue(content.startsWith("This is the real meat"));
@@ -80,12 +73,13 @@ public class BoilerpipeHandlerTest extends TikaTest {
         bpch.setIncludeMarkup(true);
 
         new JSoupParser().parse(TikaInputStream.get(getResourceAsStream(path)), bpch, metadata,
-                new ParseContext());
+                        new ParseContext());
 
         String content = sw.toString();
         assertTrue(content.contains("<body><table><tr><td><table><tr><td>"),
-                "Has empty table elements");
-        assertTrue(content.contains("<a shape=\"rect\" href=\"Main.php\"/>"), "Has empty a element");
+                        "Has empty table elements");
+        assertTrue(content.contains("<a shape=\"rect\" href=\"Main.php\"/>"),
+                        "Has empty a element");
         assertTrue(content.contains("<p>This is the real meat"), "Has real content");
         assertTrue(content.endsWith("</p></body></html>"), "Ends with appropriate HTML");
         assertFalse(content.contains("boilerplate"));
@@ -108,7 +102,7 @@ public class BoilerpipeHandlerTest extends TikaTest {
         bpHandler.setIncludeMarkup(true);
 
         new JSoupParser().parse(TikaInputStream.get(getResourceAsStream(path)), bpHandler, metadata,
-                new ParseContext());
+                        new ParseContext());
 
         String content = handler.toString();
 
@@ -137,9 +131,8 @@ public class BoilerpipeHandlerTest extends TikaTest {
         BoilerpipeContentHandler bpHandler = new BoilerpipeContentHandler(handler);
         bpHandler.setIncludeMarkup(true);
 
-        new JSoupParser().parse(
-                TikaInputStream.get(getResourceAsStream(path)), bpHandler, metadata,
-                new ParseContext());
+        new JSoupParser().parse(TikaInputStream.get(getResourceAsStream(path)), bpHandler, metadata,
+                        new ParseContext());
 
         String content = handler.toString();
 
@@ -151,8 +144,8 @@ public class BoilerpipeHandlerTest extends TikaTest {
     }
 
     /**
-     * Create ContentHandler that transforms SAX events into textual HTML output,
-     * and writes it out to <writer> - typically this is a StringWriter.
+     * Create ContentHandler that transforms SAX events into textual HTML output, and writes it out
+     * to <writer> - typically this is a StringWriter.
      *
      * @param writer Where to write resulting HTML text.
      * @return ContentHandler suitable for passing to parse() methods.

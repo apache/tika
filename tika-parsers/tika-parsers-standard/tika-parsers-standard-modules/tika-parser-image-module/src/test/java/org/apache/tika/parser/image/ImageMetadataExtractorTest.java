@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.image;
 
@@ -21,24 +19,22 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Arrays;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
-
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.Tag;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
+import java.util.Arrays;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 public class ImageMetadataExtractorTest {
 
@@ -47,7 +43,7 @@ public class ImageMetadataExtractorTest {
     public void testHandleDirectories() throws MetadataException {
         Metadata metadata = Mockito.mock(Metadata.class);
         ImageMetadataExtractor.DirectoryHandler handler1 =
-                Mockito.mock(ImageMetadataExtractor.DirectoryHandler.class);
+                        Mockito.mock(ImageMetadataExtractor.DirectoryHandler.class);
         ImageMetadataExtractor e = new ImageMetadataExtractor(metadata, handler1);
 
         Directory directory = new JpegCommentDirectory();
@@ -73,32 +69,38 @@ public class ImageMetadataExtractorTest {
     public void testExifHandlerParseDate() throws MetadataException {
         ExifSubIFDDirectory exif = Mockito.mock(ExifSubIFDDirectory.class);
         Mockito.when(exif.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(true);
-        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"), Locale.ROOT);
+        GregorianCalendar calendar =
+                        new GregorianCalendar(TimeZone.getTimeZone("UTC"), Locale.ROOT);
         calendar.setTimeInMillis(0);
         calendar.set(2000, 0, 1, 0, 0, 0);
         Mockito.when(exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL))
-                .thenReturn(calendar.getTime()); // UTC timezone as in Metadata Extractor
+                        .thenReturn(calendar.getTime()); // UTC timezone as in Metadata Extractor
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
         assertEquals("2000-01-01T00:00:00", metadata.get(TikaCoreProperties.CREATED),
-                "Should be ISO date without time zone");
+                        "Should be ISO date without time zone");
     }
 
     @Test
     public void testExifHandlerParseDateFallback() throws MetadataException {
         ExifIFD0Directory exif = Mockito.mock(ExifIFD0Directory.class);
         Mockito.when(exif.containsTag(ExifIFD0Directory.TAG_DATETIME)).thenReturn(true);
-        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"), Locale.ROOT);
+        GregorianCalendar calendar =
+                        new GregorianCalendar(TimeZone.getTimeZone("UTC"), Locale.ROOT);
         calendar.setTimeInMillis(0);
         calendar.set(1999, 0, 1, 0, 0, 0);
-        Mockito.when(exif.getDate(ExifIFD0Directory.TAG_DATETIME))
-                .thenReturn(calendar.getTime()); // UTC timezone as in Metadata Extractor
+        Mockito.when(exif.getDate(ExifIFD0Directory.TAG_DATETIME)).thenReturn(calendar.getTime()); // UTC
+                                                                                                   // timezone
+                                                                                                   // as
+                                                                                                   // in
+                                                                                                   // Metadata
+                                                                                                   // Extractor
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
         assertEquals("1999-01-01T00:00:00", metadata.get(TikaCoreProperties.CREATED),
-                "Should try EXIF Date/Time if Original is not set");
+                        "Should try EXIF Date/Time if Original is not set");
     }
 
     @Test
@@ -109,8 +111,7 @@ public class ImageMetadataExtractorTest {
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
-        assertNull(metadata.get(TikaCoreProperties.CREATED),
-                "Parsing should proceed without date");
+        assertNull(metadata.get(TikaCoreProperties.CREATED), "Parsing should proceed without date");
     }
 
     @Test
@@ -129,9 +130,10 @@ public class ImageMetadataExtractorTest {
         Mockito.when(d.getTags()).thenReturn(tags);
         Metadata metadata = new Metadata();
         new ImageMetadataExtractor.CopyUnknownFieldsHandler().handle(d, metadata);
-        assertEquals("t1", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Image Description"));
+        assertEquals("t1",
+                        metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Image Description"));
         assertNull(metadata.get(TikaCoreProperties.SUBJECT),
-                "keywords should be excluded from bulk copy because it is a defined field");
+                        "keywords should be excluded from bulk copy because it is a defined field");
         assertNull(metadata.get(TikaCoreProperties.DESCRIPTION));
     }
 

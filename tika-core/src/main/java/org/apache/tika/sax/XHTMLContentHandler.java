@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.sax;
 
@@ -20,18 +18,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-
 /**
- * Content handler decorator that simplifies the task of producing XHTML
- * events for Tika content parsers.
+ * Content handler decorator that simplifies the task of producing XHTML events for Tika content
+ * parsers.
  */
 public class XHTMLContentHandler extends SafeContentHandler {
 
@@ -42,37 +38,36 @@ public class XHTMLContentHandler extends SafeContentHandler {
     /**
      * The elements that get appended with the {@link #NL} character.
      */
-    public static final Set<String> ENDLINE =
-            unmodifiableSet("p", "h1", "h2", "h3", "h4", "h5", "h6", "div", "ul", "ol", "dl", "pre",
-                    "hr", "blockquote", "address", "fieldset", "table", "form", "noscript", "li",
-                    "dt", "dd", "noframes", "br", "tr", "select", "option", "link", "script");
+    public static final Set<String> ENDLINE = unmodifiableSet("p", "h1", "h2", "h3", "h4", "h5",
+                    "h6", "div", "ul", "ol", "dl", "pre", "hr", "blockquote", "address", "fieldset",
+                    "table", "form", "noscript", "li", "dt", "dd", "noframes", "br", "tr", "select",
+                    "option", "link", "script");
     /**
      * The newline character that gets inserted after block elements.
      */
-    private static final char[] NL = new char[]{'\n'};
+    private static final char[] NL = new char[] {'\n'};
     /**
      * The tab character gets inserted before table cells and list items.
      */
-    private static final char[] TAB = new char[]{'\t'};
+    private static final char[] TAB = new char[] {'\t'};
     /**
      * The elements that are in the <head> section.
      */
     private static final Set<String> HEAD =
-            unmodifiableSet("title", "link", "base", "meta", "script");
+                    unmodifiableSet("title", "link", "base", "meta", "script");
     /**
-     * The elements that are automatically emitted by lazyStartHead, so
-     * skip them if they get sent to startElement/endElement by mistake.
+     * The elements that are automatically emitted by lazyStartHead, so skip them if they get sent
+     * to startElement/endElement by mistake.
      */
     private static final Set<String> AUTO = unmodifiableSet("head", "frameset");
     /**
      * The elements that get prepended with the {@link #TAB} character.
      */
     private static final Set<String> INDENT =
-            unmodifiableSet("li", "dd", "dt", "td", "th", "frame");
+                    unmodifiableSet("li", "dd", "dt", "td", "th", "frame");
     private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
     /**
-     * Metadata associated with the document. Used to fill in the
-     * &lt;head/&gt; section.
+     * Metadata associated with the document. Used to fill in the &lt;head/&gt; section.
      */
     private final Metadata metadata;
     /**
@@ -85,6 +80,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
     private boolean headStarted = false;
     private boolean headEnded = false;
     private boolean useFrameset = false;
+
     public XHTMLContentHandler(ContentHandler handler, Metadata metadata) {
         super(handler);
         this.metadata = metadata;
@@ -95,10 +91,8 @@ public class XHTMLContentHandler extends SafeContentHandler {
     }
 
     /**
-     * Starts an XHTML document by setting up the namespace mappings
-     * when called for the first time.
-     * The standard XHTML prefix is generated lazily when the first
-     * element is started.
+     * Starts an XHTML document by setting up the namespace mappings when called for the first time.
+     * The standard XHTML prefix is generated lazily when the first element is started.
      */
     @Override
     public void startDocument() throws SAXException {
@@ -111,6 +105,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
 
     /**
      * Generates the following XHTML prefix when called for the first time:
+     * 
      * <pre>
      * &lt;html&gt;
      *   &lt;head&gt;
@@ -139,6 +134,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
 
     /**
      * Generates the following XHTML prefix when called for the first time:
+     * 
      * <pre>
      * &lt;html&gt;
      *   &lt;head&gt;
@@ -199,8 +195,8 @@ public class XHTMLContentHandler extends SafeContentHandler {
     }
 
     /**
-     * Ends the XHTML document by writing the following footer and
-     * clearing the namespace mappings:
+     * Ends the XHTML document by writing the following footer and clearing the namespace mappings:
+     * 
      * <pre>
      *   &lt;/body&gt;
      * &lt;/html&gt;
@@ -223,12 +219,12 @@ public class XHTMLContentHandler extends SafeContentHandler {
     }
 
     /**
-     * Starts the given element. Table cells and list items are automatically
-     * indented by emitting a tab character as ignorable whitespace.
+     * Starts the given element. Table cells and list items are automatically indented by emitting a
+     * tab character as ignorable whitespace.
      */
     @Override
     public void startElement(String uri, String local, String name, Attributes attributes)
-            throws SAXException {
+                    throws SAXException {
 
         if (name.equals("frameset")) {
             lazyEndHead(true);
@@ -248,8 +244,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
     }
 
     /**
-     * Ends the given element. Block elements are automatically followed
-     * by a newline character.
+     * Ends the given element. Block elements are automatically followed by a newline character.
      */
     @Override
     public void endElement(String uri, String local, String name) throws SAXException {
@@ -270,7 +265,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
         super.characters(ch, start, length);
     }
 
-    //------------------------------------------< public convenience methods >
+    // ------------------------------------------< public convenience methods >
 
     public void startElement(String name) throws SAXException {
         startElement(XHTML, name, name, EMPTY_ATTRIBUTES);
@@ -301,10 +296,10 @@ public class XHTMLContentHandler extends SafeContentHandler {
     }
 
     /**
-     * Emits an XHTML element with the given text content. If the given
-     * text value is null or empty, then the element is not written.
+     * Emits an XHTML element with the given text content. If the given text value is null or empty,
+     * then the element is not written.
      *
-     * @param name  XHTML element name
+     * @param name XHTML element name
      * @param value element value, possibly <code>null</code>
      * @throws SAXException if the content element could not be written
      */
@@ -321,7 +316,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
         if (super.isInvalid(ch)) {
             return true;
         }
-        // These control chars are  invalid in XHTML.
+        // These control chars are invalid in XHTML.
         return 0x7F <= ch && ch <= 0x9F;
     }
 

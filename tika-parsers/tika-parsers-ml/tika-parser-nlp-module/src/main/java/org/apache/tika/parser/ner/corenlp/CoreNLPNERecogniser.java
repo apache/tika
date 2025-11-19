@@ -1,21 +1,21 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.ner.corenlp;
 
+import com.github.openjson.JSONException;
+import com.github.openjson.JSONObject;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -27,33 +27,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
-import com.github.openjson.JSONException;
-import com.github.openjson.JSONObject;
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.parser.ner.NERecogniser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.parser.ner.NERecogniser;
-
 /**
- * This class offers an implementation of {@link NERecogniser} based on
- * CRF classifiers from Stanford CoreNLP. This NER requires additional setup,
- * due to runtime binding to Stanford CoreNLP.
- * See <a href="http://wiki.apache.org/tika/TikaAndNER#CoreNLP">
- * Tika NER Wiki</a> for configuring this recogniser.
+ * This class offers an implementation of {@link NERecogniser} based on CRF classifiers from
+ * Stanford CoreNLP. This NER requires additional setup, due to runtime binding to Stanford CoreNLP.
+ * See <a href="http://wiki.apache.org/tika/TikaAndNER#CoreNLP"> Tika NER Wiki</a> for configuring
+ * this recogniser.
  *
  * @see NERecogniser
  */
 public class CoreNLPNERecogniser implements NERecogniser {
 
-    //default model paths
+    // default model paths
     public static final String NER_3CLASS_MODEL =
-            "edu/stanford/nlp/models/ner/english.all.3class.distsim.crf.ser.gz";
+                    "edu/stanford/nlp/models/ner/english.all.3class.distsim.crf.ser.gz";
     public static final String NER_4CLASS_MODEL =
-            "edu/stanford/nlp/models/ner/english.conll.4class.distsim.crf.ser.gz";
+                    "edu/stanford/nlp/models/ner/english.conll.4class.distsim.crf.ser.gz";
     public static final String NER_7CLASS_MODEL =
-            "edu/stanford/nlp/models/ner/english.muc.7class.distsim.crf.ser.gz";
+                    "edu/stanford/nlp/models/ner/english.muc.7class.distsim.crf.ser.gz";
     /**
      * default Model path
      */
@@ -93,12 +88,12 @@ public class CoreNLPNERecogniser implements NERecogniser {
         try {
             Properties props = new Properties();
             Class<?> classifierClass = Class.forName(CLASSIFIER_CLASS_NAME);
-            Method loadMethod =
-                    classifierClass.getMethod("getClassifier", String.class, Properties.class);
+            Method loadMethod = classifierClass.getMethod("getClassifier", String.class,
+                            Properties.class);
             classifierInstance = loadMethod.invoke(classifierClass, modelPath, props);
             classifyMethod = classifierClass.getMethod("classifyToCharacterOffsets", String.class);
 
-            //these fields are for accessing result
+            // these fields are for accessing result
             Class<?> tripleClass = Class.forName("edu.stanford.nlp.util.Triple");
             this.firstField = tripleClass.getField("first");
             this.secondField = tripleClass.getField("second");
@@ -129,7 +124,7 @@ public class CoreNLPNERecogniser implements NERecogniser {
 
     /**
      * @return {@code true} if model was available, valid and was able to initialise the classifier.
-     * returns {@code false} when this recogniser is not available for service.
+     *         returns {@code false} when this recogniser is not available for service.
      */
     public boolean isAvailable() {
         return available;
@@ -163,7 +158,7 @@ public class CoreNLPNERecogniser implements NERecogniser {
                 Integer start = (Integer) secondField.get(entry);
                 Integer end = (Integer) thirdField.get(entry);
                 String name = text.substring(start, end);
-                //Clean repeating spaces, replace line breaks and tabs with single space
+                // Clean repeating spaces, replace line breaks and tabs with single space
                 name = name.trim().replaceAll("(\\s\\s+)|\n|\t", " ");
                 if (!name.isEmpty()) {
                     names.get(entityType).add(name);

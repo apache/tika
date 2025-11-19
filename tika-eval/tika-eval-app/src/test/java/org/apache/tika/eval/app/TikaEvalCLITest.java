@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.eval.app;
@@ -32,16 +30,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.tika.TikaTest;
+import org.apache.tika.utils.ProcessUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.TikaTest;
-import org.apache.tika.utils.ProcessUtils;
-
 public class TikaEvalCLITest extends TikaTest {
-    //TODO: these barely reach the minimal acceptable stage for unit tests
+    // TODO: these barely reach the minimal acceptable stage for unit tests
 
     private final static String dbName = "testdb";
 
@@ -69,20 +66,15 @@ public class TikaEvalCLITest extends TikaTest {
         List<String> args = new ArrayList<>();
         args.add("Compare");
         args.add("-a");
-        args.add(ProcessUtils.escapeCommandLine(extractsDir
-                .resolve("extractsA")
-                .toAbsolutePath()
-                .toString()));
+        args.add(ProcessUtils.escapeCommandLine(
+                        extractsDir.resolve("extractsA").toAbsolutePath().toString()));
         args.add("-b");
-        args.add(ProcessUtils.escapeCommandLine(extractsDir
-                .resolve("extractsB")
-                .toAbsolutePath()
-                .toString()));
+        args.add(ProcessUtils.escapeCommandLine(
+                        extractsDir.resolve("extractsB").toAbsolutePath().toString()));
 
         args.add("-d");
-        args.add(ProcessUtils.escapeCommandLine(compareDBDir
-                .toAbsolutePath()
-                .toString() + "/" + dbName));
+        args.add(ProcessUtils.escapeCommandLine(
+                        compareDBDir.toAbsolutePath().toString() + "/" + dbName));
 
         execute(args, 60000);
 
@@ -92,15 +84,12 @@ public class TikaEvalCLITest extends TikaTest {
         List<String> args = new ArrayList<>();
         args.add("Profile");
         args.add("-e");
-        args.add(ProcessUtils.escapeCommandLine(extractsDir
-                .resolve("extractsA")
-                .toAbsolutePath()
-                .toString()));
+        args.add(ProcessUtils.escapeCommandLine(
+                        extractsDir.resolve("extractsA").toAbsolutePath().toString()));
 
         args.add("-d");
-        args.add(ProcessUtils.escapeCommandLine(profileDBDir
-                .toAbsolutePath()
-                .toString() + "/" + dbName));
+        args.add(ProcessUtils.escapeCommandLine(
+                        profileDBDir.toAbsolutePath().toString() + "/" + dbName));
         execute(args, 60000);
     }
 
@@ -108,13 +97,10 @@ public class TikaEvalCLITest extends TikaTest {
         List<String> args = new ArrayList<>();
         args.add("Report");
         args.add("-db");
-        args.add(ProcessUtils.escapeCommandLine(profileDBDir
-                .toAbsolutePath()
-                .toString() + "/" + dbName));
+        args.add(ProcessUtils.escapeCommandLine(
+                        profileDBDir.toAbsolutePath().toString() + "/" + dbName));
         args.add("-rd");
-        args.add(ProcessUtils.escapeCommandLine(profileReportsDir
-                .toAbsolutePath()
-                .toString()));
+        args.add(ProcessUtils.escapeCommandLine(profileReportsDir.toAbsolutePath().toString()));
         execute(args, 60000);
     }
 
@@ -122,13 +108,10 @@ public class TikaEvalCLITest extends TikaTest {
         List<String> args = new ArrayList<>();
         args.add("Report");
         args.add("-db");
-        args.add(ProcessUtils.escapeCommandLine(compareDBDir
-                .toAbsolutePath()
-                .toString() + "/" + dbName));
+        args.add(ProcessUtils.escapeCommandLine(
+                        compareDBDir.toAbsolutePath().toString() + "/" + dbName));
         args.add("-rd");
-        args.add(ProcessUtils.escapeCommandLine(compareReportsDir
-                .toAbsolutePath()
-                .toString()));
+        args.add(ProcessUtils.escapeCommandLine(compareReportsDir.toAbsolutePath().toString()));
         execute(args, 60000);
     }
 
@@ -153,22 +136,21 @@ public class TikaEvalCLITest extends TikaTest {
             try {
                 exitValue = process.exitValue();
             } catch (IllegalThreadStateException e) {
-                //swallow
+                // swallow
             }
             elapsed = System.currentTimeMillis() - started;
         }
         if (exitValue == Integer.MIN_VALUE) {
             process.destroy();
-            throw new RuntimeException("Process never exited within the allowed amount of time.\n" + "I needed to destroy it");
+            throw new RuntimeException("Process never exited within the allowed amount of time.\n"
+                            + "I needed to destroy it");
         }
     }
 
     @Test
     public void testBasicCompare() throws Exception {
         Set<String> fNames = new HashSet<>();
-        for (File f : compareDBDir
-                .toFile()
-                .listFiles()) {
+        for (File f : compareDBDir.toFile().listFiles()) {
             fNames.add(f.getName());
         }
         assertContains(dbName + ".mv.db", fNames);
@@ -177,9 +159,7 @@ public class TikaEvalCLITest extends TikaTest {
     @Test
     public void testBasicProfile() throws Exception {
         Set<String> fNames = new HashSet<>();
-        for (File f : profileDBDir
-                .toFile()
-                .listFiles()) {
+        for (File f : profileDBDir.toFile().listFiles()) {
             fNames.add(f.getName());
         }
         assertContains(dbName + ".mv.db", fNames);
@@ -192,10 +172,7 @@ public class TikaEvalCLITest extends TikaTest {
         int cnt = 0;
         for (Path report : v.getPaths()) {
 
-            if (report
-                    .getFileName()
-                    .toString()
-                    .endsWith(".xlsx")) {
+            if (report.getFileName().toString().endsWith(".xlsx")) {
                 cnt++;
             }
         }
@@ -208,10 +185,7 @@ public class TikaEvalCLITest extends TikaTest {
         Files.walkFileTree(compareReportsDir, v);
         int cnt = 0;
         for (Path report : v.getPaths()) {
-            if (report
-                    .getFileName()
-                    .toString()
-                    .endsWith(".xlsx")) {
+            if (report.getFileName().toString().endsWith(".xlsx")) {
                 cnt++;
             }
         }
@@ -227,24 +201,19 @@ public class TikaEvalCLITest extends TikaTest {
         List<String> args = new ArrayList<>();
         args.add("Compare");
         args.add("-extractsA");
-        args.add(ProcessUtils.escapeCommandLine(extractsDir
-                .resolve("extractsA")
-                .toAbsolutePath()
-                .toString()));
+        args.add(ProcessUtils.escapeCommandLine(
+                        extractsDir.resolve("extractsA").toAbsolutePath().toString()));
         args.add("-extractsB");
-        args.add(ProcessUtils.escapeCommandLine(extractsDir
-                .resolve("extractsB")
-                .toAbsolutePath()
-                .toString()));
+        args.add(ProcessUtils.escapeCommandLine(
+                        extractsDir.resolve("extractsB").toAbsolutePath().toString()));
         args.add("-db");
-        args.add(ProcessUtils.escapeCommandLine(compareDBDir
-                .toAbsolutePath()
-                .toString() + "/" + dbName));
+        args.add(ProcessUtils.escapeCommandLine(
+                        compareDBDir.toAbsolutePath().toString() + "/" + dbName));
 
         execute(args, 60000);
-        //      args.add("-drop");
-//        args.add("-jdbc");
-//        args.add("jdbc:postgresql:tika_eval?user=user&password=password");
+        // args.add("-drop");
+        // args.add("-jdbc");
+        // args.add("jdbc:postgresql:tika_eval?user=user&password=password");
 
     }
 
@@ -252,7 +221,8 @@ public class TikaEvalCLITest extends TikaTest {
         Set<Path> paths = new HashSet<>();
 
         @Override
-        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                        throws IOException {
             return FileVisitResult.CONTINUE;
         }
 

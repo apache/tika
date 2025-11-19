@@ -1,38 +1,32 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mat;
 
-//JDK imports
+// JDK imports
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
 
 import com.jmatio.io.MatFileHeader;
 import com.jmatio.io.MatFileReader;
 import com.jmatio.types.MLArray;
 import com.jmatio.types.MLStructure;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -41,8 +35,10 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
-//JMatIO imports
+// JMatIO imports
 
 
 public class MatParser implements Parser {
@@ -50,37 +46,37 @@ public class MatParser implements Parser {
     public static final String MATLAB_MIME_TYPE = "application/x-matlab-data";
 
     static {
-        //make sure that this is set to false
+        // make sure that this is set to false
         MatFileReader.setAllowObjectDeserialization(false);
     }
 
     private final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("x-matlab-data"));
+                    Collections.singleton(MediaType.application("x-matlab-data"));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
 
-        //Set MIME type as Matlab
+        // Set MIME type as Matlab
         metadata.set(Metadata.CONTENT_TYPE, MATLAB_MIME_TYPE);
         TemporaryResources tmp =
-                TikaInputStream.isTikaInputStream(stream) ? null : new TemporaryResources();
+                        TikaInputStream.isTikaInputStream(stream) ? null : new TemporaryResources();
         try {
             // Use TIS so we can spool a temp file for parsing.
             TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
 
-            //Extract information from header file
-            MatFileReader mfr = new MatFileReader(tis.getFile()); //input .mat file
+            // Extract information from header file
+            MatFileReader mfr = new MatFileReader(tis.getFile()); // input .mat file
 
-            MatFileHeader hdr = mfr.getMatFileHeader(); //.mat header information
+            MatFileHeader hdr = mfr.getMatFileHeader(); // .mat header information
 
-            // Example header: "MATLAB 5.0 MAT-file, Platform: MACI64,  Created on: Sun Mar  2
+            // Example header: "MATLAB 5.0 MAT-file, Platform: MACI64, Created on: Sun Mar 2
             // 23:41:57 2014"
-            String[] parts =
-                    hdr.getDescription().split(","); // Break header information into its parts
+            String[] parts = hdr.getDescription().split(","); // Break header information into its
+                                                              // parts
 
             if (parts[2].contains("Created")) {
                 int lastIndex1 = parts[2].lastIndexOf("Created on:");
@@ -99,17 +95,18 @@ public class MatParser implements Parser {
             }
 
             // Get endian indicator from header file
-            String endianBytes = new String(hdr.getEndianIndicator(),
-                    UTF_8); // Retrieve endian bytes and convert to string
-            String endianCode = String.valueOf(
-                    endianBytes.toCharArray()); // Convert bytes to characters to string
+            String endianBytes = new String(hdr.getEndianIndicator(), UTF_8); // Retrieve endian
+                                                                              // bytes and convert
+                                                                              // to string
+            String endianCode = String.valueOf(endianBytes.toCharArray()); // Convert bytes to
+                                                                           // characters to string
             metadata.set("endian", endianCode);
 
-            //Text output
+            // Text output
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
             xhtml.newline();
-            //Loop through each variable
+            // Loop through each variable
             for (Map.Entry<String, MLArray> entry : mfr.getContent().entrySet()) {
                 String varName = entry.getKey();
                 MLArray varData = entry.getValue();

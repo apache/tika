@@ -1,25 +1,22 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.extractor.microsoft;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.CloseShieldOutputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
@@ -30,14 +27,13 @@ import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.microsoft.OfficeParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
 
@@ -49,16 +45,18 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
         if ("application/vnd.openxmlformats-officedocument.oleObject".equals(contentType)) {
             return true;
         } else {
-            return tis.getOpenContainer() != null &&
-                    tis.getOpenContainer() instanceof DirectoryEntry;
+            return tis.getOpenContainer() != null
+                            && tis.getOpenContainer() instanceof DirectoryEntry;
         }
     }
 
     @Override
-    public void translate(TikaInputStream tis, Metadata metadata, OutputStream os) throws IOException {
+    public void translate(TikaInputStream tis, Metadata metadata, OutputStream os)
+                    throws IOException {
         String contentType = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
         if ("application/vnd.openxmlformats-officedocument.oleObject".equals(contentType)) {
-            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
+            UnsynchronizedByteArrayOutputStream bos =
+                            UnsynchronizedByteArrayOutputStream.builder().get();
             IOUtils.copy(tis, bos);
             POIFSFileSystem poifs = new POIFSFileSystem(bos.toInputStream());
             OfficeParser.POIFSDocumentType type = OfficeParser.POIFSDocumentType.detectType(poifs);
@@ -82,8 +80,8 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
             os.write(data);
             os.flush();
         } else {
-            if (tis.getOpenContainer() != null &&
-                    tis.getOpenContainer() instanceof DirectoryEntry) {
+            if (tis.getOpenContainer() != null
+                            && tis.getOpenContainer() instanceof DirectoryEntry) {
                 try (POIFSFileSystem fs = new POIFSFileSystem()) {
                     copy((DirectoryEntry) tis.getOpenContainer(), fs.getRoot());
                     fs.writeFilesystem(CloseShieldOutputStream.wrap(os));

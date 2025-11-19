@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.xmp;
 
@@ -23,6 +21,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.adobe.internal.xmp.XMPConst;
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPIterator;
+import com.adobe.internal.xmp.XMPMeta;
+import com.adobe.internal.xmp.XMPMetaFactory;
+import com.adobe.internal.xmp.properties.XMPProperty;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -30,16 +34,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import com.adobe.internal.xmp.XMPConst;
-import com.adobe.internal.xmp.XMPException;
-import com.adobe.internal.xmp.XMPIterator;
-import com.adobe.internal.xmp.XMPMeta;
-import com.adobe.internal.xmp.XMPMetaFactory;
-import com.adobe.internal.xmp.properties.XMPProperty;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -47,13 +41,15 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.xmp.convert.ITikaToXMPConverter;
 import org.apache.tika.xmp.convert.MSOfficeXMLConverter;
 import org.apache.tika.xmp.convert.TikaToXMP;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests the Tika <code>Metadata</code> to XMP conversion functionatlity
  */
 public class TikaToXMPTest {
     private static final String OOXML_MIMETYPE =
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     private static final String GENERIC_MIMETYPE = "generic/mimetype";
     private Metadata tikaMetadata;
 
@@ -102,7 +98,7 @@ public class TikaToXMPTest {
     // --- TESTS ---
     @Test
     public void convert_OOXMLMetadataWithMimetype_everythingConverted()
-            throws XMPException, TikaException {
+                    throws XMPException, TikaException {
         setupOOXMLMetadata(tikaMetadata);
         tikaMetadata.set(Metadata.CONTENT_TYPE, OOXML_MIMETYPE);
 
@@ -113,7 +109,7 @@ public class TikaToXMPTest {
 
     @Test
     public void convert_OOXMLMetadataWithExtraMimetype_everythingConverted()
-            throws XMPException, TikaException {
+                    throws XMPException, TikaException {
         setupOOXMLMetadata(tikaMetadata);
 
         XMPMeta xmp = TikaToXMP.convert(tikaMetadata, OOXML_MIMETYPE);
@@ -123,7 +119,7 @@ public class TikaToXMPTest {
 
     @Test
     public void convert_OOXMLMetadataWithoutMimetype_onlyGeneralMetadataconverted()
-            throws XMPException, TikaException {
+                    throws XMPException, TikaException {
         setupOOXMLMetadata(tikaMetadata);
 
         XMPMeta xmp = TikaToXMP.convert(tikaMetadata, null);
@@ -141,21 +137,21 @@ public class TikaToXMPTest {
 
         // OOXML one is not, the namespace has also not been registered as the converter has not
         // been used
-        XMPMetaFactory.getSchemaRegistry()
-                .registerNamespace(OfficeOpenXMLCore.NAMESPACE_URI, OfficeOpenXMLCore.PREFIX);
+        XMPMetaFactory.getSchemaRegistry().registerNamespace(OfficeOpenXMLCore.NAMESPACE_URI,
+                        OfficeOpenXMLCore.PREFIX);
         prop = xmp.getProperty(OfficeOpenXMLCore.NAMESPACE_URI, "lastModifiedBy");
         assertNull(prop);
     }
 
     @Test
     public void convert_genericMetadataAllQualified_allConverted()
-            throws XMPException, TikaException {
+                    throws XMPException, TikaException {
         // simple property
         tikaMetadata.set(TikaCoreProperties.FORMAT, GENERIC_MIMETYPE);
         // language alternative
         tikaMetadata.set(TikaCoreProperties.TITLE, "title");
         // array
-        tikaMetadata.set(TikaCoreProperties.SUBJECT, new String[]{"keyword1", "keyword2"});
+        tikaMetadata.set(TikaCoreProperties.SUBJECT, new String[] {"keyword1", "keyword2"});
 
         XMPMeta xmp = TikaToXMP.convert(tikaMetadata, null);
 
@@ -240,7 +236,8 @@ public class TikaToXMPTest {
         final int numIterations = 100;
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
         try {
-            ExecutorCompletionService<Integer> executorCompletionService = new ExecutorCompletionService<>(executorService);
+            ExecutorCompletionService<Integer> executorCompletionService =
+                            new ExecutorCompletionService<>(executorService);
             for (int i = 0; i < numThreads; i++) {
                 executorCompletionService.submit(new Callable<Integer>() {
                     @Override

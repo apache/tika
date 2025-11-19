@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft;
 
@@ -28,7 +26,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
 import org.apache.poi.ddf.EscherBSERecord;
 import org.apache.poi.ddf.EscherBlipRecord;
 import org.apache.poi.ddf.EscherRecord;
@@ -73,8 +70,6 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.DateUtil;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -83,32 +78,27 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.xml.sax.SAXException;
 
 /**
- * Excel parser implementation which uses POI's Event API
- * to handle the contents of a Workbook.
+ * Excel parser implementation which uses POI's Event API to handle the contents of a Workbook.
  * <p/>
- * The Event API uses a much smaller memory footprint than
- * <code>HSSFWorkbook</code> when processing excel files
- * but at the cost of more complexity.
+ * The Event API uses a much smaller memory footprint than <code>HSSFWorkbook</code> when processing
+ * excel files but at the cost of more complexity.
  * <p/>
- * With the Event API a <i>listener</i> is registered for
- * specific record types and those records are created,
- * fired off to the listener and then discarded as the stream
- * is being processed.
+ * With the Event API a <i>listener</i> is registered for specific record types and those records
+ * are created, fired off to the listener and then discarded as the stream is being processed.
  *
  * @see org.apache.poi.hssf.eventusermodel.HSSFListener
- * @see <a href="http://poi.apache.org/hssf/how-to.html#event_api">
- * POI Event API How To</a>
+ * @see <a href="http://poi.apache.org/hssf/how-to.html#event_api"> POI Event API How To</a>
  */
 public class ExcelExtractor extends AbstractPOIFSExtractor {
 
     private static final String BOOK_ENTRY = "Book";
     /**
-     * <code>true</code> if the HSSFListener should be registered
-     * to listen for all records or <code>false</code> (the default)
-     * if the listener should be configured to only receive specified
-     * records.
+     * <code>true</code> if the HSSFListener should be registered to listen for all records or
+     * <code>false</code> (the default) if the listener should be configured to only receive
+     * specified records.
      */
     private boolean listenForAllRecords = false;
 
@@ -117,8 +107,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
     }
 
     /**
-     * Looks for one of the variant names for the workbook entry;
-     * returns null if not found.
+     * Looks for one of the variant names for the workbook entry; returns null if not found.
      *
      * @param root directory root to search
      * @return workbook entry or null
@@ -133,52 +122,48 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
     }
 
     /**
-     * Returns <code>true</code> if this parser is configured to listen
-     * for all records instead of just the specified few.
+     * Returns <code>true</code> if this parser is configured to listen for all records instead of
+     * just the specified few.
      */
     public boolean isListenForAllRecords() {
         return listenForAllRecords;
     }
 
     /**
-     * Specifies whether this parser should to listen for all
-     * records or just for the specified few.
+     * Specifies whether this parser should to listen for all records or just for the specified few.
      * <p/>
-     * <strong>Note:</strong> Under normal operation this setting should
-     * be <code>false</code> (the default), but you can experiment with
-     * this setting for testing and debugging purposes.
+     * <strong>Note:</strong> Under normal operation this setting should be <code>false</code> (the
+     * default), but you can experiment with this setting for testing and debugging purposes.
      *
-     * @param listenForAllRecords <code>true</code> if the HSSFListener
-     *                            should be registered to listen for all records or
-     *                            <code>false</code>
-     *                            if the listener should be configured to only receive specified
-     *                            records.
+     * @param listenForAllRecords <code>true</code> if the HSSFListener should be registered to
+     *        listen for all records or <code>false</code> if the listener should be configured to
+     *        only receive specified records.
      */
     public void setListenForAllRecords(boolean listenForAllRecords) {
         this.listenForAllRecords = listenForAllRecords;
     }
 
     /**
-     * Extracts text from an Excel Workbook writing the extracted content
-     * to the specified {@link Appendable}.
+     * Extracts text from an Excel Workbook writing the extracted content to the specified
+     * {@link Appendable}.
      *
      * @param filesystem POI file system
-     * @throws IOException if an error occurs processing the workbook
-     *                     or writing the extracted content
+     * @throws IOException if an error occurs processing the workbook or writing the extracted
+     *         content
      */
     protected void parse(POIFSFileSystem filesystem, XHTMLContentHandler xhtml, Locale locale)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         parse(filesystem.getRoot(), xhtml, locale);
     }
 
     protected void parse(DirectoryNode root, XHTMLContentHandler xhtml, Locale locale)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         String workbookEntryName = findWorkbookEntry(root);
         if (workbookEntryName == null) {
             if (root.hasEntry(BOOK_ENTRY)) {
                 // Excel 5 / Excel 95 file
                 // Records are in a different structure so needs a
-                //  different parser to process them
+                // different parser to process them
                 OldExcelExtractor extractor = new OldExcelExtractor(root);
                 OldExcelParser.parse(extractor, xhtml);
                 return;
@@ -192,8 +177,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         Biff8EncryptionKey.setCurrentUserPassword(getPassword());
 
         // Have the file processed in event mode
-        TikaHSSFListener listener =
-                new TikaHSSFListener(workbookEntryName, xhtml, locale, this, officeParserConfig);
+        TikaHSSFListener listener = new TikaHSSFListener(workbookEntryName, xhtml, locale, this,
+                        officeParserConfig);
         listener.processFile(root, isListenForAllRecords());
         listener.throwStoredException();
         updateMetadata(listener);
@@ -219,19 +204,19 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         if (listener.hasHiddenRow) {
             parentMetadata.set(Office.HAS_HIDDEN_ROWS, true);
         }
-        if (! listener.commentAuthors.isEmpty()) {
+        if (!listener.commentAuthors.isEmpty()) {
             for (String author : listener.commentAuthors) {
                 parentMetadata.add(Office.COMMENT_PERSONS, author);
             }
             parentMetadata.set(Office.HAS_COMMENTS, true);
         }
-        if (! listener.hiddenSheets.isEmpty()) {
+        if (!listener.hiddenSheets.isEmpty()) {
             for (String sheetName : listener.hiddenSheets) {
                 parentMetadata.add(Office.HIDDEN_SHEET_NAMES, sheetName);
             }
             parentMetadata.set(Office.HAS_HIDDEN_SHEETS, true);
         }
-        if (! listener.veryHiddenSheets.isEmpty()) {
+        if (!listener.veryHiddenSheets.isEmpty()) {
             for (String sheetName : listener.veryHiddenSheets) {
                 parentMetadata.add(Office.VERY_HIDDEN_SHEET_NAMES, sheetName);
             }
@@ -256,8 +241,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          */
         private final AbstractPOIFSExtractor extractor;
         /**
-         * Format for rendering numbers in the worksheet. Currently we just
-         * use the platform default formatting.
+         * Format for rendering numbers in the worksheet. Currently we just use the platform default
+         * formatting.
          *
          * @see <a href="https://issues.apache.org/jira/browse/TIKA-103">TIKA-103</a>
          */
@@ -267,18 +252,17 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         private final TikaExcelDataFormatter tikaExcelDataFormatter;
         private final String workbookEntryName;
         /**
-         * Potential exception thrown by the content handler. When set to
-         * non-<code>null</code>, causes all subsequent HSSF records to be
-         * ignored and the stored exception to be thrown when
-         * {@link #throwStoredException()} is invoked.
+         * Potential exception thrown by the content handler. When set to non-<code>null</code>,
+         * causes all subsequent HSSF records to be ignored and the stored exception to be thrown
+         * when {@link #throwStoredException()} is invoked.
          */
         private Exception exception = null;
         private SSTRecord sstRecord;
         private FormulaRecord stringFormulaRecord;
         private short previousSid;
         /**
-         * Internal <code>FormatTrackingHSSFListener</code> to handle cell
-         * formatting within the extraction.
+         * Internal <code>FormatTrackingHSSFListener</code> to handle cell formatting within the
+         * extraction.
          */
         private FormatTrackingHSSFListener formatListener;
         /**
@@ -286,24 +270,22 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          */
         private List<String> sheetNames = new ArrayList<>();
         /**
-         * Index of the current worksheet within the workbook.
-         * Used to find the worksheet name in the {@link #sheetNames} list.
+         * Index of the current worksheet within the workbook. Used to find the worksheet name in
+         * the {@link #sheetNames} list.
          */
         private short currentSheetIndex;
         /**
-         * Content of the current worksheet, or <code>null</code> if no
-         * worksheet is currently active.
+         * Content of the current worksheet, or <code>null</code> if no worksheet is currently
+         * active.
          */
         private SortedMap<Point, Cell> currentSheet = null;
         /**
-         * Extra text or cells that crops up, typically as part of a
-         * worksheet but not always.
+         * Extra text or cells that crops up, typically as part of a worksheet but not always.
          */
         private List<Cell> extraTextCells = new ArrayList<>();
         /**
-         * These aren't complete when we first see them, as the
-         * depend on continue records that aren't always
-         * contiguous. Collect them for later processing.
+         * These aren't complete when we first see them, as the depend on continue records that
+         * aren't always contiguous. Collect them for later processing.
          */
         private final List<DrawingGroupRecord> drawingGroups = new ArrayList<>();
 
@@ -315,14 +297,14 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         private boolean hasProtectedSheet = false;
 
         /**
-         * Construct a new listener instance outputting parsed data to
-         * the specified XHTML content handler.
+         * Construct a new listener instance outputting parsed data to the specified XHTML content
+         * handler.
          *
          * @param handler Destination to write the parsed output to
          */
         private TikaHSSFListener(String workbookEntryName, XHTMLContentHandler handler,
-                                 Locale locale, AbstractPOIFSExtractor extractor,
-                                 OfficeParserConfig officeParserConfig) {
+                        Locale locale, AbstractPOIFSExtractor extractor,
+                        OfficeParserConfig officeParserConfig) {
             this.workbookEntryName = workbookEntryName;
             this.handler = handler;
             this.extractor = extractor;
@@ -332,25 +314,25 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             this.officeParserConfig = officeParserConfig;
 
             this.tikaExcelDataFormatter
-                    .setDateFormatOverride(officeParserConfig.getDateFormatOverride());
+                            .setDateFormatOverride(officeParserConfig.getDateFormatOverride());
         }
 
         /**
          * Entry point to listener to start the processing of a file.
          *
-         * @param filesystem          POI file system.
-         * @param listenForAllRecords sets whether the listener is configured to listen
-         *                            for all records types or not.
-         * @throws IOException  on any IO errors.
+         * @param filesystem POI file system.
+         * @param listenForAllRecords sets whether the listener is configured to listen for all
+         *        records types or not.
+         * @throws IOException on any IO errors.
          * @throws SAXException on any SAX parsing errors.
          */
         public void processFile(POIFSFileSystem filesystem, boolean listenForAllRecords)
-                throws IOException, SAXException, TikaException {
+                        throws IOException, SAXException, TikaException {
             processFile(filesystem.getRoot(), listenForAllRecords);
         }
 
         public void processFile(DirectoryNode root, boolean listenForAllRecords)
-                throws IOException, SAXException, TikaException {
+                        throws IOException, SAXException, TikaException {
             // Set up listener and register the records we want to process
             HSSFRequest hssfRequest = new HSSFRequest();
             if (listenForAllRecords) {
@@ -386,7 +368,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
             // Create event factory and process Workbook (fire events)
             DocumentInputStream documentInputStream =
-                    root.createDocumentInputStream(workbookEntryName);
+                            root.createDocumentInputStream(workbookEntryName);
             HSSFEventFactory eventFactory = new HSSFEventFactory();
             try {
                 eventFactory.processEvents(hssfRequest, documentInputStream);
@@ -398,7 +380,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             processExtraText();
 
             // Look for embeded images, now that the drawing records
-            //  have been fully matched with their continue data
+            // have been fully matched with their continue data
             for (DrawingGroupRecord dgr : drawingGroups) {
                 dgr.decode();
                 findPictures(dgr.getEscherRecords());
@@ -436,7 +418,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         }
 
         private void internalProcessRecord(Record record)
-                throws SAXException, TikaException, IOException {
+                        throws SAXException, TikaException, IOException {
             switch (record.getSid()) {
                 case BOFRecord.sid: // start of workbook, worksheet etc. records
                     BOFRecord bof = (BOFRecord) record;
@@ -509,16 +491,18 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
                 case LabelSSTRecord.sid: // Ref. a string in the shared string table
                     if (sstRecord == null) {
-                        throw new TikaException("sstRecord should have been initialized before a ref to the shared string table");
+                        throw new TikaException(
+                                        "sstRecord should have been initialized before a ref to the shared string table");
                     }
                     LabelSSTRecord sst = (LabelSSTRecord) record;
                     UnicodeString unicode = sstRecord.getString(sst.getSSTIndex());
                     String cellString = null;
                     if (officeParserConfig.isConcatenatePhoneticRuns()) {
-                        String phonetic = (unicode != null && unicode.getExtendedRst() != null &&
-                                unicode.getExtendedRst().getPhoneticText() != null &&
-                                !unicode.getExtendedRst().getPhoneticText().isBlank()) ?
-                                unicode.getExtendedRst().getPhoneticText() : "";
+                        String phonetic = (unicode != null && unicode.getExtendedRst() != null
+                                        && unicode.getExtendedRst().getPhoneticText() != null
+                                        && !unicode.getExtendedRst().getPhoneticText().isBlank())
+                                                        ? unicode.getExtendedRst().getPhoneticText()
+                                                        : "";
                         cellString = unicode.getString() + " " + phonetic;
                     } else {
                         cellString = unicode.getString();
@@ -566,7 +550,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
                 case DrawingGroupRecord.sid:
                     // Collect this now, we'll process later when all
-                    //  the continue records are in
+                    // the continue records are in
                     drawingGroups.add((DrawingGroupRecord) record);
                     break;
 
@@ -584,24 +568,24 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     }
                     break;
                 case ProtectRecord.sid:
-                    if (((ProtectRecord)record).getProtect()) {
-                        //TODO -- associate this worksheet name
+                    if (((ProtectRecord) record).getProtect()) {
+                        // TODO -- associate this worksheet name
                         hasProtectedSheet = true;
                     }
                     break;
                 case ColumnInfoRecord.sid:
-                    if (((ColumnInfoRecord)record).getHidden()) {
+                    if (((ColumnInfoRecord) record).getHidden()) {
                         hasHiddenColumn = true;
                     }
                     break;
                 case NoteRecord.sid:
-                    String author = ((NoteRecord)record).getAuthor();
+                    String author = ((NoteRecord) record).getAuthor();
                     if (!StringUtils.isBlank(author)) {
                         commentAuthors.add(author);
                     }
                     break;
                 case RowRecord.sid:
-                    if (((RowRecord)record).getZeroHeight()) {
+                    if (((RowRecord) record).getZeroHeight()) {
                         hasHiddenRow = true;
                     }
                     break;
@@ -628,11 +612,11 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         }
 
         /**
-         * Adds the given cell (unless <code>null</code>) to the current
-         * worksheet (if any) at the position (if any) of the given record.
+         * Adds the given cell (unless <code>null</code>) to the current worksheet (if any) at the
+         * position (if any) of the given record.
          *
          * @param record record that holds the cell value
-         * @param cell   cell value (or <code>null</code>)
+         * @param cell cell value (or <code>null</code>)
          */
         private void addCell(Record record, Cell cell) throws SAXException {
             if (cell == null) {
@@ -642,10 +626,10 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 CellValueRecordInterface value = (CellValueRecordInterface) record;
                 Point point = new Point(value.getColumn(), value.getRow());
                 if (currentSheet.containsKey(point)) {
-                    //avoid overwriting content
-                    //for now, add to extraTextCells
-                    //TODO: consider allowing multiple text pieces
-                    //per x,y to keep the text together
+                    // avoid overwriting content
+                    // for now, add to extraTextCells
+                    // TODO: consider allowing multiple text pieces
+                    // per x,y to keep the text together
                     extraTextCells.add(cell);
                 } else {
                     currentSheet.put(point, cell);
@@ -658,11 +642,11 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         }
 
         /**
-         * Adds a text cell with the given text comment. The given text
-         * is trimmed, and ignored if <code>null</code> or empty.
+         * Adds a text cell with the given text comment. The given text is trimmed, and ignored if
+         * <code>null</code> or empty.
          *
          * @param record record that holds the text value
-         * @param text   text content, may be <code>null</code>
+         * @param text text content, may be <code>null</code>
          * @throws SAXException
          */
         private void addTextCell(Record record, String text) throws SAXException {
@@ -707,8 +691,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                         handler.startElement("tr");
                         handler.startElement("td");
                         currentRow++;
-                    } while (officeParserConfig.isIncludeMissingRows() &&
-                            currentRow < entry.getKey().y);
+                    } while (officeParserConfig.isIncludeMissingRows()
+                                    && currentRow < entry.getKey().y);
                     currentRow = entry.getKey().y;
                     currentColumn = 0;
                 }
@@ -734,7 +718,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         }
 
         private void findPictures(List<EscherRecord> records)
-                throws IOException, SAXException, TikaException {
+                        throws IOException, SAXException, TikaException {
             for (EscherRecord escherRecord : records) {
                 if (escherRecord instanceof EscherBSERecord) {
                     EscherBlipRecord blip = ((EscherBSERecord) escherRecord).getBlipRecord();
@@ -745,7 +729,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
                         // Handle the embeded resource
                         extractor.handleEmbeddedResource(stream, null, null, mimeType, handler,
-                                true);
+                                        true);
                     }
                 }
 
@@ -774,18 +758,16 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 } else {
                     if (!(cell instanceof FormulaRecord)) {
                         throw new IllegalArgumentException(
-                                "Unsupported CellValue Record passed in " + cell);
+                                        "Unsupported CellValue Record passed in " + cell);
                     }
                     value = ((FormulaRecord) cell).getValue();
                 }
                 if (DateUtil.isADateFormat(getFormatIndex(cell), formatString)) {
-                    return tikaExcelDataFormatter
-                            .formatRawCellContents(value, getFormatIndex(cell), formatString,
-                                    false);
+                    return tikaExcelDataFormatter.formatRawCellContents(value, getFormatIndex(cell),
+                                    formatString, false);
                 } else if ("general".equalsIgnoreCase(formatString)) {
-                    return tikaExcelDataFormatter
-                            .formatRawCellContents(value, getFormatIndex(cell), formatString,
-                                    false);
+                    return tikaExcelDataFormatter.formatRawCellContents(value, getFormatIndex(cell),
+                                    formatString, false);
                 }
                 return super.formatNumberDateCell(cell);
             }

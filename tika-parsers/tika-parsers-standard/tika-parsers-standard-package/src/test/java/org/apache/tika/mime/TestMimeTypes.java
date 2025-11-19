@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.mime;
 
@@ -29,15 +27,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test Suite for the {@link MimeTypes} repository.
@@ -74,7 +70,7 @@ public class TestMimeTypes {
 
     @Test
     public void testTextNotMarc() throws Exception {
-        //TIKA-3769
+        // TIKA-3769
         String md5 = "89148cea02eff4bb856183b4506bb9d8";
         assertTypeByData("text/plain", md5.getBytes(UTF_8));
     }
@@ -101,18 +97,18 @@ public class TestMimeTypes {
         assertTypeByName("application/msword", "x.doc");
         assertTypeByName("application/msword", "x.dot");
         assertTypeByName("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "x.docx");
+                        "x.docx");
         assertTypeByName("application/vnd.openxmlformats-officedocument.wordprocessingml.template",
-                "x.dotx");
+                        "x.dotx");
         assertTypeByName("application/vnd.ms-word.document.macroenabled.12", "x.docm");
         assertTypeByName("application/vnd.ms-word.template.macroenabled.12", "x.dotm");
         assertTypeByName("application/vnd.ms-excel", "x.xls");
         assertTypeByName("application/vnd.ms-excel", "x.xlt");
         assertTypeByName("application/vnd.ms-excel", "x.xla");
         assertTypeByName("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "x.xlsx");
+                        "x.xlsx");
         assertTypeByName("application/vnd.openxmlformats-officedocument.spreadsheetml.template",
-                "x.xltx");
+                        "x.xltx");
         assertTypeByName("application/vnd.ms-excel.sheet.macroenabled.12", "x.xlsm");
         assertTypeByName("application/vnd.ms-excel.template.macroenabled.12", "x.xltm");
         assertTypeByName("application/vnd.ms-excel.addin.macroenabled.12", "x.xlam");
@@ -122,12 +118,12 @@ public class TestMimeTypes {
         assertTypeByName("application/vnd.ms-powerpoint", "x.pps");
         assertTypeByName("application/vnd.ms-powerpoint", "x.ppa");
         assertTypeByName(
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                "x.pptx");
+                        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        "x.pptx");
         assertTypeByName("application/vnd.openxmlformats-officedocument.presentationml.template",
-                "x.potx");
+                        "x.potx");
         assertTypeByName("application/vnd.openxmlformats-officedocument.presentationml.slideshow",
-                "x.ppsx");
+                        "x.ppsx");
         assertTypeByName("application/vnd.ms-powerpoint.addin.macroenabled.12", "x.ppam");
         assertTypeByName("application/vnd.ms-powerpoint.presentation.macroenabled.12", "x.pptm");
         assertTypeByName("application/vnd.ms-powerpoint.template.macroenabled.12", "x.potm");
@@ -135,18 +131,17 @@ public class TestMimeTypes {
     }
 
     /**
-     * Note - detecting container formats by mime magic is very very
-     * iffy, as we can't be sure where things will end up.
-     * People really ought to use the container aware detection...
+     * Note - detecting container formats by mime magic is very very iffy, as we can't be sure where
+     * things will end up. People really ought to use the container aware detection...
      */
     @Test
     public void testOLE2Detection() throws Exception {
         // These have the properties block near the start, so our mime
-        //  magic will spot them
+        // magic will spot them
         assertTypeByData("application/vnd.ms-excel", "testEXCEL.xls");
 
         // This one quite legitimately doesn't have its properties block
-        //  as one of the first couple of entries
+        // as one of the first couple of entries
         // As such, our mime magic can't figure it out...
         assertTypeByData("application/x-tika-msoffice", "testWORD.doc");
         assertTypeByData("application/x-tika-msoffice", "testPPT.ppt");
@@ -158,46 +153,46 @@ public class TestMimeTypes {
         assertTypeByNameAndData("application/vnd.ms-excel", "testEXCEL.xls");
 
         // And the name lets us specialise the generic OOXML
-        //  ones to their actual type
+        // ones to their actual type
         assertTypeByNameAndData("application/vnd.ms-powerpoint", "testPPT.ppt");
         assertTypeByNameAndData("application/msword", "testWORD.doc");
     }
 
     /**
-     * Files generated by Works 7.0 Spreadsheet application use the OLE2
-     * structure and resemble Excel files (they contain a "Workbook"). They are
-     * not Excel though. They are distinguished from Excel files with an
-     * additional top-level entry in below the root of the POI filesystem.
+     * Files generated by Works 7.0 Spreadsheet application use the OLE2 structure and resemble
+     * Excel files (they contain a "Workbook"). They are not Excel though. They are distinguished
+     * from Excel files with an additional top-level entry in below the root of the POI filesystem.
      *
      * @throws Exception
      */
     @Test
     public void testWorksSpreadsheetDetection() throws Exception {
         assertTypeDetection("testWORKSSpreadsheet7.0.xlr",
-                // with name-only, everything should be all right 
-                "application/x-tika-msworks-spreadsheet",
-                // this is possible due to MimeTypes guessing the type
-                // based on the WksSSWorkBook near the beginning of the
-                // file
-                "application/x-tika-msworks-spreadsheet",
-                // this is right, the magic-based detection works, there is
-                // no need for the name-based detection to refine it
-                "application/x-tika-msworks-spreadsheet");
+                        // with name-only, everything should be all right
+                        "application/x-tika-msworks-spreadsheet",
+                        // this is possible due to MimeTypes guessing the type
+                        // based on the WksSSWorkBook near the beginning of the
+                        // file
+                        "application/x-tika-msworks-spreadsheet",
+                        // this is right, the magic-based detection works, there is
+                        // no need for the name-based detection to refine it
+                        "application/x-tika-msworks-spreadsheet");
     }
 
     @Test
     public void testPostscriptBasedIllustrator() throws Exception {
-        //if all we have is the name, default to pdf based illustrator
+        // if all we have is the name, default to pdf based illustrator
         assertTypeByName("application/illustrator", "testAI_PS.ai");
-        //if we have bytes, get it right
+        // if we have bytes, get it right
         assertTypeByData("application/illustrator+ps", "testAI_PS.ai");
-        //if we have name and bytes, get it right
+        // if we have name and bytes, get it right
         assertTypeByNameAndData("application/illustrator+ps", "testAI_PS.ai");
 
     }
+
     @Test
     public void testDigiliteFDF() throws Exception {
-        //not to be confused with Adobe's .fdf!
+        // not to be confused with Adobe's .fdf!
         assertTypeByData("application/vnd.digilite.prolights", "testDigilite.fdf");
         assertTypeByNameAndData("application/vnd.digilite.prolights", "testDigilite.fdf");
     }
@@ -227,7 +222,7 @@ public class TestMimeTypes {
 
     @Test
     public void testXFDF() throws Exception {
-        //for an example: https://docs.appligent.com/fdfmerge/fdfmerge-form-data-format/
+        // for an example: https://docs.appligent.com/fdfmerge/fdfmerge-form-data-format/
         assertTypeDetection("testXFDF.xfdf", "application/vnd.adobe.xfdf");
     }
 
@@ -239,50 +234,53 @@ public class TestMimeTypes {
     @Test
     public void testStarOfficeDetection() throws Exception {
         assertTypeDetection("testVORCalcTemplate.vor", "application/x-staroffice-template",
-                "application/vnd.stardivision.calc", "application/vnd.stardivision.calc");
+                        "application/vnd.stardivision.calc", "application/vnd.stardivision.calc");
         assertTypeDetection("testVORDrawTemplate.vor", "application/x-staroffice-template",
-                "application/vnd.stardivision.draw", "application/vnd.stardivision.draw");
+                        "application/vnd.stardivision.draw", "application/vnd.stardivision.draw");
         assertTypeDetection("testVORImpressTemplate.vor", "application/x-staroffice-template",
-                "application/vnd.stardivision.impress", "application/vnd.stardivision.impress");
+                        "application/vnd.stardivision.impress",
+                        "application/vnd.stardivision.impress");
         assertTypeDetection("testVORWriterTemplate.vor", "application/x-staroffice-template",
-                "application/vnd.stardivision.writer", "application/vnd.stardivision.writer");
+                        "application/vnd.stardivision.writer",
+                        "application/vnd.stardivision.writer");
 
         assertTypeDetection("testStarOffice-5.2-calc.sdc", "application/vnd.stardivision.calc",
-                "application/vnd.stardivision.calc", "application/vnd.stardivision.calc");
+                        "application/vnd.stardivision.calc", "application/vnd.stardivision.calc");
         assertTypeDetection("testStarOffice-5.2-draw.sda", "application/vnd.stardivision.draw",
-                "application/vnd.stardivision.draw", "application/vnd.stardivision.draw");
+                        "application/vnd.stardivision.draw", "application/vnd.stardivision.draw");
         assertTypeDetection("testStarOffice-5.2-impress.sdd",
-                "application/vnd.stardivision.impress", "application/vnd.stardivision.impress",
-                "application/vnd.stardivision.impress");
+                        "application/vnd.stardivision.impress",
+                        "application/vnd.stardivision.impress",
+                        "application/vnd.stardivision.impress");
         assertTypeDetection("testStarOffice-5.2-writer.sdw", "application/vnd.stardivision.writer",
-                "application/vnd.stardivision.writer", "application/vnd.stardivision.writer");
+                        "application/vnd.stardivision.writer",
+                        "application/vnd.stardivision.writer");
     }
 
     /**
-     * Files generated by Works Word Processor versions 3.0 and 4.0 use the
-     * OLE2 structure. They don't resemble Word though.
+     * Files generated by Works Word Processor versions 3.0 and 4.0 use the OLE2 structure. They
+     * don't resemble Word though.
      *
      * @throws Exception
      */
     @Test
     public void testOldWorksWordProcessorDetection() throws Exception {
         assertTypeDetection("testWORKSWordProcessor3.0.wps",
-                // .wps is just like any other works extension
-                "application/vnd.ms-works",
-                // this is due to MatOST substring
-                "application/vnd.ms-works",
-                // magic-based detection works, no need to refine it
-                "application/vnd.ms-works");
+                        // .wps is just like any other works extension
+                        "application/vnd.ms-works",
+                        // this is due to MatOST substring
+                        "application/vnd.ms-works",
+                        // magic-based detection works, no need to refine it
+                        "application/vnd.ms-works");
 
         // files in version 4.0 are no different from those in version 3.0
         assertTypeDetection("testWORKSWordProcessor4.0.wps", "application/vnd.ms-works",
-                "application/vnd.ms-works", "application/vnd.ms-works");
+                        "application/vnd.ms-works", "application/vnd.ms-works");
     }
 
     /**
-     * Files from Excel 2 through 4 are based on the BIFF record
-     * structure, but without a wrapping OLE2 structure.
-     * Excel 5 and Excel 95+ work on OLE2
+     * Files from Excel 2 through 4 are based on the BIFF record structure, but without a wrapping
+     * OLE2 structure. Excel 5 and Excel 95+ work on OLE2
      */
     @Test
     public void testOldExcel() throws Exception {
@@ -302,19 +300,18 @@ public class TestMimeTypes {
     }
 
     /**
-     * Note - detecting container formats by mime magic is very very
-     * iffy, as we can't be sure where things will end up.
-     * People really ought to use the container aware detection...
+     * Note - detecting container formats by mime magic is very very iffy, as we can't be sure where
+     * things will end up. People really ought to use the container aware detection...
      */
     @Test
     public void testOoxmlDetection() throws Exception {
         // These two do luckily have [Content_Types].xml near the start,
-        //  so our mime magic will spot them
+        // so our mime magic will spot them
         assertTypeByData("application/x-tika-ooxml", "testEXCEL.xlsx");
         assertTypeByData("application/x-tika-ooxml", "testPPT.pptx");
 
         // This one quite legitimately doesn't have its [Content_Types].xml
-        //  file as one of the first couple of entries
+        // file as one of the first couple of entries
         // As such, our mime magic can't figure it out...
         assertTypeByData("application/zip", "testWORD.docx");
 
@@ -322,33 +319,32 @@ public class TestMimeTypes {
         assertTypeByData("application/x-tika-ooxml", "testEXCEL_poi.xlsx");
 
         // If we give the filename as well as the data, we can
-        //  specialise the ooxml generic one to the correct type
+        // specialise the ooxml generic one to the correct type
         assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "testEXCEL.xlsx");
+                        "testEXCEL.xlsx");
         assertTypeByNameAndData(
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                "testPPT.pptx");
+                        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        "testPPT.pptx");
         assertTypeByNameAndData(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "testWORD.docx");
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        "testWORD.docx");
 
         assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "testEXCEL_poi.xlsx");
+                        "testEXCEL_poi.xlsx");
 
         // Test a few of the less usual ones
         assertTypeByNameAndData("application/vnd.ms-excel.sheet.binary.macroenabled.12",
-                "testEXCEL.xlsb");
+                        "testEXCEL.xlsb");
         assertTypeByNameAndData("application/vnd.ms-powerpoint.presentation.macroenabled.12",
-                "testPPT.pptm");
+                        "testPPT.pptm");
         assertTypeByNameAndData("application/vnd.ms-powerpoint.template.macroenabled.12",
-                "testPPT.potm");
+                        "testPPT.potm");
         assertTypeByNameAndData("application/vnd.ms-powerpoint.slideshow.macroenabled.12",
-                "testPPT.ppsm");
+                        "testPPT.ppsm");
     }
 
     /**
-     * Note - container based formats, needs container detection
-     * to be properly correct
+     * Note - container based formats, needs container detection to be properly correct
      */
     @Test
     public void testVisioDetection() throws Exception {
@@ -364,13 +360,13 @@ public class TestMimeTypes {
         // By Name and Data, should get it right
         assertTypeByNameAndData("application/vnd.visio", "testVISIO.vsd");
         assertTypeByNameAndData("application/vnd.ms-visio.drawing.macroenabled.12",
-                "testVISIO.vsdm");
+                        "testVISIO.vsdm");
         assertTypeByNameAndData("application/vnd.ms-visio.drawing", "testVISIO.vsdx");
         assertTypeByNameAndData("application/vnd.ms-visio.stencil.macroenabled.12",
-                "testVISIO.vssm");
+                        "testVISIO.vssm");
         assertTypeByNameAndData("application/vnd.ms-visio.stencil", "testVISIO.vssx");
         assertTypeByNameAndData("application/vnd.ms-visio.template.macroenabled.12",
-                "testVISIO.vstm");
+                        "testVISIO.vstm");
         assertTypeByNameAndData("application/vnd.ms-visio.template", "testVISIO.vstx");
 
         // By Data only, will get the container parent
@@ -384,9 +380,8 @@ public class TestMimeTypes {
     }
 
     /**
-     * Note - detecting container formats by mime magic is very very
-     * iffy, as we can't be sure where things will end up.
-     * People really ought to use the container aware detection...
+     * Note - detecting container formats by mime magic is very very iffy, as we can't be sure where
+     * things will end up. People really ought to use the container aware detection...
      */
     @Test
     public void testIWorkDetection() throws Exception {
@@ -396,7 +391,7 @@ public class TestMimeTypes {
         assertTypeByName("application/vnd.apple.pages", "testPages.pages");
 
         // We can't do it by data, as we'd need to unpack
-        //  the zip file to check the XML
+        // the zip file to check the XML
         assertTypeByData("application/zip", "testKeynote.key");
 
         assertTypeByNameAndData("application/vnd.apple.keynote", "testKeynote.key");
@@ -423,8 +418,8 @@ public class TestMimeTypes {
         assertTypeByData("application/x-archive", "testARofSND.ar");
         assertTypeByData("application/zip", "test-documents.zip");
         assertTypeByData("application/x-gtar", "test-documents.tar"); // GNU TAR
-        assertTypeByData("application/gzip",
-                "test-documents.tgz"); // See GZIP, not tar contents of it
+        assertTypeByData("application/gzip", "test-documents.tgz"); // See GZIP, not tar contents of
+                                                                    // it
         assertTypeByData("application/x-cpio", "test-documents.cpio");
         assertTypeByData("application/vnd.ms-cab-compressed", "test-documents.cab");
 
@@ -461,7 +456,7 @@ public class TestMimeTypes {
     @Test
     public void testHeifDetection() throws Exception {
         // HEIF image using the HEVC Codec == HEIC
-        //  created using https://compare.rokka.io/_compare on testJPEG_GEO.jpg
+        // created using https://compare.rokka.io/_compare on testJPEG_GEO.jpg
         assertType("image/heic", "testHEIF.heic");
         assertTypeByData("image/heic", "testHEIF.heic");
         assertTypeByName("image/heic", "testHEIF.heic");
@@ -472,13 +467,13 @@ public class TestMimeTypes {
 
     @Test
     public void testJxlDetection() throws Exception {
-        //test file created by: https://github.com/surma/jxl-art/blob/main/LICENSE
+        // test file created by: https://github.com/surma/jxl-art/blob/main/LICENSE
         assertType("image/jxl", "testJXL.jxl");
         assertTypeByData("image/jxl", "testJXL.jxl");
         assertTypeByName("image/jxl", "testJXL.jxl");
 
-        //test file contributed by Tyler Thorsted
-        //testJXL_ISOBMFF.jxl
+        // test file contributed by Tyler Thorsted
+        // testJXL_ISOBMFF.jxl
         assertType("image/jxl", "testJXL_ISOBMFF.jxl");
         assertTypeByData("image/jxl", "testJXL_ISOBMFF.jxl");
         assertTypeByName("image/jxl", "testJXL_ISOBMFF.jxl");
@@ -574,7 +569,7 @@ public class TestMimeTypes {
         assertTypeByName("image/bmp", "x.BMP");
         assertTypeByName("image/bmp", "x.dib");
         assertTypeByName("image/bmp", "x.DIB");
-        //false positive check -- contains part of BMP signature
+        // false positive check -- contains part of BMP signature
         assertType("text/plain", "testBMPfp.txt");
     }
 
@@ -741,48 +736,40 @@ public class TestMimeTypes {
     @Test
     public void testJavaDetection() throws Exception {
         // TODO Classloader doesn't seem to find the .class file in test-documents
-        //assertTypeDetection("AutoDetectParser.class", "application/java-vm");
+        // assertTypeDetection("AutoDetectParser.class", "application/java-vm");
 
         // OSX Native Extension
-        assertTypeDetection("testJNILIB.jnilib",
-                "application/x-java-jnilib",
-                "application/x-mach-o-universal",
-                "application/x-java-jnilib");
+        assertTypeDetection("testJNILIB.jnilib", "application/x-java-jnilib",
+                        "application/x-mach-o-universal", "application/x-java-jnilib");
     }
 
     @Test
     public void testMachO() throws Exception {
-        assertTypeDetection("testMacOS-x86_64-arm64",
-                "application/octet-stream",
-                "application/x-mach-o-universal",
-                "application/x-mach-o-universal");
-        assertTypeDetection("testMacOS-x86_64",
-                "application/octet-stream",
-                "application/x-mach-o-executable",
-                "application/x-mach-o-executable");
-        assertTypeDetection("testMacOS-arm64",
-                "application/octet-stream",
-                "application/x-mach-o-executable",
-                "application/x-mach-o-executable");
+        assertTypeDetection("testMacOS-x86_64-arm64", "application/octet-stream",
+                        "application/x-mach-o-universal", "application/x-mach-o-universal");
+        assertTypeDetection("testMacOS-x86_64", "application/octet-stream",
+                        "application/x-mach-o-executable", "application/x-mach-o-executable");
+        assertTypeDetection("testMacOS-arm64", "application/octet-stream",
+                        "application/x-mach-o-executable", "application/x-mach-o-executable");
     }
 
     @Test
     public void testXmlAndHtmlDetection() throws Exception {
         assertTypeByData("application/xml",
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?><records><record/></records>"
-                        .getBytes(UTF_8));
+                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?><records><record/></records>"
+                                        .getBytes(UTF_8));
         assertTypeByData("application/xml",
-                "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>"
-                        .getBytes(UTF_16LE));
+                        "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>"
+                                        .getBytes(UTF_16LE));
         assertTypeByData("application/xml",
-                "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>"
-                        .getBytes(UTF_16BE));
+                        "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>"
+                                        .getBytes(UTF_16BE));
         assertTypeByData("application/xml",
-                "<!-- XML without processing instructions --><records><record/></records>"
-                        .getBytes(UTF_8));
+                        "<!-- XML without processing instructions --><records><record/></records>"
+                                        .getBytes(UTF_8));
         assertTypeByData("text/html", "<html><body>HTML</body></html>".getBytes(UTF_8));
         assertTypeByData("text/html",
-                "<!-- HTML comment --><html><body>HTML</body></html>".getBytes(UTF_8));
+                        "<!-- HTML comment --><html><body>HTML</body></html>".getBytes(UTF_8));
     }
 
     @Test
@@ -829,8 +816,7 @@ public class TestMimeTypes {
     }
 
     /**
-     * All 3 DITA types are in theory handled by the same mimetype,
-     * but we specialise them
+     * All 3 DITA types are in theory handled by the same mimetype, but we specialise them
      */
     @Test
     public void testDITADetection() throws Exception {
@@ -847,16 +833,13 @@ public class TestMimeTypes {
         assertTypeByNameAndData("application/dita+xml; format=map", "testDITA.ditamap");
 
         // These are all children of the official type
-        assertEquals("application/dita+xml",
-                repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA.ditamap"))
-                        .toString());
-        assertEquals("application/dita+xml",
-                repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA.dita"))
-                        .toString());
+        assertEquals("application/dita+xml", repo.getMediaTypeRegistry()
+                        .getSupertype(getTypeByNameAndData("testDITA.ditamap")).toString());
+        assertEquals("application/dita+xml", repo.getMediaTypeRegistry()
+                        .getSupertype(getTypeByNameAndData("testDITA.dita")).toString());
         // Concept inherits from topic
-        assertEquals("application/dita+xml; format=topic",
-                repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA2.dita"))
-                        .toString());
+        assertEquals("application/dita+xml; format=topic", repo.getMediaTypeRegistry()
+                        .getSupertype(getTypeByNameAndData("testDITA2.dita")).toString());
     }
 
     /**
@@ -926,25 +909,27 @@ public class TestMimeTypes {
         assertTypeByName("application/x-font-printer-metric", "x.pfm");
         // TODO Get a sample .pfm file
         assertTypeByData("application/x-font-printer-metric",
-                new byte[]{0x00, 0x01, 256 - 0xb1, 0x0a, 0x00, 0x00, 0x43, 0x6f, 0x70, 0x79, 0x72,
-                        0x69, 0x67, 0x68, 0x74, 0x20});
+                        new byte[] {0x00, 0x01, 256 - 0xb1, 0x0a, 0x00, 0x00, 0x43, 0x6f, 0x70,
+                                        0x79, 0x72, 0x69, 0x67, 0x68, 0x74, 0x20});
 
         assertTypeByName("application/x-font-type1", "x.pfa");
         // TODO Get a sample .pfa file
         assertTypeByData("application/x-font-type1",
-                new byte[]{0x25, 0x21, 0x50, 0x53, 0x2d, 0x41, 0x64, 0x6f, 0x62, 0x65, 0x46, 0x6f,
-                        0x6e, 0x74, 0x2d, 0x31, 0x2e, 0x30, 0x20, 0x20, 0x2d, 0x2a, 0x2d, 0x20});
+                        new byte[] {0x25, 0x21, 0x50, 0x53, 0x2d, 0x41, 0x64, 0x6f, 0x62, 0x65,
+                                        0x46, 0x6f, 0x6e, 0x74, 0x2d, 0x31, 0x2e, 0x30, 0x20, 0x20,
+                                        0x2d, 0x2a, 0x2d, 0x20});
 
         assertTypeByName("application/x-font-type1", "x.pfb");
         // TODO Get a sample .pfm file
         assertTypeByData("application/x-font-type1",
-                new byte[]{-0x80, 0x01, 0x09, 0x05, 0x00, 0x00, 0x25, 0x21, 0x50, 0x53, 0x2d, 0x41,
-                        0x64, 0x6f, 0x62, 0x65, 0x46, 0x6f, 0x6e, 0x74, 0x2d, 0x31, 0x2e, 0x30});
+                        new byte[] {-0x80, 0x01, 0x09, 0x05, 0x00, 0x00, 0x25, 0x21, 0x50, 0x53,
+                                        0x2d, 0x41, 0x64, 0x6f, 0x62, 0x65, 0x46, 0x6f, 0x6e, 0x74,
+                                        0x2d, 0x31, 0x2e, 0x30});
     }
 
     /**
-     * Tests MimeTypes.getMimeType(URL), which examines both the byte header
-     * and, if necessary, the URL's extension.
+     * Tests MimeTypes.getMimeType(URL), which examines both the byte header and, if necessary, the
+     * URL's extension.
      */
     @Test
     public void testMimeDeterminationForTestDocuments() throws Exception {
@@ -1011,7 +996,7 @@ public class TestMimeTypes {
         assertTypeDetection("testAMR-WB.amr", "audio/amr", "audio/amr-wb", "audio/amr-wb");
 
         // Ditto for the AMR-WB+ subtype, which we don't have a sample file of yet
-        //assertTypeDetection("testAMR-WB+.amr", "audio/amr", "audio/amr-wb+", "audio/amr-wb+");
+        // assertTypeDetection("testAMR-WB+.amr", "audio/amr", "audio/amr-wb+", "audio/amr-wb+");
     }
 
     @Test
@@ -1035,13 +1020,13 @@ public class TestMimeTypes {
         // Thunderbird
         assertTypeDetection("testThunderbirdEml.eml", "message/rfc822");
 
-        //dkim header
+        // dkim header
         assertTypeDetection("testThunderbirdEml.eml", "message/rfc822");
 
-        //x- custom header
+        // x- custom header
         assertTypeDetection("testRFC822_x-.eml", "message/rfc822");
 
-        //embedded xhtml and img
+        // embedded xhtml and img
         assertTypeDetection("testEML_embedded_xhtml_and_img.eml", "message/rfc822");
 
     }
@@ -1073,7 +1058,7 @@ public class TestMimeTypes {
         assertTypeByNameAndData("application/x-msdownload; format=pe", "testTinyPE.exe");
 
         // A jar file with part of a PE header, but not a full one
-        //  should still be detected as a zip or jar (without/with name)
+        // should still be detected as a zip or jar (without/with name)
         assertTypeByData("application/zip", "testJAR_with_PEHDR.jar");
         assertTypeByNameAndData("application/java-archive", "testJAR_with_PEHDR.jar");
     }
@@ -1106,25 +1091,25 @@ public class TestMimeTypes {
     @Test
     public void testGetMimeType_byteArray() throws IOException {
         // Plain text detection
-        assertText(new byte[]{(byte) 0xFF, (byte) 0xFE});
-        assertText(new byte[]{(byte) 0xFF, (byte) 0xFE});
-        assertText(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
-        assertText(new byte[]{'a', 'b', 'c'});
-        assertText(new byte[]{'\t', '\r', '\n', 0x0C, 0x1B});
-        assertNotText(new byte[]{'\t', '\r', '\n', 0x0E, 0x1C});
+        assertText(new byte[] {(byte) 0xFF, (byte) 0xFE});
+        assertText(new byte[] {(byte) 0xFF, (byte) 0xFE});
+        assertText(new byte[] {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
+        assertText(new byte[] {'a', 'b', 'c'});
+        assertText(new byte[] {'\t', '\r', '\n', 0x0C, 0x1B});
+        assertNotText(new byte[] {'\t', '\r', '\n', 0x0E, 0x1C});
     }
 
     @Test
     public void testBerkeleyDB() throws IOException {
         assertTypeByData("application/x-berkeley-db; format=btree; version=2",
-                "testBDB_btree_2.db");
+                        "testBDB_btree_2.db");
         assertTypeByData("application/x-berkeley-db; format=btree; version=3",
-                "testBDB_btree_3.db");
+                        "testBDB_btree_3.db");
         assertTypeByData("application/x-berkeley-db; format=btree; version=4",
-                "testBDB_btree_4.db");
+                        "testBDB_btree_4.db");
         // V4 and V5 share the same btree format
         assertTypeByData("application/x-berkeley-db; format=btree; version=4",
-                "testBDB_btree_5.db");
+                        "testBDB_btree_5.db");
 
         assertTypeByData("application/x-berkeley-db; format=hash; version=2", "testBDB_hash_2.db");
         assertTypeByData("application/x-berkeley-db; format=hash; version=3", "testBDB_hash_3.db");
@@ -1180,10 +1165,10 @@ public class TestMimeTypes {
         assertType("text/javascript", "testJS_HTML.js");
 
         // With data only, because we have no JS file magic, can't be
-        //  detected. One will come through as plain text, the other
-        //  as HTML due to <html> in it. TODO Add JS magic. See TIKA-1141 
-        //assertTypeByData("application/javascript", "testJS.js");
-        //assertTypeByData("application/javascript", "testJS_HTML.js");
+        // detected. One will come through as plain text, the other
+        // as HTML due to <html> in it. TODO Add JS magic. See TIKA-1141
+        // assertTypeByData("application/javascript", "testJS.js");
+        // assertTypeByData("application/javascript", "testJS_HTML.js");
     }
 
     @Test
@@ -1245,8 +1230,8 @@ public class TestMimeTypes {
         assertTypeByData("application/x-x509-ec-parameters", "testECPARAMS.pem");
         // PKCS12 wrappers of Certs+Keys cannot currently be identified
         // Once solved, see TIKA-3784, ought to work for name or data
-        //assertType("application/x-pkcs12", "testRSAKEYandCERT.p12");
-        //assertTypeByData("application/x-pkcs12", "testRSAKEYandCERT.p12"); // pass=tika
+        // assertType("application/x-pkcs12", "testRSAKEYandCERT.p12");
+        // assertTypeByData("application/x-pkcs12", "testRSAKEYandCERT.p12"); // pass=tika
         assertTypeByData("application/x-java-keystore", "KeyStore.jks");
     }
 
@@ -1256,8 +1241,9 @@ public class TestMimeTypes {
         assertType("text/x-vcalendar", "testVCalendar.vcs");
         assertTypeByData("text/calendar", "testICalendar.ics");
         assertTypeByData("text/x-vcalendar", "testVCalendar.vcs");
-        //TIKA-4244
-        //this tests detection with content intervening between the BEGIN:VCALENDAR and the VERSION:2.0 entry
+        // TIKA-4244
+        // this tests detection with content intervening between the BEGIN:VCALENDAR and the
+        // VERSION:2.0 entry
         assertType("text/calendar", "testICalendar_w_prodId.ics");
         assertTypeByData("text/calendar", "testICalendar_w_prodId.ics");
     }
@@ -1309,7 +1295,7 @@ public class TestMimeTypes {
 
     @Test
     public void testMSWriteFile() throws Exception {
-        //This file is govdocs1's 746255.doc
+        // This file is govdocs1's 746255.doc
         assertTypeByName("application/x-mswrite", "testMSWriteFile.wri");
         assertTypeByData("application/x-mswrite", "testMSWriteFile.wri");
     }
@@ -1401,8 +1387,8 @@ public class TestMimeTypes {
     }
 
     private void assertType(String expected, String filename) throws Exception {
-        try (InputStream stream = TikaInputStream
-                .get(TestMimeTypes.class.getResourceAsStream("/test-documents/" + filename))) {
+        try (InputStream stream = TikaInputStream.get(
+                        TestMimeTypes.class.getResourceAsStream("/test-documents/" + filename))) {
             assertNotNull(stream, "Test file not found: " + filename);
             Metadata metadata = new Metadata();
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
@@ -1417,8 +1403,8 @@ public class TestMimeTypes {
     }
 
     private void assertTypeByData(String expected, String filename) throws IOException {
-        try (InputStream stream = TikaInputStream
-                .get(TestMimeTypes.class.getResourceAsStream("/test-documents/" + filename))) {
+        try (InputStream stream = TikaInputStream.get(
+                        TestMimeTypes.class.getResourceAsStream("/test-documents/" + filename))) {
             assertNotNull(stream, "Test file not found: " + filename);
             Metadata metadata = new Metadata();
             assertEquals(expected, repo.detect(stream, metadata).toString());
@@ -1437,7 +1423,7 @@ public class TestMimeTypes {
     }
 
     private void assertTypeDetection(String filename, String byName, String byData,
-                                     String byNameAndData) throws IOException {
+                    String byNameAndData) throws IOException {
         assertTypeByName(byName, filename);
         assertTypeByData(byData, filename);
         assertTypeByNameAndData(byNameAndData, filename);
@@ -1448,8 +1434,8 @@ public class TestMimeTypes {
     }
 
     private MediaType getTypeByNameAndData(String filename) throws IOException {
-        try (InputStream stream = TikaInputStream
-                .get(TestMimeTypes.class.getResourceAsStream("/test-documents/" + filename))) {
+        try (InputStream stream = TikaInputStream.get(
+                        TestMimeTypes.class.getResourceAsStream("/test-documents/" + filename))) {
             assertNotNull(stream, "Test document not found: " + filename);
             Metadata metadata = new Metadata();
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);

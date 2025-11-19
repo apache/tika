@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.mime;
 
@@ -22,14 +20,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
- * Selector for combining different mime detection results
- * based on probability
+ * Selector for combining different mime detection results based on probability
  */
 public class ProbabilisticMimeDetectionSelector implements Detector {
     private static final long serialVersionUID = 224589862960269260L;
@@ -42,10 +38,9 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
     private final MimeTypes mimeTypes;
     private final MediaType rootMediaType;
     /*
-     * this change rate is used when there are multiple types predicted by
-     * magic-bytes. the first predicted type has the highest probability, and
-     * the probability for the next type predicted by magic-bytes will decay
-     * with this change rate. The idea is to have the first one to take
+     * this change rate is used when there are multiple types predicted by magic-bytes. the first
+     * predicted type has the highest probability, and the probability for the next type predicted
+     * by magic-bytes will decay with this change rate. The idea is to have the first one to take
      * precedence among the multiple possible types predicted by MAGIC-bytes.
      */
     private final float changeRate;
@@ -53,8 +48,8 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
     private float magic_trust, extension_trust, meta_trust;
     private float magic_neg, extension_neg, meta_neg;
     /*
-     * any posterior probability lower than the threshold, will be considered as
-     * an oct-stream type, the default value is 0.5
+     * any posterior probability lower than the threshold, will be considered as an oct-stream type,
+     * the default value is 0.5
      */
     private float threshold;
 
@@ -80,16 +75,16 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
         this.initializeDefaultProbabilityParameters();
         this.changeRate = 0.1f;
         if (builder != null) {
-            priorMagicFileType = builder.priorMagicFileType == 0f ? priorMagicFileType :
-                    builder.priorMagicFileType;
-            priorExtensionFileType = builder.priorExtensionFileType == 0f ? priorExtensionFileType :
-                    builder.priorExtensionFileType;
-            priorMetaFileType =
-                    builder.priorMetaFileType == 0f ? priorMetaFileType : builder.priorMetaFileType;
+            priorMagicFileType = builder.priorMagicFileType == 0f ? priorMagicFileType
+                            : builder.priorMagicFileType;
+            priorExtensionFileType = builder.priorExtensionFileType == 0f ? priorExtensionFileType
+                            : builder.priorExtensionFileType;
+            priorMetaFileType = builder.priorMetaFileType == 0f ? priorMetaFileType
+                            : builder.priorMetaFileType;
 
             magic_trust = builder.magic_trust == 0f ? magic_trust : builder.extension_neg;
-            extension_trust =
-                    builder.extension_trust == 0f ? extension_trust : builder.extension_trust;
+            extension_trust = builder.extension_trust == 0f ? extension_trust
+                            : builder.extension_trust;
             meta_trust = builder.meta_trust == 0f ? meta_trust : builder.meta_trust;
 
             magic_neg = builder.magic_neg == 0f ? magic_neg : builder.magic_neg;
@@ -130,7 +125,7 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
             input.mark(mimeTypes.getMinLength());
             try {
                 byte[] prefix = mimeTypes.readMagicHeader(input);
-                //defensive copy
+                // defensive copy
                 possibleTypes.addAll(mimeTypes.getMimeType(prefix));
             } finally {
                 input.reset();
@@ -187,8 +182,7 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
     }
 
     private MediaType applyProbilities(final List<MimeType> possibleTypes,
-                                       final MimeType extMimeType,
-                                       final MimeType metadataMimeType) {
+                    final MimeType extMimeType, final MimeType metadataMimeType) {
 
         /* initialize some probability variables */
         MediaType extensionMediaType_ = extMimeType == null ? null : extMimeType.getType();
@@ -206,8 +200,7 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
         /* pre-process some probability variables */
         if (extensionMediaType_ == null || extensionMediaType_.compareTo(rootMediaType) == 0) {
             /*
-             * this is a root type, that means the extension method fails to
-             * identify any type.
+             * this is a root type, that means the extension method fails to identify any type.
              */
             ext_trust = 1;
             ext_neg = 1;
@@ -231,8 +224,8 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
                 } else {
                     // check if each identified type belongs to the same class;
                     if (extensionMediaType_ != null) {
-                        if (extensionMediaType_.equals(magictype) ||
-                                registry.isSpecializationOf(extensionMediaType_, magictype)) {
+                        if (extensionMediaType_.equals(magictype) || registry
+                                        .isSpecializationOf(extensionMediaType_, magictype)) {
                             // Use just this type
                             possibleTypes.set(i, extMimeType);
                         } else if (registry.isSpecializationOf(magictype, extensionMediaType_)) {
@@ -240,8 +233,8 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
                         }
                     }
                     if (metaMediaType_ != null) {
-                        if (metaMediaType_.equals(magictype) ||
-                                registry.isSpecializationOf(metaMediaType_, magictype)) {
+                        if (metaMediaType_.equals(magictype)
+                                        || registry.isSpecializationOf(metaMediaType_, magictype)) {
                             // Use just this type
                             possibleTypes.set(i, metadataMimeType);
                         } else if (registry.isSpecializationOf(magictype, metaMediaType_)) {
@@ -261,8 +254,7 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
 
                 if (i > 0) {
                     /*
-                     * decay as our trust goes down with next type predicted by
-                     * magic
+                     * decay as our trust goes down with next type predicted by magic
                      */
                     mag_trust = mag_trust * (1 - changeRate);
                     /*
@@ -371,8 +363,8 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
                     results[2] = 0.1f;
                 }
                 /*
-                 * compute the posterior probability for each predicted file
-                 * type and store them into the "results" array.
+                 * compute the posterior probability for each predicted file type and store them
+                 * into the "results" array.
                  */
                 float pPrime = priorMagicFileType;
                 float deno = 1 - priorMagicFileType;
@@ -444,19 +436,16 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
      */
     public static class Builder {
         /*
-         * the following are the prior probabilities for the file type
-         * identified by each method.
+         * the following are the prior probabilities for the file type identified by each method.
          */
         private float priorMagicFileType, priorExtensionFileType, priorMetaFileType;
         /*
-         * the following are the conditional probability for each method with
-         * positive conditions
+         * the following are the conditional probability for each method with positive conditions
          */
         private float magic_trust, extension_trust, meta_trust;
 
         /*
-         * the following *_neg are the conditional probabilities with negative
-         * conditions
+         * the following *_neg are the conditional probabilities with negative conditions
          */
         private float magic_neg, extension_neg, meta_neg;
 

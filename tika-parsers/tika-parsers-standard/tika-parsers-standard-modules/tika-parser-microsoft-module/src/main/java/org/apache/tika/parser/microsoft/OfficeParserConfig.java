@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft;
 
@@ -39,7 +37,7 @@ public class OfficeParserConfig implements Serializable {
 
     private boolean extractAllAlternativesFromMSG = false;
     private String dateOverrideFormat = null;
-    private int maxOverride = 0;//ignore
+    private int maxOverride = 0;// ignore
 
     /**
      * @return whether or not to extract macros
@@ -49,8 +47,8 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * Sets whether or not MSOffice parsers should extract macros.
-     * As of Tika 1.15, the default is <code>false</code>.
+     * Sets whether or not MSOffice parsers should extract macros. As of Tika 1.15, the default is
+     * <code>false</code>.
      *
      * @param extractMacros
      */
@@ -79,11 +77,11 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * With track changes on, when a section is moved, the content
-     * is stored in both the "moveFrom" section and in the "moveTo" section.
+     * With track changes on, when a section is moved, the content is stored in both the "moveFrom"
+     * section and in the "moveTo" section.
      * <p/>
-     * If you'd like to include the section both in its original location (moveFrom)
-     * and in its new location (moveTo), set this to <code>true</code>
+     * If you'd like to include the section both in its original location (moveFrom) and in its new
+     * location (moveTo), set this to <code>true</code>
      * <p/>
      * Default: <code>false</code>
      * <p/>
@@ -101,11 +99,10 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * In Excel and Word, there can be text stored within drawing shapes.
-     * (In PowerPoint everything is in a Shape)
+     * In Excel and Word, there can be text stored within drawing shapes. (In PowerPoint everything
+     * is in a Shape)
      * <p/>
-     * If you'd like to skip processing these to look for text, set this to
-     * <code>false</code>
+     * If you'd like to skip processing these to look for text, set this to <code>false</code>
      * <p/>
      * Default: <code>true</code>
      *
@@ -122,8 +119,8 @@ public class OfficeParserConfig implements Serializable {
     /**
      * Whether or not to include headers and footers.
      * <p/>
-     * This only operates on headers and footers in Word and Excel,
-     * not master slide content in Powerpoint.
+     * This only operates on headers and footers in Word and Excel, not master slide content in
+     * Powerpoint.
      * <p/>
      * Default: <code>true</code>
      *
@@ -138,9 +135,8 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * Use the experimental SAX-based streaming DOCX parser?
-     * If set to <code>false</code>, the classic parser will be used; if <code>true</code>,
-     * the new experimental parser will be used.
+     * Use the experimental SAX-based streaming DOCX parser? If set to <code>false</code>, the
+     * classic parser will be used; if <code>true</code>, the new experimental parser will be used.
      * <p/>
      * Default: <code>false</code> (classic DOM parser)
      *
@@ -155,9 +151,8 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * Use the experimental SAX-based streaming DOCX parser?
-     * If set to <code>false</code>, the classic parser will be used; if <code>true</code>,
-     * the new experimental parser will be used.
+     * Use the experimental SAX-based streaming DOCX parser? If set to <code>false</code>, the
+     * classic parser will be used; if <code>true</code>, the new experimental parser will be used.
      * <p/>
      * Default: <code>false</code> (classic DOM parser)
      *
@@ -172,12 +167,12 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * Microsoft Excel files can sometimes contain phonetic (furigana) strings.
-     * See <a href="https://support.office.com/en-us/article/PHONETIC-function-9a329dac-0c0f-42f8-9a55-639086988554">PHONETIC</a>.
+     * Microsoft Excel files can sometimes contain phonetic (furigana) strings. See <a href=
+     * "https://support.office.com/en-us/article/PHONETIC-function-9a329dac-0c0f-42f8-9a55-639086988554">PHONETIC</a>.
      * This sets whether or not the parser will concatenate the phonetic runs to the original text.
      * <p>
-     * This is currently only supported by the xls and xlsx parsers (not the xlsb parser),
-     * and the default is <code>true</code>.
+     * This is currently only supported by the xls and xlsx parsers (not the xlsb parser), and the
+     * default is <code>true</code>.
      * </p>
      *
      * @param concatenatePhoneticRuns
@@ -191,10 +186,9 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * Some .msg files can contain body content in html, rtf and/or text.
-     * The default behavior is to pick the first non-null value and include only that.
-     * If you'd like to extract all non-null body content, which is likely duplicative,
-     * set this value to true.
+     * Some .msg files can contain body content in html, rtf and/or text. The default behavior is to
+     * pick the first non-null value and include only that. If you'd like to extract all non-null
+     * body content, which is likely duplicative, set this value to true.
      *
      * @param extractAllAlternativesFromMSG whether or not to extract all alternative parts
      * @since 1.17
@@ -208,9 +202,8 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * For table-like formats, and tables within other formats, should
-     * missing rows in sparse tables be output where detected?
-     * The default is to only output rows defined within the file, which
+     * For table-like formats, and tables within other formats, should missing rows in sparse tables
+     * be output where detected? The default is to only output rows defined within the file, which
      * avoid lots of blank lines, but means layout isn't preserved.
      */
     public void setIncludeMissingRows(boolean includeMissingRows) {
@@ -222,10 +215,9 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * Whether or not to process slide notes content.  If set
-     * to <code>false</code>, the parser will skip the text content
-     * and all embedded objects from the slide notes in ppt and ppt[xm].
-     * The default is <code>true</code>.
+     * Whether or not to process slide notes content. If set to <code>false</code>, the parser will
+     * skip the text content and all embedded objects from the slide notes in ppt and ppt[xm]. The
+     * default is <code>true</code>.
      *
      * @param includeSlideNotes whether or not to process slide notes
      * @since 1.19.1
@@ -243,10 +235,9 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * Whether or not to include contents from any of the three
-     * types of masters -- slide, notes, handout -- in a .ppt or ppt[xm] file.
-     * If set to <code>false</code>, the parser will not extract
-     * text or embedded objects from any of the masters.
+     * Whether or not to include contents from any of the three types of masters -- slide, notes,
+     * handout -- in a .ppt or ppt[xm] file. If set to <code>false</code>, the parser will not
+     * extract text or embedded objects from any of the masters.
      *
      * @param includeSlideMasterContent
      * @since 1.19.1
@@ -260,8 +251,8 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * A user may wish to override the date formats in xls and xlsx files.
-     * For example, a user might prefer 'yyyy-mm-dd' to 'mm/dd/yy'.
+     * A user may wish to override the date formats in xls and xlsx files. For example, a user might
+     * prefer 'yyyy-mm-dd' to 'mm/dd/yy'.
      * <p>
      * Note: these formats are "Excel formats" not Java's SimpleDateFormat
      *
@@ -280,8 +271,9 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * The default changed to <code>false</code> in 4.x. For legacy 3.x behavior,
-     * set this to <code>true</code>.
+     * The default changed to <code>false</code> in 4.x. For legacy 3.x behavior, set this to
+     * <code>true</code>.
+     * 
      * @return
      */
     public boolean isWriteSelectHeadersInBody() {
@@ -292,5 +284,3 @@ public class OfficeParserConfig implements Serializable {
         this.writeSelectHeadersInBody = writeSelectHeadersInBody;
     }
 }
-
-

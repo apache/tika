@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
@@ -43,15 +41,7 @@ import javax.xml.transform.OutputKeys;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
-
 import org.apache.poi.util.LocaleUtil;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
@@ -76,6 +66,12 @@ import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.OfficeParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class OOXMLParserTest extends MultiThreadedTikaTest {
 
@@ -107,7 +103,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         String content = getText("testEXCEL.xlsx", metadata, context);
 
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                metadata.get(Metadata.CONTENT_TYPE));
+                        metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Simple Excel document", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -129,7 +125,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
         String content = getText("testEXCEL-formats.xlsx", metadata, context);
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                metadata.get(Metadata.CONTENT_TYPE));
+                        metadata.get(Metadata.CONTENT_TYPE));
 
         // Number #,##0.00
         assertContains("1,599.99", content);
@@ -172,17 +168,15 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         // team - See TIKA-103.
 
         /*************************************************************************
-         // Date Format: m/d/yy
-         assertContains("03/10/2009", content);
-
-         // Date/Time Format
-         assertContains("19/01/2008 04:35", content);
-
-         // Custom Number (0 "dollars and" .00 "cents")
-         assertContains("19 dollars and .99 cents", content);
-
-         // Custom Number ("At" h:mm AM/PM "on" dddd mmmm d"," yyyy)
-         assertContains("At 4:20 AM on Thursday May 17, 2007", content);
+         * // Date Format: m/d/yy assertContains("03/10/2009", content);
+         * 
+         * // Date/Time Format assertContains("19/01/2008 04:35", content);
+         * 
+         * // Custom Number (0 "dollars and" .00 "cents") assertContains("19 dollars and .99 cents",
+         * content);
+         * 
+         * // Custom Number ("At" h:mm AM/PM "on" dddd mmmm d"," yyyy) assertContains("At 4:20 AM on
+         * Thursday May 17, 2007", content);
          **************************************************************************/
 
     }
@@ -197,7 +191,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         String content = getText("testEXCEL.strict.xlsx", metadata, context);
 
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                metadata.get(Metadata.CONTENT_TYPE));
+                        metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Sample Spreadsheet", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Nick Burch", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Spreadsheet for testing", metadata.get(TikaCoreProperties.DESCRIPTION));
@@ -212,22 +206,21 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     }
 
     /**
-     * We have a number of different powerpoint files,
-     * such as presentation, macro-enabled etc
+     * We have a number of different powerpoint files, such as presentation, macro-enabled etc
      */
     @Test
     public void testPowerPoint() throws Exception {
-        String[] extensions = new String[]{"pptx", "pptm", "ppsm", "ppsx", "potm"
-                //"thmx", // TIKA-418: Will be supported in POI 3.7 beta 2
-                //"xps" // TIKA-418: Not yet supported by POI
+        String[] extensions = new String[] {"pptx", "pptm", "ppsm", "ppsx", "potm"
+                        // "thmx", // TIKA-418: Will be supported in POI 3.7 beta 2
+                        // "xps" // TIKA-418: Not yet supported by POI
         };
 
-        String[] mimeTypes = new String[]{
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                "application/vnd.ms-powerpoint.presentation.macroenabled.12",
-                "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
-                "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
-                "application/vnd.ms-powerpoint.template.macroenabled.12"};
+        String[] mimeTypes = new String[] {
+                        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        "application/vnd.ms-powerpoint.presentation.macroenabled.12",
+                        "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
+                        "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+                        "application/vnd.ms-powerpoint.template.macroenabled.12"};
 
         for (int i = 0; i < extensions.length; i++) {
             String extension = extensions[i];
@@ -239,7 +232,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
             String content = getText(filename, metadata, context);
 
             assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
-                    "Mime-type checking for " + filename);
+                            "Mime-type checking for " + filename);
             assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Rajiv", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -248,37 +241,36 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
                 assertEquals("", content);
             } else {
                 assertTrue(content.contains("Attachment Test"),
-                        "Text missing for " + filename + "\n" + content);
+                                "Text missing for " + filename + "\n" + content);
                 assertTrue(content.contains("This is a test file data with the same content"),
-                        "Text missing for " + filename + "\n" + content);
+                                "Text missing for " + filename + "\n" + content);
                 assertTrue(content.contains("content parsing"),
-                        "Text missing for " + filename + "\n" + content);
+                                "Text missing for " + filename + "\n" + content);
                 assertTrue(content.contains("Different words to test against"),
-                        "Text missing for " + filename + "\n" + content);
+                                "Text missing for " + filename + "\n" + content);
                 assertTrue(content.contains("Mystery"),
-                        "Text missing for " + filename + "\n" + content);
+                                "Text missing for " + filename + "\n" + content);
             }
         }
 
     }
 
     /**
-     * Test that the metadata is already extracted when the body is processed.
-     * See TIKA-1109
+     * Test that the metadata is already extracted when the body is processed. See TIKA-1109
      */
     @Test
     public void testPowerPointMetadataEarly() throws Exception {
-        String[] extensions = new String[]{"pptx", "pptm", "ppsm", "ppsx", "potm"
-                //"thmx", // TIKA-418: Will be supported in POI 3.7 beta 2
-                //"xps" // TIKA-418: Not yet supported by POI
+        String[] extensions = new String[] {"pptx", "pptm", "ppsm", "ppsx", "potm"
+                        // "thmx", // TIKA-418: Will be supported in POI 3.7 beta 2
+                        // "xps" // TIKA-418: Not yet supported by POI
         };
 
-        final String[] mimeTypes = new String[]{
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                "application/vnd.ms-powerpoint.presentation.macroenabled.12",
-                "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
-                "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
-                "application/vnd.ms-powerpoint.template.macroenabled.12"};
+        final String[] mimeTypes = new String[] {
+                        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        "application/vnd.ms-powerpoint.presentation.macroenabled.12",
+                        "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
+                        "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+                        "application/vnd.ms-powerpoint.template.macroenabled.12"};
 
         for (int i = 0; i < extensions.length; i++) {
             String extension = extensions[i];
@@ -291,7 +283,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
                 @Override
                 public void startDocument() {
                     assertEquals(mimeTypes[currentI], metadata.get(Metadata.CONTENT_TYPE),
-                            "Mime-type checking for " + filename);
+                                    "Mime-type checking for " + filename);
                     assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
                     assertEquals("Rajiv", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -307,14 +299,13 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     }
 
     /**
-     * For the PowerPoint formats we don't currently support, ensure that
-     * we don't break either
+     * For the PowerPoint formats we don't currently support, ensure that we don't break either
      */
     @Test
     public void testUnsupportedPowerPoint() throws Exception {
-        String[] extensions = new String[]{"xps", "thmx"};
-        String[] mimeTypes = new String[]{"application/vnd.ms-xpsdocument",
-                "application/vnd.openxmlformats-officedocument" // Is this right?
+        String[] extensions = new String[] {"xps", "thmx"};
+        String[] mimeTypes = new String[] {"application/vnd.ms-xpsdocument",
+                        "application/vnd.openxmlformats-officedocument" // Is this right?
         };
 
         for (int i = 0; i < extensions.length; i++) {
@@ -326,7 +317,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
             getXML(filename, metadata);
             // Should get the metadata
             assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
-                    "Mime-type checking for " + filename);
+                            "Mime-type checking for " + filename);
 
 
         }
@@ -342,7 +333,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         Metadata metadata = new Metadata();
         String content = getText("testWORD.docx", metadata, new ParseContext());
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                metadata.get(Metadata.CONTENT_TYPE));
+                        metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
         assertTrue(content.contains("Sample Word Document"));
@@ -358,13 +349,12 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     public void testWordFootnote() throws Exception {
         XMLResult xmlResult = getXML("footnotes.docx");
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+                        xmlResult.metadata.get(Metadata.CONTENT_TYPE));
         assertTrue(xmlResult.xml.contains("snoska"));
     }
 
     /**
-     * Test that the word converter is able to generate the
-     * correct HTML for the document
+     * Test that the word converter is able to generate the correct HTML for the document
      */
     @Test
     public void testWordHTML() throws Exception {
@@ -372,7 +362,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         String xml = result.xml;
         Metadata metadata = result.metadata;
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                metadata.get(Metadata.CONTENT_TYPE));
+                        metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
         assertTrue(xml.contains("Sample Word Document"));
@@ -402,11 +392,11 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
         // Images 2-4 (there is no 1!)
         assertTrue(xml.contains("<img src=\"embedded:image2.png\" alt=\"A description...\" />"),
-                "Image not found in:\n" + xml);
+                        "Image not found in:\n" + xml);
         assertTrue(xml.contains("<img src=\"embedded:image3.jpeg\" alt=\"A description...\" />"),
-                "Image not found in:\n" + xml);
+                        "Image not found in:\n" + xml);
         assertTrue(xml.contains("<img src=\"embedded:image4.png\" alt=\"A description...\" />"),
-                "Image not found in:\n" + xml);
+                        "Image not found in:\n" + xml);
 
         // Text too
         assertTrue(xml.contains("<p>The end!</p>"));
@@ -440,7 +430,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         Metadata m = metadataList.get(0);
         String mainContent = m.get(TikaCoreProperties.TIKA_CONTENT);
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                m.get(Metadata.CONTENT_TYPE));
+                        m.get(Metadata.CONTENT_TYPE));
         // Check that custom headings came through
         assertTrue(mainContent.contains("<img"));
     }
@@ -448,11 +438,11 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     @Test
     @Disabled("need to add links in xhtml")
     public void testPicturesInVariousPlaces() throws Exception {
-        //test that images are actually extracted from
-        //headers, footers, comments, endnotes, footnotes
+        // test that images are actually extracted from
+        // headers, footers, comments, endnotes, footnotes
         List<Metadata> metadataList = getRecursiveMetadata("testWORD_embedded_pics.docx");
 
-        //only process embedded resources once
+        // only process embedded resources once
         assertEquals(3, metadataList.size());
         String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         for (int i = 1; i < 4; i++) {
@@ -462,18 +452,17 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("body_pic.jpg", content);
         assertContains("sdt_pic.jpg", content);
         assertContains("deeply_embedded_pic", content);
-        assertContains("deleted_pic", content);//TODO: don't extract this
+        assertContains("deleted_pic", content);// TODO: don't extract this
         assertContains("footnotes_pic", content);
         assertContains("comments_pic", content);
         assertContains("endnotes_pic", content);
-//        assertContains("sdt2_pic.jpg", content);//name of file is not stored in image-sdt
+        // assertContains("sdt2_pic.jpg", content);//name of file is not stored in image-sdt
 
         assertContainsCount("<img src=", content, 14);
     }
 
     /**
-     * Documents with some sheets are protected, but not all.
-     * See TIKA-364.
+     * Documents with some sheets are protected, but not all. See TIKA-364.
      */
     @Test
     public void testProtectedExcelSheets() throws Exception {
@@ -481,22 +470,21 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         Metadata metadata = getXML("protectedSheets.xlsx").metadata;
 
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                metadata.get(Metadata.CONTENT_TYPE));
+                        metadata.get(Metadata.CONTENT_TYPE));
 
         assertEquals("true", metadata.get(Office.PROTECTED_WORKSHEET));
 
     }
 
     /**
-     * An excel document which is password protected.
-     * See TIKA-437.
+     * An excel document which is password protected. See TIKA-437.
      */
     @Test
     public void testProtectedExcelFile() throws Exception {
         XMLResult xmlResult = getXML("protectedFile.xlsx");
 
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+                        xmlResult.metadata.get(Metadata.CONTENT_TYPE));
 
         assertEquals("true", xmlResult.metadata.get(Office.PROTECTED_WORKSHEET));
 
@@ -504,13 +492,11 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     }
 
     /**
-     * Test docx without headers
-     * TIKA-633
+     * Test docx without headers TIKA-633
      */
     @Test
     public void testNullHeaders() throws Exception {
-        assertFalse(getXML("NullHeader.docx").xml.isEmpty(),
-                "Should have found some text");
+        assertFalse(getXML("NullHeader.docx").xml.isEmpty(), "Should have found some text");
     }
 
     @Test
@@ -531,7 +517,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("<i>ita<s>l<u>i</u></s>c</i>", xml);
         assertContains("<i><u>unde<s>r</s>line</u></i>", xml);
 
-        //confirm that spaces aren't added for </s> and </u>
+        // confirm that spaces aren't added for </s> and </u>
         String txt = getText("testWORD_various.docx");
         assertContainsCount("italic", txt, 3);
         assertNotContained("ita ", txt);
@@ -545,7 +531,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         Metadata metadata = new Metadata();
 
         String content = getText("testWORD_various.docx", metadata);
-        //content = content.replaceAll("\\s+"," ");
+        // content = content.replaceAll("\\s+"," ");
         assertContains("Footnote appears here", content);
         assertContains("This is a footnote.", content);
         assertContains("This is the header text.", content);
@@ -560,20 +546,20 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("Figure 1 This is a caption for Figure 1", content);
         assertContains("(Kramer)", content);
         assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3",
-                content.replaceAll("\\s+", " "));
+                        content.replaceAll("\\s+", " "));
         assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2",
-                content.replaceAll("\\s+", " "));
+                        content.replaceAll("\\s+", " "));
         assertContains("This is a hyperlink", content);
         assertContains("Here is a list:", content);
         for (int row = 1; row <= 3; row++) {
-            //assertContains("·\tBullet " + row, content);
-            //assertContains("\u00b7\tBullet " + row, content);
+            // assertContains("·\tBullet " + row, content);
+            // assertContains("\u00b7\tBullet " + row, content);
             assertContains("Bullet " + row, content);
         }
         assertContains("Here is a numbered list:", content);
         for (int row = 1; row <= 3; row++) {
-            //assertContains(row + ")\tNumber bullet " + row, content);
-            //assertContains(row + ") Number bullet " + row, content);
+            // assertContains(row + ")\tNumber bullet " + row, content);
+            // assertContains(row + ") Number bullet " + row, content);
             // TODO: OOXMLExtractor fails to number the bullets:
             assertContains("Number bullet " + row, content);
         }
@@ -587,12 +573,12 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("Keyword1 Keyword2", content);
         assertEquals("Keyword1 Keyword2", metadata.get(Office.KEYWORDS));
         assertContains("Keyword1 Keyword2",
-                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+                        Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
 
 
         assertContains("Subject is here", content);
         assertContains("Subject is here",
-                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+                        Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
 
 
         assertContains("Suddenly some Japanese text:", content);
@@ -600,11 +586,11 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("\uff08\uff27\uff28\uff31\uff09", content);
         // 6 other characters
         assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f",
-                content);
+                        content);
 
         assertContains("And then some Gothic text:", content);
         assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A",
-                content);
+                        content);
     }
 
     @Test
@@ -617,11 +603,10 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertNotContained("This is the header text.", xml);
         assertNotContained("This is the footer text.", xml);
 
-        //now test configuration via tika-config
+        // now test configuration via tika-config
         Parser configuredParser;
-        try (InputStream is =
-                     OfficeParserTest.class.getResourceAsStream(
-                             "tika-config-headers-footers.xml")) {
+        try (InputStream is = OfficeParserTest.class
+                        .getResourceAsStream("tika-config-headers-footers.xml")) {
             configuredParser = new AutoDetectParser(new TikaConfig(is));
         }
         xml = getXML("testWORD_various.docx", configuredParser).xml;
@@ -651,14 +636,14 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("<p><a href=\"http://tika.apache.org/\">This is a hyperlink</a>", xml);
         assertContains("<p>Here is a list:", xml);
         for (int row = 1; row <= 3; row++) {
-            //assertContains("·\tBullet " + row, content);
-            //assertContains("\u00b7\tBullet " + row, content);
+            // assertContains("·\tBullet " + row, content);
+            // assertContains("\u00b7\tBullet " + row, content);
             assertContains("<p>Bullet " + row, xml);
         }
         assertContains("Here is a numbered list:", xml);
         for (int row = 1; row <= 3; row++) {
-            //assertContains(row + ")\tNumber bullet " + row, content);
-            //assertContains(row + ") Number bullet " + row, content);
+            // assertContains(row + ")\tNumber bullet " + row, content);
+            // assertContains(row + ") Number bullet " + row, content);
             // TODO: OOXMLExtractor fails to number the bullets:
             assertContains("<p>Number bullet " + row, xml);
         }
@@ -676,9 +661,9 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertEquals("Subject is here", metadata.get(DublinCore.SUBJECT));
 
         assertContains("Keyword1 Keyword2",
-                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+                        Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
         assertContains("Subject is here",
-                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+                        Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
 
 
         assertContains("Suddenly some Japanese text:", xml);
@@ -686,16 +671,16 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("\uff08\uff27\uff28\uff31\uff09", xml);
         // 6 other characters
         assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f",
-                xml);
+                        xml);
 
         assertContains("And then some Gothic text:", xml);
         assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A",
-                xml);
+                        xml);
     }
 
     @Test
     public void testSkipHeaderFooter() throws Exception {
-        //now test turning off header/footer
+        // now test turning off header/footer
         OfficeParserConfig config = new OfficeParserConfig();
         config.setIncludeHeadersAndFooters(false);
         ParseContext context = new ParseContext();
@@ -720,10 +705,10 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     @Test
     @Disabled("can't tell why this isn't working")
     public void testTurningOffMasterContent() throws Exception {
-        //now test turning off master content
+        // now test turning off master content
 
-        //the underlying xml has "Master footer" in
-        //the actual slide's xml, not just in the master slide.
+        // the underlying xml has "Master footer" in
+        // the actual slide's xml, not just in the master slide.
         OfficeParserConfig config = new OfficeParserConfig();
         config.setIncludeSlideMasterContent(false);
         ParseContext context = new ParseContext();
@@ -733,8 +718,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     }
 
     /**
-     * TIKA-712 Master Slide Text from PPT and PPTX files
-     * should be extracted too
+     * TIKA-712 Master Slide Text from PPT and PPTX files should be extracted too
      */
     @Test
     public void testMasterText() throws Exception {
@@ -742,7 +726,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         String content = getText("testPPT_masterText.pptx");
         assertContains("Text that I added to the master slide", content);
 
-        //now test turning off master content
+        // now test turning off master content
         OfficeParserConfig config = new OfficeParserConfig();
         config.setIncludeSlideMasterContent(false);
         ParseContext context = new ParseContext();
@@ -756,7 +740,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         String content = getText("testPPT_masterText2.pptx");
         assertContains("Text that I added to the master slide", content);
 
-        //now test turning off master content
+        // now test turning off master content
         OfficeParserConfig config = new OfficeParserConfig();
         config.setIncludeSlideMasterContent(false);
         ParseContext context = new ParseContext();
@@ -781,7 +765,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         getXML("testEXCEL_custom_props.xlsx", metadata, context);
 
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                metadata.get(Metadata.CONTENT_TYPE));
+                        metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(null, metadata.get(TikaCoreProperties.CREATOR));
         assertEquals(null, metadata.get(TikaCoreProperties.MODIFIER));
         assertEquals("2006-09-12T15:06:44Z", metadata.get(TikaCoreProperties.CREATED));
@@ -798,8 +782,8 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     public void testWordCustomProperties() throws Exception {
         Metadata metadata = new Metadata();
 
-        try (InputStream input = getResourceAsStream(
-                "/test-documents/testWORD_custom_props.docx")) {
+        try (InputStream input =
+                        getResourceAsStream("/test-documents/testWORD_custom_props.docx")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
@@ -807,7 +791,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         }
 
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                metadata.get(Metadata.CONTENT_TYPE));
+                        metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("EJ04325S", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Etienne Jouvin", metadata.get(TikaCoreProperties.MODIFIER));
         assertEquals("2011-07-29T16:52:00Z", metadata.get(TikaCoreProperties.CREATED));
@@ -841,7 +825,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         }
 
         assertEquals("application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                metadata.get(Metadata.CONTENT_TYPE));
+                        metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("JOUVIN ETIENNE", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("EJ04325S", metadata.get(TikaCoreProperties.MODIFIER));
         assertEquals("2011-08-22T13:30:53Z", metadata.get(TikaCoreProperties.CREATED));
@@ -867,8 +851,8 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
         handler.setResult(new StreamResult(sw));
 
-        try (InputStream input = getResourceAsStream(
-                "/test-documents/testWORD_embedded_pdf.docx")) {
+        try (InputStream input =
+                        getResourceAsStream("/test-documents/testWORD_embedded_pdf.docx")) {
             new OOXMLParser().parse(input, handler, metadata, new ParseContext());
         }
         String xml = sw.toString();
@@ -913,8 +897,8 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     }
 
     /**
-     * TIKA-1044 - Handle word documents where parts of the
-     * text have no formatting or styles applied to them
+     * TIKA-1044 - Handle word documents where parts of the text have no formatting or styles
+     * applied to them
      */
     @Test
     public void testNoFormat() throws Exception {
@@ -939,7 +923,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("This text is inside of a text box in the footer of the document.", xml);
     }
 
-    //TIKA-2807
+    // TIKA-2807
     @Test
     public void testSDTInTextBox() throws Exception {
         String xml = getXML("testWORD_sdtInTextBox.docx").xml;
@@ -947,7 +931,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContainsCount("inside-text", xml, 1);
     }
 
-    //TIKA-2346
+    // TIKA-2346
     @Test
     public void testTurningOffTextBoxExtraction() throws Exception {
         ParseContext pc = new ParseContext();
@@ -971,28 +955,27 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
     /**
      * Test for missing text described in
-     * <a href="https://issues.apache.org/jira/browse/TIKA-1130">TIKA-1130</a>.
-     * and TIKA-1317
+     * <a href="https://issues.apache.org/jira/browse/TIKA-1130">TIKA-1130</a>. and TIKA-1317
      */
     @Test
     public void testMissingText() throws Exception {
         XMLResult xmlResult = getXML("testWORD_missing_text.docx");
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+                        xmlResult.metadata.get(Metadata.CONTENT_TYPE));
         assertContains("BigCompany", xmlResult.xml);
         assertContains("Seasoned", xmlResult.xml);
         assertContains("Rich_text_in_cell", xmlResult.xml);
 
     }
 
-    //TIKA-1100:
+    // TIKA-1100:
     @Test
     public void testExcelTextBox() throws Exception {
         XMLResult r = getXML("testEXCEL_textbox.xlsx");
         assertContains("some autoshape", r.xml);
     }
 
-    //TIKA-2346
+    // TIKA-2346
     @Test
     public void testTurningOffTextBoxExtractionExcel() throws Exception {
 
@@ -1004,20 +987,20 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertNotContained("autoshape", xml);
     }
 
-    //TIKA-792; with room for future missing bean tests
+    // TIKA-792; with room for future missing bean tests
     @Test
     public void testWordMissingOOXMLBeans() throws Exception {
-        //If a bean is missing, POI prints stack trace to stderr 
-        String[] fileNames = new String[]{"testWORD_missing_ooxml_bean1.docx",//TIKA-792
+        // If a bean is missing, POI prints stack trace to stderr
+        String[] fileNames = new String[] {"testWORD_missing_ooxml_bean1.docx",// TIKA-792
         };
         PrintStream origErr = System.err;
         for (String fileName : fileNames) {
-            //grab stderr
+            // grab stderr
             ByteArrayOutputStream errContent = new ByteArrayOutputStream();
             System.setErr(new PrintStream(errContent, true, UTF_8.name()));
             getXML(fileName);
 
-            //return stderr
+            // return stderr
             System.setErr(origErr);
 
             String err = errContent.toString(UTF_8.name());
@@ -1025,11 +1008,11 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         }
     }
 
-    //TIKA-817
+    // TIKA-817
     @Test
     public void testPPTXAutodate() throws Exception {
-        //Following POI-52368, the stored date is extracted,
-        //not the auto-generated date.
+        // Following POI-52368, the stored date is extracted,
+        // not the auto-generated date.
 
         XMLResult result = getXML("testPPT_autodate.pptx");
         assertContains("<p>Now</p>\n" + "<p>2011-12-19 10:20:04 AM</p>\n", result.xml);
@@ -1062,7 +1045,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     public void testPPTXThumbnail() throws Exception {
         String xml = getXML("testPPTX_Thumbnail.pptx").xml;
         int a = xml.indexOf(
-                "<body><div class=\"slide-content\"><p>This file contains an embedded thumbnail");
+                        "<body><div class=\"slide-content\"><p>This file contains an embedded thumbnail");
         int b = xml.indexOf("<div class=\"embedded\" id=\"/docProps/thumbnail.jpeg\" />");
         assertTrue(a != -1);
         assertTrue(b != -1);
@@ -1072,15 +1055,15 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     @Test
     public void testEncrypted() throws Exception {
         Map<String, String> tests = new HashMap<>();
-        //the first three contain javax.crypto.CipherInputStream
+        // the first three contain javax.crypto.CipherInputStream
         tests.put("testWORD_protected_passtika.docx", "This is an encrypted Word 2007 File");
         tests.put("testPPT_protected_passtika.pptx", "This is an encrypted PowerPoint 2007 slide.");
         tests.put("testEXCEL_protected_passtika.xlsx", "This is an Encrypted Excel spreadsheet.");
-        //TIKA-2873 this one contains a ChunkedCipherInputStream
-        //that is buggy at the POI level...can unwrap TikaInputStream in OfficeParser
-        //once https://bz.apache.org/bugzilla/show_bug.cgi?id=63431 is fixed.
+        // TIKA-2873 this one contains a ChunkedCipherInputStream
+        // that is buggy at the POI level...can unwrap TikaInputStream in OfficeParser
+        // once https://bz.apache.org/bugzilla/show_bug.cgi?id=63431 is fixed.
         tests.put("testEXCEL_protected_passtika_2.xlsx",
-                "This is an Encrypted Excel spreadsheet with a ChunkedCipherInputStream.");
+                        "This is an Encrypted Excel spreadsheet with a ChunkedCipherInputStream.");
 
         PasswordProvider passwordProvider = new PasswordProvider() {
             @Override
@@ -1097,7 +1080,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         }
 
         ParseContext context = new ParseContext();
-        //now try with no password
+        // now try with no password
         for (Map.Entry<String, String> e : tests.entrySet()) {
             boolean exc = false;
             try {
@@ -1133,47 +1116,47 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("1.1.1. 1.1.1", xml);
         assertContains("1.1. 1.2-&gt;1.1  //set the value", xml);
 
-        //TODO: comment is not being extracted!
-        //assertContains("add a list here", xml);
+        // TODO: comment is not being extracted!
+        // assertContains("add a list here", xml);
     }
 
     @Test
     public void testDOCXOverrideParagraphNumbering() throws Exception {
         String xml = getXML("testWORD_override_list_numbering.docx").xml;
 
-        //Test 1
+        // Test 1
         assertContains("<p>1.1.1.1...1 1.1.1.1...1</p>", xml);
         assertContains("1st.2.3someText 1st.2.3someText", xml);
         assertContains("1st.2.2someOtherText.1 1st.2.2someOtherText.1", xml);
         assertContains("5th 5th", xml);
 
 
-        //Test 2
+        // Test 2
         assertContains("1.a.I 1.a.I", xml);
-        //test no reset because level 2 is not sufficient to reset
+        // test no reset because level 2 is not sufficient to reset
         assertContains("<p>1.b.III 1.b.III</p>", xml);
-        //test restarted because of level 0's increment to 2
+        // test restarted because of level 0's increment to 2
         assertContains("2.a.I 2.a.I", xml);
-        //test handling of skipped level
+        // test handling of skipped level
         assertContains("<p>2.b 2.b</p>", xml);
 
-        //Test 3
+        // Test 3
         assertContains("(1)) (1))", xml);
-        //tests start level 1 at 17 and
+        // tests start level 1 at 17 and
         assertContains("2.17 2.17", xml);
-        //tests that isLegal turns everything into decimal
+        // tests that isLegal turns everything into decimal
         assertContains("2.18.2.1 2.18.2.1", xml);
         assertContains("<p>2 2</p>", xml);
 
-        //Test4
+        // Test4
         assertContains("<p>1 1</p>", xml);
         assertContains("<p>A A</p>", xml);
         assertContains("<p>B B</p>", xml);
-        //this tests overrides
+        // this tests overrides
         assertContains("<p>C C</p>", xml);
         assertContains("<p>4 4</p>", xml);
 
-        //Test5
+        // Test5
         assertContains(">00 00", xml);
         assertContains(">01 01", xml);
         assertContains(">01. 01.", xml);
@@ -1186,7 +1169,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         XMLResult xml = getXML("testEXCEL_headers_footers.xlsx");
 
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                xml.metadata.get(Metadata.CONTENT_TYPE));
+                        xml.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Internal spreadsheet", xml.metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Aeham Abushwashi", xml.metadata.get(TikaCoreProperties.CREATOR));
 
@@ -1217,9 +1200,10 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertNotContained("Footer - For Internal Use Only", content);
         assertNotContained("Footer - Author: John Smith", content);
 
-        //now test configuration via tika-config
+        // now test configuration via tika-config
         Parser configuredParser;
-        try (InputStream is = OfficeParserTest.class.getResourceAsStream("tika-config-headers-footers.xml")) {
+        try (InputStream is = OfficeParserTest.class
+                        .getResourceAsStream("tika-config-headers-footers.xml")) {
             configuredParser = new AutoDetectParser(new TikaConfig(is));
         }
         content = getXML("testEXCEL_headers_footers.xlsx", configuredParser).xml;
@@ -1251,13 +1235,13 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     @Test
     public void testHyperlinksInXLSX() throws Exception {
         String xml = getXML("testEXCEL_hyperlinks.xlsx").xml;
-        //external url
+        // external url
         assertContains("<a href=\"http://tika.apache.org/\">", xml);
-        //mail url
+        // mail url
         assertContains("<a href=\"mailto:user@tika.apache.org?subject=help\">", xml);
-        //external linked file
+        // external linked file
         assertContains("<a href=\"linked_file.txt.htm\">", xml);
-        //link on textbox
+        // link on textbox
         assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
     }
 
@@ -1266,41 +1250,40 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     public void testOrigSourcePath() throws Exception {
         Metadata embed1_zip_metadata = getRecursiveMetadata("test_recursive_embedded.docx").get(2);
         assertContains("C:\\Users\\tallison\\AppData\\Local\\Temp\\embed1.zip", Arrays.asList(
-                embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
-        assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",
-                Arrays.asList(
                         embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+        assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",
+                        Arrays.asList(embed1_zip_metadata
+                                        .getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
     }
 
     @Test
     public void testBigIntegersWGeneralFormat() throws Exception {
-        //TIKA-2025
+        // TIKA-2025
         String xml = getXML("testEXCEL_big_numbers.xlsx").xml;
-        assertContains("123456789012345", xml);//15 digit number
-        assertContains("123456789012346", xml);//15 digit formula
+        assertContains("123456789012345", xml);// 15 digit number
+        assertContains("123456789012346", xml);// 15 digit formula
         Locale locale = LocaleUtil.getUserLocale();
 
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(locale);
-        //16 digit number is treated as scientific notation as is the 16 digit formula
-        assertContains("1" + symbols.getDecimalSeparator() + "23456789012345E+15</td>\t" + "<td>1" +
-                symbols.getDecimalSeparator() + "23456789012345E+15", xml);
+        // 16 digit number is treated as scientific notation as is the 16 digit formula
+        assertContains("1" + symbols.getDecimalSeparator() + "23456789012345E+15</td>\t" + "<td>1"
+                        + symbols.getDecimalSeparator() + "23456789012345E+15", xml);
     }
 
     @Test
     public void testBigIntegersWGeneralFormatWLocaleIT() throws Exception {
         LocaleUtil.setUserLocale(Locale.ITALIAN);
-        //TIKA-2438
+        // TIKA-2438
         try {
             String xml = getXML("testEXCEL_big_numbers.xlsx").xml;
-            assertContains("123456789012345", xml);//15 digit number
-            assertContains("123456789012346", xml);//15 digit formula
+            assertContains("123456789012345", xml);// 15 digit number
+            assertContains("123456789012346", xml);// 15 digit formula
             Locale locale = LocaleUtil.getUserLocale();
 
             DecimalFormatSymbols symbols = new DecimalFormatSymbols(locale);
-            //16 digit number is treated as scientific notation as is the 16 digit formula
-            assertContains(
-                    "1" + symbols.getDecimalSeparator() + "23456789012345E+15</td>\t" + "<td>1" +
-                            symbols.getDecimalSeparator() + "23456789012345E+15", xml);
+            // 16 digit number is treated as scientific notation as is the 16 digit formula
+            assertContains("1" + symbols.getDecimalSeparator() + "23456789012345E+15</td>\t"
+                            + "<td>1" + symbols.getDecimalSeparator() + "23456789012345E+15", xml);
         } finally {
             LocaleUtil.setUserLocale(USER_LOCALE);
         }
@@ -1309,7 +1292,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
     @Test
     public void testBoldHyperlink() throws Exception {
-        //TIKA-1255
+        // TIKA-1255
         String xml = getXML("testWORD_boldHyperlink.docx").xml;
         xml = xml.replaceAll("\\s+", " ");
         assertContains("<a href=\"http://tika.apache.org/\">hyper <b>link</b></a>", xml);
@@ -1318,21 +1301,21 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
     @Test
     public void testLongForIntExceptionInSummaryDetails() throws Exception {
-        //TIKA-2055
+        // TIKA-2055
         assertContains("bold", getXML("testWORD_totalTimeOutOfRange.docx").xml);
     }
 
     @Test
     public void testMacrosInDocm() throws Exception {
 
-        //test default is "don't extract macros"
+        // test default is "don't extract macros"
         for (Metadata metadata : getRecursiveMetadata("testWORD_macros.docm")) {
             if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
                 fail("Shouldn't have extracted macros as default");
             }
         }
 
-        //now test that they were extracted
+        // now test that they were extracted
         ParseContext context = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setExtractMacros(true);
@@ -1344,30 +1327,30 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
         minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+                        TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testWORD_macros.docm", context));
 
-        //test configuring via config file
+        // test configuring via config file
         try (InputStream is = getResourceAsStream("tika-config-dom-macros.xml")) {
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser parser = new AutoDetectParser(tikaConfig);
             assertContainsAtLeast(minExpected,
-                    getRecursiveMetadata("testWORD_macros.docm", parser));
+                            getRecursiveMetadata("testWORD_macros.docm", parser));
         }
     }
 
     @Test
     public void testMacrosInPptm() throws Exception {
 
-        //test default is "don't extract macros"
+        // test default is "don't extract macros"
         for (Metadata metadata : getRecursiveMetadata("testPPT_macros.pptm")) {
             if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
                 fail("Shouldn't have extracted macros as default");
             }
         }
 
-        //now test that they were extracted
+        // now test that they were extracted
         ParseContext context = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setExtractMacros(true);
@@ -1378,11 +1361,11 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
         minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+                        TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", context));
 
-        //test configuring via config file
+        // test configuring via config file
         try (InputStream is = getResourceAsStream("tika-config-dom-macros.xml")) {
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser parser = new AutoDetectParser(tikaConfig);
@@ -1393,7 +1376,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     @Test
     public void testMacroinXlsm() throws Exception {
 
-        //test default is "don't extract macros"
+        // test default is "don't extract macros"
         List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_macro.xlsm");
         for (Metadata metadata : metadataList) {
             if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
@@ -1402,7 +1385,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         }
         assertEquals("ThisWorkbook", metadataList.get(0).get(Office.WORKBOOK_CODENAME));
 
-        //now test that they were extracted
+        // now test that they were extracted
         ParseContext context = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setExtractMacros(true);
@@ -1413,20 +1396,20 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "dirty dirt dirt");
         minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+                        TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xlsm", context));
 
-        //test configuring via config file
+        // test configuring via config file
         try (InputStream is = getResourceAsStream("tika-config-dom-macros.xml")) {
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser parser = new AutoDetectParser(tikaConfig);
             assertContainsAtLeast(minExpected,
-                    getRecursiveMetadata("testEXCEL_macro.xlsm", parser));
+                            getRecursiveMetadata("testEXCEL_macro.xlsm", parser));
         }
     }
 
-    //@Test //use this for lightweight benchmarking to compare xwpf options
+    // @Test //use this for lightweight benchmarking to compare xwpf options
     public void testBatch() throws Exception {
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setUseSAXDocxExtractor(true);
@@ -1440,7 +1423,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
                 try (InputStream is = TikaInputStream.get(f.toPath())) {
                     ParseContext parseContext = new ParseContext();
                     parseContext.set(OfficeParserConfig.class, officeParserConfig);
-                    //test only the extraction of the main docx content, not embedded docs
+                    // test only the extraction of the main docx content, not embedded docs
                     parseContext.set(Parser.class, new EmptyParser());
                     XMLResult r = getXML(is, AUTO_DETECT_PARSER, new Metadata(), parseContext);
                 } catch (Exception e) {
@@ -1449,17 +1432,17 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
                 }
             }
         }
-        System.out.println("elapsed: " + (System.currentTimeMillis() - started) + " with " + ex +
-                " exceptions");
+        System.out.println("elapsed: " + (System.currentTimeMillis() - started) + " with " + ex
+                        + " exceptions");
     }
 
     @Test
     public void testInitializationViaConfig() throws Exception {
-        //NOTE: this test relies on a bug in the DOM extractor that
-        //is passing over the title information.
-        //once we fix that, this test will no longer be meaningful!
+        // NOTE: this test relies on a bug in the DOM extractor that
+        // is passing over the title information.
+        // once we fix that, this test will no longer be meaningful!
         try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/parser/microsoft/tika-config-sax-docx.xml")) {
+                        "/org/apache/tika/parser/microsoft/tika-config-sax-docx.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser p = new AutoDetectParser(tikaConfig);
@@ -1484,7 +1467,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
         // OfficeParser won't handle it
         assertEquals(false,
-                (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
+                        (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
 
         // OOXMLParser will (soon) handle it
         assertTrue((new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
@@ -1561,7 +1544,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
     @Test
     public void testPOI61034() throws Exception {
-        //tests temporary work around until POI 3.17-beta1 is released
+        // tests temporary work around until POI 3.17-beta1 is released
         XMLResult r = getXML("testEXCEL_poi-61034.xlsx");
         Matcher m = Pattern.compile("<h1>(Sheet\\d+)</h1>").matcher(r.xml);
         Set<String> seen = new HashSet<>();
@@ -1578,15 +1561,15 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     @Test
     public void testXLSBOriginalPath() throws Exception {
         assertEquals("C:\\Users\\tallison\\Desktop\\working\\TIKA-1945\\",
-                getXML("testEXCEL_diagramData.xlsb").metadata
-                        .get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+                        getXML("testEXCEL_diagramData.xlsb").metadata
+                                        .get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
     }
 
     @Test
     public void testXLSXOriginalPath() throws Exception {
         assertEquals("C:\\Users\\tallison\\Desktop\\working\\TIKA-1945\\",
-                getXML("testEXCEL_diagramData.xlsx").metadata
-                        .get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+                        getXML("testEXCEL_diagramData.xlsx").metadata
+                                        .get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
     }
 
     @Test
@@ -1648,7 +1631,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("WordArt1", content);
         assertContains("WordArt2", content);
-        assertContainsCount("Ungrouped text box", content, 1);//should only be 1
+        assertContainsCount("Ungrouped text box", content, 1);// should only be 1
         assertContains("Text box1", content);
         assertContains("Text box2", content);
         assertContains("Text box3", content);
@@ -1661,35 +1644,35 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("MyTitle", content);
 
         assertEquals("/image1.jpg",
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
         assertEquals("/thumbnail.jpeg",
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
     @Test
     public void testXLSXPhoneticStrings() throws Exception {
-        //This unit test and test file come from Apache POI 51519.xlsx
+        // This unit test and test file come from Apache POI 51519.xlsx
 
-        //test default concatenates = true
+        // test default concatenates = true
         assertContains("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
-                getXML("testEXCEL_phonetic.xlsx").xml);
+                        getXML("testEXCEL_phonetic.xlsx").xml);
 
-        //test turning it off
+        // test turning it off
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setConcatenatePhoneticRuns(false);
         ParseContext pc = new ParseContext();
         pc.set(OfficeParserConfig.class, officeParserConfig);
         assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
-                getXML("testEXCEL_phonetic.xlsx", pc).xml);
+                        getXML("testEXCEL_phonetic.xlsx", pc).xml);
 
 
-        //test configuring via config file
+        // test configuring via config file
         TikaConfig tikaConfig = new TikaConfig(
-                OfficeParser.class.getResourceAsStream("tika-config-exclude-phonetic.xml"));
+                        OfficeParser.class.getResourceAsStream("tika-config-exclude-phonetic.xml"));
         AutoDetectParser parser = new AutoDetectParser(tikaConfig);
         assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
-                getXML("testEXCEL_phonetic.xlsx", parser).xml);
+                        getXML("testEXCEL_phonetic.xlsx", parser).xml);
 
     }
 
@@ -1697,7 +1680,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     public void testDOCXPhoneticStrings() throws Exception {
 
         assertContains("\u6771\u4EAC (\u3068\u3046\u304D\u3087\u3046)",
-                getXML("testWORD_phonetic.docx").xml);
+                        getXML("testWORD_phonetic.docx").xml);
 
         OfficeParserConfig config = new OfficeParserConfig();
         config.setConcatenatePhoneticRuns(false);
@@ -1713,7 +1696,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_embeddedMP3.pptx");
         assertEquals(4, metadataList.size());
         assertEquals("application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                metadataList.get(0).get(Metadata.CONTENT_TYPE));
+                        metadataList.get(0).get(Metadata.CONTENT_TYPE));
         assertEquals("audio/mpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals("image/png", metadataList.get(2).get(Metadata.CONTENT_TYPE));
         assertEquals("image/jpeg", metadataList.get(3).get(Metadata.CONTENT_TYPE));
@@ -1727,7 +1710,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("<h1>Sheet1</h1>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("<td>1</td>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                xlsx.get(Metadata.CONTENT_TYPE));
+                        xlsx.get(Metadata.CONTENT_TYPE));
     }
 
 
@@ -1769,16 +1752,16 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     @Test
     public void testDocSecurity() throws Exception {
         assertEquals(OfficeOpenXMLExtended.SECURITY_PASSWORD_PROTECTED,
-                getRecursiveMetadata("protectedFile.xlsx").get(0)
-                        .get(OfficeOpenXMLExtended.DOC_SECURITY_STRING));
+                        getRecursiveMetadata("protectedFile.xlsx").get(0)
+                                        .get(OfficeOpenXMLExtended.DOC_SECURITY_STRING));
         assertEquals(OfficeOpenXMLExtended.SECURITY_READ_ONLY_ENFORCED,
-                getRecursiveMetadata("testWORD_docSecurity.docx").get(0)
-                        .get(OfficeOpenXMLExtended.DOC_SECURITY_STRING));
+                        getRecursiveMetadata("testWORD_docSecurity.docx").get(0)
+                                        .get(OfficeOpenXMLExtended.DOC_SECURITY_STRING));
     }
 
     @Test
     public void testMultiThreaded() throws Exception {
-        //TIKA-3627
+        // TIKA-3627
         int numThreads = 5;
         int numIterations = 5;
         ParseContext[] parseContexts = new ParseContext[numThreads];
@@ -1820,7 +1803,8 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
     @Test
     public void testNoRecordSizeOverflow() throws Exception {
-        //TIKA-4474 -- test: files (passed as stream) no longer have limit on record size as they are spooled
+        // TIKA-4474 -- test: files (passed as stream) no longer have limit on record size as they
+        // are spooled
         String content = getText("testRecordSizeExceeded.xlsx");
         assertContains("Repetitive content pattern 3 for compression test row 1", content);
     }

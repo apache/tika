@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.multiple;
 
@@ -27,9 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -41,11 +36,12 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.multiple.AbstractMultipleParser.MetadataPolicy;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.utils.ParserUtils;
+import org.junit.jupiter.api.Test;
 
 public class MultipleParserTest {
     /**
-     * Tests how {@link AbstractMultipleParser} works out which
-     * mime types to offer, based on the types of the parsers
+     * Tests how {@link AbstractMultipleParser} works out which mime types to offer, based on the
+     * types of the parsers
      */
     @Test
     public void testMimeTypeSupported() {
@@ -53,7 +49,7 @@ public class MultipleParserTest {
         // Some media types
         Set<MediaType> onlyOct = Collections.singleton(MediaType.OCTET_STREAM);
         Set<MediaType> octAndText =
-                new HashSet<>(Arrays.asList(MediaType.OCTET_STREAM, MediaType.TEXT_PLAIN));
+                        new HashSet<>(Arrays.asList(MediaType.OCTET_STREAM, MediaType.TEXT_PLAIN));
         // TODO One with a subtype
     }
 
@@ -73,8 +69,7 @@ public class MultipleParserTest {
 
         // Some parsers
         ErrorParser pFail = new ErrorParser();
-        DummyParser pContent =
-                new DummyParser(onlyOct, new HashMap<>(), "Fell back!");
+        DummyParser pContent = new DummyParser(onlyOct, new HashMap<>(), "Fell back!");
         EmptyParser pNothing = new EmptyParser();
 
 
@@ -83,7 +78,7 @@ public class MultipleParserTest {
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(new ByteArrayInputStream(new byte[] {0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back!", handler.toString());
 
         usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
@@ -96,7 +91,7 @@ public class MultipleParserTest {
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(new ByteArrayInputStream(new byte[] {0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back!", handler.toString());
 
         usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
@@ -115,7 +110,7 @@ public class MultipleParserTest {
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(new ByteArrayInputStream(new byte[] {0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back!", handler.toString());
 
         usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
@@ -161,7 +156,7 @@ public class MultipleParserTest {
             new SupplementingParser(null, MetadataPolicy.DISCARD_ALL);
             fail("Discard shouldn't be supported");
         } catch (IllegalArgumentException e) {
-            //swallow
+            // swallow
         }
 
 
@@ -170,7 +165,7 @@ public class MultipleParserTest {
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(new ByteArrayInputStream(new byte[] {0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back 1!", handler.toString());
 
         assertEquals("Test1", metadata.get("T1"));
@@ -184,11 +179,11 @@ public class MultipleParserTest {
         // Check the First, Last and All policies:
         // First Wins
         p = new SupplementingParser(null, MetadataPolicy.FIRST_WINS, pFail, pContent1, pContent2,
-                pNothing);
+                        pNothing);
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(new ByteArrayInputStream(new byte[] {0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back 1!Fell back 2!", handler.toString());
 
         assertEquals("Test1", metadata.get("T1"));
@@ -204,11 +199,11 @@ public class MultipleParserTest {
 
         // Last Wins
         p = new SupplementingParser(null, MetadataPolicy.LAST_WINS, pFail, pContent1, pContent2,
-                pNothing);
+                        pNothing);
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(new ByteArrayInputStream(new byte[] {0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back 1!Fell back 2!", handler.toString());
 
         assertEquals("Test1", metadata.get("T1"));
@@ -224,11 +219,11 @@ public class MultipleParserTest {
 
         // Merge
         p = new SupplementingParser(null, MetadataPolicy.KEEP_ALL, pFail, pContent1, pContent2,
-                pNothing);
+                        pNothing);
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(new ByteArrayInputStream(new byte[] {0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back 1!Fell back 2!", handler.toString());
 
         assertEquals("Test1", metadata.get("T1"));

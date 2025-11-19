@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
@@ -20,23 +18,21 @@ package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.poi.openxml4j.opc.ContentTypes;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
 
 class CorePropertiesHandler extends AbstractPartHandler {
 
     final static String DC_NS = "http://purl.org/dc/elements/1.1";
     final static String DC_TERMS_NS = "http://purl.org/dc/terms";
     final static String CP_NS =
-            "http://schemas.openxmlformats.org/package/2006/metadata/core-properties";
+                    "http://schemas.openxmlformats.org/package/2006/metadata/core-properties";
     final StringBuilder buffer = new StringBuilder();
     final Map<String, Map<String, Property>> properties = new HashMap<>();
     private final Metadata metadata;
@@ -80,8 +76,7 @@ class CorePropertiesHandler extends AbstractPartHandler {
     }
 
     @Override
-    public void startDocument() throws SAXException {
-    }
+    public void startDocument() throws SAXException {}
 
     @Override
     public void endDocument() throws SAXException {
@@ -89,16 +84,14 @@ class CorePropertiesHandler extends AbstractPartHandler {
     }
 
     @Override
-    public void startPrefixMapping(String prefix, String uri) throws SAXException {
-    }
+    public void startPrefixMapping(String prefix, String uri) throws SAXException {}
 
     @Override
-    public void endPrefixMapping(String prefix) throws SAXException {
-    }
+    public void endPrefixMapping(String prefix) throws SAXException {}
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+                    throws SAXException {
 
     }
 

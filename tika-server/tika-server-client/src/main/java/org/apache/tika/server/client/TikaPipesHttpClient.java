@@ -1,24 +1,21 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.server.client;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -26,12 +23,11 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Low-level class to handle the http layer.
@@ -46,16 +42,17 @@ class TikaPipesHttpClient {
     private final String endPointUrl;
     private final String tikaUrl;
     private final int maxRetries = 3;
-    //if can't make contact with Tika server, max wait time in ms
+    // if can't make contact with Tika server, max wait time in ms
     private final long maxWaitForTikaMs = 120000;
-    //how often to ping /tika (in ms) to see if the server is up and running
+    // how often to ping /tika (in ms) to see if the server is up and running
     private final long pulseWaitForTikaMs = 1000;
     private HttpClient httpClient;
 
     /**
      * @param baseUrl url to base endpoint
      */
-    TikaPipesHttpClient(String baseUrl, HttpClientFactory httpClientFactory) throws TikaConfigException {
+    TikaPipesHttpClient(String baseUrl, HttpClientFactory httpClientFactory)
+                    throws TikaConfigException {
         if (!baseUrl.endsWith("/")) {
             baseUrl += "/";
         }
@@ -106,22 +103,21 @@ class TikaPipesHttpClient {
                 try {
                     msg = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                 } catch (IOException e) {
-                    //swallow
+                    // swallow
                 }
                 long elapsed = System.currentTimeMillis() - start;
                 TikaEmitterResult.STATUS status = TikaEmitterResult.STATUS.OK;
-                if (response
-                        .getStatusLine()
-                        .getStatusCode() != 200) {
+                if (response.getStatusLine().getStatusCode() != 200) {
                     status = TikaEmitterResult.STATUS.NOT_OK;
                 } else {
-                    //pull out stacktrace from parse exception?
+                    // pull out stacktrace from parse exception?
                 }
                 return new TikaEmitterResult(status, elapsed, msg);
             }
         } catch (TimeoutWaitingForTikaException e) {
             long elapsed = System.currentTimeMillis() - start;
-            return new TikaEmitterResult(TikaEmitterResult.STATUS.TIMED_OUT_WAITING_FOR_TIKA, elapsed, "");
+            return new TikaEmitterResult(TikaEmitterResult.STATUS.TIMED_OUT_WAITING_FOR_TIKA,
+                            elapsed, "");
         }
         long elapsed = System.currentTimeMillis() - start;
         return new TikaEmitterResult(TikaEmitterResult.STATUS.EXCEEDED_MAX_RETRIES, elapsed, "");
@@ -136,15 +132,13 @@ class TikaPipesHttpClient {
             try {
                 Thread.sleep(pulseWaitForTikaMs);
             } catch (InterruptedException e) {
-                //swallow
+                // swallow
             }
 
             HttpGet get = new HttpGet(tikaUrl);
             try {
                 HttpResponse response = httpClient.execute(get);
-                if (response
-                        .getStatusLine()
-                        .getStatusCode() == 200) {
+                if (response.getStatusLine().getStatusCode() == 200) {
                     LOGGER.debug("server back up");
                     return;
                 }

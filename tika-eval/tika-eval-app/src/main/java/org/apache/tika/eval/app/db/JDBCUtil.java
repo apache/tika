@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.eval.app.db;
@@ -51,30 +49,29 @@ public class JDBCUtil {
         this.driverClass = driverClass;
         if (driverClass == null || driverClass.isEmpty()) {
             if (System.getProperty("jdbc.drivers") != null) {
-                //user has specified it on the command line
-                //stop now
+                // user has specified it on the command line
+                // stop now
             } else {
-                //try to use the mappings in db.properties to determine the class
+                // try to use the mappings in db.properties to determine the class
                 try (InputStream is = JDBCUtil.class.getResourceAsStream("/db.properties")) {
                     Properties properties = new Properties();
                     properties.load(is);
                     for (String k : properties.stringPropertyNames()) {
-                        Matcher m = Pattern
-                                .compile("(?i)jdbc:" + k)
-                                .matcher(connectionString);
+                        Matcher m = Pattern.compile("(?i)jdbc:" + k).matcher(connectionString);
                         if (m.find()) {
                             this.driverClass = properties.getProperty(k);
                         }
                     }
 
                 } catch (IOException e) {
-                    //swallow
+                    // swallow
                 }
             }
         }
     }
 
-    public static void batchInsert(PreparedStatement insertStatement, TableInfo table, Map<Cols, String> data) throws SQLException {
+    public static void batchInsert(PreparedStatement insertStatement, TableInfo table,
+                    Map<Cols, String> data) throws SQLException {
 
         try {
             int i = 1;
@@ -84,7 +81,8 @@ public class JDBCUtil {
             }
             for (Cols c : data.keySet()) {
                 if (!table.containsColumn(c)) {
-                    throw new IllegalArgumentException("Can't add data to " + c + " because it doesn't exist in the table: " + table.getName());
+                    throw new IllegalArgumentException("Can't add data to " + c
+                                    + " because it doesn't exist in the table: " + table.getName());
                 }
             }
             insertStatement.addBatch();
@@ -93,7 +91,8 @@ public class JDBCUtil {
         }
     }
 
-    public static void updateInsertStatement(int dbColOffset, PreparedStatement st, ColInfo colInfo, String value) throws SQLException {
+    public static void updateInsertStatement(int dbColOffset, PreparedStatement st, ColInfo colInfo,
+                    String value) throws SQLException {
         if (value == null) {
             st.setNull(dbColOffset, colInfo.getType());
             return;
@@ -105,12 +104,12 @@ public class JDBCUtil {
                         value = value.substring(0, colInfo.getPrecision());
                         LOG.warn("truncated varchar value in {} : {}", colInfo.getName(), value);
                     }
-                    //postgres doesn't allow \0000
+                    // postgres doesn't allow \0000
                     value = value.replaceAll("\u0000", " ");
                     st.setString(dbColOffset, value);
                     break;
                 case Types.CHAR:
-                    //postgres doesn't allow \0000
+                    // postgres doesn't allow \0000
                     value = value.replaceAll("\u0000", " ");
                     st.setString(dbColOffset, value);
                     break;
@@ -130,7 +129,8 @@ public class JDBCUtil {
                     st.setBoolean(dbColOffset, Boolean.parseBoolean(value));
                     break;
                 default:
-                    throw new UnsupportedOperationException("Don't yet support type: " + colInfo.getType());
+                    throw new UnsupportedOperationException(
+                                    "Don't yet support type: " + colInfo.getType());
             }
         } catch (NumberFormatException e) {
             if (!"".equals(value)) {
@@ -144,8 +144,7 @@ public class JDBCUtil {
     }
 
     /**
-     * Override this any optimizations you want to do on the db
-     * before writing/reading.
+     * Override this any optimizations you want to do on the db before writing/reading.
      *
      * @return
      * @throws IOException
@@ -170,7 +169,7 @@ public class JDBCUtil {
     }
 
     /**
-     * JDBC driver class.  Override as necessary.
+     * JDBC driver class. Override as necessary.
      *
      * @return
      */
@@ -199,15 +198,14 @@ public class JDBCUtil {
 
         try (ResultSet rs = dbMeta.getTables(null, null, "%", null)) {
             while (rs.next()) {
-                tables.add(rs
-                        .getString(3)
-                        .toLowerCase(Locale.US));
+                tables.add(rs.getString(3).toLowerCase(Locale.US));
             }
         }
         return tables;
     }
 
-    public void createTables(List<TableInfo> tableInfos, CREATE_TABLE createTable) throws SQLException, IOException {
+    public void createTables(List<TableInfo> tableInfos, CREATE_TABLE createTable)
+                    throws SQLException, IOException {
 
         Connection conn = getConnection();
         for (TableInfo tableInfo : tableInfos) {
@@ -246,12 +244,10 @@ public class JDBCUtil {
         return tableName;
     }
 
-    //does not close the connection
+    // does not close the connection
     private void createTable(Connection conn, TableInfo tableInfo) throws SQLException {
         StringBuilder createSql = new StringBuilder();
-        createSql
-                .append("CREATE TABLE ")
-                .append(tableInfo.getName());
+        createSql.append("CREATE TABLE ").append(tableInfo.getName());
         createSql.append("(");
 
         int last = 0;

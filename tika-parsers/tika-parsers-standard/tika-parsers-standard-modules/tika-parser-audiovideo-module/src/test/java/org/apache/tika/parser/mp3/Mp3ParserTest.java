@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mp3;
 
@@ -20,13 +18,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayInputStream;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test case for parsing mp3 files.
@@ -40,9 +36,8 @@ public class Mp3ParserTest extends TikaTest {
      * @param expected the expected duration, rounded as seconds
      */
     private static void checkDuration(Metadata metadata, int expected) {
-        assertEquals(expected,
-                Math.round(Float.parseFloat(metadata.get(XMPDM.DURATION))),
-                "wrong duration");
+        assertEquals(expected, Math.round(Float.parseFloat(metadata.get(XMPDM.DURATION))),
+                        "wrong duration");
     }
 
     /**
@@ -72,8 +67,7 @@ public class Mp3ParserTest extends TikaTest {
     }
 
     /**
-     * Test that with only ID3v2 tags, we get the full
-     * set of information out.
+     * Test that with only ID3v2 tags, we get the full set of information out.
      */
     @Test
     public void testMp3ParsingID3v2() throws Exception {
@@ -108,7 +102,7 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("2008", metadata.get(XMPDM.RELEASE_DATE));
         assertEquals("Rock", metadata.get(XMPDM.GENRE));
         assertEquals("XXX - ID3v1 Comment\nTest Comment",
-                metadata.get(XMPDM.LOG_COMMENT.getName()));
+                        metadata.get(XMPDM.LOG_COMMENT.getName()));
         assertEquals("1", metadata.get(XMPDM.TRACK_NUMBER));
         assertEquals("1/1", metadata.get(XMPDM.DISC_NUMBER));
         assertEquals("1", metadata.get(XMPDM.COMPILATION));
@@ -120,8 +114,8 @@ public class Mp3ParserTest extends TikaTest {
     }
 
     /**
-     * Test that metadata is added before xhtml content
-     * is written...so that more metadata shows up in the xhtml
+     * Test that metadata is added before xhtml content is written...so that more metadata shows up
+     * in the xhtml
      */
     @Test
     public void testAddingToMetadataBeforeWriting() throws Exception {
@@ -132,8 +126,7 @@ public class Mp3ParserTest extends TikaTest {
     }
 
     /**
-     * Test that with both id3v2 and id3v1, we prefer the
-     * details from id3v2
+     * Test that with both id3v2 and id3v1, we prefer the details from id3v2
      */
     @Test
     public void testMp3ParsingID3v1v2() throws Exception {
@@ -158,8 +151,7 @@ public class Mp3ParserTest extends TikaTest {
     }
 
     /**
-     * Test that with only ID3v2 tags, of version 2.4, we get the full
-     * set of information out.
+     * Test that with only ID3v2 tags, of version 2.4, we get the full set of information out.
      */
     @Test
     public void testMp3ParsingID3v24() throws Exception {
@@ -197,8 +189,7 @@ public class Mp3ParserTest extends TikaTest {
     }
 
     /**
-     * Tests that a file with characters not in the ISO 8859-1
-     * range is correctly handled
+     * Tests that a file with characters not in the ISO 8859-1 range is correctly handled
      */
     @Test
     public void testMp3ParsingID3i18n() throws Exception {
@@ -212,7 +203,7 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("Test Album \u2460\u2468", metadata.get(XMPDM.ALBUM));
 
         assertEquals("Eng - Comment Desc\nThis is a \u1357\u2468\u2460 Comment",
-                metadata.get(XMPDM.LOG_COMMENT));
+                        metadata.get(XMPDM.LOG_COMMENT));
 
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
@@ -221,9 +212,8 @@ public class Mp3ParserTest extends TikaTest {
     }
 
     /**
-     * Tests that a file with the last frame slightly
-     * truncated does not cause an EOF and does
-     * not lead to an infinite loop.
+     * Tests that a file with the last frame slightly truncated does not cause an EOF and does not
+     * lead to an infinite loop.
      */
     @Test
     public void testMp3ParsingID3i18nTruncated() throws Exception {
@@ -237,7 +227,7 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("Test Album \u2460\u2468", metadata.get(XMPDM.ALBUM));
 
         assertEquals("Eng - Comment Desc\nThis is a \u1357\u2468\u2460 Comment",
-                metadata.get(XMPDM.LOG_COMMENT));
+                        metadata.get(XMPDM.LOG_COMMENT));
 
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
@@ -246,14 +236,13 @@ public class Mp3ParserTest extends TikaTest {
     }
 
     /**
-     * Tests that a file with both lyrics and
-     * ID3v2 tags gets both extracted correctly
+     * Tests that a file with both lyrics and ID3v2 tags gets both extracted correctly
      */
     @Test
     public void testMp3ParsingLyrics() throws Exception {
 
         // Note - our test file has a lyrics tag, but lacks any
-        //  lyrics in the tags, so we can't test that bit
+        // lyrics in the tags, so we can't test that bit
         // TODO Find a better sample file
         Metadata metadata = new Metadata();
         String content = getText("testMP3lyrics.mp3", metadata);
@@ -277,13 +266,13 @@ public class Mp3ParserTest extends TikaTest {
 
     @Test
     public void testID3v2Frame() throws Exception {
-        byte[] empty = new byte[]{0x49, 0x44, 0x33, 3, 1, 0, 0, 0, 0, 0};
+        byte[] empty = new byte[] {0x49, 0x44, 0x33, 3, 1, 0, 0, 0, 0, 0};
 
-        assertEquals(11, ID3v2Frame.getInt(new byte[]{0, 0, 0, 0x0b}));
-        assertEquals(257, ID3v2Frame.getInt(new byte[]{0, 0, 1, 1}));
+        assertEquals(11, ID3v2Frame.getInt(new byte[] {0, 0, 0, 0x0b}));
+        assertEquals(257, ID3v2Frame.getInt(new byte[] {0, 0, 1, 1}));
 
-        ID3v2Frame f =
-                (ID3v2Frame) ID3v2Frame.createFrameIfPresent(new ByteArrayInputStream(empty));
+        ID3v2Frame f = (ID3v2Frame) ID3v2Frame
+                        .createFrameIfPresent(new ByteArrayInputStream(empty));
         assertEquals(3, f.getMajorVersion());
         assertEquals(1, f.getMinorVersion());
         assertEquals(0, f.getFlags());
@@ -291,8 +280,8 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals(0, f.getData().length);
 
         assertEquals("", ID3v2Frame.getTagString(f.getData(), 0, 0));
-        assertEquals("", ID3v2Frame.getTagString(new byte[]{0, 0, 0, 0}, 0, 3));
-        assertEquals("A", ID3v2Frame.getTagString(new byte[]{(byte) 'A', 0, 0, 0}, 0, 3));
+        assertEquals("", ID3v2Frame.getTagString(new byte[] {0, 0, 0, 0}, 0, 3));
+        assertEquals("A", ID3v2Frame.getTagString(new byte[] {(byte) 'A', 0, 0, 0}, 0, 3));
     }
 
     @Test
@@ -301,16 +290,13 @@ public class Mp3ParserTest extends TikaTest {
     }
 
     /**
-     * This test will do nothing, unless you've downloaded the
-     * mp3 file from TIKA-424 - the file cannot be
-     * distributed with Tika.
-     * This test will check for the complicated set of ID3v2.4
+     * This test will do nothing, unless you've downloaded the mp3 file from TIKA-424 - the file
+     * cannot be distributed with Tika. This test will check for the complicated set of ID3v2.4
      * tags.
      */
     @Test
     public void testTIKA424() throws Exception {
-        assumeTrue(
-                Mp3ParserTest.class.getResourceAsStream("/test-documents/test2.mp3") != null);
+        assumeTrue(Mp3ParserTest.class.getResourceAsStream("/test-documents/test2.mp3") != null);
 
         Metadata metadata = new Metadata();
         String content = getText("test2.mp3", metadata);
@@ -327,11 +313,10 @@ public class Mp3ParserTest extends TikaTest {
     }
 
     /**
-     * This tests that we can handle without errors (but perhaps not
-     * all content) a file with a very very large ID3 frame that
-     * has been truncated before the end of the ID3 tags.
-     * In this case, it is a file with JPEG data in the ID3, which
-     * is truncated before the end of the JPEG bit of the ID3 frame.
+     * This tests that we can handle without errors (but perhaps not all content) a file with a very
+     * very large ID3 frame that has been truncated before the end of the ID3 tags. In this case, it
+     * is a file with JPEG data in the ID3, which is truncated before the end of the JPEG bit of the
+     * ID3 frame.
      */
     @Test
     public void testTIKA474() throws Exception {

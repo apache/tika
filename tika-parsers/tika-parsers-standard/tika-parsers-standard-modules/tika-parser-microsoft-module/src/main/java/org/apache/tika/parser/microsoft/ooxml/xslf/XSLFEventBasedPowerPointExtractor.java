@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.ooxml.xslf;
@@ -20,17 +18,15 @@ package org.apache.tika.parser.microsoft.ooxml.xslf;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Date;
-
 import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.xmlbeans.XmlException;
-
 import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
+import org.apache.xmlbeans.XmlException;
 
 public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
 
@@ -39,7 +35,7 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
     private POIXMLProperties properties;
 
     public XSLFEventBasedPowerPointExtractor(OPCPackage container)
-            throws XmlException, OpenXML4JException, IOException {
+                    throws XmlException, OpenXML4JException, IOException {
         this.container = container;
         this.properties = new POIXMLProperties(container);
     }
@@ -68,7 +64,7 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
 
     @Override
     public String getText() {
-        //TODO
+        // TODO
         return "";
     }
 
@@ -93,7 +89,7 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
     }
 
     private static class XSLFToTextContentHandler
-            implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
+                    implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
         private final StringBuilder buffer;
 
         public XSLFToTextContentHandler(StringBuilder buffer) {
@@ -107,17 +103,17 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
 
         @Override
         public void hyperlinkStart(String link) {
-            //no-op
+            // no-op
         }
 
         @Override
         public void hyperlinkEnd() {
-            //no-op
+            // no-op
         }
 
         @Override
         public void startParagraph(ParagraphProperties paragraphProperties) {
-            //no-op
+            // no-op
         }
 
         @Override
@@ -167,7 +163,7 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
 
         @Override
         public void startEditedSection(String editor, Date date,
-                                       OOXMLWordAndPowerPointTextHandler.EditType editType) {
+                        OOXMLWordAndPowerPointTextHandler.EditType editType) {
 
         }
 
@@ -199,12 +195,12 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
 
         @Override
         public void embeddedOLERef(String refId) {
-            //no-op
+            // no-op
         }
 
         @Override
         public void embeddedPicRef(String picFileName, String picDescription) {
-            //no-op
+            // no-op
         }
 
         @Override

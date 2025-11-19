@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.ocr;
 
@@ -27,15 +25,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
 import javax.imageio.ImageIO;
-
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ocr.tess4j.ImageDeskew;
 import org.apache.tika.utils.SystemUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class ImagePreprocessor implements Serializable {
 
@@ -49,9 +45,9 @@ class ImagePreprocessor implements Serializable {
     }
 
 
-    //this assumes that image magick is available
+    // this assumes that image magick is available
     void process(Path sourceFile, Path targFile, Metadata metadata, TesseractOCRConfig config)
-            throws IOException {
+                    throws IOException {
 
 
         double angle = config.isApplyRotation() ? getAngle(sourceFile, metadata) : 0d;
@@ -65,29 +61,28 @@ class ImagePreprocessor implements Serializable {
 
             // Arguments for ImageMagick
             final List<String> density =
-                    Arrays.asList("-density", Integer.toString(config.getDensity()));
+                            Arrays.asList("-density", Integer.toString(config.getDensity()));
             final List<String> depth = Arrays.asList("-depth", Integer.toString(config.getDepth()));
             final List<String> colorspace = Arrays.asList("-colorspace", config.getColorspace());
             final List<String> filter = Arrays.asList("-filter", config.getFilter());
             final List<String> resize = Arrays.asList("-resize", config.getResize() + "%");
             final List<String> rotate = Arrays.asList("-rotate", Double.toString(-angle));
             final List<String> sourceFileArg =
-                    Collections.singletonList(sourceFile.toAbsolutePath().toString());
+                            Collections.singletonList(sourceFile.toAbsolutePath().toString());
             final List<String> targFileArg =
-                    Collections.singletonList(targFile.toAbsolutePath().toString());
+                            Collections.singletonList(targFile.toAbsolutePath().toString());
 
             Stream<List<String>> stream = Stream.empty();
             if (angle == 0) {
                 if (config.isEnableImagePreprocessing()) {
                     // Do pre-processing, but don't do any rotation
                     stream = Stream.of(density, depth, colorspace, filter, resize, sourceFileArg,
-                            targFileArg);
+                                    targFileArg);
                 }
             } else if (config.isEnableImagePreprocessing()) {
                 // Do pre-processing with rotation
-                stream =
-                        Stream.of(density, depth, colorspace, filter, resize, rotate, sourceFileArg,
-                                targFileArg);
+                stream = Stream.of(density, depth, colorspace, filter, resize, rotate,
+                                sourceFileArg, targFileArg);
 
             } else if (config.isApplyRotation()) {
                 // Just rotation
@@ -108,7 +103,7 @@ class ImagePreprocessor implements Serializable {
     }
 
     /**
-     * Get the current skew angle of the image.  Positive = clockwise; Negative = counter-clockwise
+     * Get the current skew angle of the image. Positive = clockwise; Negative = counter-clockwise
      */
     private double getAngle(Path sourceFile, Metadata metadata) throws IOException {
         BufferedImage bi = ImageIO.read(sourceFile.toFile());
@@ -120,7 +115,7 @@ class ImagePreprocessor implements Serializable {
             angle = 0d;
         } else {
             metadata.add(TesseractOCRParser.IMAGE_ROTATION,
-                    String.format(Locale.getDefault(), "%.3f", angle));
+                            String.format(Locale.getDefault(), "%.3f", angle));
         }
 
         return angle;

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika;
 
@@ -39,11 +37,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedResourceHandler;
@@ -61,6 +55,8 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parent class of Tika tests
@@ -77,6 +73,7 @@ public abstract class TikaTest {
             throw new RuntimeException(e);
         }
     }
+
     public static void assertContainsCount(String needle, String haystack, int targetCount) {
         int i = haystack.indexOf(needle);
         int count = 0;
@@ -85,7 +82,7 @@ public abstract class TikaTest {
             i = haystack.indexOf(needle, i + 1);
         }
         assertEquals(targetCount, count,
-                "found " + count + " but should have found: " + targetCount);
+                        "found " + count + " but should have found: " + targetCount);
     }
 
     public static void assertContains(String needle, String haystack) {
@@ -105,8 +102,7 @@ public abstract class TikaTest {
     }
 
     public static void assertMetadataListEquals(List<Metadata> metadataListA,
-                                          List<Metadata> metadataListB,
-                                    Set<String> fieldsToIgnore) {
+                    List<Metadata> metadataListB, Set<String> fieldsToIgnore) {
         assertEquals(metadataListA.size(), metadataListB.size(), "different sizes");
         for (int i = 0; i < metadataListA.size(); i++) {
             Metadata mA = metadataListA.get(i);
@@ -117,8 +113,8 @@ public abstract class TikaTest {
                     continue;
                 }
                 mAFields.add(n);
-                assertArrayEquals(mA.getValues(n), mB.getValues(n), "problem with " + n +
-                        " in metadata index=" + i);
+                assertArrayEquals(mA.getValues(n), mB.getValues(n),
+                                "problem with " + n + " in metadata index=" + i);
             }
             Set<String> mBFields = new HashSet<>();
             for (String n : mB.names()) {
@@ -132,14 +128,13 @@ public abstract class TikaTest {
     }
 
     /**
-     * Test that in at least one item in metadataList, all keys and values
-     * in minExpected are contained.
+     * Test that in at least one item in metadataList, all keys and values in minExpected are
+     * contained.
      * <p>
-     * The values in minExpected are tested for whether they are contained
-     * within a value in the target.  If minExpected=&dquot;text/vbasic&dquot;  and
-     * what was actually found in the target within metadatalist is
-     * &dquot;text/vbasic; charset=windows-1252&dquot;,
-     * that is counted as a hit.
+     * The values in minExpected are tested for whether they are contained within a value in the
+     * target. If minExpected=&dquot;text/vbasic&dquot; and what was actually found in the target
+     * within metadatalist is &dquot;text/vbasic; charset=windows-1252&dquot;, that is counted as a
+     * hit.
      *
      * @param minExpected
      * @param metadataList
@@ -162,11 +157,11 @@ public abstract class TikaTest {
                 }
             }
             if (foundPropertyCount == minExpected.names().length) {
-                //found everything!
+                // found everything!
                 return;
             }
         }
-        //TODO: figure out how to have more informative error message
+        // TODO: figure out how to have more informative error message
         fail("Couldn't find everything within a single metadata item");
     }
 
@@ -223,8 +218,8 @@ public abstract class TikaTest {
      *
      * @param name name of the desired resource
      * @return A {@link java.net.URI} object or null
-     * @throws URISyntaxException if this URL is not formatted strictly according to
-     *                            RFC2396 and cannot be converted to a URI.
+     * @throws URISyntaxException if this URL is not formatted strictly according to RFC2396 and
+     *         cannot be converted to a URI.
      */
     public URI getResourceAsUri(String name) throws URISyntaxException {
         URL url = getResourceAsUrl(name);
@@ -235,13 +230,12 @@ public abstract class TikaTest {
     }
 
     /**
-     * This method will give you back the filename incl. the absolute path name
-     * to the resource. If the resource does not exist it will give you back the
-     * resource name incl. the path.
+     * This method will give you back the filename incl. the absolute path name to the resource. If
+     * the resource does not exist it will give you back the resource name incl. the path.
      *
      * @param name The named resource to search for.
-     * @return an absolute path incl. the name which is in the same directory as
-     * the the class you've called it from.
+     * @return an absolute path incl. the name which is in the same directory as the the class
+     *         you've called it from.
      */
     public File getResourceAsFile(String name) throws URISyntaxException {
         URI uri = getResourceAsUri(name);
@@ -268,9 +262,9 @@ public abstract class TikaTest {
     }
 
     protected XMLResult getXML(String filePath, Parser parser, ParseContext context)
-            throws Exception {
+                    throws Exception {
         return getXML(getResourceAsStream("/test-documents/" + filePath), parser, new Metadata(),
-                context);
+                        context);
     }
 
     protected XMLResult getXML(String filePath, Parser parser, Metadata metadata) throws Exception {
@@ -282,21 +276,20 @@ public abstract class TikaTest {
     }
 
     protected XMLResult getXML(String filePath, Parser parser, Metadata metadata,
-                               ParseContext parseContext)
-            throws Exception {
-        return getXML(getResourceAsStream("/test-documents/" + filePath), parser,
-                metadata, parseContext);
+                    ParseContext parseContext) throws Exception {
+        return getXML(getResourceAsStream("/test-documents/" + filePath), parser, metadata,
+                        parseContext);
     }
 
     protected XMLResult getXML(String filePath, Metadata metadata, ParseContext parseContext)
-            throws Exception {
+                    throws Exception {
         return getXML(getResourceAsStream("/test-documents/" + filePath), AUTO_DETECT_PARSER,
-                metadata, parseContext);
+                        metadata, parseContext);
     }
 
     protected XMLResult getXML(String filePath, Metadata metadata) throws Exception {
         return getXML(getResourceAsStream("/test-documents/" + filePath), AUTO_DETECT_PARSER,
-                metadata, null);
+                        metadata, null);
     }
 
     protected XMLResult getXML(String filePath, Parser parser) throws Exception {
@@ -307,16 +300,16 @@ public abstract class TikaTest {
 
     protected XMLResult getXML(String filePath) throws Exception {
         return getXML(getResourceAsStream("/test-documents/" + filePath), AUTO_DETECT_PARSER,
-                new Metadata(), null);
+                        new Metadata(), null);
     }
 
     protected XMLResult getXML(InputStream input, Parser parser, Metadata metadata)
-            throws Exception {
+                    throws Exception {
         return getXML(input, parser, metadata, null);
     }
 
     protected XMLResult getXML(InputStream input, Parser parser, Metadata metadata,
-                               ParseContext context) throws Exception {
+                    ParseContext context) throws Exception {
         if (context == null) {
             context = new ParseContext();
         }
@@ -335,13 +328,13 @@ public abstract class TikaTest {
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, boolean suppressException)
-            throws Exception {
+                    throws Exception {
         return getRecursiveMetadata(filePath, new Metadata(), new ParseContext(),
-                suppressException);
+                        suppressException);
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, ParseContext parseContext,
-                                                  boolean suppressException) throws Exception {
+                    boolean suppressException) throws Exception {
         return getRecursiveMetadata(filePath, new Metadata(), parseContext, suppressException);
     }
 
@@ -350,77 +343,72 @@ public abstract class TikaTest {
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath,
-                                                  BasicContentHandlerFactory.HANDLER_TYPE handlerType)
-            throws Exception {
+                    BasicContentHandlerFactory.HANDLER_TYPE handlerType) throws Exception {
         return getRecursiveMetadata(filePath, TikaTest.AUTO_DETECT_PARSER, new Metadata(),
-                new ParseContext(), true,
-                handlerType);
+                        new ParseContext(), true, handlerType);
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, Metadata metadata)
-            throws Exception {
+                    throws Exception {
         return getRecursiveMetadata(filePath, metadata, new ParseContext());
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, Metadata metadata,
-                                                  ParseContext context) throws Exception {
+                    ParseContext context) throws Exception {
         return getRecursiveMetadata(filePath, metadata, context, false);
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, Metadata metadata,
-                                                  ParseContext context, boolean suppressException)
-            throws Exception {
+                    ParseContext context, boolean suppressException) throws Exception {
         return getRecursiveMetadata(filePath, AUTO_DETECT_PARSER, metadata, context,
-                suppressException);
+                        suppressException);
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, Parser wrapped,
-                                                  Metadata metadata, ParseContext context,
-                                                  boolean suppressException) throws Exception {
+                    Metadata metadata, ParseContext context, boolean suppressException)
+                    throws Exception {
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
             return getRecursiveMetadata(is, wrapped, metadata, context, suppressException);
         }
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, Parser wrapped,
-                                                  Metadata metadata, ParseContext context,
-                                                  boolean suppressException,
-                                                  BasicContentHandlerFactory.HANDLER_TYPE handlerType)
-            throws Exception {
+                    Metadata metadata, ParseContext context, boolean suppressException,
+                    BasicContentHandlerFactory.HANDLER_TYPE handlerType) throws Exception {
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
-            return getRecursiveMetadata(is, wrapped, metadata, context, suppressException, handlerType);
+            return getRecursiveMetadata(is, wrapped, metadata, context, suppressException,
+                            handlerType);
         }
     }
 
     protected List<Metadata> getRecursiveMetadata(Path path, ParseContext context,
-                                                  boolean suppressException) throws Exception {
+                    boolean suppressException) throws Exception {
         Metadata metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(path, metadata)) {
             return getRecursiveMetadata(tis, AUTO_DETECT_PARSER, metadata, context,
-                    suppressException);
-        }
-    }
-
-    protected List<Metadata> getRecursiveMetadata(Path path, Parser parser, ParseContext parseContext,
-                                                  boolean suppressException) throws Exception {
-        Metadata metadata = new Metadata();
-        try (TikaInputStream tis = TikaInputStream.get(path, metadata)) {
-            return getRecursiveMetadata(tis, parser, metadata, parseContext,
-                    suppressException);
+                            suppressException);
         }
     }
 
     protected List<Metadata> getRecursiveMetadata(Path path, Parser parser,
-                                                  boolean suppressException) throws Exception {
+                    ParseContext parseContext, boolean suppressException) throws Exception {
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(path, metadata)) {
+            return getRecursiveMetadata(tis, parser, metadata, parseContext, suppressException);
+        }
+    }
+
+    protected List<Metadata> getRecursiveMetadata(Path path, Parser parser,
+                    boolean suppressException) throws Exception {
         Metadata metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(path, metadata)) {
             return getRecursiveMetadata(tis, parser, metadata, new ParseContext(),
-                    suppressException);
+                            suppressException);
         }
     }
 
     protected List<Metadata> getRecursiveMetadata(Path p, boolean suppressException)
-            throws Exception {
+                    throws Exception {
         Metadata metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(p, metadata)) {
             return getRecursiveMetadata(tis, metadata, new ParseContext(), suppressException);
@@ -435,28 +423,27 @@ public abstract class TikaTest {
     }
 
     protected List<Metadata> getRecursiveMetadata(InputStream is, boolean suppressException)
-            throws Exception {
+                    throws Exception {
         return getRecursiveMetadata(is, new Metadata(), new ParseContext(), suppressException);
     }
 
     protected List<Metadata> getRecursiveMetadata(InputStream is, Parser parser,
-                                                  boolean suppressException) throws Exception {
+                    boolean suppressException) throws Exception {
         return getRecursiveMetadata(is, parser, new Metadata(), new ParseContext(),
-                suppressException);
+                        suppressException);
     }
 
     protected List<Metadata> getRecursiveMetadata(InputStream is, Metadata metadata,
-                                                  ParseContext context, boolean suppressException)
-            throws Exception {
+                    ParseContext context, boolean suppressException) throws Exception {
         return getRecursiveMetadata(is, AUTO_DETECT_PARSER, metadata, context, suppressException);
     }
 
     protected List<Metadata> getRecursiveMetadata(InputStream is, Parser p, Metadata metadata,
-                                                  ParseContext context, boolean suppressException)
-            throws Exception {
+                    ParseContext context, boolean suppressException) throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+        RecursiveParserWrapperHandler handler =
+                        new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(
+                                        BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
         try {
             wrapper.parse(is, handler, metadata, context);
         } catch (Exception e) {
@@ -468,12 +455,11 @@ public abstract class TikaTest {
     }
 
     protected List<Metadata> getRecursiveMetadata(InputStream is, Parser p, Metadata metadata,
-                                                  ParseContext context, boolean suppressException,
-                                                  BasicContentHandlerFactory.HANDLER_TYPE handlerType)
-            throws Exception {
+                    ParseContext context, boolean suppressException,
+                    BasicContentHandlerFactory.HANDLER_TYPE handlerType) throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(handlerType, -1));
+                        new BasicContentHandlerFactory(handlerType, -1));
         try {
             wrapper.parse(is, handler, metadata, context);
         } catch (Exception e) {
@@ -485,11 +471,12 @@ public abstract class TikaTest {
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, ParseContext context)
-            throws Exception {
+                    throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
 
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+        RecursiveParserWrapperHandler handler =
+                        new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(
+                                        BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
             wrapper.parse(is, handler, new Metadata(), context);
         }
@@ -497,25 +484,22 @@ public abstract class TikaTest {
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, Parser parserToWrap)
-            throws Exception {
+                    throws Exception {
         return getRecursiveMetadata(filePath, parserToWrap,
-                BasicContentHandlerFactory.HANDLER_TYPE.XML);
+                        BasicContentHandlerFactory.HANDLER_TYPE.XML);
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, Parser parserToWrap,
-                                                  BasicContentHandlerFactory.HANDLER_TYPE
-                                                          handlerType)
-            throws Exception {
+                    BasicContentHandlerFactory.HANDLER_TYPE handlerType) throws Exception {
         return getRecursiveMetadata(filePath, parserToWrap, handlerType, new ParseContext());
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, Parser parserToWrap,
-                                                  BasicContentHandlerFactory.HANDLER_TYPE
-                                                          handlerType,
-                                                  ParseContext context) throws Exception {
+                    BasicContentHandlerFactory.HANDLER_TYPE handlerType, ParseContext context)
+                    throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parserToWrap);
-        RecursiveParserWrapperHandler handler =
-                new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(handlerType, -1));
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                        new BasicContentHandlerFactory(handlerType, -1));
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, FilenameUtils.getName(filePath));
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
@@ -525,10 +509,11 @@ public abstract class TikaTest {
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, Parser parserToWrap,
-                                                  ParseContext parseContext) throws Exception {
+                    ParseContext parseContext) throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parserToWrap);
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+        RecursiveParserWrapperHandler handler =
+                        new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(
+                                        BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
 
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
             wrapper.parse(is, handler, new Metadata(), parseContext);
@@ -553,14 +538,14 @@ public abstract class TikaTest {
     }
 
     protected String getText(String filePath, Metadata metadata, ParseContext parseContext)
-            throws Exception {
+                    throws Exception {
         return getText(filePath, AUTO_DETECT_PARSER, metadata, parseContext);
     }
 
     protected String getText(String filePath, Parser parser, Metadata metadata,
-                             ParseContext parseContext) throws Exception {
+                    ParseContext parseContext) throws Exception {
         return getText(getResourceAsStream("/test-documents/" + filePath), parser, parseContext,
-                metadata);
+                        metadata);
     }
 
     /**
@@ -569,7 +554,7 @@ public abstract class TikaTest {
      * Tries to close input stream after processing.
      */
     public String getText(InputStream is, Parser parser, ParseContext context, Metadata metadata)
-            throws Exception {
+                    throws Exception {
         ContentHandler handler = new BodyContentHandler(1000000);
         try (is) {
             parser.parse(is, handler, metadata, context);
@@ -600,7 +585,7 @@ public abstract class TikaTest {
         }
         if (truncatedLength > bos.toByteArray().length) {
             throw new EOFException(
-                    "Can't truncate beyond file length: " + bos.toByteArray().length);
+                            "Can't truncate beyond file length: " + bos.toByteArray().length);
         }
         byte[] truncated = new byte[truncatedLength];
         System.arraycopy(bos.toByteArray(), 0, truncated, 0, truncatedLength);
@@ -608,8 +593,8 @@ public abstract class TikaTest {
     }
 
     public List<Path> getAllTestFiles() {
-        //for now, just get main files
-        //TODO: fix this to be recursive
+        // for now, just get main files
+        // TODO: fix this to be recursive
         try {
             File[] pathArray = Paths.get(getResourceAsUri("/test-documents")).toFile().listFiles();
             List<Path> paths = new ArrayList<>();
@@ -677,7 +662,7 @@ public abstract class TikaTest {
                 bytes.add(os.toByteArray());
                 stream.reset();
             } catch (IOException e) {
-                //swallow
+                // swallow
             }
         }
     }

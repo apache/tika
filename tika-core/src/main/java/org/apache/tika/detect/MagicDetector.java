@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.detect;
 
@@ -28,25 +26,24 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
 /**
- * Content type detection based on magic bytes, i.e. type-specific patterns
- * near the beginning of the document input stream.
+ * Content type detection based on magic bytes, i.e. type-specific patterns near the beginning of
+ * the document input stream.
  * <p>
- * Because this works on bytes, not characters, by default any string
- * matching is done as ISO_8859_1. To use an explicit different
- * encoding, supply a type other than "string" / "stringignorecase"
+ * Because this works on bytes, not characters, by default any string matching is done as
+ * ISO_8859_1. To use an explicit different encoding, supply a type other than "string" /
+ * "stringignorecase"
  *
  * @since Apache Tika 0.3
  */
 public class MagicDetector implements Detector {
 
     /**
-     * The matching media type. Returned by the
-     * {@link #detect(InputStream, Metadata)} method if a match is found.
+     * The matching media type. Returned by the {@link #detect(InputStream, Metadata)} method if a
+     * match is found.
      */
     private final MediaType type;
     /**
@@ -54,14 +51,14 @@ public class MagicDetector implements Detector {
      */
     private final int length;
     /**
-     * The magic match pattern. If this byte pattern is equal to the
-     * possibly bit-masked bytes from the input stream, then the type
-     * detection succeeds and the configured {@link #type} is returned.
+     * The magic match pattern. If this byte pattern is equal to the possibly bit-masked bytes from
+     * the input stream, then the type detection succeeds and the configured {@link #type} is
+     * returned.
      */
     private final byte[] pattern;
     /**
-     * Length of the pattern, which in the case of regular expressions will
-     * not be the same as the comparison window length.
+     * Length of the pattern, which in the case of regular expressions will not be the same as the
+     * comparison window length.
      */
     private final int patternLength;
     /**
@@ -77,26 +74,24 @@ public class MagicDetector implements Detector {
      */
     private final byte[] mask;
     /**
-     * First offset (inclusive) of the comparison window within the
-     * document input stream. Greater than or equal to zero.
+     * First offset (inclusive) of the comparison window within the document input stream. Greater
+     * than or equal to zero.
      */
     private final int offsetRangeBegin;
     /**
-     * Last offset (inclusive) of the comparison window within the document
-     * input stream. Greater than or equal to the
-     * {@link #offsetRangeBegin first offset}.
+     * Last offset (inclusive) of the comparison window within the document input stream. Greater
+     * than or equal to the {@link #offsetRangeBegin first offset}.
      * <p>
-     * Note that this is <em>not</em> the offset of the last byte read from
-     * the document stream. Instead, the last window of bytes to be compared
-     * starts at this offset.
+     * Note that this is <em>not</em> the offset of the last byte read from the document stream.
+     * Instead, the last window of bytes to be compared starts at this offset.
      */
     private final int offsetRangeEnd;
 
     /**
-     * Creates a detector for input documents that have the exact given byte
-     * pattern at the beginning of the document stream.
+     * Creates a detector for input documents that have the exact given byte pattern at the
+     * beginning of the document stream.
      *
-     * @param type    matching media type
+     * @param type matching media type
      * @param pattern magic match pattern
      */
     public MagicDetector(MediaType type, byte[] pattern) {
@@ -104,49 +99,46 @@ public class MagicDetector implements Detector {
     }
 
     /**
-     * Creates a detector for input documents that have the exact given byte
-     * pattern at the given offset of the document stream.
+     * Creates a detector for input documents that have the exact given byte pattern at the given
+     * offset of the document stream.
      *
-     * @param type    matching media type
+     * @param type matching media type
      * @param pattern magic match pattern
-     * @param offset  offset of the pattern match
+     * @param offset offset of the pattern match
      */
     public MagicDetector(MediaType type, byte[] pattern, int offset) {
         this(type, pattern, null, offset, offset);
     }
 
     /**
-     * Creates a detector for input documents that meet the specified magic
-     * match.  {@code pattern} must NOT be a regular expression.
-     * Constructor maintained for legacy reasons.
+     * Creates a detector for input documents that meet the specified magic match. {@code pattern}
+     * must NOT be a regular expression. Constructor maintained for legacy reasons.
      */
     public MagicDetector(MediaType type, byte[] pattern, byte[] mask, int offsetRangeBegin,
-                         int offsetRangeEnd) {
+                    int offsetRangeEnd) {
         this(type, pattern, mask, false, offsetRangeBegin, offsetRangeEnd);
     }
 
     /**
-     * Creates a detector for input documents that meet the specified
-     * magic match.
+     * Creates a detector for input documents that meet the specified magic match.
      */
     public MagicDetector(MediaType type, byte[] pattern, byte[] mask, boolean isRegex,
-                         int offsetRangeBegin, int offsetRangeEnd) {
+                    int offsetRangeBegin, int offsetRangeEnd) {
         this(type, pattern, mask, isRegex, false, offsetRangeBegin, offsetRangeEnd);
     }
 
     /**
-     * Creates a detector for input documents that meet the specified
-     * magic match.
+     * Creates a detector for input documents that meet the specified magic match.
      */
     public MagicDetector(MediaType type, byte[] pattern, byte[] mask, boolean isRegex,
-                         boolean isStringIgnoreCase, int offsetRangeBegin, int offsetRangeEnd) {
+                    boolean isStringIgnoreCase, int offsetRangeBegin, int offsetRangeEnd) {
         if (type == null) {
             throw new IllegalArgumentException("Matching media type is null");
         } else if (pattern == null) {
             throw new IllegalArgumentException("Magic match pattern is null");
         } else if (offsetRangeBegin < 0 || offsetRangeEnd < offsetRangeBegin) {
-            throw new IllegalArgumentException(
-                    "Invalid offset range: [" + offsetRangeBegin + "," + offsetRangeEnd + "]");
+            throw new IllegalArgumentException("Invalid offset range: [" + offsetRangeBegin + ","
+                            + offsetRangeEnd + "]");
         }
 
         this.type = type;
@@ -185,7 +177,7 @@ public class MagicDetector implements Detector {
     }
 
     public static MagicDetector parse(MediaType mediaType, String type, String offset, String value,
-                                      String mask) {
+                    String mask) {
         int start = 0;
         int end = 0;
         if (offset != null) {
@@ -206,7 +198,7 @@ public class MagicDetector implements Detector {
         }
 
         return new MagicDetector(mediaType, patternBytes, maskBytes, type.equals("regex"),
-                type.equals("stringignorecase"), start, end);
+                        type.equals("stringignorecase"), start, end);
     }
 
     private static byte[] decodeValue(String value, String type) {
@@ -244,25 +236,26 @@ public class MagicDetector implements Detector {
             case "host16":
             case "little16": {
                 int i = Integer.parseInt(tmpVal, radix);
-                decoded = new byte[]{(byte) (i & 0x00FF), (byte) (i >> 8)};
+                decoded = new byte[] {(byte) (i & 0x00FF), (byte) (i >> 8)};
                 break;
             }
             case "big16": {
                 int i = Integer.parseInt(tmpVal, radix);
-                decoded = new byte[]{(byte) (i >> 8), (byte) (i & 0x00FF)};
+                decoded = new byte[] {(byte) (i >> 8), (byte) (i & 0x00FF)};
                 break;
             }
             case "host32":
             case "little32": {
                 long i = Long.parseLong(tmpVal, radix);
-                decoded = new byte[]{(byte) ((i & 0x000000FF)), (byte) ((i & 0x0000FF00) >> 8),
-                        (byte) ((i & 0x00FF0000) >> 16), (byte) ((i & 0xFF000000) >> 24)};
+                decoded = new byte[] {(byte) ((i & 0x000000FF)), (byte) ((i & 0x0000FF00) >> 8),
+                                (byte) ((i & 0x00FF0000) >> 16), (byte) ((i & 0xFF000000) >> 24)};
                 break;
             }
             case "big32": {
                 long i = Long.parseLong(tmpVal, radix);
-                decoded = new byte[]{(byte) ((i & 0xFF000000) >> 24), (byte) ((i & 0x00FF0000) >> 16),
-                        (byte) ((i & 0x0000FF00) >> 8), (byte) ((i & 0x000000FF))};
+                decoded = new byte[] {(byte) ((i & 0xFF000000) >> 24),
+                                (byte) ((i & 0x00FF0000) >> 16), (byte) ((i & 0x0000FF00) >> 8),
+                                (byte) ((i & 0x000000FF))};
                 break;
             }
         }
@@ -296,8 +289,8 @@ public class MagicDetector implements Detector {
                     i++;
                 } else {
                     int j = i + 1;
-                    while ((j < i + 4) && (j < value.length()) &&
-                            (Character.isDigit(value.charAt(j)))) {
+                    while ((j < i + 4) && (j < value.length())
+                                    && (Character.isDigit(value.charAt(j)))) {
                         j++;
                     }
                     decoded.write(Short.decode("0" + value.substring(i + 1, j)).byteValue());
@@ -334,7 +327,7 @@ public class MagicDetector implements Detector {
     }
 
     /**
-     * @param input    document input stream, or <code>null</code>
+     * @param input document input stream, or <code>null</code>
      * @param metadata ignored
      */
     public MediaType detect(InputStream input, Metadata metadata) throws IOException {
@@ -426,13 +419,12 @@ public class MagicDetector implements Detector {
     }
 
     /**
-     * Returns a string representation of the Detection Rule.
-     * Should sort nicely by type and details, as we sometimes
-     * compare these.
+     * Returns a string representation of the Detection Rule. Should sort nicely by type and
+     * details, as we sometimes compare these.
      */
     public String toString() {
         // Needs to be unique, as these get compared.
-        return "Magic Detection for " + type + " looking for " + pattern.length + " bytes = " +
-                Arrays.toString(this.pattern) + " mask = " + Arrays.toString(this.mask);
+        return "Magic Detection for " + type + " looking for " + pattern.length + " bytes = "
+                        + Arrays.toString(this.pattern) + " mask = " + Arrays.toString(this.mask);
     }
 }

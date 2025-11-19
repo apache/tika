@@ -1,24 +1,23 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.ctakes;
 
 import java.util.Collection;
-
 import org.apache.ctakes.typesystem.type.textsem.IdentifiedAnnotation;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.uima.analysis_engine.AnalysisEngine;
 import org.apache.uima.fit.util.JCasUtil;
 import org.apache.uima.jcas.JCas;
@@ -26,16 +25,13 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.ContentHandlerDecorator;
-
 /**
  * Class used to extract biomedical information while parsing.
  *
  * <p>
- * This class relies on <a href="http://ctakes.apache.org/">Apache cTAKES</a>
- * that is a natural language processing system for extraction of information
- * from electronic medical record clinical free-text.
+ * This class relies on <a href="http://ctakes.apache.org/">Apache cTAKES</a> that is a natural
+ * language processing system for extraction of information from electronic medical record clinical
+ * free-text.
  * </p>
  */
 public class CTAKESContentHandler extends ContentHandlerDecorator {
@@ -58,13 +54,13 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
     private JCas jcas = null;
 
     /**
-     * Creates a new {@link CTAKESContentHandler} for the given {@link ContentHandler}
-     * and Metadata objects.
+     * Creates a new {@link CTAKESContentHandler} for the given {@link ContentHandler} and Metadata
+     * objects.
      *
-     * @param handler  the {@link ContentHandler} object to be decorated.
-     * @param metadata the {@link Metadata} object that will be populated using
-     *                 biomedical information extracted by cTAKES.
-     * @param config   the {@link CTAKESConfig} object used to configure the handler.
+     * @param handler the {@link ContentHandler} object to be decorated.
+     * @param metadata the {@link Metadata} object that will be populated using biomedical
+     *        information extracted by cTAKES.
+     * @param config the {@link CTAKESConfig} object used to configure the handler.
      */
     public CTAKESContentHandler(ContentHandler handler, Metadata metadata, CTAKESConfig config) {
         super(handler);
@@ -74,12 +70,12 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Creates a new {@link CTAKESContentHandler} for the given {@link
-     * ContentHandler} and Metadata objects.
+     * Creates a new {@link CTAKESContentHandler} for the given {@link ContentHandler} and Metadata
+     * objects.
      *
-     * @param handler  the {@link ContentHandler} object to be decorated.
-     * @param metadata the {@link Metadata} object that will be populated using
-     *                 biomedical information extracted by cTAKES.
+     * @param handler the {@link ContentHandler} object to be decorated.
+     * @param metadata the {@link Metadata} object that will be populated using biomedical
+     *        information extracted by cTAKES.
      */
     public CTAKESContentHandler(ContentHandler handler, Metadata metadata) {
         this(handler, metadata, new CTAKESConfig());
@@ -105,9 +101,8 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
         try {
             // create an Analysis Engine
             if (ae == null) {
-                ae = CTAKESUtils
-                        .getAnalysisEngine(config.getAeDescriptorPath(), config.getUMLSUser(),
-                                config.getUMLSPass());
+                ae = CTAKESUtils.getAnalysisEngine(config.getAeDescriptorPath(),
+                                config.getUMLSUser(), config.getUMLSPass());
             }
 
             // create a JCas, given an AE
@@ -135,25 +130,25 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
             metadata.add(CTAKES_META_PREFIX + "schema", config.getAnnotationPropsAsString());
             CTAKESAnnotationProperty[] annotationPros = config.getAnnotationProps();
             Collection<IdentifiedAnnotation> collection =
-                    JCasUtil.select(jcas, IdentifiedAnnotation.class);
+                            JCasUtil.select(jcas, IdentifiedAnnotation.class);
             for (IdentifiedAnnotation annotation : collection) {
                 StringBuilder annotationBuilder = new StringBuilder();
                 annotationBuilder.append(annotation.getCoveredText());
                 if (annotationPros != null) {
                     for (CTAKESAnnotationProperty property : annotationPros) {
                         annotationBuilder.append(config.getSeparatorChar());
-                        annotationBuilder
-                                .append(CTAKESUtils.getAnnotationProperty(annotation, property));
+                        annotationBuilder.append(
+                                        CTAKESUtils.getAnnotationProperty(annotation, property));
                     }
                 }
                 metadata.add(CTAKES_META_PREFIX + annotation.getType().getShortName(),
-                        annotationBuilder.toString());
+                                annotationBuilder.toString());
             }
 
             if (config.isSerialize()) {
                 // serialize data
                 CTAKESUtils.serialize(jcas, config.getSerializerType(), config.isPrettyPrint(),
-                        config.getOutputStream());
+                                config.getOutputStream());
             }
         } catch (Exception e) {
             throw new SAXException(e.getMessage());

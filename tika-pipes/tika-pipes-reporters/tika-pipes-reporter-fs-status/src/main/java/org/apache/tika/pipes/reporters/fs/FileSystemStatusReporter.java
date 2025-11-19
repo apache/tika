@@ -1,21 +1,23 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.reporters.fs;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
@@ -26,14 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -45,21 +39,20 @@ import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.pipes.core.async.AsyncStatus;
 import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
 import org.apache.tika.utils.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This is intended to write summary statistics to disk
- * periodically.
+ * This is intended to write summary statistics to disk periodically.
  *
- *  As of the 2.5.0 release, this is ALPHA version.  There may be breaking changes
- *  in the future.
+ * As of the 2.5.0 release, this is ALPHA version. There may be breaking changes in the future.
  *
- *  Because {@link AsyncStatus uses {@link java.time.Instant}, if you are deserializing
- *  with jackson-databind, you'll need to add jackson-datatype-jsr310. See
- *  the unit tests for how to deserialize AsyncStatus.
+ * Because {@link AsyncStatus uses {@link java.time.Instant}, if you are deserializing with
+ * jackson-databind, you'll need to add jackson-datatype-jsr310. See the unit tests for how to
+ * deserialize AsyncStatus.
  *
  */
-public class FileSystemStatusReporter extends PipesReporter
-        implements Initializable {
+public class FileSystemStatusReporter extends PipesReporter implements Initializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemStatusReporter.class);
 
@@ -74,8 +67,9 @@ public class FileSystemStatusReporter extends PipesReporter
     private ConcurrentHashMap<PipesResult.STATUS, LongAdder> counts = new ConcurrentHashMap<>();
     private AsyncStatus asyncStatus = new AsyncStatus();
 
-    private TotalCountResult totalCountResult = new TotalCountResult(0,
-            TotalCountResult.STATUS.NOT_COMPLETED);
+    private TotalCountResult totalCountResult =
+                    new TotalCountResult(0, TotalCountResult.STATUS.NOT_COMPLETED);
+
     @Field
     public void setStatusFile(String path) {
         this.statusFile = Paths.get(path);
@@ -88,10 +82,8 @@ public class FileSystemStatusReporter extends PipesReporter
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        objectMapper = JsonMapper.builder()
-                .addModule(new JavaTimeModule())
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .build();
+        objectMapper = JsonMapper.builder().addModule(new JavaTimeModule())
+                        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS).build();
         reporterThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -101,7 +93,7 @@ public class FileSystemStatusReporter extends PipesReporter
                         report(AsyncStatus.ASYNC_STATUS.STARTED);
                     }
                 } catch (InterruptedException e) {
-                    //no op
+                    // no op
                 }
 
             }
@@ -112,7 +104,7 @@ public class FileSystemStatusReporter extends PipesReporter
 
     private synchronized void report(AsyncStatus.ASYNC_STATUS status) {
         Map<PipesResult.STATUS, Long> localCounts = new HashMap<>();
-        counts.entrySet().forEach( e -> localCounts.put(e.getKey(), e.getValue().longValue()));
+        counts.entrySet().forEach(e -> localCounts.put(e.getKey(), e.getValue().longValue()));
         asyncStatus.update(localCounts, totalCountResult, status);
         try (Writer writer = Files.newBufferedWriter(statusFile, StandardCharsets.UTF_8)) {
             objectMapper.writeValue(writer, asyncStatus);
@@ -132,11 +124,11 @@ public class FileSystemStatusReporter extends PipesReporter
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+                    throws TikaConfigException {
         if (statusFile == null) {
             throw new TikaConfigException("must initialize 'statusFile'");
         }
-        if (! Files.isDirectory(statusFile.getParent())) {
+        if (!Files.isDirectory(statusFile.getParent())) {
             try {
                 Files.createDirectories(statusFile.getParent());
             } catch (IOException e) {
@@ -149,7 +141,7 @@ public class FileSystemStatusReporter extends PipesReporter
     public void close() throws IOException {
         LOG.debug("finishing and writing last report");
         interuptThread();
-        if (! crashed) {
+        if (!crashed) {
             report(AsyncStatus.ASYNC_STATUS.COMPLETED);
         }
     }
@@ -159,7 +151,7 @@ public class FileSystemStatusReporter extends PipesReporter
         try {
             reporterThread.join(1000);
         } catch (InterruptedException e) {
-            //swallow
+            // swallow
         }
     }
 
@@ -179,8 +171,7 @@ public class FileSystemStatusReporter extends PipesReporter
 
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-        counts.computeIfAbsent(result.getStatus(),
-                k -> new LongAdder()).increment();
+        counts.computeIfAbsent(result.getStatus(), k -> new LongAdder()).increment();
     }
 
     @Override

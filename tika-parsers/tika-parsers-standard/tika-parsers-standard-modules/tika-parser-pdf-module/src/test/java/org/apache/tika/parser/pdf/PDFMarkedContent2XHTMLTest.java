@@ -1,32 +1,28 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.pdf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 
 public class PDFMarkedContent2XHTMLTest extends TikaTest {
@@ -66,16 +62,16 @@ public class PDFMarkedContent2XHTMLTest extends TikaTest {
     @Test
     public void testChildAttachments() throws Exception {
         List<Metadata> metadataList =
-                getRecursiveMetadata("testPDF_childAttachments.pdf", MARKUP_CONTEXT);
+                        getRecursiveMetadata("testPDF_childAttachments.pdf", MARKUP_CONTEXT);
 
-        //make sure that embedded docs are still getting extracted
+        // make sure that embedded docs are still getting extracted
         assertEquals(3, metadataList.size());
 
         String xml = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
-        //the point here is that in the annotations (that we
+        // the point here is that in the annotations (that we
         // were grabbing by the classic PDF2XHTML),
-        //the <a> content is identical to the href.  Here, they are not, which we only get from
-        //marked up content...victory!!!
+        // the <a> content is identical to the href. Here, they are not, which we only get from
+        // marked up content...victory!!!
         assertContains("<a href=\"http://www.irs.gov\">IRS.gov</a>", xml);
         assertContains("<a href=\"http://www.irs.gov/pub15\">www.irs.gov/pub15</a>", xml);
     }

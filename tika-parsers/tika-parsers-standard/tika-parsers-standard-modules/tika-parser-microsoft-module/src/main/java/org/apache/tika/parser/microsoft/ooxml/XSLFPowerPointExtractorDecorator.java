@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
@@ -24,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.namespace.QName;
-
 import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.PackagePart;
@@ -56,6 +53,12 @@ import org.apache.poi.xslf.usermodel.XSLFTableRow;
 import org.apache.poi.xslf.usermodel.XSLFTextParagraph;
 import org.apache.poi.xslf.usermodel.XSLFTextRun;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTCommentAuthor;
@@ -67,22 +70,15 @@ import org.openxmlformats.schemas.presentationml.x2006.main.CTSlideIdListEntry;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.StringUtils;
-
 public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
     private final static String HANDOUT_MASTER =
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/handoutMaster";
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/handoutMaster";
 
     private Metadata metadata;
 
     public XSLFPowerPointExtractorDecorator(Metadata metadata, ParseContext context,
-                                            XSLFExtractor extractor) {
+                    XSLFExtractor extractor) {
         super(context, extractor);
         this.metadata = metadata;
     }
@@ -106,7 +102,8 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private void handleSlide(XSLFSlide slide, XHTMLContentHandler xhtml, AtomicInteger hiddenSlideCounter) throws SAXException {
+    private void handleSlide(XSLFSlide slide, XHTMLContentHandler xhtml,
+                    AtomicInteger hiddenSlideCounter) throws SAXException {
         String slideDesc;
         if (slide.getPackagePart() != null && slide.getPackagePart().getPartName() != null) {
             slideDesc = getJustFileName(slide.getPackagePart().getPartName().toString());
@@ -181,22 +178,20 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 xhtml.endElement("p");
             }
         }
-        //now dump diagram data
+        // now dump diagram data
         handleGeneralTextContainingPart(RELATION_DIAGRAM_DATA, "diagram-data",
-                slide.getPackagePart(), metadata,
-                new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                        new HashMap<>()//empty
-                ));
-        //now dump chart data
+                        slide.getPackagePart(), metadata, new OOXMLWordAndPowerPointTextHandler(
+                                        new OOXMLTikaBodyPartHandler(xhtml), new HashMap<>()// empty
+                        ));
+        // now dump chart data
         handleGeneralTextContainingPart(XSLFRelation.CHART.getRelation(), "chart",
-                slide.getPackagePart(), metadata,
-                new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                        new HashMap<>()//empty
-                ));
+                        slide.getPackagePart(), metadata, new OOXMLWordAndPowerPointTextHandler(
+                                        new OOXMLTikaBodyPartHandler(xhtml), new HashMap<>()// empty
+                        ));
 
         CTSlide ctSlide = slide.getXmlObject();
         if (ctSlide.isSetTiming()) {
-            //perhaps require more, like: ctSlide.getTiming()?.getTnLst()?.getParArray()?.length
+            // perhaps require more, like: ctSlide.getTiming()?.getTnLst()?.getParArray()?.length
             metadata.set(Office.HAS_ANIMATIONS, true);
         }
     }
@@ -221,7 +216,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     private void extractContent(List<? extends XSLFShape> shapes, boolean skipPlaceholders,
-                                XHTMLContentHandler xhtml, String slideDesc) throws SAXException {
+                    XHTMLContentHandler xhtml, String slideDesc) throws SAXException {
         for (XSLFShape sh : shapes) {
 
             if (sh instanceof XSLFTextShape) {
@@ -237,13 +232,13 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                         continue;
                     }
                     for (XSLFTextRun run : p.getTextRuns()) {
-                        //TODO: add check for targetmode=external into POI
-                        //then check to confirm that the urls are actually
-                        //external and not footnote refs via the current hack
+                        // TODO: add check for targetmode=external into POI
+                        // then check to confirm that the urls are actually
+                        // external and not footnote refs via the current hack
                         Hyperlink hyperlink = run.getHyperlink();
 
-                        if (hyperlink != null && hyperlink.getAddress() != null &&
-                                !hyperlink.getAddress().contains("#_ftn")) {
+                        if (hyperlink != null && hyperlink.getAddress() != null
+                                        && !hyperlink.getAddress().contains("#_ftn")) {
                             xhtml.startElement("a", "href", hyperlink.getAddress());
                             inHyperlink = true;
                         }
@@ -260,17 +255,17 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 XSLFGroupShape group = (XSLFGroupShape) sh;
                 extractContent(group.getShapes(), skipPlaceholders, xhtml, slideDesc);
             } else if (sh instanceof XSLFTable) {
-                //unlike tables in Word, ppt/x can't have recursive tables...I don't think
+                // unlike tables in Word, ppt/x can't have recursive tables...I don't think
                 extractTable((XSLFTable) sh, xhtml);
             } else if (sh instanceof XSLFGraphicFrame) {
                 XSLFGraphicFrame frame = (XSLFGraphicFrame) sh;
                 XmlObject[] sp = frame.getXmlObject().selectPath(
-                        "declare namespace p='http://schemas.openxmlformats.org/presentationml/2006/main' .//*/p:oleObj");
+                                "declare namespace p='http://schemas.openxmlformats.org/presentationml/2006/main' .//*/p:oleObj");
                 if (sp != null) {
                     for (XmlObject emb : sp) {
                         XmlObject relIDAtt = emb.selectAttribute(new QName(
-                                "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-                                "id"));
+                                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+                                        "id"));
                         if (relIDAtt != null) {
                             String relID = relIDAtt.getDomNode().getNodeValue();
                             if (slideDesc != null) {
@@ -311,13 +306,13 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             xhtml.startElement("tr");
             for (XSLFTableCell c : row.getCells()) {
                 xhtml.startElement("td");
-                //TODO: Need to wait for fix in POI to test for hyperlink first
-                //shouldn't need to catch NPE...
+                // TODO: Need to wait for fix in POI to test for hyperlink first
+                // shouldn't need to catch NPE...
                 XSLFHyperlink hyperlink = null;
                 try {
                     hyperlink = c.getHyperlink();
                 } catch (NullPointerException e) {
-                    //swallow
+                    // swallow
                 }
                 if (hyperlink != null && hyperlink.getAddress() != null) {
                     xhtml.startElement("a", "href", hyperlink.getAddress());
@@ -335,8 +330,8 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     /**
-     * In PowerPoint files, slides have things embedded in them,
-     * and slide drawings which have the images
+     * In PowerPoint files, slides have things embedded in them, and slide drawings which have the
+     * images
      */
     @Override
     protected List<PackagePart> getMainDocumentParts() throws TikaException {
@@ -362,23 +357,23 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 addSlideParts(slidePart, parts);
             }
         }
-        //add full document to include macros
+        // add full document to include macros
         parts.add(document.getPackagePart());
 
-        for (String rel : new String[]{XSLFRelation.SLIDE_MASTER.getRelation(), HANDOUT_MASTER}) {
+        for (String rel : new String[] {XSLFRelation.SLIDE_MASTER.getRelation(), HANDOUT_MASTER}) {
             try {
                 PackageRelationshipCollection prc =
-                        document.getPackagePart().getRelationshipsByType(rel);
+                                document.getPackagePart().getRelationshipsByType(rel);
                 for (int i = 0; i < prc.size(); i++) {
-                    PackagePart pp =
-                            document.getPackagePart().getRelatedPart(prc.getRelationship(i));
+                    PackagePart pp = document.getPackagePart()
+                                    .getRelatedPart(prc.getRelationship(i));
                     if (pp != null) {
                         parts.add(pp);
                     }
                 }
 
             } catch (InvalidFormatException e) {
-                //log
+                // log
             }
         }
 
@@ -388,24 +383,25 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
     private void addSlideParts(PackagePart slidePart, List<PackagePart> parts) {
 
-        for (String relation : new String[]{XSLFRelation.VML_DRAWING.getRelation(),
-                XSLFRelation.SLIDE_LAYOUT.getRelation(), XSLFRelation.NOTES_MASTER.getRelation(),
-                XSLFRelation.NOTES.getRelation(), XSLFRelation.CHART.getRelation(),
-                XSLFRelation.DIAGRAM_DRAWING.getRelation()}) {
+        for (String relation : new String[] {XSLFRelation.VML_DRAWING.getRelation(),
+                        XSLFRelation.SLIDE_LAYOUT.getRelation(),
+                        XSLFRelation.NOTES_MASTER.getRelation(), XSLFRelation.NOTES.getRelation(),
+                        XSLFRelation.CHART.getRelation(),
+                        XSLFRelation.DIAGRAM_DRAWING.getRelation()}) {
             try {
                 for (PackageRelationship packageRelationship : slidePart
-                        .getRelationshipsByType(relation)) {
+                                .getRelationshipsByType(relation)) {
                     if (packageRelationship.getTargetMode() == TargetMode.INTERNAL) {
                         PackagePartName relName = PackagingURIHelper
-                                .createPartName(packageRelationship.getTargetURI());
+                                        .createPartName(packageRelationship.getTargetURI());
                         parts.add(packageRelationship.getPackage().getPart(relName));
                     }
                 }
             } catch (InvalidFormatException e) {
-                //swallow
+                // swallow
             }
         }
-        //and slide of course
+        // and slide of course
         parts.add(slidePart);
 
     }

@@ -1,33 +1,29 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.language.translate.impl;
 
+import com.memetix.mst.language.Language;
+import com.memetix.mst.translate.Translate;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-
-import com.memetix.mst.language.Language;
-import com.memetix.mst.translate.Translate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.translate.Translator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Wrapper class to access the Windows translation service. This class uses the com.memetix.mst
@@ -43,14 +39,15 @@ public class MicrosoftTranslator implements Translator {
     public static final String DEFAULT_ID = "dummy-id";
     public static final String DEFAULT_SECRET = "dummy-secret";
     private static final Logger LOG = LoggerFactory.getLogger(MicrosoftTranslator.class);
-    boolean available;              // Flag for whether or not translation is available.
-    String clientId, clientSecret;  // Keys used for the API calls.
+    boolean available; // Flag for whether or not translation is available.
+    String clientId, clientSecret; // Keys used for the API calls.
 
     /**
      * Create a new MicrosoftTranslator with the client keys specified in
-     * resources/org/apache/tika/language/translate/translator.microsoft.properties. Silently becomes unavailable
-     * when client keys are unavailable. translator.microsoft.client-id and translator.client-secret must be set
-     * in translator.microsoft.properties for translation to work.
+     * resources/org/apache/tika/language/translate/translator.microsoft.properties. Silently
+     * becomes unavailable when client keys are unavailable. translator.microsoft.client-id and
+     * translator.client-secret must be set in translator.microsoft.properties for translation to
+     * work.
      *
      * @since Tika 1.6
      */
@@ -73,10 +70,10 @@ public class MicrosoftTranslator implements Translator {
     }
 
     /**
-     * Use the Microsoft service to translate the given text from the given source language to the given target.
-     * You must set the client keys in translator.microsoft.properties.
+     * Use the Microsoft service to translate the given text from the given source language to the
+     * given target. You must set the client keys in translator.microsoft.properties.
      *
-     * @param text           The text to translate.
+     * @param text The text to translate.
      * @param sourceLanguage The input text language (for example, "en").
      * @param targetLanguage The desired language to translate to (for example, "fr").
      * @return The translated text. If translation is unavailable, returns the unchanged text.
@@ -85,7 +82,7 @@ public class MicrosoftTranslator implements Translator {
      * @since Tika 1.6
      */
     public String translate(String text, String sourceLanguage, String targetLanguage)
-            throws TikaException, IOException {
+                    throws TikaException, IOException {
         if (!available) {
             return text;
         }
@@ -101,10 +98,11 @@ public class MicrosoftTranslator implements Translator {
     }
 
     /**
-     * Use the Microsoft service to translate the given text to the given target language. The source language
-     * is automatically detected by Microsoft. You must set the client keys in translator.microsoft.properties.
+     * Use the Microsoft service to translate the given text to the given target language. The
+     * source language is automatically detected by Microsoft. You must set the client keys in
+     * translator.microsoft.properties.
      *
-     * @param text           The text to translate.
+     * @param text The text to translate.
      * @param targetLanguage The desired language to translate to (for example, "hi").
      * @return The translated text. If translation is unavailable, returns the unchanged text.
      * @throws Exception
@@ -156,7 +154,7 @@ public class MicrosoftTranslator implements Translator {
     }
 
     private boolean checkAvailable() {
-        return clientId != null && !clientId.equals(DEFAULT_ID) && clientSecret != null &&
-                !clientSecret.equals(DEFAULT_SECRET);
+        return clientId != null && !clientId.equals(DEFAULT_ID) && clientSecret != null
+                        && !clientSecret.equals(DEFAULT_SECRET);
     }
 }

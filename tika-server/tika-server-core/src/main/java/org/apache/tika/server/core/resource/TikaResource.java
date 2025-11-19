@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.server.core.resource;
@@ -21,6 +19,20 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.tika.server.core.resource.RecursiveMetadataResource.DEFAULT_HANDLER_TYPE;
 import static org.apache.tika.server.core.resource.RecursiveMetadataResource.HANDLER_TYPE_PARAM;
 
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -37,31 +49,11 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
-
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.StreamingOutput;
-import jakarta.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.cxf.attachment.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.impl.MetadataMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaTaskTimeout;
@@ -88,11 +80,16 @@ import org.apache.tika.server.core.TikaServerConfig;
 import org.apache.tika.server.core.TikaServerParseException;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 @Path("/tika")
 public class TikaResource {
 
-    public static final String GREETING = "This is Tika Server (" + Tika.getString() + "). Please PUT\n";
+    public static final String GREETING =
+                    "This is Tika Server (" + Tika.getString() + "). Please PUT\n";
     private static final String META_PREFIX = "meta_";
     private static final Logger LOG = LoggerFactory.getLogger(TikaResource.class);
     private static Pattern ALLOWABLE_HEADER_CHARS = Pattern.compile("(?i)^[-/_+\\.A-Z0-9 ]+$");
@@ -105,8 +102,9 @@ public class TikaResource {
     private static ParseContextConfig PARSE_CONTEXT_CONFIG = new CompositeParseContextConfig();
 
 
-    public static void init(TikaConfig config, TikaServerConfig tikaServerConfg, DigestingParser.Digester digester, InputStreamFactory inputStreamFactory,
-                            ServerStatus serverStatus) {
+    public static void init(TikaConfig config, TikaServerConfig tikaServerConfg,
+                    DigestingParser.Digester digester, InputStreamFactory inputStreamFactory,
+                    ServerStatus serverStatus) {
         TIKA_CONFIG = config;
         TIKA_SERVER_CONFIG = tikaServerConfg;
         DIGESTER = digester;
@@ -121,12 +119,9 @@ public class TikaResource {
 
         if (DIGESTER != null) {
             boolean skipContainer = false;
-            if (TIKA_CONFIG
-                    .getAutoDetectParserConfig()
-                    .getDigesterFactory() != null && TIKA_CONFIG
-                    .getAutoDetectParserConfig()
-                    .getDigesterFactory()
-                    .isSkipContainerDocument()) {
+            if (TIKA_CONFIG.getAutoDetectParserConfig().getDigesterFactory() != null
+                            && TIKA_CONFIG.getAutoDetectParserConfig().getDigesterFactory()
+                                            .isSkipContainerDocument()) {
                 skipContainer = true;
             }
             return new DigestingParser(parser, DIGESTER, skipContainer);
@@ -157,11 +152,13 @@ public class TikaResource {
         return httpHeaders.getFirst("File-Name");
     }
 
-    public static void fillParseContext(MultivaluedMap<String, String> httpHeaders, Metadata metadata, ParseContext parseContext) {
+    public static void fillParseContext(MultivaluedMap<String, String> httpHeaders,
+                    Metadata metadata, ParseContext parseContext) {
         PARSE_CONTEXT_CONFIG.configure(httpHeaders, metadata, parseContext);
     }
 
-    public static InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders headers, UriInfo uriInfo) {
+    public static InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders headers,
+                    UriInfo uriInfo) {
         try {
             return INPUTSTREAM_FACTORY.getInputStream(is, metadata, headers, uriInfo);
         } catch (IOException e) {
@@ -173,8 +170,8 @@ public class TikaResource {
      * Utility method to set a property on a class via reflection.
      *
      * @param object the <code>Object</code> to set the property on.
-     * @param key    the key of the HTTP Header.
-     * @param val    the value of HTTP header.
+     * @param key the key of the HTTP Header.
+     * @param val the value of HTTP header.
      * @param prefix the name of the HTTP Header prefix used to find property.
      * @throws WebApplicationException thrown when field cannot be found.
      */
@@ -183,29 +180,21 @@ public class TikaResource {
             String property = Strings.CI.removeStart(key, prefix);
             Field field = null;
             try {
-                field = object
-                        .getClass()
-                        .getDeclaredField(StringUtils.uncapitalize(property));
+                field = object.getClass().getDeclaredField(StringUtils.uncapitalize(property));
             } catch (NoSuchFieldException e) {
                 // try to match field case-insensitive way
-                for (Field aField : object
-                        .getClass()
-                        .getDeclaredFields()) {
-                    if (aField
-                            .getName()
-                            .equalsIgnoreCase(property)) {
+                for (Field aField : object.getClass().getDeclaredFields()) {
+                    if (aField.getName().equalsIgnoreCase(property)) {
                         field = aField;
                         break;
                     }
                 }
             }
             String setter = field != null ? field.getName() : property;
-            setter = "set" + setter
-                    .substring(0, 1)
-                    .toUpperCase(Locale.US) + setter.substring(1);
-            //default assume string class
-            //if there's a more specific type, e.g. double, int, boolean
-            //try that.
+            setter = "set" + setter.substring(0, 1).toUpperCase(Locale.US) + setter.substring(1);
+            // default assume string class
+            // if there's a more specific type, e.g. double, int, boolean
+            // try that.
             Class clazz = String.class;
             if (field != null) {
                 if (field.getType() == int.class || field.getType() == Integer.class) {
@@ -230,8 +219,8 @@ public class TikaResource {
             }
 
             Method m = tryToGetMethod(object, setter, clazz);
-            //if you couldn't find more specific setter, back off
-            //to string setter and try that.
+            // if you couldn't find more specific setter, back off
+            // to string setter and try that.
             if (m == null && clazz != String.class) {
                 m = tryToGetMethod(object, setter, String.class);
             }
@@ -251,7 +240,8 @@ public class TikaResource {
                 } else if (clazz == long.class || clazz == Long.class) {
                     m.invoke(object, Long.parseLong(val));
                 } else {
-                    throw new IllegalArgumentException("setter must be String, int, float, double or boolean...for now");
+                    throw new IllegalArgumentException(
+                                    "setter must be String, int, float, double or boolean...for now");
                 }
             } else {
                 throw new NoSuchMethodException("Couldn't find: " + setter);
@@ -259,8 +249,10 @@ public class TikaResource {
 
         } catch (Throwable ex) {
             // TIKA-3345
-            String error = (!(ex.getCause() instanceof IllegalArgumentException)) ? String.format(Locale.ROOT, "%s is an invalid %s header", key, prefix) :
-                    String.format(Locale.ROOT, "%s is an invalid %s header value", val, key);
+            String error = (!(ex.getCause() instanceof IllegalArgumentException))
+                            ? String.format(Locale.ROOT, "%s is an invalid %s header", key, prefix)
+                            : String.format(Locale.ROOT, "%s is an invalid %s header value", val,
+                                            key);
             throw new WebApplicationException(error, Response.Status.BAD_REQUEST);
         }
     }
@@ -269,50 +261,53 @@ public class TikaResource {
         if (setter == null || val == null) {
             throw new IllegalArgumentException("setter and val must not be null");
         }
-        if (setter
-                .toLowerCase(Locale.US)
-                .contains("trusted")) {
-            throw new IllegalArgumentException("Can't call a trusted method via tika-server headers");
+        if (setter.toLowerCase(Locale.US).contains("trusted")) {
+            throw new IllegalArgumentException(
+                            "Can't call a trusted method via tika-server headers");
         }
         Matcher m = ALLOWABLE_HEADER_CHARS.matcher(val);
         if (!m.find()) {
-            throw new IllegalArgumentException("Header val: " + val + " contains illegal characters. " + "Must contain: TikaResource.ALLOWABLE_HEADER_CHARS");
+            throw new IllegalArgumentException(
+                            "Header val: " + val + " contains illegal characters. "
+                                            + "Must contain: TikaResource.ALLOWABLE_HEADER_CHARS");
         }
     }
 
     /**
-     * Tries to get method. Silently swallows NoMethodException and returns
-     * <code>null</code> if not found.
+     * Tries to get method. Silently swallows NoMethodException and returns <code>null</code> if not
+     * found.
      *
      * @param object the object to get method from.
      * @param method the name of the method to get.
-     * @param clazz  the parameter type of the method to get.
+     * @param clazz the parameter type of the method to get.
      * @return the found method instance
      */
     private static Method tryToGetMethod(Object object, String method, Class clazz) {
         try {
-            return object
-                    .getClass()
-                    .getMethod(method, clazz);
+            return object.getClass().getMethod(method, clazz);
         } catch (NoSuchMethodException e) {
             return null;
         }
     }
 
     @SuppressWarnings("serial")
-    public static void fillMetadata(Parser parser, Metadata metadata, MultivaluedMap<String, String> httpHeaders) {
+    public static void fillMetadata(Parser parser, Metadata metadata,
+                    MultivaluedMap<String, String> httpHeaders) {
         String fileName = detectFilename(httpHeaders);
         if (fileName != null) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
         }
 
         String contentTypeHeader = httpHeaders.getFirst(HttpHeaders.CONTENT_TYPE);
-        jakarta.ws.rs.core.MediaType mediaType = (contentTypeHeader == null || "*/*".equals(contentTypeHeader)) ? null : jakarta.ws.rs.core.MediaType.valueOf(contentTypeHeader);
+        jakarta.ws.rs.core.MediaType mediaType =
+                        (contentTypeHeader == null || "*/*".equals(contentTypeHeader)) ? null
+                                        : jakarta.ws.rs.core.MediaType.valueOf(contentTypeHeader);
         if (mediaType != null && "xml".equals(mediaType.getSubtype())) {
             mediaType = null;
         }
 
-        if (mediaType != null && mediaType.equals(jakarta.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM_TYPE)) {
+        if (mediaType != null && mediaType
+                        .equals(jakarta.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM_TYPE)) {
             mediaType = null;
         }
 
@@ -326,12 +321,8 @@ public class TikaResource {
         }
 
         for (Map.Entry<String, List<String>> e : httpHeaders.entrySet()) {
-            if (e
-                    .getKey()
-                    .startsWith(META_PREFIX)) {
-                String tikaKey = e
-                        .getKey()
-                        .substring(META_PREFIX.length());
+            if (e.getKey().startsWith(META_PREFIX)) {
+                String tikaKey = e.getKey().substring(META_PREFIX.length());
                 for (String value : e.getValue()) {
                     metadata.add(tikaKey, value);
                 }
@@ -340,21 +331,21 @@ public class TikaResource {
     }
 
     /**
-     * Use this to call a parser and unify exception handling.
-     * NOTE: This call to parse closes the InputStream. DO NOT surround
-     * the call in an auto-close block.
+     * Use this to call a parser and unify exception handling. NOTE: This call to parse closes the
+     * InputStream. DO NOT surround the call in an auto-close block.
      *
-     * @param parser       parser to use
-     * @param logger       logger to use
-     * @param path         file path
-     * @param inputStream  inputStream (which is closed by this call!)
-     * @param handler      handler to use
-     * @param metadata     metadata
+     * @param parser parser to use
+     * @param logger logger to use
+     * @param path file path
+     * @param inputStream inputStream (which is closed by this call!)
+     * @param handler handler to use
+     * @param metadata metadata
      * @param parseContext parse context
      * @throws IOException wrapper for all exceptions
      */
-    public static void parse(Parser parser, Logger logger, String path, InputStream inputStream, ContentHandler handler, Metadata metadata, ParseContext parseContext)
-            throws IOException {
+    public static void parse(Parser parser, Logger logger, String path, InputStream inputStream,
+                    ContentHandler handler, Metadata metadata, ParseContext parseContext)
+                    throws IOException {
 
         checkIsOperating();
         String fileName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
@@ -390,22 +381,26 @@ public class TikaResource {
 
         if (tikaTaskTimeout != null) {
             if (tikaTaskTimeout.getTimeoutMillis() > TIKA_SERVER_CONFIG.getTaskTimeoutMillis()) {
-                throw new IllegalArgumentException(
-                        "Can't request a timeout ( " + tikaTaskTimeout.getTimeoutMillis() + "ms) greater than the taskTimeoutMillis set in the server config (" +
-                                TIKA_SERVER_CONFIG.getTaskTimeoutMillis() + "ms)");
+                throw new IllegalArgumentException("Can't request a timeout ( "
+                                + tikaTaskTimeout.getTimeoutMillis()
+                                + "ms) greater than the taskTimeoutMillis set in the server config ("
+                                + TIKA_SERVER_CONFIG.getTaskTimeoutMillis() + "ms)");
             }
             timeoutMillis = tikaTaskTimeout.getTimeoutMillis();
             if (timeoutMillis < TIKA_SERVER_CONFIG.getMinimumTimeoutMillis()) {
-                throw new WebApplicationException(new IllegalArgumentException(
-                        "taskTimeoutMillis must be > " + "minimumTimeoutMillis, currently set to (" + TIKA_SERVER_CONFIG.getMinimumTimeoutMillis() + "ms)"),
-                        Response.Status.BAD_REQUEST);
+                throw new WebApplicationException(
+                                new IllegalArgumentException("taskTimeoutMillis must be > "
+                                                + "minimumTimeoutMillis, currently set to ("
+                                                + TIKA_SERVER_CONFIG.getMinimumTimeoutMillis()
+                                                + "ms)"),
+                                Response.Status.BAD_REQUEST);
             }
         }
         return timeoutMillis;
     }
 
     public static void checkIsOperating() {
-        //check that server is not in shutdown mode
+        // check that server is not in shutdown mode
         if (!SERVER_STATUS.isOperating()) {
             throw new WebApplicationException(Response.Status.SERVICE_UNAVAILABLE);
         }
@@ -416,7 +411,8 @@ public class TikaResource {
         if (metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE) == null) {
             logger.info("{} (autodetecting type)", endpoint);
         } else {
-            logger.info("{} ({})", endpoint, metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE));
+            logger.info("{} ({})", endpoint,
+                            metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE));
         }
     }
 
@@ -428,7 +424,8 @@ public class TikaResource {
             } else if ("false".equalsIgnoreCase(val)) {
                 return false;
             } else {
-                throw new IllegalArgumentException("'throwOnWriteLimitReached' must be either 'true' or 'false'");
+                throw new IllegalArgumentException(
+                                "'throwOnWriteLimitReached' must be either 'true' or 'false'");
             }
         }
         return HandlerConfig.DEFAULT_HANDLER_CONFIG.isThrowOnWriteLimitReached();
@@ -445,29 +442,35 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/plain")
     @Path("form")
-    public StreamingOutput getTextFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceText(att.getObject(InputStream.class), new Metadata(), preparePostHeaderMap(att, httpHeaders), info);
+    public StreamingOutput getTextFromMultipart(Attachment att, @Context HttpHeaders httpHeaders,
+                    @Context final UriInfo info) {
+        return produceText(att.getObject(InputStream.class), new Metadata(),
+                        preparePostHeaderMap(att, httpHeaders), info);
     }
 
-    //this is equivalent to text-main in tika-app
+    // this is equivalent to text-main in tika-app
     @PUT
     @Consumes("*/*")
     @Produces("text/plain")
     @Path("main")
-    public StreamingOutput getTextMain(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+    public StreamingOutput getTextMain(final InputStream is, @Context HttpHeaders httpHeaders,
+                    @Context final UriInfo info) {
         return produceTextMain(is, httpHeaders.getRequestHeaders(), info);
     }
 
-    //this is equivalent to text-main (Boilerpipe handler) in tika-app
+    // this is equivalent to text-main (Boilerpipe handler) in tika-app
     @POST
     @Consumes("multipart/form-data")
     @Produces("text/plain")
     @Path("form/main")
-    public StreamingOutput getTextMainFromMultipart(final Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceTextMain(att.getObject(InputStream.class), preparePostHeaderMap(att, httpHeaders), info);
+    public StreamingOutput getTextMainFromMultipart(final Attachment att,
+                    @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+        return produceTextMain(att.getObject(InputStream.class),
+                        preparePostHeaderMap(att, httpHeaders), info);
     }
 
-    public StreamingOutput produceTextMain(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {
+    public StreamingOutput produceTextMain(final InputStream is,
+                    MultivaluedMap<String, String> httpHeaders, final UriInfo info) {
         final Parser parser = createParser();
         final Metadata metadata = new Metadata();
         final ParseContext context = new ParseContext();
@@ -489,12 +492,15 @@ public class TikaResource {
     @PUT
     @Consumes("*/*")
     @Produces("text/plain")
-    public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+    public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders,
+                    @Context final UriInfo info) {
         final Metadata metadata = new Metadata();
-        return produceText(getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info);
+        return produceText(getInputStream(is, metadata, httpHeaders, info), metadata,
+                        httpHeaders.getRequestHeaders(), info);
     }
 
-    public StreamingOutput produceText(final InputStream is, final Metadata metadata, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {
+    public StreamingOutput produceText(final InputStream is, final Metadata metadata,
+                    MultivaluedMap<String, String> httpHeaders, final UriInfo info) {
         final Parser parser = createParser();
         final ParseContext context = new ParseContext();
 
@@ -516,46 +522,55 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/html")
     @Path("form")
-    public StreamingOutput getHTMLFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceOutput(att.getObject(InputStream.class), new Metadata(), preparePostHeaderMap(att, httpHeaders), info, "html");
+    public StreamingOutput getHTMLFromMultipart(Attachment att, @Context HttpHeaders httpHeaders,
+                    @Context final UriInfo info) {
+        return produceOutput(att.getObject(InputStream.class), new Metadata(),
+                        preparePostHeaderMap(att, httpHeaders), info, "html");
     }
 
     @PUT
     @Consumes("*/*")
     @Produces("text/html")
-    public StreamingOutput getHTML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+    public StreamingOutput getHTML(final InputStream is, @Context HttpHeaders httpHeaders,
+                    @Context final UriInfo info) {
         Metadata metadata = new Metadata();
-        return produceOutput(getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info, "html");
+        return produceOutput(getInputStream(is, metadata, httpHeaders, info), metadata,
+                        httpHeaders.getRequestHeaders(), info, "html");
     }
 
     @POST
     @Consumes("multipart/form-data")
     @Produces("text/xml")
     @Path("form")
-    public StreamingOutput getXMLFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceOutput(att.getObject(InputStream.class), new Metadata(), preparePostHeaderMap(att, httpHeaders), info, "xml");
+    public StreamingOutput getXMLFromMultipart(Attachment att, @Context HttpHeaders httpHeaders,
+                    @Context final UriInfo info) {
+        return produceOutput(att.getObject(InputStream.class), new Metadata(),
+                        preparePostHeaderMap(att, httpHeaders), info, "xml");
     }
 
     @PUT
     @Consumes("*/*")
     @Produces("text/xml")
-    public StreamingOutput getXML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+    public StreamingOutput getXML(final InputStream is, @Context HttpHeaders httpHeaders,
+                    @Context final UriInfo info) {
         Metadata metadata = new Metadata();
-        return produceOutput(getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info, "xml");
+        return produceOutput(getInputStream(is, metadata, httpHeaders, info), metadata,
+                        httpHeaders.getRequestHeaders(), info, "xml");
     }
 
     @POST
     @Consumes("multipart/form-data")
     @Produces("application/json")
     @Path("form{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
-    public Metadata getJsonFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
-            throws IOException, TikaException {
+    public Metadata getJsonFromMultipart(Attachment att, @Context HttpHeaders httpHeaders,
+                    @Context final UriInfo info,
+                    @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
+                    throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        parseToMetadata(getInputStream(att.getObject(InputStream.class), metadata, httpHeaders, info), metadata, preparePostHeaderMap(att, httpHeaders), info, handlerTypeName);
-        TikaResource
-                .getConfig()
-                .getMetadataFilter()
-                .filter(metadata);
+        parseToMetadata(getInputStream(att.getObject(InputStream.class), metadata, httpHeaders,
+                        info), metadata, preparePostHeaderMap(att, httpHeaders), info,
+                        handlerTypeName);
+        TikaResource.getConfig().getMetadataFilter().filter(metadata);
         return metadata;
     }
 
@@ -563,18 +578,20 @@ public class TikaResource {
     @Consumes("*/*")
     @Produces("application/json")
     @Path("{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
-    public Metadata getJson(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
-            throws IOException, TikaException {
+    public Metadata getJson(final InputStream is, @Context HttpHeaders httpHeaders,
+                    @Context final UriInfo info,
+                    @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
+                    throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        parseToMetadata(getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info, handlerTypeName);
-        TikaResource
-                .getConfig()
-                .getMetadataFilter()
-                .filter(metadata);
+        parseToMetadata(getInputStream(is, metadata, httpHeaders, info), metadata,
+                        httpHeaders.getRequestHeaders(), info, handlerTypeName);
+        TikaResource.getConfig().getMetadataFilter().filter(metadata);
         return metadata;
     }
 
-    private void parseToMetadata(InputStream inputStream, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info, String handlerTypeName) throws IOException {
+    private void parseToMetadata(InputStream inputStream, Metadata metadata,
+                    MultivaluedMap<String, String> httpHeaders, UriInfo info,
+                    String handlerTypeName) throws IOException {
         final Parser parser = createParser();
         final ParseContext context = new ParseContext();
 
@@ -588,8 +605,10 @@ public class TikaResource {
             writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
         }
 
-        BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
-        BasicContentHandlerFactory fact = new BasicContentHandlerFactory(type, writeLimit, throwOnWriteLimitReached, context);
+        BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory
+                        .parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
+        BasicContentHandlerFactory fact = new BasicContentHandlerFactory(type, writeLimit,
+                        throwOnWriteLimitReached, context);
         ContentHandler contentHandler = fact.getNewContentHandler();
 
         try {
@@ -603,16 +622,19 @@ public class TikaResource {
             }
             if (TIKA_SERVER_CONFIG.isReturnStackTrace()) {
                 if (cause != null) {
-                    metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, ExceptionUtils.getStackTrace(cause));
+                    metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
+                                    ExceptionUtils.getStackTrace(cause));
                 } else {
-                    metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, ExceptionUtils.getStackTrace(e));
+                    metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
+                                    ExceptionUtils.getStackTrace(e));
                 }
             } else if (!writeLimitReached) {
                 throw e;
             }
         } catch (OutOfMemoryError e) {
             if (TIKA_SERVER_CONFIG.isReturnStackTrace()) {
-                metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, ExceptionUtils.getStackTrace(e));
+                metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
+                                ExceptionUtils.getStackTrace(e));
             } else {
                 throw e;
             }
@@ -621,7 +643,9 @@ public class TikaResource {
         }
     }
 
-    private StreamingOutput produceOutput(final InputStream is, Metadata metadata, final MultivaluedMap<String, String> httpHeaders, final UriInfo info, final String format) {
+    private StreamingOutput produceOutput(final InputStream is, Metadata metadata,
+                    final MultivaluedMap<String, String> httpHeaders, final UriInfo info,
+                    final String format) {
         final Parser parser = createParser();
         final ParseContext context = new ParseContext();
 
@@ -638,18 +662,10 @@ public class TikaResource {
             try {
                 SAXTransformerFactory factory = XMLReaderUtils.getSAXTransformerFactory();
                 TransformerHandler handler = factory.newTransformerHandler();
-                handler
-                        .getTransformer()
-                        .setOutputProperty(OutputKeys.METHOD, format);
-                handler
-                        .getTransformer()
-                        .setOutputProperty(OutputKeys.INDENT, "yes");
-                handler
-                        .getTransformer()
-                        .setOutputProperty(OutputKeys.ENCODING, UTF_8.name());
-                handler
-                        .getTransformer()
-                        .setOutputProperty(OutputKeys.VERSION, "1.1");
+                handler.getTransformer().setOutputProperty(OutputKeys.METHOD, format);
+                handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+                handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, UTF_8.name());
+                handler.getTransformer().setOutputProperty(OutputKeys.VERSION, "1.1");
                 handler.setResult(new StreamResult(writer));
                 content = new ExpandedTitleContentHandler(handler);
             } catch (TransformerConfigurationException | TikaException e) {
@@ -661,14 +677,15 @@ public class TikaResource {
     }
 
     /**
-     * Prepares a multivalued map, combining attachment headers and request headers.
-     * Gives priority to attachment headers.
+     * Prepares a multivalued map, combining attachment headers and request headers. Gives priority
+     * to attachment headers.
      *
-     * @param att         the attachment.
+     * @param att the attachment.
      * @param httpHeaders the http headers, fetched from context.
      * @return the case insensitive MetadataMap containing combined headers.
      */
-    private MetadataMap<String, String> preparePostHeaderMap(Attachment att, HttpHeaders httpHeaders) {
+    private MetadataMap<String, String> preparePostHeaderMap(Attachment att,
+                    HttpHeaders httpHeaders) {
         if (att == null && httpHeaders == null) {
             return null;
         }

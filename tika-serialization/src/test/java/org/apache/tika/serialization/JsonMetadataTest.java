@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.serialization;
 
@@ -24,12 +22,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 public class JsonMetadataTest {
 
@@ -39,18 +35,18 @@ public class JsonMetadataTest {
         metadata.add(TikaCoreProperties.TIKA_CONTENT, "this is the content");
         metadata.add("k1", "v1");
         metadata.add("k1", "v2");
-        //test duplicate value
+        // test duplicate value
         metadata.add("k3", "v3");
         metadata.add("k3", "v3");
-        //test numeral with comma
+        // test numeral with comma
         metadata.add("k4", "500,000");
-        //test Chinese
+        // test Chinese
         metadata.add("alma_mater", "\u666E\u6797\u65AF\u987F\u5927\u5B66");
-        //test url
+        // test url
         metadata.add("url", "/myApp/myAction.html?method=router&cmd=1");
-        //simple html entities
+        // simple html entities
         metadata.add("html", "<html><body>&amp;&nbsp;</body></html>");
-        //simple json escape chars
+        // simple json escape chars
         metadata.add("json_escapes", "the: \"quick\" brown, fox");
 
         StringWriter writer = new StringWriter();
@@ -59,27 +55,24 @@ public class JsonMetadataTest {
         assertEquals(8, deserialized.names().length);
         assertEquals(metadata, deserialized);
 
-        //test that this really is 6 Chinese characters
-        assertEquals(6, deserialized
-                .get("alma_mater")
-                .length());
+        // test that this really is 6 Chinese characters
+        assertEquals(6, deserialized.get("alma_mater").length());
 
-        //now test pretty print;
+        // now test pretty print;
         writer = new StringWriter();
         JsonMetadata.setPrettyPrinting(true);
         JsonMetadata.toJson(metadata, writer);
-        String expected = "{[NEWLINE]  \"alma_mater\" : \"普林斯顿大学\",[NEWLINE]  \"html\" : \"<html><body>&amp;&nbsp;</body></html>\"," +
-                "[NEWLINE]  \"json_escapes\" : \"the: \\\"quick\\\" brown, fox\"," +
-                "[NEWLINE]  \"k1\" : [ \"v1\", \"v2\" ],[NEWLINE]  \"k3\" : [ \"v3\", \"v3\" ],[NEWLINE]  \"k4\" : \"500,000\"," +
-                "[NEWLINE]  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\",[NEWLINE]  \"X-TIKA:content\" : \"this is the content\"[NEWLINE]}";
-        assertEquals(expected, writer
-                .toString()
-                .replaceAll("[\r\n]+", "[NEWLINE]"));
+        String expected =
+                        "{[NEWLINE]  \"alma_mater\" : \"普林斯顿大学\",[NEWLINE]  \"html\" : \"<html><body>&amp;&nbsp;</body></html>\","
+                                        + "[NEWLINE]  \"json_escapes\" : \"the: \\\"quick\\\" brown, fox\","
+                                        + "[NEWLINE]  \"k1\" : [ \"v1\", \"v2\" ],[NEWLINE]  \"k3\" : [ \"v3\", \"v3\" ],[NEWLINE]  \"k4\" : \"500,000\","
+                                        + "[NEWLINE]  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\",[NEWLINE]  \"X-TIKA:content\" : \"this is the content\"[NEWLINE]}";
+        assertEquals(expected, writer.toString().replaceAll("[\r\n]+", "[NEWLINE]"));
     }
 
     @Test
     public void testDeserializationException() {
-        //malformed json; 500,000 should be in quotes
+        // malformed json; 500,000 should be in quotes
         String json = "{\"k1\":[\"v1\",\"v2\"],\"k3\":\"v3\",\"k4\":500,000}";
         boolean ex = false;
         try {
@@ -117,9 +110,10 @@ public class JsonMetadataTest {
 
     @Test
     public void testLargeValues() throws Exception {
-        //TIKA-4154
+        // TIKA-4154
         TikaConfig tikaConfig = null;
-        try (InputStream is = JsonMetadata.class.getResourceAsStream("/config/tika-config-json.xml")) {
+        try (InputStream is =
+                        JsonMetadata.class.getResourceAsStream("/config/tika-config-json.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         StringBuilder sb = new StringBuilder();

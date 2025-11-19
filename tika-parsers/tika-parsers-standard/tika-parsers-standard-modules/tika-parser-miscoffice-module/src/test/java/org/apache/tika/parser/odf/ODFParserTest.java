@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.odf;
 
@@ -34,11 +32,6 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -53,14 +46,16 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class ODFParserTest extends TikaTest {
     /**
-     * For now, allow us to run some tests against both
-     * the old and the new parser
+     * For now, allow us to run some tests against both the old and the new parser
      */
     private Parser[] getParsers() {
-        return new Parser[]{new OpenDocumentParser()};
+        return new Parser[] {new OpenDocumentParser()};
     }
 
 
@@ -73,7 +68,7 @@ public class ODFParserTest extends TikaTest {
                 parser.parse(input, handler, metadata, new ParseContext());
 
                 assertEquals("application/vnd.oasis.opendocument.text",
-                        metadata.get(Metadata.CONTENT_TYPE));
+                                metadata.get(Metadata.CONTENT_TYPE));
 
                 String content = handler.toString();
                 assertContains("Tika is part of the Lucene project.", content);
@@ -94,11 +89,11 @@ public class ODFParserTest extends TikaTest {
                 parser.parse(input, handler, metadata, new ParseContext());
 
                 assertEquals("application/vnd.oasis.opendocument.text",
-                        metadata.get(Metadata.CONTENT_TYPE));
+                                metadata.get(Metadata.CONTENT_TYPE));
                 assertEquals("en-US", metadata.get(TikaCoreProperties.LANGUAGE));
                 assertEquals("PT1M7S", metadata.get(OfficeOpenXMLExtended.TOTAL_TIME));
                 assertEquals("NeoOffice/2.2$Unix OpenOffice.org_project/680m18$Build-9161",
-                        metadata.get("generator"));
+                                metadata.get("generator"));
 
                 // Check date metadata, both old-style and new-style
                 assertEquals("2007-09-14T11:07:10", metadata.get(TikaCoreProperties.MODIFIED));
@@ -122,15 +117,14 @@ public class ODFParserTest extends TikaTest {
                 assertEquals("1.0", metadata.get(OpenDocumentMetaParser.ODF_VERSION_KEY));
 
                 String content = handler.toString();
-                assertTrue(content.contains("This is a sample Open Office document," +
-                        " written in NeoOffice 2.2.1 for the Mac."));
+                assertTrue(content.contains("This is a sample Open Office document,"
+                                + " written in NeoOffice 2.2.1 for the Mac."));
             }
         }
     }
 
     /**
-     * Similar to {@link #testOO2()}, but using a different
-     * OO2 file with different metadata in it
+     * Similar to {@link #testOO2()}, but using a different OO2 file with different metadata in it
      */
     @Test
     public void testOO2Metadata() throws Exception {
@@ -140,19 +134,19 @@ public class ODFParserTest extends TikaTest {
             new OpenDocumentParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("application/vnd.oasis.opendocument.formula",
-                    metadata.get(Metadata.CONTENT_TYPE));
+                            metadata.get(Metadata.CONTENT_TYPE));
             assertEquals(null, metadata.get(TikaCoreProperties.MODIFIED));
             assertEquals("2006-01-27T11:55:22", metadata.get(TikaCoreProperties.CREATED));
             assertEquals("The quick brown fox jumps over the lazy dog",
-                    metadata.get(TikaCoreProperties.TITLE));
+                            metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Gym class featuring a brown fox and lazy dog",
-                    metadata.get(OfficeOpenXMLCore.SUBJECT));
+                            metadata.get(OfficeOpenXMLCore.SUBJECT));
             assertContains("Gym class featuring a brown fox and lazy dog",
-                    Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+                            Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
             assertEquals("PT0S", metadata.get(OfficeOpenXMLExtended.TOTAL_TIME));
             assertEquals("1", metadata.get("editing-cycles"));
             assertEquals("OpenOffice.org/2.2$Win32 OpenOffice.org_project/680m14$Build-9134",
-                    metadata.get("generator"));
+                            metadata.get("generator"));
             assertEquals("Pangram, fox, dog", metadata.get(TikaCoreProperties.SUBJECT));
 
             // User defined metadata
@@ -196,20 +190,20 @@ public class ODFParserTest extends TikaTest {
             new OpenDocumentParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("application/vnd.oasis.opendocument.text",
-                    metadata.get(Metadata.CONTENT_TYPE));
+                            metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("2009-10-05T21:22:38", metadata.get(TikaCoreProperties.MODIFIED));
             assertEquals("2009-10-05T19:04:01", metadata.get(TikaCoreProperties.CREATED));
             assertEquals("2009-10-05T19:04:01", metadata.get(TikaCoreProperties.CREATED));
             assertEquals("Apache Tika", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Test document", metadata.get(OfficeOpenXMLCore.SUBJECT));
             assertContains("Test document",
-                    Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+                            Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
             assertEquals("A rather complex document", metadata.get(TikaCoreProperties.DESCRIPTION));
             assertEquals("Bart Hanssens", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("2", metadata.get("editing-cycles"));
             assertEquals("PT02H03M24S", metadata.get(OfficeOpenXMLExtended.TOTAL_TIME));
             assertEquals("OpenOffice.org/3.1$Unix OpenOffice.org_project/310m19$Build-9420",
-                    metadata.get("generator"));
+                            metadata.get("generator"));
             assertEquals("Apache, Lucene, Tika", metadata.get(TikaCoreProperties.SUBJECT));
 
             // User defined metadata
@@ -274,7 +268,7 @@ public class ODFParserTest extends TikaTest {
     @Test
     public void testFromFile() throws Exception {
         try (TikaInputStream tis = TikaInputStream
-                .get(getResourceAsUrl("/test-documents/testODFwithOOo3.odt"))) {
+                        .get(getResourceAsUrl("/test-documents/testODFwithOOo3.odt"))) {
             assertEquals(true, tis.hasFile());
             OpenDocumentParser parser = new OpenDocumentParser();
             Metadata metadata = new Metadata();
@@ -282,7 +276,7 @@ public class ODFParserTest extends TikaTest {
             parser.parse(tis, handler, metadata, new ParseContext());
 
             assertEquals("application/vnd.oasis.opendocument.text",
-                    metadata.get(Metadata.CONTENT_TYPE));
+                            metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("1.1", metadata.get(OpenDocumentMetaParser.ODF_VERSION_KEY));
 
             String content = handler.toString();
@@ -294,13 +288,13 @@ public class ODFParserTest extends TikaTest {
     public void testNPEFromFile() throws Exception {
         OpenDocumentParser parser = new OpenDocumentParser();
         try (TikaInputStream tis = TikaInputStream
-                .get(getResourceAsUrl("/test-documents/testNPEOpenDocument.odt"))) {
+                        .get(getResourceAsUrl("/test-documents/testNPEOpenDocument.odt"))) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             parser.parse(tis, handler, metadata, new ParseContext());
 
             assertEquals("application/vnd.oasis.opendocument.text",
-                    metadata.get(Metadata.CONTENT_TYPE));
+                            metadata.get(Metadata.CONTENT_TYPE));
 
             String content = handler.toString();
             assertContains("primero hay que generar un par de claves", content);
@@ -319,7 +313,7 @@ public class ODFParserTest extends TikaTest {
         assertContains("</ul>", xml);
     }
 
-    //TIKA-1600: Test that null pointer doesn't break parsing.
+    // TIKA-1600: Test that null pointer doesn't break parsing.
     @Test
     public void testNullStylesInODTFooter() throws Exception {
         Parser parser = new OpenDocumentParser();
@@ -329,7 +323,7 @@ public class ODFParserTest extends TikaTest {
             parser.parse(input, handler, metadata, getNonRecursingParseContext());
 
             assertEquals("application/vnd.oasis.opendocument.text",
-                    metadata.get(Metadata.CONTENT_TYPE));
+                            metadata.get(Metadata.CONTENT_TYPE));
 
             String content = handler.toString();
 
@@ -340,29 +334,27 @@ public class ODFParserTest extends TikaTest {
         }
     }
 
-    @Test  //TIKA-1916
+    @Test // TIKA-1916
     public void testMissingMeta() throws Exception {
         String xml = getXML("testODTNoMeta.odt").xml;
         assertContains("Test text", xml);
     }
 
-    @Test //TIKA-2242
+    @Test // TIKA-2242
     public void testParagraphLevelFontStyles() throws Exception {
         String xml = getXML("testODTStyles2.odt", getNonRecursingParseContext()).xml;
-        //test text span font-style properties
+        // test text span font-style properties
         assertContains("<p><b>name</b>, advocaat", xml);
-        //test paragraph's font-style properties
+        // test paragraph's font-style properties
         assertContains("<p><b>Publicatie Onbekwaamverklaring", xml);
     }
 
-    @Test //TIKA-2242
+    @Test // TIKA-2242
     public void testAnnotationsAndPDepthGt1() throws Exception {
-        //not allowed in html: <p> <annotation> <p> this is an annotation </p> </annotation> </p>
+        // not allowed in html: <p> <annotation> <p> this is an annotation </p> </annotation> </p>
         String xml = getXML("testODTStyles3.odt").xml;
-        assertContains(
-                "<p><b>WOUTERS Rolf</b><p class=\"annotation\"> Beschermde persoon is " +
-                        "overleden </p>",
-                xml);
+        assertContains("<p><b>WOUTERS Rolf</b><p class=\"annotation\"> Beschermde persoon is "
+                        + "overleden </p>", xml);
     }
 
     @Test
@@ -374,15 +366,15 @@ public class ODFParserTest extends TikaTest {
     @Test
     public void testEmbeddedImageAndLink() throws Exception {
         String xml = getXML("testODTEmbeddedImageLink.odt").xml;
-        assertContains("<a href=\"https://tika.apache.org/\">" +
-                "<img src=\"embedded:Pictures/10000201000001240000006457F5B1D1243E0671.png\" />" +
-                "<span>Visit Tika</span></a>", xml);
+        assertContains("<a href=\"https://tika.apache.org/\">"
+                        + "<img src=\"embedded:Pictures/10000201000001240000006457F5B1D1243E0671.png\" />"
+                        + "<span>Visit Tika</span></a>", xml);
     }
 
     @Test
     public void testInvalidFromStream() throws Exception {
-        try (InputStream is = getResourceAsUrl("/test-documents/testODTnotaZipFile.odt")
-                .openStream()) {
+        try (InputStream is =
+                        getResourceAsUrl("/test-documents/testODTnotaZipFile.odt").openStream()) {
             OpenDocumentParser parser = new OpenDocumentParser();
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
@@ -395,7 +387,7 @@ public class ODFParserTest extends TikaTest {
     @Test
     public void testInvalidFromFile() throws Exception {
         try (TikaInputStream is = TikaInputStream
-                .get(getResourceAsUrl("/test-documents/testODTnotaZipFile.odt"))) {
+                        .get(getResourceAsUrl("/test-documents/testODTnotaZipFile.odt"))) {
             OpenDocumentParser parser = new OpenDocumentParser();
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
@@ -407,11 +399,9 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testEncryptedODTFile() throws Exception {
-        //the password to this file is "tika"
-        Path p =
-                Paths.get(
-                        ODFParserTest.class.getResource(
-                                "/test-documents/testODTEncrypted.odt").toURI());
+        // the password to this file is "tika"
+        Path p = Paths.get(ODFParserTest.class.getResource("/test-documents/testODTEncrypted.odt")
+                        .toURI());
         assertThrows(EncryptedDocumentException.class, () -> {
             getRecursiveMetadata(p, false);
         });
@@ -426,14 +416,14 @@ public class ODFParserTest extends TikaTest {
         assertEquals("true", metadataList.get(0).get(TikaCoreProperties.IS_ENCRYPTED));
     }
 
-    //this, of course, should throw an EncryptedDocumentException
-    //but the file can't be read by Java's ZipInputStream or
-    //by commons compress, unless you enable descriptors.
-    //https://issues.apache.org/jira/browse/ODFTOOLKIT-402
+    // this, of course, should throw an EncryptedDocumentException
+    // but the file can't be read by Java's ZipInputStream or
+    // by commons compress, unless you enable descriptors.
+    // https://issues.apache.org/jira/browse/ODFTOOLKIT-402
     @Test
     public void testEncryptedODTStream() throws Exception {
-        try (InputStream is = ODFParserTest.class.getResourceAsStream(
-                "/test-documents/testODTEncrypted.odt")) {
+        try (InputStream is = ODFParserTest.class
+                        .getResourceAsStream("/test-documents/testODTEncrypted.odt")) {
             assertThrows(TikaException.class, () -> {
                 getRecursiveMetadata(is, false);
             });
@@ -451,15 +441,15 @@ public class ODFParserTest extends TikaTest {
         int numThreads = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
         ExecutorCompletionService<Integer> executorCompletionService =
-                new ExecutorCompletionService<>(executorService);
+                        new ExecutorCompletionService<>(executorService);
 
         for (int i = 0; i < numThreads; i++) {
             executorCompletionService.submit(() -> {
                 for (int i1 = 0; i1 < 10; i1++) {
                     List<Metadata> metadataList = getRecursiveMetadata("testODTEmbedded.odt");
                     assertEquals(3, metadataList.size());
-                    assertEquals("THUMBNAIL",
-                            metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+                    assertEquals("THUMBNAIL", metadataList.get(1)
+                                    .get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
                 }
                 return 1;
             });
@@ -479,13 +469,13 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testODTXHTMLIsParseable() throws Exception {
-        //for all OpenDocument files, make sure that the
-        //output from the parse is parseable xhtml
+        // for all OpenDocument files, make sure that the
+        // output from the parse is parseable xhtml
         int filesTested = 0;
         for (Path p : getAllTestFiles()) {
             String fileName = p.getFileName().toString();
-            if (fileName.endsWith(".odt") || fileName.endsWith("odp") || fileName.endsWith("odf") ||
-                    fileName.endsWith(".ods")) {
+            if (fileName.endsWith(".odt") || fileName.endsWith("odp") || fileName.endsWith("odf")
+                            || fileName.endsWith(".ods")) {
 
                 XMLResult xmlResult = null;
                 try (InputStream is = TikaInputStream.get(p)) {
@@ -494,9 +484,11 @@ public class ODFParserTest extends TikaTest {
                     continue;
                 }
                 try {
-                    //just make sure this doesn't throw any exceptions
-                    XMLReaderUtils.parseSAX(new ByteArrayInputStream(xmlResult.xml.getBytes(StandardCharsets.UTF_8)),
-                            new DefaultHandler(), new ParseContext());
+                    // just make sure this doesn't throw any exceptions
+                    XMLReaderUtils.parseSAX(
+                                    new ByteArrayInputStream(
+                                                    xmlResult.xml.getBytes(StandardCharsets.UTF_8)),
+                                    new DefaultHandler(), new ParseContext());
                     filesTested++;
                 } catch (Exception e) {
                     fail(p.getFileName().toString(), e);
@@ -508,19 +500,17 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testVersions() throws Exception {
-        //test at least that all files from
+        // test at least that all files from
         // https://github.com/openpreserve/format-corpus/tree/master/office-examples/LibreOffice7-ODF-1.3
-        //pass as 1.3.  Note that we don't currently parse base files, so skip that one.
-        for (String name : new String[]{
-                //"LibreOfficeBase_odb_1.3.odb",
-                "LibreOfficeCalc_ods_1.3.ods",
-                "LibreOfficeDraw_odg_1.3.odg",
-                "LibreOfficeImpress_odp_1.3.odp",
-                "LibreOfficeWriter_odt_1.3.odt",
-        }) {
+        // pass as 1.3. Note that we don't currently parse base files, so skip that one.
+        for (String name : new String[] {
+                        // "LibreOfficeBase_odb_1.3.odb",
+                        "LibreOfficeCalc_ods_1.3.ods", "LibreOfficeDraw_odg_1.3.odg",
+                        "LibreOfficeImpress_odp_1.3.odp", "LibreOfficeWriter_odt_1.3.odt",}) {
             List<Metadata> metadataList = getRecursiveMetadata("/versions/" + name);
             Metadata metadata = metadataList.get(0);
-            assertEquals("1.3", metadata.get(OpenDocumentMetaParser.ODF_VERSION_KEY), "failed on " + name);
+            assertEquals("1.3", metadata.get(OpenDocumentMetaParser.ODF_VERSION_KEY),
+                            "failed on " + name);
         }
     }
 }

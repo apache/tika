@@ -1,34 +1,30 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.serialization;
 
 import static org.apache.tika.serialization.JsonMetadata.buildObjectMapper;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.util.List;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.util.List;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 
@@ -41,13 +37,11 @@ public class JsonMetadataList {
 
     static {
         JsonFactory factory = new JsonFactory();
-        factory.setStreamReadConstraints(StreamReadConstraints
-                .builder()
-                .maxNestingDepth(10)
-                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
-                .maxNumberLength(500)
-//                                                              .maxDocumentLength(1000000)
-                .build());
+        factory.setStreamReadConstraints(StreamReadConstraints.builder().maxNestingDepth(10)
+                        .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
+                        .maxNumberLength(500)
+                        // .maxDocumentLength(1000000)
+                        .build());
         OBJECT_MAPPER = new ObjectMapper(factory);
         SimpleModule baseModule = new SimpleModule();
         baseModule.addDeserializer(Metadata.class, new MetadataDeserializer());
@@ -62,14 +56,15 @@ public class JsonMetadataList {
     }
 
     /**
-     * Serializes a Metadata object to Json.  This does not flush or close the writer.
+     * Serializes a Metadata object to Json. This does not flush or close the writer.
      *
      * @param metadataList list of metadata to write
-     * @param writer       writer
-     * @param prettyPrint  whether or not to pretty print the output
+     * @param writer writer
+     * @param prettyPrint whether or not to pretty print the output
      * @throws org.apache.tika.exception.TikaException if there is an IOException during writing
      */
-    public static void toJson(List<Metadata> metadataList, Writer writer, boolean prettyPrint) throws IOException {
+    public static void toJson(List<Metadata> metadataList, Writer writer, boolean prettyPrint)
+                    throws IOException {
         if (prettyPrint) {
             PRETTY_SERIALIZER.writerWithDefaultPrettyPrinter().writeValue(writer, metadataList);
         } else {
@@ -78,10 +73,10 @@ public class JsonMetadataList {
     }
 
     /**
-     * Serializes a Metadata object to Json.  This does not flush or close the writer.
+     * Serializes a Metadata object to Json. This does not flush or close the writer.
      *
      * @param metadataList list of metadata to write
-     * @param writer       writer
+     * @param writer writer
      * @throws org.apache.tika.exception.TikaException if there is an IOException during writing
      */
     public static void toJson(List<Metadata> metadataList, Writer writer) throws IOException {
@@ -99,12 +94,12 @@ public class JsonMetadataList {
         if (reader == null) {
             return null;
         }
-        if (OBJECT_MAPPER.getFactory().streamReadConstraints().getMaxStringLength()
-                != TikaConfig.getMaxJsonStringFieldLength()) {
+        if (OBJECT_MAPPER.getFactory().streamReadConstraints().getMaxStringLength() != TikaConfig
+                        .getMaxJsonStringFieldLength()) {
             OBJECT_MAPPER = buildObjectMapper(TikaConfig.getMaxJsonStringFieldLength());
         }
 
-        return OBJECT_MAPPER.readValue(reader, new TypeReference<List<Metadata>>(){});
+        return OBJECT_MAPPER.readValue(reader, new TypeReference<List<Metadata>>() {});
     }
 
     public static void setPrettyPrinting(boolean prettyPrint) {

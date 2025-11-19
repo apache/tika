@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.detect;
 
@@ -23,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -45,7 +42,7 @@ public class CompositeDetector implements Detector {
     private final List<Detector> detectors;
 
     public CompositeDetector(MediaTypeRegistry registry, List<Detector> detectors,
-                             Collection<Class<? extends Detector>> excludeDetectors) {
+                    Collection<Class<? extends Detector>> excludeDetectors) {
         if (excludeDetectors == null || excludeDetectors.isEmpty()) {
             this.detectors = detectors;
         } else {
@@ -78,8 +75,8 @@ public class CompositeDetector implements Detector {
         }
         MediaType type = MediaType.OCTET_STREAM;
 
-        //we have to iterate through all detectors because the override detector may
-        //be within a CompositeDetector
+        // we have to iterate through all detectors because the override detector may
+        // be within a CompositeDetector
         for (Detector detector : getDetectors()) {
             MediaType detected = detector.detect(input, metadata);
             if (registry.isSpecializationOf(detected, type)) {
@@ -111,6 +108,7 @@ public class CompositeDetector implements Detector {
         }
         return null;
     }
+
     /**
      * Returns the component detectors.
      */
@@ -119,12 +117,12 @@ public class CompositeDetector implements Detector {
     }
 
     private boolean isExcluded(Collection<Class<? extends Detector>> excludeDetectors,
-                               Class<? extends Detector> d) {
+                    Class<? extends Detector> d) {
         return excludeDetectors.contains(d) || assignableFrom(excludeDetectors, d);
     }
 
     private boolean assignableFrom(Collection<Class<? extends Detector>> excludeDetectors,
-                                   Class<? extends Detector> d) {
+                    Class<? extends Detector> d) {
         for (Class<? extends Detector> e : excludeDetectors) {
             if (e.isAssignableFrom(d)) {
                 return true;

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.wordperfect;
 
@@ -22,10 +20,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -36,10 +30,14 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * <p>Parser for Corel WordPerfect documents. Targets WP6 File Format
- * but appears to be compatible with more recent versions too.</p>
+ * <p>
+ * Parser for Corel WordPerfect documents. Targets WP6 File Format but appears to be compatible with
+ * more recent versions too.
+ * </p>
  *
  * @author Pascal Essiembre
  */
@@ -51,8 +49,8 @@ public class WordPerfectParser implements Parser {
     final static MediaType WP_5_1 = new MediaType(WP_BASE, "version", "5.1");
     final static MediaType WP_6_x = new MediaType(WP_BASE, "version", "6.x");
     private static final long serialVersionUID = 8941810225917012232L;
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(WP_5_0, WP_5_1, WP_6_x)));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+                    .unmodifiableSet(new HashSet<>(Arrays.asList(WP_5_0, WP_5_1, WP_6_x)));
 
     @Field
     private boolean includeDeletedContent = true;
@@ -64,7 +62,7 @@ public class WordPerfectParser implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
 
         WPInputStream wpStream = new WPInputStream(stream);
         WPPrefixArea prefixArea = WPPrefixAreaExtractor.extract(wpStream);
@@ -77,7 +75,7 @@ public class WordPerfectParser implements Parser {
     }
 
     private void extractDocumentArea(WPPrefixArea prefixArea, WPInputStream in,
-                                     XHTMLContentHandler xhtml) throws SAXException, IOException {
+                    XHTMLContentHandler xhtml) throws SAXException, IOException {
 
         // Move to offset (for some reason skip() did not work).
         for (int i = 0; i < prefixArea.getDocAreaPointer(); i++) {
@@ -92,12 +90,12 @@ public class WordPerfectParser implements Parser {
     }
 
     private void ensureFileSupport(WPPrefixArea pa, Metadata metadata)
-            throws UnsupportedFormatException, EncryptedDocumentException {
-        if (pa.getMajorVersion() != WPPrefixArea.WP5_MAJOR_VERSION &&
-                pa.getMajorVersion() != WPPrefixArea.WP6_MAJOR_VERSION) {
+                    throws UnsupportedFormatException, EncryptedDocumentException {
+        if (pa.getMajorVersion() != WPPrefixArea.WP5_MAJOR_VERSION
+                        && pa.getMajorVersion() != WPPrefixArea.WP6_MAJOR_VERSION) {
             metadata.set(Metadata.CONTENT_TYPE, WP_UNK.toString());
             throw new UnsupportedFormatException(
-                    "Parser doesn't recognize this major version: " + pa.getMajorVersion());
+                            "Parser doesn't recognize this major version: " + pa.getMajorVersion());
         }
         if (pa.isEncrypted()) {
             throw new EncryptedDocumentException();
@@ -106,7 +104,7 @@ public class WordPerfectParser implements Parser {
 
     private void applyMetadata(WPPrefixArea pa, Metadata metadata) {
         // Should we force the more precise media type if only the base
-        // form is found?  Or shall we store a friendly representation
+        // form is found? Or shall we store a friendly representation
         // of the version in a new field?
         if (metadata.get(Metadata.CONTENT_TYPE) == null) {
             if (pa.getMajorVersion() == WPPrefixArea.WP6_MAJOR_VERSION) {
@@ -141,9 +139,8 @@ public class WordPerfectParser implements Parser {
     }
 
     /**
-     * Whether or not to include deleted content.  This currently
-     * only works with WP6.
-     * The default is <code>true</code>
+     * Whether or not to include deleted content. This currently only works with WP6. The default is
+     * <code>true</code>
      *
      * @param includeDeletedContent
      */

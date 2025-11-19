@@ -1,37 +1,34 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.metadata;
 
 import java.util.Date;
 
 /**
- * XMP Dynamic Media schema. This is a collection of
- * {@link Property property definition} constants for the dynamic media
- * properties defined in the XMP standard.
+ * XMP Dynamic Media schema. This is a collection of {@link Property property definition} constants
+ * for the dynamic media properties defined in the XMP standard.
  *
- * @see <a href="http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/xmp/pdfs/cc-201306/XMPSpecificationPart2.pdf"
- * >XMP Specification, Part 2: Standard Schemas</a>
+ * @see <a href=
+ *      "http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/xmp/pdfs/cc-201306/XMPSpecificationPart2.pdf"
+ *      >XMP Specification, Part 2: Standard Schemas</a>
  * @since Apache Tika 0.7
  */
 public interface XMPDM {
 
     /**
-     * "The absolute path to the file's peak audio file. If empty, no peak
-     * file exists."
+     * "The absolute path to the file's peak audio file. If empty, no peak file exists."
      */
     Property ABS_PEAK_AUDIO_FILE_PATH = Property.internalURI("xmpDM:absPeakAudioFilePath");
 
@@ -41,17 +38,16 @@ public interface XMPDM {
     Property ALBUM = Property.externalText("xmpDM:album");
 
     /**
-     * "An alternative tape name, set via the project window or timecode
-     * dialog in Premiere. If an alternative name has been set and has not
-     * been reverted, that name is displayed."
+     * "An alternative tape name, set via the project window or timecode dialog in Premiere. If an
+     * alternative name has been set and has not been reverted, that name is displayed."
      */
     Property ALT_TAPE_NAME = Property.externalText("xmpDM:altTapeName");
 
-//    /**
-//     * "A timecode set by the user. When specified, it is used instead
-//     * of the startTimecode."
-//     */
-//    Property ALT_TIMECODE = "xmpDM:altTimecode";
+    // /**
+    // * "A timecode set by the user. When specified, it is used instead
+    // * of the startTimecode."
+    // */
+    // Property ALT_TIMECODE = "xmpDM:altTimecode";
 
     /**
      * "The name of the artist or artists."
@@ -69,23 +65,21 @@ public interface XMPDM {
     Property AUDIO_MOD_DATE = Property.internalDate("xmpDM:audioModDate");
 
     /**
-     * "The audio sample rate. Can be any value, but commonly 32000, 41100,
-     * or 48000."
+     * "The audio sample rate. Can be any value, but commonly 32000, 41100, or 48000."
      */
     Property AUDIO_SAMPLE_RATE = Property.internalInteger("xmpDM:audioSampleRate");
 
     /**
      * "The audio sample type."
      */
-    Property AUDIO_SAMPLE_TYPE =
-            Property.internalClosedChoise("xmpDM:audioSampleType", "8Int", "16Int", "32Int",
-                    "32Float");
+    Property AUDIO_SAMPLE_TYPE = Property.internalClosedChoise("xmpDM:audioSampleType", "8Int",
+                    "16Int", "32Int", "32Float");
 
     /**
      * "The audio channel type."
      */
-    Property AUDIO_CHANNEL_TYPE =
-            Property.internalClosedChoise("xmpDM:audioChannelType", "Mono", "Stereo", "5.1", "7.1");
+    Property AUDIO_CHANNEL_TYPE = Property.internalClosedChoise("xmpDM:audioChannelType", "Mono",
+                    "Stereo", "5.1", "7.1");
     /**
      * "The audio compression used. For example, MP3."
      */
@@ -95,10 +89,10 @@ public interface XMPDM {
      */
     Property COMPILATION = Property.externalInteger("xmpDM:compilation");
 
-//    /**
-//     * "Additional parameters for Beat Splice stretch mode."
-//     */
-//    Property BEAT_SPLICE_PARAMS = "xmpDM:beatSpliceParams";
+    // /**
+    // * "Additional parameters for Beat Splice stretch mode."
+    // */
+    // Property BEAT_SPLICE_PARAMS = "xmpDM:beatSpliceParams";
     /**
      * "The composer's name."
      */
@@ -108,17 +102,16 @@ public interface XMPDM {
      */
     Property COPYRIGHT = Property.externalText("xmpDM:copyright");
 
-//    /**
-//     * "An unordered list of all media used to create this media."
-//     */
-//    Property CONTRIBUTED_MEDIA = "xmpDM:contributedMedia";
+    // /**
+    // * "An unordered list of all media used to create this media."
+    // */
+    // Property CONTRIBUTED_MEDIA = "xmpDM:contributedMedia";
     /**
      * "The disc number for part of an album set."
      */
     Property DISC_NUMBER = Property.externalInteger("xmpDM:discNumber");
     /**
-     * "The duration of the media file."
-     * Value is in Seconds, unless xmpDM:scale is also set.
+     * "The duration of the media file." Value is in Seconds, unless xmpDM:scale is also set.
      */
     Property DURATION = Property.externalReal("xmpDM:duration");
     /**
@@ -126,8 +119,7 @@ public interface XMPDM {
      */
     Property ENGINEER = Property.externalText("xmpDM:engineer");
     /**
-     * "The file data rate in megabytes per second. For example:
-     * '36/10' = 3.6 MB/sec"
+     * "The file data rate in megabytes per second. For example: '36/10' = 3.6 MB/sec"
      */
     Property FILE_DATA_RATE = Property.internalRational("xmpDM:fileDataRate");
     /**
@@ -141,14 +133,13 @@ public interface XMPDM {
     /**
      * "The audio's musical key."
      */
-    Property KEY =
-            Property.internalClosedChoise("xmpDM:key", "C", "C#", "D", "D#", "E", "F", "F#", "G",
-                    "G#", "A", "A#", "B");
+    Property KEY = Property.internalClosedChoise("xmpDM:key", "C", "C#", "D", "D#", "E", "F", "F#",
+                    "G", "G#", "A", "A#", "B");
 
-//    /**
-//     * "The duration of lead time for queuing music."
-//     */
-//    Property INTRO_TIME = "xmpDM:introTime";
+    // /**
+    // * "The duration of lead time for queuing music."
+    // */
+    // Property INTRO_TIME = "xmpDM:introTime";
     /**
      * "User's log comments."
      */
@@ -166,52 +157,51 @@ public interface XMPDM {
      */
     Property METADATA_MOD_DATE = Property.internalDate("xmpDM:metadataModDate");
 
-//    /**
-//     * An ordered list of markers. See also {@link #TRACKS xmpDM:Tracks}.
-//     */
-//    Property MARKERS = "xmpDM:markers";
+    // /**
+    // * An ordered list of markers. See also {@link #TRACKS xmpDM:Tracks}.
+    // */
+    // Property MARKERS = "xmpDM:markers";
     /**
      * "The sampling phase of film to be converted to video (pull-down)."
      */
-    Property PULL_DOWN =
-            Property.internalClosedChoise("xmpDM:pullDown", "WSSWW", "SSWWW", "SWWWS", "WWWSS",
-                    "WWSSW", "WSSWW_24p", "SSWWW_24p", "SWWWS_24p", "WWWSS_24p", "WWSSW_24p");
+    Property PULL_DOWN = Property.internalClosedChoise("xmpDM:pullDown", "WSSWW", "SSWWW", "SWWWS",
+                    "WWWSS", "WWSSW", "WSSWW_24p", "SSWWW_24p", "SWWWS_24p", "WWWSS_24p",
+                    "WWSSW_24p");
 
-//    /**
-//     * "The time at which to fade out."
-//     */
-//    Property OUT_CUE = "xmpDM:outCue";
+    // /**
+    // * "The time at which to fade out."
+    // */
+    // Property OUT_CUE = "xmpDM:outCue";
 
-//    /**
-//     * "A reference to the project that created this file."
-//     */
-//    Property PROJECT_REF = "xmpDM:projectRef";
+    // /**
+    // * "A reference to the project that created this file."
+    // */
+    // Property PROJECT_REF = "xmpDM:projectRef";
     /**
-     * "The relative path to the file's peak audio file. If empty, no peak
-     * file exists."
+     * "The relative path to the file's peak audio file. If empty, no peak file exists."
      */
     Property RELATIVE_PEAK_AUDIO_FILE_PATH =
-            Property.internalURI("xmpDM:relativePeakAudioFilePath");
+                    Property.internalURI("xmpDM:relativePeakAudioFilePath");
     /**
      * "The date the title was released."
      */
     Property RELEASE_DATE = Property.externalDate("xmpDM:releaseDate");
 
-//    /**
-//     * "The start time of the media inside the audio project."
-//     */
-//    Property RELATIVE_TIMESTAMP = "xmpDM:relativeTimestamp";
+    // /**
+    // * "The start time of the media inside the audio project."
+    // */
+    // Property RELATIVE_TIMESTAMP = "xmpDM:relativeTimestamp";
     /**
-     * "The musical scale used in the music. 'Neither' is most often used
-     * for instruments with no associated scale, such as drums."
+     * "The musical scale used in the music. 'Neither' is most often used for instruments with no
+     * associated scale, such as drums."
      */
-    Property SCALE_TYPE =
-            Property.internalClosedChoise("xmpDM:scaleType", "Major", "Minor", "Both", "Neither");
+    Property SCALE_TYPE = Property.internalClosedChoise("xmpDM:scaleType", "Major", "Minor", "Both",
+                    "Neither");
 
-//    /**
-//     * "Additional parameters for Resample stretch mode."
-//     */
-//    Property RESAMPLE_PARAMS = "xmpDM:resampleParams";
+    // /**
+    // * "Additional parameters for Resample stretch mode."
+    // */
+    // Property RESAMPLE_PARAMS = "xmpDM:resampleParams";
     /**
      * "The name of the scene."
      */
@@ -221,9 +211,8 @@ public interface XMPDM {
      */
     Property SHOT_DATE = Property.externalDate("xmpDM:shotDate");
     /**
-     * "The name of the location where the video was shot. For example:
-     * 'Oktoberfest, Munich, Germany'. For more accurate  positioning,
-     * use the EXIF GPS values."
+     * "The name of the location where the video was shot. For example: 'Oktoberfest, Munich,
+     * Germany'. For more accurate positioning, use the EXIF GPS values."
      */
     Property SHOT_LOCATION = Property.externalText("xmpDM:shotLocation");
     /**
@@ -231,26 +220,23 @@ public interface XMPDM {
      */
     Property SHOT_NAME = Property.externalText("xmpDM:shotName");
     /**
-     * "A description of the speaker angles from center front in degrees.
-     * For example: 'Left = -30, Right = 30, Center = 0, LFE = 45,
-     * Left Surround = -110, Right Surround = 110'"
+     * "A description of the speaker angles from center front in degrees. For example: 'Left = -30,
+     * Right = 30, Center = 0, LFE = 45, Left Surround = -110, Right Surround = 110'"
      */
     Property SPEAKER_PLACEMENT = Property.externalText("xmpDM:speakerPlacement");
     /**
      * "The audio stretch mode."
      */
-    Property STRETCH_MODE =
-            Property.internalClosedChoise("xmpDM:stretchMode", "Fixed length", "Time-Scale",
-                    "Resample", "Beat Splice", "Hybrid");
+    Property STRETCH_MODE = Property.internalClosedChoise("xmpDM:stretchMode", "Fixed length",
+                    "Time-Scale", "Resample", "Beat Splice", "Hybrid");
 
-//    /**
-//     * "The timecode of the first frame of video in the file, as obtained
-//     * from the device control."
-//     */
-//    Property START_TIMECODE = "xmpDM:startTimecode";
+    // /**
+    // * "The timecode of the first frame of video in the file, as obtained
+    // * from the device control."
+    // */
+    // Property START_TIMECODE = "xmpDM:startTimecode";
     /**
-     * "The name of the tape from which the clip was captured, as set during
-     * the capture process."
+     * "The name of the tape from which the clip was captured, as set during the capture process."
      */
     Property TAPE_NAME = Property.externalText("xmpDM:tapeName");
     /**
@@ -260,47 +246,45 @@ public interface XMPDM {
     /**
      * "The time signature of the music."
      */
-    Property TIME_SIGNATURE =
-            Property.internalClosedChoise("xmpDM:timeSignature", "2/4", "3/4", "4/4", "5/4", "7/4",
-                    "6/8", "9/8", "12/8", "other");
+    Property TIME_SIGNATURE = Property.internalClosedChoise("xmpDM:timeSignature", "2/4", "3/4",
+                    "4/4", "5/4", "7/4", "6/8", "9/8", "12/8", "other");
 
-//    /**
-//     * "Additional parameters for Time-Scale stretch mode."
-//     */
-//    Property TIME_SCALE_PARAMS = "xmpDM:timeScaleParams";
+    // /**
+    // * "Additional parameters for Time-Scale stretch mode."
+    // */
+    // Property TIME_SCALE_PARAMS = "xmpDM:timeScaleParams";
     /**
-     * "A numeric value indicating the order of the audio file within its
-     * original recording."
+     * "A numeric value indicating the order of the audio file within its original recording."
      */
     Property TRACK_NUMBER = Property.externalInteger("xmpDM:trackNumber");
     /**
      * "The alpha mode."
      */
-    Property VIDEO_ALPHA_MODE =
-            Property.externalClosedChoise("xmpDM:videoAlphaMode", "straight", "pre-multiplied");
+    Property VIDEO_ALPHA_MODE = Property.externalClosedChoise("xmpDM:videoAlphaMode", "straight",
+                    "pre-multiplied");
 
-//    /**
-//     * "An unordered list of tracks. A track is a named set of markers,
-//     * which can specify a frame rate for all markers in the set.
-//     * See also {@link #MARKERS xmpDM:markers}."
-//     */
-//    Property TRACKS = "xmpDM:Tracks";
+    // /**
+    // * "An unordered list of tracks. A track is a named set of markers,
+    // * which can specify a frame rate for all markers in the set.
+    // * See also {@link #MARKERS xmpDM:markers}."
+    // */
+    // Property TRACKS = "xmpDM:Tracks";
     /**
      * "When true, unity is clear, when false, it is opaque."
      */
     Property VIDEO_ALPHA_UNITY_IS_TRANSPARENT =
-            Property.internalBoolean("xmpDM:videoAlphaUnityIsTransparent");
+                    Property.internalBoolean("xmpDM:videoAlphaUnityIsTransparent");
 
-//    /**
-//     * "A color in CMYK or RGB to be used as the pre-multiple color when
-//     * alpha mode is pre-multiplied."
-//     */
-//    Property VIDEO_ALPHA_PREMULTIPLE_COLOR = "xmpDM:videoAlphaPremultipleColor";
+    // /**
+    // * "A color in CMYK or RGB to be used as the pre-multiple color when
+    // * alpha mode is pre-multiplied."
+    // */
+    // Property VIDEO_ALPHA_PREMULTIPLE_COLOR = "xmpDM:videoAlphaPremultipleColor";
     /**
      * "The color space."
      */
-    Property VIDEO_COLOR_SPACE =
-            Property.internalClosedChoise("xmpDM:videoColorSpace", "sRGB", "CCIR-601", "CCIR-709");
+    Property VIDEO_COLOR_SPACE = Property.internalClosedChoise("xmpDM:videoColorSpace", "sRGB",
+                    "CCIR-601", "CCIR-709");
     /**
      * "Video compression used. For example, jpeg."
      */
@@ -308,29 +292,28 @@ public interface XMPDM {
     /**
      * "The field order for video."
      */
-    Property VIDEO_FIELD_ORDER =
-            Property.internalClosedChoise("xmpDM:videoFieldOrder", "Upper", "Lower", "Progressive");
+    Property VIDEO_FIELD_ORDER = Property.internalClosedChoise("xmpDM:videoFieldOrder", "Upper",
+                    "Lower", "Progressive");
     /**
      * "The video frame rate."
      */
     Property VIDEO_FRAME_RATE =
-            Property.internalOpenChoise("xmpDM:videoFrameRate", "24", "NTSC", "PAL");
+                    Property.internalOpenChoise("xmpDM:videoFrameRate", "24", "NTSC", "PAL");
     /**
      * "The date and time when the video was last modified."
      */
     Property VIDEO_MOD_DATE = Property.internalDate("xmpDM:videoModDate");
 
-//    /**
-//     * "The frame size. For example: w:720, h: 480, unit:pixels"
-//     */
-//    Property VIDEO_FRAME_SIZE = "xmpDM:videoFrameSize";
+    // /**
+    // * "The frame size. For example: w:720, h: 480, unit:pixels"
+    // */
+    // Property VIDEO_FRAME_SIZE = "xmpDM:videoFrameSize";
     /**
-     * "The size in bits of each color component of a pixel. Standard
-     * Windows 32-bit pixels have 8 bits per component."
+     * "The size in bits of each color component of a pixel. Standard Windows 32-bit pixels have 8
+     * bits per component."
      */
-    Property VIDEO_PIXEL_DEPTH =
-            Property.internalClosedChoise("xmpDM:videoPixelDepth", "8Int", "16Int", "32Int",
-                    "32Float");
+    Property VIDEO_PIXEL_DEPTH = Property.internalClosedChoise("xmpDM:videoPixelDepth", "8Int",
+                    "16Int", "32Int", "32Float");
     /**
      * "The aspect ratio, expressed as wd/ht. For example: '648/720' = 0.9"
      */
@@ -377,7 +360,7 @@ public interface XMPDM {
             }
             if (value instanceof Date) {
                 // Won't happen in this case, just an example of already
-                //  converted to a type metadata.set(property) handles
+                // converted to a type metadata.set(property) handles
                 metadata.set(property, (Date) value);
             }
             if (value instanceof String) {

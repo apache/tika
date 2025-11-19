@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.renderer.pdf.pdfbox;
 
@@ -25,16 +23,12 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
@@ -58,6 +52,8 @@ import org.apache.tika.renderer.RenderRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.renderer.RenderingTracker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
 
@@ -66,19 +62,17 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
     protected static final Logger LOG = LoggerFactory.getLogger(PDFBoxRenderer.class);
 
     /**
-     * This is the amount of time it takes for PDFBox to render the page
-     * to a BufferedImage
+     * This is the amount of time it takes for PDFBox to render the page to a BufferedImage
      */
     public static Property PDFBOX_RENDERING_TIME_MS =
-            Property.externalReal(Rendering.RENDERING_PREFIX + "pdfbox-rendering-ms");
+                    Property.externalReal(Rendering.RENDERING_PREFIX + "pdfbox-rendering-ms");
 
     /**
-     * This is the amount of time it takes for PDFBox/java to write the image after
-     * it has been rendered into a BufferedImage.  Some formats take much longer
-     * to encode than others.
+     * This is the amount of time it takes for PDFBox/java to write the image after it has been
+     * rendered into a BufferedImage. Some formats take much longer to encode than others.
      */
     public static Property PDFBOX_IMAGE_WRITING_TIME_MS =
-            Property.externalReal(Rendering.RENDERING_PREFIX + "pdfbox-image-writing-ms");
+                    Property.externalReal(Rendering.RENDERING_PREFIX + "pdfbox-image-writing-ms");
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -92,7 +86,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
 
     @Override
     public RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext,
-                                RenderRequest... requests) throws IOException, TikaException {
+                    RenderRequest... requests) throws IOException, TikaException {
 
 
         PDDocument pdDocument;
@@ -118,20 +112,20 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
     }
 
     private void processRequest(RenderRequest renderRequest, PDDocument pdDocument,
-                                Metadata metadata, ParseContext parseContext,
-                                PageBasedRenderResults results) {
-        if (renderRequest == PageRangeRequest.RENDER_ALL || renderRequest.equals(PageRangeRequest.RENDER_ALL)) {
-            renderRange(pdDocument, 1, pdDocument.getNumberOfPages(),
-                    metadata, parseContext, results);
+                    Metadata metadata, ParseContext parseContext, PageBasedRenderResults results) {
+        if (renderRequest == PageRangeRequest.RENDER_ALL
+                        || renderRequest.equals(PageRangeRequest.RENDER_ALL)) {
+            renderRange(pdDocument, 1, pdDocument.getNumberOfPages(), metadata, parseContext,
+                            results);
         } else if (renderRequest instanceof PageRangeRequest) {
-            int start = ((PageRangeRequest)renderRequest).getFrom();
-            int toInclusive = ((PageRangeRequest)renderRequest).getTo();
+            int start = ((PageRangeRequest) renderRequest).getFrom();
+            int toInclusive = ((PageRangeRequest) renderRequest).getTo();
             renderRange(pdDocument, start, toInclusive, metadata, parseContext, results);
         }
     }
 
     private void renderRange(PDDocument pdDocument, int start, int endInclusive, Metadata metadata,
-                             ParseContext parseContext, PageBasedRenderResults results) {
+                    ParseContext parseContext, PageBasedRenderResults results) {
         PDFRenderer renderer = new PDFRenderer(pdDocument);
         RenderingTracker tracker = parseContext.get(RenderingTracker.class);
         if (tracker == null) {
@@ -142,10 +136,11 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
             int id = tracker.getNextId();
             Metadata m = new Metadata();
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                    TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
+                            TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
             try {
                 m.set(TikaPagedText.PAGE_NUMBER, i);
-                m.set(TikaPagedText.PAGE_ROTATION, (double)pdDocument.getPage(i - 1).getRotation());
+                m.set(TikaPagedText.PAGE_ROTATION,
+                                (double) pdDocument.getPage(i - 1).getRotation());
                 results.add(renderPage(renderer, id, i, m, parseContext));
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordException(e, m);
@@ -155,29 +150,27 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
     }
 
     protected RenderResult renderPage(PDFRenderer renderer, int id, int pageNumber,
-                                      Metadata metadata, ParseContext parseContext)
-            throws IOException {
+                    Metadata metadata, ParseContext parseContext) throws IOException {
 
         Path tmpFile = Files.createTempFile("tika-pdfbox-rendering-",
-                "-" + id + "-" + pageNumber + "." + getImageFormatName(parseContext));
+                        "-" + id + "-" + pageNumber + "." + getImageFormatName(parseContext));
         try {
             long start = System.currentTimeMillis();
-            //TODO: parameterize whether or not to un-rotate page?
-            BufferedImage image = renderer.renderImageWithDPI(
-                    pageNumber - 1,
-                    getDPI(parseContext),
-                    getImageType(parseContext));
+            // TODO: parameterize whether or not to un-rotate page?
+            BufferedImage image = renderer.renderImageWithDPI(pageNumber - 1, getDPI(parseContext),
+                            getImageType(parseContext));
             long renderingElapsed = System.currentTimeMillis() - start;
             metadata.set(PDFBOX_RENDERING_TIME_MS, renderingElapsed);
             start = System.currentTimeMillis();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
-                ImageIOUtil.writeImage(image, getImageFormatName(parseContext), os, getDPI(parseContext));
+                ImageIOUtil.writeImage(image, getImageFormatName(parseContext), os,
+                                getDPI(parseContext));
             }
             long elapsedWrite = System.currentTimeMillis() - start;
             metadata.set(PDFBOX_IMAGE_WRITING_TIME_MS, elapsedWrite);
             metadata.set(Rendering.RENDERED_MS, renderingElapsed + elapsedWrite);
         } catch (SecurityException e) {
-            //throw SecurityExceptions immediately
+            // throw SecurityExceptions immediately
             throw e;
         } catch (Exception e) {
             try {
@@ -192,12 +185,12 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //check file format names
+        // check file format names
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+                    throws TikaConfigException {
 
     }
 

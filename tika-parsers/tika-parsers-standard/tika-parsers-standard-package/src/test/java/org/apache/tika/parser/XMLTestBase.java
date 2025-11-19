@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser;
 
@@ -32,18 +30,16 @@ import java.util.zip.ZipOutputStream;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.TextContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class XMLTestBase extends TikaTest {
 
@@ -70,7 +66,7 @@ public class XMLTestBase extends TikaTest {
     }
 
     static Path injectZippedXMLs(Path original, byte[] toInject, boolean includeSlides)
-            throws IOException {
+                    throws IOException {
         ZipFile input = new ZipFile(original.toFile());
         File output = Files.createTempFile("tika-xxe-", ".zip").toFile();
         ZipOutputStream outZip = new ZipOutputStream(new FileOutputStream(output));
@@ -81,9 +77,9 @@ public class XMLTestBase extends TikaTest {
             IOUtils.copy(input.getInputStream(entry), bos);
             byte[] bytes = bos.toByteArray();
             if (entry.getName().endsWith(".xml") &&
-                    //don't inject the slides because you'll get a bean exception
-                    //Unexpected node
-                    (!includeSlides && !entry.getName().contains("slides/slide"))) {
+            // don't inject the slides because you'll get a bean exception
+            // Unexpected node
+                            (!includeSlides && !entry.getName().contains("slides/slide"))) {
                 bytes = injectXML(bytes, toInject);
             }
             ZipEntry outEntry = new ZipEntry(entry.getName());
@@ -99,7 +95,7 @@ public class XMLTestBase extends TikaTest {
     }
 
     static void parse(String testFileName, InputStream is, Parser parser, ParseContext context)
-            throws Exception {
+                    throws Exception {
         parser.parse(is, new DefaultHandler(), new Metadata(), context);
     }
 
@@ -112,13 +108,13 @@ public class XMLTestBase extends TikaTest {
 
         @Override
         public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException, SAXException, TikaException {
+                        ParseContext context) throws IOException, SAXException, TikaException {
 
             TaggedContentHandler tagged = new TaggedContentHandler(handler);
             try {
-                SAXParserFactory saxParserFactory = SAXParserFactory
-                        .newInstance("org.apache.xerces.parsers.SAXParser",
-                                this.getClass().getClassLoader());
+                SAXParserFactory saxParserFactory =
+                                SAXParserFactory.newInstance("org.apache.xerces.parsers.SAXParser",
+                                                this.getClass().getClassLoader());
                 SAXParser parser = saxParserFactory.newSAXParser();
                 parser.parse(stream, new TextContentHandler(handler, true));
             } catch (ParserConfigurationException e) {
@@ -137,12 +133,11 @@ public class XMLTestBase extends TikaTest {
 
         @Override
         public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException, SAXException, TikaException {
+                        ParseContext context) throws IOException, SAXException, TikaException {
 
             TaggedContentHandler tagged = new TaggedContentHandler(handler);
             try {
-                SAXParserFactory saxParserFactory = SAXParserFactory
-                        .newInstance();
+                SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
                 SAXParser parser = saxParserFactory.newSAXParser();
                 parser.parse(stream, new TextContentHandler(handler, true));
             } catch (ParserConfigurationException e) {

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.mime;
 
@@ -23,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 
 public class MediaTypeTest {
@@ -31,7 +28,7 @@ public class MediaTypeTest {
     @Test
     public void testBasics() {
         assertEquals("application/octet-stream",
-                new MediaType("application", "octet-stream").toString());
+                        new MediaType("application", "octet-stream").toString());
 
         assertEquals("text/plain", new MediaType("text", "plain").toString());
 
@@ -40,11 +37,11 @@ public class MediaTypeTest {
 
         parameters.put("charset", "UTF-8");
         assertEquals("text/plain; charset=UTF-8",
-                new MediaType("text", "plain", parameters).toString());
+                        new MediaType("text", "plain", parameters).toString());
 
         parameters.put("x-eol-style", "crlf");
         assertEquals("text/plain; charset=UTF-8; x-eol-style=crlf",
-                new MediaType("text", "plain", parameters).toString());
+                        new MediaType("text", "plain", parameters).toString());
     }
 
     @Test
@@ -57,11 +54,11 @@ public class MediaTypeTest {
 
         parameters.put("CHARSET", "UTF-8");
         assertEquals("text/plain; charset=UTF-8",
-                new MediaType("TEXT", "plain", parameters).toString());
+                        new MediaType("TEXT", "plain", parameters).toString());
 
         parameters.put("X-Eol-Style", "crlf");
         assertEquals("text/plain; charset=UTF-8; x-eol-style=crlf",
-                new MediaType("TeXt", "PlAiN", parameters).toString());
+                        new MediaType("TeXt", "PlAiN", parameters).toString());
     }
 
     @Test
@@ -74,11 +71,11 @@ public class MediaTypeTest {
 
         parameters.put(" charset", "UTF-8");
         assertEquals("text/plain; charset=UTF-8",
-                new MediaType("\n\ntext", "plain \r", parameters).toString());
+                        new MediaType("\n\ntext", "plain \r", parameters).toString());
 
         parameters.put("\r\n\tx-eol-style  \t", "crlf");
         assertEquals("text/plain; charset=UTF-8; x-eol-style=crlf",
-                new MediaType("    text", "\tplain ", parameters).toString());
+                        new MediaType("    text", "\tplain ", parameters).toString());
     }
 
     @Test
@@ -87,9 +84,9 @@ public class MediaTypeTest {
         parameters.put("a", " value with spaces ");
         parameters.put("b", "text/plain");
         parameters.put("c", "()<>@,;:\\\"/[]?=");
-        assertEquals("text/plain; a=\" value with spaces \"; b=\"text\\/plain\"" +
-                        "; c=\"\\(\\)\\<\\>\\@\\,\\;\\:\\\\\\\"\\/\\[\\]\\?\\=\"",
-                new MediaType("text", "plain", parameters).toString());
+        assertEquals("text/plain; a=\" value with spaces \"; b=\"text\\/plain\""
+                        + "; c=\"\\(\\)\\<\\>\\@\\,\\;\\:\\\\\\\"\\/\\[\\]\\?\\=\"",
+                        new MediaType("text", "plain", parameters).toString());
     }
 
     /**
@@ -177,13 +174,13 @@ public class MediaTypeTest {
     @Test
     public void testOddParameters() {
         assertEquals("text/html; charset=UTF-8",
-                MediaType.parse("text/html;; charset=UTF-8").toString());
+                        MediaType.parse("text/html;; charset=UTF-8").toString());
         assertEquals("text/html; charset=UTF-8",
-                MediaType.parse("text/html;; charset=UTF-8").toString());
+                        MediaType.parse("text/html;; charset=UTF-8").toString());
         assertEquals("text/html; charset=UTF-8",
-                MediaType.parse("text/html;; charset=\"UTF-8\"").toString());
+                        MediaType.parse("text/html;; charset=\"UTF-8\"").toString());
         assertEquals("text/html; charset=UTF-8",
-                MediaType.parse("text/html;; charset=\"UTF-8").toString());
+                        MediaType.parse("text/html;; charset=\"UTF-8").toString());
     }
 
 }

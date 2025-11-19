@@ -1,24 +1,27 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.asm;
 
 import java.io.IOException;
 import java.io.InputStream;
-
+import org.apache.tika.exception.RuntimeSAXException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassReader;
@@ -30,16 +33,8 @@ import org.objectweb.asm.Type;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.RuntimeSAXException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.exception.WriteLimitReachedException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.sax.XHTMLContentHandler;
-
 /**
- * Class visitor that generates XHTML SAX events to describe the
- * contents of the visited class.
+ * Class visitor that generates XHTML SAX events to describe the contents of the visited class.
  */
 class XHTMLClassVisitor extends ClassVisitor {
 
@@ -72,7 +67,7 @@ class XHTMLClassVisitor extends ClassVisitor {
     }
 
     public void visit(int version, int access, String name, String signature, String superName,
-                      String[] interfaces) {
+                    String[] interfaces) {
         type = Type.getObjectType(name);
 
         String className = type.getClassName();
@@ -154,14 +149,12 @@ class XHTMLClassVisitor extends ClassVisitor {
     /**
      * Ignored.
      */
-    public void visitOuterClass(String owner, String name, String desc) {
-    }
+    public void visitOuterClass(String owner, String name, String desc) {}
 
     /**
      * Ignored.
      */
-    public void visitSource(String source, String debug) {
-    }
+    public void visitSource(String source, String debug) {}
 
     /**
      * Ignored.
@@ -173,20 +166,18 @@ class XHTMLClassVisitor extends ClassVisitor {
     /**
      * Ignored.
      */
-    public void visitAttribute(Attribute attr) {
-    }
+    public void visitAttribute(Attribute attr) {}
 
     /**
      * Ignored.
      */
-    public void visitInnerClass(String name, String outerName, String innerName, int access) {
-    }
+    public void visitInnerClass(String name, String outerName, String innerName, int access) {}
 
     /**
      * Visits a field.
      */
     public FieldVisitor visitField(int access, String name, String desc, String signature,
-                                   Object value) {
+                    Object value) {
         if (!isSet(access, Opcodes.ACC_SYNTHETIC)) {
             try {
                 xhtml.characters("    ");
@@ -214,7 +205,7 @@ class XHTMLClassVisitor extends ClassVisitor {
      * Visits a method.
      */
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
-                                     String[] exceptions) {
+                    String[] exceptions) {
         if (!isSet(access, Opcodes.ACC_SYNTHETIC)) {
             try {
                 xhtml.characters("    ");

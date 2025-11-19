@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.isatab;
 
@@ -21,10 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -33,6 +27,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class ISArchiveParser implements Parser {
 
@@ -42,7 +38,7 @@ public class ISArchiveParser implements Parser {
     private static final long serialVersionUID = 3640809327541300229L;
     private static String studyAssayFileNameField = "Study Assay File Name";
     private final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("x-isatab"));
+                    Collections.singleton(MediaType.application("x-isatab"));
     private String location = null;
 
     private String studyFileName = null;
@@ -73,10 +69,10 @@ public class ISArchiveParser implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
 
         TemporaryResources tmp =
-                TikaInputStream.isTikaInputStream(stream) ? null : new TemporaryResources();
+                        TikaInputStream.isTikaInputStream(stream) ? null : new TemporaryResources();
 
         TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
         try {
@@ -86,7 +82,8 @@ public class ISArchiveParser implements Parser {
             this.studyFileName = tis.getFile().getName();
 
             File locationFile = new File(location);
-            String[] investigationList = locationFile.list((dir, name) -> name.matches("i_.+\\.txt"));
+            String[] investigationList =
+                            locationFile.list((dir, name) -> name.matches("i_.+\\.txt"));
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
@@ -104,8 +101,8 @@ public class ISArchiveParser implements Parser {
     }
 
     private void parseInvestigation(String[] investigationList, XHTMLContentHandler xhtml,
-                                    Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+                    Metadata metadata, ParseContext context)
+                    throws IOException, SAXException, TikaException {
         if ((investigationList == null) || (investigationList.length == 0)) {
             // TODO warning
             return;
@@ -116,27 +113,28 @@ public class ISArchiveParser implements Parser {
         }
 
         String investigation = investigationList[0]; // TODO add to metadata?
-        try (InputStream stream = TikaInputStream.get(new File(this.location + investigation).toPath())) {
+        try (InputStream stream =
+                        TikaInputStream.get(new File(this.location + investigation).toPath())) {
             ISATabUtils.parseInvestigation(stream, xhtml, metadata, context, this.studyFileName);
         }
         xhtml.element("h1", "INVESTIGATION " + metadata.get("Investigation Identifier"));
     }
 
     private void parseStudy(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
-                            ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         xhtml.element("h2", "STUDY " + metadata.get("Study Identifier"));
 
         ISATabUtils.parseStudy(stream, xhtml, metadata, context);
     }
 
     private void parseAssay(XHTMLContentHandler xhtml, Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         for (String assayFileName : metadata.getValues(studyAssayFileNameField)) {
             xhtml.startElement("div");
             xhtml.element("h3", "ASSAY " + assayFileName);
             // location starts with "/C:" on windows, can't use Paths.get()
-            try (InputStream stream = TikaInputStream.get(new File(this.location + assayFileName).toPath()))
-            {
+            try (InputStream stream =
+                            TikaInputStream.get(new File(this.location + assayFileName).toPath())) {
                 ISATabUtils.parseAssay(stream, xhtml, metadata, context);
             }
             xhtml.endElement("div");

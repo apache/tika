@@ -1,31 +1,27 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.xmp.convert;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 import com.adobe.internal.xmp.XMPConst;
 import com.adobe.internal.xmp.XMPException;
 import com.adobe.internal.xmp.XMPMeta;
 import com.adobe.internal.xmp.options.PropertyOptions;
-
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -39,11 +35,12 @@ import org.apache.tika.metadata.TikaCoreProperties;
  * (.pptx).
  */
 public class MSOfficeXMLConverter extends AbstractConverter {
-    protected static final Set<Namespace> ADDITIONAL_NAMESPACES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(
-                    new Namespace(OfficeOpenXMLCore.NAMESPACE_URI, OfficeOpenXMLCore.PREFIX),
-                    new Namespace(OfficeOpenXMLExtended.NAMESPACE_URI,
-                            OfficeOpenXMLExtended.PREFIX))));
+    protected static final Set<Namespace> ADDITIONAL_NAMESPACES =
+                    Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                                    new Namespace(OfficeOpenXMLCore.NAMESPACE_URI,
+                                                    OfficeOpenXMLCore.PREFIX),
+                                    new Namespace(OfficeOpenXMLExtended.NAMESPACE_URI,
+                                                    OfficeOpenXMLExtended.PREFIX))));
 
     public MSOfficeXMLConverter() throws TikaException {
         super();
@@ -58,20 +55,20 @@ public class MSOfficeXMLConverter extends AbstractConverter {
         // Core Properties
         createProperty(OfficeOpenXMLCore.CATEGORY, XMPConst.NS_IPTCCORE, "intellectualGenre");
         createProperty(OfficeOpenXMLCore.CONTENT_STATUS, OfficeOpenXMLCore.NAMESPACE_URI,
-                "contentStatus");
+                        "contentStatus");
         createProperty(TikaCoreProperties.CREATED, XMPConst.NS_XMP, "CreateDate");
         createCommaSeparatedArray(TikaCoreProperties.CREATOR, XMPConst.NS_DC, "creator",
-                PropertyOptions.ARRAY_ORDERED);
+                        PropertyOptions.ARRAY_ORDERED);
         createProperty(TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments");
         createProperty(TikaCoreProperties.IDENTIFIER, XMPConst.NS_DC, "identifier");
         createCommaSeparatedArray(TikaCoreProperties.SUBJECT, XMPConst.NS_DC, "subject",
-                PropertyOptions.ARRAY);
+                        PropertyOptions.ARRAY);
         createLangAltProperty(TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description");
         createProperty(TikaCoreProperties.LANGUAGE, XMPConst.NS_DC, "language");
         createProperty(TikaCoreProperties.MODIFIER, OfficeOpenXMLCore.NAMESPACE_URI,
-                "lastModifiedBy");
+                        "lastModifiedBy");
         createProperty(TikaCoreProperties.PRINT_DATE, OfficeOpenXMLCore.NAMESPACE_URI,
-                "lastPrinted");
+                        "lastPrinted");
         createProperty(TikaCoreProperties.MODIFIED, XMPConst.NS_XMP, "ModifyDate");
         createProperty(OfficeOpenXMLCore.REVISION, OfficeOpenXMLCore.NAMESPACE_URI, "revision");
         createLangAltProperty(TikaCoreProperties.TITLE, XMPConst.NS_DC, "title");
@@ -97,22 +94,22 @@ public class MSOfficeXMLConverter extends AbstractConverter {
 
         createProperty(Office.CHARACTER_COUNT, OfficeOpenXMLExtended.NAMESPACE_URI, "Characters");
         createProperty(Office.CHARACTER_COUNT_WITH_SPACES, OfficeOpenXMLExtended.NAMESPACE_URI,
-                "CharactersWithSpaces");
+                        "CharactersWithSpaces");
         createProperty(TikaCoreProperties.PUBLISHER, OfficeOpenXMLExtended.NAMESPACE_URI,
-                "Company");
+                        "Company");
         createProperty(Office.LINE_COUNT, OfficeOpenXMLExtended.NAMESPACE_URI, "Lines");
         createProperty(OfficeOpenXMLExtended.MANAGER, OfficeOpenXMLExtended.NAMESPACE_URI,
-                "Manager");
+                        "Manager");
         createProperty(OfficeOpenXMLExtended.NOTES, OfficeOpenXMLExtended.NAMESPACE_URI, "Notes");
         createProperty(Office.PAGE_COUNT, XMPConst.TYPE_PAGEDFILE, "NPages");
         createProperty(Office.PARAGRAPH_COUNT, OfficeOpenXMLExtended.NAMESPACE_URI, "Paragraphs");
         createProperty(OfficeOpenXMLExtended.PRESENTATION_FORMAT,
-                OfficeOpenXMLExtended.NAMESPACE_URI, "PresentationFormat");
+                        OfficeOpenXMLExtended.NAMESPACE_URI, "PresentationFormat");
         createProperty(Office.SLIDE_COUNT, OfficeOpenXMLExtended.NAMESPACE_URI, "Slides");
         createProperty(OfficeOpenXMLExtended.TEMPLATE, OfficeOpenXMLExtended.NAMESPACE_URI,
-                "Template");
+                        "Template");
         createProperty(OfficeOpenXMLExtended.TOTAL_TIME, OfficeOpenXMLExtended.NAMESPACE_URI,
-                "TotalTime");
+                        "TotalTime");
         createProperty(Office.WORD_COUNT, OfficeOpenXMLExtended.NAMESPACE_URI, "Words");
 
         return super.getXMPMeta();

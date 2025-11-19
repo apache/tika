@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 /* $Id: XMPPacketParser.java 750418 2009-03-05 11:03:54Z vhennebert $ */
@@ -26,14 +24,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * This class is a parser for XMP packets. By default, it tries to locate the first XMP packet
- * it finds and parses it.
+ * This class is a parser for XMP packets. By default, it tries to locate the first XMP packet it
+ * finds and parses it.
  * <p/>
  * Important: Before you use this class to look for an XMP packet in some random file, please read
  * the chapter on "Scanning Files for XMP Packets" in the XMP specification!
  * <p/>
- * Thic class was branched from http://xmlgraphics.apache.org/ XMPPacketParser.
- * See also org.semanticdesktop.aperture.extractor.xmp.XMPExtractor, a variant.
+ * Thic class was branched from http://xmlgraphics.apache.org/ XMPPacketParser. See also
+ * org.semanticdesktop.aperture.extractor.xmp.XMPExtractor, a variant.
  */
 public class XMPPacketScanner {
 
@@ -52,7 +50,7 @@ public class XMPPacketScanner {
     }
 
     private static boolean skipAfter(InputStream in, byte[] match, OutputStream out)
-            throws IOException {
+                    throws IOException {
         int found = 0;
         int len = match.length;
         int b;
@@ -76,18 +74,18 @@ public class XMPPacketScanner {
     }
 
     /**
-     * Locates an XMP packet in a stream, parses it and returns the XMP metadata. If no
-     * XMP packet is found until the stream ends, null is returned. Note: This method
-     * only finds the first XMP packet in a stream. And it cannot determine whether it
-     * has found the right XMP packet if there are multiple packets.
+     * Locates an XMP packet in a stream, parses it and returns the XMP metadata. If no XMP packet
+     * is found until the stream ends, null is returned. Note: This method only finds the first XMP
+     * packet in a stream. And it cannot determine whether it has found the right XMP packet if
+     * there are multiple packets.
      * <p/>
-     * Does <em>not</em> close the stream.
-     * If XMP block was found reading can continue below the block.
+     * Does <em>not</em> close the stream. If XMP block was found reading can continue below the
+     * block.
      *
-     * @param in     the InputStream to search
+     * @param in the InputStream to search
      * @param xmlOut to write the XMP packet to
      * @return true if XMP packet is found, false otherwise
-     * @throws IOException          if an I/O error occurs
+     * @throws IOException if an I/O error occurs
      * @throws TransformerException if an error occurs while parsing the XMP packet
      */
     public boolean parse(InputStream in, OutputStream xmlOut) throws IOException {
@@ -98,11 +96,11 @@ public class XMPPacketScanner {
         if (!foundXMP) {
             return false;
         }
-        //TODO Inspect "begin" attribute!
+        // TODO Inspect "begin" attribute!
         if (!skipAfter(in, PACKET_HEADER_END)) {
             throw new IOException("Invalid XMP packet header!");
         }
-        //TODO Do with TeeInputStream when Commons IO 1.4 is available
+        // TODO Do with TeeInputStream when Commons IO 1.4 is available
         if (!skipAfter(in, PACKET_TRAILER, xmlOut)) {
             throw new IOException("XMP packet not properly terminated!");
         }
@@ -110,4 +108,3 @@ public class XMPPacketScanner {
     }
 
 }
-

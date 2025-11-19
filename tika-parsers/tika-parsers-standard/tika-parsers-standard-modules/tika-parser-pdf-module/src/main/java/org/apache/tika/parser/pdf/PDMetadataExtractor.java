@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.pdf;
 
@@ -21,7 +19,6 @@ import java.io.InputStream;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.jempbox.xmp.XMPSchema;
@@ -34,9 +31,6 @@ import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.pdmodel.common.PDMetadata;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.DublinCore;
@@ -57,6 +51,8 @@ import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaPDFXId;
 import org.apache.tika.parser.xmp.JempboxExtractor;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 public class PDMetadataExtractor {
 
@@ -65,10 +61,10 @@ public class PDMetadataExtractor {
             metadata.set(PDF.HAS_XMP, "false");
             return;
         }
-        //this file has XMP...
-        //whether or not it is readable or throws an exception is another story...
+        // this file has XMP...
+        // whether or not it is readable or throws an exception is another story...
         metadata.set(PDF.HAS_XMP, "true");
-        //now go for the XMP
+        // now go for the XMP
         Document dom = loadDOM(pdMetadata, metadata, context);
         if (dom == null) {
             return;
@@ -96,14 +92,14 @@ public class PDMetadataExtractor {
             schema = (XMPSchemaIllustrator) xmp.getSchemaByClass(XMPSchemaIllustrator.class);
         } catch (IOException e) {
             metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
-                    "" + e);
+                            "" + e);
         }
 
         if (schema == null) {
             return;
         }
         String type = schema.getType();
-        if (! StringUtils.isBlank(type)) {
+        if (!StringUtils.isBlank(type)) {
             metadata.set(PDF.ILLUSTRATOR_TYPE, type);
         }
     }
@@ -113,28 +109,41 @@ public class PDMetadataExtractor {
         try {
             dcSchema = xmp.getDublinCoreSchema();
         } catch (IOException e) {
-            //swallow
+            // swallow
         }
         if (dcSchema == null) {
             return;
         }
-        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.CONTRIBUTOR.getName(), TikaCoreProperties.CONTRIBUTOR, XMPDC.CONTRIBUTOR);
-        extractDublinCoreSimpleItem(metadata, dcSchema, TikaCoreProperties.COVERAGE.getName(), TikaCoreProperties.COVERAGE, XMPDC.COVERAGE);
-        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.CREATOR.getName(), TikaCoreProperties.CREATOR, XMPDC.CREATOR);
+        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.CONTRIBUTOR.getName(),
+                        TikaCoreProperties.CONTRIBUTOR, XMPDC.CONTRIBUTOR);
+        extractDublinCoreSimpleItem(metadata, dcSchema, TikaCoreProperties.COVERAGE.getName(),
+                        TikaCoreProperties.COVERAGE, XMPDC.COVERAGE);
+        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.CREATOR.getName(),
+                        TikaCoreProperties.CREATOR, XMPDC.CREATOR);
 
         extractDublinCoreListItems(metadata, dcSchema, XMPDC.DATE.getName(), XMPDC.DATE);
-        extractMultilingualItems(metadata, dcSchema, TikaCoreProperties.DESCRIPTION.getName(), TikaCoreProperties.DESCRIPTION, XMPDC.DESCRIPTION);
+        extractMultilingualItems(metadata, dcSchema, TikaCoreProperties.DESCRIPTION.getName(),
+                        TikaCoreProperties.DESCRIPTION, XMPDC.DESCRIPTION);
         extractDublinCoreListItems(metadata, dcSchema, XMPDC.FORMAT.getName(), XMPDC.FORMAT);
-        extractDublinCoreSimpleItem(metadata, dcSchema, TikaCoreProperties.IDENTIFIER.getName(), TikaCoreProperties.IDENTIFIER, XMPDC.IDENTIFIER);
-        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.LANGUAGE.getName(), TikaCoreProperties.LANGUAGE, XMPDC.LANGUAGE);
-        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.PUBLISHER.getName(), TikaCoreProperties.PUBLISHER, XMPDC.PUBLISHER);
-        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.RELATION.getName(), TikaCoreProperties.RELATION, XMPDC.RELATION);
-        extractMultilingualItems(metadata, dcSchema, TikaCoreProperties.RIGHTS.getName(), TikaCoreProperties.RIGHTS, XMPDC.RIGHTS);
-        extractDublinCoreSimpleItem(metadata, dcSchema, TikaCoreProperties.SOURCE.getName(), TikaCoreProperties.SOURCE, XMPDC.SOURCE);
-        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.SUBJECT.getName(), TikaCoreProperties.SUBJECT, XMPDC.SUBJECT);
-        extractMultilingualItems(metadata, dcSchema, TikaCoreProperties.TITLE.getName(), TikaCoreProperties.TITLE, XMPDC.TITLE);
+        extractDublinCoreSimpleItem(metadata, dcSchema, TikaCoreProperties.IDENTIFIER.getName(),
+                        TikaCoreProperties.IDENTIFIER, XMPDC.IDENTIFIER);
+        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.LANGUAGE.getName(),
+                        TikaCoreProperties.LANGUAGE, XMPDC.LANGUAGE);
+        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.PUBLISHER.getName(),
+                        TikaCoreProperties.PUBLISHER, XMPDC.PUBLISHER);
+        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.RELATION.getName(),
+                        TikaCoreProperties.RELATION, XMPDC.RELATION);
+        extractMultilingualItems(metadata, dcSchema, TikaCoreProperties.RIGHTS.getName(),
+                        TikaCoreProperties.RIGHTS, XMPDC.RIGHTS);
+        extractDublinCoreSimpleItem(metadata, dcSchema, TikaCoreProperties.SOURCE.getName(),
+                        TikaCoreProperties.SOURCE, XMPDC.SOURCE);
+        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.SUBJECT.getName(),
+                        TikaCoreProperties.SUBJECT, XMPDC.SUBJECT);
+        extractMultilingualItems(metadata, dcSchema, TikaCoreProperties.TITLE.getName(),
+                        TikaCoreProperties.TITLE, XMPDC.TITLE);
         // finds only the first one?!
-        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.TYPE.getName(), TikaCoreProperties.TYPE, XMPDC.TYPE);
+        extractDublinCoreListItems(metadata, dcSchema, TikaCoreProperties.TYPE.getName(),
+                        TikaCoreProperties.TYPE, XMPDC.TYPE);
 
 
     }
@@ -146,22 +155,21 @@ public class PDMetadataExtractor {
             schema = (XMPSchemaPDFVT) xmp.getSchemaByClass(XMPSchemaPDFVT.class);
         } catch (IOException e) {
             metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
-                    "" + e);
+                            "" + e);
         }
 
         if (schema == null) {
             return;
         }
         String version = schema.getPDFVTVersion();
-        if (! StringUtils.isBlank(version)) {
+        if (!StringUtils.isBlank(version)) {
             metadata.set(PDF.PDFVT_VERSION, version);
         }
         try {
             Calendar modified = schema.getPDFVTModified();
             metadata.set(PDF.PDFVT_MODIFIED, modified);
         } catch (IOException ex) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    "bad date in vt modified");
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, "bad date in vt modified");
         }
     }
 
@@ -169,8 +177,8 @@ public class PDMetadataExtractor {
         xmp.addXMLNSMapping(XMPSchemaPDFXId.NAMESPACE_URI, XMPSchemaPDFXId.class);
         xmp.addXMLNSMapping(XMPSchemaPDFX.NAMESPACE_URI, XMPSchemaPDFX.class);
         try {
-            XMPSchemaPDFXId
-                    XMPSchemaPDFXId = (XMPSchemaPDFXId) xmp.getSchemaByClass(XMPSchemaPDFXId.class);
+            XMPSchemaPDFXId XMPSchemaPDFXId =
+                            (XMPSchemaPDFXId) xmp.getSchemaByClass(XMPSchemaPDFXId.class);
             if (XMPSchemaPDFXId != null) {
                 String version = XMPSchemaPDFXId.getPDFXVersion();
                 if (!StringUtils.isBlank(version)) {
@@ -179,7 +187,7 @@ public class PDMetadataExtractor {
             }
         } catch (IOException e) {
             metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
-                    "" + e);
+                            "" + e);
         }
         try {
             XMPSchemaPDFX XMPSchemaPDFX = (XMPSchemaPDFX) xmp.getSchemaByClass(XMPSchemaPDFX.class);
@@ -195,7 +203,7 @@ public class PDMetadataExtractor {
             }
         } catch (IOException e) {
             metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
-                    "" + e);
+                            "" + e);
         }
 
     }
@@ -208,7 +216,7 @@ public class PDMetadataExtractor {
             schema = (XMPSchemaPDFUA) xmp.getSchemaByClass(XMPSchemaPDFUA.class);
         } catch (IOException e) {
             metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
-                    "" + e);
+                            "" + e);
         }
 
         if (schema == null) {
@@ -221,7 +229,7 @@ public class PDMetadataExtractor {
             }
         } catch (NumberFormatException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    "expected integer " + "part");
+                            "expected integer " + "part");
         }
 
     }
@@ -233,7 +241,7 @@ public class PDMetadataExtractor {
             schema = (XMPSchemaPDFAId) xmp.getSchemaByClass(XMPSchemaPDFAId.class);
         } catch (IOException e) {
             metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
-                    "" + e);
+                            "" + e);
         }
 
         if (schema == null) {
@@ -248,7 +256,7 @@ public class PDMetadataExtractor {
             }
         } catch (NumberFormatException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    "expected integer " + "part");
+                            "expected integer " + "part");
         }
         if (schema.getConformance() != null) {
             metadata.set(PDF.PDFAID_CONFORMANCE, schema.getConformance());
@@ -290,7 +298,7 @@ public class PDMetadataExtractor {
         if (basic == null) {
             return;
         }
-        //add the elements from the basic schema
+        // add the elements from the basic schema
         setNotNull(basic.getCreatorTool(), metadata, XMP.CREATOR_TOOL);
         setNotNull(basic.getTitle(), metadata, DublinCore.TITLE, XMP.TITLE);
         setNotNull(basic.getAbout(), metadata, XMP.ABOUT);
@@ -298,17 +306,17 @@ public class PDMetadataExtractor {
         try {
             setNotNull(XMP.CREATE_DATE, basic.getCreateDate(), metadata);
         } catch (IOException e) {
-            //swallow
+            // swallow
         }
         try {
             setNotNull(XMP.MODIFY_DATE, basic.getModifyDate(), metadata);
         } catch (IOException e) {
-            //swallow
+            // swallow
         }
         try {
             setNotNull(XMP.METADATA_DATE, basic.getMetadataDate(), metadata);
         } catch (IOException e) {
-            //swallow
+            // swallow
         }
 
         List<String> identifiers = basic.getIdentifiers();
@@ -327,13 +335,13 @@ public class PDMetadataExtractor {
         try {
             setNotNull(XMP.RATING, basic.getRating(), metadata);
         } catch (NumberFormatException e) {
-            //swallow TIKA-4401
+            // swallow TIKA-4401
         }
-        //TODO: find an example where basic.getThumbNail is not null
-        //and figure out how to add that info
+        // TODO: find an example where basic.getThumbNail is not null
+        // and figure out how to add that info
     }
 
-    private static void setNotNull(String value, Metadata metadata, Property ... properties) {
+    private static void setNotNull(String value, Metadata metadata, Property... properties) {
         if (value == null || value.isBlank()) {
             return;
         }
@@ -355,7 +363,7 @@ public class PDMetadataExtractor {
         }
     }
 
-    static void addNotNull(String value, Metadata metadata, Property ... properties) {
+    static void addNotNull(String value, Metadata metadata, Property... properties) {
         if (StringUtils.isBlank(value)) {
             return;
         }
@@ -365,10 +373,9 @@ public class PDMetadataExtractor {
     }
 
     /**
-     * As of this writing, XMPSchema can contain bags or sequence lists
-     * for some attributes...despite standards documentation.
-     * JempBox expects one or the other for specific attributes.
-     * Until more flexibility is added to JempBox, Tika will have to handle both.
+     * As of this writing, XMPSchema can contain bags or sequence lists for some
+     * attributes...despite standards documentation. JempBox expects one or the other for specific
+     * attributes. Until more flexibility is added to JempBox, Tika will have to handle both.
      *
      * @param schema
      * @param name
@@ -387,20 +394,21 @@ public class PDMetadataExtractor {
      * <p/>
      * This relies on the property having a valid xmp getName()
      * <p/>
-     * For now, this only extracts the first language if the property does not allow multiple
-     * values (see TIKA-1295)
+     * For now, this only extracts the first language if the property does not allow multiple values
+     * (see TIKA-1295)
      *
      * @param metadata
      * @param schema schema - must be non-null
      * @param dcName dublin core name for the property to select from the xmp schema
      * @param properties property names to set to this value
      */
-    private static void extractMultilingualItems(Metadata metadata, XMPSchema schema, String dcName, Property ... properties) {
+    private static void extractMultilingualItems(Metadata metadata, XMPSchema schema, String dcName,
+                    Property... properties) {
 
         for (Property property : properties) {
             for (String lang : schema.getLanguagePropertyLanguages(dcName)) {
                 String value = schema.getLanguageProperty(dcName, lang);
-                if (value != null && ! value.isBlank()) {
+                if (value != null && !value.isBlank()) {
                     addMetadata(metadata, property, value);
                     addMetadata(metadata, property.getName() + ":" + lang, value);
                 }
@@ -410,11 +418,9 @@ public class PDMetadataExtractor {
 
 
     /**
-     * This tries to read a list from a particular property in
-     * XMPSchemaDublinCore.
+     * This tries to read a list from a particular property in XMPSchemaDublinCore.
      * <p/>
-     * Until PDFBOX-1803/TIKA-1233 are fixed, do not call this
-     * on dates!
+     * Until PDFBOX-1803/TIKA-1233 are fixed, do not call this on dates!
      * <p/>
      * This relies on the property having a DublinCore compliant getName()
      *
@@ -423,8 +429,8 @@ public class PDMetadataExtractor {
      * @param dcName -- name of the dc property to read from the dc schema
      * @param properties -- property to set for this value in the metadata object
      */
-    private static void extractDublinCoreListItems(Metadata metadata,
-                                                   XMPSchemaDublinCore dc, String dcName, Property ... properties) {
+    private static void extractDublinCoreListItems(Metadata metadata, XMPSchemaDublinCore dc,
+                    String dcName, Property... properties) {
 
         List<String> items = getXMPBagOrSeqList(dc, dcName);
         if (items == null) {
@@ -437,7 +443,7 @@ public class PDMetadataExtractor {
         }
     }
 
-     /**
+    /**
      * This tries to read a string from a particular property in XMPSchemaDublinCore.
      * <p/>
      * This relies on the property having a DublinCore compliant getName()
@@ -447,8 +453,8 @@ public class PDMetadataExtractor {
      * @param dcName -- name of the dc property to read from the dc schema
      * @param properties -- property to set for this value in the metadata object
      */
-    private static void extractDublinCoreSimpleItem(Metadata metadata,
-                                                   XMPSchemaDublinCore dc, String dcName, Property ... properties) {
+    private static void extractDublinCoreSimpleItem(Metadata metadata, XMPSchemaDublinCore dc,
+                    String dcName, Property... properties) {
 
         String textProperty = dc.getTextProperty(dcName);
         for (Property property : properties) {
@@ -457,8 +463,9 @@ public class PDMetadataExtractor {
     }
 
     /**
-     * Add non-null, non-empty and unique values to the Metadata object. If the property
-     * does not allow multiple values, silently fail to add values after the first.
+     * Add non-null, non-empty and unique values to the Metadata object. If the property does not
+     * allow multiple values, silently fail to add values after the first.
+     * 
      * @param metadata
      * @param property
      * @param value
@@ -479,7 +486,7 @@ public class PDMetadataExtractor {
             }
             metadata.add(property, decoded);
         }
-        //silently skip adding property that already exists if multiple values are not permitted
+        // silently skip adding property that already exists if multiple values are not permitted
     }
 
     static void addMetadata(Metadata metadata, String name, String value) {
@@ -505,9 +512,9 @@ public class PDMetadataExtractor {
         return value;
     }
 
-    //can return null!
+    // can return null!
     private static Document loadDOM(PDMetadata pdMetadata, Metadata metadata,
-                                    ParseContext context) {
+                    ParseContext context) {
         if (pdMetadata == null) {
             return null;
         }
@@ -537,8 +544,8 @@ public class PDMetadataExtractor {
     }
 
     /**
-     * Used when processing custom metadata entries, as PDFBox won't do
-     * the conversion for us in the way it does for the standard ones
+     * Used when processing custom metadata entries, as PDFBox won't do the conversion for us in the
+     * way it does for the standard ones
      */
     static void addMetadata(Metadata metadata, String name, COSBase value) {
         if (value instanceof COSArray) {

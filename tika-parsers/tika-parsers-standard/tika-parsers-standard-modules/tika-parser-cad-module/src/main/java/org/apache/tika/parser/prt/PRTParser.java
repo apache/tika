@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.prt;
 
@@ -23,11 +21,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.Set;
-
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
@@ -36,10 +30,12 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * A basic text extracting parser for the CADKey PRT (CAD Drawing)
- * format. It outputs text from note entries.
+ * A basic text extracting parser for the CADKey PRT (CAD Drawing) format. It outputs text from note
+ * entries.
  */
 
 public class PRTParser implements Parser {
@@ -50,10 +46,10 @@ public class PRTParser implements Parser {
      */
     private static final long serialVersionUID = 4659638314375035178L;
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("x-prt"));
+                    Collections.singleton(MediaType.application("x-prt"));
     /**
-     * How long do we allow a text run to claim to be, before we
-     * decide we're confused and it's not really text after all?
+     * How long do we allow a text run to claim to be, before we decide we're confused and it's not
+     * really text after all?
      */
     private static final int MAX_TEXT_LENGTH = 0x0800;
 
@@ -62,17 +58,15 @@ public class PRTParser implements Parser {
     }
 
     /*
-     * Text types:
-     *   00 00 00 00 f0 [3b]f sz sz TEXT     *view name*
-     *   00 00 00 00 f0 3f 00 00 00 00 00 00 00 00 sz sz TEXT  *view name*
-     *   (anything)  e0 3f sz sz TEXT    *view name*
-     *   3x 33 33 33 33 33 e3 3f 0x 00 00 0x 00 00 0x 0x 1f sz sz TEXT    *note entries*
+     * Text types: 00 00 00 00 f0 [3b]f sz sz TEXT *view name* 00 00 00 00 f0 3f 00 00 00 00 00 00
+     * 00 00 sz sz TEXT *view name* (anything) e0 3f sz sz TEXT *view name* 3x 33 33 33 33 33 e3 3f
+     * 0x 00 00 0x 00 00 0x 0x 1f sz sz TEXT *note entries*
      *
-     *  Note - all text is null terminated
+     * Note - all text is null terminated
      */
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         Last5 l5 = new Last5();
@@ -86,9 +80,9 @@ public class PRTParser implements Parser {
 
         String dateStr = new String(date, US_ASCII);
         if (dateStr.startsWith("19") || dateStr.startsWith("20")) {
-            String formattedDate = dateStr.substring(0, 4) + "-" + dateStr.substring(4, 6) + "-" +
-                    dateStr.substring(6, 8) + "T" + dateStr.substring(8, 10) + ":" +
-                    dateStr.substring(10, 12) + ":00";
+            String formattedDate = dateStr.substring(0, 4) + "-" + dateStr.substring(4, 6) + "-"
+                            + dateStr.substring(6, 8) + "T" + dateStr.substring(8, 10) + ":"
+                            + dateStr.substring(10, 12) + ":00";
             metadata.set(TikaCoreProperties.CREATED, formattedDate);
             // TODO Metadata.DATE is used as modified, should it be here?
             metadata.set(TikaCoreProperties.CREATED, formattedDate);
@@ -126,7 +120,7 @@ public class PRTParser implements Parser {
     }
 
     private void handleNoteText(InputStream stream, XHTMLContentHandler xhtml)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         // Ensure we have the right padding text
         int read;
         for (int i = 0; i < 10; i++) {
@@ -152,7 +146,7 @@ public class PRTParser implements Parser {
     }
 
     private void handleViewName(int typeA, int typeB, InputStream stream, XHTMLContentHandler xhtml,
-                                Last5 l5) throws IOException, SAXException, TikaException {
+                    Last5 l5) throws IOException, SAXException, TikaException {
         // Is it 8 byte zero padded?
         int maybeLength = EndianUtils.readUShortLE(stream);
         if (maybeLength == 0) {
@@ -185,7 +179,7 @@ public class PRTParser implements Parser {
     }
 
     private void handleText(int length, InputStream stream, XHTMLContentHandler xhtml)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         byte[] str = new byte[length];
         IOUtils.readFully(stream, str);
         if (str[length - 1] != 0) {
@@ -205,7 +199,7 @@ public class PRTParser implements Parser {
      */
     private String extractText(byte[] data, boolean trim) throws TikaException {
         // The text is always stored null terminated, but sometimes
-        //  may have extra null padding too
+        // may have extra null padding too
         int length = data.length - 1;
         if (trim) {
             for (int i = 0; i < data.length; i++) {

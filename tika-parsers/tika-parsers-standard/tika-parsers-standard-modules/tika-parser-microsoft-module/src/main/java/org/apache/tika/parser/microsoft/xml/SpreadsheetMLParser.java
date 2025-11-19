@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.xml;
 
@@ -20,24 +18,22 @@ package org.apache.tika.parser.microsoft.xml;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Set;
-
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.TeeContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.TeeContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
-
 /**
- * Parses wordml 2003 format Excel files.  These are single xml files
- * that predate ooxml.
+ * Parses wordml 2003 format Excel files. These are single xml files that predate ooxml.
  * <p>
- * See <a href="https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats">https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats</a>
+ * See <a href=
+ * "https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats">https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats</a>
  */
 public class SpreadsheetMLParser extends AbstractXML2003Parser {
 
@@ -56,10 +52,10 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
 
     @Override
     protected ContentHandler getContentHandler(ContentHandler ch, Metadata metadata,
-                                               ParseContext context) {
+                    ParseContext context) {
 
         return new TeeContentHandler(super.getContentHandler(ch, metadata, context),
-                new ExcelMLHandler(ch));
+                        new ExcelMLHandler(ch));
     }
 
     @Override
@@ -80,7 +76,7 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attrs)
-                throws SAXException {
+                        throws SAXException {
             localName = localName.toLowerCase(Locale.US);
 
             if (MS_SPREADSHEET_URN.equals(uri)) {
@@ -97,7 +93,7 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
                         AttributesImpl xhtmlAttrs = new AttributesImpl();
                         if (worksheetName != null) {
                             xhtmlAttrs.addAttribute(XHTMLContentHandler.XHTML, NAME_ATTR, NAME_ATTR,
-                                    CDATA, worksheetName);
+                                            CDATA, worksheetName);
                         }
                         handler.startElement(XHTMLContentHandler.XHTML, DIV, DIV, xhtmlAttrs);
                         break;

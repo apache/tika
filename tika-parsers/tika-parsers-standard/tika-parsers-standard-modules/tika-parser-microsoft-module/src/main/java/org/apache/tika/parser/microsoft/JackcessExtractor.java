@@ -1,35 +1,22 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft;
 
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.text.DateFormat;
-import java.text.NumberFormat;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 
 import com.healthmarketscience.jackcess.Column;
 import com.healthmarketscience.jackcess.DataType;
@@ -40,10 +27,18 @@ import com.healthmarketscience.jackcess.Row;
 import com.healthmarketscience.jackcess.Table;
 import com.healthmarketscience.jackcess.query.Query;
 import com.healthmarketscience.jackcess.util.OleBlob;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.text.DateFormat;
+import java.text.NumberFormat;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -56,10 +51,11 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * Internal class.  Needs to be instantiated for each parse because of
- * the lack of thread safety with the dateTimeFormatter
+ * Internal class. Needs to be instantiated for each parse because of the lack of thread safety with
+ * the dateTimeFormatter
  */
 class JackcessExtractor extends AbstractPOIFSExtractor {
 
@@ -83,8 +79,8 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         currencyFormatter = NumberFormat.getCurrencyInstance(locale);
         shortDateTimeFormatter = DateFormat.getDateInstance(DateFormat.SHORT, locale);
         this.parseContext = context;
-        Parser tmpHtmlParser =
-                EmbeddedDocumentUtil.tryToFindExistingLeafParser(JSoupParser.class, context);
+        Parser tmpHtmlParser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(JSoupParser.class,
+                        context);
         if (tmpHtmlParser == null) {
             htmlParser = new JSoupParser();
         } else {
@@ -93,7 +89,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     }
 
     public void parse(Database db, XHTMLContentHandler xhtml)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
 
 
         String pw = db.getDatabasePassword();
@@ -104,23 +100,23 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         PropertyMap dbp = db.getDatabaseProperties();
         for (PropertyMap.Property p : dbp) {
             parentMetadata.add(JackcessParser.MDB_PROPERTY_PREFIX + p.getName(),
-                    toString(p.getValue(), p.getType()));
+                            toString(p.getValue(), p.getType()));
         }
 
         PropertyMap up = db.getUserDefinedProperties();
         for (PropertyMap.Property p : up) {
             parentMetadata.add(JackcessParser.USER_DEFINED_PROPERTY_PREFIX + p.getName(),
-                    toString(p.getValue(), p.getType()));
+                            toString(p.getValue(), p.getType()));
         }
 
         Set<String> found = new HashSet<>();
         PropertyMap summaryProperties = db.getSummaryProperties();
         if (summaryProperties != null) {
-            //try to get core properties
+            // try to get core properties
             PropertyMap.Property title = summaryProperties.get(TITLE_PROP_KEY);
             if (title != null) {
-                parentMetadata
-                        .set(TikaCoreProperties.TITLE, toString(title.getValue(), title.getType()));
+                parentMetadata.set(TikaCoreProperties.TITLE,
+                                toString(title.getValue(), title.getType()));
                 found.add(title.getName());
             }
             PropertyMap.Property author = summaryProperties.get(AUTHOR_PROP_KEY);
@@ -132,20 +128,20 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             PropertyMap.Property company = summaryProperties.get(COMPANY_PROP_KEY);
             if (company != null) {
                 parentMetadata.set(OfficeOpenXMLExtended.COMPANY,
-                        toString(company.getValue(), company.getType()));
+                                toString(company.getValue(), company.getType()));
                 found.add(company.getName());
             }
 
             for (PropertyMap.Property p : db.getSummaryProperties()) {
                 if (!found.contains(p.getName())) {
                     parentMetadata.add(JackcessParser.SUMMARY_PROPERTY_PREFIX + p.getName(),
-                            toString(p.getValue(), p.getType()));
+                                    toString(p.getValue(), p.getType()));
                 }
             }
         }
 
         for (Table table : db.newIterable().setIncludeLinkedTables(false)
-                .setIncludeSystemTables(false)) {
+                        .setIncludeSystemTables(false)) {
             if (table == null) {
                 break;
             }
@@ -172,11 +168,11 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         for (Query q : db.getQueries()) {
             xhtml.startElement("div", "type", "sqlQuery");
             String sqlString = "unsupported query type";
-            //unknownqueryimpl can throw an UnsupportedOperationException
+            // unknownqueryimpl can throw an UnsupportedOperationException
             try {
                 sqlString = q.toSQLString();
             } catch (UnsupportedOperationException e) {
-                //swallow
+                // swallow
             }
             xhtml.characters(sqlString);
             xhtml.endElement("div");
@@ -184,7 +180,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     }
 
     private void addHeaders(List<? extends Column> columns, XHTMLContentHandler xhtml)
-            throws SAXException {
+                    throws SAXException {
         xhtml.startElement("thead");
         xhtml.startElement("tr");
         for (Column c : columns) {
@@ -198,7 +194,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     }
 
     private void handleCell(Row r, Column c, XHTMLContentHandler handler)
-            throws SAXException, IOException, TikaException {
+                    throws SAXException, IOException, TikaException {
 
         handler.startElement("td");
         if (c.getType().equals(DataType.OLE)) {
@@ -207,10 +203,10 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             Object obj = r.get(c.getName());
             if (obj != null) {
                 byte[] bytes = (byte[]) obj;
-                handleEmbeddedResource(TikaInputStream.get(bytes), null,//filename
-                        null,//relationshipId
-                        null,//mediatype
-                        handler, false);
+                handleEmbeddedResource(TikaInputStream.get(bytes), null, // filename
+                                null, // relationshipId
+                                null, // mediatype
+                                handler, false);
             }
         } else {
             Object obj = r.get(c.getName());
@@ -224,7 +220,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                     handler.characters(h.toString());
                 } catch (SAXException e) {
                     WriteLimitReachedException.throwIfWriteLimitReached(e);
-                    //if something went wrong in htmlparser, just append the characters
+                    // if something went wrong in htmlparser, just append the characters
                     handler.characters(v);
                 }
             } else {
@@ -259,7 +255,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             return "";
         }
         if (type == null) {
-            //this shouldn't happen
+            // this shouldn't happen
             return value.toString();
         }
         switch (type) {
@@ -268,8 +264,8 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             case TEXT:
                 return (String) value;
             case MONEY:
-                //TODO: consider getting parsing "Format" field from
-                //field properties.
+                // TODO: consider getting parsing "Format" field from
+                // field properties.
                 return formatCurrency(((BigDecimal) value).doubleValue(), type);
             case SHORT_DATE_TIME:
                 return formatShortDateTime((Date) value);
@@ -289,7 +285,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 return Byte.toString((Byte) value);
             case GUID:
                 return value.toString();
-            case COMPLEX_TYPE: //skip all these
+            case COMPLEX_TYPE: // skip all these
             case UNKNOWN_0D:
             case UNKNOWN_11:
             case UNSUPPORTED_FIXEDLEN:
@@ -302,9 +298,9 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
 
 
     private void handleOLE(Row row, String cName, XHTMLContentHandler xhtml)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         OleBlob blob = row.getBlob(cName);
-        //lifted shamelessly from Jackcess's OleBlobTest
+        // lifted shamelessly from Jackcess's OleBlobTest
         if (blob == null) {
             return;
         }
@@ -320,9 +316,9 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 break;
             case SIMPLE_PACKAGE:
                 OleBlob.SimplePackageContent spc = (OleBlob.SimplePackageContent) content;
-                //TODO: find test file that has this kind of attachment
-                //and see if getFilePath or getLocalFilePath is meaningful
-                //for TikaCoreProperties.ORIGINAL_RESOURCE_NAME
+                // TODO: find test file that has this kind of attachment
+                // and see if getFilePath or getLocalFilePath is meaningful
+                // for TikaCoreProperties.ORIGINAL_RESOURCE_NAME
                 TikaInputStream tis = null;
                 try {
                     tis = TikaInputStream.get(spc.getStream());
@@ -332,10 +328,10 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 }
                 if (tis != null) {
                     try {
-                        handleEmbeddedResource(tis, spc.getFileName(),//filename
-                                null,//relationshipId
-                                spc.getTypeName(),//mediatype
-                                xhtml, false);
+                        handleEmbeddedResource(tis, spc.getFileName(), // filename
+                                        null, // relationshipId
+                                        spc.getTypeName(), // mediatype
+                                        xhtml, false);
                     } finally {
                         IOUtils.closeQuietly(tis);
                     }
@@ -350,10 +346,10 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                     EmbeddedDocumentUtil.recordException(e, parentMetadata);
                 }
                 try {
-                    handleEmbeddedResource(ocStream, null,//filename
-                            null,//relationshipId
-                            oc.getTypeName(),//mediatype
-                            xhtml, false);
+                    handleEmbeddedResource(ocStream, null, // filename
+                                    null, // relationshipId
+                                    oc.getTypeName(), // mediatype
+                                    xhtml, false);
                 } finally {
                     IOUtils.closeQuietly(ocStream);
                 }
@@ -366,7 +362,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     }
 
     private void handleCompoundContent(OleBlob.CompoundContent cc, XHTMLContentHandler xhtml)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         InputStream is = null;
         POIFSFileSystem fileSystem = null;
         try {
@@ -391,7 +387,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 try {
                     fileSystem.close();
                 } catch (IOException e) {
-                    //swallow
+                    // swallow
                 }
             }
             if (is != null) {
@@ -415,4 +411,3 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     }
 
 }
-

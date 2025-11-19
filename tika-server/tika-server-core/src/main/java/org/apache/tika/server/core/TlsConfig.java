@@ -1,23 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.server.core;
 
 import java.util.Map;
-
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
@@ -26,7 +23,7 @@ import org.apache.tika.utils.StringUtils;
 
 public class TlsConfig implements Initializable {
 
-    //TODO make this configurable
+    // TODO make this configurable
     private final boolean passwordsAESEncrypted = false;
     private boolean active = false;
     private String keyStoreType = null;
@@ -106,7 +103,8 @@ public class TlsConfig implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+                    throws TikaConfigException {
         if (active) {
             if (StringUtils.isBlank(keyStoreType)) {
                 throw new TikaConfigException("must initialize keyStoreType");
@@ -117,15 +115,19 @@ public class TlsConfig implements Initializable {
             }
             if (hasTrustStore()) {
                 if (StringUtils.isBlank(trustStoreType)) {
-                    throw new TikaConfigException("must initialize trustStoreType " + "if there's any trustStore info");
+                    throw new TikaConfigException("must initialize trustStoreType "
+                                    + "if there's any trustStore info");
                 } else if (StringUtils.isBlank(trustStoreFile)) {
-                    throw new TikaConfigException("must initialize trustStoreFile " + "if there's any trustStore info");
+                    throw new TikaConfigException("must initialize trustStoreFile "
+                                    + "if there's any trustStore info");
                 } else if (StringUtils.isBlank(trustStorePassword)) {
-                    throw new TikaConfigException("must initialize trustStorePassword " + "if there's any trustStore info");
+                    throw new TikaConfigException("must initialize trustStorePassword "
+                                    + "if there's any trustStore info");
                 }
             }
             if (!hasTrustStore() && isClientAuthenticationRequired()) {
-                throw new TikaConfigException("requiring client authentication, but no trust " + "store has been specified?!");
+                throw new TikaConfigException("requiring client authentication, but no trust "
+                                + "store has been specified?!");
             }
         }
     }
@@ -148,13 +150,18 @@ public class TlsConfig implements Initializable {
 
     @Override
     public String toString() {
-        return "TlsConfig{" + "active=" + active + ", passwordsAESEncrypted=" + passwordsAESEncrypted + ", keyStoreType='" + keyStoreType + '\'' + ", keyStorePassword='" +
-                keyStorePassword + '\'' + ", keyStoreFile='" + keyStoreFile + '\'' + ", trustStoreType='" + trustStoreType + '\'' + ", trustStorePassword='" + trustStorePassword +
-                '\'' + ", trustStoreFile='" + trustStoreFile + '\'' + ", clientAuthenticationWanted=" + clientAuthenticationWanted + ", isClientAuthenticationRequired=" +
-                clientAuthenticationRequired + '}';
+        return "TlsConfig{" + "active=" + active + ", passwordsAESEncrypted="
+                        + passwordsAESEncrypted + ", keyStoreType='" + keyStoreType + '\''
+                        + ", keyStorePassword='" + keyStorePassword + '\'' + ", keyStoreFile='"
+                        + keyStoreFile + '\'' + ", trustStoreType='" + trustStoreType + '\''
+                        + ", trustStorePassword='" + trustStorePassword + '\''
+                        + ", trustStoreFile='" + trustStoreFile + '\''
+                        + ", clientAuthenticationWanted=" + clientAuthenticationWanted
+                        + ", isClientAuthenticationRequired=" + clientAuthenticationRequired + '}';
     }
 
     public boolean hasTrustStore() {
-        return !StringUtils.isBlank(trustStoreType) && !StringUtils.isBlank(trustStorePassword) && !StringUtils.isBlank(trustStoreFile);
+        return !StringUtils.isBlank(trustStoreType) && !StringUtils.isBlank(trustStorePassword)
+                        && !StringUtils.isBlank(trustStoreFile);
     }
 }

@@ -1,31 +1,27 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.tmx;
 
 import java.util.HashSet;
 import java.util.Set;
-
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.XHTMLContentHandler;
 
 
 /**
@@ -53,7 +49,7 @@ public class TMXContentHandler extends DefaultHandler {
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+                    throws SAXException {
 
         final AttributesImpl attributeVals = new AttributesImpl();
         attributeVals.setAttributes(attributes);
@@ -97,25 +93,31 @@ public class TMXContentHandler extends DefaultHandler {
             }
         }
         if (null != attributes.getValue("o-encoding")) {
-            attrs.addAttribute("", "original-encoding", "original-encoding", "", attributes.getValue("o-encoding"));
+            attrs.addAttribute("", "original-encoding", "original-encoding", "",
+                            attributes.getValue("o-encoding"));
         }
         if (null != attributes.getValue("datatype")) {
             attrs.addAttribute("", "datatype", "datatype", "", attributes.getValue("datatype"));
         }
         if (null != attributes.getValue("usagecount")) {
-            attrs.addAttribute("", "usagecount", "usagecount", "", attributes.getValue("usagecount"));
+            attrs.addAttribute("", "usagecount", "usagecount", "",
+                            attributes.getValue("usagecount"));
         }
         if (null != attributes.getValue("lastusagedate")) {
-            attrs.addAttribute("", "lastusagedate", "lastusagedate", "", attributes.getValue("lastusagedate"));
+            attrs.addAttribute("", "lastusagedate", "lastusagedate", "",
+                            attributes.getValue("lastusagedate"));
         }
         if (null != attributes.getValue("creationdate")) {
-            attrs.addAttribute("", "creationdate", "creationdate", "", attributes.getValue("creationdate"));
+            attrs.addAttribute("", "creationdate", "creationdate", "",
+                            attributes.getValue("creationdate"));
         }
         if (null != attributes.getValue("creationid")) {
-            attrs.addAttribute("", "creationid", "creationid", "", attributes.getValue("creationid"));
+            attrs.addAttribute("", "creationid", "creationid", "",
+                            attributes.getValue("creationid"));
         }
         if (null != attributes.getValue("changedate")) {
-            attrs.addAttribute("", "changedate", "changedate", "", attributes.getValue("changedate"));
+            attrs.addAttribute("", "changedate", "changedate", "",
+                            attributes.getValue("changedate"));
         }
         if (null != attributes.getValue("changeid")) {
             attrs.addAttribute("", "changeid", "changeid", "", attributes.getValue("changeid"));
@@ -160,4 +162,3 @@ public class TMXContentHandler extends DefaultHandler {
     }
 
 }
-

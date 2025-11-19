@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.core.async;
 
@@ -26,19 +24,16 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.pipes.core.emitter.EmitData;
 import org.apache.tika.pipes.core.emitter.Emitter;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.utils.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Worker thread that takes EmitData off the queue, batches it
- * and tries to emit it as a batch
+ * Worker thread that takes EmitData off the queue, batches it and tries to emit it as a batch
  */
 public class AsyncEmitter implements Callable<Integer> {
 
@@ -54,7 +49,7 @@ public class AsyncEmitter implements Callable<Integer> {
     Instant lastEmitted = Instant.now();
 
     public AsyncEmitter(AsyncConfig asyncConfig, ArrayBlockingQueue<EmitData> emitData,
-                        EmitterManager emitterManager) {
+                    EmitterManager emitterManager) {
         this.asyncConfig = asyncConfig;
         this.emitDataQueue = emitData;
         this.emitterManager = emitterManager;
@@ -71,17 +66,18 @@ public class AsyncEmitter implements Callable<Integer> {
                 return EMITTER_FUTURE_CODE;
             }
             if (emitData != null) {
-                //this can block on emitAll
+                // this can block on emitAll
                 cache.add(emitData);
             } else {
                 LOG.trace("Nothing on the async queue");
             }
             LOG.debug("cache size: ({}) bytes and extract count: {}", cache.estimatedSize,
-                    cache.size);
+                            cache.size);
             long elapsed = ChronoUnit.MILLIS.between(lastEmitted, Instant.now());
             if (elapsed > asyncConfig.getEmitWithinMillis()) {
-                LOG.debug("{} elapsed > {}, going to emitAll", elapsed, asyncConfig.getEmitWithinMillis());
-                //this can block
+                LOG.debug("{} elapsed > {}, going to emitAll", elapsed,
+                                asyncConfig.getEmitWithinMillis());
+                // this can block
                 cache.emitAll();
             }
         }
@@ -107,10 +103,11 @@ public class AsyncEmitter implements Callable<Integer> {
             long sz = data.getEstimatedSizeBytes();
             if (estimatedSize + sz > maxBytes) {
                 LOG.debug("estimated size ({}) > maxBytes({}), going to emitAll",
-                        (estimatedSize + sz), maxBytes);
+                                (estimatedSize + sz), maxBytes);
                 emitAll();
             }
-            List<EmitData> cached = map.computeIfAbsent(data.getEmitKey().getEmitterName(), k -> new ArrayList<>());
+            List<EmitData> cached = map.computeIfAbsent(data.getEmitKey().getEmitterName(),
+                            k -> new ArrayList<>());
             updateEstimatedSize(sz);
             cached.add(data);
         }
@@ -137,7 +134,7 @@ public class AsyncEmitter implements Callable<Integer> {
                 emitter.emit(cachedEmitData);
             } catch (IOException | TikaEmitterException e) {
                 LOG.warn("emitter class ({}): {}", emitter.getClass(),
-                        ExceptionUtils.getStackTrace(e));
+                                ExceptionUtils.getStackTrace(e));
             }
         }
     }

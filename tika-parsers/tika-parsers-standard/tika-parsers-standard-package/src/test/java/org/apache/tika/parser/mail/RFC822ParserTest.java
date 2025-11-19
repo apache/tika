@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mail;
 
@@ -22,11 +20,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 import java.util.List;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
@@ -36,16 +29,19 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class RFC822ParserTest extends TikaTest {
 
-    //legacy RFC822 behavior...extract every alternative part
+    // legacy RFC822 behavior...extract every alternative part
     private static Parser EXTRACT_ALL_ALTERNATIVES_PARSER;
     private static TikaConfig TIKA_CONFIG;
 
     private static InputStream getStream(String name) {
         InputStream stream =
-                Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
+                        Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
         assertNotNull(stream, "Test file not found " + name);
         return stream;
     }
@@ -54,15 +50,14 @@ public class RFC822ParserTest extends TikaTest {
     public static void setUp() throws Exception {
 
         try (InputStream is = getStream(
-                "org/apache/tika/parser/mail/tika-config-extract-all-alternatives.xml")) {
+                        "org/apache/tika/parser/mail/tika-config-extract-all-alternatives.xml")) {
             TIKA_CONFIG = new TikaConfig(is);
         }
         EXTRACT_ALL_ALTERNATIVES_PARSER = new AutoDetectParser(TIKA_CONFIG);
     }
 
     /**
-     * Test TIKA-1028 - Ensure we can get the contents of an
-     * un-encrypted zip file
+     * Test TIKA-1028 - Ensure we can get the contents of an un-encrypted zip file
      */
     @Test
     public void testNormalZipAttachment() throws Exception {
@@ -91,9 +86,8 @@ public class RFC822ParserTest extends TikaTest {
     }
 
     /**
-     * Test TIKA-1028 - If the mail contains an encrypted attachment (or
-     * an attachment that others triggers an error), parsing should carry
-     * on for the remainder regardless
+     * Test TIKA-1028 - If the mail contains an encrypted attachment (or an attachment that others
+     * triggers an error), parsing should carry on for the remainder regardless
      */
     @Test
     public void testEncryptedZipAttachment() throws Exception {
@@ -134,8 +128,8 @@ public class RFC822ParserTest extends TikaTest {
         assertContains("text.txt", handler.toString());
 
         // TODO Upgrade to a version of Commons Compress with Encryption
-        //  support, then verify we get the contents of the text file
-        //  held within the encrypted zip
+        // support, then verify we get the contents of the text file
+        // held within the encrypted zip
         assumeTrue(false); // No Zip Encryption support yet
         assertContains("TEST DATA FOR TIKA.", handler.toString());
         assertContains("ENCRYPTED ZIP FILES", handler.toString());
@@ -145,18 +139,18 @@ public class RFC822ParserTest extends TikaTest {
 
     @Test
     public void testMainBody() throws Exception {
-        //test that the first text or html chunk is processed in the main body
-        //not treated as an attachment. TIKA-2547
+        // test that the first text or html chunk is processed in the main body
+        // not treated as an attachment. TIKA-2547
         List<Metadata> metadataList = getRecursiveMetadata("testRFC822_oddfrom");
         assertEquals(7, metadataList.size());
         assertContains("Air Quality Planning",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+                        metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
-        //Make sure text alternative doesn't get treated as an attachment
+        // Make sure text alternative doesn't get treated as an attachment
         metadataList = getRecursiveMetadata("testRFC822_normal_zip");
         assertEquals(3, metadataList.size());
         assertContains("This is the HTML part",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+                        metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/zip", metadataList.get(2).get(Metadata.CONTENT_TYPE));
 
         metadataList = getRecursiveMetadata("testRFC822-txt-body");

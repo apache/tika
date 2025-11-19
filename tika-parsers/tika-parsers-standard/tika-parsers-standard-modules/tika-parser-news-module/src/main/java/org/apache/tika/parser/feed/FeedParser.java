@@ -1,38 +1,31 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.feed;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 import com.rometools.rome.feed.synd.SyndContent;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.SyndFeedInput;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -40,12 +33,15 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * Feed parser.
  * <p>
- * Uses Rome for parsing the feeds. A feed description is put in a paragraph
- * with its link and title in an anchor.
+ * Uses Rome for parsing the feeds. A feed description is put in a paragraph with its link and title
+ * in an anchor.
  */
 public class FeedParser implements Parser {
 
@@ -54,9 +50,9 @@ public class FeedParser implements Parser {
      */
     private static final long serialVersionUID = -3785361933034525186L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(MediaType.application("rss+xml"),
-                    MediaType.application("atom+xml"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+                    .unmodifiableSet(new HashSet<>(Arrays.asList(MediaType.application("rss+xml"),
+                                    MediaType.application("atom+xml"))));
 
     private static String stripTags(SyndContent c) {
         if (c == null) {
@@ -82,13 +78,12 @@ public class FeedParser implements Parser {
     }
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         // set the encoding?
         try {
             SyndFeedInput input = new SyndFeedInput();
             input.setAllowDoctypes(false);
-            SyndFeed feed =
-                    input.build(new InputSource(CloseShieldInputStream.wrap(stream)));
+            SyndFeed feed = input.build(new InputSource(CloseShieldInputStream.wrap(stream)));
 
             String title = stripTags(feed.getTitleEx());
             String description = stripTags(feed.getDescriptionEx());

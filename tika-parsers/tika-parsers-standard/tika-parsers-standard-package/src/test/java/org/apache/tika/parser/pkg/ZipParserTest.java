@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.pkg;
 
@@ -24,16 +22,14 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing zip files.
@@ -96,11 +92,11 @@ public class ZipParserTest extends AbstractPkgTest {
         List<Metadata> metadataList = getRecursiveMetadata("testZipEncrypted.zip");
         assertEquals(2, metadataList.size());
         String[] values = metadataList.get(0)
-                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM);
+                        .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM);
         assertNotNull(values);
         assertEquals(1, values.length);
         assertContains("EncryptedDocumentException: stream (encrypted.txt) is encrypted",
-                values[0]);
+                        values[0]);
 
 
         assertContains("hello world", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
@@ -109,19 +105,19 @@ public class ZipParserTest extends AbstractPkgTest {
     @Test
     public void testDataDescriptorWithEmptyEntry() throws Exception {
 
-        //test that an empty first entry does not cause problems
+        // test that an empty first entry does not cause problems
         List<Metadata> results = getRecursiveMetadata("testZip_with_DataDescriptor2.zip");
         assertEquals(5, results.size());
 
-        //mime is 0 bytes
+        // mime is 0 bytes
         assertContains("InputStream must have > 0 bytes",
-                results.get(1).get("X-TIKA:EXCEPTION:embedded_exception"));
-        //source.xml is binary, not xml
+                        results.get(1).get("X-TIKA:EXCEPTION:embedded_exception"));
+        // source.xml is binary, not xml
         assertContains("TikaException: XML parse error",
-                results.get(2).get("X-TIKA:EXCEPTION:embedded_exception"));
-        //manifest.xml has malformed xml
+                        results.get(2).get("X-TIKA:EXCEPTION:embedded_exception"));
+        // manifest.xml has malformed xml
         assertContains("TikaException: XML parse error",
-                results.get(4).get("X-TIKA:EXCEPTION:embedded_exception"));
+                        results.get(4).get("X-TIKA:EXCEPTION:embedded_exception"));
     }
 
     private static class GatherRelIDsDocumentExtractor implements EmbeddedDocumentExtractor {
@@ -136,7 +132,7 @@ public class ZipParserTest extends AbstractPkgTest {
         }
 
         public void parseEmbedded(TikaInputStream inputStream, ContentHandler contentHandler,
-                                  Metadata metadata, boolean outputHtml) {
+                        Metadata metadata, boolean outputHtml) {
             throw new UnsupportedOperationException("should never be called");
         }
     }

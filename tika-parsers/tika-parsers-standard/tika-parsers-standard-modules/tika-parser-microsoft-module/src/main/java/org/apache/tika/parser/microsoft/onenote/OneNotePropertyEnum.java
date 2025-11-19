@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.onenote;
@@ -22,6 +20,7 @@ import java.util.Map;
 
 @SuppressWarnings("unused")
 public enum OneNotePropertyEnum {
+    // @formatter:off
     LayoutTightLayout(0x08001C00), PageWidth(0x14001C01), PageHeight(0x14001C02),
     OutlineElementChildLevel(0x0C001C03), Bold(0x08001C04), Italic(0x08001C05),
     Underline(0x08001C06), Strikethrough(0x08001C07), Superscript(0x08001C08),
@@ -78,6 +77,7 @@ public enum OneNotePropertyEnum {
     PageMarginOriginY(0x14001D10), WzHyperlinkUrl(0x1C001E20), TaskTagDueDate(0x1400346B),
     NotebookElementOrderingID(0x14001CB9),
     Unknown(0x00000000);
+    // @formatter:on
 
     private static final Map<Long, OneNotePropertyEnum> BY_ID = new HashMap<>();
 

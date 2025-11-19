@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.pdf;
@@ -26,11 +24,6 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -43,6 +36,9 @@ import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class PDFRenderingTest extends TikaTest {
 
@@ -59,11 +55,11 @@ public class PDFRenderingTest extends TikaTest {
         Parser p = new AutoDetectParser(config);
         List<Metadata> metadataList = getRecursiveMetadata("testPDF.pdf", p, parseContext);
         Map<Integer, byte[]> embedded =
-                ((RenderCaptureExtractor)parseContext.get(EmbeddedDocumentExtractor.class))
-                        .getEmbedded();
+                        ((RenderCaptureExtractor) parseContext.get(EmbeddedDocumentExtractor.class))
+                                        .getEmbedded();
         assertEquals(1, embedded.size());
         assertTrue(embedded.containsKey(0));
-        //what else can we do to test this?  File type == tiff? Run OCR?
+        // what else can we do to test this? File type == tiff? Run OCR?
         assertTrue(embedded.get(0).length > 1000);
 
         assertEquals(2, metadataList.size());
@@ -79,12 +75,12 @@ public class PDFRenderingTest extends TikaTest {
         Parser p = new AutoDetectParser(config);
         List<Metadata> metadataList = getRecursiveMetadata("testPDF_rotated.pdf", p, parseContext);
         Map<Integer, byte[]> embedded =
-                ((RenderCaptureExtractor)parseContext.get(EmbeddedDocumentExtractor.class))
-                        .getEmbedded();
+                        ((RenderCaptureExtractor) parseContext.get(EmbeddedDocumentExtractor.class))
+                                        .getEmbedded();
 
         assertEquals(1, embedded.size());
         assertTrue(embedded.containsKey(0));
-        //what else can we do to test this?  File type == tiff? Run OCR?
+        // what else can we do to test this? File type == tiff? Run OCR?
         assertTrue(embedded.get(0).length > 1000);
 
         assertEquals(2, metadataList.size());
@@ -117,7 +113,7 @@ public class PDFRenderingTest extends TikaTest {
 
         @Override
         public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                                  boolean outputHtml) throws SAXException, IOException {
+                        boolean outputHtml) throws SAXException, IOException {
 
             byte[] bytes = Files.readAllBytes(tis.getPath());
             embedded.put(count++, bytes);

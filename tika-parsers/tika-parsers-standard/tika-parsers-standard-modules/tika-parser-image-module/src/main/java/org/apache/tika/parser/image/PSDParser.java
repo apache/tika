@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.image;
 
@@ -24,12 +22,8 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -43,6 +37,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xmp.JempboxExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for the Adobe Photoshop PSD File Format.
@@ -50,8 +46,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Documentation on the file format is available from
  * http://www.adobe.com/devnet-apps/photoshop/fileformatashtml/PhotoshopFileFormats.htm
  * <p>
- * An MIT-licensed python parser with test files is:
- * https://github.com/psd-tools/psd-tools
+ * An MIT-licensed python parser with test files is: https://github.com/psd-tools/psd-tools
  */
 public class PSDParser implements Parser {
 
@@ -60,8 +55,8 @@ public class PSDParser implements Parser {
      */
     private static final long serialVersionUID = 883387734607994914L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Collections.singletonList(MediaType.image("vnd.adobe.photoshop"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
+                    Collections.singletonList(MediaType.image("vnd.adobe.photoshop"))));
 
     private static final int MAX_DATA_LENGTH_BYTES = 10_000_000;
     private static final int MAX_BLOCKS = 10000;
@@ -73,12 +68,12 @@ public class PSDParser implements Parser {
     }
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         // Check for the magic header signature
         byte[] signature = new byte[4];
         IOUtils.readFully(stream, signature);
-        if (signature[0] == (byte) '8' && signature[1] == (byte) 'B' &&
-                signature[2] == (byte) 'P' && signature[3] == (byte) 'S') {
+        if (signature[0] == (byte) '8' && signature[1] == (byte) 'B' && signature[2] == (byte) 'P'
+                        && signature[3] == (byte) 'S') {
             // Good, signature found
         } else {
             throw new TikaException("PSD/PSB magic signature invalid");
@@ -124,13 +119,13 @@ public class PSDParser implements Parser {
         // Check for certain interesting keys here
         long imageResourcesSectionSize = EndianUtils.readIntBE(stream);
         long read = 0;
-        //if something is corrupt about this number, prevent an
-        //infinite loop by only reading 10000 blocks
+        // if something is corrupt about this number, prevent an
+        // infinite loop by only reading 10000 blocks
         int blocks = 0;
         while (read < imageResourcesSectionSize && blocks < MAX_BLOCKS) {
             ResourceBlock rb = new ResourceBlock(stream, maxDataLengthBytes);
             if (rb.totalLength <= 0) {
-                //break;
+                // break;
             }
             read += rb.totalLength;
 
@@ -142,8 +137,8 @@ public class PSDParser implements Parser {
             } else if (rb.id == ResourceBlock.ID_EXIF_3) {
                 // TODO Parse the EXIF info via ImageMetadataExtractor
             } else if (rb.id == ResourceBlock.ID_XMP) {
-                //if there are multiple xmps in a file, this will
-                //overwrite the data from the earlier xmp
+                // if there are multiple xmps in a file, this will
+                // overwrite the data from the earlier xmp
                 JempboxExtractor ex = new JempboxExtractor(metadata);
                 ex.parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(rb.data).get());
             }
@@ -175,7 +170,7 @@ public class PSDParser implements Parser {
         private static final int ID_EXIF_1 = 0x0422;
         private static final int ID_EXIF_3 = 0x0423;
         private static final int ID_XMP = 0x0424;
-        //TODO
+        // TODO
         private static final int ID_URL = 0x040B;
         private static final int ID_AUTO_SAVE_FILE_PATH = 0x043E;
         private static final int ID_THUMBNAIL_RESOURCE = 0x040C;
@@ -187,15 +182,15 @@ public class PSDParser implements Parser {
         private int totalLength;
 
         private ResourceBlock(InputStream stream, int maxDataLengthBytes)
-                throws IOException, TikaException {
+                        throws IOException, TikaException {
             this.maxDataLengthBytes = maxDataLengthBytes;
             counter++;
             // Verify the signature
             long sig = EndianUtils.readIntBE(stream);
             if (sig != SIGNATURE) {
-                throw new TikaException(
-                        "Invalid Image Resource Block Signature Found, got " + sig + " 0x" +
-                                Long.toHexString(sig) + " but the spec defines " + SIGNATURE);
+                throw new TikaException("Invalid Image Resource Block Signature Found, got " + sig
+                                + " 0x" + Long.toHexString(sig) + " but the spec defines "
+                                + SIGNATURE);
             }
 
             // Read the block
@@ -231,7 +226,7 @@ public class PSDParser implements Parser {
                 // Data Length is even padded
                 dataLen = dataLen + 1;
             }
-            //protect against overflow
+            // protect against overflow
             if (Integer.MAX_VALUE - dataLen < nameLen + 10) {
                 throw new TikaException("data length is too long:" + dataLen);
             }
@@ -240,7 +235,7 @@ public class PSDParser implements Parser {
             if (captureData(id)) {
                 if (dataLen > maxDataLengthBytes) {
                     throw new TikaMemoryLimitException(
-                            "data length must be < " + maxDataLengthBytes + ": " + dataLen);
+                                    "data length must be < " + maxDataLengthBytes + ": " + dataLen);
                 }
                 data = new byte[dataLen];
                 IOUtils.readFully(stream, data);
@@ -251,8 +246,7 @@ public class PSDParser implements Parser {
         }
 
         /**
-         * To save memory, only capture the data
-         * section of resource blocks we process
+         * To save memory, only capture the data section of resource blocks we process
          */
         private static boolean captureData(int id) {
             switch (id) {

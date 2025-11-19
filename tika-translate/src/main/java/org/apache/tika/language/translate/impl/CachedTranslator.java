@@ -1,33 +1,30 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.language.translate.impl;
 
+import com.fasterxml.jackson.databind.util.LRUMap;
 import java.io.IOException;
 import java.util.HashMap;
-
-import com.fasterxml.jackson.databind.util.LRUMap;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.translate.Translator;
 
 /**
- * CachedTranslator. Saves a map of previous translations in order to prevent repetitive translation requests.
+ * CachedTranslator. Saves a map of previous translations in order to prevent repetitive translation
+ * requests.
  */
 public class CachedTranslator extends AbstractTranslator {
     private static final int INITIAL_ENTRIES = 100;
@@ -49,8 +46,8 @@ public class CachedTranslator extends AbstractTranslator {
     /**
      * Create a new CachedTranslator.
      *
-     * @param translator The translator that should be used for the underlying translation service. The properties
-     *                   for that service must be set properly!
+     * @param translator The translator that should be used for the underlying translation service.
+     *        The properties for that service must be set properly!
      */
     public CachedTranslator(Translator translator) {
         this.translator = translator;
@@ -73,12 +70,12 @@ public class CachedTranslator extends AbstractTranslator {
 
     @Override
     public String translate(String text, String sourceLanguage, String targetLanguage)
-            throws TikaException, IOException {
+                    throws TikaException, IOException {
         if (translator == null) {
             return text;
         }
         LRUMap<String, String> translationCache =
-                getTranslationCache(sourceLanguage, targetLanguage);
+                        getTranslationCache(sourceLanguage, targetLanguage);
         String translatedText = translationCache.get(text);
         if (translatedText == null) {
             translatedText = translator.translate(text, sourceLanguage, targetLanguage);
@@ -100,8 +97,8 @@ public class CachedTranslator extends AbstractTranslator {
     }
 
     /**
-     * Get the number of different source/target translation pairs this CachedTranslator
-     * currently has in its cache.
+     * Get the number of different source/target translation pairs this CachedTranslator currently
+     * has in its cache.
      *
      * @return Number of translation source/target pairs in this CachedTranslator's cache.
      * @since Tika 1.6
@@ -111,8 +108,8 @@ public class CachedTranslator extends AbstractTranslator {
     }
 
     /**
-     * Get the number of different translations from the source language to the target language
-     * this CachedTranslator has in its cache.
+     * Get the number of different translations from the source language to the target language this
+     * CachedTranslator has in its cache.
      *
      * @param sourceLanguage The source language of translation.
      * @param targetLanguage The target language of translation.
@@ -121,7 +118,7 @@ public class CachedTranslator extends AbstractTranslator {
      */
     public int getNumTranslationsFor(String sourceLanguage, String targetLanguage) {
         LRUMap<String, String> translationCache =
-                cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
+                        cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
         if (translationCache == null) {
             return 0;
         } else {
@@ -133,22 +130,22 @@ public class CachedTranslator extends AbstractTranslator {
      * Check whether this CachedTranslator's cache contains a translation of the text from the
      * source language to the target language.
      *
-     * @param text           What string to check for.
+     * @param text What string to check for.
      * @param sourceLanguage The source language of translation.
      * @param targetLanguage The target language of translation.
      * @return true if the cache contains a translation of the text, false otherwise.
      */
     public boolean contains(String text, String sourceLanguage, String targetLanguage) {
         LRUMap<String, String> translationCache =
-                getTranslationCache(sourceLanguage, targetLanguage);
+                        getTranslationCache(sourceLanguage, targetLanguage);
         return translationCache.get(text) != null;
     }
 
     /**
-     * Check whether this CachedTranslator's cache contains a translation of the text to the target language,
-     * attempting to auto-detect the source language.
+     * Check whether this CachedTranslator's cache contains a translation of the text to the target
+     * language, attempting to auto-detect the source language.
      *
-     * @param text           What string to check for.
+     * @param text What string to check for.
      * @param targetLanguage The target language of translation.
      * @return true if the cache contains a translation of the text, false otherwise.
      */
@@ -182,9 +179,9 @@ public class CachedTranslator extends AbstractTranslator {
      * @return The LRUMap representing the translation cache.
      */
     private LRUMap<String, String> getTranslationCache(String sourceLanguage,
-                                                       String targetLanguage) {
+                    String targetLanguage) {
         LRUMap<String, String> translationCache =
-                cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
+                        cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
         if (translationCache == null) {
             translationCache = new LRUMap<>(INITIAL_ENTRIES, MAX_ENTRIES);
             cache.put(buildCacheKeyString(sourceLanguage, targetLanguage), translationCache);

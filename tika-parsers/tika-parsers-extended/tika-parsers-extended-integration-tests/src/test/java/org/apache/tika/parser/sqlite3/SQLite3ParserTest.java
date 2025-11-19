@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.sqlite3;
 
@@ -25,11 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.EmbeddedResourceHandler;
 import org.apache.tika.extractor.ParserContainerExtractor;
@@ -45,6 +39,8 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class SQLite3ParserTest extends TikaTest {
 
@@ -54,14 +50,14 @@ public class SQLite3ParserTest extends TikaTest {
     @Test
     public void testBasic() throws Exception {
 
-        //test different types of input streams
-        //actual inputstream, memory buffered bytearray and literal file
+        // test different types of input streams
+        // actual inputstream, memory buffered bytearray and literal file
         try (InputStream stream = getResourceAsStream(TEST_FILE1)) {
             _testBasic(stream);
         }
 
         try (InputStream is = getResourceAsStream(TEST_FILE1);
-                ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             IOUtils.copy(is, bos);
             try (InputStream stream = new ByteArrayInputStream(bos.toByteArray())) {
                 _testBasic(stream);
@@ -77,25 +73,25 @@ public class SQLite3ParserTest extends TikaTest {
     private void _testBasic(InputStream stream) throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-        //1) getXML closes the stream
-        //2) getXML runs recursively on the contents, so the embedded docs should show up
+        // 1) getXML closes the stream
+        // 2) getXML runs recursively on the contents, so the embedded docs should show up
         XMLResult result = getXML(stream, AUTO_DETECT_PARSER, metadata);
         String x = result.xml;
-        //first table name
+        // first table name
         assertContains("<table name=\"my_table1\"><thead><tr>\t<th>PK</th>", x);
-        //non-ascii
+        // non-ascii
         assertContains("<td>普林斯顿大学</td>", x);
-        //boolean
+        // boolean
         assertContains("<td>true</td>\t<td>2015-01-02</td>", x);
-        //date test
+        // date test
         assertContains("2015-01-04", x);
-        //timestamp test
+        // timestamp test
         assertContains("2015-01-03 15:17:03", x);
-        //first embedded doc's image tag
+        // first embedded doc's image tag
         assertContains("alt=\"image1.png\"", x);
-        //second embedded doc's image tag
+        // second embedded doc's image tag
         assertContains("alt=\"A description...\"", x);
-        //second table name
+        // second table name
         assertContains("<table name=\"my_table2\"><thead><tr>\t<th>INT_COL2</th>", x);
 
         Metadata post = result.metadata;
@@ -105,7 +101,7 @@ public class SQLite3ParserTest extends TikaTest {
         assertEquals("my_table2", tableNames[1]);
     }
 
-    //test what happens if the user does not want embedded docs handled
+    // test what happens if the user does not want embedded docs handled
     @Test
     public void testNotAddingEmbeddedParserToParseContext() throws Exception {
         ContentHandler handler = new ToXMLContentHandler();
@@ -117,16 +113,14 @@ public class SQLite3ParserTest extends TikaTest {
             AUTO_DETECT_PARSER.parse(is, handler, metadata, parseContext);
         }
         String xml = handler.toString();
-        //just includes headers for embedded documents
+        // just includes headers for embedded documents
         assertContains("<table name=\"my_table1\"><thead><tr>", xml);
-        assertContains(
-                "<td><span type=\"blob\" column_name=\"BYTES_COL\" row_number=\"0\">" +
-                        "<div class=\"package-entry\"><h1>BYTES_COL_0.doc</h1>",
-                xml);
-        //but no other content
+        assertContains("<td><span type=\"blob\" column_name=\"BYTES_COL\" row_number=\"0\">"
+                        + "<div class=\"package-entry\"><h1>BYTES_COL_0.doc</h1>", xml);
+        // but no other content
         assertNotContained("dog", xml);
         assertNotContained("alt=\"image1.png\"", xml);
-        //second embedded doc's image tag
+        // second embedded doc's image tag
         assertNotContained("alt=\"A description...\"", xml);
     }
 
@@ -135,8 +129,9 @@ public class SQLite3ParserTest extends TikaTest {
 
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         Metadata metadata = new Metadata();
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
+        RecursiveParserWrapperHandler handler =
+                        new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(
+                                        BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
 
         try (InputStream is = getResourceAsStream(TEST_FILE1)) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
@@ -144,32 +139,32 @@ public class SQLite3ParserTest extends TikaTest {
         }
         List<Metadata> metadataList = handler.getMetadataList();
         assertEquals(5, metadataList.size());
-        //make sure the \t are inserted in a body handler
+        // make sure the \t are inserted in a body handler
 
         String table = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("0\t2.3\t2.4\tlorem", table);
         assertContains("普林斯顿大学", table);
 
-        //make sure the \n is inserted
+        // make sure the \n is inserted
         String table2 = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("do eiusmod tempor\n", table2);
 
         assertContains("The quick brown fox",
-                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+                        metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("The quick brown fox",
-                metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
+                        metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
 
-        //confirm .doc was added to blob
+        // confirm .doc was added to blob
         assertEquals("/BYTES_COL_0.doc/image1.png",
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
     @Test
     public void testParserContainerExtractor() throws Exception {
-        //There should be 6 embedded documents:
-        //2x tables -- UTF-8 csv representations of the tables
-        //2x word files, one doc and one docx
-        //2x png files, the same image embedded in each of the doc and docx
+        // There should be 6 embedded documents:
+        // 2x tables -- UTF-8 csv representations of the tables
+        // 2x word files, one doc and one docx
+        // 2x png files, the same image embedded in each of the doc and docx
 
         ParserContainerExtractor ex = new ParserContainerExtractor();
         ByteCopyingHandler byteCopier = new ByteCopyingHandler();
@@ -185,10 +180,9 @@ public class SQLite3ParserTest extends TikaTest {
             String s = new String(byteArr, 0, Math.min(byteArr.length, 1000), UTF_8);
             strings[i] = s;
         }
-        byte[] oleBytes =
-                new byte[]{(byte) -48, (byte) -49, (byte) 17, (byte) -32, (byte) -95, (byte) -79,
-                        (byte) 26, (byte) -31, (byte) 0, (byte) 0,};
-        //test OLE
+        byte[] oleBytes = new byte[] {(byte) -48, (byte) -49, (byte) 17, (byte) -32, (byte) -95,
+                        (byte) -79, (byte) 26, (byte) -31, (byte) 0, (byte) 0,};
+        // test OLE
         for (int i = 0; i < 10; i++) {
             assertEquals(oleBytes[i], byteCopier.bytes.get(0)[i]);
         }
@@ -197,13 +191,13 @@ public class SQLite3ParserTest extends TikaTest {
         assertContains("PNG", strings[3]);
     }
 
-    //This confirms that reading the stream twice is not
-    //quadrupling the number of attachments.
+    // This confirms that reading the stream twice is not
+    // quadrupling the number of attachments.
     @Test
     public void testInputStreamReset() throws Exception {
-        //There should be 8 embedded documents:
-        //4x word files, two docs and two docxs
-        //4x png files, the same image embedded in each of the doc and docx
+        // There should be 8 embedded documents:
+        // 4x word files, two docs and two docxs
+        // 4x png files, the same image embedded in each of the doc and docx
 
         ParserContainerExtractor ex = new ParserContainerExtractor();
         InputStreamResettingHandler byteCopier = new InputStreamResettingHandler();
@@ -234,13 +228,13 @@ public class SQLite3ParserTest extends TikaTest {
                 IOUtils.copy(stream, os);
                 bytes.add(os.toByteArray());
                 stream.reset();
-                //now try again
+                // now try again
                 os.reset();
                 IOUtils.copy(stream, os);
                 bytes.add(os.toByteArray());
                 stream.reset();
             } catch (IOException e) {
-                //swallow
+                // swallow
             }
         }
     }

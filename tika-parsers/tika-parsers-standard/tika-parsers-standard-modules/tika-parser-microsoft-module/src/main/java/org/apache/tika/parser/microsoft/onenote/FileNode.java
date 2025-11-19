@@ -1,85 +1,68 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
 import java.util.Objects;
-
+import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
-
 /**
- * A FileNode structure is the basic unit for holding and referencing data in the file.
- * FileNode structures are organized into file node lists
+ * A FileNode structure is the basic unit for holding and referencing data in the file. FileNode
+ * structures are organized into file node lists
  * <p>
  * A FileNode structure is divided into header fields and a data field, fnd. The header fields
- * specify what type of FileNode structure it
- * is,
- * and what format the fnd field is in.
+ * specify what type of FileNode structure it is, and what format the fnd field is in.
  * <p>
  * The fnd field can be empty, or it can contain data directly, or it can contain a reference to
- * another block of the file by
- * byte position and byte count, or it can contain both data and a reference.
+ * another block of the file by byte position and byte count, or it can contain both data and a
+ * reference.
  */
 class FileNode {
     private static final Logger LOG = LoggerFactory.getLogger(FileNode.class);
 
     /**
-     * An unsigned integer that specifies the type of this FileNode structure. The meaning of
-     * this value is specified by the fnd field.
+     * An unsigned integer that specifies the type of this FileNode structure. The meaning of this
+     * value is specified by the fnd field.
      */
     long id;
     long size;
 
     /**
      * An unsigned integer that specifies whether the structure specified by fnd contains a
-     * FileNodeChunkReference structure.
-     * 0 - This FileNode structure does not reference other data. The data structure specified
-     * by fnd MUST NOT contain a
-     * FileNodeChunkReference structure. The StpFormat and CbFormat fields MUST be ignored.
-     * 1 - This FileNode structure contains a reference to data. The first field in the data
-     * structure specified by an fnd field MUST be a
-     * FileNodeChunkReference structure that specifies the location and size of the referenced
-     * data.
-     * The type of the FileNodeChunkReference structure is specified by the StpFormat and
-     * CbFormat fields.
-     * 2 - This FileNode structure contains a reference to a file node list.
-     * The first field in the data structure specified by the fnd field MUST be a
-     * FileNodeChunkReference structure that specifies the
-     * location and size of a file node list. The type of the FileNodeChunkReference is
-     * specified by the StpFormat and CbFormat fields.
+     * FileNodeChunkReference structure. 0 - This FileNode structure does not reference other data.
+     * The data structure specified by fnd MUST NOT contain a FileNodeChunkReference structure. The
+     * StpFormat and CbFormat fields MUST be ignored. 1 - This FileNode structure contains a
+     * reference to data. The first field in the data structure specified by an fnd field MUST be a
+     * FileNodeChunkReference structure that specifies the location and size of the referenced data.
+     * The type of the FileNodeChunkReference structure is specified by the StpFormat and CbFormat
+     * fields. 2 - This FileNode structure contains a reference to a file node list. The first field
+     * in the data structure specified by the fnd field MUST be a FileNodeChunkReference structure
+     * that specifies the location and size of a file node list. The type of the
+     * FileNodeChunkReference is specified by the StpFormat and CbFormat fields.
      */
     long baseType;
 
     /**
-     * The ExtendedGUID for this FileNode.
-     * Specified for ObjectSpaceManifestRoot
-     * ObjectSpaceManifestStart
-     * ObjectSpaceManifestList
-     * RevisionManifestListStart
-     * ObjectGroupStartFND
-     * ObjectGroupID
-     * ObjectGroupListReferenceFND
+     * The ExtendedGUID for this FileNode. Specified for ObjectSpaceManifestRoot
+     * ObjectSpaceManifestStart ObjectSpaceManifestList RevisionManifestListStart
+     * ObjectGroupStartFND ObjectGroupID ObjectGroupListReferenceFND
      * <p>
-     * RID for RevisionManifestStart4FND
-     * DataSignatureGroup for RevisionManifestEndFND
+     * RID for RevisionManifestStart4FND DataSignatureGroup for RevisionManifestEndFND
      */
     ExtendedGUID gosid;
 
@@ -108,25 +91,26 @@ class FileNode {
             return false;
         }
         FileNode fileNode = (FileNode) o;
-        return id == fileNode.id && size == fileNode.size && baseType == fileNode.baseType &&
-                isFileData == fileNode.isFileData && Objects.equals(gosid, fileNode.gosid) &&
-                Objects.equals(gctxid, fileNode.gctxid) &&
-                Objects.equals(fileDataStoreReference, fileNode.fileDataStoreReference) &&
-                Objects.equals(ref, fileNode.ref) &&
-                Objects.equals(propertySet, fileNode.propertySet) &&
-                Objects.equals(childFileNodeList, fileNode.childFileNodeList) &&
-                Objects.equals(subType, fileNode.subType);
+        return id == fileNode.id && size == fileNode.size && baseType == fileNode.baseType
+                        && isFileData == fileNode.isFileData
+                        && Objects.equals(gosid, fileNode.gosid)
+                        && Objects.equals(gctxid, fileNode.gctxid)
+                        && Objects.equals(fileDataStoreReference, fileNode.fileDataStoreReference)
+                        && Objects.equals(ref, fileNode.ref)
+                        && Objects.equals(propertySet, fileNode.propertySet)
+                        && Objects.equals(childFileNodeList, fileNode.childFileNodeList)
+                        && Objects.equals(subType, fileNode.subType);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(id, size, baseType, gosid, gctxid, fileDataStoreReference, ref,
-                propertySet, isFileData, childFileNodeList, subType);
+                        propertySet, isFileData, childFileNodeList, subType);
     }
 
     public boolean hasGctxid() {
-        return id == FndStructureConstants.RevisionRoleAndContextDeclarationFND ||
-                id == FndStructureConstants.RevisionManifestStart7FND;
+        return id == FndStructureConstants.RevisionRoleAndContextDeclarationFND
+                        || id == FndStructureConstants.RevisionManifestStart7FND;
     }
 
     public long getId() {
@@ -229,11 +213,11 @@ class FileNode {
     }
 
     public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel)
-            throws IOException, TikaException {
+                    throws IOException, TikaException {
         boolean shouldPrintHeader = FndStructureConstants.nameOf(id).contains("ObjectDec");
         if (gosid.equals(ExtendedGUID.nil()) && shouldPrintHeader) {
             LOG.debug("{}[beg {}]:{}", IndentUtil.getIndent(indentLevel + 1),
-                    FndStructureConstants.nameOf(id), gosid);
+                            FndStructureConstants.nameOf(id), gosid);
         }
         propertySet.print(document, pointer, indentLevel + 1);
         if (!childFileNodeList.children.isEmpty()) {
@@ -244,26 +228,27 @@ class FileNode {
                 child.print(document, pointer, indentLevel + 1);
             }
         }
-        if (id == FndStructureConstants.RevisionRoleDeclarationFND ||
-                id == FndStructureConstants.RevisionRoleAndContextDeclarationFND) {
+        if (id == FndStructureConstants.RevisionRoleDeclarationFND
+                        || id == FndStructureConstants.RevisionRoleAndContextDeclarationFND) {
             LOG.debug("{}[Revision Role {}]", IndentUtil.getIndent(indentLevel + 1),
-                    subType.revisionRoleDeclaration.revisionRole);
+                            subType.revisionRoleDeclaration.revisionRole);
 
         }
-        if (id == FndStructureConstants.RevisionManifestStart4FND ||
-                id == FndStructureConstants.RevisionManifestStart6FND ||
-                id == FndStructureConstants.RevisionManifestStart7FND) {
+        if (id == FndStructureConstants.RevisionManifestStart4FND
+                        || id == FndStructureConstants.RevisionManifestStart6FND
+                        || id == FndStructureConstants.RevisionManifestStart7FND) {
             LOG.debug("{}[revisionRole {}]", IndentUtil.getIndent(indentLevel + 1),
-                    subType.revisionManifest.revisionRole);
+                            subType.revisionManifest.revisionRole);
 
         }
-        if ((!gctxid.equals(ExtendedGUID.nil()) ||
-                id == FndStructureConstants.RevisionManifestStart7FND) && shouldPrintHeader) {
+        if ((!gctxid.equals(ExtendedGUID.nil())
+                        || id == FndStructureConstants.RevisionManifestStart7FND)
+                        && shouldPrintHeader) {
             LOG.debug("{}[gctxid {}]", IndentUtil.getIndent(indentLevel + 1), gctxid);
         }
         if (!gosid.equals(ExtendedGUID.nil()) && shouldPrintHeader) {
             LOG.debug("{}[end {}]:{}", IndentUtil.getIndent(indentLevel + 1),
-                    FndStructureConstants.nameOf(id), gosid);
+                            FndStructureConstants.nameOf(id), gosid);
 
         }
     }
@@ -280,7 +265,7 @@ class FileNode {
     @Override
     public String toString() {
         return new StringBuilder().append("FileNodeID=0x").append(Long.toHexString(id))
-                .append(", gosid=").append(gosid).append(", baseType=0x")
-                .append(Long.toHexString(baseType)).toString();
+                        .append(", gosid=").append(gosid).append(", baseType=0x")
+                        .append(Long.toHexString(baseType)).toString();
     }
 }

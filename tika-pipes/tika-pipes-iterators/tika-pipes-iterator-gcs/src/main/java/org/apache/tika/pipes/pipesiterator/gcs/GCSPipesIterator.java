@@ -1,34 +1,28 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.pipesiterator.gcs;
 
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.TimeoutException;
-
 import com.google.api.gax.paging.Page;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -42,6 +36,8 @@ import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GCSPipesIterator extends PipesIterator implements Initializable {
 
@@ -75,16 +71,13 @@ public class GCSPipesIterator extends PipesIterator implements Initializable {
      */
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //TODO -- add other params to the builder as needed
-        storage = StorageOptions
-                .newBuilder()
-                .setProjectId(projectId)
-                .build()
-                .getService();
+        // TODO -- add other params to the builder as needed
+        storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+                    throws TikaConfigException {
         super.checkInitialization(problemHandler);
         mustNotBeEmpty("bucket", this.bucket);
         mustNotBeEmpty("projectId", this.projectId);
@@ -106,18 +99,19 @@ public class GCSPipesIterator extends PipesIterator implements Initializable {
         }
 
         for (Blob blob : blobs.iterateAll()) {
-            //I couldn't find a better way to skip directories
-            //calling blob.isDirectory() does not appear to work.  #usererror I'm sure.
+            // I couldn't find a better way to skip directories
+            // calling blob.isDirectory() does not appear to work. #usererror I'm sure.
             if (blob.getSize() == 0) {
                 continue;
             }
             long elapsed = System.currentTimeMillis() - start;
             LOGGER.debug("adding ({}) {} in {} ms", count, blob.getName(), elapsed);
-            //TODO -- allow user specified metadata as the "id"?
+            // TODO -- allow user specified metadata as the "id"?
             ParseContext parseContext = new ParseContext();
             parseContext.set(HandlerConfig.class, handlerConfig);
-            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherName, blob.getName()), new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
-                    getOnParseException()));
+            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherName, blob.getName()),
+                            new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
+                            getOnParseException()));
             count++;
         }
         long elapsed = System.currentTimeMillis() - start;
