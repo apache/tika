@@ -59,24 +59,12 @@ import org.apache.tika.utils.StringUtils;
 
 public class FileSystemFetcher extends AbstractTikaExtension implements Fetcher {
 
-
-
-    public static FileSystemFetcher build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
-        FileSystemFetcher fetcher = new FileSystemFetcher(pluginConfig);
-        fetcher.configure();
-        return fetcher;
-    }
-
-
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemFetcher.class);
 
     private FileSystemFetcherConfig defaultFileSystemFetcherConfig;
 
-    public FileSystemFetcher(ExtensionConfig pluginConfig) {
+    public FileSystemFetcher(ExtensionConfig pluginConfig) throws IOException, TikaConfigException {
         super(pluginConfig);
-    }
-
-    private void configure() throws IOException, TikaConfigException {
         defaultFileSystemFetcherConfig = FileSystemFetcherConfig.load(pluginConfig.jsonConfig());
         checkConfig(defaultFileSystemFetcherConfig);
     }

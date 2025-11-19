@@ -1,17 +1,13 @@
 {
-  "plugins" : {
-    "fetchers": {
-      "http": {
-        "http-fetcher": {
-          "httpHeaders": [
-            "Connection",
-            "Expires",
-            "Content-Length"
-          ],
-          "httpRequestHeaders": {
-            "headerNameFromFetcherConfig": "headerValueFromFetcherConfig"
-          }
-        }
+  "http-fetcher-id": {
+    "http-fetcher": {
+      "httpHeaders": [
+        "Connection",
+        "Expires",
+        "Content-Length"
+      ],
+      "httpRequestHeaders": {
+        "headerNameFromFetcherConfig": "headerValueFromFetcherConfig"
       }
     }
   },

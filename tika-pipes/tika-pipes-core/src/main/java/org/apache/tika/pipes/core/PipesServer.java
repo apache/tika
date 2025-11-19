@@ -80,7 +80,8 @@ import org.apache.tika.pipes.core.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.extractor.EmittingEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
-import org.apache.tika.plugins.TikaExtensionConfigsManager;
+import org.apache.tika.plugins.TikaConfigs;
+import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -396,6 +397,7 @@ public class PipesServer implements Runnable {
                 LOG.trace("timer -- read fetchEmitTuple: {} ms",
                         System.currentTimeMillis() - start);
             }
+            LOG.info("PARSE CONTEXT: {}", t.getParseContext());
             start = System.currentTimeMillis();
             updateTimeout(t);
             actuallyParse(t);
@@ -849,22 +851,19 @@ public class PipesServer implements Runnable {
     }
 
     protected void initializeResources() throws TikaException, IOException, SAXException {
-        TikaExtensionConfigsManager tikaExtensionConfigsManager = null;
+        TikaConfigs tikaConfigs = TikaConfigs.load(pipesConfigPath);
 
-        if (maxForEmitBatchBytes > -1) {
-            tikaExtensionConfigsManager = TikaExtensionConfigsManager.load(Files.newInputStream(pipesConfigPath), true, TikaExtensionConfigsManager.EXTENSION_TYPES.FETCHERS,
-                    TikaExtensionConfigsManager.EXTENSION_TYPES.EMITTERS);
-        } else {
-            tikaExtensionConfigsManager = TikaExtensionConfigsManager.load(Files.newInputStream(pipesConfigPath), true, TikaExtensionConfigsManager.EXTENSION_TYPES.FETCHERS);
-        }
+        TikaPluginManager tikaPluginManager = new TikaPluginManager(tikaConfigs);
+        tikaPluginManager.loadPlugins();
+        tikaPluginManager.startPlugins();
 
         //TODO allowed named configurations in tika config
         this.tikaConfig = new TikaConfig(tikaConfigPath);
-        this.fetcherManager = FetcherManager.load(tikaExtensionConfigsManager);
+        this.fetcherManager = FetcherManager.load(tikaPluginManager);
         //skip initialization of the emitters if emitting
         //from the pipesserver is turned off.
         if (maxForEmitBatchBytes > -1) {
-            this.emitterManager = EmitterManager.load(tikaExtensionConfigsManager);
+            this.emitterManager = EmitterManager.load(tikaPluginManager);
         } else {
             LOG.debug("'maxForEmitBatchBytes' < 0. Not initializing emitters in PipesServer");
             this.emitterManager = null;

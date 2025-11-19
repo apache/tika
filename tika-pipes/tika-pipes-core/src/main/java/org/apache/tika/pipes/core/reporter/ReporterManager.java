@@ -23,20 +23,16 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
-import org.pf4j.DefaultPluginManager;
-import org.pf4j.PluginManager;
-import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
 import org.apache.tika.pipes.api.reporter.PipesReporterFactory;
-import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.ExtensionConfigs;
-import org.apache.tika.plugins.TikaExtensionConfigsManager;
+import org.apache.tika.plugins.TikaConfigs;
+import org.apache.tika.plugins.TikaPluginManager;
 
 /**
  * Utility class to hold multiple fetchers.
@@ -47,73 +43,22 @@ public class ReporterManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReporterManager.class);
 
-    public static PipesReporter load(Path path) throws IOException, TikaConfigException {
-        try (InputStream is = Files.newInputStream(path)) {
-            return load(is);
+    public static PipesReporter load(TikaPluginManager tikaPluginManager) throws IOException, TikaConfigException {
+        if (tikaPluginManager.getStartedPlugins().isEmpty()) {
+            tikaPluginManager.loadPlugins();
+            tikaPluginManager.startPlugins();
         }
-    }
-
-    public static PipesReporter load(InputStream is) throws IOException, TikaConfigException {
-
-        TikaExtensionConfigsManager tikaExtensionConfigsManager = TikaExtensionConfigsManager.load(is, false, TikaExtensionConfigsManager.EXTENSION_TYPES.REPORTERS);
-        return load(tikaExtensionConfigsManager);
-    }
-
-    public static PipesReporter load(TikaExtensionConfigsManager tikaExtensionConfigsManager) throws IOException, TikaConfigException {
-        Optional<ExtensionConfigs> reporterPluginConfigsOpt = tikaExtensionConfigsManager.get(TikaExtensionConfigsManager.EXTENSION_TYPES.REPORTERS);
-        if (reporterPluginConfigsOpt.isEmpty()) {
-            return NoOpReporter.NO_OP;
+        List<PipesReporter> pipesReporters = new ArrayList<>();
+        for (PipesReporter pipesReporter : tikaPluginManager.buildConfiguredExtensions(PipesReporterFactory.class)) {
+            LOG.info("Pf4j loaded plugin: " + pipesReporter.getClass());
+            pipesReporters.add(pipesReporter);
+        }
+        if (pipesReporters.size() == 1) {
+            return pipesReporters.get(0);
+        }
+        if (pipesReporters.size() > 1) {
+            return new CompositePipesReporter(pipesReporters);
         }
         return NoOpReporter.NO_OP;
-/*
-        PluginManager pluginManager = null;
-        if (! tikaExtensionConfigsManager
-                .getPluginRoots().isEmpty()) {
-            LOG.warn("LOADING WITH PLUGINS PATHS: {}", tikaExtensionConfigsManager.getPluginRoots());
-            pluginManager = new DefaultPluginManager(tikaExtensionConfigsManager.getPluginRoots());
-        } else {
-            LOG.warn("NOT LOADING WITH PLUGINS PATHS: {}", tikaExtensionConfigsManager.getPluginRoots());
-            pluginManager = new DefaultPluginManager();
-        }
-        pluginManager.loadPlugins();
-        pluginManager.startPlugins();
-        List<PipesReporter> pipesReporterList = new ArrayList<>();
-        for (PipesReporterFactory reporterFactory : pluginManager.getExtensions(PipesReporterFactory.class)) {
-            LOG.warn("Pf4j loaded plugin: " + reporterFactory.getClass());
-            PluginWrapper pluginWrapper = pluginManager.whichPlugin(reporterFactory.getClass());
-            if (pluginWrapper == null) {
-                LOG.warn("Couldn't find plugin wrapper for class={}", reporterFactory.getClass());
-                continue;
-            }
-            String pluginId = pluginWrapper.getPluginId();
-            if (reporterPluginConfigsOpt.isPresent()) {
-                ExtensionConfigs reporterExtensionConfigs = reporterPluginConfigsOpt.get();
-                Set<String> ids = reporterExtensionConfigs.getIdsByExtensionId(pluginId);
-                if (ids.isEmpty()) {
-                    LOG.warn("Couldn't find config for class={} pluginId={}. Skipping", reporterFactory.getClass(), pluginId);
-                }
-                for (String id : ids) {
-                    Optional<ExtensionConfig> pluginConfigOpt = reporterExtensionConfigs.getById(id);
-                    if (pluginConfigOpt.isEmpty()) {
-                        LOG.warn("Couldn't find config for id={}", id);
-                    } else {
-                        ExtensionConfig pluginConfig = pluginConfigOpt.get();
-                        PipesReporter reporter = reporterFactory.buildPlugin(pluginConfig);
-                        pipesReporterList.add(reporter);
-                    }
-                }
-            } else {
-                LOG.debug("found no config for pluginId={}", pluginId);
-            }
-        }
-        if (pipesReporterList.isEmpty()) {
-            return NoOpReporter.NO_OP;
-        } else if (pipesReporterList.size() == 1) {
-            return pipesReporterList.get(0);
-        } else {
-            return new CompositePipesReporter(pipesReporterList);
-        }
-        */
-
     }
 }

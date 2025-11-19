@@ -1,12 +1,9 @@
 {
-  "plugins" : {
-    "fetchers": {
-      "file-system-fetcher": {
-        "id": "extract-false",
-        "config": {
-          "basePath": "{BASE_PATH}",
-          "extractFileSystemMetadata": false
-        }
+  "fsf-extract-false": {
+    "file-system-fetcher": {
+      "config": {
+        "basePath": "{BASE_PATH}",
+        "extractFileSystemMetadata": false
       }
     }
   }

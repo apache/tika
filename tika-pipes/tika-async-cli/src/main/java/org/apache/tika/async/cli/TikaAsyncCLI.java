@@ -43,6 +43,7 @@ import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
 import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.utils.StringUtils;
 
@@ -83,7 +84,7 @@ public class TikaAsyncCLI {
         if (args.length == 2) {
             if (args[0].endsWith(".xml") && args[1].endsWith(".json")) {
                 LOG.warn("processing args");
-                processWithTikaConfig(PipesIteratorManager.load(Paths.get(args[1])), Paths.get(args[0]), Paths.get(args[1]), null);
+                processWithTikaConfig(PipesIteratorManager.load(TikaPluginManager.load(Paths.get(args[1]))), Paths.get(args[0]), Paths.get(args[1]), null);
                 return;
             }
         }
@@ -127,13 +128,13 @@ public class TikaAsyncCLI {
     private static PipesIterator buildPipesIterator(Path pluginsConfig, SimpleAsyncConfig simpleAsyncConfig) throws TikaConfigException, IOException {
         String inputDirString = simpleAsyncConfig.getInputDir();
         if (StringUtils.isBlank(inputDirString)) {
-            return PipesIteratorManager.load(pluginsConfig);
+            return PipesIteratorManager.load(TikaPluginManager.load(pluginsConfig));
         }
         Path p = Paths.get(simpleAsyncConfig.getInputDir());
         if (Files.isRegularFile(p)) {
             return new SingleFilePipesIterator(p.getFileName().toString());
         }
-        return PipesIteratorManager.load(pluginsConfig);
+        return PipesIteratorManager.load(TikaPluginManager.load(pluginsConfig));
     }
 
     //not private for testing purposes

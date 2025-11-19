@@ -1,21 +1,19 @@
 {
-  "plugins": {
-    "fetchers": {
-      "fsf": {
-        "file-system-fetcher": {
-          "basePath": "FETCHER_BASE_PATH",
-          "extractFileSystemMetadata": false
-        }
-      }
-    },
-    "emitters": {
-      "fse": {
-        "file-system-emitter" : {
-          "basePath": "EMITTER_BASE_PATH",
-          "fileExtension": "json"
-        }
-      }
+  "fsf": {
+    "file-system-fetcher": {
+      "basePath": "FETCHER_BASE_PATH",
+      "extractFileSystemMetadata": false
     }
   },
-  "pluginsPaths": ["path1", "path2", "path3"]
+  "fse": {
+    "file-system-emitter": {
+      "basePath": "EMITTER_BASE_PATH",
+      "fileExtension": "json"
+    }
+  },
+  "pluginsPaths": [
+    "path1",
+    "path2",
+    "path3"
+  ]
 }

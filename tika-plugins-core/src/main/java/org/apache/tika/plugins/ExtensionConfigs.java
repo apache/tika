@@ -16,16 +16,17 @@
  */
 package org.apache.tika.plugins;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 public class ExtensionConfigs {
 
-    Map<String, ExtensionConfig> extensionConfigsById = new HashMap<>();
-    Map<String, Set<String>> extensionIdsToId = new HashMap<>();
+    Map<String, ExtensionConfig> idToConfig = new HashMap<>();
+    Map<String, List<ExtensionConfig>> extensionIdsToConfig = new HashMap<>();
 
     public ExtensionConfigs() {
 
@@ -37,27 +38,29 @@ public class ExtensionConfigs {
         }
     }
 
-    public void add(ExtensionConfig pluginConfig) {
-        if (extensionConfigsById.containsKey(pluginConfig.id())) {
-            throw new IllegalArgumentException("Can't overwrite existing extension config for id: " + pluginConfig.extensionId());
+    public void add(ExtensionConfig extensionConfig) {
+        if (idToConfig.containsKey(extensionConfig.id())) {
+            throw new IllegalArgumentException("Can't overwrite existing extension config for extensionName: " + extensionConfig.extensionName());
         }
-        extensionConfigsById.put(pluginConfig.id(), pluginConfig);
-        extensionIdsToId.computeIfAbsent(pluginConfig.extensionId(), k -> new HashSet<>()).add(pluginConfig.id());
+        idToConfig.put(extensionConfig.id(), extensionConfig);
+        extensionIdsToConfig
+                .computeIfAbsent(extensionConfig.extensionName(), k -> new ArrayList<>()).add(extensionConfig);
     }
 
     public Optional<ExtensionConfig> getById(String id) {
-        return Optional.ofNullable(extensionConfigsById.get(id));
+        return Optional.ofNullable(idToConfig.get(id));
+    }
+
+    public List<ExtensionConfig> getByExtensionName(String extensionName) {
+        List<ExtensionConfig> configs = extensionIdsToConfig.get(extensionName);
+        if (configs == null) {
+            return List.of();
+        }
+        return configs;
     }
 
     public Set<String> ids() {
-        return extensionConfigsById.keySet();
+        return idToConfig.keySet();
     }
 
-    public Set<String> getIdsByExtensionId(String extensionId) {
-        return extensionIdsToId.getOrDefault(extensionId, Set.of());
-    }
-
-    public Set<String> getExtensionIds() {
-        return extensionIdsToId.keySet();
-    }
 }

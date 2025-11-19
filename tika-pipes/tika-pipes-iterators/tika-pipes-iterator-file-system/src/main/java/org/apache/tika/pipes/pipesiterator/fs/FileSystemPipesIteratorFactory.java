@@ -27,6 +27,13 @@ import org.apache.tika.plugins.ExtensionConfig;
 @Extension
 public class FileSystemPipesIteratorFactory implements PipesIteratorFactory {
 
+    public static final String EXTENSION_NAME = "file-system-pipes-iterator";
+
+    @Override
+    public String getExtensionName() {
+        return EXTENSION_NAME;
+    }
+
     @Override
     public FileSystemPipesIterator buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
         return FileSystemPipesIterator.build(extensionConfig);

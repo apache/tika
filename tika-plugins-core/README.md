@@ -33,4 +33,6 @@ are configured in the json config file.
 We may want to move to a resource based organization for pipes so that we'd have, say, a `tika-pipes-s3`
 plugin that has a fetcher, emitter and iterator. Some plugins would only have a fetcher or an emitter, but
 some would have all three. If we did this, the heavy s3 dependencies for all three components would be 
-packaged only once in a zip. 
+packaged only once in a zip.
+
+## Configuration generally

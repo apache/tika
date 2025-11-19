@@ -16,6 +16,6 @@
  */
 package org.apache.tika.plugins;
 
-public record ExtensionConfig(String id, String extensionId, String jsonConfig) {
+public record ExtensionConfig(String id, String extensionName, String jsonConfig) {
 
 }

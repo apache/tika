@@ -32,54 +32,28 @@ public class TikaPluginsManagerTest {
 
     @Test
     public void testBasic() throws Exception {
-        TikaExtensionConfigsManager manager = TikaExtensionConfigsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/test1.json"), true,
-                TikaExtensionConfigsManager.EXTENSION_TYPES.FETCHERS);
-        Optional<ExtensionConfigs> pluginConfigsOpt = manager.get(TikaExtensionConfigsManager.EXTENSION_TYPES.FETCHERS);
-        assertTrue(pluginConfigsOpt.isPresent());
-        ExtensionConfigs extensionConfigs = pluginConfigsOpt.get();
-        Optional<ExtensionConfig> pluginConfigOpt = extensionConfigs.getById("fsf");
-        assertTrue(pluginConfigOpt.isPresent());
-        ExtensionConfig pluginConfig = pluginConfigOpt.get();
-        assertEquals("file-system-fetcher", pluginConfig.extensionId());
+        TikaConfigs tikaConfigs = TikaConfigs.load(TikaPluginsManagerTest.class.getResourceAsStream("/test1.json"));
+        Optional<ExtensionConfig> extensionConfigOpt = tikaConfigs.getExtensionConfigs().getById("fsf");
+        assertTrue(extensionConfigOpt.isPresent());
+        ExtensionConfig extensionConfig = extensionConfigOpt.get();
+        assertEquals("file-system-fetcher", extensionConfig.extensionName());
     }
 
     @Test
     public void testPath() throws Exception {
-        TikaExtensionConfigsManager manager = TikaExtensionConfigsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/test2.json"), true,
-                TikaExtensionConfigsManager.EXTENSION_TYPES.FETCHERS);
-        List<Path> paths = manager.getPluginRoots();
+        TikaConfigs tikaConfigs = TikaConfigs.load(TikaPluginsManagerTest.class.getResourceAsStream("/test2.json"));
+        List<Path> paths = tikaConfigs.getPluginRoots();
         assertEquals(1, paths.size());
         assertEquals("path1", paths.get(0).getFileName().toString());
     }
 
     @Test
     public void testPaths() throws Exception {
-        TikaExtensionConfigsManager manager = TikaExtensionConfigsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/test3.json"), true,
-                TikaExtensionConfigsManager.EXTENSION_TYPES.FETCHERS);
-        List<Path> paths = manager.getPluginRoots();
+        TikaConfigs tikaConfigs = TikaConfigs.load(TikaPluginsManagerTest.class.getResourceAsStream("/test3.json"));
+        List<Path> paths = tikaConfigs.getPluginRoots();
         assertEquals(3, paths.size());
         assertEquals("path1", paths.get(0).getFileName().toString());
         assertEquals("path2", paths.get(1).getFileName().toString());
         assertEquals("path3", paths.get(2).getFileName().toString());
-    }
-
-    @Test
-    public void testMissingItem() throws Exception {
-        assertThrows(TikaConfigException.class, () ->
-                TikaExtensionConfigsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/test1.json"),
-                "qwerty")
-        );
-        assertThrows(TikaConfigException.class, () ->
-                TikaExtensionConfigsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/testEmpty.json"), true,
-                        TikaExtensionConfigsManager.EXTENSION_TYPES.FETCHERS)
-        );
-        assertThrows(TikaConfigException.class, () ->
-                TikaExtensionConfigsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/testEmpty2.json"), true,
-                        TikaExtensionConfigsManager.EXTENSION_TYPES.FETCHERS)
-        );
-        assertThrows(TikaConfigException.class, () ->
-                TikaExtensionConfigsManager.load(TikaPluginsManagerTest.class.getResourceAsStream("/testNoPluginConfig.json"), true,
-                        TikaExtensionConfigsManager.EXTENSION_TYPES.FETCHERS)
-        );
     }
 }

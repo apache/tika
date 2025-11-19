@@ -27,44 +27,36 @@ public class PluginsWriter {
 
     final static String JSON_TEMPLATE = """
             {
-              "plugins" : {
-                "fetchers": {
-                  "fsf" : {
-                    "file-system-fetcher": {
-                      "basePath": "FETCHER_BASE_PATH",
-                      "extractFileSystemMetadata": false
-                    }
-                  }
-                },
-                "emitters": {
-                  "fse": {
-                    "file-system-emitter": {
-                      "basePath": "EMITTER_BASE_PATH",
-                      "fileExtension": "json",
-                      "onExists": "EXCEPTION"
-                    }
-                  }
-                },
-                "pipes_iterator": {
-                  "fspi": {
-                    "file-system-pipes-iterator": {
-                      "basePath": "FETCHER_BASE_PATH",
-                      "countTotal": true,
-                      "baseConfig": {
-                        "fetcherId": "fsf",
-                        "emitterId": "fse",
-                        "handlerConfig": {
-                          "type": "TEXT",
-                          "parseMode": "RMETA",
-                          "writeLimit": -1,
-                          "maxEmbeddedResources": -1,
-                          "throwOnWriteLimitReached": true
-                        },
-                        "onParseException": "EMIT",
-                        "maxWaitMs": 600000,
-                        "queueSize": 10000
-                      }
-                    }
+              "fsf" : {
+                "file-system-fetcher": {
+                  "basePath": "FETCHER_BASE_PATH",
+                  "extractFileSystemMetadata": false
+                }
+              },
+              "fse": {
+                "file-system-emitter": {
+                  "basePath": "EMITTER_BASE_PATH",
+                  "fileExtension": "json",
+                  "onExists": "EXCEPTION"
+                }
+              },
+              "fspi": {
+                "file-system-pipes-iterator": {
+                  "basePath": "FETCHER_BASE_PATH",
+                  "countTotal": true,
+                  "baseConfig": {
+                    "fetcherId": "fsf",
+                    "emitterId": "fse",
+                    "handlerConfig": {
+                      "type": "TEXT",
+                      "parseMode": "RMETA",
+                      "writeLimit": -1,
+                      "maxEmbeddedResources": -1,
+                      "throwOnWriteLimitReached": true
+                    },
+                    "onParseException": "EMIT",
+                    "maxWaitMs": 600000,
+                    "queueSize": 10000
                   }
                 }
               },

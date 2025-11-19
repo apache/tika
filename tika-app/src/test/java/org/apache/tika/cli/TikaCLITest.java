@@ -398,13 +398,7 @@ public class TikaCLITest {
 
     private void testRecursiveUnpack(String targetFile, String[] expectedChildrenFileNames, int expectedLength) throws Exception {
         Path input = Paths.get(new URI(resourcePrefix + "/" + targetFile));
-        Path asyncConfig = Files.createTempFile("async-config-", ".json");
         Path pluginsDir = Paths.get("target/plugins");
-
-        String json = TikaCLIAsyncTest.JSON_TEMPLATE_FETCH_EMIT_ONLY.replace("FETCHER_BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString())
-                                   .replace("EMITTER_BASE_PATH", extractDir.toAbsolutePath().toString())
-                                   .replace("PLUGINS_PATHS", pluginsDir.toAbsolutePath().toString());
-        Files.writeString(asyncConfig, json, UTF_8);
 
         String[] params = {"-Z",
                 "-p", ProcessUtils.escapeCommandLine(pluginsDir.toAbsolutePath().toString()),
@@ -412,11 +406,9 @@ public class TikaCLITest {
                 ProcessUtils.escapeCommandLine(extractDir
                 .toAbsolutePath()
                 .toString())};
-        try {
-            TikaCLI.main(params);
-        } finally {
-            Files.delete(asyncConfig);
-        }
+
+        TikaCLI.main(params);
+
         Set<String> fileNames = getFileNames(extractDir);
         String[] jsonFile = extractDir
                 .toFile()

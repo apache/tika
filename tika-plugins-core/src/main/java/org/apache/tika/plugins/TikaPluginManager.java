@@ -2,6 +2,7 @@ package org.apache.tika.plugins;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,12 +25,25 @@ public class TikaPluginManager extends DefaultPluginManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaPluginManager.class);
 
-    public TikaPluginManager(List<Path> pluginRoots) {
-        super(pluginRoots);
+    private final TikaConfigs tikaConfigs;
+
+    public static TikaPluginManager load(Path path) throws TikaConfigException, IOException {
+        return new TikaPluginManager(TikaConfigs.load(path));
     }
 
-    public TikaPluginManager(Path ... pluginRoots) throws IOException {
+    public static TikaPluginManager load(InputStream is) throws TikaConfigException, IOException {
+        return new TikaPluginManager(TikaConfigs.load(is));
+    }
+
+    public TikaPluginManager(TikaConfigs tikaConfigs) throws IOException {
+        super(tikaConfigs.getPluginRoots());
+        this.tikaConfigs = tikaConfigs;
+        init();
+    }
+
+    public TikaPluginManager(List<Path> pluginRoots) throws IOException{
         super(pluginRoots);
+        this.tikaConfigs = null;
         init();
     }
 
@@ -59,12 +73,12 @@ public class TikaPluginManager extends DefaultPluginManager {
         return new TikaPluginLoader(this);
     }
 
-    public <E extends TikaExtension, F extends TikaExtensionFactory<E>> List<E> buildConfiguredExtensions(Class<F> clazz, ExtensionConfigs extensionConfigs)
+    public <E extends TikaExtension, F extends TikaExtensionFactory<E>> List<E> buildConfiguredExtensions(Class<F> clazz)
             throws TikaConfigException, IOException {
 
         List<F> factories = getExtensions(clazz);
         List<E> extensions = new ArrayList<>();
-        //in some circumstances, factories are loaded twice
+        //in some circumstances (when the plugins are available on the classpath and in a plugin dir), factories are loaded twice
         Set<String> seen = new HashSet<>();
         for (TikaExtensionFactory<E> factory : factories) {
             if (seen.contains(factory.getExtensionName())) {
@@ -72,8 +86,8 @@ public class TikaPluginManager extends DefaultPluginManager {
             }
             seen.add(factory.getExtensionName());
             String extensionName = factory.getExtensionName();
-            for (String id : extensionConfigs.getIdsByExtensionId(extensionName)) {
-                E extension = factory.buildExtension(extensionConfigs.getById(id).get());
+            for (ExtensionConfig extensionConfig : tikaConfigs.getExtensionConfigs().getByExtensionName(extensionName)) {
+                E extension = factory.buildExtension(extensionConfig);
                 extensions.add(extension);
             }
         }

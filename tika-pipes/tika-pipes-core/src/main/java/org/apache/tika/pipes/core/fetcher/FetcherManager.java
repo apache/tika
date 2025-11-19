@@ -22,13 +22,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.pf4j.DefaultPluginManager;
-import org.pf4j.PluginManager;
-import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,9 +32,8 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
-import org.apache.tika.plugins.ExtensionConfig;
-import org.apache.tika.plugins.ExtensionConfigs;
-import org.apache.tika.plugins.TikaExtensionConfigsManager;
+import org.apache.tika.plugins.TikaConfigs;
+import org.apache.tika.plugins.TikaPluginManager;
 
 /**
  * Utility class to hold multiple fetchers.
@@ -49,64 +44,17 @@ public class FetcherManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(FetcherManager.class);
 
-    public static FetcherManager load(Path path) throws IOException, TikaConfigException {
-        try (InputStream is = Files.newInputStream(path)) {
-            return load(is);
+    public static FetcherManager load(TikaPluginManager tikaPluginManager) throws IOException, TikaConfigException {
+        if (tikaPluginManager.getStartedPlugins().isEmpty()) {
+            tikaPluginManager.loadPlugins();
+            tikaPluginManager.startPlugins();
         }
-    }
-
-    public static FetcherManager load(InputStream is) throws IOException, TikaConfigException {
-        //this will throw a TikaConfigException if "fetchers" is not loaded
-        TikaExtensionConfigsManager tikaExtensionConfigsManager = TikaExtensionConfigsManager.load(is, true, TikaExtensionConfigsManager.EXTENSION_TYPES.FETCHERS);
-        return load(tikaExtensionConfigsManager);
-    }
-
-    public static FetcherManager load(TikaExtensionConfigsManager tikaExtensionConfigsManager) throws IOException, TikaConfigException {
-        return null;
-        /*
-        Optional<ExtensionConfigs> fetcherPluginConfigsOpt = tikaExtensionConfigsManager.get(TikaExtensionConfigsManager.EXTENSION_TYPES.FETCHERS);
-        if (fetcherPluginConfigsOpt.isEmpty()) {
-            throw new TikaConfigException("Forgot to load 'fetchers'?");
-        }
-        ExtensionConfigs fetcherExtensionConfigs = fetcherPluginConfigsOpt.get();
-        PluginManager pluginManager = null;
-        if (! tikaExtensionConfigsManager
-                .getPluginRoots().isEmpty()) {
-            LOG.warn("LOADING WITH PLUGINS PATHS: {}", tikaExtensionConfigsManager.getPluginRoots());
-            pluginManager = new DefaultPluginManager(tikaExtensionConfigsManager.getPluginRoots());
-        } else {
-            LOG.warn("NOT LOADING WITH PLUGINS PATHS: {}", tikaExtensionConfigsManager.getPluginRoots());
-            pluginManager = new DefaultPluginManager();
-        }
-        pluginManager.loadPlugins();
-        pluginManager.startPlugins();
         Map<String, Fetcher> fetcherMap = new HashMap<>();
-        for (FetcherFactory fetcherFactory : pluginManager.getExtensions(FetcherFactory.class)) {
-            LOG.info("Pf4j loaded plugin: " + fetcherFactory.getClass());
-            PluginWrapper pluginWrapper = pluginManager.whichPlugin(fetcherFactory.getClass());
-            if (pluginWrapper == null) {
-                LOG.warn("Couldn't find plugin wrapper for class={}", fetcherFactory.getClass());
-                continue;
-            }
-            String pluginId = pluginWrapper.getPluginId();
-            Set<String> ids = fetcherExtensionConfigs.getIdsByPluginId(pluginId);
-            if (ids.isEmpty()) {
-                LOG.warn("Couldn't find config for class={} pluginId={}. Skipping", fetcherFactory.getClass(), pluginId);
-            }
-            for (String id : ids) {
-                Optional<ExtensionConfig> pluginConfigOpt = fetcherExtensionConfigs.getById(id);
-                if (pluginConfigOpt.isEmpty()) {
-                    LOG.warn("Couldn't find config for id={}", id);
-                } else {
-                    ExtensionConfig pluginConfig = pluginConfigOpt.get();
-                    Fetcher fetcher = fetcherFactory.buildPlugin(pluginConfig);
-                    fetcherMap.put(pluginConfig.id(), fetcher);
-                }
-            }
+        for (Fetcher fetcher : tikaPluginManager.buildConfiguredExtensions(FetcherFactory.class)) {
+            LOG.info("Pf4j loaded plugin: " + fetcher.getClass());
+            fetcherMap.put(fetcher.getExtensionConfig().id(), fetcher);
         }
         return new FetcherManager(fetcherMap);
-        */
-
     }
 
     private final Map<String, Fetcher> fetcherMap = new ConcurrentHashMap<>();

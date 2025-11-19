@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.plugins.ExtensionConfig;
 
 
@@ -49,7 +50,7 @@ public class FileSystemFetcherTest {
     public void testNullByte() throws Exception {
         assertThrows(TikaConfigException.class, () -> {
             ExtensionConfig pluginConfig = new ExtensionConfig("test", "test", "{ \"basePath\":\"bad\u0000path\"}");
-            FileSystemFetcher f = FileSystemFetcher.build(pluginConfig);
+            Fetcher f = new FileSystemFetcherFactory().buildExtension(pluginConfig);
         });
     }
 }

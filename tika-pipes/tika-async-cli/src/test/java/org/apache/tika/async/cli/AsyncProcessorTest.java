@@ -58,35 +58,29 @@ public class AsyncProcessorTest extends TikaTest {
 
 
     final static String JSON_TEMPLATE_TEST = """
-            {
-              "plugins" : {
-                "fetchers": {
-                  "fsf":{
+                {
+                  "fsf": {
                     "file-system-fetcher": {
                       "basePath": "FETCHER_BASE_PATH",
                       "extractFileSystemMetadata": false
                     }
-                  }
-                },
-                "emitters": {
+                  },
                   "fse-json": {
                     "file-system-emitter": {
                       "basePath": "JSON_EMITTER_BASE_PATH",
                       "fileExtension": "",
-                      "onExists":"EXCEPTION"
+                      "onExists": "EXCEPTION"
                     }
                   },
                   "fse-bytes": {
                     "file-system-emitter": {
                       "basePath": "BYTES_EMITTER_BASE_PATH",
                       "fileExtension": "",
-                      "onExists":"EXCEPTION"
+                      "onExists": "EXCEPTION"
                     }
-                  }
+                  },
+                  "pluginsPaths": "PLUGINS_PATHS"
                 }
-              },
-              "pluginsPaths": "PLUGINS_PATHS"
-            }
             """;
 
     //TODO -- integrate json pipes iterator and run with AyncProcessor.main

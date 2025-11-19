@@ -207,6 +207,9 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
     private HttpFetcherConfig getAdditionalHttpFetcherConfig(ParseContext parseContext) throws JsonProcessingException {
         HttpFetcherConfig additionalHttpFetcherConfig = null;
         ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
+        if (configContainer == null) {
+            return null;
+        }
         Optional<String> jsonOpt = configContainer.get(HttpFetcher.class);
         if (jsonOpt.isPresent()) {
             additionalHttpFetcherConfig = OM.readValue(jsonOpt.get(), HttpFetcherConfig.class);
@@ -512,8 +515,9 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         this.httpClientFactory = httpClientFactory;
     }
 
-    public void setHttpFetcherConfig(HttpFetcherConfig httpFetcherConfig) {
+    public void setHttpFetcherConfig(HttpFetcherConfig httpFetcherConfig) throws TikaConfigException {
         this.httpFetcherConfig = httpFetcherConfig;
+        initialize();
     }
 
     public void setHttpClient(HttpClient httpClient) {

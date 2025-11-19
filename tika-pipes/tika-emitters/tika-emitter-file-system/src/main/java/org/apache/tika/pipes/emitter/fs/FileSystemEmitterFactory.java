@@ -34,6 +34,7 @@ public class FileSystemEmitterFactory implements EmitterFactory {
     public String getExtensionName() {
         return EXTENSION_NAME;
     }
+
     @Override
     public Emitter buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
         return FileSystemEmitter.build(extensionConfig);

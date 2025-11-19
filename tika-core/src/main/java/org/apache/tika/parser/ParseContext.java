@@ -113,4 +113,8 @@ public class ParseContext implements Serializable {
         return context.hashCode();
     }
 
+    @Override
+    public String toString() {
+        return "ParseContext{" + "context=" + context + '}';
+    }
 }

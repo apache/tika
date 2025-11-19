@@ -1,0 +1,23 @@
+{
+  "fsf": {
+    "file-system-fetcher": {
+      "basePath": "FETCHER_BASE_PATH",
+      "extractFileSystemMetadata": false
+    }
+  },
+  "fse-json": {
+    "file-system-emitter": {
+      "basePath": "JSON_EMITTER_BASE_PATH",
+      "fileExtension": "",
+      "onExists": "EXCEPTION"
+    }
+  },
+  "fse-bytes": {
+    "file-system-emitter": {
+      "basePath": "BYTES_EMITTER_BASE_PATH",
+      "fileExtension": "",
+      "onExists": "EXCEPTION"
+    }
+  },
+  "pluginsPaths": "PLUGINS_PATHS"
+}

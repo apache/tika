@@ -20,21 +20,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
-import org.pf4j.DefaultPluginManager;
-import org.pf4j.PluginManager;
-import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
-import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.ExtensionConfigs;
-import org.apache.tika.plugins.TikaExtensionConfigsManager;
+import org.apache.tika.plugins.TikaConfigs;
+import org.apache.tika.plugins.TikaPluginManager;
 
 /**
  * Utility class to hold a single pipes iterator
@@ -45,68 +43,22 @@ public class PipesIteratorManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesIteratorManager.class);
 
-    public static PipesIterator load(Path path) throws IOException, TikaConfigException {
-        try (InputStream is = Files.newInputStream(path)) {
-            return load(is);
+    public static PipesIterator load(TikaPluginManager tikaPluginManager) throws IOException, TikaConfigException {
+        if (tikaPluginManager.getStartedPlugins().isEmpty()) {
+            tikaPluginManager.loadPlugins();
+            tikaPluginManager.startPlugins();
         }
+        List<PipesIterator> pipesIterators = new ArrayList<>();
+        for (PipesIterator pipesIterator : tikaPluginManager.buildConfiguredExtensions(PipesIteratorFactory.class)) {
+            LOG.info("Pf4j loaded plugin: " + pipesIterator.getClass());
+            pipesIterators.add(pipesIterator);
+        }
+        if (pipesIterators.size() == 1) {
+            return pipesIterators.get(0);
+        }
+        if (pipesIterators.size() > 1) {
+            throw new TikaConfigException("Can only specify one pipesIterator");
+        }
+        throw new TikaConfigException("Couldn't find a pipesIterator plugin");
     }
-
-    public static PipesIterator load(InputStream is) throws IOException, TikaConfigException {
-        //this will throw a TikaConfigException if "fetchers" is not loaded
-        TikaExtensionConfigsManager tikaExtensionConfigsManager = TikaExtensionConfigsManager.load(is, true, TikaExtensionConfigsManager.EXTENSION_TYPES.PIPES_ITERATOR);
-        return load(tikaExtensionConfigsManager);
-    }
-
-    public static PipesIterator load(TikaExtensionConfigsManager tikaExtensionConfigsManager) throws IOException, TikaConfigException {
-        Optional<ExtensionConfigs> pipesIteratorPluginConfigsOpt = tikaExtensionConfigsManager.get(TikaExtensionConfigsManager.EXTENSION_TYPES.PIPES_ITERATOR);
-        return null;
-        /*
-        if (pipesIteratorPluginConfigsOpt.isEmpty()) {
-            throw new TikaConfigException("Forgot to load 'pipesIterator'?");
-        }
-        ExtensionConfigs pipesIteratorConfig = pipesIteratorPluginConfigsOpt.get();
-        PluginManager pluginManager = null;
-        if (! tikaExtensionConfigsManager
-                .getPluginRoots().isEmpty()) {
-            LOG.warn("LOADING WITH PLUGINS PATHS: {}", tikaExtensionConfigsManager.getPluginRoots());
-            pluginManager = new DefaultPluginManager(tikaExtensionConfigsManager
-                    .getPluginRoots().toArray(new Path[0]));
-        } else {
-            LOG.warn("NOT LOADING WITH PLUGINS PATHS: {}", tikaExtensionConfigsManager.getPluginRoots());
-            pluginManager = new DefaultPluginManager();
-        }
-        pluginManager.loadPlugins();
-        pluginManager.startPlugins();
-        for (PipesIteratorFactory pipesIteratorFactory : pluginManager.getExtensions(PipesIteratorFactory.class)) {
-            LOG.warn("Pf4j loaded plugin: " + pipesIteratorFactory.getClass());
-            PluginWrapper pluginWrapper = pluginManager.whichPlugin(pipesIteratorFactory.getClass());
-            if (pluginWrapper == null) {
-                LOG.warn("Couldn't find plugin wrapper for class={}", pipesIteratorFactory.getClass());
-                continue;
-            }
-            String pluginId = pluginWrapper.getPluginId();
-            Set<String> ids = pipesIteratorConfig.getIdsByPluginId(pluginId);
-            if (ids.isEmpty()) {
-                String msg = "Couldn't find config for class=" + pipesIteratorFactory.getClass() +
-                        "pluginId=" + pluginId;
-                throw new TikaConfigException(msg);
-            }
-            if (ids.size() > 1) {
-                String msg = "Can't have more than a single PipesIterator. I see: " + ids.size();
-                throw new TikaConfigException(msg);
-            }
-            for (String id : ids) {
-                Optional<ExtensionConfig> pluginConfigOpt = pipesIteratorConfig.getById(id);
-                if (pluginConfigOpt.isEmpty()) {
-                    throw new TikaConfigException("Couldn't find config for id=" + id);
-                } else {
-                    ExtensionConfig pluginConfig = pluginConfigOpt.get();
-                    PipesIterator pipesIterator = pipesIteratorFactory.buildPlugin(pluginConfig);
-                    return pipesIterator;
-                }
-            }
-        }
-        throw new TikaConfigException("Couldn't find a pipes_iterator plugin");*/
-    }
-
 }
