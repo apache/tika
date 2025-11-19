@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.video;
 
@@ -28,26 +26,23 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * <p>
- * Parser for metadata contained in Flash Videos (.flv). Resources:
- * http://osflash.org/flv and for AMF:
- * http://download.macromedia.com/pub/labs/amf/amf0_spec_121207.pdf
+ * Parser for metadata contained in Flash Videos (.flv). Resources: http://osflash.org/flv and for
+ * AMF: http://download.macromedia.com/pub/labs/amf/amf0_spec_121207.pdf
  * <p>
- * This parser is capable of extracting the general metadata from header as well
- * as embedded metadata.
+ * This parser is capable of extracting the general metadata from header as well as embedded
+ * metadata.
  * <p>
  * Known keys for metadata (from file header):
  * <ol>
@@ -55,13 +50,12 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * <li>hasSound: true|false
  * </ol>
  * <p>
- * In addition to the above values also metadata that is inserted in to the
- * actual stream will be picked. Usually there are keys like:
- * hasKeyframes, lastkeyframetimestamp, audiocodecid, keyframes, filepositions,
- * hasMetadata, audiosamplerate, videodatarate metadatadate, videocodecid,
- * metadatacreator, audiosize, hasVideo, height, audiosamplesize, framerate,
- * hasCuePoints width, cuePoints, lasttimestamp, canSeekToEnd, datasize,
- * duration, videosize, filesize, audiodatarate, hasAudio, stereo audiodelay
+ * In addition to the above values also metadata that is inserted in to the actual stream will be
+ * picked. Usually there are keys like: hasKeyframes, lastkeyframetimestamp, audiocodecid,
+ * keyframes, filepositions, hasMetadata, audiosamplerate, videodatarate metadatadate, videocodecid,
+ * metadatacreator, audiosize, hasVideo, height, audiosamplesize, framerate, hasCuePoints width,
+ * cuePoints, lasttimestamp, canSeekToEnd, datasize, duration, videosize, filesize, audiodatarate,
+ * hasAudio, stereo audiodelay
  */
 public class FLVParser implements Parser {
 
@@ -70,7 +64,7 @@ public class FLVParser implements Parser {
      */
     private static final long serialVersionUID = -8718013155719197679L;
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.video("x-flv"));
+                    Collections.singleton(MediaType.video("x-flv"));
     private static int TYPE_METADATA = 0x12;
     private static byte MASK_AUDIO = 1;
     private static byte MASK_VIDEO = 4;
@@ -84,7 +78,7 @@ public class FLVParser implements Parser {
     }
 
     private int readUInt24(DataInputStream input) throws IOException {
-        //readUnsignedByte ensures EOFException
+        // readUnsignedByte ensures EOFException
         int uint = input.readUnsignedByte() << 16;
         uint += input.readUnsignedByte() << 8;
         uint += input.readUnsignedByte();
@@ -165,7 +159,7 @@ public class FLVParser implements Parser {
     }
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         DataInputStream datainput = new DataInputStream(stream);
         if (!checkSignature(datainput)) {
             throw new TikaException("FLV signature not detected");
@@ -207,14 +201,14 @@ public class FLVParser implements Parser {
                 break;
             }
 
-            final int datalen = readUInt24(datainput); //body length
+            final int datalen = readUInt24(datainput); // body length
             readUInt32(datainput); // timestamp
             readUInt24(datainput); // streamid
 
             if (type == TYPE_METADATA) {
                 // found metadata Tag, read content to buffer
                 byte[] metaBytes = new byte[datalen];
-                for (int readCount = 0; readCount < datalen; ) {
+                for (int readCount = 0; readCount < datalen;) {
                     int r = stream.read(metaBytes, readCount, datalen - readCount);
                     if (r != -1) {
                         readCount += r;
@@ -224,11 +218,9 @@ public class FLVParser implements Parser {
                     }
                 }
 
-                try (
-                        UnsynchronizedByteArrayInputStream is =
-                                UnsynchronizedByteArrayInputStream.builder().setByteArray(metaBytes).get();
-                        DataInputStream dis = new DataInputStream(is);
-                ) {
+                try (UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream
+                                .builder().setByteArray(metaBytes).get();
+                                DataInputStream dis = new DataInputStream(is);) {
                     Object data = null;
 
                     for (int i = 0; i < 2; i++) {

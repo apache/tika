@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.example;
@@ -26,25 +24,19 @@ import org.apache.tika.language.translate.Translator;
 import org.apache.tika.language.translate.impl.GoogleTranslator;
 
 /**
- * This example demonstrates primitive logic for
- * chaining Tika API calls. In this case translation
- * could be considered as a downstream process to
- * transcription.
- * We simply pass the output of
- * a call to {@link Tika#parseToString(Path)}
- * into {@link Translator#translate(String, String)}.
- * The {@link GoogleTranslator} is configured with a target
- * language of "en-US".
+ * This example demonstrates primitive logic for chaining Tika API calls. In this case translation
+ * could be considered as a downstream process to transcription. We simply pass the output of a call
+ * to {@link Tika#parseToString(Path)} into {@link Translator#translate(String, String)}. The
+ * {@link GoogleTranslator} is configured with a target language of "en-US".
  *
  * @author lewismc
  */
 public class TranscribeTranslateExample {
 
     /**
-     * Use {@link GoogleTranslator} to execute translation on
-     * input data. This implementation needs configured as explained in the Javadoc.
-     * In this implementation, Google will try to guess the input language. The target
-     * language is "en-US".
+     * Use {@link GoogleTranslator} to execute translation on input data. This implementation needs
+     * configured as explained in the Javadoc. In this implementation, Google will try to guess the
+     * input language. The target language is "en-US".
      *
      * @param text input text to translate.
      * @return translated text String.
@@ -64,8 +56,7 @@ public class TranscribeTranslateExample {
 
     /**
      * Use {@link org.apache.tika.parser.transcribe.aws.AmazonTranscribe} to execute transcription
-     * on input data.
-     * This implementation needs to be configured as explained in the Javadoc.
+     * on input data. This implementation needs to be configured as explained in the Javadoc.
      *
      * @param file the name of the file (which needs to be on the Java Classpath) to transcribe.
      * @return transcribed text.
@@ -81,13 +72,14 @@ public class TranscribeTranslateExample {
      * transcription then translation on the given resource, or
      * <li><code>transcribe ${tika-config.xml} ${file}</code>; which executes only translation</li>
      *
-     * @param args either of the commands described above and the input file
-     *             (which needs to be on the Java Classpath).
-     *             <p>
-     *             <p>
-     *             <p>
-     *             ${tika-config.xml} must include credentials for aws and a temporary storage bucket:
-     *             <pre>
+     * @param args either of the commands described above and the input file (which needs to be on
+     *        the Java Classpath).
+     *        <p>
+     *        <p>
+     *        <p>
+     *        ${tika-config.xml} must include credentials for aws and a temporary storage bucket:
+     * 
+     *        <pre>
      *             {@code
      *              <properties>
      *               <parsers>
@@ -108,8 +100,10 @@ public class TranscribeTranslateExample {
         String text = null;
         if (args.length > 1) {
             if ("transcribe-translate".equals(args[1])) {
-                text = googleTranslateToEnglish(amazonTranscribe(Paths.get(args[0]), Paths.get(args[1])));
-                System.out.print("Transcription and translation successful!\nEXTRACTED TEXT: " + text);
+                text = googleTranslateToEnglish(
+                                amazonTranscribe(Paths.get(args[0]), Paths.get(args[1])));
+                System.out.print("Transcription and translation successful!\nEXTRACTED TEXT: "
+                                + text);
             } else if ("transcribe".equals(args[1])) {
                 text = amazonTranscribe(Paths.get(args[0]), Paths.get(args[1]));
                 System.out.print("Transcription successful!\nEXTRACTED TEXT: " + text);

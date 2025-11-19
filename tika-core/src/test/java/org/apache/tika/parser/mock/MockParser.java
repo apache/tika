@@ -1,24 +1,27 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mock;
 
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.martensigwart.fakeload.FakeLoad;
+import com.martensigwart.fakeload.FakeLoadBuilder;
+import com.martensigwart.fakeload.FakeLoadExecutor;
+import com.martensigwart.fakeload.FakeLoadExecutors;
+import com.martensigwart.fakeload.MemoryUnit;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -38,20 +41,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.parsers.DocumentBuilder;
-
-import com.martensigwart.fakeload.FakeLoad;
-import com.martensigwart.fakeload.FakeLoadBuilder;
-import com.martensigwart.fakeload.FakeLoadExecutor;
-import com.martensigwart.fakeload.FakeLoadExecutors;
-import com.martensigwart.fakeload.MemoryUnit;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -65,13 +55,18 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * This class enables mocking of parser behavior for use in testing
- * wrappers and drivers of parsers.
+ * This class enables mocking of parser behavior for use in testing wrappers and drivers of parsers.
  * <p>
- * See resources/test-documents/mock/example.xml in tika-parsers/test for the documentation
- * of all the options for this MockParser.
+ * See resources/test-documents/mock/example.xml in tika-parsers/test for the documentation of all
+ * the options for this MockParser.
  * <p>
  * Tests for this class are in tika-parsers.
  * <p>
@@ -115,7 +110,7 @@ public class MockParser implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         if (Thread.currentThread().isInterrupted()) {
             throw new TikaException("interrupted", new InterruptedException());
         }
@@ -124,7 +119,7 @@ public class MockParser implements Parser {
             DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder(context);
             doc = docBuilder.parse(CloseShieldInputStream.wrap(stream));
         } catch (SAXException e) {
-            //to distinguish between SAX on read vs SAX while writing
+            // to distinguish between SAX on read vs SAX while writing
             throw new IOException(e);
         }
         Node root = doc.getDocumentElement();
@@ -138,8 +133,7 @@ public class MockParser implements Parser {
     }
 
     private void executeAction(Node action, Metadata metadata, ParseContext context,
-                               XHTMLContentHandler xhtml)
-            throws SAXException, IOException, TikaException {
+                    XHTMLContentHandler xhtml) throws SAXException, IOException, TikaException {
 
         if (action.getNodeType() != 1) {
             return;
@@ -183,21 +177,21 @@ public class MockParser implements Parser {
     }
 
     private void fakeload(Node action) {
-        //https://github.com/msigwart/fakeload
-        //with this version of fakeload, you should only need one thread to hit
-        //the cpu targets; on Linux with Java 8 at least, two or more threads did
-        //not increase the overall CPU over a single thread
+        // https://github.com/msigwart/fakeload
+        // with this version of fakeload, you should only need one thread to hit
+        // the cpu targets; on Linux with Java 8 at least, two or more threads did
+        // not increase the overall CPU over a single thread
         int numThreads = 1;
         NamedNodeMap attrs = action.getAttributes();
         if (attrs == null) {
-            throw new IllegalArgumentException("Must specify details...no attributes for " +
-                    "fakeload?!");
+            throw new IllegalArgumentException(
+                            "Must specify details...no attributes for " + "fakeload?!");
         }
-        if (attrs.getNamedItem("millis") == null || attrs.getNamedItem("cpu") == null ||
-                attrs.getNamedItem("mb") == null) {
-            throw new IllegalArgumentException("must specify 'millis' (time to process), " +
-                    "'cpu' (% cpu as an integer, e.g. 50% would be '50'), " +
-                    "and 'mb' (megabytes as an integer)");
+        if (attrs.getNamedItem("millis") == null || attrs.getNamedItem("cpu") == null
+                        || attrs.getNamedItem("mb") == null) {
+            throw new IllegalArgumentException("must specify 'millis' (time to process), "
+                            + "'cpu' (% cpu as an integer, e.g. 50% would be '50'), "
+                            + "and 'mb' (megabytes as an integer)");
         }
         Node n = attrs.getNamedItem("numThreads");
         if (n != null) {
@@ -209,12 +203,11 @@ public class MockParser implements Parser {
 
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
         ExecutorCompletionService<Integer> executorCompletionService =
-                new ExecutorCompletionService<>(executorService);
+                        new ExecutorCompletionService<>(executorService);
 
         for (int i = 0; i < numThreads; i++) {
             executorCompletionService.submit(() -> {
-                FakeLoad fakeload =
-                        new FakeLoadBuilder().lasting(millis, TimeUnit.MILLISECONDS)
+                FakeLoad fakeload = new FakeLoadBuilder().lasting(millis, TimeUnit.MILLISECONDS)
                                 .withCpu(cpu).withMemory(mb, MemoryUnit.MB).build();
                 FakeLoadExecutor executor = FakeLoadExecutors.newDefaultExecutor();
                 executor.execute(fakeload);
@@ -244,7 +237,7 @@ public class MockParser implements Parser {
     }
 
     private void handleEmbedded(Node action, XHTMLContentHandler handler, ParseContext context)
-            throws TikaException, SAXException, IOException {
+                    throws TikaException, SAXException, IOException {
         String fileName = "";
         String contentType = "";
         NamedNodeMap attrs = action.getAttributes();
@@ -260,7 +253,8 @@ public class MockParser implements Parser {
         }
 
         String embeddedText = action.getTextContent();
-        EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor extractor =
+                        EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
@@ -339,7 +333,7 @@ public class MockParser implements Parser {
             Node pNode = attrs.getNamedItem("pulse_millis");
             if (pNode == null) {
                 throw new RuntimeException(
-                        "Must specify attribute \"pulse_millis\" if the hang is \"heavy\"");
+                                "Must specify attribute \"pulse_millis\" if the hang is \"heavy\"");
             }
             String pulseMillisString = mNode.getNodeValue();
             try {
@@ -364,7 +358,7 @@ public class MockParser implements Parser {
 
     private void metadata(Node action, Metadata metadata) {
         NamedNodeMap attrs = action.getAttributes();
-        //throws npe unless there is a name
+        // throws npe unless there is a name
         String name = attrs.getNamedItem("name").getNodeValue();
         String value = action.getTextContent();
         Node actionType = attrs.getNamedItem("action");
@@ -401,7 +395,7 @@ public class MockParser implements Parser {
 
 
     private void throwIt(String className, String msg)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         Throwable t = null;
         if (msg == null || msg.equals("")) {
             try {
@@ -429,7 +423,7 @@ public class MockParser implements Parser {
         } else if (t instanceof RuntimeException) {
             throw (RuntimeException) t;
         } else {
-            //wrap the throwable in a RuntimeException
+            // wrap the throwable in a RuntimeException
             throw new RuntimeException(t);
         }
     }
@@ -444,11 +438,11 @@ public class MockParser implements Parser {
     }
 
     private void hangHeavy(long maxMillis, long pulseCheckMillis, boolean interruptible) {
-        //do some heavy computation and occasionally check for
-        //whether time has exceeded maxMillis (see TIKA-1132 for inspiration)
-        //or whether the thread was interrupted.
-        //By creating a new Date in the inner loop, we're also intentionally
-        //triggering the gc most likely.
+        // do some heavy computation and occasionally check for
+        // whether time has exceeded maxMillis (see TIKA-1132 for inspiration)
+        // or whether the thread was interrupted.
+        // By creating a new Date in the inner loop, we're also intentionally
+        // triggering the gc most likely.
         long start = new Date().getTime();
         long lastChecked = start;
         while (true) {

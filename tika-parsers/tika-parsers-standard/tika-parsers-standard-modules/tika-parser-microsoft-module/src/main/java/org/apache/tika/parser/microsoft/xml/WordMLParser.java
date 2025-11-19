@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.xml;
 
@@ -25,14 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import javax.xml.namespace.QName;
-
 import org.apache.commons.codec.binary.Base64;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -42,21 +33,26 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Parses wordml 2003 format word files.  These are single xml files
- * that predate ooxml.
+ * Parses wordml 2003 format word files. These are single xml files that predate ooxml.
  * <p>
- * See <a href="https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats">https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats</a>
+ * See <a href=
+ * "https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats">https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats</a>
  */
 public class WordMLParser extends AbstractXML2003Parser {
-    //map between wordml and xhtml entities
+    // map between wordml and xhtml entities
     private static final Map<String, String> WORDML_TO_XHTML;
-    //ignore all characters within these elements
-    private static final Set<QName> IGNORE_CHARACTERS = Collections.unmodifiableSet(new HashSet<>(
-            Arrays.asList(new QName(WORD_ML_URL, HLINK), new QName(WORD_ML_URL, PICT),
-                    new QName(WORD_ML_URL, BIN_DATA),
-                    new QName(MS_OFFICE_PROPERTIES_URN, DOCUMENT_PROPERTIES))));
+    // ignore all characters within these elements
+    private static final Set<QName> IGNORE_CHARACTERS = Collections
+                    .unmodifiableSet(new HashSet<>(Arrays.asList(new QName(WORD_ML_URL, HLINK),
+                                    new QName(WORD_ML_URL, PICT), new QName(WORD_ML_URL, BIN_DATA),
+                                    new QName(MS_OFFICE_PROPERTIES_URN, DOCUMENT_PROPERTIES))));
     private static final MediaType MEDIA_TYPE = MediaType.application("vnd.ms-wordml");
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
 
@@ -65,10 +61,10 @@ public class WordMLParser extends AbstractXML2003Parser {
         m.put(P, P);
         m.put("tbl", TABLE);
         m.put(TR, TR);
-        m.put("tc", TD);//not a typo -- table cell -> tc
+        m.put("tc", TD);// not a typo -- table cell -> tc
         WORDML_TO_XHTML = Collections.unmodifiableMap(m);
     }
-    //immutable
+    // immutable
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -77,12 +73,12 @@ public class WordMLParser extends AbstractXML2003Parser {
 
     @Override
     protected ContentHandler getContentHandler(ContentHandler ch, Metadata metadata,
-                                               ParseContext context) {
+                    ParseContext context) {
 
         return new TeeContentHandler(super.getContentHandler(ch, metadata, context),
-                new WordMLHandler(ch), new HyperlinkHandler(ch, WORD_ML_URL),
-                new PictHandler(ch, metadata,
-                        EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context)));
+                        new WordMLHandler(ch), new HyperlinkHandler(ch, WORD_ML_URL),
+                        new PictHandler(ch, metadata, EmbeddedDocumentUtil
+                                        .getEmbeddedDocumentExtractor(context)));
     }
 
     @Override
@@ -95,9 +91,9 @@ public class WordMLParser extends AbstractXML2003Parser {
         private boolean ignoreCharacters;
         private boolean inBody = false;
 
-        //use inP to keep track of whether the handler is
-        //in a paragraph or not. <p><p></p></p> was allowed
-        //in wordml. Use this boolean to prevent <p> within <p>
+        // use inP to keep track of whether the handler is
+        // in a paragraph or not. <p><p></p></p> was allowed
+        // in wordml. Use this boolean to prevent <p> within <p>
         private boolean inP;
 
         public WordMLHandler(ContentHandler handler) {
@@ -106,7 +102,7 @@ public class WordMLParser extends AbstractXML2003Parser {
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attrs)
-                throws SAXException {
+                        throws SAXException {
             localName = localName.toLowerCase(Locale.US);
             if (WORD_ML_URL.equals(uri)) {
                 if (BODY.equals(localName)) {
@@ -116,7 +112,7 @@ public class WordMLParser extends AbstractXML2003Parser {
                 String html = WORDML_TO_XHTML.get(localName);
                 if (html != null) {
                     if (P.equals(localName)) {
-                        //close p if already in a p to prevent nested <p>
+                        // close p if already in a p to prevent nested <p>
                         if (inP) {
                             handler.endElement(XHTMLContentHandler.XHTML, P, P);
                         }
@@ -147,8 +143,8 @@ public class WordMLParser extends AbstractXML2003Parser {
         @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
             if (WORD_ML_URL.equals(uri)) {
-                //for now, don't bother checking for end of body...if there's any text
-                //after the close of body, we should extract it
+                // for now, don't bother checking for end of body...if there's any text
+                // after the close of body, we should extract it
                 localName = localName.toLowerCase(Locale.US);
                 String html = WORDML_TO_XHTML.get(localName);
                 if (html != null) {
@@ -156,7 +152,7 @@ public class WordMLParser extends AbstractXML2003Parser {
                         handler.endElement(XHTMLContentHandler.XHTML, TBODY, TBODY);
                     }
                     if (P.equals(html) && !inP) {
-                        //start p if not already in one to prevent non-matching <p>
+                        // start p if not already in one to prevent non-matching <p>
                         handler.startElement(XHTMLContentHandler.XHTML, P, P, EMPTY_ATTRS);
                     }
                     handler.endElement(XHTMLContentHandler.XHTML, html, html);
@@ -186,7 +182,7 @@ public class WordMLParser extends AbstractXML2003Parser {
         String pictSource = null;
 
         public PictHandler(ContentHandler handler, Metadata metadata,
-                           EmbeddedDocumentExtractor embeddedDocumentExtractor) {
+                        EmbeddedDocumentExtractor embeddedDocumentExtractor) {
             this.handler = handler;
             this.parentMetadata = metadata;
             this.embeddedDocumentExtractor = embeddedDocumentExtractor;
@@ -194,7 +190,7 @@ public class WordMLParser extends AbstractXML2003Parser {
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attrs)
-                throws SAXException {
+                        throws SAXException {
             if (WORD_ML_URL.equals(uri)) {
                 if (PICT.equals(localName)) {
                     inPict = true;
@@ -207,13 +203,13 @@ public class WordMLParser extends AbstractXML2003Parser {
                 }
             } else if (MS_VML_URN.equals(uri)) {
                 if (localName.equals("imagedata")) {
-                    //src is an internal designator with an extension
+                    // src is an internal designator with an extension
                     String src = attrs.getValue("", "src");
-                    //title appears to be the original file name
+                    // title appears to be the original file name
                     String title = attrs.getValue(MS_OFFICE_PROPERTIES_URN, "title");
                     if (title != null && !title.equals("")) {
                         if (src != null) {
-                            //take the extention from the src and append it to the title
+                            // take the extention from the src and append it to the title
                             int i = src.lastIndexOf(".");
                             if (i > -1 && i + 1 < src.length()) {
                                 String ext = src.substring(i);
@@ -240,13 +236,13 @@ public class WordMLParser extends AbstractXML2003Parser {
             if (!WORD_ML_URL.equals(uri)) {
                 return;
             }
-            //somewhat tricky...
-            //can't just dump bin_data at the end of the
-            //bin_data element because there may be metadata
-            //after it, if it is within a pict element
-            //<pict><binData></binData><imagedata/></pict>.
-            //However, if you aren't in a pict (say docOLEdata), then do dump binary
-            //data at the end of the bin data.
+            // somewhat tricky...
+            // can't just dump bin_data at the end of the
+            // bin_data element because there may be metadata
+            // after it, if it is within a pict element
+            // <pict><binData></binData><imagedata/></pict>.
+            // However, if you aren't in a pict (say docOLEdata), then do dump binary
+            // data at the end of the bin data.
             if (PICT.equals(localName)) {
                 inPict = false;
                 AttributesImpl attrs = new AttributesImpl();
@@ -265,7 +261,7 @@ public class WordMLParser extends AbstractXML2003Parser {
                 } catch (IllegalArgumentException e) {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                 } finally {
-                    //reset
+                    // reset
                     buffer.setLength(0);
                 }
                 if (success && !inPict) {
@@ -288,10 +284,10 @@ public class WordMLParser extends AbstractXML2003Parser {
                         embeddedDocumentExtractor.parseEmbedded(is, handler, metadata, outputHtml);
                     }
                 } catch (IOException e) {
-                    //log
+                    // log
                 }
             }
-            //reset
+            // reset
             pictName = null;
             pictSource = null;
             rawBytes = null;

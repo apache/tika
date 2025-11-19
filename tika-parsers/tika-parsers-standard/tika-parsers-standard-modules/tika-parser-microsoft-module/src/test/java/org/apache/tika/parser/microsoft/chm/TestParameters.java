@@ -1,24 +1,21 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.chm;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.apache.commons.io.IOUtils;
 
 
@@ -69,7 +66,7 @@ public class TestParameters {
     static final int VP_CONTROL_DATA_VERSION = 2;
     static final int VP_WINDOW_SIZE = 65536;
     static final int VP_WINDOWS_PER_RESET = 1;
-    static final int VP_CHM_ENTITIES_NUMBER = 100; //updated  by Hawking
+    static final int VP_CHM_ENTITIES_NUMBER = 100; // updated by Hawking
     static final int VP_PMGI_FREE_SPACE = 3;
     static final int VP_PMGL_BLOCK_NEXT = -1;
     static final int VP_PMGL_BLOCK_PREV = -1;
@@ -85,8 +82,7 @@ public class TestParameters {
     static ChmCommons.EntryType entryType = ChmCommons.EntryType.COMPRESSED;
 
     /* Prevents initialization */
-    private TestParameters() {
-    }
+    private TestParameters() {}
 
     private static byte[] readResource(String name) {
         try {

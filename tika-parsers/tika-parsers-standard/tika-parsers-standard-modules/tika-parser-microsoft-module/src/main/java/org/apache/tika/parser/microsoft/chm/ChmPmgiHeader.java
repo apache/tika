@@ -1,38 +1,33 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.chm;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.util.Arrays;
-
 import org.apache.tika.exception.TikaException;
 
 /**
- * Description Note: not always exists An index chunk has the following format:
- * 0000: char[4] 'PMGI' 0004: DWORD Length of quickref/free area at end of
- * directory chunk 0008: Directory index entries (to quickref/free area) The
- * quickref area in an PMGI is the same as in an PMGL The format of a directory
- * index entry is as follows: BYTE: length of name BYTEs: name (UTF-8 encoded)
- * ENCINT: directory listing chunk which starts with name Encoded Integers aka
- * ENCINT An ENCINT is a variable-length integer. The high bit of each byte
- * indicates "continued to the next byte". Bytes are stored most significant to
- * least significant. So, for example, $EA $15 is (((0xEA&amp;0x7F)&lt;&lt;7)|0x15) =
- * 0x3515.
+ * Description Note: not always exists An index chunk has the following format: 0000: char[4] 'PMGI'
+ * 0004: DWORD Length of quickref/free area at end of directory chunk 0008: Directory index entries
+ * (to quickref/free area) The quickref area in an PMGI is the same as in an PMGL The format of a
+ * directory index entry is as follows: BYTE: length of name BYTEs: name (UTF-8 encoded) ENCINT:
+ * directory listing chunk which starts with name Encoded Integers aka ENCINT An ENCINT is a
+ * variable-length integer. The high bit of each byte indicates "continued to the next byte". Bytes
+ * are stored most significant to least significant. So, for example, $EA $15 is
+ * (((0xEA&amp;0x7F)&lt;&lt;7)|0x15) = 0x3515.
  *
  * <p>
  * Note: This class is not in use
@@ -67,19 +62,20 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
     }
 
     private void unmarshalCharArray(byte[] data, ChmPmgiHeader chmPmgiHeader, int count)
-            throws ChmParsingException {
+                    throws ChmParsingException {
         int index = -1;
         ChmAssert.assertByteArrayNotNull(data);
         ChmAssert.assertChmAccessorNotNull(chmPmgiHeader);
         ChmAssert.assertPositiveInt(count);
         this.setDataRemained(data.length);
-        index = ChmCommons.indexOfDataSpaceStorageElement(data, ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8));
+        index = ChmCommons.indexOfDataSpaceStorageElement(data,
+                        ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8));
 
         if (index >= 0) {
             System.arraycopy(data, index, chmPmgiHeader.getSignature(), 0, count);
         } else {
-            //Some chm documents (actually most of them) do not contain
-            //PMGI header, in this case, we just notice about it.
+            // Some chm documents (actually most of them) do not contain
+            // PMGI header, in this case, we just notice about it.
         }
         this.setCurrentPlace(this.getCurrentPlace() + count);
         this.setDataRemained(this.getDataRemained() - count);
@@ -91,10 +87,10 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
         if (4 > getDataRemained()) {
             throw new ChmParsingException("4 > dataLenght");
         }
-        dest = (data[this.getCurrentPlace()] & 0xff) |
-                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
-                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
-                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                        | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                        | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                        | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -143,7 +139,8 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("signature:=").append(new String(getSignature(), UTF_8)).append(", ");
-        sb.append("free space:=").append(getFreeSpace()).append(System.getProperty("line.separator"));
+        sb.append("free space:=").append(getFreeSpace())
+                        .append(System.getProperty("line.separator"));
         return sb.toString();
     }
 
@@ -156,15 +153,15 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
 
         /* unmarshal fields */
         chmPmgiHeader.unmarshalCharArray(data, chmPmgiHeader, ChmConstants.CHM_SIGNATURE_LEN);
-        chmPmgiHeader
-                .setFreeSpace(chmPmgiHeader.unmarshalUInt32(data, chmPmgiHeader.getFreeSpace()));
+        chmPmgiHeader.setFreeSpace(
+                        chmPmgiHeader.unmarshalUInt32(data, chmPmgiHeader.getFreeSpace()));
 
         /* check structure */
         if (!Arrays.equals(chmPmgiHeader.getSignature(),
-                ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8))) {
+                        ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8))) {
             throw new TikaException(
-                    "it does not seem to be valid a PMGI signature, check ChmItsp index_root if " +
-                            "it was -1, means no PMGI, use PMGL insted");
+                            "it does not seem to be valid a PMGI signature, check ChmItsp index_root if "
+                                            + "it was -1, means no PMGI, use PMGL insted");
         }
 
     }

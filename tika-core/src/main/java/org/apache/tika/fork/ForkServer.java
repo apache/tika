@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.fork;
 
@@ -26,11 +24,9 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
-
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParserFactory;
+import org.xml.sax.SAXException;
 
 class ForkServer implements Runnable {
 
@@ -61,28 +57,28 @@ class ForkServer implements Runnable {
      */
     private final DataOutputStream output;
     private final boolean active = true;
-    //milliseconds to sleep before checking to see if there has been any reading/writing
-    //If no reading or writing in this time, shutdown the server.
+    // milliseconds to sleep before checking to see if there has been any reading/writing
+    // If no reading or writing in this time, shutdown the server.
     private long serverPulseMillis = 5000;
     private long serverParserTimeoutMillis = 60000;
     private long serverWaitTimeoutMillis = 60000;
-    //can't be class Parser because then you'd
-    //have to include that in bootstrap jar (legacy mode)
+    // can't be class Parser because then you'd
+    // have to include that in bootstrap jar (legacy mode)
     private Object parser;
     private ClassLoader classLoader;
     private boolean parsing = false;
     private long since;
+
     /**
-     * Sets up a forked server instance using the given stdin/out
-     * communication channel.
+     * Sets up a forked server instance using the given stdin/out communication channel.
      *
-     * @param input  input stream for reading from the parent process
+     * @param input input stream for reading from the parent process
      * @param output output stream for writing to the parent process
      * @throws IOException if the server instance could not be created
      */
     public ForkServer(InputStream input, OutputStream output, long serverPulseMillis,
-                      long serverParserTimeoutMillis, long serverWaitTimeoutMillis)
-            throws IOException {
+                    long serverParserTimeoutMillis, long serverWaitTimeoutMillis)
+                    throws IOException {
         this.input = new DataInputStream(input);
         this.output = new DataOutputStream(output);
         this.serverPulseMillis = serverPulseMillis;
@@ -93,10 +89,9 @@ class ForkServer implements Runnable {
     }
 
     /**
-     * Starts a forked server process using the standard input and output
-     * streams for communication with the parent process. Any attempts by
-     * stray code to read from standard input or write to standard output
-     * is redirected to avoid interfering with the communication channel.
+     * Starts a forked server process using the standard input and output streams for communication
+     * with the parent process. Any attempts by stray code to read from standard input or write to
+     * standard output is redirected to avoid interfering with the communication channel.
      *
      * @param args command line arguments, ignored
      * @throws Exception if the server could not be started
@@ -108,9 +103,8 @@ class ForkServer implements Runnable {
 
         URL.setURLStreamHandlerFactory(new MemoryURLStreamHandlerFactory());
 
-        ForkServer server =
-                new ForkServer(System.in, System.out, serverPulseMillis, serverParseTimeoutMillis,
-                        serverWaitTimeoutMillis);
+        ForkServer server = new ForkServer(System.in, System.out, serverPulseMillis,
+                        serverParseTimeoutMillis, serverWaitTimeoutMillis);
         System.setIn(new ByteArrayInputStream(new byte[0]));
         System.setOut(System.err);
 
@@ -128,8 +122,8 @@ class ForkServer implements Runnable {
                     long elapsed = System.currentTimeMillis() - since;
                     if (parsing && elapsed > serverParserTimeoutMillis) {
                         break;
-                    } else if (!parsing && serverWaitTimeoutMillis > 0 &&
-                            elapsed > serverWaitTimeoutMillis) {
+                    } else if (!parsing && serverWaitTimeoutMillis > 0
+                                    && elapsed > serverWaitTimeoutMillis) {
                         break;
                     }
                 }
@@ -137,12 +131,12 @@ class ForkServer implements Runnable {
             }
             System.exit(0);
         } catch (InterruptedException e) {
-            //swallow
+            // swallow
         }
     }
 
     public void processRequests() {
-        //initialize
+        // initialize
         try {
             initializeParserAndLoader();
         } catch (Throwable t) {
@@ -157,7 +151,7 @@ class ForkServer implements Runnable {
             }
             return;
         }
-        //main loop
+        // main loop
         try {
             while (true) {
                 int request = input.read();
@@ -179,7 +173,7 @@ class ForkServer implements Runnable {
     }
 
     private void initializeParserAndLoader()
-            throws IOException, ClassNotFoundException, TikaException, SAXException {
+                    throws IOException, ClassNotFoundException, TikaException, SAXException {
         output.writeByte(READY);
         output.flush();
 
@@ -192,36 +186,36 @@ class ForkServer implements Runnable {
         switch (configIndex) {
             case INIT_PARSER_FACTORY_FACTORY:
                 if (firstObject instanceof ParserFactoryFactory) {
-                    //the user has submitted a parser factory, but no class loader
+                    // the user has submitted a parser factory, but no class loader
                     classLoader = ForkServer.class.getClassLoader();
                     ParserFactory parserFactory = ((ParserFactoryFactory) firstObject).build();
                     parser = parserFactory.build();
                 } else {
                     throw new IllegalArgumentException(
-                            "Expecting only one object of class ParserFactoryFactory");
+                                    "Expecting only one object of class ParserFactoryFactory");
                 }
                 break;
             case INIT_LOADER_PARSER:
                 if (firstObject instanceof ClassLoader) {
                     classLoader = (ClassLoader) firstObject;
                     Thread.currentThread().setContextClassLoader(classLoader);
-                    //parser from parent process
+                    // parser from parent process
                     parser = readObject(classLoader);
                 } else {
                     throw new IllegalArgumentException(
-                            "Expecting ClassLoader followed by a Parser");
+                                    "Expecting ClassLoader followed by a Parser");
                 }
                 break;
             case INIT_PARSER_FACTORY_FACTORY_LOADER:
                 if (firstObject instanceof ParserFactoryFactory) {
-                    //the user has submitted a parser factory and a class loader
+                    // the user has submitted a parser factory and a class loader
                     ParserFactory parserFactory = ((ParserFactoryFactory) firstObject).build();
                     parser = parserFactory.build();
                     classLoader = (ClassLoader) readObject(ForkServer.class.getClassLoader());
                     Thread.currentThread().setContextClassLoader(classLoader);
                 } else {
                     throw new IllegalStateException(
-                            "Expecing ParserFactoryFactory followed by a class loader");
+                                    "Expecing ParserFactoryFactory followed by a class loader");
                 }
                 break;
         }
@@ -281,12 +275,12 @@ class ForkServer implements Runnable {
     }
 
     /**
-     * Deserializes an object from the given stream. The serialized object
-     * is expected to be preceded by a size integer, that is used for reading
-     * the entire serialization into a memory before deserializing it.
+     * Deserializes an object from the given stream. The serialized object is expected to be
+     * preceded by a size integer, that is used for reading the entire serialization into a memory
+     * before deserializing it.
      *
      * @param loader class loader to be used for loading referenced classes
-     * @throws IOException            if the object could not be deserialized
+     * @throws IOException if the object could not be deserialized
      * @throws ClassNotFoundException if a referenced class is not found
      */
     private Object readObject(ClassLoader loader) throws IOException, ClassNotFoundException {

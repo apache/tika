@@ -1,24 +1,21 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.core;
 
 import java.io.Serializable;
 import java.util.Objects;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.emitter.EmitKey;
@@ -45,16 +42,18 @@ public class FetchEmitTuple implements Serializable {
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey) {
         this(id, fetchKey, emitKey, new Metadata());
     }
+
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata) {
         this(id, fetchKey, emitKey, metadata, new ParseContext());
     }
 
-    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata, ParseContext parseContext) {
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata,
+                    ParseContext parseContext) {
         this(id, fetchKey, emitKey, metadata, parseContext, ON_PARSE_EXCEPTION.EMIT);
     }
 
-    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata, ParseContext parseContext,
-                          ON_PARSE_EXCEPTION onParseException) {
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata,
+                    ParseContext parseContext, ON_PARSE_EXCEPTION onParseException) {
         this.id = id;
         this.fetchKey = fetchKey;
         this.emitKey = emitKey;
@@ -66,6 +65,7 @@ public class FetchEmitTuple implements Serializable {
     public String getId() {
         return id;
     }
+
     public FetchKey getFetchKey() {
         return fetchKey;
     }
@@ -81,6 +81,7 @@ public class FetchEmitTuple implements Serializable {
     public ParseContext getParseContext() {
         return parseContext;
     }
+
     public void setEmitKey(EmitKey emitKey) {
         this.emitKey = emitKey;
     }
@@ -99,10 +100,13 @@ public class FetchEmitTuple implements Serializable {
         }
 
         FetchEmitTuple that = (FetchEmitTuple) o;
-        return Objects.equals(id, that.id) && Objects.equals(fetchKey, that.fetchKey) && Objects.equals(emitKey, that.emitKey)
-                && Objects.equals(metadata, that.metadata) &&
-                Objects.equals(parseContext, that.parseContext) && onParseException == that.onParseException &&
-                Objects.equals(embeddedDocumentBytesConfig, that.embeddedDocumentBytesConfig);
+        return Objects.equals(id, that.id) && Objects.equals(fetchKey, that.fetchKey)
+                        && Objects.equals(emitKey, that.emitKey)
+                        && Objects.equals(metadata, that.metadata)
+                        && Objects.equals(parseContext, that.parseContext)
+                        && onParseException == that.onParseException
+                        && Objects.equals(embeddedDocumentBytesConfig,
+                                        that.embeddedDocumentBytesConfig);
     }
 
     @Override
@@ -119,8 +123,9 @@ public class FetchEmitTuple implements Serializable {
 
     @Override
     public String toString() {
-        return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey=" + emitKey +
-                ", metadata=" + metadata + ", parseContext=" + parseContext +
-                ", onParseException=" + onParseException + ", embeddedDocumentBytesConfig=" + embeddedDocumentBytesConfig + '}';
+        return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey="
+                        + emitKey + ", metadata=" + metadata + ", parseContext=" + parseContext
+                        + ", onParseException=" + onParseException
+                        + ", embeddedDocumentBytesConfig=" + embeddedDocumentBytesConfig + '}';
     }
 }

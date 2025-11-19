@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.iwork;
 
@@ -23,11 +21,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
@@ -40,6 +33,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Tests if the IWork parser parses the content and metadata properly of the supported formats.
@@ -64,7 +60,7 @@ public class IWorkParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
         iWorkParser.parse(input, handler, metadata, new ParseContext());
-        input.read();   // Will throw an Exception if the stream was already closed.
+        input.read(); // Will throw an Exception if the stream was already closed.
     }
 
     @Test
@@ -77,15 +73,15 @@ public class IWorkParserTest extends TikaTest {
         assertTrue(metadata.size() >= 6, "Insufficient metadata found " + metadata.size());
         List<String> metadataKeys = Arrays.asList(metadata.names());
         assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(Office.SLIDE_COUNT.getName()),
-                "Metadata not found in " + metadataKeys);
-//        assertTrue("Metadata not found in " + metadataKeys,
-//        metadataKeys.contains(Office.SLIDE_COUNT.getName()));
+                        "Metadata not found in " + metadataKeys);
+        // assertTrue("Metadata not found in " + metadataKeys,
+        // metadataKeys.contains(Office.SLIDE_COUNT.getName()));
         assertTrue(metadataKeys.contains(TikaCoreProperties.CREATOR.getName()),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
 
         // Check the metadata values
         assertEquals("application/vnd.apple.keynote", metadata.get(Metadata.CONTENT_TYPE));
@@ -126,7 +122,7 @@ public class IWorkParserTest extends TikaTest {
     public void testKeynoteBulletPoints() throws Exception {
         String content = getText("testBulletPoints.key", iWorkParser);
         assertTrue(content.replaceAll("\\s+", " ")
-                .contains("bullet point 1 bullet point 2 bullet point 3"));
+                        .contains("bullet point 1 bullet point 2 bullet point 3"));
     }
 
     // TIKA-923
@@ -156,17 +152,17 @@ public class IWorkParserTest extends TikaTest {
         assertTrue(metadata.size() >= 50, "Insufficient metadata found " + metadata.size());
         List<String> metadataKeys = Arrays.asList(metadata.names());
         assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(Office.PAGE_COUNT.getName()),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.CREATOR.getName()),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.MODIFIED.getName()),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.LANGUAGE.getName()),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
 
         // Check the metadata values
         assertEquals("application/vnd.apple.pages", metadata.get(Metadata.CONTENT_TYPE));
@@ -217,17 +213,17 @@ public class IWorkParserTest extends TikaTest {
         assertTrue(metadata.size() >= 8, "Insufficient metadata found " + metadata.size());
         List<String> metadataKeys = Arrays.asList(metadata.names());
         assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(Office.PAGE_COUNT.getName()),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.CREATOR.getName()),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.COMMENTS.getName()),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()),
-                "Metadata not found in " + metadataKeys);
+                        "Metadata not found in " + metadataKeys);
 
         // Check the metadata values
         assertEquals("2", metadata.get(Office.PAGE_COUNT));
@@ -267,9 +263,8 @@ public class IWorkParserTest extends TikaTest {
     }
 
     /**
-     * We don't currently support password protected Pages files, as
-     * we don't know how the encryption works (it's not regular Zip
-     * Encryption). See TIKA-903 for details
+     * We don't currently support password protected Pages files, as we don't know how the
+     * encryption works (it's not regular Zip Encryption). See TIKA-903 for details
      */
     @Test
     public void testParsePagesPasswordProtected() throws Exception {
@@ -403,14 +398,14 @@ public class IWorkParserTest extends TikaTest {
         assertContains("Chart 2", content);
     }
 
-    //TIKA-3020
+    // TIKA-3020
     @Test
     public void testKeyNoteTableMarkup() throws Exception {
         String expected =
-                "<table><tr>\t<td>Cell one</td>\t<td>Cell two</td>\t<td>Cell three</td></tr>" +
-                        "<tr>\t<td>Cell four</td>\t<td>Cell 5</td>\t<td>Cell six</td></tr>" +
-                        "<tr>\t<td>7</td>\t<td>Cell eight</td>\t<td>5/5/1985</td></tr>" +
-                        "</table>";
+                        "<table><tr>\t<td>Cell one</td>\t<td>Cell two</td>\t<td>Cell three</td></tr>"
+                                        + "<tr>\t<td>Cell four</td>\t<td>Cell 5</td>\t<td>Cell six</td></tr>"
+                                        + "<tr>\t<td>7</td>\t<td>Cell eight</td>\t<td>5/5/1985</td></tr>"
+                                        + "</table>";
         String xml = getXML("testKeynote.key", iWorkParser).xml;
         xml = xml.replaceAll("[\r\n]", "");
         assertContains(expected, xml);
@@ -418,12 +413,12 @@ public class IWorkParserTest extends TikaTest {
 
     @Test
     public void testNPEInDetection() throws Exception {
-        //TIKA-3639
+        // TIKA-3639
         List<ZipContainerDetector> zips = new ArrayList<>();
         zips.add(new IWorkDetector());
         Detector d = new CompositeDetector(new DefaultZipContainerDetector(zips));
         try (InputStream is = this.getClass()
-                .getResourceAsStream("/test-documents/testIWorksNPEDetector.zip")) {
+                        .getResourceAsStream("/test-documents/testIWorksNPEDetector.zip")) {
             MediaType mt = d.detect(is, new Metadata());
             assertEquals(MediaType.application("zip"), mt);
         }

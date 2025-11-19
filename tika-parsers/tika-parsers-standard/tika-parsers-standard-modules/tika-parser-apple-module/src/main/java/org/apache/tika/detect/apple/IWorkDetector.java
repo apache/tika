@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.detect.apple;
 
@@ -20,10 +18,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
-
 import org.apache.tika.detect.zip.StreamingDetectContext;
 import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.io.TikaInputStream;
@@ -53,7 +49,7 @@ public class IWorkDetector implements ZipContainerDetector {
             // the correct type of the keynote container.
             for (String entryName : IWorkPackageParser.IWORK_CONTENT_ENTRIES) {
                 IWorkPackageParser.IWORKDocumentType type = IWorkPackageParser.IWORKDocumentType
-                        .detectType(zip.getEntry(entryName), zip);
+                                .detectType(zip.getEntry(entryName), zip);
                 if (type != null) {
                     return type.getType();
                 }
@@ -81,7 +77,7 @@ public class IWorkDetector implements ZipContainerDetector {
 
     @Override
     public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
-                                           StreamingDetectContext detectContext) {
+                    StreamingDetectContext detectContext) {
         String name = zae.getName();
         EntryNames entryNames = detectContext.get(EntryNames.class);
         if (entryNames == null) {
@@ -91,7 +87,7 @@ public class IWorkDetector implements ZipContainerDetector {
         entryNames.names.add(name);
         if (IWorkPackageParser.IWORK_CONTENT_ENTRIES.contains(name)) {
             IWorkPackageParser.IWORKDocumentType type =
-                    IWorkPackageParser.IWORKDocumentType.detectType(zis);
+                            IWorkPackageParser.IWORKDocumentType.detectType(zis);
             if (type != null) {
                 return type.getType();
             }
@@ -117,7 +113,7 @@ public class IWorkDetector implements ZipContainerDetector {
         if (entryNames.names.contains(IWork13PackageParser.IWORK13_MAIN_ENTRY)) {
             return IWork13PackageParser.IWork13DocumentType.UNKNOWN13.getType();
         }
-        //general iworks
+        // general iworks
         if (entryNames.names.contains(IWorkPackageParser.IWORK_COMMON_ENTRY)) {
             return MediaType.application("vnd.apple.iwork");
         }

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.io;
 
@@ -24,7 +22,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -34,16 +31,17 @@ public class TailStreamTest {
     /**
      * Constant for generating test text.
      */
-    private static final String TEXT = "Lorem ipsum dolor sit amet, consetetur " +
-            "sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut " +
-            "labore et dolore magna aliquyam erat, sed diam voluptua. At vero" +
-            " eos et accusam et justo duo dolores et ea rebum. Stet clita " +
-            "kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor " + "sit amet.";
+    private static final String TEXT = "Lorem ipsum dolor sit amet, consetetur "
+                    + "sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut "
+                    + "labore et dolore magna aliquyam erat, sed diam voluptua. At vero"
+                    + " eos et accusam et justo duo dolores et ea rebum. Stet clita "
+                    + "kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor "
+                    + "sit amet.";
 
     /**
      * Generates a test text using the specified parameters.
      *
-     * @param from   the start index of the text
+     * @param from the start index of the text
      * @param length the length of the text
      * @return the generated test text
      */
@@ -59,7 +57,7 @@ public class TailStreamTest {
     /**
      * Generates a stream which contains a test text.
      *
-     * @param from   the start index of the text
+     * @param from the start index of the text
      * @param length the length of the generated stream
      * @return the stream with the test text
      */
@@ -114,7 +112,7 @@ public class TailStreamTest {
         TailStream stream = new TailStream(generateStream(0, 2 * count), count);
         readStream(stream);
         assertEquals(generateText(count, count), new String(stream.getTail(), UTF_8),
-                "Wrong buffer");
+                        "Wrong buffer");
     }
 
     /**
@@ -132,8 +130,8 @@ public class TailStreamTest {
         while (read != -1) {
             read = stream.read(buf);
         }
-        assertEquals(generateText(count - tailSize, tailSize),
-                new String(stream.getTail(), UTF_8), "Wrong buffer");
+        assertEquals(generateText(count - tailSize, tailSize), new String(stream.getTail(), UTF_8),
+                        "Wrong buffer");
         stream.close();
     }
 
@@ -150,8 +148,8 @@ public class TailStreamTest {
         stream.read(buf);
         stream.reset();
         readStream(stream);
-        assertEquals(generateText(tailSize, tailSize),
-                new String(stream.getTail(), UTF_8), "Wrong buffer");
+        assertEquals(generateText(tailSize, tailSize), new String(stream.getTail(), UTF_8),
+                        "Wrong buffer");
     }
 
     /**
@@ -165,8 +163,8 @@ public class TailStreamTest {
         stream.reset();
         byte[] buf = new byte[count];
         stream.read(buf);
-        assertEquals(generateText(count - tailSize, tailSize),
-                new String(stream.getTail(), UTF_8), "Wrong buffer");
+        assertEquals(generateText(count - tailSize, tailSize), new String(stream.getTail(), UTF_8),
+                        "Wrong buffer");
         stream.close();
     }
 
@@ -181,7 +179,7 @@ public class TailStreamTest {
         TailStream stream = new TailStream(generateStream(0, count), tailSize);
         assertEquals(skipCount, stream.skip(skipCount), "Wrong skip result");
         assertEquals(generateText(skipCount - tailSize, tailSize),
-                new String(stream.getTail(), UTF_8), "Wrong buffer");
+                        new String(stream.getTail(), UTF_8), "Wrong buffer");
         stream.close();
     }
 
@@ -193,8 +191,7 @@ public class TailStreamTest {
         final int count = 128;
         TailStream stream = new TailStream(generateStream(0, count), 2 * count);
         assertEquals(count, stream.skip(2 * count), "Wrong skip result");
-        assertEquals(generateText(0, count), new String(stream.getTail(), UTF_8),
-                "Wrong buffer");
+        assertEquals(generateText(0, count), new String(stream.getTail(), UTF_8), "Wrong buffer");
         stream.close();
     }
 

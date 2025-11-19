@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mp3;
 
@@ -22,10 +20,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TailStream;
@@ -37,13 +31,16 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * The <code>Mp3Parser</code> is used to parse ID3 Version 1 Tag information
- * from an MP3 file, if available.
+ * The <code>Mp3Parser</code> is used to parse ID3 Version 1 Tag information from an MP3 file, if
+ * available.
  *
  * @see <a href="https://id3.org/ID3v1">MP3 ID3 Version 1 specification</a>
- * @see <a href="https://id3.org/id3v2.4.0-structure">MP3 ID3 Version 2.4 Structure Specification</a>
+ * @see <a href="https://id3.org/id3v2.4.0-structure">MP3 ID3 Version 2.4 Structure
+ *      Specification</a>
  * @see <a href="https://id3.org/id3v2.4.0-frames">MP3 ID3 Version 2.4 Frames Specification</a>
  */
 public class Mp3Parser implements Parser {
@@ -54,14 +51,14 @@ public class Mp3Parser implements Parser {
     private static final long serialVersionUID = 8537074922934844370L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.audio("mpeg"));
+                    Collections.singleton(MediaType.audio("mpeg"));
 
     /**
-     * Scans the MP3 frames for ID3 tags, and creates ID3Tag Handlers
-     * for each supported set of tags.
+     * Scans the MP3 frames for ID3 tags, and creates ID3Tag Handlers for each supported set of
+     * tags.
      */
     protected static ID3TagsAndAudio getAllTagHandlers(InputStream stream, ContentHandler handler)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         ID3v24Handler v24 = null;
         ID3v23Handler v23 = null;
         ID3v22Handler v22 = null;
@@ -140,7 +137,7 @@ public class Mp3Parser implements Parser {
     }
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "audio/mpeg");
         metadata.set(XMPDM.AUDIO_COMPRESSOR, "MP3");
 
@@ -150,7 +147,7 @@ public class Mp3Parser implements Parser {
         ID3TagsAndAudio audioAndTags = getAllTagHandlers(stream, handler);
 
         // Before we start on the XHTML output, process and store
-        //  as much metadata as possible
+        // as much metadata as possible
         if (audioAndTags.duration > 0) {
             metadata.set(XMPDM.DURATION, audioAndTags.durationSeconds());
         }
@@ -161,7 +158,7 @@ public class Mp3Parser implements Parser {
             metadata.set("version", audioAndTags.audio.getVersion());
 
             metadata.set(XMPDM.AUDIO_SAMPLE_RATE,
-                    Integer.toString(audioAndTags.audio.getSampleRate()));
+                            Integer.toString(audioAndTags.audio.getSampleRate()));
             if (audioAndTags.audio.getChannels() == 1) {
                 metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Mono");
             } else if (audioAndTags.audio.getChannels() == 2) {
@@ -257,6 +254,7 @@ public class Mp3Parser implements Parser {
     public int getMaxRecordSize() {
         return ID3v2Frame.getMaxRecordSize();
     }
+
     protected static class ID3TagsAndAudio {
         private ID3Tags[] tags;
         private AudioFrame audio;

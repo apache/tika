@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb;
@@ -31,9 +29,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -61,22 +56,21 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Propert
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned.Unsigned;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
 
 public class MSOneStorePackage {
     /**
-     * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC.
-     * So we create this offset used to calculate number of seconds between this and the Instant
-     * .EPOCH.
+     * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC. So we create this offset used to
+     * calculate number of seconds between this and the Instant .EPOCH.
      */
     private static final long TIME32_EPOCH_DIFF_1980;
     /**
-     * See spec MS-DTYP - 2.3.3 - DATETIME dates are based on epoch of jan 1 1601 UTC.
-     * So we create this offset used to calculate number of seconds between this and the Instant
-     * .EPOCH.
+     * See spec MS-DTYP - 2.3.3 - DATETIME dates are based on epoch of jan 1 1601 UTC. So we create
+     * this offset used to calculate number of seconds between this and the Instant .EPOCH.
      */
     private static final long DATETIME_EPOCH_DIFF_1601;
     private static final Pattern HYPERLINK_PATTERN =
-            Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
+                    Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
     private static final String P = "p";
 
     static {
@@ -125,25 +119,26 @@ public class MSOneStorePackage {
         StorageIndexCellMapping storageIndexCellMapping = null;
         if (this.storageIndex != null) {
             storageIndexCellMapping = this.storageIndex.storageIndexCellMappingList.stream()
-                    .filter(s -> s.cellID.equals(cellID)).findFirst()
-                    .orElse(new StorageIndexCellMapping());
+                            .filter(s -> s.cellID.equals(cellID)).findFirst()
+                            .orElse(new StorageIndexCellMapping());
         }
         return storageIndexCellMapping;
     }
 
     /**
-     * This method is used to find the Storage Index Revision Mapping that matches the Revision Mapping Extended GUID.
+     * This method is used to find the Storage Index Revision Mapping that matches the Revision
+     * Mapping Extended GUID.
      *
      * @param revisionExtendedGUID Specify the Revision Mapping Extended GUID.
      * @return Return the instance of Storage Index Revision Mapping.
      */
     public StorageIndexRevisionMapping findStorageIndexRevisionMapping(
-            ExGuid revisionExtendedGUID) {
+                    ExGuid revisionExtendedGUID) {
         StorageIndexRevisionMapping instance = null;
         if (this.storageIndex != null) {
             instance = this.storageIndex.storageIndexRevisionMappingList.stream()
-                    .filter(r -> r.revisionExGuid.equals(revisionExtendedGUID)).findFirst()
-                    .orElse(new StorageIndexRevisionMapping());
+                            .filter(r -> r.revisionExGuid.equals(revisionExtendedGUID)).findFirst()
+                            .orElse(new StorageIndexRevisionMapping());
         }
 
         return instance;
@@ -156,44 +151,46 @@ public class MSOneStorePackage {
      * @return Is it binary?
      */
     private boolean propertyIsBinary(OneNotePropertyEnum property) {
-        return property == OneNotePropertyEnum.RgOutlineIndentDistance ||
-                property == OneNotePropertyEnum.NotebookManagementEntityGuid ||
-                property == OneNotePropertyEnum.RichEditTextUnicode;
+        return property == OneNotePropertyEnum.RgOutlineIndentDistance
+                        || property == OneNotePropertyEnum.NotebookManagementEntityGuid
+                        || property == OneNotePropertyEnum.RichEditTextUnicode;
     }
 
     public void walkTree(OneNoteTreeWalkerOptions options, Metadata metadata,
-                         XHTMLContentHandler xhtml)
-            throws SAXException, TikaException, IOException {
+                    XHTMLContentHandler xhtml) throws SAXException, TikaException, IOException {
         for (RevisionStoreObjectGroup revisionStoreObjectGroup : OtherFileNodeList) {
             for (RevisionStoreObject revisionStoreObject : revisionStoreObjectGroup.objects) {
                 PropertySet propertySet =
-                        revisionStoreObject.propertySet.objectSpaceObjectPropSet.body;
+                                revisionStoreObject.propertySet.objectSpaceObjectPropSet.body;
                 for (int i = 0; i < propertySet.rgData.size(); ++i) {
                     IProperty property = propertySet.rgData.get(i);
                     PropertyID propertyID = propertySet.rgPrids[i];
                     PropertyType propertyType = PropertyType.fromIntVal(propertyID.type);
-                    OneNotePropertyEnum oneNotePropertyEnum =
-                            OneNotePropertyEnum.of(Unsigned.uint(propertyID.value).longValue());
+                    OneNotePropertyEnum oneNotePropertyEnum = OneNotePropertyEnum
+                                    .of(Unsigned.uint(propertyID.value).longValue());
                     if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTimeStamp) {
                         long fullval = getScalar(property);
                         Instant instant = Instant.ofEpochSecond(
-                                fullval / 10000000 + DATETIME_EPOCH_DIFF_1601);
+                                        fullval / 10000000 + DATETIME_EPOCH_DIFF_1601);
                         if (instant.isAfter(lastModifiedTimestamp)) {
                             lastModifiedTimestamp = instant;
                         }
                         metadata.set(ONE_NOTE_PREFIX + "lastModifiedTimestamp",
-                                String.valueOf(lastModifiedTimestamp.toEpochMilli()));
+                                        String.valueOf(lastModifiedTimestamp.toEpochMilli()));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.CreationTimeStamp) {
-                        // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
+                        // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per
+                        // 1980, not
                         // 1970
                         long scalar = getScalar(property);
                         long creationTs = scalar + TIME32_EPOCH_DIFF_1980;
                         if (creationTs < creationTimestamp) {
                             creationTimestamp = creationTs;
                         }
-                        metadata.set(ONE_NOTE_PREFIX + "creationTimestamp", String.valueOf(creationTimestamp));
+                        metadata.set(ONE_NOTE_PREFIX + "creationTimestamp",
+                                        String.valueOf(creationTimestamp));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTime) {
-                        // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
+                        // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per
+                        // 1980, not
                         // 1970
                         long scalar = getScalar(property);
                         long lastMod = scalar + TIME32_EPOCH_DIFF_1980;
@@ -202,8 +199,8 @@ public class MSOneStorePackage {
                         }
                         metadata.set(TikaCoreProperties.MODIFIED, String.valueOf(lastModified));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.Author) {
-                        String author =
-                                new String(((PrtFourBytesOfLengthFollowedByData) property).data,
+                        String author = new String(
+                                        ((PrtFourBytesOfLengthFollowedByData) property).data,
                                         StandardCharsets.UTF_8);
                         if (mostRecentAuthorProp) {
                             mostRecentAuthors.add(author);
@@ -219,35 +216,35 @@ public class MSOneStorePackage {
                     } else if (propertyType == PropertyType.FourBytesOfLengthFollowedByData) {
                         boolean isBinary = propertyIsBinary(oneNotePropertyEnum);
                         PrtFourBytesOfLengthFollowedByData dataProperty =
-                                (PrtFourBytesOfLengthFollowedByData) property;
-                        if ((dataProperty.data.length & 1) == 0 &&
-                                oneNotePropertyEnum != OneNotePropertyEnum.TextExtendedAscii &&
-                                !isBinary) {
+                                        (PrtFourBytesOfLengthFollowedByData) property;
+                        if ((dataProperty.data.length & 1) == 0
+                                        && oneNotePropertyEnum != OneNotePropertyEnum.TextExtendedAscii
+                                        && !isBinary) {
                             if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
                                 xhtml.startElement(P);
-                                xhtml.characters(
-                                        new String(dataProperty.data, StandardCharsets.UTF_16LE));
+                                xhtml.characters(new String(dataProperty.data,
+                                                StandardCharsets.UTF_16LE));
                                 xhtml.endElement(P);
                             }
                         } else if (oneNotePropertyEnum == OneNotePropertyEnum.TextExtendedAscii) {
                             xhtml.startElement(P);
-                            xhtml.characters(
-                                    new String(dataProperty.data, StandardCharsets.US_ASCII));
+                            xhtml.characters(new String(dataProperty.data,
+                                            StandardCharsets.US_ASCII));
                             xhtml.endElement(P);
                         } else if (!isBinary) {
                             if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
                                 xhtml.startElement(P);
-                                xhtml.characters(
-                                        new String(dataProperty.data, StandardCharsets.UTF_16LE));
+                                xhtml.characters(new String(dataProperty.data,
+                                                StandardCharsets.UTF_16LE));
                                 xhtml.endElement(P);
                             }
                         } else {
                             if (oneNotePropertyEnum == OneNotePropertyEnum.RichEditTextUnicode) {
                                 handleRichEditTextUnicode(dataProperty.data, xhtml);
                             } else {
-                                //TODO -- these seem to be somewhat broken font files and other
-                                //odds and ends...what are they and how should we process them?
-                                //handleEmbedded(content.size());
+                                // TODO -- these seem to be somewhat broken font files and other
+                                // odds and ends...what are they and how should we process them?
+                                // handleEmbedded(content.size());
                             }
                         }
                     }
@@ -255,21 +252,21 @@ public class MSOneStorePackage {
             }
         }
         if (!authors.isEmpty()) {
-            metadata.set(TikaCoreProperties.CREATOR, authors.toArray(new String[]{}));
+            metadata.set(TikaCoreProperties.CREATOR, authors.toArray(new String[] {}));
         }
         if (!mostRecentAuthors.isEmpty()) {
             metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "mostRecentAuthors"),
-                    mostRecentAuthors.toArray(new String[]{}));
+                            mostRecentAuthors.toArray(new String[] {}));
         }
         if (!originalAuthors.isEmpty()) {
             metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "originalAuthors"),
-                    originalAuthors.toArray(new String[]{}));
+                            originalAuthors.toArray(new String[] {}));
         }
     }
 
 
     private void handleRichEditTextUnicode(byte[] arr, XHTMLContentHandler xhtml)
-            throws SAXException, IOException, TikaException {
+                    throws SAXException, IOException, TikaException {
         // look for the first null
         int firstNull = 0;
         for (int i = 0; i < arr.length - 1; i += 2) {

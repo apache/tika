@@ -1,35 +1,29 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.fetcher.gcs;
 
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.util.Map;
-
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.util.Map;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -42,6 +36,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.gcs.config.GCSFetcherConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Fetches files from google cloud storage. Must set projectId and bucket via the config.
@@ -50,12 +46,14 @@ public class GCSFetcher extends AbstractFetcher implements Initializable {
     public GCSFetcher() {
 
     }
+
     public GCSFetcher(GCSFetcherConfig gcsFetcherConfig) {
         setBucket(gcsFetcherConfig.getBucket());
         setProjectId(gcsFetcherConfig.getProjectId());
         setSpoolToTemp(gcsFetcherConfig.isSpoolToTemp());
         setExtractUserMetadata(gcsFetcherConfig.isExtractUserMetadata());
     }
+
     private static String PREFIX = "gcs";
     private static final Logger LOGGER = LoggerFactory.getLogger(GCSFetcher.class);
     private String projectId;
@@ -65,7 +63,8 @@ public class GCSFetcher extends AbstractFetcher implements Initializable {
     private boolean spoolToTemp = true;
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+                    throws TikaException, IOException {
 
         LOGGER.debug("about to fetch fetchkey={} from bucket ({})", fetchKey, bucket);
 
@@ -121,7 +120,7 @@ public class GCSFetcher extends AbstractFetcher implements Initializable {
         this.extractUserMetadata = extractUserMetadata;
     }
 
-    //TODO: parameterize extracting other blob metadata, eg. md5, crc, etc.
+    // TODO: parameterize extracting other blob metadata, eg. md5, crc, etc.
 
     /**
      * This initializes the gcs storage client.
@@ -131,14 +130,14 @@ public class GCSFetcher extends AbstractFetcher implements Initializable {
      */
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //params have already been set...ignore them
-        //TODO -- add other params to the builder as needed
+        // params have already been set...ignore them
+        // TODO -- add other params to the builder as needed
         storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+                    throws TikaConfigException {
         mustNotBeEmpty("bucket", this.bucket);
         mustNotBeEmpty("projectId", this.projectId);
     }

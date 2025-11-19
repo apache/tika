@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.hwp;
 
@@ -34,7 +32,6 @@ import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
@@ -47,10 +44,6 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.LittleEndian;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -60,20 +53,23 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 public class HwpTextExtractorV5 implements Serializable {
     private static final long serialVersionUID = 1L;
     private static final byte[] HWP_V5_SIGNATURE =
-            "HWP Document File".getBytes(StandardCharsets.US_ASCII);
+                    "HWP Document File".getBytes(StandardCharsets.US_ASCII);
     private static final int HWPTAG_BEGIN = 0x010;
     private static final int MAX_TAG_LENGTH = 50 * 1024 * 1024;
     private static final int I = 1; // INLINE
     private static final int C = 2; // CONTROL
     private static final int X = 3; // EXTENDED
-    private static final int[] HWP_CHAR_TYPE = new int[]{C, X, X, X, I, I, I, I, I, I, // 0-9
-            C, X, X, C, X, X, X, X, X, I, // 10-19
-            I, X, X, X, C, C, C, C, C, C, // 20-29
-            C, C}; // 30-31
+    private static final int[] HWP_CHAR_TYPE = new int[] {C, X, X, X, I, I, I, I, I, I, // 0-9
+                    C, X, X, C, X, X, X, X, X, I, // 10-19
+                    I, X, X, X, C, C, C, C, C, C, // 20-29
+                    C, C}; // 30-31
     protected static Logger LOG = LoggerFactory.getLogger(HwpTextExtractorV5.class);
 
     /**
@@ -88,7 +84,7 @@ public class HwpTextExtractorV5 implements Serializable {
      * @throws SAXException
      */
     public void extract(InputStream source, Metadata metadata, XHTMLContentHandler xhtml)
-            throws FileNotFoundException, IOException, TikaException, SAXException {
+                    throws FileNotFoundException, IOException, TikaException, SAXException {
         if (source == null || xhtml == null) {
             throw new IllegalArgumentException();
         }
@@ -102,14 +98,14 @@ public class HwpTextExtractorV5 implements Serializable {
 
         } catch (IOException e) {
             throw new TikaException(
-                    "error occurred when parsing HWP Format, It may not HWP Format.", e);
+                            "error occurred when parsing HWP Format, It may not HWP Format.", e);
         } finally {
             IOUtils.closeQuietly(fs);
         }
     }
 
     private void extract0(DirectoryNode root, Metadata metadata, XHTMLContentHandler xhtml)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
 
         Entry headerEntry = root.getEntry("FileHeader");
         if (!headerEntry.isDocumentEntry()) {
@@ -137,7 +133,7 @@ public class HwpTextExtractorV5 implements Serializable {
     }
 
     private void parseSummaryInformation(DirectoryNode root, Metadata metadata)
-            throws TikaException {
+                    throws TikaException {
 
         try {
             Entry summaryEntry = root.getEntry("\u0005HwpSummaryInformation");
@@ -151,7 +147,7 @@ public class HwpTextExtractorV5 implements Serializable {
     }
 
     private void populateMatadata(Entry summaryEntry, Metadata metadata)
-            throws IOException, NoPropertySetStreamException {
+                    throws IOException, NoPropertySetStreamException {
 
         DocumentInputStream summaryStream = new DocumentInputStream((DocumentEntry) summaryEntry);
 
@@ -207,11 +203,11 @@ public class HwpTextExtractorV5 implements Serializable {
         // confirm signature
         byte[] header = new byte[256]; // the length of File header is 256
 
-        try (DocumentInputStream headerStream = new DocumentInputStream(
-                (DocumentEntry) headerEntry)) {
+        try (DocumentInputStream headerStream =
+                        new DocumentInputStream((DocumentEntry) headerEntry)) {
             int read = headerStream.read(header);
             if (read != 256 || !Arrays.equals(HWP_V5_SIGNATURE,
-                    Arrays.copyOfRange(header, 0, HWP_V5_SIGNATURE.length))) {
+                            Arrays.copyOfRange(header, 0, HWP_V5_SIGNATURE.length))) {
                 return null;
             }
         }
@@ -241,7 +237,7 @@ public class HwpTextExtractorV5 implements Serializable {
      * @throws SAXException
      */
     private void parseBodyText(FileHeader header, DirectoryNode root, XHTMLContentHandler xhtml)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         // read BodyText
         Entry bodyText = root.getEntry("BodyText");
         if (bodyText == null || !bodyText.isDirectoryEntry()) {
@@ -279,7 +275,7 @@ public class HwpTextExtractorV5 implements Serializable {
      * @throws IOException
      */
     private void parseViewText(FileHeader header, DirectoryNode root, XHTMLContentHandler xhtml)
-            throws IOException, TikaException {
+                    throws IOException, TikaException {
         // read BodyText
         Entry bodyText = root.getEntry("ViewText");
         if (bodyText == null || !bodyText.isDirectoryEntry()) {
@@ -303,7 +299,8 @@ public class HwpTextExtractorV5 implements Serializable {
 
                     HwpStreamReader sectionStream = new HwpStreamReader(input);
                     parse(sectionStream, xhtml);
-                } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SAXException e) {
+                } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
+                                | SAXException e) {
                     throw new IOException(e);
                 } finally {
                     IOUtils.closeQuietly(input);
@@ -340,7 +337,7 @@ public class HwpTextExtractorV5 implements Serializable {
     }
 
     public InputStream createDecryptStream(InputStream input, Key key)
-            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+                    throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
         Cipher cipher = null;
 
         cipher = Cipher.getInstance("AES/ECB/NoPadding");
@@ -358,7 +355,7 @@ public class HwpTextExtractorV5 implements Serializable {
      * @throws SAXException
      */
     private void parse(HwpStreamReader reader, XHTMLContentHandler xhtml)
-            throws IOException, TikaException, SAXException {
+                    throws IOException, TikaException, SAXException {
         StringBuilder buf = new StringBuilder();
         TagInfo tag = new TagInfo();
 
@@ -372,7 +369,8 @@ public class HwpTextExtractorV5 implements Serializable {
                     throw new IOException("Invalid block size");
                 }
                 if (tag.length > MAX_TAG_LENGTH) {
-                    throw new TikaMemoryLimitException("Tags myst be smaller than " + MAX_TAG_LENGTH);
+                    throw new TikaMemoryLimitException(
+                                    "Tags myst be smaller than " + MAX_TAG_LENGTH);
                 }
                 buf.setLength(0);
                 writeParaText(reader, tag.length, buf);
@@ -400,8 +398,8 @@ public class HwpTextExtractorV5 implements Serializable {
      * @throws IOException
      */
     private void writeParaText(HwpStreamReader reader, long datasize, StringBuilder buf)
-            throws IOException {
-        //datasize is bounds checked before calling writeParaText
+                    throws IOException {
+        // datasize is bounds checked before calling writeParaText
         int[] chars = reader.uint16((int) (datasize / 2));
 
         for (int index = 0; index < chars.length; index++) {

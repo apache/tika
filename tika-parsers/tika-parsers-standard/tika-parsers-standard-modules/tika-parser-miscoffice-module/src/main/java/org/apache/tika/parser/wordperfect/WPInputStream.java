@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.wordperfect;
@@ -22,12 +20,11 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * {@link InputStream} wrapper adding WordPerfect-specific byte-reading methods.
- * Applies to both 5.x and 6+ documents.
+ * {@link InputStream} wrapper adding WordPerfect-specific byte-reading methods. Applies to both 5.x
+ * and 6+ documents.
  *
  * @author Pascal Essiembre
  */
@@ -48,8 +45,7 @@ class WPInputStream extends InputStream {
     }
 
     /**
-     * Reads a WordPerfect "short": a 2 bytes (16-bit) unsigned value in
-     * reverse order.
+     * Reads a WordPerfect "short": a 2 bytes (16-bit) unsigned value in reverse order.
      *
      * @return an integer value
      * @throws IOException if not enough bytes remain
@@ -64,8 +60,7 @@ class WPInputStream extends InputStream {
     }
 
     /**
-     * Reads a WordPerfect "long": a 4 bytes (32-bit) unsigned value in
-     * reverse order.
+     * Reads a WordPerfect "long": a 4 bytes (32-bit) unsigned value in reverse order.
      *
      * @return a long value
      * @throws IOException if not enough bytes remain
@@ -137,9 +132,8 @@ class WPInputStream extends InputStream {
     }
 
     /**
-     * Reads a series of bytes of the specified length, converting
-     * each byte to its hexadecimal representation.
-     * converting each characters to .
+     * Reads a series of bytes of the specified length, converting each byte to its hexadecimal
+     * representation. converting each characters to .
      *
      * @param numOfBytes how many byte to read
      * @return an hexadecimal string

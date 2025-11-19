@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.chm;
 
@@ -20,19 +18,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-
 import org.apache.tika.exception.TikaException;
 
 /**
- * The Header 0000: char[4] 'ITSF' 0004: DWORD 3 (Version number) 0008: DWORD
- * Total header length, including header section table and following data. 000C:
- * DWORD 1 (unknown) 0010: DWORD a timestamp 0014: DWORD Windows Language ID
- * 0018: GUID {7C01FD10-7BAA-11D0-9E0C-00A0-C922-E6EC} 0028: GUID
- * {7C01FD11-7BAA-11D0-9E0C-00A0-C922-E6EC} Note: a GUID is $10 bytes, arranged
- * as 1 DWORD, 2 WORDs, and 8 BYTEs. 0000: QWORD Offset of section from
- * beginning of file 0008: QWORD Length of section Following the header section
- * table is 8 bytes of additional header data. In Version 2 files, this data is
- * not there and the content section starts immediately after the directory.
+ * The Header 0000: char[4] 'ITSF' 0004: DWORD 3 (Version number) 0008: DWORD Total header length,
+ * including header section table and following data. 000C: DWORD 1 (unknown) 0010: DWORD a
+ * timestamp 0014: DWORD Windows Language ID 0018: GUID {7C01FD10-7BAA-11D0-9E0C-00A0-C922-E6EC}
+ * 0028: GUID {7C01FD11-7BAA-11D0-9E0C-00A0-C922-E6EC} Note: a GUID is $10 bytes, arranged as 1
+ * DWORD, 2 WORDs, and 8 BYTEs. 0000: QWORD Offset of section from beginning of file 0008: QWORD
+ * Length of section Following the header section table is 8 bytes of additional header data. In
+ * Version 2 files, this data is not there and the content section starts immediately after the
+ * directory.
  */
 /* structure of ITSF headers */
 public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
@@ -59,8 +55,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
         signature = ChmConstants.ITSF.getBytes(UTF_8); /* 0 (ITSF) */
     }
 
-    public static void main(String[] args) {
-    }
+    public static void main(String[] args) {}
 
     /**
      * Prints the values of ChmfHeader
@@ -326,7 +321,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
      * @throws TikaException
      */
     private void unmarshalCharArray(byte[] data, ChmItsfHeader chmItsfHeader, int count)
-            throws TikaException {
+                    throws TikaException {
         ChmAssert.assertChmAccessorParameters(data, chmItsfHeader, count);
         System.arraycopy(data, 0, chmItsfHeader.signature, 0, count);
         this.setCurrentPlace(this.getCurrentPlace() + count);
@@ -380,10 +375,10 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
         if (4 > this.getDataRemained()) {
             throw new TikaException("4 > dataLenght");
         }
-        dest = (data[this.getCurrentPlace()] & 0xff) |
-                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
-                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
-                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                        | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                        | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                        | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         this.setCurrentPlace(this.getCurrentPlace() + 4);
         this.setDataRemained(this.getDataRemained() - 4);
@@ -395,8 +390,9 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
         if (4 > getDataRemained()) {
             throw new TikaException("4 > dataLenght");
         }
-        dest = data[this.getCurrentPlace()] | data[this.getCurrentPlace() + 1] << 8 |
-                data[this.getCurrentPlace() + 2] << 16 | data[this.getCurrentPlace() + 3] << 24;
+        dest = data[this.getCurrentPlace()] | data[this.getCurrentPlace() + 1] << 8
+                        | data[this.getCurrentPlace() + 2] << 16
+                        | data[this.getCurrentPlace() + 3] << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -441,32 +437,32 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     // @Override
     public void parse(byte[] data, ChmItsfHeader chmItsfHeader) throws TikaException {
-        if (data.length < ChmConstants.CHM_ITSF_V2_LEN ||
-                data.length > ChmConstants.CHM_ITSF_V3_LEN) {
+        if (data.length < ChmConstants.CHM_ITSF_V2_LEN
+                        || data.length > ChmConstants.CHM_ITSF_V3_LEN) {
             throw new TikaException(
-                    "we only know how to deal with the 0x58 and 0x60 byte structures");
+                            "we only know how to deal with the 0x58 and 0x60 byte structures");
         }
 
         chmItsfHeader.setDataRemained(data.length);
         chmItsfHeader.unmarshalCharArray(data, chmItsfHeader, ChmConstants.CHM_SIGNATURE_LEN);
         chmItsfHeader.setVersion(chmItsfHeader.unmarshalInt32(data, chmItsfHeader.getVersion()));
-        chmItsfHeader
-                .setHeaderLen(chmItsfHeader.unmarshalInt32(data, chmItsfHeader.getHeaderLen()));
+        chmItsfHeader.setHeaderLen(
+                        chmItsfHeader.unmarshalInt32(data, chmItsfHeader.getHeaderLen()));
         chmItsfHeader.setUnknown_000c(
-                chmItsfHeader.unmarshalInt32(data, chmItsfHeader.getUnknown_000c()));
+                        chmItsfHeader.unmarshalInt32(data, chmItsfHeader.getUnknown_000c()));
         chmItsfHeader.setLastModified(
-                chmItsfHeader.unmarshalUInt32(data, chmItsfHeader.getLastModified()));
+                        chmItsfHeader.unmarshalUInt32(data, chmItsfHeader.getLastModified()));
         chmItsfHeader.setLangId(chmItsfHeader.unmarshalUInt32(data, chmItsfHeader.getLangId()));
-        chmItsfHeader
-                .setDir_uuid(chmItsfHeader.unmarshalUuid(data, chmItsfHeader.getDir_uuid(), 16));
+        chmItsfHeader.setDir_uuid(
+                        chmItsfHeader.unmarshalUuid(data, chmItsfHeader.getDir_uuid(), 16));
         chmItsfHeader.setStream_uuid(
-                chmItsfHeader.unmarshalUuid(data, chmItsfHeader.getStream_uuid(), 16));
+                        chmItsfHeader.unmarshalUuid(data, chmItsfHeader.getStream_uuid(), 16));
         chmItsfHeader.setUnknownOffset(
-                chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getUnknownOffset()));
-        chmItsfHeader
-                .setUnknownLen(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getUnknownLen()));
-        chmItsfHeader
-                .setDirOffset(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getDirOffset()));
+                        chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getUnknownOffset()));
+        chmItsfHeader.setUnknownLen(
+                        chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getUnknownLen()));
+        chmItsfHeader.setDirOffset(
+                        chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getDirOffset()));
         chmItsfHeader.setDirLen(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getDirLen()));
         if (!new String(chmItsfHeader.getSignature(), UTF_8).equals(ChmConstants.ITSF)) {
             throw new TikaException("seems not valid file");
@@ -484,13 +480,12 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
         }
 
         /*
-         * now, if we have a V3 structure, unmarshal the rest, otherwise,
-         * compute it
+         * now, if we have a V3 structure, unmarshal the rest, otherwise, compute it
          */
         if (chmItsfHeader.getVersion() == ChmConstants.CHM_VER_3) {
             if (chmItsfHeader.getDataRemained() >= 0) {
-                chmItsfHeader
-                        .setDataOffset(chmItsfHeader.getDirOffset() + chmItsfHeader.getDirLen());
+                chmItsfHeader.setDataOffset(
+                                chmItsfHeader.getDirOffset() + chmItsfHeader.getDirLen());
             } else {
                 throw new TikaException("cannot set data offset, no data remained");
             }

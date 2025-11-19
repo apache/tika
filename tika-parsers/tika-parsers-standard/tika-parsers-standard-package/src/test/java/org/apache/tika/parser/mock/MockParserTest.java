@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mock;
 
@@ -25,22 +23,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class MockParserTest extends TikaTest {
     private final static String M = "/test-documents/mock/";
 
     @Override
     public XMLResult getXML(String path, Metadata m) throws Exception {
-        //note that this is specific to MockParserTest with addition of M to the path!
+        // note that this is specific to MockParserTest with addition of M to the path!
         InputStream is = getResourceAsStream(M + path);
         try {
             return super.getXML(is, AUTO_DETECT_PARSER, m);
@@ -88,7 +84,7 @@ public class MockParserTest extends TikaTest {
     public void testNullPointer() throws Exception {
         Metadata m = new Metadata();
         assertThrowable("null_pointer.xml", m, NullPointerException.class,
-                "another null pointer exception");
+                        "another null pointer exception");
         assertMockParser(m);
     }
 
@@ -107,7 +103,7 @@ public class MockParserTest extends TikaTest {
         String content = getXML("sleep.xml", m).xml;
         assertMockParser(m);
         long elapsed = System.currentTimeMillis() - start;
-        //should sleep for at least 3000
+        // should sleep for at least 3000
         boolean enoughTimeHasElapsed = elapsed > 2000;
         assertTrue(enoughTimeHasElapsed, "not enough time has not elapsed: " + elapsed);
         assertMockParser(m);
@@ -121,7 +117,7 @@ public class MockParserTest extends TikaTest {
         String content = getXML("heavy_hang.xml", m).xml;
         assertMockParser(m);
         long elapsed = System.currentTimeMillis() - start;
-        //should sleep for at least 3000
+        // should sleep for at least 3000
         boolean enoughTimeHasElapsed = elapsed > 2000;
         assertTrue(enoughTimeHasElapsed, "not enough time has elapsed: " + elapsed);
         assertMockParser(m);
@@ -137,9 +133,9 @@ public class MockParserTest extends TikaTest {
     @Test
     @Disabled("maven doesn't like this one; occasionally crashes the forked jvm")
     public void testRealOOM() throws Exception {
-        //Note: we're not actually testing the diff between fake and real oom
-        //i.e. by creating a forked process and setting different -Xmx or
-        //memory profiling.
+        // Note: we're not actually testing the diff between fake and real oom
+        // i.e. by creating a forked process and setting different -Xmx or
+        // memory profiling.
         Metadata m = new Metadata();
         assertThrowable("real_oom.xml", m, OutOfMemoryError.class, "Java heap space");
         assertMockParser(m);
@@ -147,10 +143,10 @@ public class MockParserTest extends TikaTest {
 
     @Test
     public void testInterruptibleSleep() {
-        //Without static initialization of the parser, it can take ~1 second after t.start()
-        //before the parser actually calls parse.  This is
-        //just the time it takes to instantiate and call AutoDetectParser, do the detection, etc.
-        //This is not thread creation overhead.
+        // Without static initialization of the parser, it can take ~1 second after t.start()
+        // before the parser actually calls parse. This is
+        // just the time it takes to instantiate and call AutoDetectParser, do the detection, etc.
+        // This is not thread creation overhead.
         ParserRunnable r = new ParserRunnable("sleep_interruptible.xml");
         Thread t = new Thread(r);
         t.start();
@@ -158,7 +154,7 @@ public class MockParserTest extends TikaTest {
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
-            //swallow
+            // swallow
         }
 
         t.interrupt();
@@ -166,10 +162,10 @@ public class MockParserTest extends TikaTest {
         try {
             t.join(10000);
         } catch (InterruptedException e) {
-            //swallow
+            // swallow
         }
         long elapsed = System.currentTimeMillis() - start;
-        boolean shortEnough = elapsed < 2000;//the xml file specifies 3000
+        boolean shortEnough = elapsed < 2000;// the xml file specifies 3000
         assertTrue(shortEnough, "elapsed (" + elapsed + " millis) was not short enough");
     }
 
@@ -180,29 +176,29 @@ public class MockParserTest extends TikaTest {
         t.start();
         long start = System.currentTimeMillis();
         try {
-            //make sure that the thread has actually started
+            // make sure that the thread has actually started
             Thread.sleep(1000);
         } catch (InterruptedException e) {
-            //swallow
+            // swallow
         }
         t.interrupt();
         try {
             t.join(20000);
         } catch (InterruptedException e) {
-            //swallow
+            // swallow
         }
         long elapsed = System.currentTimeMillis() - start;
-        boolean longEnough = elapsed >= 3000;//the xml file specifies 3000, this sleeps 1000
+        boolean longEnough = elapsed >= 3000;// the xml file specifies 3000, this sleeps 1000
         assertTrue(longEnough, "elapsed (" + elapsed + " millis) was not long enough");
     }
 
     private void assertThrowable(String path, Metadata m, Class<? extends Throwable> expected,
-                                 String message) {
+                    String message) {
 
         try {
             getXML(path, m);
         } catch (Throwable t) {
-            //if this is a throwable wrapped in a TikaException, use the cause
+            // if this is a throwable wrapped in a TikaException, use the cause
             if (t instanceof TikaException && t.getCause() != null) {
                 t = t.getCause();
             }
@@ -217,7 +213,7 @@ public class MockParserTest extends TikaTest {
 
     private void assertMockParser(Metadata m) {
         String[] parsers = m.getValues(TikaCoreProperties.TIKA_PARSED_BY);
-        //make sure that it was actually parsed by mock.
+        // make sure that it was actually parsed by mock.
         boolean parsedByMock = false;
         for (String parser : parsers) {
             if (parser.equals("org.apache.tika.parser.mock.MockParser")) {

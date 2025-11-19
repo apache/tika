@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.iwork.iwana;
@@ -26,28 +24,26 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
 import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * For now, this parser isn't even registered.  It contains
- * code that will detect the newer 2018 .keynote, .numbers, .pages files.
+ * For now, this parser isn't even registered. It contains code that will detect the newer 2018
+ * .keynote, .numbers, .pages files.
  */
 public class IWork18PackageParser implements Parser {
 
     private final static Set<MediaType> supportedTypes = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(IWork18DocumentType.KEYNOTE18.getType(),
-                    IWork18DocumentType.NUMBERS18.getType(),
-                    IWork18DocumentType.PAGES18.getType())));
+                    new HashSet<>(Arrays.asList(IWork18DocumentType.KEYNOTE18.getType(),
+                                    IWork18DocumentType.NUMBERS18.getType(),
+                                    IWork18DocumentType.PAGES18.getType())));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -56,7 +52,7 @@ public class IWork18PackageParser implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         // Open the Zip stream
         // Use a File if we can, and an already open zip is even better
         ZipFile zipFile = null;
@@ -100,9 +96,9 @@ public class IWork18PackageParser implements Parser {
     }
 
     public enum IWork18DocumentType {
-        KEYNOTE18(MediaType.application("vnd.apple.keynote.18")),
-        NUMBERS18(MediaType.application("vnd.apple.numbers.18")),
-        PAGES18(MediaType.application("vnd.apple.pages.18"));
+        KEYNOTE18(MediaType.application("vnd.apple.keynote.18")), NUMBERS18(
+                        MediaType.application("vnd.apple.numbers.18")), PAGES18(
+                                        MediaType.application("vnd.apple.pages.18"));
 
         private final MediaType mediaType;
 

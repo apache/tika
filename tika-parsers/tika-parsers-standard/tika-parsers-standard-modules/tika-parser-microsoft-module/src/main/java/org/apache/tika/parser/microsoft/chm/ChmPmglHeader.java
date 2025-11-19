@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.chm;
 
@@ -21,29 +19,24 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import org.apache.tika.exception.TikaException;
 
 /**
- * Description There are two types of directory chunks -- index chunks, and
- * listing chunks. The index chunk will be omitted if there is only one listing
- * chunk. A listing chunk has the following format: 0000: char[4] 'PMGL' 0004:
- * DWORD Length of free space and/or quickref area at end of directory chunk
- * 0008: DWORD Always 0 000C: DWORD Chunk number of previous listing chunk when
- * reading directory in sequence (-1 if this is the first listing chunk) 0010:
- * DWORD Chunk number of next listing chunk when reading directory in sequence
- * (-1 if this is the last listing chunk) 0014: Directory listing entries (to
- * quickref area) Sorted by filename; the sort is case-insensitive The quickref
- * area is written backwards from the end of the chunk. One quickref entry
- * exists for every n entries in the file, where n is calculated as 1 + (1 &lt;&lt;
- * quickref density). So for density = 2, n = 5 Chunklen-0002: WORD Number of
- * entries in the chunk Chunklen-0004: WORD Offset of entry n from entry 0
- * Chunklen-0008: WORD Offset of entry 2n from entry 0 Chunklen-000C: WORD
- * Offset of entry 3n from entry 0 ... The format of a directory listing entry
- * is as follows BYTE: length of name BYTEs: name (UTF-8 encoded) ENCINT:
- * content section ENCINT: offset ENCINT: length The offset is from the
- * beginning of the content section the file is in, after the section has been
- * decompressed (if appropriate). The length also refers to length of the file
- * in the section after decompression. There are two kinds of file represented
- * in the directory: user data and format related files. The files which are
- * format-related have names which begin with '::', the user data files have
- * names which begin with "/".
+ * Description There are two types of directory chunks -- index chunks, and listing chunks. The
+ * index chunk will be omitted if there is only one listing chunk. A listing chunk has the following
+ * format: 0000: char[4] 'PMGL' 0004: DWORD Length of free space and/or quickref area at end of
+ * directory chunk 0008: DWORD Always 0 000C: DWORD Chunk number of previous listing chunk when
+ * reading directory in sequence (-1 if this is the first listing chunk) 0010: DWORD Chunk number of
+ * next listing chunk when reading directory in sequence (-1 if this is the last listing chunk)
+ * 0014: Directory listing entries (to quickref area) Sorted by filename; the sort is
+ * case-insensitive The quickref area is written backwards from the end of the chunk. One quickref
+ * entry exists for every n entries in the file, where n is calculated as 1 + (1 &lt;&lt; quickref
+ * density). So for density = 2, n = 5 Chunklen-0002: WORD Number of entries in the chunk
+ * Chunklen-0004: WORD Offset of entry n from entry 0 Chunklen-0008: WORD Offset of entry 2n from
+ * entry 0 Chunklen-000C: WORD Offset of entry 3n from entry 0 ... The format of a directory listing
+ * entry is as follows BYTE: length of name BYTEs: name (UTF-8 encoded) ENCINT: content section
+ * ENCINT: offset ENCINT: length The offset is from the beginning of the content section the file is
+ * in, after the section has been decompressed (if appropriate). The length also refers to length of
+ * the file in the section after decompression. There are two kinds of file represented in the
+ * directory: user data and format related files. The files which are format-related have names
+ * which begin with '::', the user data files have names which begin with "/".
  */
 public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
     private static final long serialVersionUID = -6139486487475923593L;
@@ -59,10 +52,8 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
 
     public ChmPmglHeader() {
         signature = ChmConstants.PMGL.getBytes(UTF_8); /*
-         * 0
-         * (PMGL
-         * )
-         */
+                                                        * 0 (PMGL )
+                                                        */
     }
 
     private int getDataRemained() {
@@ -98,12 +89,13 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         sb.append("free space:=").append(getFreeSpace()).append(", ");
         sb.append("unknown0008:=").append(getUnknown0008()).append(", ");
         sb.append("prev block:=").append(getBlockPrev()).append(", ");
-        sb.append("next block:=").append(getBlockNext()).append(System.getProperty("line.separator"));
+        sb.append("next block:=").append(getBlockNext())
+                        .append(System.getProperty("line.separator"));
         return sb.toString();
     }
 
     protected void unmarshalCharArray(byte[] data, ChmPmglHeader chmPmglHeader, int count)
-            throws TikaException {
+                    throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         this.setDataRemained(data.length);
         System.arraycopy(data, 0, chmPmglHeader.signature, 0, count);
@@ -117,10 +109,10 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         if (4 > this.getDataRemained()) {
             throw new TikaException("4 > dataLenght");
         }
-        dest = (data[this.getCurrentPlace()] & 0xff) |
-                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
-                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
-                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                        | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                        | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                        | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         this.setCurrentPlace(this.getCurrentPlace() + 4);
         this.setDataRemained(this.getDataRemained() - 4);
@@ -133,10 +125,10 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         if (4 > getDataRemained()) {
             throw new ChmParsingException("4 > dataLenght");
         }
-        dest = (data[this.getCurrentPlace()] & 0xff) |
-                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
-                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
-                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                        | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                        | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                        | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -146,8 +138,8 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
     // @Override
     public void parse(byte[] data, ChmPmglHeader chmPmglHeader) throws TikaException {
         if (data.length < ChmConstants.CHM_PMGL_LEN) {
-            throw new TikaException(ChmPmglHeader.class.getName() +
-                    " we only know how to deal with a 0x14 byte structures");
+            throw new TikaException(ChmPmglHeader.class.getName()
+                            + " we only know how to deal with a 0x14 byte structures");
         }
 
         /* unmarshal fields */
@@ -160,7 +152,7 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         /* check structure */
         if (!new String(chmPmglHeader.getSignature(), UTF_8).equals(ChmConstants.PMGL)) {
             throw new ChmParsingException(
-                    ChmPmglHeader.class.getName() + " pmgl != pmgl.signature");
+                            ChmPmglHeader.class.getName() + " pmgl != pmgl.signature");
         }
     }
 

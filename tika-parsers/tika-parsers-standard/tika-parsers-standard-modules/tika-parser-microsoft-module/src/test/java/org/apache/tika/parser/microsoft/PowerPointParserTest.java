@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft;
 
@@ -23,11 +21,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
@@ -35,6 +28,9 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class PowerPointParserTest extends TikaTest {
 
@@ -78,14 +74,14 @@ public class PowerPointParserTest extends TikaTest {
         assertContains("<p><a href=\"http://tika.apache.org/\">This is a hyperlink</a>", xml);
         assertContains("<p>Here is a list:", xml);
         for (int row = 1; row <= 3; row++) {
-            //assertContains("·\tBullet " + row, content);
-            //assertContains("\u00b7\tBullet " + row, content);
+            // assertContains("·\tBullet " + row, content);
+            // assertContains("\u00b7\tBullet " + row, content);
             assertContains("<li>Bullet " + row, xml);
         }
         assertContains("Here is a numbered list:", xml);
         for (int row = 1; row <= 3; row++) {
-            //assertContains(row + ")\tNumber bullet " + row, content);
-            //assertContains(row + ") Number bullet " + row, content);
+            // assertContains(row + ")\tNumber bullet " + row, content);
+            // assertContains(row + ") Number bullet " + row, content);
             // TODO: OOXMLExtractor fails to number the bullets:
             assertContains("<li>Number bullet " + row, xml);
         }
@@ -99,12 +95,12 @@ public class PowerPointParserTest extends TikaTest {
         assertContains("Keyword1 Keyword2", xml);
         assertEquals("Keyword1 Keyword2", metadata.get(Office.KEYWORDS));
         assertContains("Keyword1 Keyword2",
-                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+                        Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
 
 
         assertContains("Subject is here", xml);
         assertContains("Subject is here",
-                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+                        Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
 
 
         assertContains("Suddenly some Japanese text:", xml);
@@ -112,26 +108,26 @@ public class PowerPointParserTest extends TikaTest {
         assertContains("\uff08\uff27\uff28\uff31\uff09", xml);
         // 6 other characters
         assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f",
-                xml);
+                        xml);
 
         assertContains("And then some Gothic text:", xml);
         assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A",
-                xml);
+                        xml);
     }
 
     @Test
     @Disabled("not sure why this isn't working")
     public void testSkipHeaderFooter() throws Exception {
-        //now test turning off header/footer
+        // now test turning off header/footer
         OfficeParserConfig config = new OfficeParserConfig();
         config.setIncludeHeadersAndFooters(false);
         ParseContext context = new ParseContext();
         context.set(OfficeParserConfig.class, config);
         String xml = getXML("testPPT_various.ppt", context).xml;
-        //"This is the header text" should show up as a notes header
-        //however, it is currently being extracted while we process notes
-        //as just a regular HSLFTextParagraph with a value of "false"
-        //for p.isHeaderOrFooter().
+        // "This is the header text" should show up as a notes header
+        // however, it is currently being extracted while we process notes
+        // as just a regular HSLFTextParagraph with a value of "false"
+        // for p.isHeaderOrFooter().
         assertNotContained("This is the header text", xml);
 
     }
@@ -151,14 +147,14 @@ public class PowerPointParserTest extends TikaTest {
         // Make sure boilerplate text didn't come through:
         assertEquals(-1, content.indexOf("Click to edit Master"));
 
-        //TIKA-1171, POI-62591
+        // TIKA-1171, POI-62591
         assertEquals(-1, content.indexOf("*"));
     }
 
     @Test
     @Disabled("not working")
     public void testTurningOffMasterFooter() throws Exception {
-        //now test turning off master content
+        // now test turning off master content
         OfficeParserConfig config = new OfficeParserConfig();
         config.setIncludeSlideMasterContent(false);
         ParseContext context = new ParseContext();
@@ -167,8 +163,7 @@ public class PowerPointParserTest extends TikaTest {
     }
 
     /**
-     * TIKA-712 Master Slide Text from PPT and PPTX files
-     * should be extracted too
+     * TIKA-712 Master Slide Text from PPT and PPTX files should be extracted too
      */
     @Test
     public void testMasterText() throws Exception {
@@ -185,10 +180,10 @@ public class PowerPointParserTest extends TikaTest {
         // Make sure boilerplate text didn't come through:
         assertEquals(-1, content.indexOf("Click to edit Master"));
 
-        //TIKA-1171, POI-62591
+        // TIKA-1171, POI-62591
         assertEquals(-1, content.indexOf("*"));
 
-        //now test turning off master content
+        // now test turning off master content
         OfficeParserConfig config = new OfficeParserConfig();
         config.setIncludeSlideMasterContent(false);
         ParseContext context = new ParseContext();
@@ -212,10 +207,10 @@ public class PowerPointParserTest extends TikaTest {
 
         // Make sure boilerplate text didn't come through:
         assertEquals(-1, content.indexOf("Click to edit Master"));
-        //TIKA-1171, POI-62591
+        // TIKA-1171, POI-62591
         assertEquals(-1, content.indexOf("*"));
 
-        //now test turning off master content
+        // now test turning off master content
         OfficeParserConfig config = new OfficeParserConfig();
         config.setIncludeSlideMasterContent(false);
         ParseContext context = new ParseContext();
@@ -265,9 +260,9 @@ public class PowerPointParserTest extends TikaTest {
     // TIKA-817
     @Test
     public void testAutoDatePPT() throws Exception {
-        //decision was made in POI-52367 not to generate
-        //autodate automatically.  For pptx, where value is stored,
-        //value is extracted.  For ppt, however, no date is extracted.
+        // decision was made in POI-52367 not to generate
+        // autodate automatically. For pptx, where value is stored,
+        // value is extracted. For ppt, however, no date is extracted.
         XMLResult result = getXML("testPPT_autodate.ppt");
         assertContains("<div class=\"slide-content\"><p>Now</p>", result.xml);
     }
@@ -285,7 +280,7 @@ public class PowerPointParserTest extends TikaTest {
         minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
         minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+                        TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
         ParseContext parseContext = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
@@ -300,20 +295,20 @@ public class PowerPointParserTest extends TikaTest {
 
     @Test
     public void testSkippingBadCompressedObj() throws Exception {
-        //test file is from govdocs1: 258642.ppt
-        //TIKA-2130
+        // test file is from govdocs1: 258642.ppt
+        // TIKA-2130
         XMLResult r = getXML("testPPT_skipBadCompressedObject.ppt");
         assertContains("NASA Human", r.xml);
         assertEquals(2, r.metadata
-                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
+                        .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
         assertContains("incorrect data check",
-                r.metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+                        r.metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
 
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_skipBadCompressedObject.ppt");
         assertEquals(2, metadataList.get(0)
-                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
+                        .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
         assertContains("incorrect data check",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+                        metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
 
     @Test
@@ -328,32 +323,32 @@ public class PowerPointParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_groups.ppt");
         assertEquals(3, metadataList.size());
         String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
-        //this tests that we're ignoring text shapes at depth=0
-        //i.e. POI has already included them in the slide's getTextParagraphs()
+        // this tests that we're ignoring text shapes at depth=0
+        // i.e. POI has already included them in the slide's getTextParagraphs()
         assertContainsCount("Text box1", content, 1);
 
 
-        //the WordArt and text box count tests will fail
-        //if this content is available via getTextParagraphs() of the slide in POI
-        //i.e. when POI is fixed, these tests will fail, and
-        //we'll have to remove the workaround in HSLFExtractor's extractGroupText(...)
+        // the WordArt and text box count tests will fail
+        // if this content is available via getTextParagraphs() of the slide in POI
+        // i.e. when POI is fixed, these tests will fail, and
+        // we'll have to remove the workaround in HSLFExtractor's extractGroupText(...)
         assertContainsCount("WordArt1", content, 1);
         assertContainsCount("WordArt2", content, 1);
-        assertContainsCount("Ungrouped text box", content, 1);//should only be 1
+        assertContainsCount("Ungrouped text box", content, 1);// should only be 1
         assertContains("Text box2", content);
         assertContains("Text box3", content);
         assertContains("Text box4", content);
         assertContains("Text box5", content);
 
-        //see below -- need to extract hyperlinks
+        // see below -- need to extract hyperlinks
         assertContains("tika", content);
         assertContains("MyTitle", content);
 
         assertEquals("/embedded-1",
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
         assertEquals("/embedded-2",
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
     }
 
@@ -379,7 +374,7 @@ public class PowerPointParserTest extends TikaTest {
         assertContains("<h1>Sheet1</h1>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("<td>1</td>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                xlsx.get(Metadata.CONTENT_TYPE));
+                        xlsx.get(Metadata.CONTENT_TYPE));
 
     }
 }

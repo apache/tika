@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.mime;
 
@@ -69,22 +67,19 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      */
     private List<RootXML> rootXML = null;
     /**
-     * All known file extensions of this type, in order of preference
-     * (best first).
+     * All known file extensions of this type, in order of preference (best first).
      */
     private List<String> extensions = null;
     /**
-     * Whether this mime-type is used for server-side scripts,
-     * and thus cannot reliably be used for filename-based type detection
+     * Whether this mime-type is used for server-side scripts, and thus cannot reliably be used for
+     * filename-based type detection
      */
     private boolean isInterpreted = false;
 
     /**
-     * Creates a media type with the give name and containing media type
-     * registry. The name is expected to be valid and normalized to lower
-     * case. This constructor should only be called by
-     * {@link MimeTypes#forName(String)} to keep the media type registry
-     * up to date.
+     * Creates a media type with the give name and containing media type registry. The name is
+     * expected to be valid and normalized to lower case. This constructor should only be called by
+     * {@link MimeTypes#forName(String)} to keep the media type registry up to date.
      *
      * @param type normalized media type name
      */
@@ -96,9 +91,9 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     }
 
     /**
-     * Checks that the given string is a valid Internet media type name
-     * based on rules from RFC 2054 section 5.3. For validation purposes the
-     * rules can be simplified to the following:
+     * Checks that the given string is a valid Internet media type name based on rules from RFC 2054
+     * section 5.3. For validation purposes the rules can be simplified to the following:
+     * 
      * <pre>
      * name := token "/" token
      * token := 1*&lt;any (US-ASCII) CHAR except SPACE, CTLs, or tspecials&gt;
@@ -107,8 +102,8 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      * </pre>
      *
      * @param name name string
-     * @return <code>true</code> if the string is a valid media type name,
-     * <code>false</code> otherwise
+     * @return <code>true</code> if the string is a valid media type name, <code>false</code>
+     *         otherwise
      */
     public static boolean isValid(String name) {
         if (name == null) {
@@ -118,9 +113,9 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         boolean slash = false;
         for (int i = 0; i < name.length(); i++) {
             char ch = name.charAt(i);
-            if (ch <= ' ' || ch >= 127 || ch == '(' || ch == ')' || ch == '<' || ch == '>' ||
-                    ch == '@' || ch == ',' || ch == ';' || ch == ':' || ch == '\\' || ch == '"' ||
-                    ch == '[' || ch == ']' || ch == '?' || ch == '=') {
+            if (ch <= ' ' || ch >= 127 || ch == '(' || ch == ')' || ch == '<' || ch == '>'
+                            || ch == '@' || ch == ',' || ch == ';' || ch == ':' || ch == '\\'
+                            || ch == '"' || ch == '[' || ch == ']' || ch == '?' || ch == '=') {
                 return false;
             } else if (ch == '/') {
                 if (slash || i == 0 || i + 1 == name.length()) {
@@ -197,7 +192,8 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      * Get the UTI for this mime type.
      *
      * @return The Uniform Type Identifier
-     * @see <a href="http://en.wikipedia.org/wiki/Uniform_Type_Identifier">http://en.wikipedia.org/wiki/Uniform_Type_Identifier</a>
+     * @see <a href=
+     *      "http://en.wikipedia.org/wiki/Uniform_Type_Identifier">http://en.wikipedia.org/wiki/Uniform_Type_Identifier</a>
      */
     public String getUniformTypeIdentifier() {
         return uti;
@@ -323,7 +319,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         return type.compareTo(mime.type);
     }
 
-    //----------------------------------------------------------< Comparable >
+    // ----------------------------------------------------------< Comparable >
 
     public boolean equals(Object o) {
         if (o instanceof MimeType) {
@@ -334,7 +330,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         return false;
     }
 
-    //--------------------------------------------------------------< Object >
+    // --------------------------------------------------------------< Object >
 
     public int hashCode() {
         return type.hashCode();
@@ -350,9 +346,9 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     }
 
     /**
-     * Returns the preferred file extension of this type, or an empty string
-     * if no extensions are known. Use the {@link #getExtensions()} method to
-     * get the full list of known extensions of this type.
+     * Returns the preferred file extension of this type, or an empty string if no extensions are
+     * known. Use the {@link #getExtensions()} method to get the full list of known extensions of
+     * this type.
      *
      * @return preferred file extension or empty string
      * @since Apache Tika 0.9
@@ -396,8 +392,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     }
 
     /**
-     * Defines a RootXML description. RootXML is made of a localName and/or a
-     * namespaceURI.
+     * Defines a RootXML description. RootXML is made of a localName and/or a namespaceURI.
      */
     static class RootXML implements Serializable {
 
@@ -415,7 +410,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         RootXML(MimeType type, String namespaceURI, String localName) {
             if (isEmpty(namespaceURI) && isEmpty(localName)) {
                 throw new IllegalArgumentException(
-                        "Both namespaceURI and localName cannot be empty");
+                                "Both namespaceURI and localName cannot be empty");
             }
             this.type = type;
             this.namespaceURI = namespaceURI;
@@ -423,7 +418,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         }
 
         boolean matches(String namespaceURI, String localName) {
-            //Compare namespaces
+            // Compare namespaces
             if (!isEmpty(this.namespaceURI)) {
                 if (!this.namespaceURI.equals(namespaceURI)) {
                     return false;
@@ -436,7 +431,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
                 }
             }
 
-            //Compare root element's local name
+            // Compare root element's local name
             if (!isEmpty(this.localName)) {
                 return this.localName.equals(localName);
             } else {

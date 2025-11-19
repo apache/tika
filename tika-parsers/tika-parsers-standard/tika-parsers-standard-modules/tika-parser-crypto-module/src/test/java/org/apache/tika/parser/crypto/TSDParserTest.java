@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.crypto;
 
@@ -22,26 +20,28 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class TSDParserTest extends TikaTest {
 
     @Test
     public void testTSDFileData() throws Exception {
         try (InputStream inputXml = getResourceAsStream("/test-documents/MANIFEST.XML.TSD");
-                InputStream inputTxt1 = getResourceAsStream("/test-documents/Test1.txt.tsd");
-                InputStream inputTxt2 = getResourceAsStream("/test-documents/Test2.txt.tsd");
-                InputStream inputDocx = getResourceAsStream("/test-documents/Test3.docx.tsd");
-                InputStream inputPdf = getResourceAsStream("/test-documents/Test4.pdf.tsd");
-                InputStream inputPng = getResourceAsStream("/test-documents/Test5.PNG.tsd")) {
+                        InputStream inputTxt1 =
+                                        getResourceAsStream("/test-documents/Test1.txt.tsd");
+                        InputStream inputTxt2 =
+                                        getResourceAsStream("/test-documents/Test2.txt.tsd");
+                        InputStream inputDocx =
+                                        getResourceAsStream("/test-documents/Test3.docx.tsd");
+                        InputStream inputPdf = getResourceAsStream("/test-documents/Test4.pdf.tsd");
+                        InputStream inputPng =
+                                        getResourceAsStream("/test-documents/Test5.PNG.tsd")) {
 
             TSDParser tsdParser = new TSDParser();
 
@@ -118,7 +118,7 @@ public class TSDParserTest extends TikaTest {
         List<Metadata> list = getRecursiveMetadata("MANIFEST.XML.TSD");
         assertEquals(3, list.size());
         assertContains(TSDParser.class.getName(),
-                Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+                        Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }
 
     @Test
@@ -126,7 +126,7 @@ public class TSDParserTest extends TikaTest {
         List<Metadata> list = getRecursiveMetadata("Test1.txt.tsd");
         assertEquals(2, list.size());
         assertContains(TSDParser.class.getName(),
-                Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+                        Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }
 
     @Test
@@ -134,7 +134,7 @@ public class TSDParserTest extends TikaTest {
         List<Metadata> list = getRecursiveMetadata("Test2.txt.tsd");
         assertEquals(2, list.size());
         assertContains(TSDParser.class.getName(),
-                Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+                        Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }
 
     @Test
@@ -142,7 +142,7 @@ public class TSDParserTest extends TikaTest {
         List<Metadata> list = getRecursiveMetadata("Test3.docx.tsd");
         assertEquals(2, list.size());
         assertContains(TSDParser.class.getName(),
-                Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+                        Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }
 
     @Test
@@ -150,14 +150,14 @@ public class TSDParserTest extends TikaTest {
         List<Metadata> list = getRecursiveMetadata("Test4.pdf.tsd");
         assertEquals(2, list.size());
         assertContains(TSDParser.class.getName(),
-                Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+                        Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }
 
-    //@Test
+    // @Test
     public void testTSDFileDataRecursiveMetadataPng() throws Exception {
         List<Metadata> list = getRecursiveMetadata("Test5.PNG.tsd");
         assertEquals(2, list.size());
         assertContains(TSDParser.class.getName(),
-                Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+                        Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }
 }

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.activemime;
 
@@ -20,14 +18,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
-
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.LittleEndian;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -37,9 +31,11 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * ActiveMime is a macro container format used in some mso files.  See, e.g.
+ * ActiveMime is a macro container format used in some mso files. See, e.g.
  * <a href="https://mastodon.social/@Ange/110027138524274526">Ange's toot</a>.
  */
 public class ActiveMimeParser implements Parser {
@@ -54,20 +50,20 @@ public class ActiveMimeParser implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
-        //based on: https://mastodon.social/@Ange/110027138524274526
-        IOUtils.skipFully(stream, 12); //header
-        IOUtils.skipFully(stream, 2); //version
-        IOUtils.skipFully(stream, 4); //flag1 04000000
-        IOUtils.skipFully(stream, 4);//reserved ffffffff
-        IOUtils.skipFully(stream, 4);//flag2 000006F0
-        // do something with this?  If so, use readUInt
+                    ParseContext context) throws IOException, SAXException, TikaException {
+        // based on: https://mastodon.social/@Ange/110027138524274526
+        IOUtils.skipFully(stream, 12); // header
+        IOUtils.skipFully(stream, 2); // version
+        IOUtils.skipFully(stream, 4); // flag1 04000000
+        IOUtils.skipFully(stream, 4);// reserved ffffffff
+        IOUtils.skipFully(stream, 4);// flag2 000006F0
+        // do something with this? If so, use readUInt
         // long datasize = LittleEndian.readUInt(stream);
-        IOUtils.skipFully(stream, 4); //datasize
+        IOUtils.skipFully(stream, 4); // datasize
         long zlibOffset = LittleEndian.readUInt(stream);
-        IOUtils.skipFully(stream, 4);//flag
-        IOUtils.skipFully(stream, 4);//uncompressed size
-        IOUtils.skipFully(stream, 4);//don't know
+        IOUtils.skipFully(stream, 4);// flag
+        IOUtils.skipFully(stream, 4);// uncompressed size
+        IOUtils.skipFully(stream, 4);// don't know
 
         IOUtils.skipFully(stream, zlibOffset);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);

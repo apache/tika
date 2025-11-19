@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.pdf;
 
@@ -25,46 +23,43 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
- * This class offers an initial capability to
- * scrape text containing elements out of XFA, and
- * it tries to link fields with values.
+ * This class offers an initial capability to scrape text containing elements out of XFA, and it
+ * tries to link fields with values.
  * <p>
  * Some areas for improvement:
  * <ol>
- *     <li>convert this to 2 lines of XPath</li>
- *     <li>handle metadata stored in &lt;desc&gt; section (govdocs1: 754282.pdf, 982106.pdf)</li>
- *     <li>handle pdf metadata (access permissions, etc.) in &lt;pdf&gt; element</li>
- *     <li>extract different types of uris as metadata</li>
- *     <li>add extraction of &lt;image&gt; data (govdocs1: 754282.pdf)</li>
- *     <li>add computation of traversal order for fields</li>
- *     <li>figure out when text extracted from xfa fields is duplicative of that
- *     extracted from the rest of the pdf...and do this efficiently and quickly</li>
- *     <li>avoid duplication with &lt;speak&gt; and &lt;tooltip&gt; elements</li>
+ * <li>convert this to 2 lines of XPath</li>
+ * <li>handle metadata stored in &lt;desc&gt; section (govdocs1: 754282.pdf, 982106.pdf)</li>
+ * <li>handle pdf metadata (access permissions, etc.) in &lt;pdf&gt; element</li>
+ * <li>extract different types of uris as metadata</li>
+ * <li>add extraction of &lt;image&gt; data (govdocs1: 754282.pdf)</li>
+ * <li>add computation of traversal order for fields</li>
+ * <li>figure out when text extracted from xfa fields is duplicative of that extracted from the rest
+ * of the pdf...and do this efficiently and quickly</li>
+ * <li>avoid duplication with &lt;speak&gt; and &lt;tooltip&gt; elements</li>
  * </ol>
  */
 class XFAExtractor {
 
     private static final Pattern XFA_TEMPLATE_ANY_VERSION =
-            Pattern.compile("^http://www.xfa.org/schema/xfa-template");
+                    Pattern.compile("^http://www.xfa.org/schema/xfa-template");
     private static final Pattern TEXT_PATTERN =
-            Pattern.compile("^(speak|text|contents-richtext|toolTip|exData)$");
+                    Pattern.compile("^(speak|text|contents-richtext|toolTip|exData)$");
 
     private static final String XFA_DATA_NS = "http://www.xfa.org/schema/xfa-data/1.0/";
 
     private static final String FIELD_LN = "field";
     private static final QName XFA_DATA = new QName(XFA_DATA_NS, "data");
 
-    private final Matcher xfaTemplateMatcher;//namespace any version
+    private final Matcher xfaTemplateMatcher;// namespace any version
     private final Matcher textMatcher;
 
     XFAExtractor() {
@@ -73,32 +68,33 @@ class XFAExtractor {
     }
 
     void extract(InputStream xfaIs, XHTMLContentHandler xhtml, Metadata m, ParseContext context)
-            throws XMLStreamException, SAXException {
+                    throws XMLStreamException, SAXException {
         xhtml.startElement("div", "class", "xfa_content");
 
-        //TODO - replace this with multivalued map? This isn't
-        //actually metadata, just a handy data structure.
+        // TODO - replace this with multivalued map? This isn't
+        // actually metadata, just a handy data structure.
         Metadata pdfObjRToValues = new Metadata();
 
-        //for now, store and dump the fields in insertion order
+        // for now, store and dump the fields in insertion order
         Map<String, XFAField> namedFields = new LinkedHashMap<>();
 
-        //The strategy is to cache the fields in fields
-        //and cache the values in pdfObjRToValues while
-        //handling the text etc along the way.
+        // The strategy is to cache the fields in fields
+        // and cache the values in pdfObjRToValues while
+        // handling the text etc along the way.
         //
-        //As a final step, dump the merged fields and the values.
+        // As a final step, dump the merged fields and the values.
 
-        XMLStreamReader reader = XMLReaderUtils.getXMLInputFactory(context).createXMLStreamReader(xfaIs);
+        XMLStreamReader reader =
+                        XMLReaderUtils.getXMLInputFactory(context).createXMLStreamReader(xfaIs);
         while (reader.hasNext()) {
             switch (reader.next()) {
                 case XMLStreamConstants.START_ELEMENT:
                     QName name = reader.getName();
                     String localName = name.getLocalPart();
-                    if (xfaTemplateMatcher.reset(name.getNamespaceURI()).find() &&
-                            FIELD_LN.equals(name.getLocalPart())) {
+                    if (xfaTemplateMatcher.reset(name.getNamespaceURI()).find()
+                                    && FIELD_LN.equals(name.getLocalPart())) {
                         handleField(reader, namedFields);
-                    } else if (XFA_DATA.equals(name)) { //full qname match is important!
+                    } else if (XFA_DATA.equals(name)) { // full qname match is important!
                         loadData(reader, pdfObjRToValues);
                     } else if (textMatcher.reset(localName).find()) {
                         scrapeTextUntil(reader, xhtml, name);
@@ -113,19 +109,18 @@ class XFAExtractor {
             xhtml.endElement("div");
             return;
         }
-        //now dump fields and values
+        // now dump fields and values
         xhtml.startElement("div", "class", "xfa_form");
         xhtml.startElement("ol");
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, XFAField> e : namedFields.entrySet()) {
             String fieldName = e.getKey();
             XFAField field = e.getValue();
-            String displayFieldName =
-                    (field.toolTip == null || field.toolTip.isBlank()) ? fieldName :
-                            field.toolTip;
+            String displayFieldName = (field.toolTip == null || field.toolTip.isBlank()) ? fieldName
+                            : field.toolTip;
             String[] fieldValues = pdfObjRToValues.getValues(fieldName);
             if (fieldValues.length == 0) {
-                fieldValues = new String[]{""};
+                fieldValues = new String[] {""};
             }
             for (String fieldValue : fieldValues) {
                 AttributesImpl attrs = new AttributesImpl();
@@ -147,9 +142,9 @@ class XFAExtractor {
         xhtml.endElement("div");
     }
 
-    //try to scrape the text until the endElement
+    // try to scrape the text until the endElement
     private void scrapeTextUntil(XMLStreamReader reader, XHTMLContentHandler xhtml,
-                                 QName endElement) throws XMLStreamException, SAXException {
+                    QName endElement) throws XMLStreamException, SAXException {
         StringBuilder buffer = new StringBuilder();
         boolean keepGoing = true;
         while (reader.hasNext() && keepGoing) {
@@ -186,7 +181,7 @@ class XFAExtractor {
 
 
     private String scrapeTextUntil(XMLStreamReader reader, QName endElement)
-            throws XMLStreamException {
+                    throws XMLStreamException {
         StringBuilder buffer = new StringBuilder();
         boolean keepGoing = true;
         while (reader.hasNext() && keepGoing) {
@@ -218,9 +213,9 @@ class XFAExtractor {
     }
 
     private void loadData(XMLStreamReader reader, Metadata pdfObjRToValues)
-            throws XMLStreamException {
-        //reader is at the "xfa:data" element
-        //scrape the contents from the text containing nodes
+                    throws XMLStreamException {
+        // reader is at the "xfa:data" element
+        // scrape the contents from the text containing nodes
         StringBuilder buffer = new StringBuilder();
         while (reader.hasNext()) {
             switch (reader.next()) {
@@ -254,8 +249,8 @@ class XFAExtractor {
     }
 
     private void handleField(XMLStreamReader reader, Map<String, XFAField> fields)
-            throws XMLStreamException {
-        //reader is set to the field element
+                    throws XMLStreamException {
+        // reader is set to the field element
         String fieldName = findFirstAttributeValue(reader, "name");
         String pdfObjRef = "";
         String toolTip = "";
@@ -268,8 +263,8 @@ class XFAExtractor {
                     // add checkbutton, etcif (reader.getName().equals())
                     break;
                 case XMLStreamConstants.END_ELEMENT:
-                    if (xfaTemplateMatcher.reset(reader.getName().getNamespaceURI()).find() &&
-                            FIELD_LN.equals(reader.getName().getLocalPart())) {
+                    if (xfaTemplateMatcher.reset(reader.getName().getNamespaceURI()).find()
+                                    && FIELD_LN.equals(reader.getName().getLocalPart())) {
                         if (fieldName != null) {
                             fields.put(fieldName, new XFAField(fieldName, toolTip, pdfObjRef));
                         }
@@ -310,8 +305,8 @@ class XFAExtractor {
 
         @Override
         public String toString() {
-            return "XFAField{" + "fieldName='" + fieldName + '\'' + ", toolTip='" + toolTip + '\'' +
-                    ", pdfObjRef='" + pdfObjRef + '\'' + ", value='" + value + '\'' + '}';
+            return "XFAField{" + "fieldName='" + fieldName + '\'' + ", toolTip='" + toolTip + '\''
+                            + ", pdfObjRef='" + pdfObjRef + '\'' + ", value='" + value + '\'' + '}';
         }
     }
 }

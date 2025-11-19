@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.sqlite3;
 
@@ -29,9 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.sqlite.SQLiteConfig;
-
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -40,23 +35,25 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.jdbc.AbstractDBParser;
 import org.apache.tika.parser.jdbc.JDBCTableReader;
+import org.sqlite.SQLiteConfig;
 
 /**
  * This is the implementation of the db parser for SQLite.
  * <p/>
- * This parser is internal only; it should not be registered in the services
- * file or configured in the TikaConfig xml file.
+ * This parser is internal only; it should not be registered in the services file or configured in
+ * the TikaConfig xml file.
  */
 public class SQLite3DBParser extends AbstractDBParser {
 
     protected static final String SQLITE_CLASS_NAME = "org.sqlite.JDBC";
 
-    protected static final Map<Property, String> METADATA_KEYS = Map.of(
-            SQLite3Parser.SQLITE_APPLICATION_ID, "select application_id from pragma_application_id",
-            SQLite3Parser.SQLITE_USER_VERSION, "select user_version from pragma_user_version"
-    );
+    protected static final Map<Property, String> METADATA_KEYS =
+                    Map.of(SQLite3Parser.SQLITE_APPLICATION_ID,
+                                    "select application_id from pragma_application_id",
+                                    SQLite3Parser.SQLITE_USER_VERSION,
+                                    "select user_version from pragma_user_version");
 
-    //If the InputStream wasn't a TikaInputStream, copy to this tmp file
+    // If the InputStream wasn't a TikaInputStream, copy to this tmp file
     Path tmpFile = null;
 
     /**
@@ -70,7 +67,7 @@ public class SQLite3DBParser extends AbstractDBParser {
 
     @Override
     protected Connection getConnection(InputStream stream, Metadata metadata, ParseContext context)
-            throws IOException {
+                    throws IOException {
         String connectionString = getConnectionString(stream, metadata, context);
 
         Connection connection = null;
@@ -82,7 +79,7 @@ public class SQLite3DBParser extends AbstractDBParser {
         try {
             SQLiteConfig config = new SQLiteConfig();
 
-            //good habit, but effectively meaningless here
+            // good habit, but effectively meaningless here
             config.setReadOnly(true);
             connection = config.createConnection(connectionString);
 
@@ -94,15 +91,15 @@ public class SQLite3DBParser extends AbstractDBParser {
 
     @Override
     protected String getConnectionString(InputStream is, Metadata metadata, ParseContext context)
-            throws IOException {
+                    throws IOException {
         TikaInputStream tis = TikaInputStream.cast(is);
-        //if this is a TikaInputStream, use that to spool is to disk or
-        //use original underlying file.
+        // if this is a TikaInputStream, use that to spool is to disk or
+        // use original underlying file.
         if (tis != null) {
             Path dbFile = tis.getPath();
             return "jdbc:sqlite:" + dbFile.toAbsolutePath().toString();
         } else {
-            //if not TikaInputStream, create own tmpResources.
+            // if not TikaInputStream, create own tmpResources.
             tmpFile = Files.createTempFile("tika-sqlite-tmp", "");
             Files.copy(is, tmpFile, StandardCopyOption.REPLACE_EXISTING);
             return "jdbc:sqlite:" + tmpFile.toAbsolutePath().toString();
@@ -127,7 +124,7 @@ public class SQLite3DBParser extends AbstractDBParser {
 
     @Override
     protected List<String> getTableNames(Connection connection, Metadata metadata,
-                                         ParseContext context) throws SQLException {
+                    ParseContext context) throws SQLException {
         List<String> tableNames = new LinkedList<>();
 
         try (Statement st = connection.createStatement()) {
@@ -143,36 +140,36 @@ public class SQLite3DBParser extends AbstractDBParser {
 
     @Override
     public JDBCTableReader getTableReader(Connection connection, String tableName,
-                                          ParseContext context) {
+                    ParseContext context) {
         return new SQLite3TableReader(connection, tableName, new EmbeddedDocumentUtil(context));
     }
 
     @Override
     protected JDBCTableReader getTableReader(Connection connection, String tableName,
-                                             EmbeddedDocumentUtil embeddedDocumentUtil) {
+                    EmbeddedDocumentUtil embeddedDocumentUtil) {
         return new SQLite3TableReader(connection, tableName, embeddedDocumentUtil);
     }
 
     @Override
     protected void extractMetadata(Connection connection, Metadata metadata) {
-        //TODO -- figure out how to get the version of sqlite3 that last modified this file and
+        // TODO -- figure out how to get the version of sqlite3 that last modified this file and
         // version-valid-for.
         // version-valid-for is at offset 92, last modified by app version isat offset 96 --
         // not clear how to get this info via sql
-        //'file' extracts this info; we should to :\
-        //See: https://www.sqlite.org/fileformat.html
+        // 'file' extracts this info; we should to :\
+        // See: https://www.sqlite.org/fileformat.html
         for (Map.Entry<Property, String> e : METADATA_KEYS.entrySet()) {
             try (Statement st = connection.createStatement()) {
                 try (ResultSet rs = st.executeQuery(e.getValue())) {
                     if (rs.next()) {
                         int val = rs.getInt(1);
-                        if (! rs.wasNull()) {
+                        if (!rs.wasNull()) {
                             metadata.set(e.getKey(), Integer.toString(val, 16));
                         }
                     }
                 }
             } catch (SQLException ex) {
-                //swallow
+                // swallow
             }
         }
     }

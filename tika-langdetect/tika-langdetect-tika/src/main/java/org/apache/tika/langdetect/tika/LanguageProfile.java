@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.langdetect.tika;
 
@@ -25,7 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,8 +45,7 @@ public class LanguageProfile {
      */
     private final Interleaved interleaved = new Interleaved();
     /**
-     * The sum of all ngram counts in this profile.
-     * Used to calculate relative ngram frequency.
+     * The sum of all ngram counts in this profile. Used to calculate relative ngram frequency.
      */
     private long count = 0;
 
@@ -108,9 +104,8 @@ public class LanguageProfile {
      */
     public void add(String ngram, long count) {
         if (length != ngram.length()) {
-            throw new IllegalArgumentException(
-                    "Unable to add an ngram of incorrect length: " + ngram.length() + " != " +
-                    length);
+            throw new IllegalArgumentException("Unable to add an ngram of incorrect length: "
+                            + ngram.length() + " != " + length);
         }
 
         Counter counter = ngrams.get(ngram);
@@ -123,8 +118,7 @@ public class LanguageProfile {
     }
 
     /**
-     * Calculates the geometric distance between this and the given
-     * other language profile.
+     * Calculates the geometric distance between this and the given other language profile.
      *
      * @param that the other language profile
      * @return distance between the profiles
@@ -135,8 +129,8 @@ public class LanguageProfile {
 
     private double distanceStandard(LanguageProfile that) {
         if (length != that.length) {
-            throw new IllegalArgumentException("Unable to calculage distance of language profiles" +
-                                               " with different ngram lengths: " + that.length + " != " + length);
+            throw new IllegalArgumentException("Unable to calculage distance of language profiles"
+                            + " with different ngram lengths: " + that.length + " != " + length);
         }
 
         double sumOfSquares = 0.0;
@@ -163,8 +157,8 @@ public class LanguageProfile {
 
     private double distanceInterleaved(LanguageProfile that) {
         if (length != that.length) {
-            throw new IllegalArgumentException("Unable to calculage distance of language profiles" +
-                                               " with different ngram lengths: " + that.length + " != " + length);
+            throw new IllegalArgumentException("Unable to calculage distance of language profiles"
+                            + " with different ngram lengths: " + that.length + " != " + length);
         }
 
         double sumOfSquares = 0.0;
@@ -265,8 +259,7 @@ public class LanguageProfile {
         }
 
         private List<Map.Entry<String, Counter>> getSortedNgrams() {
-            List<Map.Entry<String, Counter>> entries =
-                    new ArrayList<>(ngrams.size());
+            List<Map.Entry<String, Counter>> entries = new ArrayList<>(ngrams.size());
             entries.addAll(ngrams.entrySet());
             entries.sort(Map.Entry.comparingByKey());
             return entries;

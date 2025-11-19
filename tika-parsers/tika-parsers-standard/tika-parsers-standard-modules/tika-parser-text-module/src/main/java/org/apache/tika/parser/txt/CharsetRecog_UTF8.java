@@ -1,9 +1,8 @@
 // © 2016 and later: Unicode, Inc. and others.
 // License & terms of use: http://www.unicode.org/copyright.html#License
 /**
- * ******************************************************************************
- * Copyright (C) 2005 - 2014, International Business Machines Corporation and  *
- * others. All Rights Reserved.                                                *
+ * ****************************************************************************** Copyright (C) 2005
+ * - 2014, International Business Machines Corporation and * others. All Rights Reserved. *
  * ******************************************************************************
  */
 package org.apache.tika.parser.txt;
@@ -17,7 +16,9 @@ class CharsetRecog_UTF8 extends CharsetRecognizer {
         return "UTF-8";
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see com.ibm.icu.text.CharsetRecognizer#match(com.ibm.icu.text.CharsetDetector)
      */
     CharsetMatch match(CharsetDetector det) {
@@ -29,8 +30,8 @@ class CharsetRecog_UTF8 extends CharsetRecognizer {
         int trailBytes = 0;
         int confidence;
 
-        if (det.fRawLength >= 3 && (input[0] & 0xFF) == 0xef && (input[1] & 0xFF) == 0xbb &&
-                (input[2] & 0xFF) == 0xbf) {
+        if (det.fRawLength >= 3 && (input[0] & 0xFF) == 0xef && (input[1] & 0xFF) == 0xbb
+                        && (input[2] & 0xFF) == 0xbf) {
             hasBOM = true;
         }
 
@@ -38,10 +39,10 @@ class CharsetRecog_UTF8 extends CharsetRecognizer {
         for (i = 0; i < det.fRawLength; i++) {
             int b = input[i];
             if ((b & 0x80) == 0) {
-                continue;   // ASCII
+                continue; // ASCII
             }
 
-            // Hi bit on char found.  Figure out how long the sequence should be
+            // Hi bit on char found. Figure out how long the sequence should be
             if ((b & 0x0e0) == 0x0c0) {
                 trailBytes = 1;
             } else if ((b & 0x0f0) == 0x0e0) {
@@ -54,7 +55,7 @@ class CharsetRecog_UTF8 extends CharsetRecognizer {
             }
 
             // Verify that we've got the right number of trail bytes in the sequence
-            for (; ; ) {
+            for (;;) {
                 i++;
                 if (i >= det.fRawLength) {
                     break;
@@ -72,7 +73,7 @@ class CharsetRecog_UTF8 extends CharsetRecognizer {
         }
 
         // Cook up some sort of confidence score, based on presense of a BOM
-        //    and the existence of valid and/or invalid multi-byte sequences.
+        // and the existence of valid and/or invalid multi-byte sequences.
         confidence = 0;
         if (hasBOM && numInvalid == 0) {
             confidence = 100;
@@ -84,11 +85,11 @@ class CharsetRecog_UTF8 extends CharsetRecognizer {
             confidence = 80;
         } else if (numValid == 0 && numInvalid == 0) {
             // Plain ASCII. Confidence must be > 10, it's more likely than UTF-16, which
-            //              accepts ASCII with confidence = 10.
+            // accepts ASCII with confidence = 10.
             // TODO: add plain ASCII as an explicitly detected type.
             confidence = 15;
         } else if (numValid > numInvalid * 10) {
-            // Probably corruput utf-8 data.  Valid sequences aren't likely by chance.
+            // Probably corruput utf-8 data. Valid sequences aren't likely by chance.
             confidence = 25;
         }
         return confidence == 0 ? null : new CharsetMatch(det, this, confidence);

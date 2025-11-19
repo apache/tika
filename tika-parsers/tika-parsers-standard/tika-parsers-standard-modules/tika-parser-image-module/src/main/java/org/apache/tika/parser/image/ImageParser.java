@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.image;
 
@@ -28,21 +26,19 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
-
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class ImageParser extends AbstractImageParser {
     /**
@@ -58,17 +54,16 @@ public class ImageParser extends AbstractImageParser {
     private static final Set<MediaType> TMP_SUPPORTED;
 
     static {
-        TMP_SUPPORTED = new HashSet<>(
-                Arrays.asList(MAIN_BMP_TYPE, OLD_BMP_TYPE, MediaType.image("gif"),
-                        MediaType.image("png"), MediaType.image("vnd.wap.wbmp"),
-                        MediaType.image("x-icon"), MediaType.image("x-xcf"),
-                        MediaType.image("x-jbig2")));
-        //add try/catch class.forName() for image types relying on
-        //provided dependencies
+        TMP_SUPPORTED = new HashSet<>(Arrays.asList(MAIN_BMP_TYPE, OLD_BMP_TYPE,
+                        MediaType.image("gif"), MediaType.image("png"),
+                        MediaType.image("vnd.wap.wbmp"), MediaType.image("x-icon"),
+                        MediaType.image("x-xcf"), MediaType.image("x-jbig2")));
+        // add try/catch class.forName() for image types relying on
+        // provided dependencies
     }
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(TMP_SUPPORTED);
+                    Collections.unmodifiableSet(TMP_SUPPORTED);
 
     private static void setIfPresent(Metadata metadata, String imageIOkey, Property tikaProp) {
         if (metadata.get(imageIOkey) != null) {
@@ -94,7 +89,7 @@ public class ImageParser extends AbstractImageParser {
     }
 
     private static void loadNode(Metadata metadata, Node node, String parents,
-                                 boolean addThisNodeName) {
+                    boolean addThisNodeName) {
         if (addThisNodeName) {
             if (parents.length() > 0) {
                 parents += " ";
@@ -106,7 +101,8 @@ public class ImageParser extends AbstractImageParser {
 
             int length = map.getLength();
             if (length == 1) {
-                metadata.add(ImageMetadataExtractor.UNKNOWN_IMG_NS + parents, normalize(map.item(0).getNodeValue()));
+                metadata.add(ImageMetadataExtractor.UNKNOWN_IMG_NS + parents,
+                                normalize(map.item(0).getNodeValue()));
             } else if (length > 1) {
                 StringBuilder value = new StringBuilder();
                 for (int i = 0; i < length; i++) {
@@ -151,8 +147,7 @@ public class ImageParser extends AbstractImageParser {
 
     @Override
     void extractMetadata(InputStream stream, ContentHandler contentHandler, Metadata metadata,
-                         ParseContext parseContext)
-            throws IOException, SAXException, TikaException {
+                    ParseContext parseContext) throws IOException, SAXException, TikaException {
         String type = metadata.get(Metadata.CONTENT_TYPE);
         if (type == null) {
             return;
@@ -163,7 +158,7 @@ public class ImageParser extends AbstractImageParser {
                 ImageReader reader = iterator.next();
                 try {
                     try (ImageInputStream imageStream = ImageIO
-                            .createImageInputStream(CloseShieldInputStream.wrap(stream))) {
+                                    .createImageInputStream(CloseShieldInputStream.wrap(stream))) {
                         reader.setInput(imageStream);
                         try {
                             int numImages = reader.getNumImages(true);
@@ -171,12 +166,14 @@ public class ImageParser extends AbstractImageParser {
                                 metadata.set(TikaCoreProperties.NUM_IMAGES, numImages);
                             }
                         } catch (IllegalStateException e) {
-                            //ignore
+                            // ignore
                         }
                         metadata.set(Metadata.IMAGE_WIDTH, Integer.toString(reader.getWidth(0)));
                         metadata.set(Metadata.IMAGE_LENGTH, Integer.toString(reader.getHeight(0)));
-                        metadata.set(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height", Integer.toString(reader.getHeight(0)));
-                        metadata.set(ImageMetadataExtractor.UNKNOWN_IMG_NS + "width", Integer.toString(reader.getWidth(0)));
+                        metadata.set(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height",
+                                        Integer.toString(reader.getHeight(0)));
+                        metadata.set(ImageMetadataExtractor.UNKNOWN_IMG_NS + "width",
+                                        Integer.toString(reader.getWidth(0)));
 
                         loadMetadata(reader.getImageMetadata(0), metadata);
                     }
@@ -186,16 +183,20 @@ public class ImageParser extends AbstractImageParser {
             }
 
             // Translate certain Metadata tags from the ImageIO
-            //  specific namespace into the general Tika one
-            setIfPresent(metadata, ImageMetadataExtractor.UNKNOWN_IMG_NS + "CommentExtensions CommentExtension",
-                    TikaCoreProperties.COMMENTS);
-            setIfPresent(metadata, ImageMetadataExtractor.UNKNOWN_IMG_NS + "markerSequence com", TikaCoreProperties.COMMENTS);
-            setIfPresent(metadata, ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data BitsPerSample", Metadata.BITS_PER_SAMPLE);
+            // specific namespace into the general Tika one
+            setIfPresent(metadata,
+                            ImageMetadataExtractor.UNKNOWN_IMG_NS
+                                            + "CommentExtensions CommentExtension",
+                            TikaCoreProperties.COMMENTS);
+            setIfPresent(metadata, ImageMetadataExtractor.UNKNOWN_IMG_NS + "markerSequence com",
+                            TikaCoreProperties.COMMENTS);
+            setIfPresent(metadata, ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data BitsPerSample",
+                            Metadata.BITS_PER_SAMPLE);
         } catch (IIOException e) {
             // TIKA-619: There is a known bug in the Sun API when dealing with GIF images
-            //  which Tika will just ignore.
-            if (!(e.getMessage() != null && e.getMessage().equals("Unexpected block type 0!") &&
-                    type.equals("image/gif"))) {
+            // which Tika will just ignore.
+            if (!(e.getMessage() != null && e.getMessage().equals("Unexpected block type 0!")
+                            && type.equals("image/gif"))) {
                 throw new TikaException(type + " parse error", e);
             }
         }
@@ -208,7 +209,7 @@ public class ImageParser extends AbstractImageParser {
             return null;
         }
         // If the old (pre-RFC7903) BMP mime type is given,
-        //  fix it up to the new one, so Java is happy
+        // fix it up to the new one, so Java is happy
         if (OLD_BMP_TYPE.equals(mediaType)) {
             return MAIN_BMP_TYPE;
         }

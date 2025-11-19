@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.metadata;
 
@@ -26,10 +24,9 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * XMP property definition. Each instance of this class defines a single
- * metadata property like "dc:format". In addition to the property name,
- * the {@link ValueType value type} and category (internal or external)
- * of the property are included in the property definition. The available
+ * XMP property definition. Each instance of this class defines a single metadata property like
+ * "dc:format". In addition to the property name, the {@link ValueType value type} and category
+ * (internal or external) of the property are included in the property definition. The available
  * choice values are also stored for open and closed choice value types.
  *
  * @since Apache Tika 0.7
@@ -49,15 +46,15 @@ public final class Property implements Comparable<Property> {
     private final Set<String> choices;
 
     private Property(String name, boolean internal, PropertyType propertyType, ValueType valueType,
-                     String[] choices, Property primaryProperty,
-                     Property[] secondaryExtractProperties) {
+                    String[] choices, Property primaryProperty,
+                    Property[] secondaryExtractProperties) {
         this.name = name;
         this.internal = internal;
         this.propertyType = propertyType;
         this.valueType = valueType;
         if (choices != null) {
             this.choices = Collections
-                    .unmodifiableSet(new HashSet<>(Arrays.asList(choices.clone())));
+                            .unmodifiableSet(new HashSet<>(Arrays.asList(choices.clone())));
         } else {
             this.choices = null;
         }
@@ -77,7 +74,7 @@ public final class Property implements Comparable<Property> {
     }
 
     private Property(String name, boolean internal, PropertyType propertyType, ValueType valueType,
-                     String[] choices) {
+                    String[] choices) {
         this(name, internal, propertyType, valueType, choices, null, null);
     }
 
@@ -90,7 +87,7 @@ public final class Property implements Comparable<Property> {
     }
 
     private Property(String name, boolean internal, PropertyType propertyType,
-                     ValueType valueType) {
+                    ValueType valueType) {
         this(name, internal, propertyType, valueType, null);
     }
 
@@ -223,15 +220,15 @@ public final class Property implements Comparable<Property> {
     /**
      * Constructs a new composite property from the given primary and array of secondary properties.
      * <p>
-     * Note that name of the composite property is taken from its primary property,
-     * and primary and secondary properties must not be composite properties themselves.
+     * Note that name of the composite property is taken from its primary property, and primary and
+     * secondary properties must not be composite properties themselves.
      *
      * @param primaryProperty
      * @param secondaryExtractProperties
      * @return the composite property
      */
     public static Property composite(Property primaryProperty,
-                                     Property[] secondaryExtractProperties) {
+                    Property[] secondaryExtractProperties) {
         if (primaryProperty == null) {
             throw new NullPointerException("primaryProperty must not be null");
         }
@@ -250,8 +247,8 @@ public final class Property implements Comparable<Property> {
             choices = primaryProperty.getChoices().toArray(new String[0]);
         }
         return new Property(primaryProperty.getName(), primaryProperty.isInternal(),
-                PropertyType.COMPOSITE, ValueType.PROPERTY, choices, primaryProperty,
-                secondaryExtractProperties);
+                        PropertyType.COMPOSITE, ValueType.PROPERTY, choices, primaryProperty,
+                        secondaryExtractProperties);
     }
 
     public String getName() {
@@ -270,8 +267,8 @@ public final class Property implements Comparable<Property> {
      * Is the PropertyType one which accepts multiple values?
      */
     public boolean isMultiValuePermitted() {
-        if (propertyType == PropertyType.BAG || propertyType == PropertyType.SEQ ||
-                propertyType == PropertyType.ALT) {
+        if (propertyType == PropertyType.BAG || propertyType == PropertyType.SEQ
+                        || propertyType == PropertyType.ALT) {
             return true;
         } else if (propertyType == PropertyType.COMPOSITE) {
             // Base it on the primary property's behaviour
@@ -289,9 +286,9 @@ public final class Property implements Comparable<Property> {
     }
 
     /**
-     * Returns the (immutable) set of choices for the values of this property.
-     * Only defined for {@link ValueType#OPEN_CHOICE open} and
-     * {@link ValueType#CLOSED_CHOICE closed choice} value types.
+     * Returns the (immutable) set of choices for the values of this property. Only defined for
+     * {@link ValueType#OPEN_CHOICE open} and {@link ValueType#CLOSED_CHOICE closed choice} value
+     * types.
      *
      * @return available choices, or <code>null</code>
      */
@@ -325,13 +322,13 @@ public final class Property implements Comparable<Property> {
         return o instanceof Property && name.equals(((Property) o).name);
     }
 
-    //----------------------------------------------------------< Comparable >
+    // ----------------------------------------------------------< Comparable >
 
     public int hashCode() {
         return name.hashCode();
     }
 
-    //--------------------------------------------------------------< Object >
+    // --------------------------------------------------------------< Object >
 
     public enum PropertyType {
         /**
@@ -357,8 +354,7 @@ public final class Property implements Comparable<Property> {
     }
 
     public enum ValueType {
-        BOOLEAN, OPEN_CHOICE, CLOSED_CHOICE, DATE, INTEGER, LOCALE, MIME_TYPE, PROPER_NAME,
-        RATIONAL, REAL, TEXT, URI, URL, XPATH, PROPERTY
+        BOOLEAN, OPEN_CHOICE, CLOSED_CHOICE, DATE, INTEGER, LOCALE, MIME_TYPE, PROPER_NAME, RATIONAL, REAL, TEXT, URI, URL, XPATH, PROPERTY
     }
 
 }

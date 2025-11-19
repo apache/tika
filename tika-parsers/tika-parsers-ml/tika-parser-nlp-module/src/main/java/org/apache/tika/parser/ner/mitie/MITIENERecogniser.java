@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.ner.mitie;
 
@@ -24,19 +22,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
+import org.apache.tika.parser.ner.NERecogniser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.parser.ner.NERecogniser;
-
 /**
- * This class offers an implementation of {@link NERecogniser} based on
- * trained models using state-of-the-art information extraction tools. \This NER requires
- * additional setup,
- * due to runtime binding to MIT Information Extraction.
- * See <a href="http://wiki.apache.org/tika/TikaAndMITIE">
- * Tika MITIE Wiki</a> for configuring this recogniser.
+ * This class offers an implementation of {@link NERecogniser} based on trained models using
+ * state-of-the-art information extraction tools. \This NER requires additional setup, due to
+ * runtime binding to MIT Information Extraction. See
+ * <a href="http://wiki.apache.org/tika/TikaAndMITIE"> Tika MITIE Wiki</a> for configuring this
+ * recogniser.
  *
  * @see NERecogniser
  */
@@ -52,7 +47,7 @@ public class MITIENERecogniser implements NERecogniser {
     };
     private static final Logger LOG = LoggerFactory.getLogger(MITIENERecogniser.class);
     private static final String NamedEntityExtractor_Class =
-            "edu.mit.ll.mitie.NamedEntityExtractor";
+                    "edu.mit.ll.mitie.NamedEntityExtractor";
     private boolean available = false;
     private Object extractorInstance;
 
@@ -71,8 +66,8 @@ public class MITIENERecogniser implements NERecogniser {
                 LOG.warn("{} does not exist", modelPath);
             } else {
                 Class<?> namedEntityExtractorClass = Class.forName(NamedEntityExtractor_Class);
-                extractorInstance =
-                        namedEntityExtractorClass.getDeclaredConstructor(new Class[]{String.class})
+                extractorInstance = namedEntityExtractorClass
+                                .getDeclaredConstructor(new Class[] {String.class})
                                 .newInstance(modelPath);
                 this.available = true;
             }
@@ -84,7 +79,7 @@ public class MITIENERecogniser implements NERecogniser {
 
     /**
      * @return {@code true} if model was available, valid and was able to initialise the classifier.
-     * returns {@code false} when this recogniser is not available for service.
+     *         returns {@code false} when this recogniser is not available for service.
      */
     public boolean isAvailable() {
         return available;
@@ -112,17 +107,17 @@ public class MITIENERecogniser implements NERecogniser {
 
             Class<?> stringVectorClass = Class.forName("edu.mit.ll.mitie.StringVector");
             Class<?> entityMentionVectorClass =
-                    Class.forName("edu.mit.ll.mitie.EntityMentionVector");
+                            Class.forName("edu.mit.ll.mitie.EntityMentionVector");
             Class<?> entityMentionClass = Class.forName("edu.mit.ll.mitie.EntityMention");
             Object entityMentionObject = null;
             Class<?> globalClass = Class.forName("edu.mit.ll.mitie.global");
             Object stringVectorObject = extractorInstance.getClass().getMethod("getPossibleNerTags")
-                    .invoke(extractorInstance);
+                            .invoke(extractorInstance);
             long size = (Long) stringVectorClass.getMethod("size").invoke(stringVectorObject);
             ArrayList<String> possibleTags = new ArrayList<>();
             for (long i = 0; i < size; i++) {
                 String t = (String) stringVectorClass.getMethod("get", Integer.TYPE)
-                        .invoke(stringVectorObject, (int) i);
+                                .invoke(stringVectorObject, (int) i);
                 possibleTags.add(t);
             }
             Method tokenize = globalClass.getMethod("tokenize", String.class);
@@ -132,18 +127,18 @@ public class MITIENERecogniser implements NERecogniser {
             size = (Long) stringVectorClass.getMethod("size").invoke(stringVectorObject);
             for (long i = 0; i < size; i++) {
                 String t = (String) stringVectorClass.getMethod("get", Integer.TYPE)
-                        .invoke(stringVectorObject, (int) i);
+                                .invoke(stringVectorObject, (int) i);
                 stringVector.add(t);
             }
-            Method extractEntities =
-                    extractorInstance.getClass().getMethod("extractEntities", stringVectorClass);
+            Method extractEntities = extractorInstance.getClass().getMethod("extractEntities",
+                            stringVectorClass);
             Object entities = extractEntities.invoke(extractorInstance, stringVectorObject);
             size = (Long) entityMentionVectorClass.getMethod("size").invoke(entities);
             for (long i = 0; i < size; i++) {
                 entityMentionObject = entityMentionVectorClass.getMethod("get", Integer.TYPE)
-                        .invoke(entities, (int) i);
+                                .invoke(entities, (int) i);
                 int tag_index = (Integer) entityMentionClass.getMethod("getTag")
-                        .invoke(entityMentionObject);
+                                .invoke(entityMentionObject);
                 String tag = possibleTags.get(tag_index);
                 Set<String> x = new HashSet<>();
                 if (names.containsKey(tag)) {
@@ -152,9 +147,9 @@ public class MITIENERecogniser implements NERecogniser {
                     names.put(tag, x);
                 }
                 int start = (Integer) entityMentionClass.getMethod("getStart")
-                        .invoke(entityMentionObject);
+                                .invoke(entityMentionObject);
                 int end = (Integer) entityMentionClass.getMethod("getEnd")
-                        .invoke(entityMentionObject);
+                                .invoke(entityMentionObject);
                 StringBuilder match = new StringBuilder();
                 while (start < end) {
                     match.append(stringVector.get(start)).append(" ");

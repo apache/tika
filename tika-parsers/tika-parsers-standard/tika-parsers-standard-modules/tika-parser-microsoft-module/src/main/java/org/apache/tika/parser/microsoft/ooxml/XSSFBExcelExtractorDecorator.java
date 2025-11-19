@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
@@ -20,7 +18,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
-
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -33,35 +30,34 @@ import org.apache.poi.xssf.eventusermodel.XSSFBReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler.SheetContentsHandler;
 import org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor;
 import org.apache.poi.xssf.usermodel.XSSFShape;
-import org.apache.xmlbeans.XmlException;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.xmlbeans.XmlException;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
 
     public XSSFBExcelExtractorDecorator(ParseContext context, POIXMLTextExtractor extractor,
-                                        Locale locale) {
+                    Locale locale) {
         super(context, extractor, locale);
     }
 
     @Override
     protected void configureExtractor(POIXMLTextExtractor extractor, Locale locale) {
-        //need to override this because setFormulasNotResults is not yet available
-        //for xlsb
-        //((XSSFBEventBasedExcelExtractor)extractor).setFormulasNotResults(false);
+        // need to override this because setFormulasNotResults is not yet available
+        // for xlsb
+        // ((XSSFBEventBasedExcelExtractor)extractor).setFormulasNotResults(false);
         ((XSSFBEventBasedExcelExtractor) extractor).setLocale(locale);
     }
 
     @Override
     public void getXHTML(ContentHandler handler, Metadata metadata, ParseContext context)
-            throws SAXException, XmlException, IOException, TikaException {
+                    throws SAXException, XmlException, IOException, TikaException {
 
         this.metadata = metadata;
         this.parseContext = context;
@@ -75,7 +71,7 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
      */
     @Override
     protected void buildXHTML(XHTMLContentHandler xhtml)
-            throws SAXException, XmlException, IOException {
+                    throws SAXException, XmlException, IOException {
         OPCPackage container = extractor.getPackage();
 
         XSSFBSharedStringsTable strings;
@@ -119,7 +115,7 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
 
             // Output any headers and footers
             // (Need to process the sheet to get them, so we can't
-            //  do the headers before the contents)
+            // do the headers before the contents)
             for (String header : sheetExtractor.headers) {
                 extractHeaderFooter(header, xhtml);
             }
@@ -130,10 +126,10 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
 
             processShapes(shapes, xhtml);
 
-            //for now dump sheet hyperlinks at bottom of page
-            //consider a double-pass of the inputstream to reunite hyperlinks with cells/textboxes
-            //step 1: extract hyperlink info from bottom of page
-            //step 2: process as we do now, but with cached hyperlink relationship info
+            // for now dump sheet hyperlinks at bottom of page
+            // consider a double-pass of the inputstream to reunite hyperlinks with cells/textboxes
+            // step 1: extract hyperlink info from bottom of page
+            // step 2: process as we do now, but with cached hyperlink relationship info
             extractHyperLinks(sheetPart, xhtml);
             // All done with this sheet
             xhtml.endElement("div");
@@ -150,13 +146,12 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
 
 
     private void processSheet(SheetContentsHandler sheetContentsExtractor,
-                              XSSFBCommentsTable comments, XSSFBStylesTable styles,
-                              XSSFBSharedStringsTable strings, InputStream sheetInputStream)
-            throws IOException, SAXException {
+                    XSSFBCommentsTable comments, XSSFBStylesTable styles,
+                    XSSFBSharedStringsTable strings, InputStream sheetInputStream)
+                    throws IOException, SAXException {
 
-        XSSFBSheetHandler xssfbSheetHandler =
-                new XSSFBSheetHandler(sheetInputStream, styles, comments, strings,
-                        sheetContentsExtractor, formatter, false);
+        XSSFBSheetHandler xssfbSheetHandler = new XSSFBSheetHandler(sheetInputStream, styles,
+                        comments, strings, sheetContentsExtractor, formatter, false);
         xssfbSheetHandler.parse();
     }
 }

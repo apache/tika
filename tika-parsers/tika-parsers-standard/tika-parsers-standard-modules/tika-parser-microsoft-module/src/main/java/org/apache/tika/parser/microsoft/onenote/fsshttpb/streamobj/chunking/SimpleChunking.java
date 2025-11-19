@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.chunking;
@@ -20,9 +18,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.chunking;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import org.apache.commons.codec.digest.DigestUtils;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.LeafNodeObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.SignatureObject;
@@ -49,7 +45,7 @@ public class SimpleChunking extends AbstractChunking {
         int maxChunkSize = 1 * 1024 * 1024;
         java.util.List<LeafNodeObject> list = new ArrayList<>();
         LeafNodeObject.IntermediateNodeObjectBuilder builder =
-                new LeafNodeObject.IntermediateNodeObjectBuilder();
+                        new LeafNodeObject.IntermediateNodeObjectBuilder();
         int chunkStart = 0;
 
         if (this.fileContent.length <= maxChunkSize) {
@@ -59,8 +55,9 @@ public class SimpleChunking extends AbstractChunking {
         }
 
         while (chunkStart < this.fileContent.length) {
-            int chunkLength = chunkStart + maxChunkSize >= this.fileContent.length ?
-                    this.fileContent.length - chunkStart : maxChunkSize;
+            int chunkLength = chunkStart + maxChunkSize >= this.fileContent.length
+                            ? this.fileContent.length - chunkStart
+                            : maxChunkSize;
             byte[] temp = Arrays.copyOfRange(this.fileContent, chunkStart, chunkLength);
             list.add(builder.Build(temp, this.getSignature(temp)));
             chunkStart += chunkLength;
@@ -84,7 +81,7 @@ public class SimpleChunking extends AbstractChunking {
             return signature;
         } else {
             throw new TikaException(
-                    "When the file size is larger than 250MB, the signature method is not implemented.");
+                            "When the file size is larger than 250MB, the signature method is not implemented.");
         }
     }
 }

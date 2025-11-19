@@ -1,26 +1,23 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.langdetect.tika;
 
 import org.apache.tika.sax.WriteOutContentHandler;
 
 /**
- * SAX content handler that builds a language profile based on all the
- * received character content.
+ * SAX content handler that builds a language profile based on all the received character content.
  *
  * @since Apache Tika 0.5
  */
@@ -42,11 +39,10 @@ public class ProfilingHandler extends WriteOutContentHandler {
     }
 
     /**
-     * Returns the language profile being built by this content handler.
-     * Note that the returned profile gets updated whenever new SAX events
-     * are received by this content handler. Use the {@link #getLanguage()}
-     * method to get the language that best matches the current state of
-     * the profile.
+     * Returns the language profile being built by this content handler. Note that the returned
+     * profile gets updated whenever new SAX events are received by this content handler. Use the
+     * {@link #getLanguage()} method to get the language that best matches the current state of the
+     * profile.
      *
      * @return language profile
      */
@@ -55,8 +51,7 @@ public class ProfilingHandler extends WriteOutContentHandler {
     }
 
     /**
-     * Returns the language that best matches the current state of the
-     * language profile.
+     * Returns the language that best matches the current state of the language profile.
      *
      * @return language that best matches the current profile
      */

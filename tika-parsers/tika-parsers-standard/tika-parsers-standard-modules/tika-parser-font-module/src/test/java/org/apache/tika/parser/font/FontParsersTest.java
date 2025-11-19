@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.font;
 
@@ -25,15 +23,14 @@ import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_WEIGHT;
 import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_PS_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing various different font files.
@@ -46,8 +43,8 @@ public class FontParsersTest extends TikaTest {
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
 
-        try (TikaInputStream stream = TikaInputStream
-                .get(getResourceAsUrl("/test-documents/testAFM.afm"))) {
+        try (TikaInputStream stream =
+                        TikaInputStream.get(getResourceAsUrl("/test-documents/testAFM.afm"))) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, context);
         }
 
@@ -75,12 +72,12 @@ public class FontParsersTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        //Open Sans font is ASL 2.0 according to
-        //http://www.google.com/fonts/specimen/Open+Sans
-        //...despite the copyright in the file's metadata.
+        // Open Sans font is ASL 2.0 according to
+        // http://www.google.com/fonts/specimen/Open+Sans
+        // ...despite the copyright in the file's metadata.
 
         try (TikaInputStream stream = TikaInputStream
-                .get(getResourceAsUrl("/test-documents/testTrueType3.ttf"))) {
+                        .get(getResourceAsUrl("/test-documents/testTrueType3.ttf"))) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, context);
         }
 

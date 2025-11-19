@@ -1,28 +1,22 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.xml;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
-
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -30,13 +24,15 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
 
     private Property FIRST_NAME = Property.internalTextBag(
-            "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "FirstName");
+                    "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "FirstName");
     private Property LAST_NAME = Property.internalTextBag(
-            "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LastName");
+                    "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LastName");
 
     @Test
     public void testDefaultBehavior() throws Exception {
@@ -67,8 +63,8 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
         try (InputStream input = getResourceAsStream("/test-documents/testXML3.xml")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new AllowEmptiesAndDuplicatesCustomXMLTestParser()
-                    .parse(input, handler, metadata, new ParseContext());
+            new AllowEmptiesAndDuplicatesCustomXMLTestParser().parse(input, handler, metadata,
+                            new ParseContext());
 
             assertEquals(4, metadata.getValues(FIRST_NAME).length);
             assertEquals(4, metadata.getValues(LAST_NAME).length);
@@ -92,16 +88,15 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
         private static final long serialVersionUID = 2458579047014545931L;
 
         protected ElementMetadataHandler getCustomElementHandler(Metadata metadata,
-                                                                 Property tikaProperty,
-                                                                 String localPart) {
+                        Property tikaProperty, String localPart) {
             return new ElementMetadataHandler("http://custom", localPart, metadata, tikaProperty);
         }
 
         protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata,
-                                                   ParseContext context) {
+                        ParseContext context) {
             return new TeeContentHandler(super.getContentHandler(handler, metadata, context),
-                    getCustomElementHandler(metadata, FIRST_NAME, "FirstName"),
-                    getCustomElementHandler(metadata, LAST_NAME, "LastName"));
+                            getCustomElementHandler(metadata, FIRST_NAME, "FirstName"),
+                            getCustomElementHandler(metadata, LAST_NAME, "LastName"));
         }
     }
 
@@ -110,10 +105,9 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
         private static final long serialVersionUID = 3735646809954466229L;
 
         protected ElementMetadataHandler getCustomElementHandler(Metadata metadata,
-                                                                 Property tikaProperty,
-                                                                 String localPart) {
+                        Property tikaProperty, String localPart) {
             return new ElementMetadataHandler("http://custom", localPart, metadata, tikaProperty,
-                    true, true);
+                            true, true);
         }
     }
 

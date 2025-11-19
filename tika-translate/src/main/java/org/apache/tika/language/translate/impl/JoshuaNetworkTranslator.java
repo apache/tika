@@ -1,23 +1,28 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.language.translate.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,28 +33,21 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
-
 /**
- * <p>This translator is designed to work with a TCP-IP available
- * Joshua translation server, specifically the
- * <a href="https://github.com/joshua-decoder/joshua_translation_engine">
- * REST-based Joshua server</a>.</p>
+ * <p>
+ * This translator is designed to work with a TCP-IP available Joshua translation server,
+ * specifically the <a href="https://github.com/joshua-decoder/joshua_translation_engine">
+ * REST-based Joshua server</a>.
+ * </p>
  *
- * <p>If you were to interact with the server via curl a request
- * would look as follows</p>
+ * <p>
+ * If you were to interact with the server via curl a request would look as follows
+ * </p>
  *
  * <pre>
  * {code
@@ -59,8 +57,8 @@ import org.apache.tika.exception.TikaException;
  * }
  * </pre>
  * <p>
- * Joshua requires input to be pre-formatted into sentences, one per line,
- * so this translation implementation takes care of that.
+ * Joshua requires input to be pre-formatted into sentences, one per line, so this translation
+ * implementation takes care of that.
  */
 public class JoshuaNetworkTranslator extends AbstractTranslator {
 
@@ -75,13 +73,11 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
     private String networkURI;
 
     /**
-     * Default constructor which first checks for the presence of
-     * the <code>translator.joshua.properties</code> file.
-     * We check if the remote server is available on each
-     * translation process. This check is not a remote call, but instead
-     * a check for null value within of a local variable represetning the
-     * value for <code>joshua.server.url</code>, which should be populated
-     * within the <code>translator.joshua.properties</code> file.
+     * Default constructor which first checks for the presence of the
+     * <code>translator.joshua.properties</code> file. We check if the remote server is available on
+     * each translation process. This check is not a remote call, but instead a check for null value
+     * within of a local variable represetning the value for <code>joshua.server.url</code>, which
+     * should be populated within the <code>translator.joshua.properties</code> file.
      */
     public JoshuaNetworkTranslator() {
         Properties props = new Properties();
@@ -98,23 +94,25 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
     }
 
     /**
-     * <p>Initially then check if the source language has been provided.
-     * If no source language (or a null value) has been provided then
-     * we make an attempt to guess the source using Tika's
-     * {@link org.apache.tika.langdetect.OptimaizeLangDetector}. If we
-     * are still unable to guess the language then we return the source
-     * text.</p>
+     * <p>
+     * Initially then check if the source language has been provided. If no source language (or a
+     * null value) has been provided then we make an attempt to guess the source using Tika's
+     * {@link org.apache.tika.langdetect.OptimaizeLangDetector}. If we are still unable to guess the
+     * language then we return the source text.
+     * </p>
      *
-     * <p>We then process the input text into a new string consisting of
-     * sentences, one per line e.g. insert \n between the presence of '.'</p>
+     * <p>
+     * We then process the input text into a new string consisting of sentences, one per line e.g.
+     * insert \n between the presence of '.'
+     * </p>
      *
-     * @see org.apache.tika.language.translate.Translator#translate
-     * (java.lang.String, java.lang.String, java.lang.String)
+     * @see org.apache.tika.language.translate.Translator#translate (java.lang.String,
+     *      java.lang.String, java.lang.String)
      */
     @Override
     public String translate(String text, String sourceLanguage, String targetLanguage)
-            throws TikaException, IOException {
-        //create networkURI
+                    throws TikaException, IOException {
+        // create networkURI
         if (!networkServer.endsWith("/")) {
             networkURI = networkServer + "/" + targetLanguage;
         } else {
@@ -124,12 +122,12 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
             return text;
         }
 
-        //make an attempt to guess language if one is not provided.
+        // make an attempt to guess language if one is not provided.
         if (sourceLanguage == null) {
             sourceLanguage = detectLanguage(text).getLanguage();
         }
 
-        //process input text into sentences, one per line
+        // process input text into sentences, one per line
         // e.g. insert \n between the presence of '.'
         StringBuilder sb = new StringBuilder(text);
         int i = 0;
@@ -149,14 +147,13 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
         ObjectNode jsonNode = requestMapper.createObjectNode();
         jsonNode.put("inputLanguage", sourceLanguage);
         jsonNode.put("inputText", inputText);
-        //make the request
-        Response response =
-                client.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
-                        .post(jsonNode);
+        // make the request
+        Response response = client.accept(MediaType.APPLICATION_JSON)
+                        .type(MediaType.APPLICATION_JSON).post(jsonNode);
         StringBuilder responseText = new StringBuilder();
-        try (InputStreamReader inputStreamReader = new InputStreamReader(
-                (InputStream) response.getEntity(), UTF_8);
-                BufferedReader reader = new BufferedReader(inputStreamReader)) {
+        try (InputStreamReader inputStreamReader =
+                        new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+                        BufferedReader reader = new BufferedReader(inputStreamReader)) {
             String line;
             while ((line = reader.readLine()) != null) {
                 responseText.append(line);
@@ -173,21 +170,20 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
                 throw new TikaException(jsonResp.findValue("message").get(0).asText());
             }
         } catch (JsonParseException e) {
-            throw new TikaException(
-                    "Error requesting translation from '" + sourceLanguage + "' to '" +
-                            targetLanguage + "', JSON response " +
-                            "from Joshua REST Server is not well formatted: " +
-                            responseText.toString());
+            throw new TikaException("Error requesting translation from '" + sourceLanguage
+                            + "' to '" + targetLanguage + "', JSON response "
+                            + "from Joshua REST Server is not well formatted: "
+                            + responseText.toString());
         }
     }
 
     /**
      * Make an attempt to guess the source language via
-     * {@link org.apache.tika.language.translate.AbstractTranslator#detectLanguage(String)}
-     * before making the call to
-     * {@link JoshuaNetworkTranslator#translate(String, String, String)}
+     * {@link org.apache.tika.language.translate.AbstractTranslator#detectLanguage(String)} before
+     * making the call to {@link JoshuaNetworkTranslator#translate(String, String, String)}
      *
-     * @see org.apache.tika.language.translate.Translator#translate(java.lang.String, java.lang.String)
+     * @see org.apache.tika.language.translate.Translator#translate(java.lang.String,
+     *      java.lang.String)
      */
     @Override
     public String translate(String text, String targetLanguage) throws TikaException, IOException {
@@ -209,7 +205,7 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
                 url = new URL(networkURI);
             } catch (MalformedURLException mue) {
                 LOG.error("Error reading {} property from {}. {}", JOSHUA_SERVER, PROPERTIES_FILE,
-                        mue);
+                                mue);
             }
             HttpURLConnection connection = null;
             try {

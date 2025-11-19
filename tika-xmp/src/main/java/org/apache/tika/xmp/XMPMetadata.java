@@ -1,31 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.xmp;
-
-import java.io.IOException;
-import java.io.NotSerializableException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
 
 import com.adobe.internal.xmp.XMPDateTime;
 import com.adobe.internal.xmp.XMPException;
@@ -38,7 +25,16 @@ import com.adobe.internal.xmp.options.IteratorOptions;
 import com.adobe.internal.xmp.options.PropertyOptions;
 import com.adobe.internal.xmp.options.SerializeOptions;
 import com.adobe.internal.xmp.properties.XMPProperty;
-
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -75,8 +71,7 @@ public class XMPMetadata extends Metadata {
     }
 
     /**
-     * @see #XMPMetadata(Metadata, String)
-     * But the mimetype is retrieved from the metadata map.
+     * @see #XMPMetadata(Metadata, String) But the mimetype is retrieved from the metadata map.
      */
     public XMPMetadata(Metadata meta) throws TikaException {
         this.xmpData = TikaToXMP.convert(meta);
@@ -89,7 +84,7 @@ public class XMPMetadata extends Metadata {
      * will convert only those properties that are in known namespaces and are using the correct
      * prefixes
      *
-     * @param meta     the Metadata information from Tika-core
+     * @param meta the Metadata information from Tika-core
      * @param mimetype mimetype information
      * @throws TikaException case an error occurred during conversion
      */
@@ -102,24 +97,23 @@ public class XMPMetadata extends Metadata {
      * registered, no matter what the prefix is. If the URI is not registered but the suggested
      * prefix is in use, a unique prefix is created from the suggested one. The actual registered
      * prefix is always returned. The function result tells if the registered prefix is the
-     * suggested one.
-     * Note: No checking is presently done on either the URI or the prefix.
+     * suggested one. Note: No checking is presently done on either the URI or the prefix.
      *
-     * @param namespaceURI    The URI for the namespace. Must be a valid XML URI.
-     * @param suggestedPrefix The suggested prefix to be used if the URI is not yet registered. Must be a valid
-     *                        XML name.
+     * @param namespaceURI The URI for the namespace. Must be a valid XML URI.
+     * @param suggestedPrefix The suggested prefix to be used if the URI is not yet registered. Must
+     *        be a valid XML name.
      * @return Returns the registered prefix for this URI, is equal to the suggestedPrefix if the
-     * namespace hasn't been registered before, otherwise the existing prefix.
+     *         namespace hasn't been registered before, otherwise the existing prefix.
      * @throws XMPException If the parameters are not accordingly set
      */
     public static String registerNamespace(String namespaceURI, String suggestedPrefix)
-            throws XMPException {
+                    throws XMPException {
         return registry.registerNamespace(namespaceURI, suggestedPrefix);
     }
 
     /**
-     * Obtain the prefix for a registered namespace URI.
-     * It is not an error if the namespace URI is not registered.
+     * Obtain the prefix for a registered namespace URI. It is not an error if the namespace URI is
+     * not registered.
      *
      * @param namespaceURI The URI for the namespace. Must not be null or the empty string.
      * @return Returns the prefix registered for this namespace URI or null.
@@ -129,8 +123,8 @@ public class XMPMetadata extends Metadata {
     }
 
     /**
-     * Obtain the URI for a registered namespace prefix.
-     * It is not an error if the namespace prefix is not registered.
+     * Obtain the URI for a registered namespace prefix. It is not an error if the namespace prefix
+     * is not registered.
      *
      * @param namespacePrefix The prefix for the namespace. Must not be null or the empty string.
      * @return Returns the URI registered for this prefix or null.
@@ -143,7 +137,7 @@ public class XMPMetadata extends Metadata {
 
     /**
      * @return Returns the registered prefix/namespace-pairs as map, where the keys are the
-     * namespaces and the values are the prefixes.
+     *         namespaces and the values are the prefixes.
      */
     @SuppressWarnings("unchecked")
     public static Map<String, String> getNamespaces() {
@@ -152,7 +146,7 @@ public class XMPMetadata extends Metadata {
 
     /**
      * @return Returns the registered namespace/prefix-pairs as map, where the keys are the prefixes
-     * and the values are the namespaces.
+     *         and the values are the namespaces.
      */
     @SuppressWarnings("unchecked")
     public static Map<String, String> getPrefixes() {
@@ -175,8 +169,7 @@ public class XMPMetadata extends Metadata {
 
     /**
      * @see org.apache.tika.xmp.XMPMetadata#process(org.apache.tika.metadata.Metadata,
-     * java.lang.String)
-     * But the mimetype is retrieved from the metadata map.
+     *      java.lang.String) But the mimetype is retrieved from the metadata map.
      */
     public void process(Metadata meta) throws TikaException {
         this.xmpData = TikaToXMP.convert(meta);
@@ -188,7 +181,7 @@ public class XMPMetadata extends Metadata {
      * specific converter available a generic conversion is done which will convert only those
      * properties that are in known namespaces and are using the correct prefixes
      *
-     * @param meta     the Metadata information from Tika-core
+     * @param meta the Metadata information from Tika-core
      * @param mimetype mimetype information
      * @throws TikaException case an error occurred during conversion
      */
@@ -456,7 +449,7 @@ public class XMPMetadata extends Metadata {
      * properties that use a registered prefix are stored in the XMP.
      *
      * @see org.apache.tika.metadata.Metadata#set(org.apache.tika.metadata.Property,
-     * java.lang.String[])
+     *      java.lang.String[])
      */
     @Override
     public void set(Property property, String[] values) {
@@ -490,8 +483,8 @@ public class XMPMetadata extends Metadata {
      */
     @Override
     public void setAll(Properties properties) {
-        @SuppressWarnings("unchecked") Enumeration<String> names =
-                (Enumeration<String>) properties.propertyNames();
+        @SuppressWarnings("unchecked")
+        Enumeration<String> names = (Enumeration<String>) properties.propertyNames();
 
         while (names.hasMoreElements()) {
             String name = names.nextElement();
@@ -503,7 +496,7 @@ public class XMPMetadata extends Metadata {
             String value = properties.getProperty(name);
 
             if (property.isMultiValuePermitted()) {
-                this.set(property, new String[]{value});
+                this.set(property, new String[] {value});
             } else {
                 this.set(property, value);
             }
@@ -545,7 +538,7 @@ public class XMPMetadata extends Metadata {
         try {
             // Get an iterator for the XMP packet, starting at the top level schema nodes
             XMPIterator nsIter = xmpData.iterator(
-                    new IteratorOptions().setJustChildren(true).setOmitQualifiers(true));
+                            new IteratorOptions().setJustChildren(true).setOmitQualifiers(true));
             // iterate all top level namespaces
             while (nsIter.hasNext()) {
                 nsIter.next();
@@ -581,8 +574,8 @@ public class XMPMetadata extends Metadata {
     public String toString() {
         String result = null;
         try {
-            result = XMPMetaFactory.serializeToString(xmpData,
-                    new SerializeOptions().setOmitPacketWrapper(true).setUseCompactFormat(true));
+            result = XMPMetaFactory.serializeToString(xmpData, new SerializeOptions()
+                            .setOmitPacketWrapper(true).setUseCompactFormat(true));
         } catch (XMPException e) {
             // ignore
         }
@@ -625,7 +618,7 @@ public class XMPMetadata extends Metadata {
      *
      * @param key the key to split
      * @return prefix and local name of the property or null if the key did not contain a delimiter
-     * or too much of them
+     *         or too much of them
      */
     private String[] splitKey(String key) {
         String[] keyParts = key.split(TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER);

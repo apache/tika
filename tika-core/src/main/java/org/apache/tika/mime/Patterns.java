@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.mime;
 
@@ -47,8 +45,7 @@ class Patterns implements Serializable {
     /**
      * Index of generic glob patterns, sorted by length.
      */
-    private final SortedMap<String, MimeType> globs =
-            new TreeMap<>(new LengthComparator());
+    private final SortedMap<String, MimeType> globs = new TreeMap<>(new LengthComparator());
     private int minExtensionLength = Integer.MAX_VALUE;
     private int maxExtensionLength = 0;
 
@@ -71,11 +68,11 @@ class Patterns implements Serializable {
             addGlob(pattern, type);
         } else {
 
-            if (pattern.indexOf('*') == -1 && pattern.indexOf('?') == -1 &&
-                    pattern.indexOf('[') == -1) {
+            if (pattern.indexOf('*') == -1 && pattern.indexOf('?') == -1
+                            && pattern.indexOf('[') == -1) {
                 addName(pattern, type);
-            } else if (pattern.startsWith("*") && pattern.indexOf('*', 1) == -1 &&
-                    pattern.indexOf('?') == -1 && pattern.indexOf('[') == -1) {
+            } else if (pattern.startsWith("*") && pattern.indexOf('*', 1) == -1
+                            && pattern.indexOf('?') == -1 && pattern.indexOf('[') == -1) {
                 String extension = pattern.substring(1);
                 addExtension(extension, type);
                 type.addExtension(extension);
@@ -89,8 +86,8 @@ class Patterns implements Serializable {
         MimeType previous = names.get(name);
         if (previous == null || registry.isSpecializationOf(previous.getType(), type.getType())) {
             names.put(name, type);
-        } else if (previous == type ||
-                registry.isSpecializationOf(type.getType(), previous.getType())) {
+        } else if (previous == type
+                        || registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException("Conflicting name pattern: " + name);
@@ -104,8 +101,8 @@ class Patterns implements Serializable {
             int length = extension.length();
             minExtensionLength = Math.min(minExtensionLength, length);
             maxExtensionLength = Math.max(maxExtensionLength, length);
-        } else if (previous == type ||
-                registry.isSpecializationOf(type.getType(), previous.getType())) {
+        } else if (previous == type
+                        || registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException("Conflicting extension pattern: " + extension);
@@ -116,8 +113,8 @@ class Patterns implements Serializable {
         MimeType previous = globs.get(glob);
         if (previous == null || registry.isSpecializationOf(previous.getType(), type.getType())) {
             globs.put(glob, type);
-        } else if (previous == type ||
-                registry.isSpecializationOf(type.getType(), previous.getType())) {
+        } else if (previous == type
+                        || registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException("Conflicting glob pattern: " + glob);
@@ -127,15 +124,13 @@ class Patterns implements Serializable {
     /**
      * Find the MimeType corresponding to a resource name.
      * <p>
-     * It applies the recommendations detailed in FreeDesktop Shared MIME-info
-     * Database for guessing MimeType from a resource name: It first tries a
-     * case-sensitive match, then try again with the resource name converted to
-     * lower-case if that fails. If several patterns match then the longest
-     * pattern is used. In particular, files with multiple extensions (such as
-     * Data.tar.gz) match the longest sequence of extensions (eg '*.tar.gz' in
-     * preference to '*.gz'). Literal patterns (eg, 'Makefile') are matched
-     * before all others. Patterns beginning with `*.' and containing no other
-     * special characters (`*?[') are matched before other wildcarded patterns
+     * It applies the recommendations detailed in FreeDesktop Shared MIME-info Database for guessing
+     * MimeType from a resource name: It first tries a case-sensitive match, then try again with the
+     * resource name converted to lower-case if that fails. If several patterns match then the
+     * longest pattern is used. In particular, files with multiple extensions (such as Data.tar.gz)
+     * match the longest sequence of extensions (eg '*.tar.gz' in preference to '*.gz'). Literal
+     * patterns (eg, 'Makefile') are matched before all others. Patterns beginning with `*.' and
+     * containing no other special characters (`*?[') are matched before other wildcarded patterns
      * (since this covers the majority of the patterns).
      */
     public MimeType matches(String name) {

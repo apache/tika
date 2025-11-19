@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.pdf;
 
@@ -24,10 +22,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.text.PDFTextStripper;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
 import org.apache.tika.renderer.Renderer;
@@ -45,13 +41,14 @@ import org.apache.tika.renderer.Renderer;
 public class PDFParserConfig implements Serializable {
 
     public enum TikaImageType {
-        RGB(ImageType.RGB),
-        GRAY(ImageType.GRAY);
+        RGB(ImageType.RGB), GRAY(ImageType.GRAY);
 
         private ImageType imageType;
+
         TikaImageType(ImageType imageType) {
             this.imageType = imageType;
         }
+
         public ImageType getImageType() {
             return imageType;
         }
@@ -76,44 +73,44 @@ public class PDFParserConfig implements Serializable {
     // (necessary for some PDFs, but messes up other PDFs):
     private boolean sortByPosition = false;
 
-    //True if acroform content should be extracted
+    // True if acroform content should be extracted
     private boolean extractAcroFormContent = true;
 
-    //True if bookmarks content should be extracted
+    // True if bookmarks content should be extracted
     private boolean extractBookmarksText = true;
 
-    //True if inline PDXImage objects should be extracted
+    // True if inline PDXImage objects should be extracted
     private boolean extractInlineImages = false;
 
-    //True if inline images should only have their metadata
-    //extracted.
+    // True if inline images should only have their metadata
+    // extracted.
     private boolean extractInlineImageMetadataOnly = false;
 
     private ImageGraphicsEngineFactory imageGraphicsEngineFactory =
-            new ImageGraphicsEngineFactory();
+                    new ImageGraphicsEngineFactory();
 
-    //True if inline images (as identified by their object id within
-    //a pdf file) should only be extracted once.
+    // True if inline images (as identified by their object id within
+    // a pdf file) should only be extracted once.
     private boolean extractUniqueInlineImagesOnly = true;
 
-    //Should the PDFParser _try_ to extract marked content/structure tags (backoff to regular
-    //text extraction if the given PDF doesn't have marked content)
+    // Should the PDFParser _try_ to extract marked content/structure tags (backoff to regular
+    // text extraction if the given PDF doesn't have marked content)
     private boolean extractMarkedContent = false;
 
-    //The character width-based tolerance value used to estimate where spaces in text should be
+    // The character width-based tolerance value used to estimate where spaces in text should be
     // added. Default taken from PDFBox.
     private Float averageCharTolerance = 0.3f;
 
-    //The space width-based tolerance value used to estimate where spaces in text should be added
-    //Default taken from PDFBox.
+    // The space width-based tolerance value used to estimate where spaces in text should be added
+    // Default taken from PDFBox.
     private Float spacingTolerance = 0.5f;
 
     // The multiplication factor for line height to decide when a new paragraph starts.
-    //Default taken from PDFBox.
+    // Default taken from PDFBox.
     private float dropThreshold = 2.5f;
 
-    //If the PDF has an XFA element, process only that and skip extracting
-    //content from elsewhere in the document.
+    // If the PDF has an XFA element, process only that and skip extracting
+    // content from elsewhere in the document.
     private boolean ifXFAExtractOnlyXFA = false;
 
     private OCR_STRATEGY ocrStrategy = OCR_STRATEGY.AUTO;
@@ -138,10 +135,10 @@ public class PDFParserConfig implements Serializable {
     private IMAGE_STRATEGY imageStrategy = IMAGE_STRATEGY.NONE;
     private AccessChecker accessChecker = new AccessChecker();
 
-    //The PDFParser can throw IOExceptions if there is a problem
-    //with a streams.  If this is set to true, Tika's
-    //parser catches these exceptions, reports them in the metadata
-    //and then throws the first stored exception after the parse has completed.
+    // The PDFParser can throw IOExceptions if there is a problem
+    // with a streams. If this is set to true, Tika's
+    // parser catches these exceptions, reports them in the metadata
+    // and then throws the first stored exception after the parse has completed.
     private boolean catchIntermediateIOExceptions = true;
 
     private boolean extractActions = false;
@@ -172,12 +169,11 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * Use this when you want to know how many images of what formats are in a PDF
-     * but you don't need to render the images (e.g. for OCR).  This is far
-     * faster than {@link #extractInlineImages} because it doesn't have to render the
-     * images, which can be very slow.  This does not extract metadata from
-     * within each image, rather it extracts the XMP that may be stored
-     * external to an image in PDImageXObjects.
+     * Use this when you want to know how many images of what formats are in a PDF but you don't
+     * need to render the images (e.g. for OCR). This is far faster than
+     * {@link #extractInlineImages} because it doesn't have to render the images, which can be very
+     * slow. This does not extract metadata from within each image, rather it extracts the XMP that
+     * may be stored external to an image in PDImageXObjects.
      *
      * @param extractInlineImageMetadataOnly
      * @since 1.25
@@ -192,9 +188,9 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * If the PDF contains marked content, try to extract text and its marked structure.
-     * If the PDF does not contain marked content, backoff to the regular PDF2XHTML for
-     * text extraction.  As of 1.24, this is an "alpha" version.
+     * If the PDF contains marked content, try to extract text and its marked structure. If the PDF
+     * does not contain marked content, backoff to the regular PDF2XHTML for text extraction. As of
+     * 1.24, this is an "alpha" version.
      *
      * @param extractMarkedContent
      * @since 1.24
@@ -237,9 +233,8 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * If true (the default), extract content from AcroForms
-     * at the end of the document.  If an XFA is found,
-     * try to process that, otherwise, process the AcroForm.
+     * If true (the default), extract content from AcroForms at the end of the document. If an XFA
+     * is found, try to process that, otherwise, process the AcroForm.
      *
      * @param extractAcroFormContent
      */
@@ -257,9 +252,8 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * If false (the default), extract content from the full PDF
-     * as well as the XFA form.  This will likely lead to some duplicative
-     * content.
+     * If false (the default), extract content from the full PDF as well as the XFA form. This will
+     * likely lead to some duplicative content.
      *
      * @param ifXFAExtractOnlyXFA
      */
@@ -311,17 +305,17 @@ public class PDFParserConfig implements Serializable {
     /**
      * If <code>true</code>, extract the literal inline embedded OBXImages.
      * <p/>
-     * <b>Beware:</b> some PDF documents of modest size (~4MB) can contain
-     * thousands of embedded images totaling &gt; 2.5 GB.  Also, at least as of PDFBox 1.8.5,
-     * there can be surprisingly large memory consumption and/or out of memory errors.
+     * <b>Beware:</b> some PDF documents of modest size (~4MB) can contain thousands of embedded
+     * images totaling &gt; 2.5 GB. Also, at least as of PDFBox 1.8.5, there can be surprisingly
+     * large memory consumption and/or out of memory errors.
      * <p/>
-     * Along the same lines, note that this does not extract "logical" images.  Some PDF writers
-     * break up a single logical image into hundreds of little images.  With this option set to
+     * Along the same lines, note that this does not extract "logical" images. Some PDF writers
+     * break up a single logical image into hundreds of little images. With this option set to
      * <code>true</code>, you might get those hundreds of little images.
      * <p/>
-     * NOTE ALSO: this extracts the raw images without clipping, rotation, masks, color
-     * inversion, etc. The images that this extracts may look nothing like what a human
-     * would expect given the appearance of the PDF.
+     * NOTE ALSO: this extracts the raw images without clipping, rotation, masks, color inversion,
+     * etc. The images that this extracts may look nothing like what a human would expect given the
+     * appearance of the PDF.
      * <p/>
      * Set to <code>true</code> only with the greatest caution.
      *
@@ -344,23 +338,22 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * Multiple pages within a PDF file might refer to the same underlying image.
-     * If {@link #extractUniqueInlineImagesOnly} is set to <code>false</code>, the
-     * parser will call the EmbeddedExtractor each time the image appears on a page.
-     * This might be desired for some use cases.  However, to avoid duplication of
-     * extracted images, set this to <code>true</code>.  The default is <code>true</code>.
+     * Multiple pages within a PDF file might refer to the same underlying image. If
+     * {@link #extractUniqueInlineImagesOnly} is set to <code>false</code>, the parser will call the
+     * EmbeddedExtractor each time the image appears on a page. This might be desired for some use
+     * cases. However, to avoid duplication of extracted images, set this to <code>true</code>. The
+     * default is <code>true</code>.
      * <p/>
-     * Note that uniqueness is determined only by the underlying PDF COSObject id, not by
-     * file hash or similar equality metric.
-     * If the PDF actually contains multiple copies of the same image
-     * -- all with different object ids -- then all images will be extracted.
+     * Note that uniqueness is determined only by the underlying PDF COSObject id, not by file hash
+     * or similar equality metric. If the PDF actually contains multiple copies of the same image --
+     * all with different object ids -- then all images will be extracted.
      * <p/>
-     * For this parameter to have any effect, {@link #extractInlineImages} must be
-     * set to <code>true</code>.
+     * For this parameter to have any effect, {@link #extractInlineImages} must be set to
+     * <code>true</code>.
      * <p>
-     * Because of TIKA-1742 -- to avoid infinite recursion -- no matter the setting
-     * of this parameter, the extractor will only pull out one copy of each image per
-     * page.  This parameter tries to capture uniqueness across the entire document.
+     * Because of TIKA-1742 -- to avoid infinite recursion -- no matter the setting of this
+     * parameter, the extractor will only pull out one copy of each image per page. This parameter
+     * tries to capture uniqueness across the entire document.
      *
      * @param extractUniqueInlineImagesOnly
      */
@@ -377,10 +370,8 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * If true (the default), the parser should estimate
-     * where spaces should be inserted between words.  For
-     * many PDFs this is necessary as they do not include
-     * explicit whitespace characters.
+     * If true (the default), the parser should estimate where spaces should be inserted between
+     * words. For many PDFs this is necessary as they do not include explicit whitespace characters.
      */
     public void setEnableAutoSpace(boolean enableAutoSpace) {
         this.enableAutoSpace = enableAutoSpace;
@@ -395,13 +386,10 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * If true, the parser should try to remove duplicated
-     * text over the same region.  This is needed for some
-     * PDFs that achieve bolding by re-writing the same
-     * text in the same area.  Note that this can
-     * slow down extraction substantially (PDFBOX-956) and
-     * sometimes remove characters that were not in fact
-     * duplicated (PDFBOX-1155).  By default this is disabled.
+     * If true, the parser should try to remove duplicated text over the same region. This is needed
+     * for some PDFs that achieve bolding by re-writing the same text in the same area. Note that
+     * this can slow down extraction substantially (PDFBOX-956) and sometimes remove characters that
+     * were not in fact duplicated (PDFBOX-1155). By default this is disabled.
      */
     public void setSuppressDuplicateOverlappingText(boolean suppressDuplicateOverlappingText) {
         this.suppressDuplicateOverlappingText = suppressDuplicateOverlappingText;
@@ -434,8 +422,7 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * If true (the default), text in annotations will be
-     * extracted.
+     * If true (the default), text in annotations will be extracted.
      */
     public void setExtractAnnotationText(boolean extractAnnotationText) {
         this.extractAnnotationText = extractAnnotationText;
@@ -450,12 +437,10 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * If true, sort text tokens by their x/y position
-     * before extracting text.  This may be necessary for
-     * some PDFs (if the text tokens are not rendered "in
-     * order"), while for other PDFs it can produce the
-     * wrong result (for example if there are 2 columns,
-     * the text will be interleaved).  Default is false.
+     * If true, sort text tokens by their x/y position before extracting text. This may be necessary
+     * for some PDFs (if the text tokens are not rendered "in order"), while for other PDFs it can
+     * produce the wrong result (for example if there are 2 columns, the text will be interleaved).
+     * Default is false.
      */
     public void setSortByPosition(boolean sortByPosition) {
         this.sortByPosition = sortByPosition;
@@ -526,11 +511,10 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * The PDFBox parser will throw an IOException if there is
-     * a problem with a stream.  If this is set to <code>true</code>,
-     * Tika's PDFParser will catch these exceptions and try to parse
-     * the rest of the document.  After the parse is completed,
-     * Tika's PDFParser will throw the first caught exception.
+     * The PDFBox parser will throw an IOException if there is a problem with a stream. If this is
+     * set to <code>true</code>, Tika's PDFParser will catch these exceptions and try to parse the
+     * rest of the document. After the parse is completed, Tika's PDFParser will throw the first
+     * caught exception.
      *
      * @param catchIntermediateIOExceptions
      */
@@ -580,21 +564,23 @@ public class PDFParserConfig implements Serializable {
                 if (matcher.group(3) != null) {
                     // If we have the percent sign, then convert
                     if (unmappedUnicodeCharsPerPage > 100.0) {
-                        throw new IllegalArgumentException
-                        ("Error parsing OCRStrategyAuto - Percent cannot exceed 100%");
+                        throw new IllegalArgumentException(
+                                        "Error parsing OCRStrategyAuto - Percent cannot exceed 100%");
                     }
                     unmappedUnicodeCharsPerPage = unmappedUnicodeCharsPerPage / 100f;
                 }
-                // The 2nd number is optional.  Default to 10 chars per page
-                int totalCharsPerPage = matcher.group(4) == null
-                        ? OCR_STRATEGY_AUTO_DEFAULT_CHARS_PER_PAGE
-                        : Integer.parseInt(matcher.group(4));
-                this.ocrStrategyAuto = new OCRStrategyAuto(unmappedUnicodeCharsPerPage, totalCharsPerPage);
+                // The 2nd number is optional. Default to 10 chars per page
+                int totalCharsPerPage =
+                                matcher.group(4) == null ? OCR_STRATEGY_AUTO_DEFAULT_CHARS_PER_PAGE
+                                                : Integer.parseInt(matcher.group(4));
+                this.ocrStrategyAuto =
+                                new OCRStrategyAuto(unmappedUnicodeCharsPerPage, totalCharsPerPage);
             }
             userConfigured.add("ocrStrategyAuto");
 
         } else {
-            throw new IllegalArgumentException("Error parsing OCRStrategyAuto - Must be in the form 'num[%], num'");
+            throw new IllegalArgumentException(
+                            "Error parsing OCRStrategyAuto - Must be in the form 'num[%], num'");
         }
     }
 
@@ -627,8 +613,8 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * String representation of the image format used to render
-     * the page image for OCR (examples: png, tiff, jpeg)
+     * String representation of the image format used to render the page image for OCR (examples:
+     * png, tiff, jpeg)
      *
      * @return
      */
@@ -637,16 +623,14 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * @param ocrImageFormatName name of image format used to render
-     *                           page image
+     * @param ocrImageFormatName name of image format used to render page image
      * @see #getOcrImageFormatName()
      */
     public void setOcrImageFormatName(String ocrImageFormatName) {
-        if (!ocrImageFormatName.equals("png") && !ocrImageFormatName.equals("tiff") &&
-                !ocrImageFormatName.equals("jpeg")) {
-            throw new IllegalArgumentException(
-                    "Available options: png, tiff, jpeg. " + "I'm sorry, but I don't recognize: " +
-                            ocrImageFormatName);
+        if (!ocrImageFormatName.equals("png") && !ocrImageFormatName.equals("tiff")
+                        && !ocrImageFormatName.equals("jpeg")) {
+            throw new IllegalArgumentException("Available options: png, tiff, jpeg. "
+                            + "I'm sorry, but I don't recognize: " + ocrImageFormatName);
         }
         this.ocrImageFormatName = ocrImageFormatName;
         userConfigured.add("ocrImageFormatName");
@@ -691,8 +675,8 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * Dots per inch used to render the page image for OCR.
-     * This does not apply to all image formats.
+     * Dots per inch used to render the page image for OCR. This does not apply to all image
+     * formats.
      *
      * @param ocrDPI
      */
@@ -702,8 +686,7 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * Image quality used to render the page image for OCR.
-     * This does not apply to all image formats
+     * Image quality used to render the page image for OCR. This does not apply to all image formats
      *
      * @return
      */
@@ -712,8 +695,7 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * Image quality used to render the page image for OCR.
-     * This does not apply to all image formats
+     * Image quality used to render the page image for OCR. This does not apply to all image formats
      */
     public void setOcrImageQuality(float ocrImageQuality) {
         this.ocrImageQuality = ocrImageQuality;
@@ -729,9 +711,8 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * Whether or not to extract PDActions from the file.
-     * Most Action types are handled inline; javascript macros
-     * are processed as embedded documents.
+     * Whether or not to extract PDActions from the file. Most Action types are handled inline;
+     * javascript macros are processed as embedded documents.
      *
      * @param v
      */
@@ -762,14 +743,14 @@ public class PDFParserConfig implements Serializable {
     /**
      * <p>
      * Whether to call <code>System.setProperty("sun.java2d.cmm",
-     * "sun.java2d.cmm.kcms.KcmsServiceProvider")</code>.
-     * KCMS is the unmaintained, legacy provider and is far faster than the newer replacement.
-     * However, there are stability and security risks with using the unmaintained legacy provider.
+     * "sun.java2d.cmm.kcms.KcmsServiceProvider")</code>. KCMS is the unmaintained, legacy provider
+     * and is far faster than the newer replacement. However, there are stability and security risks
+     * with using the unmaintained legacy provider.
      * </p>
      * <p>
-     * Note, of course, that this is <b>not</b> thread safe.  If the value is <code>false</code>
-     * in your first thread, and the second thread changes this to <code>true</code>,
-     * the system property in the first thread will now be <code>true</code>.
+     * Note, of course, that this is <b>not</b> thread safe. If the value is <code>false</code> in
+     * your first thread, and the second thread changes this to <code>true</code>, the system
+     * property in the first thread will now be <code>true</code>.
      * </p>
      * <p>
      * Default is <code>false</code>.
@@ -862,7 +843,8 @@ public class PDFParserConfig implements Serializable {
      *
      * @param imageGraphicsEngineFactory
      */
-    public void setImageGraphicsEngineFactory(ImageGraphicsEngineFactory imageGraphicsEngineFactory) {
+    public void setImageGraphicsEngineFactory(
+                    ImageGraphicsEngineFactory imageGraphicsEngineFactory) {
         this.imageGraphicsEngineFactory = imageGraphicsEngineFactory;
         userConfigured.add("imageGraphicsEngineFactory");
     }
@@ -950,13 +932,12 @@ public class PDFParserConfig implements Serializable {
     /**
      * Encapsulate the numbers used to control OCR Strategy when set to auto
      * <p>
-     * If the total characters on the page < this.totalCharsPerPage
-     * or
-     * total unmapped unicode characters on the page > this.unmappedUnicodeCharsPerPage
-     * then we will perform OCR on the page
+     * If the total characters on the page < this.totalCharsPerPage or total unmapped unicode
+     * characters on the page > this.unmappedUnicodeCharsPerPage then we will perform OCR on the
+     * page
      * <p>
-     * If unamppedUnicodeCharsPerPage is an integer > 0, then we compare absolute number of characters.
-     * If it is a float < 1, then we assume it is a percentage and we compare it to the
+     * If unamppedUnicodeCharsPerPage is an integer > 0, then we compare absolute number of
+     * characters. If it is a float < 1, then we assume it is a percentage and we compare it to the
      * percentage of unmappedCharactersPerPage/totalCharsPerPage
      */
     public static class OCRStrategyAuto implements Serializable {
@@ -978,12 +959,12 @@ public class PDFParserConfig implements Serializable {
 
         @Override
         public String toString() {
-            //TODO -- figure out if this is actual BEST or whatever
-            //and return that instead of the literal values
+            // TODO -- figure out if this is actual BEST or whatever
+            // and return that instead of the literal values
             String unmappedString = null;
             if (unmappedUnicodeCharsPerPage < 1.0) {
                 unmappedString = String.format(Locale.US, "%.03f",
-                        unmappedUnicodeCharsPerPage * 100) + "%";
+                                unmappedUnicodeCharsPerPage * 100) + "%";
             } else {
                 unmappedString = String.format(Locale.US, "%.0f", unmappedUnicodeCharsPerPage);
             }
@@ -993,11 +974,11 @@ public class PDFParserConfig implements Serializable {
 
     public enum OCR_RENDERING_STRATEGY {
 
-        NO_TEXT, //includes vector graphics and image
-        TEXT_ONLY, //renders only glyphs
-        VECTOR_GRAPHICS_ONLY, //renders only vector graphics
+        NO_TEXT, // includes vector graphics and image
+        TEXT_ONLY, // renders only glyphs
+        VECTOR_GRAPHICS_ONLY, // renders only vector graphics
         ALL;
-        //TODO: add AUTO?
+        // TODO: add AUTO?
 
         private static OCR_RENDERING_STRATEGY parse(String s) {
             if (s == null) {
@@ -1037,24 +1018,23 @@ public class PDFParserConfig implements Serializable {
          */
         RAW_IMAGES,
         /**
-         * If you want the rendered images, and you don't care that there's
-         * markup in the xhtml handler per page then go with this option.
-         * For some rendering engines, it is faster to render the full document
-         * upfront than to parse a page, render a page, etc.
+         * If you want the rendered images, and you don't care that there's markup in the xhtml
+         * handler per page then go with this option. For some rendering engines, it is faster to
+         * render the full document upfront than to parse a page, render a page, etc.
          */
         RENDER_PAGES_BEFORE_PARSE,
         /**
-         * This renders each page, one at a time, at the end of the page.
-         * For some rendering engines, this may be slower, but it allows the writing
-         * of image metadata into the xhtml in the proper location
+         * This renders each page, one at a time, at the end of the page. For some rendering
+         * engines, this may be slower, but it allows the writing of image metadata into the xhtml
+         * in the proper location
          */
         RENDER_PAGES_AT_PAGE_END;
-        //TODO: add LOGICAL_IMAGES
+        // TODO: add LOGICAL_IMAGES
 
         private static IMAGE_STRATEGY parse(String s) {
             String lc = s.toLowerCase(Locale.US);
             switch (lc) {
-                case "rawimages" :
+                case "rawimages":
                     return RAW_IMAGES;
                 case "renderpagesbeforeparse":
                     return RENDER_PAGES_BEFORE_PARSE;
@@ -1063,7 +1043,7 @@ public class PDFParserConfig implements Serializable {
                 case "none":
                     return NONE;
                 default:
-                    //fall through to exception
+                    // fall through to exception
                     break;
             }
             StringBuilder sb = new StringBuilder();

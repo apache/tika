@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.ctakes;
 
@@ -21,7 +19,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Properties;
-
 import org.apache.commons.io.output.NullOutputStream;
 
 /**
@@ -37,7 +34,7 @@ public class CTAKESConfig implements Serializable {
 
     // Path to XML descriptor for AnalysisEngine
     private String aeDescriptorPath =
-            "/ctakes-core/desc/analysis_engine/SentencesAndTokensAggregate.xml";
+                    "/ctakes-core/desc/analysis_engine/SentencesAndTokensAggregate.xml";
 
     // UMLS username
     private String UMLSUser = "";
@@ -108,10 +105,10 @@ public class CTAKESConfig implements Serializable {
         setUMLSPass(props.getProperty("UMLSPass", getUMLSPass()));
         setText(Boolean.parseBoolean(props.getProperty("text", Boolean.toString(isText()))));
         setMetadata(props.getProperty("metadata", getMetadataAsString()).split(","));
-        setAnnotationProps(
-                props.getProperty("annotationProps", getAnnotationPropsAsString()).split(","));
+        setAnnotationProps(props.getProperty("annotationProps", getAnnotationPropsAsString())
+                        .split(","));
         setSeparatorChar(props.getProperty("separatorChar", Character.toString(getSeparatorChar()))
-                .charAt(0));
+                        .charAt(0));
     }
 
     /**
@@ -277,11 +274,11 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
-     * Returns a string containing a comma-separated list of metadata whose
-     * values will be analyzed using cTAKES.
+     * Returns a string containing a comma-separated list of metadata whose values will be analyzed
+     * using cTAKES.
      *
-     * @return a string containing a comma-separated list of metadata whose
-     * values will be analyzed using cTAKES.
+     * @return a string containing a comma-separated list of metadata whose values will be analyzed
+     *         using cTAKES.
      */
     public String getMetadataAsString() {
         if (metadata == null) {
@@ -298,11 +295,11 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
-     * Returns an array of {@link CTAKESAnnotationProperty}'s that will be
-     * included into cTAKES metadata.
+     * Returns an array of {@link CTAKESAnnotationProperty}'s that will be included into cTAKES
+     * metadata.
      *
-     * @return an array of {@link CTAKESAnnotationProperty}'s that will be
-     * included into cTAKES metadata.
+     * @return an array of {@link CTAKESAnnotationProperty}'s that will be included into cTAKES
+     *         metadata.
      */
     public CTAKESAnnotationProperty[] getAnnotationProps() {
         return annotationProps;
@@ -311,8 +308,8 @@ public class CTAKESConfig implements Serializable {
     /**
      * Sets the {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
      *
-     * @param annotationProps the {@link CTAKESAnnotationProperty}'s that will
-     *                        be included into cTAKES metadata.
+     * @param annotationProps the {@link CTAKESAnnotationProperty}'s that will be included into
+     *        cTAKES metadata.
      */
     public void setAnnotationProps(CTAKESAnnotationProperty[] annotationProps) {
         this.annotationProps = annotationProps;
@@ -321,12 +318,12 @@ public class CTAKESConfig implements Serializable {
     /**
      * ets the {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
      *
-     * @param annotationProps the {@link CTAKESAnnotationProperty}'s that will be
-     *                       included into cTAKES metadata.
+     * @param annotationProps the {@link CTAKESAnnotationProperty}'s that will be included into
+     *        cTAKES metadata.
      */
     public void setAnnotationProps(String[] annotationProps) {
         CTAKESAnnotationProperty[] properties =
-                new CTAKESAnnotationProperty[annotationProps.length];
+                        new CTAKESAnnotationProperty[annotationProps.length];
         for (int i = 0; i < annotationProps.length; i++) {
             properties[i] = CTAKESAnnotationProperty.valueOf(annotationProps[i]);
         }
@@ -334,8 +331,8 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
-     * Returns a string containing a comma-separated list of {@link CTAKESAnnotationProperty}
-     * names that will be included into cTAKES metadata.
+     * Returns a string containing a comma-separated list of {@link CTAKESAnnotationProperty} names
+     * that will be included into cTAKES metadata.
      *
      * @return
      */

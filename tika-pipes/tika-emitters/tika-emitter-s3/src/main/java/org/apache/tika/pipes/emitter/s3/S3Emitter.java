@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.emitter.s3;
 
@@ -32,8 +30,22 @@ import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.core.emitter.AbstractEmitter;
+import org.apache.tika.pipes.core.emitter.StreamEmitter;
+import org.apache.tika.pipes.core.emitter.TikaEmitterException;
+import org.apache.tika.serialization.JsonMetadataList;
+import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -54,24 +66,9 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.emitter.AbstractEmitter;
-import org.apache.tika.pipes.core.emitter.StreamEmitter;
-import org.apache.tika.pipes.core.emitter.TikaEmitterException;
-import org.apache.tika.serialization.JsonMetadataList;
-import org.apache.tika.utils.StringUtils;
-
 /**
  * Emits to existing s3 bucket
+ * 
  * <pre class="prettyprint">
  *  &lt;properties&gt;
  *      &lt;emitters&gt;
@@ -101,7 +98,8 @@ import org.apache.tika.utils.StringUtils;
  *              &lt;/params&gt;
  *          &lt;/emitter&gt;
  *      &lt;/emitters&gt;
- *  &lt;/properties&gt;</pre>
+ *  &lt;/properties&gt;
+ * </pre>
  */
 public class S3Emitter extends AbstractEmitter implements Initializable, StreamEmitter {
 
@@ -116,7 +114,8 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     private String fileExtension = "json";
     private boolean spoolToTemp = true;
     private String prefix = null;
-    private int maxConnections = SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS.get(SdkHttpConfigurationOption.MAX_CONNECTIONS);
+    private int maxConnections = SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS
+                    .get(SdkHttpConfigurationOption.MAX_CONNECTIONS);
     private boolean pathStyleAccessEnabled = false;
     private S3Client s3Client;
 
@@ -130,16 +129,17 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
      * @throws TikaEmitterException
      */
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException, TikaEmitterException {
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
+                    throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.isEmpty()) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
         }
 
         if (!spoolToTemp) {
-            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
-                    .builder()
-                    .get();
-            try (Writer writer = new BufferedWriter(new OutputStreamWriter(bos, StandardCharsets.UTF_8))) {
+            UnsynchronizedByteArrayOutputStream bos =
+                            UnsynchronizedByteArrayOutputStream.builder().get();
+            try (Writer writer = new BufferedWriter(
+                            new OutputStreamWriter(bos, StandardCharsets.UTF_8))) {
                 JsonMetadataList.toJson(metadataList, writer);
             } catch (IOException e) {
                 throw new TikaEmitterException("can't jsonify", e);
@@ -151,7 +151,8 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
         } else {
             try (TemporaryResources tmp = new TemporaryResources()) {
                 Path tmpPath = tmp.createTempFile();
-                try (Writer writer = Files.newBufferedWriter(tmpPath, StandardCharsets.UTF_8, StandardOpenOption.CREATE)) {
+                try (Writer writer = Files.newBufferedWriter(tmpPath, StandardCharsets.UTF_8,
+                                StandardOpenOption.CREATE)) {
                     JsonMetadataList.toJson(metadataList, writer);
                 } catch (IOException e) {
                     throw new TikaEmitterException("can't jsonify", e);
@@ -164,15 +165,16 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     }
 
     /**
-     * @param path         -- object path, not including the bucket
-     * @param is           inputStream to copy
+     * @param path -- object path, not including the bucket
+     * @param is inputStream to copy
      * @param userMetadata this will be written to the s3 ObjectMetadata's userMetadata
      * @param parseContext
      * @throws IOException if there is a Runtime s3 client exception
      * @throws TikaEmitterException if there is a Runtime s3 client exception
      */
     @Override
-    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext) throws IOException, TikaEmitterException {
+    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext)
+                    throws IOException, TikaEmitterException {
 
         if (!StringUtils.isBlank(prefix)) {
             path = prefix + "/" + path;
@@ -184,22 +186,25 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
 
         LOGGER.debug("about to emit to target bucket: ({}) path:({})", bucket, path);
 
-        Map<String,String> metadataMap = new HashMap<>();
+        Map<String, String> metadataMap = new HashMap<>();
         for (String n : userMetadata.names()) {
             String[] vals = userMetadata.getValues(n);
             if (vals.length > 1) {
-                LOGGER.warn("Can only write the first value for key {}. I see {} values.", n, vals.length);
+                LOGGER.warn("Can only write the first value for key {}. I see {} values.", n,
+                                vals.length);
             }
             metadataMap.put(n, vals[0]);
         }
-        //In practice, sending a file is more robust
-        //We ran into stream reset issues during digesting, and aws doesn't
-        //like putObjects for streams without lengths
+        // In practice, sending a file is more robust
+        // We ran into stream reset issues during digesting, and aws doesn't
+        // like putObjects for streams without lengths
         if (is instanceof TikaInputStream) {
             if (((TikaInputStream) is).hasFile()) {
                 try {
-                    PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(path).metadata(metadataMap).build();
-                    RequestBody requestBody = RequestBody.fromFile(((TikaInputStream) is).getFile());
+                    PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(path)
+                                    .metadata(metadataMap).build();
+                    RequestBody requestBody =
+                                    RequestBody.fromFile(((TikaInputStream) is).getFile());
                     s3Client.putObject(request, requestBody);
                 } catch (IOException e) {
                     throw new TikaEmitterException("exception sending underlying file", e);
@@ -208,7 +213,8 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
             }
         }
         try {
-            PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(path).metadata(metadataMap).build();
+            PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(path)
+                            .metadata(metadataMap).build();
             RequestBody requestBody = RequestBody.fromBytes(is.readAllBytes());
             s3Client.putObject(request, requestBody);
         } catch (S3Exception e) {
@@ -217,9 +223,9 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     }
 
     /**
-     * Whether or not to spool the metadatalist to a tmp file before putting object.
-     * Default: <code>true</code>.  If this is set to <code>false</code>,
-     * this emitter writes the json object to memory and then puts that into s3.
+     * Whether or not to spool the metadatalist to a tmp file before putting object. Default:
+     * <code>true</code>. If this is set to <code>false</code>, this emitter writes the json object
+     * to memory and then puts that into s3.
      *
      * @param spoolToTemp
      */
@@ -245,7 +251,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
 
     @Field
     public void setPrefix(String prefix) {
-        //strip final "/" if it exists
+        // strip final "/" if it exists
         if (prefix.endsWith("/")) {
             this.prefix = prefix.substring(0, prefix.length() - 1);
         } else {
@@ -255,15 +261,16 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
 
     @Field
     public void setCredentialsProvider(String credentialsProvider) {
-        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance") && !credentialsProvider.equals("key_secret")) {
-            throw new IllegalArgumentException("credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
+        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")
+                        && !credentialsProvider.equals("key_secret")) {
+            throw new IllegalArgumentException(
+                            "credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
         }
         this.credentialsProvider = credentialsProvider;
     }
 
     /**
-     * If you want to customize the output file's file extension.
-     * Do not include the "."
+     * If you want to customize the output file's file extension. Do not include the "."
      *
      * @param fileExtension
      */
@@ -283,8 +290,8 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     }
 
     /**
-     * maximum number of http connections allowed.  This should be
-     * greater than or equal to the number of threads emitting to S3.
+     * maximum number of http connections allowed. This should be greater than or equal to the
+     * number of threads emitting to S3.
      *
      * @param maxConnections
      */
@@ -299,15 +306,15 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     }
 
     /**
-     * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
-     * e.g. SdkClientException in a TikaConfigException.
+     * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions, e.g. SdkClientException
+     * in a TikaConfigException.
      *
      * @param params params to use for initialization
      * @throws TikaConfigException
      */
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //params have already been set...ignore them
+        // params have already been set...ignore them
         AwsCredentialsProvider provider;
         switch (credentialsProvider) {
             case "instance":
@@ -321,20 +328,24 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
                 provider = StaticCredentialsProvider.create(awsCreds);
                 break;
             default:
-                throw new TikaConfigException("credentialsProvider must be set and " + "must be either 'instance', 'profile' or 'key_secret'");
+                throw new TikaConfigException("credentialsProvider must be set and "
+                                + "must be either 'instance', 'profile' or 'key_secret'");
         }
-        SdkHttpClient httpClient = ApacheHttpClient.builder().maxConnections(maxConnections).build();
-        S3Configuration clientConfig = S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccessEnabled).build();
+        SdkHttpClient httpClient =
+                        ApacheHttpClient.builder().maxConnections(maxConnections).build();
+        S3Configuration clientConfig = S3Configuration.builder()
+                        .pathStyleAccessEnabled(pathStyleAccessEnabled).build();
         try {
-            S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient).
-                    requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED). // https://stackoverflow.com/a/79488850/535646
-                    serviceConfiguration(clientConfig).credentialsProvider(provider);
+            S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient)
+                            .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED). // https://stackoverflow.com/a/79488850/535646
+                            serviceConfiguration(clientConfig).credentialsProvider(provider);
             if (!StringUtils.isBlank(endpointConfigurationService)) {
                 try {
-                    s3ClientBuilder.endpointOverride(new URI(endpointConfigurationService)).region(Region.of(region));
-                }
-                catch (URISyntaxException ex) {
-                    throw new TikaConfigException("bad endpointConfigurationService: " + endpointConfigurationService, ex);
+                    s3ClientBuilder.endpointOverride(new URI(endpointConfigurationService))
+                                    .region(Region.of(region));
+                } catch (URISyntaxException ex) {
+                    throw new TikaConfigException("bad endpointConfigurationService: "
+                                    + endpointConfigurationService, ex);
                 }
             } else {
                 s3ClientBuilder.region(Region.of(region));
@@ -346,7 +357,8 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+                    throws TikaConfigException {
         mustNotBeEmpty("bucket", this.bucket);
         mustNotBeEmpty("region", this.region);
     }

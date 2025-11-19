@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.config;
 
@@ -20,8 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-
-import org.junit.jupiter.api.Test;
 
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
@@ -32,11 +28,11 @@ import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.microsoft.pst.OutlookPSTParser;
+import org.junit.jupiter.api.Test;
 
 /**
- * Junit test class for {@link TikaConfig}, which cover things
- * that {@link TikaConfigTest} can't do due to a need for the
- * full set of detectors
+ * Junit test class for {@link TikaConfig}, which cover things that {@link TikaConfigTest} can't do
+ * due to a need for the full set of detectors
  */
 public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
 
@@ -72,9 +68,8 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
     }
 
     /**
-     * TIKA-1708 - If the Zip detector is disabled, either explicitly,
-     * or via giving a list of detectors that it isn't part of, ensure
-     * that detection of PST files still works
+     * TIKA-1708 - If the Zip detector is disabled, either explicitly, or via giving a list of
+     * detectors that it isn't part of, ensure that detection of PST files still works
      */
     @Test
     public void testPSTDetectionWithoutZipDetector() throws Exception {
@@ -101,26 +96,28 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
 
         // Check that both detectors have a mimetypes with entries
         assertTrue(configWX.getMediaTypeRegistry().getTypes().size() > 100,
-                "Not enough mime types: " + configWX.getMediaTypeRegistry().getTypes().size());
+                        "Not enough mime types: "
+                                        + configWX.getMediaTypeRegistry().getTypes().size());
         assertTrue(configCL.getMediaTypeRegistry().getTypes().size() > 100,
-                "Not enough mime types: " + configCL.getMediaTypeRegistry().getTypes().size());
+                        "Not enough mime types: "
+                                        + configCL.getMediaTypeRegistry().getTypes().size());
 
 
         // Now check they detect PST files correctly
-        try (TikaInputStream outer = TikaInputStream
-                .get(getResourceAsStream("/test-documents/testPST.pst"))) {
+        try (TikaInputStream outer =
+                        TikaInputStream.get(getResourceAsStream("/test-documents/testPST.pst"))) {
             try (TikaInputStream stream = TikaInputStream.get(outer.getPath())) {
 
                 assertEquals(OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE,
-                        detectorWX.detect(stream, new Metadata()));
+                                detectorWX.detect(stream, new Metadata()));
                 assertEquals(OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE,
-                        detectorCL.detect(stream, new Metadata()));
+                                detectorCL.detect(stream, new Metadata()));
             }
         }
     }
 
     private void assertDetectors(CompositeDetector detector, boolean shouldHavePOIFS,
-                                 boolean shouldHaveZip) {
+                    boolean shouldHaveZip) {
         boolean hasZip = false;
         boolean hasPOIFS = false;
         for (Detector d : detector.getDetectors()) {

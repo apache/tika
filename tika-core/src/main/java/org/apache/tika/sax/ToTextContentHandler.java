@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.sax;
 
@@ -23,18 +21,15 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Locale;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * SAX event handler that writes all character content out to a character
- * stream. No escaping or other transformations are made on the character
- * content.
+ * SAX event handler that writes all character content out to a character stream. No escaping or
+ * other transformations are made on the character content.
  * <p>
- * As of Tika 1.20, this handler ignores content within &lt;script&gt; and
- * &lt;style&gt; tags.
+ * As of Tika 1.20, this handler ignores content within &lt;script&gt; and &lt;style&gt; tags.
  * </p>
  *
  * @since Apache Tika 0.10
@@ -51,8 +46,7 @@ public class ToTextContentHandler extends DefaultHandler {
     private int scriptDepth = 0;
 
     /**
-     * Creates a content handler that writes character events to
-     * the given writer.
+     * Creates a content handler that writes character events to the given writer.
      *
      * @param writer writer
      */
@@ -61,22 +55,21 @@ public class ToTextContentHandler extends DefaultHandler {
     }
 
     /**
-     * Creates a content handler that writes character events to
-     * the given output stream using the given encoding.
+     * Creates a content handler that writes character events to the given output stream using the
+     * given encoding.
      *
-     * @param stream   output stream
+     * @param stream output stream
      * @param encoding output encoding
      * @throws UnsupportedEncodingException if the encoding is unsupported
      */
     public ToTextContentHandler(OutputStream stream, String encoding)
-            throws UnsupportedEncodingException {
+                    throws UnsupportedEncodingException {
         this(new OutputStreamWriter(stream, encoding));
     }
 
     /**
-     * Creates a content handler that writes character events
-     * to an internal string buffer. Use the {@link #toString()}
-     * method to access the collected character content.
+     * Creates a content handler that writes character events to an internal string buffer. Use the
+     * {@link #toString()} method to access the collected character content.
      */
     public ToTextContentHandler() {
         this(new StringWriter());
@@ -101,9 +94,8 @@ public class ToTextContentHandler extends DefaultHandler {
 
 
     /**
-     * Writes the given ignorable characters to the given character stream.
-     * The default implementation simply forwards the call to the
-     * {@link #characters(char[], int, int)} method.
+     * Writes the given ignorable characters to the given character stream. The default
+     * implementation simply forwards the call to the {@link #characters(char[], int, int)} method.
      */
     @Override
     public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
@@ -111,8 +103,7 @@ public class ToTextContentHandler extends DefaultHandler {
     }
 
     /**
-     * Flushes the character stream so that no characters are forgotten
-     * in internal buffers.
+     * Flushes the character stream so that no characters are forgotten in internal buffers.
      *
      * @throws SAXException if the stream can not be flushed
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-179">TIKA-179</a>
@@ -128,7 +119,7 @@ public class ToTextContentHandler extends DefaultHandler {
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+                    throws SAXException {
         String uc = (qName == null) ? "" : qName.toUpperCase(Locale.ENGLISH);
         if (uc.equals(STYLE)) {
             styleDepth++;
@@ -150,11 +141,9 @@ public class ToTextContentHandler extends DefaultHandler {
     }
 
     /**
-     * Returns the contents of the internal string buffer where
-     * all the received characters have been collected. Only works
-     * when this object was constructed using the empty default
-     * constructor or by passing a {@link StringWriter} to the
-     * other constructor.
+     * Returns the contents of the internal string buffer where all the received characters have
+     * been collected. Only works when this object was constructed using the empty default
+     * constructor or by passing a {@link StringWriter} to the other constructor.
      */
     @Override
     public String toString() {

@@ -1,46 +1,41 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
 import java.math.BigInteger;
-
 import org.apache.poi.xwpf.usermodel.XWPFAbstractNum;
 import org.apache.poi.xwpf.usermodel.XWPFNum;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.tika.parser.microsoft.AbstractListManager;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTAbstractNum;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTDecimalNumber;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLvl;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNum;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumLvl;
 
-import org.apache.tika.parser.microsoft.AbstractListManager;
-
 
 public class XWPFListManager extends AbstractListManager {
 
     /**
-     * Empty singleton to be used when there is no list manager.
-     * Always returns empty string.
+     * Empty singleton to be used when there is no list manager. Always returns empty string.
      */
     public final static XWPFListManager EMPTY_LIST = new EmptyListManager();
     private final static boolean OVERRIDE_AVAILABLE;
     private final static String SKIP_FORMAT = Character.toString((char) 61623);
-//if this shows up as the lvlText, don't show a number
+    // if this shows up as the lvlText, don't show a number
 
     static {
         boolean b = false;
@@ -48,7 +43,7 @@ public class XWPFListManager extends AbstractListManager {
             Class.forName("org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumLvl");
             b = true;
         } catch (ClassNotFoundException e) {
-            //swallow
+            // swallow
         }
         b = OVERRIDE_AVAILABLE = false;
 
@@ -56,7 +51,7 @@ public class XWPFListManager extends AbstractListManager {
 
     private final XWPFNumbering numbering;
 
-    //map of numId (which paragraph series is this a member of?), levelcounts
+    // map of numId (which paragraph series is this a member of?), levelcounts
     public XWPFListManager(XWPFNumbering numbering) {
         this.numbering = numbering;
     }
@@ -67,7 +62,7 @@ public class XWPFListManager extends AbstractListManager {
      */
     public String getFormattedNumber(final XWPFParagraph paragraph) {
         return getFormattedNumber(paragraph.getNumID(),
-                paragraph.getNumIlvl() == null ? -1 : paragraph.getNumIlvl().intValue());
+                        paragraph.getNumIlvl() == null ? -1 : paragraph.getNumIlvl().intValue());
     }
 
     public String getFormattedNumber(BigInteger numId, int iLvl) {
@@ -129,9 +124,9 @@ public class XWPFListManager extends AbstractListManager {
 
 
     private ParagraphLevelCounter loadLevelTuples(CTDecimalNumber abNum) {
-        //Unfortunately, we need to go this far into the underlying structure
-        //to get the abstract num information for the edge case where
-        //someone skips a level and the format is not context-free, e.g. "1.B.i".
+        // Unfortunately, we need to go this far into the underlying structure
+        // to get the abstract num information for the edge case where
+        // someone skips a level and the format is not context-free, e.g. "1.B.i".
         XWPFAbstractNum abstractNum = numbering.getAbstractNum(abNum.getVal());
         CTAbstractNum ctAbstractNum = abstractNum.getCTAbstractNum();
 
@@ -157,20 +152,20 @@ public class XWPFListManager extends AbstractListManager {
         if (ctLvl != null && ctLvl.getNumFmt() != null && ctLvl.getNumFmt().getVal() != null) {
             numFmt = ctLvl.getNumFmt().getVal().toString();
         }
-        if (ctLvl != null && ctLvl.getLvlRestart() != null &&
-                ctLvl.getLvlRestart().getVal() != null) {
+        if (ctLvl != null && ctLvl.getLvlRestart() != null
+                        && ctLvl.getLvlRestart().getVal() != null) {
             restart = ctLvl.getLvlRestart().getVal().intValue();
         }
         if (ctLvl != null && ctLvl.getStart() != null && ctLvl.getStart().getVal() != null) {
             start = ctLvl.getStart().getVal().intValue();
         } else {
 
-            //this is a hack. Currently, this gets the lowest possible
-            //start for a given numFmt.  We should probably try to grab the
-            //restartNumberingAfterBreak value in
-            //e.g. <w:abstractNum w:abstractNumId="12" w15:restartNumberingAfterBreak="0">???
-            if ("decimal".equals(numFmt) || "ordinal".equals(numFmt) ||
-                    "decimalZero".equals(numFmt)) {
+            // this is a hack. Currently, this gets the lowest possible
+            // start for a given numFmt. We should probably try to grab the
+            // restartNumberingAfterBreak value in
+            // e.g. <w:abstractNum w:abstractNumId="12" w15:restartNumberingAfterBreak="0">???
+            if ("decimal".equals(numFmt) || "ordinal".equals(numFmt)
+                            || "decimalZero".equals(numFmt)) {
                 start = 0;
             } else {
                 start = 1;

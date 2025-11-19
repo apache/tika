@@ -1,41 +1,35 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.chm;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.util.Arrays;
-
 import org.apache.tika.exception.TikaException;
 
 /**
- * Directory header The directory starts with a header; its format is as
- * follows: 0000: char[4] 'ITSP' 0004: DWORD Version number 1 0008: DWORD Length
- * of the directory header 000C: DWORD $0a (unknown) 0010: DWORD $1000 Directory
- * chunk size 0014: DWORD "Density" of quickref section, usually 2 0018: DWORD
- * Depth of the index tree - 1 there is no index, 2 if there is one level of
- * PMGI chunks 001C: DWORD Chunk number of root index chunk, -1 if there is none
- * (though at least one file has 0 despite there being no index chunk, probably
- * a bug) 0020: DWORD Chunk number of first PMGL (listing) chunk 0024: DWORD
- * Chunk number of last PMGL (listing) chunk 0028: DWORD -1 (unknown) 002C:
- * DWORD Number of directory chunks (total) 0030: DWORD Windows language ID
- * 0034: GUID {5D02926A-212E-11D0-9DF9-00A0C922E6EC} 0044: DWORD $54 (This is
- * the length again) 0048: DWORD -1 (unknown) 004C: DWORD -1 (unknown) 0050:
- * DWORD -1 (unknown)
+ * Directory header The directory starts with a header; its format is as follows: 0000: char[4]
+ * 'ITSP' 0004: DWORD Version number 1 0008: DWORD Length of the directory header 000C: DWORD $0a
+ * (unknown) 0010: DWORD $1000 Directory chunk size 0014: DWORD "Density" of quickref section,
+ * usually 2 0018: DWORD Depth of the index tree - 1 there is no index, 2 if there is one level of
+ * PMGI chunks 001C: DWORD Chunk number of root index chunk, -1 if there is none (though at least
+ * one file has 0 despite there being no index chunk, probably a bug) 0020: DWORD Chunk number of
+ * first PMGL (listing) chunk 0024: DWORD Chunk number of last PMGL (listing) chunk 0028: DWORD -1
+ * (unknown) 002C: DWORD Number of directory chunks (total) 0030: DWORD Windows language ID 0034:
+ * GUID {5D02926A-212E-11D0-9DF9-00A0C922E6EC} 0044: DWORD $54 (This is the length again) 0048:
+ * DWORD -1 (unknown) 004C: DWORD -1 (unknown) 0050: DWORD -1 (unknown)
  */
 public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
     // TODO: refactor all unmarshals
@@ -62,69 +56,47 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
 
     public ChmItspHeader() {
         signature = ChmConstants.ITSP.getBytes(UTF_8); /*
-         * 0
-         * (ITSP
-         * )
-         */
+                                                        * 0 (ITSP )
+                                                        */
     }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("[ signature:=")
-                .append(new String(getSignature(), UTF_8))
-                .append(System.getProperty("line.separator"));
-        sb.append("version:=\t")
-                .append(getVersion())
-                .append(System.getProperty("line.separator"));
-        sb.append("header_len:=\t")
-                .append(getHeader_len())
-                .append(System.getProperty("line.separator"));
-        sb.append("unknown_00c:=\t")
-                .append(getUnknown_000c())
-                .append(System.getProperty("line.separator"));
-        sb.append("block_len:=\t")
-                .append(getBlock_len())
-                .append(" [directory chunk size]")
-                .append(System.getProperty("line.separator"));
-        sb.append("blockidx_intvl:=")
-                .append(getBlockidx_intvl())
-                .append(", density of quickref section, usually 2")
-                .append(System.getProperty("line.separator"));
-        sb.append("index_depth:=\t")
-                .append(getIndex_depth())
-                .append(", depth of the index tree - 1 there is no index, 2 if there is one level of PMGI")
-                .append(" chunk")
-                .append(System.getProperty("line.separator"));
-        sb.append("index_root:=\t")
-                .append(getIndex_root())
-                .append(", chunk number of root index chunk, -1 if there is none")
-                .append(System.getProperty("line.separator"));
-        sb.append("index_head:=\t")
-                .append(getIndex_head())
-                .append(", chunk number of first PMGL (listing) chunk")
-                .append(System.getProperty("line.separator"));
-        sb.append("unknown_0024:=\t")
-                .append(getUnknown_0024())
-                .append(", chunk number of last PMGL (listing) chunk")
-                .append(System.getProperty("line.separator"));
-        sb.append("num_blocks:=\t")
-                .append(getNum_blocks())
-                .append(", -1 (unknown)")
-                .append(System.getProperty("line.separator"));
-        sb.append("unknown_002c:=\t")
-                .append(getUnknown_002c()).append(", number of directory chunks (total)")
-                .append(System.getProperty("line.separator"));
-        sb.append("lang_id:=\t")
-                .append(getLang_id())
-                .append(" - ")
-                .append(ChmCommons.getLanguage(getLang_id()))
-                .append(System.getProperty("line.separator"));
-        sb.append("system_uuid:=")
-                .append(Arrays.toString(getSystem_uuid()))
-                .append(System.getProperty("line.separator"));
-        sb.append("unknown_0044:=")
-                .append(Arrays.toString(getUnknown_0044()))
-                .append(" ]");
+        sb.append("[ signature:=").append(new String(getSignature(), UTF_8))
+                        .append(System.getProperty("line.separator"));
+        sb.append("version:=\t").append(getVersion()).append(System.getProperty("line.separator"));
+        sb.append("header_len:=\t").append(getHeader_len())
+                        .append(System.getProperty("line.separator"));
+        sb.append("unknown_00c:=\t").append(getUnknown_000c())
+                        .append(System.getProperty("line.separator"));
+        sb.append("block_len:=\t").append(getBlock_len()).append(" [directory chunk size]")
+                        .append(System.getProperty("line.separator"));
+        sb.append("blockidx_intvl:=").append(getBlockidx_intvl())
+                        .append(", density of quickref section, usually 2")
+                        .append(System.getProperty("line.separator"));
+        sb.append("index_depth:=\t").append(getIndex_depth()).append(
+                        ", depth of the index tree - 1 there is no index, 2 if there is one level of PMGI")
+                        .append(" chunk").append(System.getProperty("line.separator"));
+        sb.append("index_root:=\t").append(getIndex_root())
+                        .append(", chunk number of root index chunk, -1 if there is none")
+                        .append(System.getProperty("line.separator"));
+        sb.append("index_head:=\t").append(getIndex_head())
+                        .append(", chunk number of first PMGL (listing) chunk")
+                        .append(System.getProperty("line.separator"));
+        sb.append("unknown_0024:=\t").append(getUnknown_0024())
+                        .append(", chunk number of last PMGL (listing) chunk")
+                        .append(System.getProperty("line.separator"));
+        sb.append("num_blocks:=\t").append(getNum_blocks()).append(", -1 (unknown)")
+                        .append(System.getProperty("line.separator"));
+        sb.append("unknown_002c:=\t").append(getUnknown_002c())
+                        .append(", number of directory chunks (total)")
+                        .append(System.getProperty("line.separator"));
+        sb.append("lang_id:=\t").append(getLang_id()).append(" - ")
+                        .append(ChmCommons.getLanguage(getLang_id()))
+                        .append(System.getProperty("line.separator"));
+        sb.append("system_uuid:=").append(Arrays.toString(getSystem_uuid()))
+                        .append(System.getProperty("line.separator"));
+        sb.append("unknown_0044:=").append(Arrays.toString(getUnknown_0044())).append(" ]");
         return sb.toString();
     }
 
@@ -137,7 +109,7 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
      * @throws TikaException
      */
     private void unmarshalCharArray(byte[] data, ChmItspHeader chmItspHeader, int count)
-            throws TikaException {
+                    throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         ChmAssert.assertChmAccessorNotNull(chmItspHeader);
         this.setDataRemained(data.length);
@@ -151,10 +123,10 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
         if (4 > this.getDataRemained()) {
             throw new TikaException("4 > dataLenght");
         }
-        dest = (data[this.getCurrentPlace()] & 0xff) |
-                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
-                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
-                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                        | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                        | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                        | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         this.setCurrentPlace(this.getCurrentPlace() + 4);
         this.setDataRemained(this.getDataRemained() - 4);
@@ -166,10 +138,10 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
         if (4 > dataLenght) {
             throw new TikaException("4 > dataLenght");
         }
-        dest = (data[this.getCurrentPlace()] & 0xff) |
-                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
-                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
-                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                        | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                        | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                        | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -281,8 +253,8 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
     }
 
     /**
-     * Sets 000c unknown bytes Unknown means here that those guys who cracked
-     * the chm format do not know what's it purposes for
+     * Sets 000c unknown bytes Unknown means here that those guys who cracked the chm format do not
+     * know what's it purposes for
      *
      * @param unknown_000c
      */
@@ -493,54 +465,43 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
         /* we only know how to deal with the 0x58 and 0x60 byte structures */
         if (data.length != ChmConstants.CHM_ITSP_V1_LEN) {
             throw new ChmParsingException(
-                    "we only know how to deal with the 0x58 and 0x60 byte structures");
+                            "we only know how to deal with the 0x58 and 0x60 byte structures");
         }
 
         /* unmarshal common fields */
         chmItspHeader.unmarshalCharArray(data, chmItspHeader, ChmConstants.CHM_SIGNATURE_LEN);
         // ChmCommons.unmarshalCharArray(data, chmItspHeader,
         // ChmConstants.CHM_SIGNATURE_LEN);
-        chmItspHeader.setVersion(chmItspHeader
-                .unmarshalInt32(data, chmItspHeader.getDataRemained(), chmItspHeader.getVersion()));
-        chmItspHeader.setHeader_len(chmItspHeader
-                .unmarshalInt32(data, chmItspHeader.getDataRemained(),
-                        chmItspHeader.getHeader_len()));
-        chmItspHeader.setUnknown_000c(chmItspHeader
-                .unmarshalInt32(data, chmItspHeader.getDataRemained(),
-                        chmItspHeader.getUnknown_000c()));
-        chmItspHeader.setBlock_len(chmItspHeader
-                .unmarshalUInt32(data, chmItspHeader.getDataRemained(),
-                        chmItspHeader.getBlock_len()));
-        chmItspHeader.setBlockidx_intvl(chmItspHeader
-                .unmarshalInt32(data, chmItspHeader.getDataRemained(),
-                        chmItspHeader.getBlockidx_intvl()));
-        chmItspHeader.setIndex_depth(chmItspHeader
-                .unmarshalInt32(data, chmItspHeader.getDataRemained(),
-                        chmItspHeader.getIndex_depth()));
-        chmItspHeader.setIndex_root(chmItspHeader
-                .unmarshalInt32(data, chmItspHeader.getDataRemained(),
-                        chmItspHeader.getIndex_root()));
-        chmItspHeader.setIndex_head(chmItspHeader
-                .unmarshalInt32(data, chmItspHeader.getDataRemained(),
-                        chmItspHeader.getIndex_head()));
-        chmItspHeader.setUnknown_0024(chmItspHeader
-                .unmarshalInt32(data, chmItspHeader.getDataRemained(),
-                        chmItspHeader.getUnknown_0024()));
-        chmItspHeader.setNum_blocks(chmItspHeader
-                .unmarshalUInt32(data, chmItspHeader.getDataRemained(),
-                        chmItspHeader.getNum_blocks()));
-        chmItspHeader.setUnknown_002c((chmItspHeader
-                .unmarshalInt32(data, chmItspHeader.getDataRemained(),
-                        chmItspHeader.getUnknown_002c())));
-        chmItspHeader.setLang_id(chmItspHeader
-                .unmarshalUInt32(data, chmItspHeader.getDataRemained(),
-                        chmItspHeader.getLang_id()));
-        chmItspHeader.setSystem_uuid(chmItspHeader
-                .unmarshalUuid(data, chmItspHeader.getDataRemained(),
-                        chmItspHeader.getSystem_uuid(), ChmConstants.BYTE_ARRAY_LENGHT));
-        chmItspHeader.setUnknown_0044(chmItspHeader
-                .unmarshalUuid(data, chmItspHeader.getDataRemained(),
-                        chmItspHeader.getUnknown_0044(), ChmConstants.BYTE_ARRAY_LENGHT));
+        chmItspHeader.setVersion(chmItspHeader.unmarshalInt32(data, chmItspHeader.getDataRemained(),
+                        chmItspHeader.getVersion()));
+        chmItspHeader.setHeader_len(chmItspHeader.unmarshalInt32(data,
+                        chmItspHeader.getDataRemained(), chmItspHeader.getHeader_len()));
+        chmItspHeader.setUnknown_000c(chmItspHeader.unmarshalInt32(data,
+                        chmItspHeader.getDataRemained(), chmItspHeader.getUnknown_000c()));
+        chmItspHeader.setBlock_len(chmItspHeader.unmarshalUInt32(data,
+                        chmItspHeader.getDataRemained(), chmItspHeader.getBlock_len()));
+        chmItspHeader.setBlockidx_intvl(chmItspHeader.unmarshalInt32(data,
+                        chmItspHeader.getDataRemained(), chmItspHeader.getBlockidx_intvl()));
+        chmItspHeader.setIndex_depth(chmItspHeader.unmarshalInt32(data,
+                        chmItspHeader.getDataRemained(), chmItspHeader.getIndex_depth()));
+        chmItspHeader.setIndex_root(chmItspHeader.unmarshalInt32(data,
+                        chmItspHeader.getDataRemained(), chmItspHeader.getIndex_root()));
+        chmItspHeader.setIndex_head(chmItspHeader.unmarshalInt32(data,
+                        chmItspHeader.getDataRemained(), chmItspHeader.getIndex_head()));
+        chmItspHeader.setUnknown_0024(chmItspHeader.unmarshalInt32(data,
+                        chmItspHeader.getDataRemained(), chmItspHeader.getUnknown_0024()));
+        chmItspHeader.setNum_blocks(chmItspHeader.unmarshalUInt32(data,
+                        chmItspHeader.getDataRemained(), chmItspHeader.getNum_blocks()));
+        chmItspHeader.setUnknown_002c((chmItspHeader.unmarshalInt32(data,
+                        chmItspHeader.getDataRemained(), chmItspHeader.getUnknown_002c())));
+        chmItspHeader.setLang_id(chmItspHeader.unmarshalUInt32(data,
+                        chmItspHeader.getDataRemained(), chmItspHeader.getLang_id()));
+        chmItspHeader.setSystem_uuid(chmItspHeader.unmarshalUuid(data,
+                        chmItspHeader.getDataRemained(), chmItspHeader.getSystem_uuid(),
+                        ChmConstants.BYTE_ARRAY_LENGHT));
+        chmItspHeader.setUnknown_0044(chmItspHeader.unmarshalUuid(data,
+                        chmItspHeader.getDataRemained(), chmItspHeader.getUnknown_0044(),
+                        ChmConstants.BYTE_ARRAY_LENGHT));
 
         /* Checks validity of the itsp header */
         if (!new String(chmItspHeader.getSignature(), UTF_8).equals(ChmConstants.ITSP)) {

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.wordperfect;
 
@@ -20,13 +18,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.InputStream;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Test;
 
 /**
  * Junit test class for the {@link WordPerfectParser}.
@@ -46,7 +42,7 @@ public class WordPerfectTest extends TikaTest {
 
     @Test
     public void testVersion50() throws Exception {
-        //test file "testWordPerfect_5_0.wp" is from govdocs1: 126546.wp
+        // test file "testWordPerfect_5_0.wp" is from govdocs1: 126546.wp
         XMLResult r = getXML("testWordPerfect_5_0.wp");
         assertEquals(WordPerfectParser.WP_5_0.toString(), r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
@@ -55,7 +51,7 @@ public class WordPerfectTest extends TikaTest {
 
     @Test
     public void testVersion51() throws Exception {
-        //testfile "testWordperfect_5_1.wp is from govdocs1: 758750.wp
+        // testfile "testWordperfect_5_1.wp is from govdocs1: 758750.wp
         XMLResult r = getXML("testWordPerfect_5_1.wp");
         assertEquals(WordPerfectParser.WP_5_1.toString(), r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
@@ -70,7 +66,7 @@ public class WordPerfectTest extends TikaTest {
 
 
         try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/parser/wordperfect/tika-config.xml")) {
+                        "/org/apache/tika/parser/wordperfect/tika-config.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
 

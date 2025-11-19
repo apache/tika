@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser;
 
@@ -26,27 +24,23 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
-
+import org.apache.tika.TikaTest;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.TikaTest;
-
 /**
- * Ensure that our various Table-based formats produce consistent,
- * broadly similar output.
- * This is mostly focused on the XHTML output
+ * Ensure that our various Table-based formats produce consistent, broadly similar output. This is
+ * mostly focused on the XHTML output
  */
 public class TabularFormatsTest extends TikaTest {
-    protected static final String[] columnNames =
-            new String[]{"recnum", "square", "desc", "pctdone", "pctincr", "date", "datetime",
-                    "time"};
-    protected static final String[] columnLabels =
-            new String[]{"Record Number", "Square of the Record Number", "Description of the Row",
-                    "Percent Done", "Percent Increment", "date", "datetime", "time"};
+    protected static final String[] columnNames = new String[] {"recnum", "square", "desc",
+                    "pctdone", "pctincr", "date", "datetime", "time"};
+    protected static final String[] columnLabels = new String[] {"Record Number",
+                    "Square of the Record Number", "Description of the Row", "Percent Done",
+                    "Percent Increment", "date", "datetime", "time"};
     // Which columns hold percentages? Not all parsers
-    //  correctly format these...
+    // correctly format these...
     protected static final List<Integer> percentageColumns = Arrays.asList(3, 4);
 
     private static final Logger LOG = LoggerFactory.getLogger(TabularFormatsTest.class);
@@ -59,11 +53,11 @@ public class TabularFormatsTest extends TikaTest {
         String[] shortMonthsLocal = new DateFormatSymbols(Locale.getDefault()).getShortMonths();
         List<String> shortMonthsExpr = new ArrayList();
         for (int i = 0; i < 12; ++i) {
-            String expr =
-                    shortMonthsEnglish[i].toUpperCase(Locale.ENGLISH) + "|" + shortMonthsEnglish[i];
+            String expr = shortMonthsEnglish[i].toUpperCase(Locale.ENGLISH) + "|"
+                            + shortMonthsEnglish[i];
             if (!shortMonthsEnglish[i].equals(shortMonthsLocal[i])) {
-                expr += "|" + shortMonthsLocal[i].toUpperCase(Locale.getDefault()) + "|" +
-                        shortMonthsLocal[i];
+                expr += "|" + shortMonthsLocal[i].toUpperCase(Locale.getDefault()) + "|"
+                                + shortMonthsLocal[i];
             }
             LOG.info(expr);
             shortMonthsExpr.add(expr);
@@ -74,60 +68,65 @@ public class TabularFormatsTest extends TikaTest {
     /**
      * Expected values, by <em>column</em>
      */
-    protected static final Object[][] table =
-            new Object[][]{new String[]{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"},
-                    new String[]{"0", "1", "4", "9", "16", "25", "36", "49", "64", "81", "100"},
-                    new String[]{}, // Generated later
-                    new Pattern[]{Pattern.compile("0%|0.00%"), Pattern.compile("10%|10.00%"),
-                            Pattern.compile("20%|20.00%"), Pattern.compile("30%|30.00%"),
-                            Pattern.compile("40%|40.00%"), Pattern.compile("50%|50.00%"),
-                            Pattern.compile("60%|60.00%"), Pattern.compile("70%|70.00%"),
-                            Pattern.compile("80%|80.00%"), Pattern.compile("90%|90.00%"),
-                            Pattern.compile("100%|100.00%"),},
-                    new Pattern[]{Pattern.compile(""), Pattern.compile("0.0%|0.00%"),
-                            Pattern.compile("50.0%|50.00%"), Pattern.compile("66.7%|66.67%"),
-                            Pattern.compile("75.0%|75.00%"), Pattern.compile("80.0%|80.00%"),
-                            Pattern.compile("83.3%|83.33%"), Pattern.compile("85.7%|85.71%"),
-                            Pattern.compile("87.5%|87.50%"), Pattern.compile("88.9%|88.89%"),
-                            Pattern.compile("90.0%|90.00%"),},
-                    new Pattern[]{Pattern.compile("0?1-01-1960"), Pattern.compile("0?2-01-1960"),
-                            Pattern.compile("17-01-1960"), Pattern.compile("22-03-1960"),
-                            Pattern.compile("13-09-1960"), Pattern.compile("17-09-1961"),
-                            Pattern.compile("20-07-1963"), Pattern.compile("29-07-1966"),
-                            Pattern.compile("20-03-1971"), Pattern.compile("18-12-1977"),
-                            Pattern.compile("19-05-1987"),}, new Pattern[]{Pattern.compile(
-                    "01(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]00:00:01(.00)?"),
-                    Pattern.compile(
-                            "01(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]00:00:10(.00)?"),
-                    Pattern.compile(
-                            "01(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]00:01:40(.00)?"),
-                    Pattern.compile(
-                            "01(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]00:16:40(.00)?"),
-                    Pattern.compile(
-                            "01(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]02:46:40(.00)?"),
-                    Pattern.compile(
-                            "02(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]03:46:40(.00)?"),
-                    Pattern.compile(
-                            "12(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]13:46:40(.00)?"),
-                    Pattern.compile(
-                            "25(" + SHORT_MONTHS_EXPR[3] + ")(60|1960)[:\\s]17:46:40(.00)?"),
-                    Pattern.compile(
-                            "03(" + SHORT_MONTHS_EXPR[2] + ")(63|1963)[:\\s]09:46:40(.00)?"),
-                    Pattern.compile(
-                            "09(" + SHORT_MONTHS_EXPR[8] + ")(91|1991)[:\\s]01:46:40(.00)?"),
-                    Pattern.compile(
-                            "19(" + SHORT_MONTHS_EXPR[10] + ")(76|2276)[:\\s]17:46:40(.00)?")},
-                    new Pattern[]{Pattern.compile("0?0:00:01(.\\d\\d)?"),
-                            Pattern.compile("0?0:00:03(.\\d\\d)?"),
-                            Pattern.compile("0?0:00:09(.\\d\\d)?"),
-                            Pattern.compile("0?0:00:27(.\\d\\d)?"),
-                            Pattern.compile("0?0:01:21(.\\d\\d)?"),
-                            Pattern.compile("0?0:04:03(.\\d\\d)?"),
-                            Pattern.compile("0?0:12:09(.\\d\\d)?"),
-                            Pattern.compile("0?0:36:27(.\\d\\d)?"),
-                            Pattern.compile("0?1:49:21(.\\d\\d)?"),
-                            Pattern.compile("0?5:28:03(.\\d\\d)?"),
-                            Pattern.compile("16:24:09(.\\d\\d)?")}};
+    protected static final Object[][] table = new Object[][] {
+                    new String[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"},
+                    new String[] {"0", "1", "4", "9", "16", "25", "36", "49", "64", "81", "100"},
+                    new String[] {}, // Generated later
+                    new Pattern[] {Pattern.compile("0%|0.00%"), Pattern.compile("10%|10.00%"),
+                                    Pattern.compile("20%|20.00%"), Pattern.compile("30%|30.00%"),
+                                    Pattern.compile("40%|40.00%"), Pattern.compile("50%|50.00%"),
+                                    Pattern.compile("60%|60.00%"), Pattern.compile("70%|70.00%"),
+                                    Pattern.compile("80%|80.00%"), Pattern.compile("90%|90.00%"),
+                                    Pattern.compile("100%|100.00%"),},
+                    new Pattern[] {Pattern.compile(""), Pattern.compile("0.0%|0.00%"),
+                                    Pattern.compile("50.0%|50.00%"),
+                                    Pattern.compile("66.7%|66.67%"),
+                                    Pattern.compile("75.0%|75.00%"),
+                                    Pattern.compile("80.0%|80.00%"),
+                                    Pattern.compile("83.3%|83.33%"),
+                                    Pattern.compile("85.7%|85.71%"),
+                                    Pattern.compile("87.5%|87.50%"),
+                                    Pattern.compile("88.9%|88.89%"),
+                                    Pattern.compile("90.0%|90.00%"),},
+                    new Pattern[] {Pattern.compile("0?1-01-1960"), Pattern.compile("0?2-01-1960"),
+                                    Pattern.compile("17-01-1960"), Pattern.compile("22-03-1960"),
+                                    Pattern.compile("13-09-1960"), Pattern.compile("17-09-1961"),
+                                    Pattern.compile("20-07-1963"), Pattern.compile("29-07-1966"),
+                                    Pattern.compile("20-03-1971"), Pattern.compile("18-12-1977"),
+                                    Pattern.compile("19-05-1987"),},
+                    new Pattern[] {Pattern.compile("01(" + SHORT_MONTHS_EXPR[0]
+                                    + ")(60|1960)[:\\s]00:00:01(.00)?"),
+                                    Pattern.compile("01(" + SHORT_MONTHS_EXPR[0]
+                                                    + ")(60|1960)[:\\s]00:00:10(.00)?"),
+                                    Pattern.compile("01(" + SHORT_MONTHS_EXPR[0]
+                                                    + ")(60|1960)[:\\s]00:01:40(.00)?"),
+                                    Pattern.compile("01(" + SHORT_MONTHS_EXPR[0]
+                                                    + ")(60|1960)[:\\s]00:16:40(.00)?"),
+                                    Pattern.compile("01(" + SHORT_MONTHS_EXPR[0]
+                                                    + ")(60|1960)[:\\s]02:46:40(.00)?"),
+                                    Pattern.compile("02(" + SHORT_MONTHS_EXPR[0]
+                                                    + ")(60|1960)[:\\s]03:46:40(.00)?"),
+                                    Pattern.compile("12(" + SHORT_MONTHS_EXPR[0]
+                                                    + ")(60|1960)[:\\s]13:46:40(.00)?"),
+                                    Pattern.compile("25(" + SHORT_MONTHS_EXPR[3]
+                                                    + ")(60|1960)[:\\s]17:46:40(.00)?"),
+                                    Pattern.compile("03(" + SHORT_MONTHS_EXPR[2]
+                                                    + ")(63|1963)[:\\s]09:46:40(.00)?"),
+                                    Pattern.compile("09(" + SHORT_MONTHS_EXPR[8]
+                                                    + ")(91|1991)[:\\s]01:46:40(.00)?"),
+                                    Pattern.compile("19(" + SHORT_MONTHS_EXPR[10]
+                                                    + ")(76|2276)[:\\s]17:46:40(.00)?")},
+                    new Pattern[] {Pattern.compile("0?0:00:01(.\\d\\d)?"),
+                                    Pattern.compile("0?0:00:03(.\\d\\d)?"),
+                                    Pattern.compile("0?0:00:09(.\\d\\d)?"),
+                                    Pattern.compile("0?0:00:27(.\\d\\d)?"),
+                                    Pattern.compile("0?0:01:21(.\\d\\d)?"),
+                                    Pattern.compile("0?0:04:03(.\\d\\d)?"),
+                                    Pattern.compile("0?0:12:09(.\\d\\d)?"),
+                                    Pattern.compile("0?0:36:27(.\\d\\d)?"),
+                                    Pattern.compile("0?1:49:21(.\\d\\d)?"),
+                                    Pattern.compile("0?5:28:03(.\\d\\d)?"),
+                                    Pattern.compile("16:24:09(.\\d\\d)?")}};
 
 
     static {
@@ -175,7 +174,7 @@ public class TabularFormatsTest extends TikaTest {
 
         // Check we got the right number
         assertEquals(columnLabels.length, cells.length,
-                "Wrong number of cells in header row " + hRow);
+                        "Wrong number of cells in header row " + hRow);
 
         // Check we got the right stuff
         for (int i = 0; i < cells.length; i++) {
@@ -208,20 +207,19 @@ public class TabularFormatsTest extends TikaTest {
         // Check we got the right number of rows
         for (int cn = 0; cn < table.length; cn++) {
             assertEquals(table[cn].length, rows.length,
-                    "Wrong number of rows found compared to column " + (cn + 1));
+                            "Wrong number of rows found compared to column " + (cn + 1));
         }
 
         // Check each row's values
         for (int rn = 0; rn < rows.length; rn++) {
             String[] cells = toCells(rows[rn], false);
-            assertEquals(table.length, cells.length,
-                    "Wrong number of values in row " + (rn + 1));
+            assertEquals(table.length, cells.length, "Wrong number of values in row " + (rn + 1));
 
             for (int cn = 0; cn < table.length; cn++) {
                 String val = cells[cn];
 
                 // If the parser doesn't know about % formats,
-                //  skip the cell if the column in a % one
+                // skip the cell if the column in a % one
                 if (!doesPercents && percentageColumns.contains(cn)) {
                     continue;
                 }
@@ -231,8 +229,8 @@ public class TabularFormatsTest extends TikaTest {
                     val = val.split(">")[1];
                 }
                 // Check
-                String error = "Wrong text in row " + (rn + 1) + " and column " + (cn + 1) + " - " +
-                        table[cn][rn] + " vs " + val;
+                String error = "Wrong text in row " + (rn + 1) + " and column " + (cn + 1) + " - "
+                                + table[cn][rn] + " vs " + val;
                 if (table[cn][rn] instanceof String) {
                     assertEquals(table[cn][rn], val, error);
                 } else {
@@ -276,13 +274,13 @@ public class TabularFormatsTest extends TikaTest {
 
     // TODO Fix the ODS test - currently failing with
     // org.xml.sax.SAXException: Namespace http://www.w3.org/1999/xhtml not declared
-//    @Test
-//    public void testODS() throws Exception {
-//        XMLResult result = getXML("test-columnar.ods");
-//        String xml = result.xml;
-//        assertHeaders(xml, false, true, false);
-//        assertContents(xml, true, true);
-//    }
+    // @Test
+    // public void testODS() throws Exception {
+    // XMLResult result = getXML("test-columnar.ods");
+    // String xml = result.xml;
+    // assertHeaders(xml, false, true, false);
+    // assertContents(xml, true, true);
+    // }
 
     // TODO Test other formats, eg Database formats
 

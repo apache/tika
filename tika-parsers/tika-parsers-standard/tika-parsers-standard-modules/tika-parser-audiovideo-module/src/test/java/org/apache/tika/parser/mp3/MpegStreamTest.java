@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mp3;
 
@@ -26,7 +24,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +39,7 @@ public class MpegStreamTest {
     /**
      * Writes the given byte the given number of times into an output stream.
      *
-     * @param out   the output stream
+     * @param out the output stream
      * @param value the value to write
      * @param count the number of bytes to write
      * @throws IOException if an error occurs
@@ -57,9 +54,9 @@ public class MpegStreamTest {
      * Writes a frame header in the given output stream.
      *
      * @param out the output stream
-     * @param b2  byte 2 of the header
-     * @param b3  byte 3 of the header
-     * @param b4  byte 4 of the header
+     * @param b2 byte 2 of the header
+     * @param b3 byte 3 of the header
+     * @param b4 byte 4 of the header
      * @throws IOException if an error occurs
      */
     private static void writeFrame(OutputStream out, int b2, int b3, int b4) throws IOException {
@@ -124,8 +121,7 @@ public class MpegStreamTest {
     }
 
     /**
-     * Tests a search for another frame which is interrupted because the stream
-     * ends.
+     * Tests a search for another frame which is interrupted because the stream ends.
      */
     @Test
     public void testSeachNextFrameEOS() throws IOException {

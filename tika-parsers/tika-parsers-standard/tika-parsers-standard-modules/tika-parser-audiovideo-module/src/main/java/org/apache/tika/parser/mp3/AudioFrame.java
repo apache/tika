@@ -1,32 +1,28 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mp3;
 
 import java.io.IOException;
 import java.io.InputStream;
-
+import org.apache.tika.exception.TikaException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaException;
-
 /**
- * An Audio Frame in an MP3 file. These come after the ID3v2 tags in the file.
- * Currently, only the header is processed, not the raw audio data.
+ * An Audio Frame in an MP3 file. These come after the ID3v2 tags in the file. Currently, only the
+ * header is processed, not the raw audio data.
  */
 public class AudioFrame implements MP3Frame {
     /**
@@ -73,7 +69,7 @@ public class AudioFrame implements MP3Frame {
      */
     @Deprecated
     public AudioFrame(InputStream stream, ContentHandler handler)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         this(-2, -2, -2, -2, stream);
     }
 
@@ -132,15 +128,15 @@ public class AudioFrame implements MP3Frame {
      * Creates a new instance of {@code AudioFrame} and initializes all properties.
      *
      * @param mpegVersion the code for the MPEG version
-     * @param layer       the code for the layer
-     * @param bitRate     the bit rate (in bps)
-     * @param sampleRate  the sample rate (in samples per second)
-     * @param channels    the number of channels
-     * @param length      the frame length (in bytes)
-     * @param duration    the duration of this frame (in milliseconds)
+     * @param layer the code for the layer
+     * @param bitRate the bit rate (in bps)
+     * @param sampleRate the sample rate (in samples per second)
+     * @param channels the number of channels
+     * @param length the frame length (in bytes)
+     * @param duration the duration of this frame (in milliseconds)
      */
     public AudioFrame(int mpegVersion, int layer, int bitRate, int sampleRate, int channels,
-                      int length, float duration) {
+                    int length, float duration) {
         versionCode = mpegVersion;
         this.layer = layer;
         this.bitRate = bitRate;
@@ -170,7 +166,7 @@ public class AudioFrame implements MP3Frame {
      * Generates a string for the version of this audio frame.
      *
      * @param version the code for the MPEG version
-     * @param layer   the code for the layer
+     * @param layer the code for the layer
      * @return a string for the version
      */
     private static String generateVersionStr(int version, int layer) {

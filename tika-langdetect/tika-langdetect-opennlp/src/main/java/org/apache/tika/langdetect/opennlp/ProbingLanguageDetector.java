@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.langdetect.opennlp;
 
@@ -21,7 +19,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-
 import opennlp.tools.langdetect.LanguageDetector;
 import opennlp.tools.langdetect.LanguageDetectorModel;
 import opennlp.tools.util.normalizer.AggregateCharSequenceNormalizer;
@@ -30,41 +27,36 @@ import opennlp.tools.util.normalizer.CharSequenceNormalizer;
 /**
  * Implements learnable Language Detector.
  * <p>
- * Starts at the beginning of the charsequence and runs language
- * detection on chunks of text.  If the end of the
- * string is reached or there are {@link #minConsecImprovements}
- * consecutive predictions for the best language and the confidence
- * increases over those last predictions and if the difference
- * in confidence between the highest confidence language
- * and the second highest confidence language is greater than {@link #minDiff},
- * the language detector will stop and report the results.
+ * Starts at the beginning of the charsequence and runs language detection on chunks of text. If the
+ * end of the string is reached or there are {@link #minConsecImprovements} consecutive predictions
+ * for the best language and the confidence increases over those last predictions and if the
+ * difference in confidence between the highest confidence language and the second highest
+ * confidence language is greater than {@link #minDiff}, the language detector will stop and report
+ * the results.
  * </p>
  * <p>
  * The authors wish to thank Ken Krugler and
- * <a href="https://github.com/kkrugler/yalder">Yalder</a>}
- * for the inspiration for many of the design
- * components of this detector.
+ * <a href="https://github.com/kkrugler/yalder">Yalder</a>} for the inspiration for many of the
+ * design components of this detector.
  * </p>
  */
 class ProbingLanguageDetector implements LanguageDetector {
 
     /**
-     * Default chunk size (in codepoints) to take from the
-     * initial String
+     * Default chunk size (in codepoints) to take from the initial String
      */
     public static final int DEFAULT_CHUNK_SIZE = 300;
 
     /**
-     * Default minimum consecutive improvements in confidence.
-     * If the best language is the same over this many consecutive
-     * probes, and if the confidence did not go down over those probes,
-     * the detector stops early.
+     * Default minimum consecutive improvements in confidence. If the best language is the same over
+     * this many consecutive probes, and if the confidence did not go down over those probes, the
+     * detector stops early.
      */
     public static final int DEFAULT_MIN_CONSEC_IMPROVEMENTS = 2;
 
     /**
-     * Default minimum difference in confidence between the language with
-     * the highest confidence and the language with the second highest confidence.
+     * Default minimum difference in confidence between the language with the highest confidence and
+     * the language with the second highest confidence.
      */
     public static final double DEFAULT_MIN_DIFF = 0.20;
 
@@ -75,16 +67,16 @@ class ProbingLanguageDetector implements LanguageDetector {
 
     private static final String SPACE = " ";
 
-    //size at which to break strings for detection (in codepoints)
+    // size at which to break strings for detection (in codepoints)
     private int chunkSize = DEFAULT_CHUNK_SIZE;
 
-    //require that the "best" language be the same
-    //and that the confidence in that language increase over
-    //this number of probes.
+    // require that the "best" language be the same
+    // and that the confidence in that language increase over
+    // this number of probes.
     private int minConsecImprovements = DEFAULT_MIN_CONSEC_IMPROVEMENTS;
 
-    //Minimum difference in confidence between the best candidate
-    //and the second best candidate
+    // Minimum difference in confidence between the best candidate
+    // and the second best candidate
     private double minDiff = DEFAULT_MIN_DIFF;
 
     /**
@@ -97,13 +89,13 @@ class ProbingLanguageDetector implements LanguageDetector {
     private LanguageDetectorModel model;
 
     /**
-     * Initializes the current instance with a language detector model. Default feature
-     * generation is used.
+     * Initializes the current instance with a language detector model. Default feature generation
+     * is used.
      *
      * @param model the language detector model
      */
     public ProbingLanguageDetector(LanguageDetectorModel model,
-                                   CharSequenceNormalizer... normalizers) {
+                    CharSequenceNormalizer... normalizers) {
         this.model = model;
         this.normalizer = new AggregateCharSequenceNormalizer(normalizers);
     }
@@ -115,12 +107,12 @@ class ProbingLanguageDetector implements LanguageDetector {
 
     @Override
     public opennlp.tools.langdetect.Language[] predictLanguages(CharSequence content) {
-        //list of the languages that received the highest
-        //confidence over the last n chunk detections
+        // list of the languages that received the highest
+        // confidence over the last n chunk detections
         LinkedList<opennlp.tools.langdetect.Language[]> predictions = new LinkedList();
-        int start = 0;//where to start the next chunk in codepoints
+        int start = 0;// where to start the next chunk in codepoints
         opennlp.tools.langdetect.Language[] currPredictions = null;
-        //cache ngram counts across chunks
+        // cache ngram counts across chunks
         Map<String, MutableInt> ngramCounts = new HashMap<>();
         CharIntNGrammer ngrammer = new CharIntNGrammer(1, 3);
         int nGrams = 0;
@@ -173,10 +165,10 @@ class ProbingLanguageDetector implements LanguageDetector {
         }
         double[] eval = model.getMaxentModel().eval(allGrams, counts);
         opennlp.tools.langdetect.Language[] arr =
-                new opennlp.tools.langdetect.Language[eval.length];
+                        new opennlp.tools.langdetect.Language[eval.length];
         for (int j = 0; j < eval.length; j++) {
             arr[j] = new opennlp.tools.langdetect.Language(model.getMaxentModel().getOutcome(j),
-                    eval[j]);
+                            eval[j]);
         }
 
         Arrays.sort(arr, (o1, o2) -> Double.compare(o2.getConfidence(), o1.getConfidence()));
@@ -184,8 +176,7 @@ class ProbingLanguageDetector implements LanguageDetector {
     }
 
     /**
-     * Size in codepoints at which to chunk the
-     * text for detection.
+     * Size in codepoints at which to chunk the text for detection.
      *
      * @return the chunk size in codepoints
      */
@@ -194,8 +185,7 @@ class ProbingLanguageDetector implements LanguageDetector {
     }
 
     /**
-     * Size in codepoints at which to chunk the
-     * text for detection.
+     * Size in codepoints at which to chunk the text for detection.
      *
      * @param chunkSize
      */
@@ -204,9 +194,8 @@ class ProbingLanguageDetector implements LanguageDetector {
     }
 
     /**
-     * Number of consecutive improvements in the
-     * confidence of the most likely language required
-     * for this language detector to stop.
+     * Number of consecutive improvements in the confidence of the most likely language required for
+     * this language detector to stop.
      *
      * @return the minimum consecutive improvements
      */
@@ -215,9 +204,8 @@ class ProbingLanguageDetector implements LanguageDetector {
     }
 
     /**
-     * Number of consecutive improvements in the
-     * confidence of the most likely language required
-     * for this language detector to stop.
+     * Number of consecutive improvements in the confidence of the most likely language required for
+     * this language detector to stop.
      *
      * @param minConsecImprovements minimum consecutive improvements
      */
@@ -226,8 +214,8 @@ class ProbingLanguageDetector implements LanguageDetector {
     }
 
     /**
-     * The minimum difference between the highest confidence and the
-     * second highest confidence required to stop.
+     * The minimum difference between the highest confidence and the second highest confidence
+     * required to stop.
      *
      * @return the minimum difference required
      */
@@ -236,8 +224,8 @@ class ProbingLanguageDetector implements LanguageDetector {
     }
 
     /**
-     * The minimum difference between the highest confidence and the
-     * second highest confidence required to stop.
+     * The minimum difference between the highest confidence and the second highest confidence
+     * required to stop.
      * <p>
      * Throws {@link IllegalArgumentException} if &lt; 0.0
      *
@@ -251,19 +239,16 @@ class ProbingLanguageDetector implements LanguageDetector {
     }
 
     /**
-     * The absolute maximum length of the string (in codepoints)
-     * to be processed.
+     * The absolute maximum length of the string (in codepoints) to be processed.
      *
-     * @return the absolute maximum length of the string (in codepoints)
-     * to be processed.
+     * @return the absolute maximum length of the string (in codepoints) to be processed.
      */
     public int getMaxLength() {
         return maxLength;
     }
 
     /**
-     * The absolute maximum length of the string (in codepoints)
-     * to be processed.
+     * The absolute maximum length of the string (in codepoints) to be processed.
      *
      * @param maxLength
      */
@@ -291,8 +276,8 @@ class ProbingLanguageDetector implements LanguageDetector {
     }
 
     /**
-     * Override this for different behavior to determine if there is enough
-     * confidence in the predictions to stop.
+     * Override this for different behavior to determine if there is enough confidence in the
+     * predictions to stop.
      *
      * @param predictionsQueue
      * @param newPredictions
@@ -300,8 +285,8 @@ class ProbingLanguageDetector implements LanguageDetector {
      * @return
      */
     boolean seenEnough(LinkedList<opennlp.tools.langdetect.Language[]> predictionsQueue,
-                       opennlp.tools.langdetect.Language[] newPredictions,
-                       Map<String, MutableInt> ngramCounts) {
+                    opennlp.tools.langdetect.Language[] newPredictions,
+                    Map<String, MutableInt> ngramCounts) {
 
         if (predictionsQueue.size() < minConsecImprovements) {
             predictionsQueue.add(newPredictions);
@@ -310,16 +295,16 @@ class ProbingLanguageDetector implements LanguageDetector {
             predictionsQueue.removeFirst();
         }
         predictionsQueue.add(newPredictions);
-        if (minDiff > 0.0 &&
-                newPredictions[0].getConfidence() - newPredictions[1].getConfidence() < minDiff) {
+        if (minDiff > 0.0 && newPredictions[0].getConfidence()
+                        - newPredictions[1].getConfidence() < minDiff) {
             return false;
         }
         String lastLang = null;
         double lastConf = -1.0;
-        //iterate through the last predictions
-        //and check that the lang with the highest confidence
-        //hasn't changed, and that the confidence in it
-        //hasn't decreased
+        // iterate through the last predictions
+        // and check that the lang with the highest confidence
+        // hasn't changed, and that the confidence in it
+        // hasn't decreased
         for (opennlp.tools.langdetect.Language[] predictions : predictionsQueue) {
             if (lastLang == null) {
                 lastLang = predictions[0].getLang();
@@ -386,8 +371,8 @@ class ProbingLanguageDetector implements LanguageDetector {
                 currGram = minGram;
                 pos++;
                 if (pos + maxGram < buffer.length) {
-                    //lowercase the last character; we've already
-                    //lowercased all previous chars
+                    // lowercase the last character; we've already
+                    // lowercased all previous chars
                     buffer[pos + maxGram] = Character.toLowerCase(buffer[pos + maxGram]);
                 }
             }
@@ -405,10 +390,9 @@ class ProbingLanguageDetector implements LanguageDetector {
         }
 
         /**
-         * @param chunk this is the chunk that will be ngrammed.  Note:
-         *              The ngrammer will lowercase the codepoints in place!
-         *              If you don't want the original data transformed,
-         *              copy it before calling this!
+         * @param chunk this is the chunk that will be ngrammed. Note: The ngrammer will lowercase
+         *        the codepoints in place! If you don't want the original data transformed, copy it
+         *        before calling this!
          */
         void reset(int[] chunk) {
             next = null;

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.utils;
 
@@ -45,9 +43,13 @@ public class StringUtils {
     }
 
     /**
-     * <p>Left pad a String with a specified String.</p>
+     * <p>
+     * Left pad a String with a specified String.
+     * </p>
      *
-     * <p>Pad to a size of {@code size}.</p>
+     * <p>
+     * Pad to a size of {@code size}.
+     * </p>
      *
      * <pre>
      * StringUtils.leftPad(null, *, *)      = null
@@ -61,11 +63,11 @@ public class StringUtils {
      * StringUtils.leftPad("bat", 5, "")    = "  bat"
      * </pre>
      *
-     * @param str    the String to pad out, may be null
-     * @param size   the size to pad to
+     * @param str the String to pad out, may be null
+     * @param size the size to pad to
      * @param padStr the String to pad with, null or empty treated as single space
-     * @return left padded String or original String if no padding is necessary,
-     * {@code null} if null String input
+     * @return left padded String or original String if no padding is necessary, {@code null} if
+     *         null String input
      */
     public static String leftPad(final String str, final int size, String padStr) {
         if (str == null) {
@@ -114,8 +116,9 @@ public class StringUtils {
     }
 
     /**
-     * <p>Returns padding using the specified delimiter repeated
-     * to a given length.</p>
+     * <p>
+     * Returns padding using the specified delimiter repeated to a given length.
+     * </p>
      *
      * <pre>
      * StringUtils.repeat('e', 0)  = ""
@@ -123,14 +126,15 @@ public class StringUtils {
      * StringUtils.repeat('e', -2) = ""
      * </pre>
      *
-     * <p>Note: this method does not support padding with
-     * <a href="http://www.unicode.org/glossary/#supplementary_character">Unicode Supplementary Characters</a>
-     * as they require a pair of {@code char}s to be represented.
-     * If you are needing to support full I18N of your applications
-     * consider using {@link #repeat(String, int)} instead.
+     * <p>
+     * Note: this method does not support padding with
+     * <a href="http://www.unicode.org/glossary/#supplementary_character">Unicode Supplementary
+     * Characters</a> as they require a pair of {@code char}s to be represented. If you are needing
+     * to support full I18N of your applications consider using {@link #repeat(String, int)}
+     * instead.
      * </p>
      *
-     * @param ch     character to repeat
+     * @param ch character to repeat
      * @param repeat number of times to repeat char, negative treated as zero
      * @return String with repeated character
      * @see #repeat(String, int)
@@ -147,11 +151,12 @@ public class StringUtils {
     }
 
     // Padding
-    //-----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
 
     /**
-     * <p>Repeat a String {@code repeat} times to form a
-     * new String.</p>
+     * <p>
+     * Repeat a String {@code repeat} times to form a new String.
+     * </p>
      *
      * <pre>
      * StringUtils.repeat(null, 2) = null
@@ -162,10 +167,10 @@ public class StringUtils {
      * StringUtils.repeat("a", -2) = ""
      * </pre>
      *
-     * @param str    the String to repeat, may be null
+     * @param str the String to repeat, may be null
      * @param repeat number of times to repeat str, negative treated as zero
-     * @return a new String consisting of the original String repeated,
-     * {@code null} if null String input
+     * @return a new String consisting of the original String repeated, {@code null} if null String
+     *         input
      */
     public static String repeat(final String str, final int repeat) {
         // Performance tuned for 2.0 (JDK1.4)

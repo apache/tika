@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.langdetect.tika;
 
@@ -36,15 +34,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
+import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
-
 /**
- * This class runs a ngram analysis over submitted text, results might be used
- * for automatic language identification.
+ * This class runs a ngram analysis over submitted text, results might be used for automatic
+ * language identification.
  * <p>
  * The similarity calculation is at experimental level. You have been warned.
  * <p>
@@ -86,7 +82,7 @@ public class LanguageProfilerBuilder {
     /**
      * The String form of the separator char
      */
-    private final static String SEP_CHARSEQ = new String(new char[]{SEPARATOR});
+    private final static String SEP_CHARSEQ = new String(new char[] {SEPARATOR});
     /**
      * A StringBuffer used during analysis
      */
@@ -119,7 +115,7 @@ public class LanguageProfilerBuilder {
     /**
      * Constructs a new ngram profile
      *
-     * @param name   is the name of the profile
+     * @param name is the name of the profile
      * @param minlen is the min length of ngram sequences
      * @param maxlen is the max length of ngram sequences
      */
@@ -142,20 +138,18 @@ public class LanguageProfilerBuilder {
     }
 
     /**
-     * Creates a new Language profile from (preferably quite large - 5-10k of
-     * lines) text file
+     * Creates a new Language profile from (preferably quite large - 5-10k of lines) text file
      *
-     * @param name     to be given for the profile
-     * @param is       a stream to be read
+     * @param name to be given for the profile
+     * @param is a stream to be read
      * @param encoding is the encoding of stream
      * @throws TikaException if could not create a language profile
      */
     public static LanguageProfilerBuilder create(String name, InputStream is, String encoding)
-            throws TikaException {
+                    throws TikaException {
 
-        LanguageProfilerBuilder newProfile =
-                new LanguageProfilerBuilder(name, ABSOLUTE_MIN_NGRAM_LENGTH,
-                        ABSOLUTE_MAX_NGRAM_LENGTH);
+        LanguageProfilerBuilder newProfile = new LanguageProfilerBuilder(name,
+                        ABSOLUTE_MIN_NGRAM_LENGTH, ABSOLUTE_MAX_NGRAM_LENGTH);
         BufferedInputStream bis = new BufferedInputStream(is);
 
         byte[] buffer = new byte[4096];
@@ -196,8 +190,8 @@ public class LanguageProfilerBuilder {
 
         // -create he sample_he.txt utf-8
 
-        String usage = "Usage: NGramProfile " + "[-create profilename filename encoding] " +
-                "[-similarity file1 file2] " + "[-score profile-name filename encoding]";
+        String usage = "Usage: NGramProfile " + "[-create profilename filename encoding] "
+                        + "[-similarity file1 file2] " + "[-score profile-name filename encoding]";
         int command = 0;
 
         final int CREATE = 1;
@@ -246,13 +240,13 @@ public class LanguageProfilerBuilder {
                     File f = new File(filename);
                     FileInputStream fis = new FileInputStream(f);
                     LanguageProfilerBuilder newProfile =
-                            LanguageProfilerBuilder.create(profilename, fis, encoding);
+                                    LanguageProfilerBuilder.create(profilename, fis, encoding);
                     fis.close();
                     f = new File(profilename + "." + FILE_EXTENSION);
                     FileOutputStream fos = new FileOutputStream(f);
                     newProfile.save(fos);
-                    System.out.println(
-                            "new profile " + profilename + "." + FILE_EXTENSION + " was created.");
+                    System.out.println("new profile " + profilename + "." + FILE_EXTENSION
+                                    + " was created.");
                     break;
 
                 case SIMILARITY:
@@ -265,7 +259,7 @@ public class LanguageProfilerBuilder {
                     f = new File(filename2);
                     fis = new FileInputStream(f);
                     LanguageProfilerBuilder newProfile2 =
-                            LanguageProfilerBuilder.create(filename2, fis, encoding);
+                                    LanguageProfilerBuilder.create(filename2, fis, encoding);
                     newProfile2.normalize();
                     System.out.println("Similarity is " + newProfile.getSimilarity(newProfile2));
                     break;
@@ -277,9 +271,8 @@ public class LanguageProfilerBuilder {
 
                     f = new File(profilename + "." + FILE_EXTENSION);
                     fis = new FileInputStream(f);
-                    LanguageProfilerBuilder compare =
-                            new LanguageProfilerBuilder(profilename, DEFAULT_MIN_NGRAM_LENGTH,
-                                    DEFAULT_MAX_NGRAM_LENGTH);
+                    LanguageProfilerBuilder compare = new LanguageProfilerBuilder(profilename,
+                                    DEFAULT_MIN_NGRAM_LENGTH, DEFAULT_MAX_NGRAM_LENGTH);
                     compare.load(fis);
                     System.out.println("Score is " + compare.getSimilarity(newProfile));
                     break;
@@ -378,7 +371,7 @@ public class LanguageProfilerBuilder {
 
     /**
      * @param word
-     * @param n    sequence length
+     * @param n sequence length
      */
     private void add(StringBuffer word, int n) {
         for (int i = 0; i <= word.length() - n; i++) {
@@ -435,7 +428,7 @@ public class LanguageProfilerBuilder {
 
         for (NGramEntry entry : getSorted()) {
             s.append("[").append(entry.seq).append("/").append(entry.count).append("/")
-                    .append(entry.frequency).append("]\n");
+                            .append(entry.frequency).append("]\n");
         }
         return s.toString();
     }
@@ -465,15 +458,15 @@ public class LanguageProfilerBuilder {
             while (i.hasNext()) {
                 NGramEntry other = i.next();
                 if (another.ngrams.containsKey(other.seq)) {
-                    sum += Math.abs((other.frequency - another.ngrams.get(other.seq).frequency)) /
-                            2;
+                    sum += Math.abs((other.frequency - another.ngrams.get(other.seq).frequency))
+                                    / 2;
                 } else {
                     sum += other.frequency;
                 }
             }
         } catch (Exception e) {
             throw new TikaException(
-                    "Could not calculate a score how well NGramProfiles match each other");
+                            "Could not calculate a score how well NGramProfiles match each other");
         }
         return sum;
     }
@@ -509,15 +502,14 @@ public class LanguageProfilerBuilder {
     }
 
     /**
-     * Writes NGramProfile content into OutputStream, content is outputted with
-     * UTF-8 encoding
+     * Writes NGramProfile content into OutputStream, content is outputted with UTF-8 encoding
      *
      * @param os the Stream to output to
      * @throws IOException
      */
     public void save(OutputStream os) throws IOException {
-        os.write(("# NgramProfile generated at " + new Date() +
-                " for Apache Tika Language Identification\n").getBytes(UTF_8));
+        os.write(("# NgramProfile generated at " + new Date()
+                        + " for Apache Tika Language Identification\n").getBytes(UTF_8));
 
         // And then each ngram
 
@@ -582,7 +574,7 @@ public class LanguageProfilerBuilder {
         /**
          * Constructs a new NGramEntry
          *
-         * @param seq   is the sequence of characters of the ngram
+         * @param seq is the sequence of characters of the ngram
          * @param count is the number of occurrences of this ngram
          */
         public NGramEntry(String seq, int count) {

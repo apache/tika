@@ -1,35 +1,31 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.sax;
 
 import java.util.Stack;
-
+import org.apache.tika.metadata.Metadata;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.metadata.Metadata;
-
 public class DIFContentHandler extends DefaultHandler {
 
-    private static final char[] NEWLINE = new char[]{'\n'};
-    private static final char[] TABSPACE = new char[]{'\t'};
+    private static final char[] NEWLINE = new char[] {'\n'};
+    private static final char[] TABSPACE = new char[] {'\t'};
     private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
 
     private final Stack<String> treeStack;
@@ -65,10 +61,10 @@ public class DIFContentHandler extends DefaultHandler {
             this.delegate.characters(title.toCharArray(), 0, title.length());
             this.delegate.endElement("", "h3", "h3");
         }
-        if (this.treeStack.peek().equals("Southernmost_Latitude") ||
-                this.treeStack.peek().equals("Northernmost_Latitude") ||
-                this.treeStack.peek().equals("Westernmost_Longitude") ||
-                this.treeStack.peek().equals("Easternmost_Longitude")) {
+        if (this.treeStack.peek().equals("Southernmost_Latitude")
+                        || this.treeStack.peek().equals("Northernmost_Latitude")
+                        || this.treeStack.peek().equals("Westernmost_Longitude")
+                        || this.treeStack.peek().equals("Easternmost_Longitude")) {
             this.delegate.characters(NEWLINE, 0, NEWLINE.length);
             this.delegate.characters(TABSPACE, 0, TABSPACE.length);
             this.delegate.characters(TABSPACE, 0, TABSPACE.length);
@@ -91,7 +87,7 @@ public class DIFContentHandler extends DefaultHandler {
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+                    throws SAXException {
         this.isLeaf = true;
         if (localName.equals("Spatial_Coverage")) {
             this.delegate.characters(NEWLINE, 0, NEWLINE.length);

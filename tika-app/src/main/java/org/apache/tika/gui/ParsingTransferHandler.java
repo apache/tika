@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.gui;
 
@@ -47,7 +45,7 @@ class ParsingTransferHandler extends TransferHandler {
             uriListFlavor = new DataFlavor("text/uri-list;class=java.lang.String");
             urlListFlavor = new DataFlavor("text/plain;class=java.lang.String");
         } catch (ClassNotFoundException e) {
-            //swallow
+            // swallow
         }
     }
 
@@ -70,7 +68,7 @@ class ParsingTransferHandler extends TransferHandler {
             try {
                 list.add(new File(new URI(s)));
             } catch (Exception e) {
-                //swallow
+                // swallow
             }
         }
         return list;
@@ -78,7 +76,8 @@ class ParsingTransferHandler extends TransferHandler {
 
     public boolean canImport(JComponent component, DataFlavor[] flavors) {
         for (DataFlavor flavor : flavors) {
-            if (flavor.equals(DataFlavor.javaFileListFlavor) || flavor.equals(uriListFlavor) || flavor.equals(urlListFlavor)) {
+            if (flavor.equals(DataFlavor.javaFileListFlavor) || flavor.equals(uriListFlavor)
+                            || flavor.equals(urlListFlavor)) {
                 return true;
             }
         }
@@ -89,7 +88,8 @@ class ParsingTransferHandler extends TransferHandler {
     public boolean importData(JComponent component, Transferable transferable) {
         try {
             if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                importFiles((List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor));
+                importFiles((List<File>) transferable
+                                .getTransferData(DataFlavor.javaFileListFlavor));
             } else if (transferable.isDataFlavorSupported(urlListFlavor)) {
                 Object data = transferable.getTransferData(urlListFlavor);
                 tika.openURL(new URL(data.toString()));
@@ -112,7 +112,8 @@ class ParsingTransferHandler extends TransferHandler {
         delegate.exportAsDrag(arg0, arg1, arg2);
     }
 
-    public void exportToClipboard(JComponent arg0, Clipboard arg1, int arg2) throws IllegalStateException {
+    public void exportToClipboard(JComponent arg0, Clipboard arg1, int arg2)
+                    throws IllegalStateException {
         delegate.exportToClipboard(arg0, arg1, arg2);
     }
 

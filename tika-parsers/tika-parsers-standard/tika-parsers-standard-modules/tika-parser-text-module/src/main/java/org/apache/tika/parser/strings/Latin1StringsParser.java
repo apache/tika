@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.strings;
 
@@ -21,29 +19,24 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * Parser to extract printable Latin1 strings from arbitrary files with pure java
- * without running any external process. Useful for binary or unknown files, for
- * files without a specific parser and for corrupted ones causing a TikaException
- * as a fallback parser. To enable the parsing of unknown or files without a
- * specific parser with AutoDetectParser:
+ * Parser to extract printable Latin1 strings from arbitrary files with pure java without running
+ * any external process. Useful for binary or unknown files, for files without a specific parser and
+ * for corrupted ones causing a TikaException as a fallback parser. To enable the parsing of unknown
+ * or files without a specific parser with AutoDetectParser:
  * <p>
- * AutoDetectParser parser = new AutoDetectParser();
- * parser.setFallback(new Latin1StringsParser());
+ * AutoDetectParser parser = new AutoDetectParser(); parser.setFallback(new Latin1StringsParser());
  * </p>
- * Currently the parser does a best effort to extract Latin1 strings, used by
- * Western European languages, encoded with ISO-8859-1, UTF-8 or UTF-16 charsets
- * mixed within the same file.
+ * Currently the parser does a best effort to extract Latin1 strings, used by Western European
+ * languages, encoded with ISO-8859-1, UTF-8 or UTF-16 charsets mixed within the same file.
  * <p>
  * The implementation is optimized for fast parsing with only one pass.
  */
@@ -115,8 +108,8 @@ public class Latin1StringsParser implements Parser {
 
         boolean[] isChar = new boolean[256];
         for (int c = Byte.MIN_VALUE; c <= Byte.MAX_VALUE; c++)
-            if ((c >= 0x20 && c <= 0x7E) || (c >= (byte) 0xC0 && c <= (byte) 0xFE) || c == 0x0A ||
-                    c == 0x0D || c == 0x09) {
+            if ((c >= 0x20 && c <= 0x7E) || (c >= (byte) 0xC0 && c <= (byte) 0xFE) || c == 0x0A
+                            || c == 0x0D || c == 0x09) {
                 isChar[c & 0xFF] = true;
             }
         return isChar;
@@ -188,13 +181,12 @@ public class Latin1StringsParser implements Parser {
     }
 
     /**
-     * @see org.apache.tika.parser.Parser#parse(java.io.InputStream,
-     * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
-     * org.apache.tika.parser.ParseContext)
+     * @see org.apache.tika.parser.Parser#parse(java.io.InputStream, org.xml.sax.ContentHandler,
+     *      org.apache.tika.metadata.Metadata, org.apache.tika.parser.ParseContext)
      */
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException {
+                    ParseContext context) throws IOException, SAXException {
         /*
          * Creates a new instance because the object is not immutable.
          */
@@ -202,23 +194,22 @@ public class Latin1StringsParser implements Parser {
     }
 
     /**
-     * Does a best effort to extract Latin1 strings encoded with ISO-8859-1,
-     * UTF-8 or UTF-16. Valid chars are saved into the output buffer and the
-     * temporary buffer position is incremented. When an invalid char is read,
-     * the difference of the temporary and current buffer position is checked.
-     * If it is greater than the minimum string size, the current buffer
-     * position is updated to the temp position. If it is not, the temp position
-     * is reseted to the current position.
+     * Does a best effort to extract Latin1 strings encoded with ISO-8859-1, UTF-8 or UTF-16. Valid
+     * chars are saved into the output buffer and the temporary buffer position is incremented. When
+     * an invalid char is read, the difference of the temporary and current buffer position is
+     * checked. If it is greater than the minimum string size, the current buffer position is
+     * updated to the temp position. If it is not, the temp position is reseted to the current
+     * position.
      *
-     * @param stream   the input stream.
-     * @param handler  the output content handler
+     * @param stream the input stream.
+     * @param handler the output content handler
      * @param metadata the metadata of the file
-     * @param context  the parsing context
-     * @throws IOException  if an io error occurs
+     * @param context the parsing context
+     * @throws IOException if an io error occurs
      * @throws SAXException if a sax error occurs
      */
     private void doParse(InputStream stream, ContentHandler handler, Metadata metadata,
-                         ParseContext context) throws IOException, SAXException {
+                    ParseContext context) throws IOException, SAXException {
 
         tmpPos = 0;
         outPos = 0;
@@ -275,9 +266,9 @@ public class Latin1StringsParser implements Parser {
                     }
                 }
                 if (!utf8)
-                    /*
-                     * Test if the byte is a valid char.
-                     */ {
+                /*
+                 * Test if the byte is a valid char.
+                 */ {
                     if (isChar(c)) {
                         output[tmpPos++] = c;
                         if (tmpPos == BUF_SIZE) {
@@ -285,13 +276,12 @@ public class Latin1StringsParser implements Parser {
                         }
                     } else {
                         /*
-                         * Test if the byte is an invalid char, marking a string
-                         * end. If it is a zero, test 2 positions before or
-                         * ahead for a valid char, meaning it marks the
-                         * transition between ISO-8859-1 and UTF16 sequences.
+                         * Test if the byte is an invalid char, marking a string end. If it is a
+                         * zero, test 2 positions before or ahead for a valid char, meaning it marks
+                         * the transition between ISO-8859-1 and UTF16 sequences.
                          */
-                        if (c != 0 || (inPos >= 3 && isChar(input[inPos - 3])) ||
-                                (inPos + 1 < inSize && isChar(input[inPos + 1]))) {
+                        if (c != 0 || (inPos >= 3 && isChar(input[inPos - 3]))
+                                        || (inPos + 1 < inSize && isChar(input[inPos + 1]))) {
 
                             if (tmpPos - outPos >= minSize) {
                                 output[tmpPos++] = 0x0A;

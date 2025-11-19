@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.chunking;
@@ -22,10 +20,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.NotImplementedException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.LeafNodeObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.SignatureObject;
@@ -58,7 +54,7 @@ public class ZipFilesChunking extends AbstractChunking {
     public List<LeafNodeObject> chunking() throws TikaException, IOException {
         java.util.List<LeafNodeObject> list = new ArrayList<>();
         LeafNodeObject.IntermediateNodeObjectBuilder builder =
-                new LeafNodeObject.IntermediateNodeObjectBuilder();
+                        new LeafNodeObject.IntermediateNodeObjectBuilder();
 
         int index = 0;
         while (ZipHeader.isFileHeader(this.fileContent, index)) {
@@ -69,8 +65,10 @@ public class ZipFilesChunking extends AbstractChunking {
 
             if (headerLength + compressedSize <= 4096) {
                 list.add(builder.Build(
-                        Arrays.copyOfRange(this.fileContent, index, headerLength + compressedSize),
-                        this.getSingleChunkSignature(header, dataFileSignatureBytes.get())));
+                                Arrays.copyOfRange(this.fileContent, index,
+                                                headerLength + compressedSize),
+                                this.getSingleChunkSignature(header,
+                                                dataFileSignatureBytes.get())));
                 index += headerLength += compressedSize;
             } else {
                 list.add(builder.Build(header, this.getSHA1Signature(header)));
@@ -80,7 +78,7 @@ public class ZipFilesChunking extends AbstractChunking {
 
                 if (dataFile.length <= 1048576) {
                     list.add(builder.Build(dataFile,
-                            this.getDataFileSignature(dataFileSignatureBytes.get())));
+                                    this.getDataFileSignature(dataFileSignatureBytes.get())));
                 } else {
                     list.addAll(this.getSubChunkList(dataFile));
                 }
@@ -93,15 +91,16 @@ public class ZipFilesChunking extends AbstractChunking {
             return null;
         }
 
-        byte[] finalRes =
-                Arrays.copyOfRange(this.fileContent, index, this.fileContent.length - index);
+        byte[] finalRes = Arrays.copyOfRange(this.fileContent, index,
+                        this.fileContent.length - index);
 
         if (finalRes.length <= 1048576) {
             list.add(builder.Build(finalRes, this.getSHA1Signature(finalRes)));
         } else {
-            // In current, it has no idea about how to compute the signature for final part larger than 1MB.
+            // In current, it has no idea about how to compute the signature for final part larger
+            // than 1MB.
             throw new TikaException(
-                    "If the final chunk is larger than 1MB, the signature method is not implemented.");
+                            "If the final chunk is larger than 1MB, the signature method is not implemented.");
         }
 
         return list;
@@ -120,7 +119,7 @@ public class ZipFilesChunking extends AbstractChunking {
             int length = chunkData.length - index < 1048576 ? chunkData.length - index : 1048576;
             byte[] temp = Arrays.copyOfRange(chunkData, index, length);
             subChunkList.add(new LeafNodeObject.IntermediateNodeObjectBuilder().Build(temp,
-                    this.getSubChunkSignature()));
+                            this.getSubChunkSignature()));
             index += length;
         }
 
@@ -130,13 +129,13 @@ public class ZipFilesChunking extends AbstractChunking {
     /**
      * This method is used to analyze the zip file header.
      *
-     * @param content           Specify the zip content.
-     * @param index             Specify the start position.
+     * @param content Specify the zip content.
+     * @param index Specify the start position.
      * @param dataFileSignature Specify the output value for the data file signature.
      * @return Return the data file content.
      */
     private byte[] analyzeFileHeader(byte[] content, int index,
-                                     AtomicReference<byte[]> dataFileSignature) throws IOException {
+                    AtomicReference<byte[]> dataFileSignature) throws IOException {
         int crc32 = BitConverter.toInt32(content, index + 14);
         int compressedSize = BitConverter.toInt32(content, index + 18);
         int uncompressedSize = BitConverter.toInt32(content, index + 22);
@@ -168,7 +167,7 @@ public class ZipFilesChunking extends AbstractChunking {
     /**
      * Get the signature for single chunk.
      *
-     * @param header   The data of file header.
+     * @param header The data of file header.
      * @param dataFile The data of data file.
      * @return An instance of SignatureObject.
      */

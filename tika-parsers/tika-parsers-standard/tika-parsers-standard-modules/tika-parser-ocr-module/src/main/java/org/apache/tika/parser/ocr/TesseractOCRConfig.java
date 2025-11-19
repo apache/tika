@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.ocr;
 
@@ -26,26 +24,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.StringUtils;
-
 /**
- * Configuration for TesseractOCRParser.
- * This class is not thread safe and must be synchronized externally.
+ * Configuration for TesseractOCRParser. This class is not thread safe and must be synchronized
+ * externally.
  * <p>
- * This class will remember all set* field forever,
- * and on {@link #cloneAndUpdate(TesseractOCRConfig)},
- * it will update all the fields that have been set on the "update" config.
- * So, for example, if you want to change language to "fra"
- * from "eng" and then on another parse,
- * you want to change depth to 5 on the same update object,
- * but you expect the language to revert to "eng", you'll be wrong.
- * Create a new update config for each parse unless you're only changing the
- * same field(s) with every parse.
+ * This class will remember all set* field forever, and on
+ * {@link #cloneAndUpdate(TesseractOCRConfig)}, it will update all the fields that have been set on
+ * the "update" config. So, for example, if you want to change language to "fra" from "eng" and then
+ * on another parse, you want to change depth to 5 on the same update object, but you expect the
+ * language to revert to "eng", you'll be wrong. Create a new update config for each parse unless
+ * you're only changing the same field(s) with every parse.
  */
 public class TesseractOCRConfig implements Serializable {
 
@@ -54,10 +47,10 @@ public class TesseractOCRConfig implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRConfig.class);
 
     private static Pattern ALLOWABLE_PAGE_SEPARATORS_PATTERN =
-            Pattern.compile("(?i)^[-_/\\.A-Z0-9]+$");
+                    Pattern.compile("(?i)^[-_/\\.A-Z0-9]+$");
 
     private static Pattern ALLOWABLE_OTHER_PARAMS_PATTERN =
-            Pattern.compile("(?i)^[-_/\\.A-Z0-9]+$");
+                    Pattern.compile("(?i)^[-_/\\.A-Z0-9]+$");
 
     // whether or not to apply rotation calculated by the rotation.py script
     private boolean applyRotation = false;
@@ -99,8 +92,8 @@ public class TesseractOCRConfig implements Serializable {
     private boolean inlineContent = false;
 
     /**
-     * This takes a language string, parses it and then bins individual langs into
-     * valid or invalid based on regexes against the language codes
+     * This takes a language string, parses it and then bins individual langs into valid or invalid
+     * based on regexes against the language codes
      *
      * @param language
      * @param validLangs
@@ -115,14 +108,13 @@ public class TesseractOCRConfig implements Serializable {
         // Test for leading or trailing +
         if (language.matches("\\+.*|.*\\+")) {
             throw new IllegalArgumentException(
-                    "Invalid syntax - Can't start or end with +" + language);
+                            "Invalid syntax - Can't start or end with +" + language);
         }
         // Split on the + sign
         final String[] langs = language.split("\\+");
         for (String lang : langs) {
             // First, make sure it conforms to the correct syntax
-            if (!lang.matches(
-                    "([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
+            if (!lang.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
                 invalidLangs.add(lang + " (invalid syntax)");
             } else {
                 validLangs.add(lang);
@@ -138,17 +130,16 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * Set tesseract language dictionary to be used. Default is "eng".
-     * languages are either:
+     * Set tesseract language dictionary to be used. Default is "eng". languages are either:
      * <ol>
-     *   <li>Nominally an ISO-639-2 code but compound codes are allowed separated by underscore:
-     *   e.g., chi_tra_vert, aze_cyrl</li>
-     *   <li>A file path in the script directory.  The name starts with upper-case letter.
-     *       Some of them have underscores and other upper-case letters: e.g., script/Arabic,
-     *       script/HanS_vert, script/Japanese_vert, script/Canadian_Aboriginal</li>
+     * <li>Nominally an ISO-639-2 code but compound codes are allowed separated by underscore: e.g.,
+     * chi_tra_vert, aze_cyrl</li>
+     * <li>A file path in the script directory. The name starts with upper-case letter. Some of them
+     * have underscores and other upper-case letters: e.g., script/Arabic, script/HanS_vert,
+     * script/Japanese_vert, script/Canadian_Aboriginal</li>
      * </ol>
-     * Multiple languages may be specified, separated by plus characters.
-     * e.g. "chi_tra+chi_sim+script/Arabic"
+     * Multiple languages may be specified, separated by plus characters. e.g.
+     * "chi_tra+chi_sim+script/Arabic"
      */
     public void setLanguage(String languageString) {
         Set<String> invalidCodes = new HashSet<>();
@@ -169,8 +160,8 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * Set tesseract page segmentation mode.
-     * Default is 1 = Automatic page segmentation with OSD (Orientation and Script Detection)
+     * Set tesseract page segmentation mode. Default is 1 = Automatic page segmentation with OSD
+     * (Orientation and Script Detection)
      */
     public void setPageSegMode(String pageSegMode) {
         if (!pageSegMode.matches("[0-9]|10|11|12|13")) {
@@ -188,13 +179,10 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * The page separator to use in plain text output.  This corresponds to Tesseract's
-     * page_separator config option.
-     * The default here is the empty string (i.e. no page separators).  Note that this is also
-     * the default in
-     * Tesseract 3.x, but in Tesseract 4.0 the default is to use the form feed control character.
-     * We are overriding
-     * Tesseract 4.0's default here.
+     * The page separator to use in plain text output. This corresponds to Tesseract's
+     * page_separator config option. The default here is the empty string (i.e. no page separators).
+     * Note that this is also the default in Tesseract 3.x, but in Tesseract 4.0 the default is to
+     * use the form feed control character. We are overriding Tesseract 4.0's default here.
      *
      * @param pageSeparator
      */
@@ -204,16 +192,15 @@ public class TesseractOCRConfig implements Serializable {
         }
         Matcher m = ALLOWABLE_PAGE_SEPARATORS_PATTERN.matcher(pageSeparator);
         if (!m.find()) {
-            throw new IllegalArgumentException(pageSeparator + " contains illegal characters.\n" +
-                    "If you trust this value, set it with setTrustedPageSeparator");
+            throw new IllegalArgumentException(pageSeparator + " contains illegal characters.\n"
+                            + "If you trust this value, set it with setTrustedPageSeparator");
         }
         setTrustedPageSeparator(pageSeparator);
         userConfigured.add("pageSeparator");
     }
 
     /**
-     * Same as {@link #setPageSeparator(String)} but does not perform
-     * any checks on the string.
+     * Same as {@link #setPageSeparator(String)} but does not perform any checks on the string.
      *
      * @param pageSeparator
      */
@@ -229,7 +216,7 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * Whether or not to maintain interword spacing.  Default is <code>false</code>.
+     * Whether or not to maintain interword spacing. Default is <code>false</code>.
      *
      * @param preserveInterwordSpacing
      */
@@ -246,8 +233,7 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * Set minimum file size to submit file to ocr.
-     * Default is 0.
+     * Set minimum file size to submit file to ocr. Default is 0.
      */
     public void setMinFileSizeToOcr(long minFileSizeToOcr) {
         this.minFileSizeToOcr = minFileSizeToOcr;
@@ -262,8 +248,7 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * Set maximum file size to submit file to ocr.
-     * Default is Integer.MAX_VALUE.
+     * Set maximum file size to submit file to ocr. Default is Integer.MAX_VALUE.
      */
     public void setMaxFileSizeToOcr(long maxFileSizeToOcr) {
         this.maxFileSizeToOcr = maxFileSizeToOcr;
@@ -279,8 +264,8 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * Set maximum time (seconds) to wait for the ocring process to terminate.
-     * Default value is 120s.
+     * Set maximum time (seconds) to wait for the ocring process to terminate. Default value is
+     * 120s.
      */
     public void setTimeoutSeconds(int timeoutSeconds) {
         this.timeoutSeconds = timeoutSeconds;
@@ -295,8 +280,8 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * Set output type from ocr process.  Default is "txt", but can be "hocr".
-     * Default value is {@link OUTPUT_TYPE#TXT}.
+     * Set output type from ocr process. Default is "txt", but can be "hocr". Default value is
+     * {@link OUTPUT_TYPE#TXT}.
      */
     public void setOutputType(OUTPUT_TYPE outputType) {
         this.outputType = outputType;
@@ -326,8 +311,7 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * Set the value to true if processing is to be enabled.
-     * Default value is false.
+     * Set the value to true if processing is to be enabled. Default value is false.
      */
     public void setEnableImagePreprocessing(boolean enableImagePreprocessing) {
         this.enableImagePreprocessing = enableImagePreprocessing;
@@ -342,13 +326,12 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * @param density the density to set. Valid range of values is 150-1200.
-     *                Default value is 300.
+     * @param density the density to set. Valid range of values is 150-1200. Default value is 300.
      */
     public void setDensity(int density) {
         if (density < 150 || density > 1200) {
             throw new IllegalArgumentException(
-                    "Invalid density value. Valid range of values is 150-1200.");
+                            "Invalid density value. Valid range of values is 150-1200.");
         }
         this.density = density;
         userConfigured.add("density");
@@ -362,8 +345,8 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * @param depth the depth to set. Valid values are 2, 4, 8, 16, 32, 64, 256, 4096.
-     *              Default value is 4.
+     * @param depth the depth to set. Valid values are 2, 4, 8, 16, 32, 64, 256, 4096. Default value
+     *        is 4.
      */
     public void setDepth(int depth) {
         int[] allowedValues = {2, 4, 8, 16, 32, 64, 256, 4096};
@@ -375,7 +358,7 @@ public class TesseractOCRConfig implements Serializable {
             }
         }
         throw new IllegalArgumentException(
-                "Invalid depth value. Valid values are 2, 4, 8, 16, 32, 64, 256, 4096.");
+                        "Invalid depth value. Valid values are 2, 4, 8, 16, 32, 64, 256, 4096.");
     }
 
     /**
@@ -386,8 +369,7 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * @param colorspace the colorspace to set
-     *                   Deafult value is gray.
+     * @param colorspace the colorspace to set Deafult value is gray.
      */
     public void setColorspace(String colorspace) {
         if (colorspace == null) {
@@ -395,7 +377,7 @@ public class TesseractOCRConfig implements Serializable {
         }
         if (!colorspace.matches("(?i)^[-_A-Z0-9]+$")) {
             throw new IllegalArgumentException(
-                    "colorspace must match this pattern: (?i)^[-_A-Z0-9]+$");
+                            "colorspace must match this pattern: (?i)^[-_A-Z0-9]+$");
         }
         this.colorspace = colorspace;
         userConfigured.add("colorspace");
@@ -410,19 +392,17 @@ public class TesseractOCRConfig implements Serializable {
 
     /**
      * @param filter the filter to set. Valid values are point, hermite, cubic, box, gaussian,
-     *               catrom, triangle, quadratic and mitchell.
-     *               Default value is triangle.
+     *        catrom, triangle, quadratic and mitchell. Default value is triangle.
      */
     public void setFilter(String filter) {
         if (filter.equals(null)) {
             throw new IllegalArgumentException(
-                    "Filter value cannot be null. Valid values are point, hermite, " +
-                            "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
+                            "Filter value cannot be null. Valid values are point, hermite, "
+                                            + "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
         }
 
-        String[] allowedFilters =
-                {"Point", "Hermite", "Cubic", "Box", "Gaussian", "Catrom", "Triangle", "Quadratic",
-                        "Mitchell"};
+        String[] allowedFilters = {"Point", "Hermite", "Cubic", "Box", "Gaussian", "Catrom",
+                        "Triangle", "Quadratic", "Mitchell"};
         for (String allowedFilter : allowedFilters) {
             if (filter.equalsIgnoreCase(allowedFilter)) {
                 this.filter = filter;
@@ -430,9 +410,8 @@ public class TesseractOCRConfig implements Serializable {
                 return;
             }
         }
-        throw new IllegalArgumentException(
-                "Invalid filter value. Valid values are point, hermite, " +
-                        "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
+        throw new IllegalArgumentException("Invalid filter value. Valid values are point, hermite, "
+                        + "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
     }
 
     public boolean isSkipOcr() {
@@ -440,8 +419,7 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * If you want to turn off OCR at run time for a specific file,
-     * set this to <code>true</code>
+     * If you want to turn off OCR at run time for a specific file, set this to <code>true</code>
      *
      * @param skipOcr
      */
@@ -458,8 +436,7 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * @param resize the resize to set. Valid range of values is 100-900.
-     *               Default value is 900.
+     * @param resize the resize to set. Valid range of values is 100-900. Default value is 900.
      */
     public void setResize(int resize) {
         for (int i = 1; i < 10; i++) {
@@ -470,12 +447,12 @@ public class TesseractOCRConfig implements Serializable {
             }
         }
         throw new IllegalArgumentException(
-                "Invalid resize value. Valid range of values is 100-900.");
+                        "Invalid resize value. Valid range of values is 100-900.");
     }
 
     /**
-     * @return Whether or not a rotation value should be calculated and passed to ImageMagick
-     * before performing OCR.
+     * @return Whether or not a rotation value should be calculated and passed to ImageMagick before
+     *         performing OCR.
      */
     public boolean isApplyRotation() {
         return this.applyRotation;
@@ -493,7 +470,7 @@ public class TesseractOCRConfig implements Serializable {
     /**
      * Sets whether or not a rotation value should be calculated and passed to ImageMagick.
      *
-     * @param applyRotation to calculate and apply rotation, false to skip.  Default is false
+     * @param applyRotation to calculate and apply rotation, false to skip. Default is false
      */
     public void setApplyRotation(boolean applyRotation) {
         this.applyRotation = applyRotation;
@@ -508,12 +485,11 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * Add a key-value pair to pass to Tesseract using its -c command line option.
-     * To see the possible options, run tesseract --print-parameters.
+     * Add a key-value pair to pass to Tesseract using its -c command line option. To see the
+     * possible options, run tesseract --print-parameters.
      * <p>
-     * You may also add these parameters in TesseractOCRConfig.properties; any
-     * key-value pair in the properties file where the key contains an underscore
-     * is passed directly to Tesseract.
+     * You may also add these parameters in TesseractOCRConfig.properties; any key-value pair in the
+     * properties file where the key contains an underscore is passed directly to Tesseract.
      *
      * @param key
      * @param value
@@ -549,9 +525,9 @@ public class TesseractOCRConfig implements Serializable {
             if ("userConfigured".equals(field.getName())) {
                 continue;
             }
-            if ("otherTesseractConfig".equals(field.getName()) &&
-                    updates.userConfigured.contains(field.getName())) {
-                //deep copy
+            if ("otherTesseractConfig".equals(field.getName())
+                            && updates.userConfigured.contains(field.getName())) {
+                // deep copy
                 for (Map.Entry<String, String> e : updates.getOtherTesseractConfig().entrySet()) {
                     updated.addOtherTesseractConfig(e.getKey(), e.getValue());
                 }

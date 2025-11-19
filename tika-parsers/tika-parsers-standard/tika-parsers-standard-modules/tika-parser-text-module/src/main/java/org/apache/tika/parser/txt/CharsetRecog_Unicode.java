@@ -2,8 +2,8 @@
 // License & terms of use: http://www.unicode.org/copyright.html#License
 /*
  *******************************************************************************
- * Copyright (C) 1996-2013, International Business Machines Corporation and    *
- * others. All Rights Reserved.                                                *
+ * Copyright (C) 1996-2013, International Business Machines Corporation and * others. All Rights
+ * Reserved. *
  *******************************************************************************
  *
  */
@@ -11,8 +11,8 @@
 package org.apache.tika.parser.txt;
 
 /**
- * This class matches UTF-16 and UTF-32, both big- and little-endian. The
- * BOM will be used if it is present.
+ * This class matches UTF-16 and UTF-32, both big- and little-endian. The BOM will be used if it is
+ * present.
  */
 abstract class CharsetRecog_Unicode extends CharsetRecognizer {
 
@@ -21,10 +21,10 @@ abstract class CharsetRecog_Unicode extends CharsetRecognizer {
     }
 
     // UTF-16 confidence calculation. Very simple minded, but better than nothing.
-    //   Any 8 bit non-control characters bump the confidence up. These have a zero high byte,
-    //     and are very likely to be UTF-16, although they could also be part of a UTF-32 code.
-    //   NULs are a contra-indication, they will appear commonly if the actual encoding is UTF-32.
-    //   NULs should be rare in actual text.
+    // Any 8 bit non-control characters bump the confidence up. These have a zero high byte,
+    // and are very likely to be UTF-16, although they could also be part of a UTF-32 code.
+    // NULs are a contra-indication, they will appear commonly if the actual encoding is UTF-32.
+    // NULs should be rare in actual text.
     static int adjustConfidence(int codeUnit, int confidence) {
         if (codeUnit == 0) {
             confidence -= 10;
@@ -39,12 +39,16 @@ abstract class CharsetRecog_Unicode extends CharsetRecognizer {
         return confidence;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see com.ibm.icu.text.CharsetRecognizer#getName()
      */
     abstract String getName();
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see com.ibm.icu.text.CharsetRecognizer#match(com.ibm.icu.text.CharsetDetector)
      */
     abstract CharsetMatch match(CharsetDetector det);
@@ -143,7 +147,7 @@ abstract class CharsetRecog_Unicode extends CharsetRecognizer {
 
 
             // Cook up some sort of confidence score, based on presence of a BOM
-            //    and the existence of valid and/or invalid multi-byte sequences.
+            // and the existence of valid and/or invalid multi-byte sequences.
             if (hasBOM && numInvalid == 0) {
                 confidence = 100;
             } else if (hasBOM && numValid > numInvalid * 10) {
@@ -153,7 +157,7 @@ abstract class CharsetRecog_Unicode extends CharsetRecognizer {
             } else if (numValid > 0 && numInvalid == 0) {
                 confidence = 80;
             } else if (numValid > numInvalid * 10) {
-                // Probably corrupt UTF-32BE data.  Valid sequences aren't likely by chance.
+                // Probably corrupt UTF-32BE data. Valid sequences aren't likely by chance.
                 confidence = 25;
             }
 
@@ -163,8 +167,8 @@ abstract class CharsetRecog_Unicode extends CharsetRecognizer {
 
     static class CharsetRecog_UTF_32_BE extends CharsetRecog_UTF_32 {
         int getChar(byte[] input, int index) {
-            return (input[index + 0] & 0xFF) << 24 | (input[index + 1] & 0xFF) << 16 |
-                    (input[index + 2] & 0xFF) << 8 | (input[index + 3] & 0xFF);
+            return (input[index + 0] & 0xFF) << 24 | (input[index + 1] & 0xFF) << 16
+                            | (input[index + 2] & 0xFF) << 8 | (input[index + 3] & 0xFF);
         }
 
         String getName() {
@@ -175,8 +179,8 @@ abstract class CharsetRecog_Unicode extends CharsetRecognizer {
 
     static class CharsetRecog_UTF_32_LE extends CharsetRecog_UTF_32 {
         int getChar(byte[] input, int index) {
-            return (input[index + 3] & 0xFF) << 24 | (input[index + 2] & 0xFF) << 16 |
-                    (input[index + 1] & 0xFF) << 8 | (input[index + 0] & 0xFF);
+            return (input[index + 3] & 0xFF) << 24 | (input[index + 2] & 0xFF) << 16
+                            | (input[index + 1] & 0xFF) << 8 | (input[index + 0] & 0xFF);
         }
 
         String getName() {

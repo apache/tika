@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.dbf;
 
@@ -27,10 +25,8 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-
 import org.apache.tika.io.EndianUtils;
 
 class DBFCell {
@@ -43,7 +39,7 @@ class DBFCell {
     DBFCell(DBFColumnHeader.ColType colType, int fieldLength, int decimalCount) {
         this.colType = colType;
         this.decimalCount = decimalCount;
-        //field length is limit-checked in DBFFileHeader
+        // field length is limit-checked in DBFFileHeader
         this.bytes = new byte[fieldLength];
     }
 
@@ -60,17 +56,17 @@ class DBFCell {
             case T:
                 return getFormattedDateTime();
             default:
-                //TODO: find examples of other cell types for testing
+                // TODO: find examples of other cell types for testing
                 return new String(getBytes(), StandardCharsets.US_ASCII).trim();
         }
     }
 
-    //returns whether any content was read
+    // returns whether any content was read
     boolean read(InputStream is) throws IOException {
         bytesReadLast = IOUtils.read(is, bytes);
         if (DBFReader.STRICT && bytesReadLast != bytes.length) {
-            throw new IOException("Truncated record, only read " + bytesReadLast +
-                    " bytes, but should have read: " + bytes.length);
+            throw new IOException("Truncated record, only read " + bytesReadLast
+                            + " bytes, but should have read: " + bytes.length);
         }
         return bytesReadLast > 0;
     }
@@ -79,7 +75,7 @@ class DBFCell {
      * @return copy of bytes that were read on the last read
      */
     byte[] getBytes() {
-        //bytesReadLast is effectively limit checked by DBFFileHeader
+        // bytesReadLast is effectively limit checked by DBFFileHeader
         byte[] ret = new byte[bytesReadLast];
         System.arraycopy(bytes, 0, ret, 0, bytesReadLast);
         return ret;
@@ -91,8 +87,8 @@ class DBFCell {
 
     @Override
     public String toString() {
-        return "DBFCell{" + "colType=" + colType + ", bytes=" + Arrays.toString(bytes) +
-                ", decimalCount=" + decimalCount + '}';
+        return "DBFCell{" + "colType=" + colType + ", bytes=" + Arrays.toString(bytes)
+                        + ", decimalCount=" + decimalCount + '}';
     }
 
     DBFCell deepCopy() {
@@ -110,8 +106,8 @@ class DBFCell {
         String year = new String(dateBytes, 0, 4, StandardCharsets.US_ASCII);
         String month = new String(dateBytes, 4, 2, StandardCharsets.US_ASCII);
         String day = new String(dateBytes, 6, 2, StandardCharsets.US_ASCII);
-        //test to see that these values make any sense
-        for (String s : new String[]{year, month, day}) {
+        // test to see that these values make any sense
+        for (String s : new String[] {year, month, day}) {
             try {
                 Integer.parseInt(s);
             } catch (NumberFormatException e) {
@@ -122,22 +118,23 @@ class DBFCell {
     }
 
     public String getFormattedDateTime() {
-        //sometimes 12/31/1899 instead of 01/01/4713 BC.
-        //http://stackoverflow.com/questions/20026154/convert-dbase-timestamp
-        //TODO: add heuristic for deciding;
-        //TODO: find example of file with time != 0
+        // sometimes 12/31/1899 instead of 01/01/4713 BC.
+        // http://stackoverflow.com/questions/20026154/convert-dbase-timestamp
+        // TODO: add heuristic for deciding;
+        // TODO: find example of file with time != 0
         Calendar baseCalendar =
-                GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
-//        baseCalendar.set(1899, 11, 31, 0, 0, 0);
+                        GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
+        // baseCalendar.set(1899, 11, 31, 0, 0, 0);
         baseCalendar.set(-4712, 0, 1, 0, 0, 0);
-        try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(getBytes()).get()) {
+        try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(getBytes())
+                        .get()) {
             int date = EndianUtils.readIntLE(is);
             int time = EndianUtils.readIntLE(is);
             baseCalendar.add(Calendar.DATE, date);
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
             return df.format(baseCalendar.getTime());
         } catch (IOException | EndianUtils.BufferUnderrunException e) {
-            //swallow
+            // swallow
         }
         return "";
     }

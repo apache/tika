@@ -1,24 +1,21 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.chm;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 
@@ -37,7 +34,7 @@ public class ChmSection {
         ChmCommons.assertByteArrayNotNull(data);
         this.data = data;
         this.prevcontent = prevconent;
-        //setData(data);
+        // setData(data);
     }
 
     /**
@@ -133,18 +130,12 @@ public class ChmSection {
     }
 
     /*
-    public BigInteger unmarshalUlong() {
-        return getBigInteger(8);
-    }
-
-    public long unmarshalUInt() {
-        return getBigInteger(4).longValue();
-    }
-
-    public int unmarshalInt() {
-        return getBigInteger(4).intValue();
-    }
-*/
+     * public BigInteger unmarshalUlong() { return getBigInteger(8); }
+     * 
+     * public long unmarshalUInt() { return getBigInteger(4).longValue(); }
+     * 
+     * public int unmarshalInt() { return getBigInteger(4).intValue(); }
+     */
     public byte[] unmarshalBytes(int i) throws TikaException {
         if (i > 8) {
             throw new TikaMemoryLimitException("Must be <= 8");
@@ -172,9 +163,9 @@ public class ChmSection {
         return bi;
     }
 
-//    private void setData(byte[] data) {
-//        this.data = data;
-//    }
+    // private void setData(byte[] data) {
+    // this.data = data;
+    // }
 
     public char unmarshalUtfChar() {
         byte ob;
@@ -183,7 +174,8 @@ public class ChmSection {
         ob = this.getByte();
         if (ob < 0) {
             i = 2;
-            while ((ob << (24 + i)) < 0) i++;
+            while ((ob << (24 + i)) < 0)
+                i++;
         }
         ba = new byte[i];
         ba[0] = ob;
@@ -199,7 +191,8 @@ public class ChmSection {
             int n;
             n = ba[0] & 15; // 00001111b, gets last 4 bits
             j = 1;
-            while (j < i) n = (n << 6) + (ba[j++] & 63);// 00111111b,gets last 6 bits
+            while (j < i)
+                n = (n << 6) + (ba[j++] & 63);// 00111111b,gets last 6 bits
             return (char) n;
         }
     }

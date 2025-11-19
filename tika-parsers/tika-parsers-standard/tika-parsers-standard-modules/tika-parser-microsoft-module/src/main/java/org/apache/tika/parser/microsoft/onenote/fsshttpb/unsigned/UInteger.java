@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  *
  * Copyright (c) Data Geekery GmbH (http://www.datageekery.com)
  */
@@ -32,13 +30,11 @@ import java.math.BigInteger;
 public final class UInteger extends UNumber implements Comparable<UInteger> {
 
     /**
-     * A constant holding the minimum value an <code>unsigned int</code> can
-     * have, 0.
+     * A constant holding the minimum value an <code>unsigned int</code> can have, 0.
      */
     public static final long MIN_VALUE = 0x00000000;
     /**
-     * A constant holding the maximum value an <code>unsigned int</code> can
-     * have, 2<sup>32</sup>-1.
+     * A constant holding the maximum value an <code>unsigned int</code> can have, 2<sup>32</sup>-1.
      */
     public static final long MAX_VALUE = 0xffffffffL;
     private static final Class<UInteger> CLASS = UInteger.class;
@@ -56,13 +52,12 @@ public final class UInteger extends UNumber implements Comparable<UInteger> {
      */
     private static final UInteger[] VALUES = mkValues();
     /**
-     * A constant holding the minimum value an <code>unsigned int</code> can
-     * have as UInteger, 0.
+     * A constant holding the minimum value an <code>unsigned int</code> can have as UInteger, 0.
      */
     public static final UInteger MIN = valueOf(MIN_VALUE);
     /**
-     * A constant holding the maximum value an <code>unsigned int</code> can
-     * have as UInteger, 2<sup>32</sup>-1.
+     * A constant holding the maximum value an <code>unsigned int</code> can have as UInteger,
+     * 2<sup>32</sup>-1.
      */
     public static final UInteger MAX = valueOf(MAX_VALUE);
     /**
@@ -76,12 +71,12 @@ public final class UInteger extends UNumber implements Comparable<UInteger> {
 
     /**
      * Unchecked internal constructor. This serves two purposes: first it allows
-     * {@link #UInteger(long)} to stay deprecated without warnings and second
-     * constructor without unnecessary value checks.
+     * {@link #UInteger(long)} to stay deprecated without warnings and second constructor without
+     * unnecessary value checks.
      *
-     * @param value  The value to wrap
-     * @param unused Unused parameter to distinguish between this and the
-     *               deprecated public constructor.
+     * @param value The value to wrap
+     * @param unused Unused parameter to distinguish between this and the deprecated public
+     *        constructor.
      */
     private UInteger(long value, boolean unused) {
         this.value = value;
@@ -90,17 +85,16 @@ public final class UInteger extends UNumber implements Comparable<UInteger> {
     /**
      * Create an <code>unsigned int</code>
      *
-     * @throws NumberFormatException If <code>value</code> is not in the range
-     *                               of an <code>unsigned int</code>
+     * @throws NumberFormatException If <code>value</code> is not in the range of an
+     *         <code>unsigned int</code>
      */
     private UInteger(long value) throws NumberFormatException {
         this.value = rangeCheck(value);
     }
 
     /**
-     * Create an <code>unsigned int</code> by masking it with
-     * <code>0xFFFFFFFF</code> i.e. <code>(int) -1</code> becomes
-     * <code>(uint) 4294967295</code>
+     * Create an <code>unsigned int</code> by masking it with <code>0xFFFFFFFF</code> i.e.
+     * <code>(int) -1</code> becomes <code>(uint) 4294967295</code>
      */
     private UInteger(int value) {
         this.value = value & MAX_VALUE;
@@ -109,8 +103,8 @@ public final class UInteger extends UNumber implements Comparable<UInteger> {
     /**
      * Create an <code>unsigned int</code>
      *
-     * @throws NumberFormatException If <code>value</code> does not contain a
-     *                               parsable <code>unsigned int</code>.
+     * @throws NumberFormatException If <code>value</code> does not contain a parsable
+     *         <code>unsigned int</code>.
      */
     private UInteger(String value) throws NumberFormatException {
         this.value = rangeCheck(Long.parseLong(value));
@@ -119,12 +113,11 @@ public final class UInteger extends UNumber implements Comparable<UInteger> {
     /**
      * Figure out the size of the precache.
      *
-     * @return The parsed value of the system property
-     * {@link #PRECACHE_PROPERTY} or {@link #DEFAULT_PRECACHE_SIZE} if
-     * the property is not set, not a number or retrieving results in a
-     * {@link SecurityException}. If the parsed value is zero or
-     * negative no cache will be created. If the value is larger than
-     * {@link Integer#MAX_VALUE} then Integer#MAX_VALUE will be used.
+     * @return The parsed value of the system property {@link #PRECACHE_PROPERTY} or
+     *         {@link #DEFAULT_PRECACHE_SIZE} if the property is not set, not a number or retrieving
+     *         results in a {@link SecurityException}. If the parsed value is zero or negative no
+     *         cache will be created. If the value is larger than {@link Integer#MAX_VALUE} then
+     *         Integer#MAX_VALUE will be used.
      */
     private static final int getPrecacheSize() {
         String prop = null;
@@ -219,17 +212,16 @@ public final class UInteger extends UNumber implements Comparable<UInteger> {
     /**
      * Create an <code>unsigned int</code>
      *
-     * @throws NumberFormatException If <code>value</code> does not contain a
-     *                               parsable <code>unsigned int</code>.
+     * @throws NumberFormatException If <code>value</code> does not contain a parsable
+     *         <code>unsigned int</code>.
      */
     public static UInteger valueOf(String value) throws NumberFormatException {
         return valueOfUnchecked(rangeCheck(Long.parseLong(value)));
     }
 
     /**
-     * Create an <code>unsigned int</code> by masking it with
-     * <code>0xFFFFFFFF</code> i.e. <code>(int) -1</code> becomes
-     * <code>(uint) 4294967295</code>
+     * Create an <code>unsigned int</code> by masking it with <code>0xFFFFFFFF</code> i.e.
+     * <code>(int) -1</code> becomes <code>(uint) 4294967295</code>
      */
     public static UInteger valueOf(int value) {
         return valueOfUnchecked(value & MAX_VALUE);
@@ -238,8 +230,8 @@ public final class UInteger extends UNumber implements Comparable<UInteger> {
     /**
      * Create an <code>unsigned int</code>
      *
-     * @throws NumberFormatException If <code>value</code> is not in the range
-     *                               of an <code>unsigned byte</code>
+     * @throws NumberFormatException If <code>value</code> is not in the range of an
+     *         <code>unsigned byte</code>
      */
     public static UInteger valueOf(long value) throws NumberFormatException {
         return valueOfUnchecked(rangeCheck(value));
@@ -263,8 +255,7 @@ public final class UInteger extends UNumber implements Comparable<UInteger> {
     /**
      * Replace version read through deserialization with cached version.
      *
-     * @return cached instance of this object's value if one exists, otherwise
-     * this object
+     * @return cached instance of this object's value if one exists, otherwise this object
      * @throws ObjectStreamException
      */
     private Object readResolve() throws ObjectStreamException {

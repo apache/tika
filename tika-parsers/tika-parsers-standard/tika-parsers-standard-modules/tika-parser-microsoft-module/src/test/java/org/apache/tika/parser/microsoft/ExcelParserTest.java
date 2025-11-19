@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft;
 
@@ -25,11 +23,7 @@ import java.io.InputStream;
 import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Locale;
-
 import org.apache.poi.util.LocaleUtil;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
@@ -46,6 +40,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class ExcelParserTest extends TikaTest {
     @Test
@@ -159,11 +155,11 @@ public class ExcelParserTest extends TikaTest {
             // team - See TIKA-103.
 
             /*************************************************************************
-             // Custom Number (0 "dollars and" .00 "cents")
-             assertContains("19 dollars and .99 cents", content);
-
-             // Custom Number ("At" h:mm AM/PM "on" dddd mmmm d"," yyyy)
-             assertContains("At 4:20 AM on Thursday May 17, 2007", content);
+             * // Custom Number (0 "dollars and" .00 "cents") assertContains("19 dollars and .99
+             * cents", content);
+             * 
+             * // Custom Number ("At" h:mm AM/PM "on" dddd mmmm d"," yyyy) assertContains("At 4:20
+             * AM on Thursday May 17, 2007", content);
              **************************************************************************/
 
         }
@@ -171,8 +167,8 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testExcelParserPassword() throws Exception {
-        try (InputStream input = getResourceAsStream(
-                "/test-documents/testEXCEL_protected_passtika.xls")) {
+        try (InputStream input =
+                        getResourceAsStream("/test-documents/testEXCEL_protected_passtika.xls")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -184,8 +180,8 @@ public class ExcelParserTest extends TikaTest {
         }
 
         // Try again, this time with the password
-        try (InputStream input = getResourceAsStream(
-                "/test-documents/testEXCEL_protected_passtika.xls")) {
+        try (InputStream input =
+                        getResourceAsStream("/test-documents/testEXCEL_protected_passtika.xls")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -262,8 +258,8 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testWorksSpreadsheet70() throws Exception {
-        try (InputStream input = getResourceAsStream(
-                "/test-documents/testWORKSSpreadsheet7.0.xlr")) {
+        try (InputStream input =
+                        getResourceAsStream("/test-documents/testWORKSSpreadsheet7.0.xlr")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
@@ -303,11 +299,11 @@ public class ExcelParserTest extends TikaTest {
 
         // OfficeParser can handle it
         assertEquals(true,
-                (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
+                        (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
 
         // OOXMLParser won't handle it
         assertEquals(false,
-                (new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
+                        (new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
 
 
         // Parse the Excel 5 file
@@ -365,8 +361,8 @@ public class ExcelParserTest extends TikaTest {
     public void testCustomProperties() throws Exception {
         Metadata metadata = new Metadata();
 
-        try (InputStream input = getResourceAsStream(
-                "/test-documents/testEXCEL_custom_props.xls")) {
+        try (InputStream input =
+                        getResourceAsStream("/test-documents/testEXCEL_custom_props.xls")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
@@ -388,8 +384,8 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testHeaderAndFooterExtraction() throws Exception {
-        try (InputStream input = getResourceAsStream(
-                "/test-documents/testEXCEL_headers_footers.xls")) {
+        try (InputStream input =
+                        getResourceAsStream("/test-documents/testEXCEL_headers_footers.xls")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -435,7 +431,7 @@ public class ExcelParserTest extends TikaTest {
         assertNotContained("Footer - For Internal Use Only", content);
         assertNotContained("Footer - Author: John Smith", content);
 
-        //now test configuration via tika-config
+        // now test configuration via tika-config
         Parser configuredParser = null;
         try (InputStream is = getResourceAsStream("tika-config-headers-footers.xml")) {
             configuredParser = new AutoDetectParser(new TikaConfig(is));
@@ -456,42 +452,42 @@ public class ExcelParserTest extends TikaTest {
     @Test
     public void testHyperlinksInXLS() throws Exception {
         String xml = getXML("testEXCEL_hyperlinks.xls").xml;
-        //external url
+        // external url
         assertContains("<a href=\"http://tika.apache.org/\">", xml);
-        //mail url
+        // mail url
         assertContains("<a href=\"mailto:user@tika.apache.org?subject=help\">", xml);
-        //external linked file
+        // external linked file
         assertContains("<a href=\"linked_file.txt.htm\">", xml);
 
-        //TODO: not extracting these yet
-        //link on textbox
-//        assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
+        // TODO: not extracting these yet
+        // link on textbox
+        // assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
     }
 
 
     @Test
     public void testBigIntegersWGeneralFormat() throws Exception {
-        //TIKA-2025
+        // TIKA-2025
         String xml = getXML("testEXCEL_big_numbers.xls").xml;
-        assertContains("123456789012345", xml);//15 digit number
-        assertContains("123456789012346", xml);//15 digit formula
+        assertContains("123456789012345", xml);// 15 digit number
+        assertContains("123456789012346", xml);// 15 digit formula
         Locale locale = LocaleUtil.getUserLocale();
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(locale);
-        //16 digit number is treated as scientific notation as is the 16 digit formula
-        assertContains("1" + symbols.getDecimalSeparator() + "23456789012345E+15</td>\t" + "<td>1" +
-                symbols.getDecimalSeparator() + "23456789012345E+15", xml);
+        // 16 digit number is treated as scientific notation as is the 16 digit formula
+        assertContains("1" + symbols.getDecimalSeparator() + "23456789012345E+15</td>\t" + "<td>1"
+                        + symbols.getDecimalSeparator() + "23456789012345E+15", xml);
     }
 
     @Test
     public void testMacros() throws Exception {
-        //test default is "don't extract macros"
+        // test default is "don't extract macros"
         for (Metadata metadata : getRecursiveMetadata("testEXCEL_macro.xls")) {
             if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
                 fail("Shouldn't have extracted macros as default");
             }
         }
 
-        //now test that they were extracted
+        // now test that they were extracted
         ParseContext context = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setExtractMacros(true);
@@ -502,11 +498,11 @@ public class ExcelParserTest extends TikaTest {
         minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "dirty dirt dirt");
         minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+                        TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls", context));
 
-        //test configuring via config file
+        // test configuring via config file
         try (InputStream is = getResourceAsStream("tika-config-macros.xml")) {
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser parser = new AutoDetectParser(tikaConfig);
@@ -520,7 +516,7 @@ public class ExcelParserTest extends TikaTest {
         assertContains("autoshape", xml);
     }
 
-    //TIKA-2346
+    // TIKA-2346
     @Test
     public void testTurningOffTextBoxExtractionExcel() throws Exception {
         ParseContext pc = new ParseContext();
@@ -533,26 +529,26 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testPhoneticStrings() throws Exception {
-        //This unit test and test file come from Apache POI 51519.xlsx
+        // This unit test and test file come from Apache POI 51519.xlsx
 
-        //test default concatenates = true
+        // test default concatenates = true
         assertContains("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
-                getXML("testEXCEL_phonetic.xls").xml);
+                        getXML("testEXCEL_phonetic.xls").xml);
 
-        //test turning it off
+        // test turning it off
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setConcatenatePhoneticRuns(false);
         ParseContext pc = new ParseContext();
         pc.set(OfficeParserConfig.class, officeParserConfig);
         assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
-                getXML("testEXCEL_phonetic.xls", pc).xml);
+                        getXML("testEXCEL_phonetic.xls", pc).xml);
 
-        //test configuring via config file
+        // test configuring via config file
         TikaConfig tikaConfig =
-                new TikaConfig(getResourceAsStream("tika-config-exclude-phonetic.xml"));
+                        new TikaConfig(getResourceAsStream("tika-config-exclude-phonetic.xml"));
         AutoDetectParser parser = new AutoDetectParser(tikaConfig);
         assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
-                getXML("testEXCEL_phonetic.xls", parser).xml);
+                        getXML("testEXCEL_phonetic.xls", parser).xml);
 
     }
 

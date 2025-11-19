@@ -40,7 +40,7 @@
 
   <module name="RegexpHeader">
     <property name="header"
-              value="^.*$\n^\W*Licensed to the Apache Software Foundation \(ASF\) under one or more$"/>
+              value="^.*$\n^\W*Licensed to the Apache Software Foundation \(ASF\) under one or more"/>
   </module>
 
   <!-- Checks for whitespace                               -->
@@ -77,16 +77,6 @@
     <module name="AvoidStarImport"/>
     <module name="UnusedImports"/>
     <module name="OneTopLevelClass"/>
-    <module name="NoLineWrap"/>
-    <!--<module name="NeedBraces"/>-->
-    <!--<module name="LeftCurly">-->
-    <!--<property name="maxLineLength" value="100"/>-->
-    <!--</module>-->
-    <!--<module name="RightCurly"/>-->
-    <!--<module name="RightCurly">-->
-    <!--<property name="option" value="alone"/>-->
-    <!--<property name="tokens" value="CLASS_DEF, METHOD_DEF, CTOR_DEF, LITERAL_FOR, LITERAL_WHILE, LITERAL_DO, STATIC_INIT, INSTANCE_INIT"/>-->
-    <!--</module>-->
     <module name="WhitespaceAround">
       <property name="allowEmptyConstructors" value="true"/>
       <property name="allowEmptyMethods" value="true"/>
@@ -119,24 +109,8 @@
       <message key="ws.notPreceded"
                value="GenericWhitespace ''{0}'' is not preceded with whitespace."/>
     </module>
-    <module name="Indentation">
-      <property name="basicOffset" value="4"/>
-      <property name="braceAdjustment" value="0"/>
-      <property name="caseIndent" value="4"/>
-      <property name="throwsIndent" value="8"/>
-      <property name="lineWrappingIndentation" value="8"/>
-      <property name="arrayInitIndent" value="4"/>
-      <property name="severity" value="error"/>
-    </module>
     <module name="EmptyCatchBlock">
       <property name="exceptionVariableName" value="expected|ignore"/>
-    </module>
-    <module name="CustomImportOrder">
-      <property name="sortImportsInGroupAlphabetically" value="true"/>
-      <property name="separateLineBetweenGroups" value="true"/>
-      <property name="specialImportsRegExp" value="apache\.tika\."/>
-      <property name="customImportOrderRules"
-                value="STATIC###STANDARD_JAVA_PACKAGE###THIRD_PARTY_PACKAGE###SPECIAL_IMPORTS"/>
     </module>
     <module name="EqualsHashCode"/>
     <module name="ArrayTypeStyle"/>

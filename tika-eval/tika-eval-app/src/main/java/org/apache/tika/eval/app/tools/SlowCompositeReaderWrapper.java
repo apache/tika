@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.eval.app.tools;
 
@@ -55,20 +53,16 @@ import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.Version;
 
 /**
- * <b>COPIED VERBATIM FROM LUCENE</b>
- * This class forces a composite reader (eg a {@link
- * MultiReader} or {@link DirectoryReader}) to emulate a
- * {@link LeafReader}.  This requires implementing the postings
- * APIs on-the-fly, using the static methods in {@link
- * MultiTerms}, {@link MultiDocValues}, by stepping through
- * the sub-readers to merge fields/terms, appending docs, etc.
+ * <b>COPIED VERBATIM FROM LUCENE</b> This class forces a composite reader (eg a {@link MultiReader}
+ * or {@link DirectoryReader}) to emulate a {@link LeafReader}. This requires implementing the
+ * postings APIs on-the-fly, using the static methods in {@link MultiTerms}, {@link MultiDocValues},
+ * by stepping through the sub-readers to merge fields/terms, appending docs, etc.
  *
- * <p><b>NOTE</b>: this class almost always results in a
- * performance hit.  If this is important to your use case,
- * you'll get better performance by gathering the sub readers using
- * {@link IndexReader#getContext()} to get the
- * leaves and then operate per-LeafReader,
- * instead of using this class.
+ * <p>
+ * <b>NOTE</b>: this class almost always results in a performance hit. If this is important to your
+ * use case, you'll get better performance by gathering the sub readers using
+ * {@link IndexReader#getContext()} to get the leaves and then operate per-LeafReader, instead of
+ * using this class.
  */
 
 public final class SlowCompositeReaderWrapper extends LeafReader {
@@ -81,24 +75,19 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
     private final CompositeReader in;
     private final LeafMetaData metaData;
     // Cached copy of FieldInfos to prevent it from being re-created on each
-    // getFieldInfos call.  Most (if not all) other LeafReader implementations
+    // getFieldInfos call. Most (if not all) other LeafReader implementations
     // also have a cached FieldInfos instance so this is consistent. SOLR-12878
     private final FieldInfos fieldInfos;
 
     SlowCompositeReaderWrapper(CompositeReader reader) throws IOException {
         in = reader;
         in.registerParentReader(this);
-        if (reader
-                .leaves()
-                .isEmpty()) {
+        if (reader.leaves().isEmpty()) {
             metaData = new LeafMetaData(Version.LATEST.major, Version.LATEST, null, false);
         } else {
             Version minVersion = Version.LATEST;
             for (LeafReaderContext leafReaderContext : reader.leaves()) {
-                Version leafVersion = leafReaderContext
-                        .reader()
-                        .getMetaData()
-                        .getMinVersion();
+                Version leafVersion = leafReaderContext.reader().getMetaData().getMinVersion();
                 if (leafVersion == null) {
                     minVersion = null;
                     break;
@@ -106,20 +95,17 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
                     minVersion = leafVersion;
                 }
             }
-            metaData = new LeafMetaData(reader
-                    .leaves()
-                    .get(0)
-                    .reader()
-                    .getMetaData()
-                    .getCreatedVersionMajor(), minVersion, null, false);
+            metaData = new LeafMetaData(
+                            reader.leaves().get(0).reader().getMetaData().getCreatedVersionMajor(),
+                            minVersion, null, false);
         }
         fieldInfos = FieldInfos.getMergedFieldInfos(in);
     }
 
     /**
-     * This method is sugar for getting an {@link LeafReader} from
-     * an {@link IndexReader} of any kind. If the reader is already atomic,
-     * it is returned unchanged, otherwise wrapped by this class.
+     * This method is sugar for getting an {@link LeafReader} from an {@link IndexReader} of any
+     * kind. If the reader is already atomic, it is returned unchanged, otherwise wrapped by this
+     * class.
      */
     public static LeafReader wrap(IndexReader reader) throws IOException {
         if (reader instanceof CompositeReader) {
@@ -155,14 +141,13 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
             return cachedTerms.computeIfAbsent(field, f -> {
                 try {
                     return MultiTerms.getTerms(in, f);
-                } catch (IOException e) { // yuck!  ...sigh... checked exceptions with built-in lambdas are a pain
+                } catch (IOException e) { // yuck! ...sigh... checked exceptions with built-in
+                                          // lambdas are a pain
                     throw new RuntimeException("unwrapMe", e);
                 }
             });
         } catch (RuntimeException e) {
-            if (e
-                    .getMessage()
-                    .equals("unwrapMe") && e.getCause() instanceof IOException) {
+            if (e.getMessage().equals("unwrapMe") && e.getCause() instanceof IOException) {
                 throw (IOException) e.getCause();
             }
             throw e;
@@ -206,20 +191,14 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
                 return dv;
             }
         }
-        int size = in
-                .leaves()
-                .size();
+        int size = in.leaves().size();
         final SortedDocValues[] values = new SortedDocValues[size];
         final int[] starts = new int[size + 1];
         long totalCost = 0;
         for (int i = 0; i < size; i++) {
-            LeafReaderContext context = in
-                    .leaves()
-                    .get(i);
+            LeafReaderContext context = in.leaves().get(i);
             final LeafReader reader = context.reader();
-            final FieldInfo fieldInfo = reader
-                    .getFieldInfos()
-                    .fieldInfo(field);
+            final FieldInfo fieldInfo = reader.getFieldInfos().fieldInfo(field);
             if (fieldInfo != null && fieldInfo.getDocValuesType() != DocValuesType.SORTED) {
                 return null;
             }
@@ -256,20 +235,14 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
         }
 
         assert map != null;
-        int size = in
-                .leaves()
-                .size();
+        int size = in.leaves().size();
         final SortedSetDocValues[] values = new SortedSetDocValues[size];
         final int[] starts = new int[size + 1];
         long cost = 0;
         for (int i = 0; i < size; i++) {
-            LeafReaderContext context = in
-                    .leaves()
-                    .get(i);
+            LeafReaderContext context = in.leaves().get(i);
             final LeafReader reader = context.reader();
-            final FieldInfo fieldInfo = reader
-                    .getFieldInfos()
-                    .fieldInfo(field);
+            final FieldInfo fieldInfo = reader.getFieldInfos().fieldInfo(field);
             if (fieldInfo != null && fieldInfo.getDocValuesType() != DocValuesType.SORTED_SET) {
                 return null;
             }
@@ -293,32 +266,32 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
 
     @Override
     public FloatVectorValues getFloatVectorValues(String s) throws IOException {
-        //TODO figure out how to implement this... if needed
+        // TODO figure out how to implement this... if needed
         return null;
     }
 
     @Override
     public ByteVectorValues getByteVectorValues(String s) throws IOException {
-        //TODO figure out how to implement this... if needed
+        // TODO figure out how to implement this... if needed
         return null;
     }
 
     @Override
-    public void searchNearestVectors(String string, float[] floats, KnnCollector kc, Bits bits) throws IOException {
-        //TODO figure out how to implement this... if needed
+    public void searchNearestVectors(String string, float[] floats, KnnCollector kc, Bits bits)
+                    throws IOException {
+        // TODO figure out how to implement this... if needed
     }
 
     @Override
-    public void searchNearestVectors(String string, byte[] bytes, KnnCollector kc, Bits bits) throws IOException {
-        //TODO figure out how to implement this... if needed
+    public void searchNearestVectors(String string, byte[] bytes, KnnCollector kc, Bits bits)
+                    throws IOException {
+        // TODO figure out how to implement this... if needed
     }
 
     @Override
     public Fields getTermVectors(int docID) throws IOException {
         ensureOpen();
-        return in
-                .termVectors()
-                .get(docID);
+        return in.termVectors().get(docID);
     }
 
     @Override
@@ -341,9 +314,7 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
     @Override
     public void document(int docID, StoredFieldVisitor visitor) throws IOException {
         ensureOpen();
-        in
-                .storedFields()
-                .document(docID, visitor);
+        in.storedFields().document(docID, visitor);
     }
 
     @Override
@@ -360,7 +331,7 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
     @Override
     public PointValues getPointValues(String field) {
         ensureOpen();
-        return null; // because not supported.  Throw UOE?
+        return null; // because not supported. Throw UOE?
     }
 
     @Override
@@ -378,9 +349,7 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
     public void checkIntegrity() throws IOException {
         ensureOpen();
         for (LeafReaderContext ctx : in.leaves()) {
-            ctx
-                    .reader()
-                    .checkIntegrity();
+            ctx.reader().checkIntegrity();
         }
     }
 

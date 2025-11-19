@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 
@@ -24,7 +22,6 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
@@ -37,7 +34,6 @@ import org.apache.poi.poifs.filesystem.FileMagic;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -50,8 +46,8 @@ import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 
 /**
  * Many thanks to Simon Mourier for:
- * http://stackoverflow.com/questions/14779647/extract-embedded-image-object-in-rtf
- * and for granting permission to use his code in Tika.
+ * http://stackoverflow.com/questions/14779647/extract-embedded-image-object-in-rtf and for granting
+ * permission to use his code in Tika.
  */
 class RTFObjDataParser {
 
@@ -65,9 +61,8 @@ class RTFObjDataParser {
     /**
      * Parses the embedded object/pict string
      *
-     * @param is actual bytes (already converted from the
-     *              hex pair string stored in the embedded object data into actual bytes or read
-     *              as raw binary bytes)
+     * @param is actual bytes (already converted from the hex pair string stored in the embedded
+     *        object data into actual bytes or read as raw binary bytes)
      * @return a SimpleRTFEmbObj or null
      * @throws IOException if there are any surprise surprises during parsing
      */
@@ -78,19 +73,20 @@ class RTFObjDataParser {
 
     /**
      * @param bytes
-     * @param metadata             incoming metadata
+     * @param metadata incoming metadata
      * @param unknownFilenameCount
      * @return byte[] for contents of obj data
      * @throws IOException
      */
     protected byte[] parse(byte[] bytes, Metadata metadata, AtomicInteger unknownFilenameCount)
-            throws IOException, TikaException {
-        UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get();
+                    throws IOException, TikaException {
+        UnsynchronizedByteArrayInputStream is =
+                        UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get();
         long version = readUInt(is);
         metadata.add(RTFMetadata.EMB_APP_VERSION, Long.toString(version));
 
         long formatId = readUInt(is);
-        //2 is an embedded object. 1 is a link.
+        // 2 is an embedded object. 1 is a link.
         if (formatId != 2L) {
             return null;
         }
@@ -110,16 +106,17 @@ class RTFObjDataParser {
 
         long dataSz = readUInt(is);
 
-        //readBytes tests for reading too many bytes
+        // readBytes tests for reading too many bytes
         byte[] embObjBytes = readBytes(is, dataSz);
 
         if (className.toLowerCase(Locale.ROOT).equals("package")) {
             return handlePackage(embObjBytes, metadata);
         } else if (className.toLowerCase(Locale.ROOT).equals("pbrush")) {
-            //simple bitmap bytes
+            // simple bitmap bytes
             return embObjBytes;
         } else {
-            UnsynchronizedByteArrayInputStream embIs = UnsynchronizedByteArrayInputStream.builder().setByteArray(embObjBytes).get();
+            UnsynchronizedByteArrayInputStream embIs = UnsynchronizedByteArrayInputStream.builder()
+                            .setByteArray(embObjBytes).get();
             boolean hasPoifs;
             try {
                 hasPoifs = hasPOIFSHeader(embIs);
@@ -138,11 +135,10 @@ class RTFObjDataParser {
         return embObjBytes;
     }
 
-    //will throw IOException if not actually POIFS
-    //can return null byte[]
+    // will throw IOException if not actually POIFS
+    // can return null byte[]
     private byte[] handleEmbeddedPOIFS(InputStream is, Metadata metadata,
-                                       AtomicInteger unknownFilenameCount)
-            throws TikaException, IOException {
+                    AtomicInteger unknownFilenameCount) throws TikaException, IOException {
 
         byte[] ret = null;
         try (POIFSFileSystem fs = new POIFSFileSystem(is)) {
@@ -155,18 +151,19 @@ class RTFObjDataParser {
 
             if (root.hasEntry("Package")) {
                 Entry ooxml = root.getEntry("Package");
-                UnsynchronizedByteArrayOutputStream out = UnsynchronizedByteArrayOutputStream.builder().get();
+                UnsynchronizedByteArrayOutputStream out =
+                                UnsynchronizedByteArrayOutputStream.builder().get();
                 try (BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb * 1024,
-                        new DocumentInputStream((DocumentEntry) ooxml))) {
+                                new DocumentInputStream((DocumentEntry) ooxml))) {
                     IOUtils.copy(bis, out);
                     if (bis.hasHitBound()) {
                         throw new TikaMemoryLimitException((memoryLimitInKb * 1024 + 1),
-                                (memoryLimitInKb * 1024));
+                                        (memoryLimitInKb * 1024));
                     }
                 }
                 ret = out.toByteArray();
             } else {
-                //try poifs
+                // try poifs
                 POIFSDocumentType type = POIFSDocumentType.detectType(root);
                 if (type == POIFSDocumentType.OLE10_NATIVE) {
                     try {
@@ -191,18 +188,19 @@ class RTFObjDataParser {
                     }
                 } else {
 
-                    UnsynchronizedByteArrayOutputStream out = UnsynchronizedByteArrayOutputStream.builder().get();
+                    UnsynchronizedByteArrayOutputStream out =
+                                    UnsynchronizedByteArrayOutputStream.builder().get();
                     is.reset();
                     BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb * 1024, is);
                     IOUtils.copy(is, out);
                     if (bis.hasHitBound()) {
                         throw new TikaMemoryLimitException(memoryLimitInKb * 1024 + 1,
-                                memoryLimitInKb * 1024);
+                                        memoryLimitInKb * 1024);
                     }
                     ret = out.toByteArray();
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                            "file_" + unknownFilenameCount.getAndIncrement() + "." +
-                                    type.getExtension());
+                                    "file_" + unknownFilenameCount.getAndIncrement() + "."
+                                                    + type.getExtension());
                     metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
                 }
             }
@@ -211,36 +209,36 @@ class RTFObjDataParser {
     }
 
     /**
-     * can return null if there is a linked object
-     * instead of an embedded file
+     * can return null if there is a linked object instead of an embedded file
      */
     private byte[] handlePackage(byte[] pkgBytes, Metadata metadata)
-            throws IOException, TikaException {
-        //now parse the package header
-        UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(pkgBytes).get();
+                    throws IOException, TikaException {
+        // now parse the package header
+        UnsynchronizedByteArrayInputStream is =
+                        UnsynchronizedByteArrayInputStream.builder().setByteArray(pkgBytes).get();
         readUShort(is);
 
         String displayName = readAnsiString(is);
 
-        //should we add this to the metadata?
-        readAnsiString(is); //iconFilePath
+        // should we add this to the metadata?
+        readAnsiString(is); // iconFilePath
         try {
-            //iconIndex
+            // iconIndex
             EndianUtils.readUShortBE(is);
         } catch (EndianUtils.BufferUnderrunException e) {
             throw new IOException(e);
         }
-        int type = readUShort(is); //type
+        int type = readUShort(is); // type
 
-        //1 is link, 3 is embedded object
-        //this only handles embedded objects
+        // 1 is link, 3 is embedded object
+        // this only handles embedded objects
         if (type != 3) {
             return null;
         }
-        //should we really be ignoring this filePathLen?
-        readUInt(is); //filePathLen
+        // should we really be ignoring this filePathLen?
+        readUInt(is); // filePathLen
 
-        String ansiFilePath = readAnsiString(is); //filePath
+        String ansiFilePath = readAnsiString(is); // filePath
         long bytesLen = readUInt(is);
         byte[] objBytes = initByteArray(bytesLen);
         IOUtils.readFully(is, objBytes);
@@ -254,14 +252,14 @@ class RTFObjDataParser {
                 int hi = is.read();
                 int sum = lo + 256 * hi;
                 if (hi == -1 || lo == -1) {
-                    //stream ran out; empty SB and stop
+                    // stream ran out; empty SB and stop
                     unicodeFilePath.setLength(0);
                     break;
                 }
                 unicodeFilePath.append((char) sum);
             }
         } catch (IOException e) {
-            //swallow; the unicode file path is optional and might not happen
+            // swallow; the unicode file path is optional and might not happen
             unicodeFilePath.setLength(0);
         }
         String fileNameToUse = "";
@@ -317,14 +315,14 @@ class RTFObjDataParser {
         try {
             return new String(bytes, WIN_ASCII);
         } catch (UnsupportedEncodingException e) {
-            //shouldn't ever happen
+            // shouldn't ever happen
             throw new IOException("Unsupported encoding");
         }
     }
 
     // never returns null
     private byte[] readBytes(InputStream is, long len) throws IOException, TikaException {
-        //initByteArray tests for "reading of too many bytes"
+        // initByteArray tests for "reading of too many bytes"
         byte[] bytes = initByteArray(len);
         IOUtils.readFully(is, bytes);
         return bytes;
@@ -344,4 +342,3 @@ class RTFObjDataParser {
 
     }
 }
-

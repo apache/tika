@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.client;
 
@@ -36,7 +34,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLContext;
-
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
@@ -73,17 +70,15 @@ import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.utils.StringUtils;
-
 /**
- * This holds quite a bit of state and is not thread safe.  Beware!
+ * This holds quite a bit of state and is not thread safe. Beware!
  * <p>
- * Also, we're currently ignoring the SSL checks.  Please open a ticket/PR
- * if you need robust SSL.
+ * Also, we're currently ignoring the SSL checks. Please open a ticket/PR if you need robust SSL.
  */
 public class HttpClientFactory {
 
@@ -105,8 +100,8 @@ public class HttpClientFactory {
     private int keepAliveOnBadKeepAliveValueMs = 1000;
     private String userName;
     private String password;
-    private String ntDomain;//if using nt credentials
-    private String authScheme = "basic"; //ntlm or basic
+    private String ntDomain;// if using nt credentials
+    private String authScheme = "basic"; // ntlm or basic
     private boolean credentialsAESEncrypted = false;
     private boolean disableContentCompression = false;
 
@@ -220,11 +215,11 @@ public class HttpClientFactory {
     }
 
     public void setCredentialsAESEncrypted(boolean credentialsAESEncrypted)
-            throws TikaConfigException {
+                    throws TikaConfigException {
         if (credentialsAESEncrypted) {
             if (System.getenv(AES_ENV_VAR) == null) {
                 throw new TikaConfigException(
-                        "must specify aes key in the environment variable: " + AES_ENV_VAR);
+                                "must specify aes key in the environment variable: " + AES_ENV_VAR);
             }
             if (credentialsAESEncrypted) {
                 aes = new AES();
@@ -258,26 +253,25 @@ public class HttpClientFactory {
 
 
     public HttpClient build() throws TikaConfigException {
-        LOG.info("http client does not verify ssl at this point.  " +
-                "If you need that, please open a ticket.");
+        LOG.info("http client does not verify ssl at this point.  "
+                        + "If you need that, please open a ticket.");
         TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
         SSLContext sslContext = null;
         try {
-            sslContext =
-                    SSLContexts.custom().loadTrustMaterial(
-                            null, acceptingTrustStrategy).build();
+            sslContext = SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy)
+                            .build();
         } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
             throw new TikaConfigException("", e);
         }
         SSLConnectionSocketFactory sslsf =
-                new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+                        new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
 
-        Registry<ConnectionSocketFactory> socketFactoryRegistry =
-                RegistryBuilder.<ConnectionSocketFactory>create().register("https", sslsf)
+        Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder
+                        .<ConnectionSocketFactory>create().register("https", sslsf)
                         .register("http", new PlainConnectionSocketFactory()).build();
 
         PoolingHttpClientConnectionManager manager =
-                new PoolingHttpClientConnectionManager(socketFactoryRegistry);
+                        new PoolingHttpClientConnectionManager(socketFactoryRegistry);
         manager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
         manager.setMaxTotal(maxConnections);
 
@@ -288,14 +282,15 @@ public class HttpClientFactory {
         addCredentialsProvider(builder);
         addProxy(builder);
         return builder.setConnectionManager(manager)
-                .setRedirectStrategy(new CustomRedirectStrategy(allowedHostsForRedirect))
-                .setDefaultRequestConfig(RequestConfig.custom().setTargetPreferredAuthSchemes(
-                        Arrays.asList(AuthSchemes.BASIC, AuthSchemes.NTLM))
-                        .setConnectionRequestTimeout(requestTimeout)
-                        .setConnectionRequestTimeout(connectTimeout).setSocketTimeout(socketTimeout)
-                        .build()).setKeepAliveStrategy(getKeepAliveStrategy())
-                .setSSLSocketFactory(sslsf).setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
-                .build();
+                        .setRedirectStrategy(new CustomRedirectStrategy(allowedHostsForRedirect))
+                        .setDefaultRequestConfig(RequestConfig.custom()
+                                        .setTargetPreferredAuthSchemes(Arrays.asList(
+                                                        AuthSchemes.BASIC, AuthSchemes.NTLM))
+                                        .setConnectionRequestTimeout(requestTimeout)
+                                        .setConnectionRequestTimeout(connectTimeout)
+                                        .setSocketTimeout(socketTimeout).build())
+                        .setKeepAliveStrategy(getKeepAliveStrategy()).setSSLSocketFactory(sslsf)
+                        .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE).build();
     }
 
     private void addProxy(HttpClientBuilder builder) {
@@ -312,10 +307,10 @@ public class HttpClientFactory {
             return;
         }
 
-        if ((StringUtils.isBlank(userName) && StringUtils.isBlank(password)) ||
-                (StringUtils.isBlank(password) && StringUtils.isBlank(userName))) {
+        if ((StringUtils.isBlank(userName) && StringUtils.isBlank(password))
+                        || (StringUtils.isBlank(password) && StringUtils.isBlank(userName))) {
             throw new IllegalArgumentException(
-                    "can't have one of 'username', " + "'password' null and the other not");
+                            "can't have one of 'username', " + "'password' null and the other not");
         }
 
         String finalUserName = decrypt(userName);
@@ -327,15 +322,14 @@ public class HttpClientFactory {
         if (authScheme.equals("basic")) {
             credentials = new UsernamePasswordCredentials(finalUserName, finalPassword);
             authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
-                    .register("basic", new BasicSchemeFactory()).build();
+                            .register("basic", new BasicSchemeFactory()).build();
         } else if (authScheme.equals("ntlm")) {
             if (StringUtils.isBlank(ntDomain)) {
                 throw new IllegalArgumentException("must specify 'ntDomain'");
             }
-            credentials = new NTCredentials(finalUserName, finalPassword,
-                    null, finalDomain);
+            credentials = new NTCredentials(finalUserName, finalPassword, null, finalDomain);
             authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
-                    .register("ntlm", new NTLMSchemeFactory()).build();
+                            .register("ntlm", new NTLMSchemeFactory()).build();
         }
         if (credentials != null) {
             provider.setCredentials(AuthScope.ANY, credentials);
@@ -352,18 +346,17 @@ public class HttpClientFactory {
         return aes.decrypt(encrypted);
     }
 
-    //if there's a bad/missing keepalive strategy
+    // if there's a bad/missing keepalive strategy
     public ConnectionKeepAliveStrategy getKeepAliveStrategy() {
         return (response, context) -> {
             // Honor 'keep-alive' header
             HeaderElementIterator it = new BasicHeaderElementIterator(
-                    response.headerIterator(HTTP.CONN_KEEP_ALIVE));
+                            response.headerIterator(HTTP.CONN_KEEP_ALIVE));
             while (it.hasNext()) {
                 HeaderElement he = it.nextElement();
                 String param = he.getName();
                 String value = he.getValue();
-                if (value != null && param != null &&
-                        param.equalsIgnoreCase("timeout")) {
+                if (value != null && param != null && param.equalsIgnoreCase("timeout")) {
                     try {
                         return Long.parseLong(value) * 1000;
                     } catch (NumberFormatException ignore) {
@@ -400,9 +393,8 @@ public class HttpClientFactory {
         }
 
         @Override
-        public boolean isRedirected(HttpRequest request, HttpResponse response,
-                                    HttpContext context)
-                throws ProtocolException {
+        public boolean isRedirected(HttpRequest request, HttpResponse response, HttpContext context)
+                        throws ProtocolException {
             boolean isRedirectedSuper = super.isRedirected(request, response, context);
             if (isRedirectedSuper) {
                 Header locationHeader = response.getFirstHeader("Location");
@@ -417,8 +409,9 @@ public class HttpClientFactory {
                     return true;
                 }
                 if (!allowedHosts.isEmpty() && !allowedHosts.contains(uri.getHost())) {
-                    LOG.info("Not allowing external redirect. OriginalUrl={}," +
-                            " RedirectLocation={}", request.getRequestLine().getUri(), location);
+                    LOG.info("Not allowing external redirect. OriginalUrl={},"
+                                    + " RedirectLocation={}", request.getRequestLine().getUri(),
+                                    location);
                     return false;
                 }
             }
@@ -435,7 +428,7 @@ public class HttpClientFactory {
         }
 
         private static SecretKeySpec setKey(String myKey) throws TikaConfigException {
-            //TODO: sha-256?
+            // TODO: sha-256?
             try {
                 byte[] key = myKey.getBytes(StandardCharsets.UTF_8);
                 MessageDigest sha = MessageDigest.getInstance("SHA-1");
@@ -452,9 +445,9 @@ public class HttpClientFactory {
                 Cipher cipher = Cipher.getInstance(CIPHER_TYPE);
                 cipher.init(Cipher.ENCRYPT_MODE, secretKey);
                 return Base64.getEncoder().encodeToString(
-                        cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
-            } catch (NoSuchAlgorithmException | InvalidKeyException |
-                    NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException e) {
+                                cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
+            } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
+                            | BadPaddingException | IllegalBlockSizeException e) {
                 throw new TikaConfigException("bad encryption info", e);
             }
         }
@@ -464,9 +457,9 @@ public class HttpClientFactory {
                 Cipher cipher = Cipher.getInstance(CIPHER_TYPE);
                 cipher.init(Cipher.DECRYPT_MODE, secretKey);
                 return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)),
-                        StandardCharsets.UTF_8);
-            } catch (NoSuchAlgorithmException | InvalidKeyException |
-                    NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException e) {
+                                StandardCharsets.UTF_8);
+            } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException
+                            | BadPaddingException | IllegalBlockSizeException e) {
                 throw new TikaConfigException("bad encryption info", e);
             }
         }

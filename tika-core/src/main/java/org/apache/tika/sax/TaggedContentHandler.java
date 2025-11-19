@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.sax;
 
@@ -20,10 +18,10 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * A content handler decorator that tags potential exceptions so that the
- * handler that caused the exception can easily be identified. This is
- * done by using the {@link TaggedSAXException} class to wrap all thrown
- * {@link SAXException}s. See below for an example of using this class.
+ * A content handler decorator that tags potential exceptions so that the handler that caused the
+ * exception can easily be identified. This is done by using the {@link TaggedSAXException} class to
+ * wrap all thrown {@link SAXException}s. See below for an example of using this class.
+ * 
  * <pre>
  * TaggedContentHandler handler = new TaggedContentHandler(...);
  * try {
@@ -40,10 +38,10 @@ import org.xml.sax.SAXException;
  * }
  * </pre>
  * <p>
- * Alternatively, the {@link #throwIfCauseOf(Exception)} method can be
- * used to let higher levels of code handle the exception caused by this
- * stream while other processing errors are being taken care of at this
- * lower level.
+ * Alternatively, the {@link #throwIfCauseOf(Exception)} method can be used to let higher levels of
+ * code handle the exception caused by this stream while other processing errors are being taken
+ * care of at this lower level.
+ * 
  * <pre>
  * TaggedContentHandler handler = new TaggedContentHandler(...);
  * try {
@@ -71,8 +69,8 @@ public class TaggedContentHandler extends ContentHandlerDecorator {
      * Tests if the given exception was caused by this handler.
      *
      * @param exception an exception
-     * @return <code>true</code> if the exception was thrown by this handler,
-     * <code>false</code> otherwise
+     * @return <code>true</code> if the exception was thrown by this handler, <code>false</code>
+     *         otherwise
      */
     public boolean isCauseOf(SAXException exception) {
         if (exception instanceof TaggedSAXException) {
@@ -84,11 +82,10 @@ public class TaggedContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Re-throws the original exception thrown by this handler. This method
-     * first checks whether the given exception is a {@link TaggedSAXException}
-     * wrapper created by this decorator, and then unwraps and throws the
-     * original wrapped exception. Returns normally if the exception was
-     * not thrown by this handler.
+     * Re-throws the original exception thrown by this handler. This method first checks whether the
+     * given exception is a {@link TaggedSAXException} wrapper created by this decorator, and then
+     * unwraps and throws the original wrapped exception. Returns normally if the exception was not
+     * thrown by this handler.
      *
      * @param exception an exception
      * @throws SAXException original exception, if any, thrown by this handler

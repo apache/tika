@@ -1,23 +1,22 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.csv;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.google.common.collect.ImmutableSet;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -28,51 +27,48 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
-import com.google.common.collect.ImmutableSet;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.mime.MediaType;
+import org.junit.jupiter.api.Test;
 
 public class CSVSnifferTest extends TikaTest {
 
     private static final Set<Character> DELIMITERS = ImmutableSet.of(',', ';', '\t', '|');
 
-    private static final byte[] CSV_BASIC =
-            ("the,quick,brown\tfox\n" + "jumped \tover,the\tlazy,\tdog\n" +
-                    "and then,ran,down\tthe\tstreet").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] CSV_BASIC = ("the,quick,brown\tfox\n"
+                    + "jumped \tover,the\tlazy,\tdog\n" + "and then,ran,down\tthe\tstreet")
+                    .getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] CSV_BASIC2 =
-            ("the;quick;brown\tfox\n" + "jumped \tover;the\tlazy;\tdog\n" +
-                    "and then;ran;down\tthe\tstreet").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] CSV_BASIC2 = ("the;quick;brown\tfox\n"
+                    + "jumped \tover;the\tlazy;\tdog\n" + "and then;ran;down\tthe\tstreet")
+                    .getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] CSV_BASIC3 =
-            ("the|quick|brown\tfox\n" + "jumped \tover|the\tlazy|\tdog\n" +
-                    "and then|ran|down\tthe\tstreet").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] CSV_BASIC3 = ("the|quick|brown\tfox\n"
+                    + "jumped \tover|the\tlazy|\tdog\n" + "and then|ran|down\tthe\tstreet")
+                    .getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] TSV_BASIC =
-            ("the\tquick\tbrown,fox\n" + "jumped ,over\tthe,lazy\t,dog\n" +
-                    "and then\tran\tdown,the,street").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] TSV_BASIC = ("the\tquick\tbrown,fox\n"
+                    + "jumped ,over\tthe,lazy\t,dog\n" + "and then\tran\tdown,the,street")
+                    .getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] CSV_MID_CELL_QUOTE_EXCEPTION =
-            ("the,quick,brown\"fox\n" + "jumped over,the lazy,dog\n" +
-                    "and then,ran,down the street").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] CSV_MID_CELL_QUOTE_EXCEPTION = ("the,quick,brown\"fox\n"
+                    + "jumped over,the lazy,dog\n" + "and then,ran,down the street")
+                    .getBytes(StandardCharsets.UTF_8);
 
 
-    private static final byte[] ALLOW_SPACES_BEFORE_QUOTE =
-            ("the,quick,         \"brown\"\"fox\"\n" + "jumped over,the lazy,dog\n" +
-                    "and then,ran,down the street").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] ALLOW_SPACES_BEFORE_QUOTE = ("the,quick,         \"brown\"\"fox\"\n"
+                    + "jumped over,the lazy,dog\n" + "and then,ran,down the street")
+                    .getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] ALLOW_SPACES_AFTER_QUOTE =
-            ("the,\"quick\"     ,brown  fox\n" + "jumped over,the lazy,dog\n" +
-                    "and then,ran,down the street").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] ALLOW_SPACES_AFTER_QUOTE = ("the,\"quick\"     ,brown  fox\n"
+                    + "jumped over,the lazy,dog\n" + "and then,ran,down the street")
+                    .getBytes(StandardCharsets.UTF_8);
 
     private static List<CSVResult> sniff(Set<Character> delimiters, byte[] bytes, Charset charset)
-            throws IOException {
+                    throws IOException {
         CSVSniffer sniffer = new CSVSniffer(delimiters);
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new ByteArrayInputStream(bytes), charset))) {
+                        new InputStreamReader(new ByteArrayInputStream(bytes), charset))) {
             return sniffer.sniff(reader);
         }
     }
@@ -99,7 +95,7 @@ public class CSVSnifferTest extends TikaTest {
     @Test
     public void testCSVMidCellQuoteException() throws Exception {
         List<CSVResult> results =
-                sniff(DELIMITERS, CSV_MID_CELL_QUOTE_EXCEPTION, StandardCharsets.UTF_8);
+                        sniff(DELIMITERS, CSV_MID_CELL_QUOTE_EXCEPTION, StandardCharsets.UTF_8);
 
         assertEquals(4, results.size());
     }
@@ -107,7 +103,7 @@ public class CSVSnifferTest extends TikaTest {
     @Test
     public void testAllowWhiteSpacesAroundAQuote() throws Exception {
         List<CSVResult> results =
-                sniff(DELIMITERS, ALLOW_SPACES_BEFORE_QUOTE, StandardCharsets.UTF_8);
+                        sniff(DELIMITERS, ALLOW_SPACES_BEFORE_QUOTE, StandardCharsets.UTF_8);
         assertEquals(4, results.size());
         assertEquals(Character.valueOf(','), results.get(0).getDelimiter());
 

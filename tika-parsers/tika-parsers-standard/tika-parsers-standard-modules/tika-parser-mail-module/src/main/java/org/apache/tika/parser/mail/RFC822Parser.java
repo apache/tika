@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mail;
 
@@ -20,14 +18,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
-
 import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.message.DefaultBodyDescriptorBuilder;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.james.mime4j.stream.MimeConfig;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
@@ -39,13 +33,15 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * Uses apache-mime4j to parse emails. Each part is treated with the
- * corresponding parser and displayed within elements.
+ * Uses apache-mime4j to parse emails. Each part is treated with the corresponding parser and
+ * displayed within elements.
  * <p/>
- * A {@link MimeConfig} object can be passed in the parsing context
- * to better control the parsing process.
+ * A {@link MimeConfig} object can be passed in the parsing context to better control the parsing
+ * process.
  *
  * @author jnioche@digitalpebble.com
  */
@@ -56,10 +52,10 @@ public class RFC822Parser implements Parser {
     private static final long serialVersionUID = -5504243905998074168L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.parse("message/rfc822"));
+                    Collections.singleton(MediaType.parse("message/rfc822"));
 
-    //rely on the detector to be thread-safe
-    //built lazily and then reused
+    // rely on the detector to be thread-safe
+    // built lazily and then reused
     private Detector detector;
 
     @Field
@@ -70,15 +66,15 @@ public class RFC822Parser implements Parser {
     }
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         // Get the mime4j configuration, or use a default one
-        MimeConfig config =
-                new MimeConfig.Builder().setMaxLineLen(100000).setMaxHeaderLen(100000).build();
+        MimeConfig config = new MimeConfig.Builder().setMaxLineLen(100000).setMaxHeaderLen(100000)
+                        .build();
 
         config = context.get(MimeConfig.class, config);
         Detector localDetector = context.get(Detector.class);
         if (localDetector == null) {
-            //lazily load this if necessary
+            // lazily load this if necessary
             if (detector == null) {
                 EmbeddedDocumentUtil embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
                 detector = embeddedDocumentUtil.getDetector();
@@ -86,17 +82,17 @@ public class RFC822Parser implements Parser {
             localDetector = detector;
         }
         MimeStreamParser parser =
-                new MimeStreamParser(config, null, new DefaultBodyDescriptorBuilder());
+                        new MimeStreamParser(config, null, new DefaultBodyDescriptorBuilder());
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         MailContentHandler mch = new MailContentHandler(xhtml, localDetector, metadata, context,
-                config.isStrictParsing(), extractAllAlternatives);
+                        config.isStrictParsing(), extractAllAlternatives);
         parser.setContentHandler(mch);
         parser.setContentDecoding(true);
         parser.setNoRecurse();
         xhtml.startDocument();
         TikaInputStream tstream = TikaInputStream.get(stream);
-        checkForZeroByte(tstream);//avoid stackoverflow
+        checkForZeroByte(tstream);// avoid stackoverflow
         try {
             parser.parse(tstream);
         } catch (IOException e) {
@@ -116,7 +112,8 @@ public class RFC822Parser implements Parser {
         xhtml.endDocument();
     }
 
-    private void checkForZeroByte(TikaInputStream tstream) throws IOException, ZeroByteFileException {
+    private void checkForZeroByte(TikaInputStream tstream)
+                    throws IOException, ZeroByteFileException {
         tstream.mark(1);
         try {
             if (tstream.read() < 0) {
@@ -128,13 +125,12 @@ public class RFC822Parser implements Parser {
     }
 
     /**
-     * Until version 1.17, Tika handled all body parts as embedded objects (see TIKA-2478).
-     * In 1.17, we modified the parser to select only the best alternative body
-     * parts for multipart/alternative sections, and we inline the content
-     * as we do for .msg files.
+     * Until version 1.17, Tika handled all body parts as embedded objects (see TIKA-2478). In 1.17,
+     * we modified the parser to select only the best alternative body parts for
+     * multipart/alternative sections, and we inline the content as we do for .msg files.
      * <p>
-     * The legacy behavior can be set by setting {@link #extractAllAlternatives}
-     * to <code>true</code>.  As of 1.17, the default value is <code>false</code>
+     * The legacy behavior can be set by setting {@link #extractAllAlternatives} to
+     * <code>true</code>. As of 1.17, the default value is <code>false</code>
      *
      * @param extractAllAlternatives whether or not to extract all alternative parts
      * @since 1.17

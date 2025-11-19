@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.sax;
 
@@ -21,14 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import org.apache.tika.metadata.Metadata;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import org.apache.tika.metadata.Metadata;
 
 /**
  * Unit tests for the {@link XHTMLContentHandler} class.
@@ -40,8 +36,8 @@ public class XHTMLContentHandlerTest {
     private XHTMLContentHandler xhtml;
 
     /**
-     * Return array of non-zerolength words. Splitting on whitespace will get us
-     * empty words for emptylines.
+     * Return array of non-zerolength words. Splitting on whitespace will get us empty words for
+     * emptylines.
      *
      * @param string some mix of newlines and real words
      * @return array of real words.
@@ -65,8 +61,7 @@ public class XHTMLContentHandlerTest {
     }
 
     /**
-     * Test that content in block elements are properly separated in text
-     * output.
+     * Test that content in block elements are properly separated in text output.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-188">TIKA-188</a>
      */
@@ -104,8 +99,7 @@ public class XHTMLContentHandlerTest {
     }
 
     /**
-     * Test that content in option elements are properly separated in text
-     * output.
+     * Test that content in option elements are properly separated in text output.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-394">TIKA-394</a>
      */
@@ -145,12 +139,12 @@ public class XHTMLContentHandlerTest {
     public void testAttributesOnBody() throws Exception {
         ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
         XHTMLContentHandler xhtmlContentHandler =
-                new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
+                        new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
         AttributesImpl attributes = new AttributesImpl();
 
         attributes.addAttribute(XHTMLContentHandler.XHTML, "itemscope", "itemscope", "", "");
         attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "",
-                "http://schema.org/Event");
+                        "http://schema.org/Event");
 
         xhtmlContentHandler.startDocument();
         xhtmlContentHandler.startElement(XHTMLContentHandler.XHTML, "body", "body", attributes);
@@ -164,12 +158,12 @@ public class XHTMLContentHandlerTest {
     public void testAttributesOnHtml() throws Exception {
         ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
         XHTMLContentHandler xhtmlContentHandler =
-                new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
+                        new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
         AttributesImpl attributes = new AttributesImpl();
 
         attributes.addAttribute(XHTMLContentHandler.XHTML, "itemscope", "itemscope", "", "");
         attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "",
-                "http://schema.org/Event");
+                        "http://schema.org/Event");
 
         xhtmlContentHandler.startDocument();
         xhtmlContentHandler.startElement(XHTMLContentHandler.XHTML, "html", "html", attributes);

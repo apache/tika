@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.http;
 
@@ -24,14 +22,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Collections;
 import java.util.Set;
-
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.netpreserve.jwarc.LengthedBody;
-import org.netpreserve.jwarc.MessageBody;
-import org.netpreserve.jwarc.MessageHeaders;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -41,11 +32,17 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.netpreserve.jwarc.LengthedBody;
+import org.netpreserve.jwarc.MessageBody;
+import org.netpreserve.jwarc.MessageHeaders;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class HttpParser implements Parser {
 
     private static final MediaType MEDIA_TYPE = MediaType.application("x-httpresponse");
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -53,7 +50,7 @@ public class HttpParser implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         org.netpreserve.jwarc.HttpParser parser = new org.netpreserve.jwarc.HttpParser();
         parser.lenientRequest();
         parser.lenientResponse();
@@ -62,7 +59,7 @@ public class HttpParser implements Parser {
         xhtml.startDocument();
 
         try (ReadableByteChannel channel =
-                     Channels.newChannel(CloseShieldInputStream.wrap(stream))) {
+                        Channels.newChannel(CloseShieldInputStream.wrap(stream))) {
 
             int len = channel.read(buffer);
             buffer.flip();
@@ -73,10 +70,10 @@ public class HttpParser implements Parser {
 
             MessageHeaders messageHeaders = parser.headers();
             updateMetadata(messageHeaders, metadata);
-            //check for ok status before continuing?
+            // check for ok status before continuing?
             long contentLength =
-                    messageHeaders.sole("Content-Length").map(Long::parseLong).orElse(0L);
-            //is there a way to handle non-lengthed bodies?
+                            messageHeaders.sole("Content-Length").map(Long::parseLong).orElse(0L);
+            // is there a way to handle non-lengthed bodies?
             if (contentLength > 0) {
                 MessageBody messageBody = LengthedBody.create(channel, buffer, contentLength);
                 Metadata payloadMetadata = new Metadata();
@@ -90,7 +87,7 @@ public class HttpParser implements Parser {
     }
 
     private void parsePayload(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                              ParseContext context) throws IOException, SAXException {
+                    ParseContext context) throws IOException, SAXException {
         EmbeddedDocumentExtractor ex = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (ex.shouldParseEmbedded(metadata)) {
             ex.parseEmbedded(tis, handler, metadata, true);
@@ -98,7 +95,7 @@ public class HttpParser implements Parser {
     }
 
     private void updateMetadata(MessageHeaders messageHeaders, Metadata metadata) {
-        //TODO
-        //metadata.set(HttpHeaders.CONTENT_LENGTH, messageHeaders.)
+        // TODO
+        // metadata.set(HttpHeaders.CONTENT_LENGTH, messageHeaders.)
     }
 }

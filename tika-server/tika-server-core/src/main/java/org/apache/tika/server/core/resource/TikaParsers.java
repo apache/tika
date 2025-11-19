@@ -1,21 +1,23 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.server.core.resource;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,12 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
@@ -39,9 +35,9 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.server.core.HTMLHelper;
 
 /**
- * <p>Provides details of all the {@link Parser}s registered with
- * Apache Tika, similar to <em>--list-parsers</em> and
- * <em>--list-parser-details</em> within the Tika CLI.
+ * <p>
+ * Provides details of all the {@link Parser}s registered with Apache Tika, similar to
+ * <em>--list-parsers</em> and <em>--list-parser-details</em> within the Tika CLI.
  */
 @Path("/parsers")
 public class TikaParsers {
@@ -66,9 +62,7 @@ public class TikaParsers {
     }
 
     protected String getParsersHTML(boolean withMimeTypes) {
-        ParserDetails p = new ParserDetails(TikaResource
-                .getConfig()
-                .getParser());
+        ParserDetails p = new ParserDetails(TikaResource.getConfig().getParser());
 
         StringBuffer h = new StringBuffer();
         html.generateHeader(h, "Parsers available to Apache Tika");
@@ -77,7 +71,8 @@ public class TikaParsers {
         return h.toString();
     }
 
-    private void parserAsHTML(ParserDetails p, boolean withMimeTypes, StringBuffer html, int level) {
+    private void parserAsHTML(ParserDetails p, boolean withMimeTypes, StringBuffer html,
+                    int level) {
         html.append("<h");
         html.append(level);
         html.append(">");
@@ -91,9 +86,7 @@ public class TikaParsers {
         if (p.isDecorated) {
             html.append("<p>Decorated Parser");
             if (p.decoratedBy != null) {
-                html
-                        .append(" - ")
-                        .append(p.decoratedBy);
+                html.append(" - ").append(p.decoratedBy);
             }
             html.append("</p>");
         }
@@ -133,13 +126,10 @@ public class TikaParsers {
 
     protected String getParsersJSON(boolean withMimeTypes) throws IOException {
         Map<String, Object> details = new HashMap<>();
-        parserAsMap(new ParserDetails(TikaResource
-                .getConfig()
-                .getParser()), withMimeTypes, details);
+        parserAsMap(new ParserDetails(TikaResource.getConfig().getParser()), withMimeTypes,
+                        details);
         ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper
-                .writerWithDefaultPrettyPrinter()
-                .writeValueAsString(details);
+        return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(details);
     }
 
     private void parserAsMap(ParserDetails p, boolean withMimeTypes, Map<String, Object> details) {
@@ -179,13 +169,13 @@ public class TikaParsers {
 
     protected String getParsersPlain(boolean withMimeTypes) {
         StringBuffer text = new StringBuffer();
-        renderParser(new ParserDetails(TikaResource
-                .getConfig()
-                .getParser()), withMimeTypes, text, "");
+        renderParser(new ParserDetails(TikaResource.getConfig().getParser()), withMimeTypes, text,
+                        "");
         return text.toString();
     }
 
-    private void renderParser(ParserDetails p, boolean withMimeTypes, StringBuffer text, String indent) {
+    private void renderParser(ParserDetails p, boolean withMimeTypes, StringBuffer text,
+                    String indent) {
         String nextIndent = indent + "  ";
 
         text.append(indent);
@@ -193,9 +183,7 @@ public class TikaParsers {
         if (p.isDecorated) {
             text.append(" (Decorated Parser");
             if (p.decoratedBy != null) {
-                text
-                        .append(" ")
-                        .append(p.decoratedBy);
+                text.append(" ").append(p.decoratedBy);
             }
             text.append(")");
         }
@@ -234,9 +222,7 @@ public class TikaParsers {
                 p = ((ParserDecorator) p).getWrappedParser();
             }
 
-            className = p
-                    .getClass()
-                    .getName();
+            className = p.getClass().getName();
             shortName = className.substring(className.lastIndexOf('.') + 1);
 
             if (p instanceof CompositeParser) {
@@ -244,14 +230,11 @@ public class TikaParsers {
                 supportedTypes = Collections.emptySet();
 
                 // Get the unique set of child parsers
-                Set<Parser> children = new HashSet<>(((CompositeParser) p)
-                        .getParsers(EMPTY_PC)
-                        .values());
+                Set<Parser> children =
+                                new HashSet<>(((CompositeParser) p).getParsers(EMPTY_PC).values());
                 // Sort it by class name
                 childParsers = new ArrayList<>(children);
-                childParsers.sort(Comparator.comparing(parser -> parser
-                        .getClass()
-                        .getName()));
+                childParsers.sort(Comparator.comparing(parser -> parser.getClass().getName()));
             } else {
                 supportedTypes = p.getSupportedTypes(EMPTY_PC);
             }

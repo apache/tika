@@ -1,21 +1,26 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.grpc;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
+import io.grpc.Grpc;
+import io.grpc.ManagedChannel;
+import io.grpc.TlsChannelCredentials;
+import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import io.grpc.stub.StreamObserver;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -29,15 +34,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import io.grpc.Grpc;
-import io.grpc.ManagedChannel;
-import io.grpc.TlsChannelCredentials;
-import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import io.grpc.stub.StreamObserver;
 import org.apache.commons.io.FileUtils;
+import org.apache.tika.FetchAndParseReply;
+import org.apache.tika.FetchAndParseRequest;
+import org.apache.tika.SaveFetcherReply;
+import org.apache.tika.SaveFetcherRequest;
+import org.apache.tika.TikaGrpc;
+import org.apache.tika.pipes.fetcher.http.HttpFetcher;
 import org.awaitility.Awaitility;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ResourceHandler;
@@ -50,25 +53,17 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.FetchAndParseReply;
-import org.apache.tika.FetchAndParseRequest;
-import org.apache.tika.SaveFetcherReply;
-import org.apache.tika.SaveFetcherRequest;
-import org.apache.tika.TikaGrpc;
-import org.apache.tika.pipes.fetcher.http.HttpFetcher;
-
 /**
- * This test will start an HTTP server using jetty.
- * Then it will start Tika Pipes Grpc service.
- * Then it will, using a bidirectional stream of data, send urls to the
- * HTTP fetcher whilst simultaneously receiving parsed output as they parse.
+ * This test will start an HTTP server using jetty. Then it will start Tika Pipes Grpc service. Then
+ * it will, using a bidirectional stream of data, send urls to the HTTP fetcher whilst
+ * simultaneously receiving parsed output as they parse.
  */
 class PipesBiDirectionalStreamingIntegrationTest {
-    static final Logger LOGGER = LoggerFactory.getLogger(PipesBiDirectionalStreamingIntegrationTest.class);
+    static final Logger LOGGER =
+                    LoggerFactory.getLogger(PipesBiDirectionalStreamingIntegrationTest.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    static File tikaConfigXmlTemplate = Paths
-            .get("src", "test", "resources", "tika-pipes-test-config.xml")
-            .toFile();
+    static File tikaConfigXmlTemplate =
+                    Paths.get("src", "test", "resources", "tika-pipes-test-config.xml").toFile();
     static File tikaConfigXml = new File("target", "tika-config-" + UUID.randomUUID() + ".xml");
     static TikaGrpcServer grpcServer;
     static int grpcPort;
@@ -95,14 +90,14 @@ class PipesBiDirectionalStreamingIntegrationTest {
         ResourceHandler resourceHandler = new ResourceHandler();
         resourceHandler.setDirAllowed(true);
         // TODO when using jetty 12:
-        // resourceHandler.setBaseResourceAsString("src/test/resources/test-files")        
-        resourceHandler.setBaseResource(new PathResource(Paths.get("src", "test", "resources", "test-files")));
+        // resourceHandler.setBaseResourceAsString("src/test/resources/test-files")
+        resourceHandler.setBaseResource(
+                        new PathResource(Paths.get("src", "test", "resources", "test-files")));
         httpServer.setHandler(resourceHandler);
         httpServer.start();
 
-        httpServerUrl = "http://" + InetAddress
-                .getByName("localhost")
-                .getHostAddress() + ":" + httpServerPort;
+        httpServerUrl = "http://" + InetAddress.getByName("localhost").getHostAddress() + ":"
+                        + httpServerPort;
     }
 
     @BeforeAll
@@ -114,25 +109,26 @@ class PipesBiDirectionalStreamingIntegrationTest {
         grpcServer.setTikaConfigXml(tikaConfigXml);
         grpcServer.setPort(grpcPort);
         grpcServer.setSecure(true);
-        grpcServer.setCertChain(Paths.get("src", "test", "resources", "certs", "server1.pem").toFile());
-        grpcServer.setPrivateKey(Paths.get("src", "test", "resources", "certs", "server1.key").toFile());
-        grpcServer.setTrustCertCollection(Paths.get("src", "test", "resources", "certs", "ca.pem").toFile());
+        grpcServer.setCertChain(
+                        Paths.get("src", "test", "resources", "certs", "server1.pem").toFile());
+        grpcServer.setPrivateKey(
+                        Paths.get("src", "test", "resources", "certs", "server1.key").toFile());
+        grpcServer.setTrustCertCollection(
+                        Paths.get("src", "test", "resources", "certs", "ca.pem").toFile());
         grpcServer.setClientAuthRequired(true);
         grpcServer.start();
 
-        String target = InetAddress
-                .getByName("localhost")
-                .getHostAddress() + ":" + grpcPort;
+        String target = InetAddress.getByName("localhost").getHostAddress() + ":" + grpcPort;
 
         TlsChannelCredentials.Builder channelCredBuilder = TlsChannelCredentials.newBuilder();
-        File clientCertChain = Paths.get("src", "test", "resources", "certs", "client.pem").toFile();
-        File clientPrivateKey = Paths.get("src", "test", "resources", "certs", "client.key").toFile();
+        File clientCertChain =
+                        Paths.get("src", "test", "resources", "certs", "client.pem").toFile();
+        File clientPrivateKey =
+                        Paths.get("src", "test", "resources", "certs", "client.key").toFile();
         channelCredBuilder.keyManager(clientCertChain, clientPrivateKey);
         channelCredBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE.getTrustManagers());
 
-        ManagedChannel channel = Grpc
-                .newChannelBuilder(target, channelCredBuilder.build())
-                .build();
+        ManagedChannel channel = Grpc.newChannelBuilder(target, channelCredBuilder.build()).build();
 
         tikaBlockingStub = TikaGrpc.newBlockingStub(channel);
         tikaStub = TikaGrpc.newStub(channel);
@@ -159,21 +155,15 @@ class PipesBiDirectionalStreamingIntegrationTest {
 
     @BeforeEach
     void createHttpFetcher() throws Exception {
-        SaveFetcherRequest saveFetcherRequest = SaveFetcherRequest
-                .newBuilder()
-                .setFetcherId(httpFetcherId)
-                .setFetcherClass(HttpFetcher.class.getName())
-                .setFetcherConfigJson(OBJECT_MAPPER.writeValueAsString(ImmutableMap
-                        .builder()
-                        .put("requestTimeout", 30_000)
-                        .put("socketTimeout", 30_000)
-                        .put("connectTimeout", 20_000)
-                        .put("maxConnectionsPerRoute", 200)
-                        .put("maxRedirects", 0)
-                        .put("maxSpoolSize", -1)
-                        .put("overallTimeout", 50_000)
-                        .build()))
-                .build();
+        SaveFetcherRequest saveFetcherRequest = SaveFetcherRequest.newBuilder()
+                        .setFetcherId(httpFetcherId).setFetcherClass(HttpFetcher.class.getName())
+                        .setFetcherConfigJson(OBJECT_MAPPER.writeValueAsString(ImmutableMap
+                                        .builder().put("requestTimeout", 30_000)
+                                        .put("socketTimeout", 30_000).put("connectTimeout", 20_000)
+                                        .put("maxConnectionsPerRoute", 200).put("maxRedirects", 0)
+                                        .put("maxSpoolSize", -1).put("overallTimeout", 50_000)
+                                        .build()))
+                        .build();
         SaveFetcherReply saveFetcherReply = tikaBlockingStub.saveFetcher(saveFetcherRequest);
         Assertions.assertEquals(saveFetcherReply.getFetcherId(), httpFetcherId);
     }
@@ -200,17 +190,16 @@ class PipesBiDirectionalStreamingIntegrationTest {
                 LOGGER.info("Completed fetching.");
             }
         };
-        StreamObserver<FetchAndParseRequest> request = tikaStub.fetchAndParseBiDirectionalStreaming(responseObserver);
+        StreamObserver<FetchAndParseRequest> request =
+                        tikaStub.fetchAndParseBiDirectionalStreaming(responseObserver);
         for (String file : files) {
-            request.onNext(FetchAndParseRequest
-                    .newBuilder()
-                    .setFetcherId(httpFetcherId)
-                    .setFetchKey(httpServerUrl + "/" + file)
-                    .build());
+            request.onNext(FetchAndParseRequest.newBuilder().setFetcherId(httpFetcherId)
+                            .setFetchKey(httpServerUrl + "/" + file).build());
         }
         request.onCompleted();
 
-        Awaitility.await().atMost(Duration.ofSeconds(600)).until(() -> result.size() == files.size());
+        Awaitility.await().atMost(Duration.ofSeconds(600))
+                        .until(() -> result.size() == files.size());
 
         Assertions.assertEquals(files.size(), numParsed.get());
     }

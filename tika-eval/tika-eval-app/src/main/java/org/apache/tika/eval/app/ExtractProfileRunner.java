@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.eval.app;
 
@@ -43,9 +41,6 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.help.HelpFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.JDBCUtil;
 import org.apache.tika.eval.app.db.MimeBuffer;
@@ -59,6 +54,8 @@ import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExtractProfileRunner {
 
@@ -71,23 +68,34 @@ public class ExtractProfileRunner {
     static {
 
         OPTIONS = new Options()
-                .addOption(Option.builder("e").longOpt("extracts").hasArg().desc("required: directory of extracts").get())
-                .addOption(Option.builder("i").longOpt("inputDir").hasArg().desc("optional: directory for original binary input documents."
-                        + " If not specified, -extracts is crawled as is.").get())
-                .addOption(Option.builder("d").longOpt("db").hasArg().desc("optional: db path").get())
-                .addOption(Option.builder("c").longOpt("config").hasArg().desc("tika-eval json config file").get())
-                .addOption(Option.builder("n").longOpt("numWorkers").hasArg().desc("number of worker threads").get())
-                .addOption(Option.builder("m").longOpt("maxExtractLength").hasArg().desc("maximum extract length").get())
-        ;
+                        .addOption(Option.builder("e").longOpt("extracts").hasArg()
+                                        .desc("required: directory of extracts").get())
+                        .addOption(Option.builder("i").longOpt("inputDir").hasArg().desc(
+                                        "optional: directory for original binary input documents."
+                                                        + " If not specified, -extracts is crawled as is.")
+                                        .get())
+                        .addOption(Option.builder("d").longOpt("db").hasArg()
+                                        .desc("optional: db path").get())
+                        .addOption(Option.builder("c").longOpt("config").hasArg()
+                                        .desc("tika-eval json config file").get())
+                        .addOption(Option.builder("n").longOpt("numWorkers").hasArg()
+                                        .desc("number of worker threads").get())
+                        .addOption(Option.builder("m").longOpt("maxExtractLength").hasArg()
+                                        .desc("maximum extract length").get());
     }
 
     public static void main(String[] args) throws Exception {
         DefaultParser defaultCLIParser = new DefaultParser();
         CommandLine commandLine = defaultCLIParser.parse(OPTIONS, args);
-        EvalConfig evalConfig = commandLine.hasOption('c') ? EvalConfig.load(Paths.get(commandLine.getOptionValue('c'))) : new EvalConfig();
-        Path extractsDir = commandLine.hasOption('e') ? Paths.get(commandLine.getOptionValue('e')) : Paths.get(USAGE_FAIL("Must specify extracts dir: -i"));
-        Path inputDir = commandLine.hasOption('i') ? Paths.get(commandLine.getOptionValue('i')) : extractsDir;
-        String dbPath = commandLine.hasOption('d') ? commandLine.getOptionValue('d') : USAGE_FAIL("Must specify the db name: -d");
+        EvalConfig evalConfig = commandLine.hasOption('c')
+                        ? EvalConfig.load(Paths.get(commandLine.getOptionValue('c')))
+                        : new EvalConfig();
+        Path extractsDir = commandLine.hasOption('e') ? Paths.get(commandLine.getOptionValue('e'))
+                        : Paths.get(USAGE_FAIL("Must specify extracts dir: -i"));
+        Path inputDir = commandLine.hasOption('i') ? Paths.get(commandLine.getOptionValue('i'))
+                        : extractsDir;
+        String dbPath = commandLine.hasOption('d') ? commandLine.getOptionValue('d')
+                        : USAGE_FAIL("Must specify the db name: -d");
         String jdbcString = getJdbcConnectionString(dbPath);
         if (commandLine.hasOption('n')) {
             evalConfig.setNumWorkers(Integer.parseInt(commandLine.getOptionValue('n')));
@@ -103,15 +111,16 @@ public class ExtractProfileRunner {
         if (dbPath.startsWith("jdbc:")) {
             return dbPath;
         }
-        //default to h2
+        // default to h2
         Path p = Paths.get(dbPath);
         return "jdbc:h2:file:" + p.toAbsolutePath();
 
     }
 
-    private static void execute(Path inputDir, Path extractsDir, String dbPath, EvalConfig evalConfig) throws SQLException, IOException {
+    private static void execute(Path inputDir, Path extractsDir, String dbPath,
+                    EvalConfig evalConfig) throws SQLException, IOException {
 
-        //parameterize this? if necesssary
+        // parameterize this? if necesssary
         try {
             ProfilerBase.loadCommonTokens(null, null);
         } catch (IOException e) {
@@ -129,28 +138,35 @@ public class ExtractProfileRunner {
 
 
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
-        CallablePipesIterator pipesIterator = new CallablePipesIterator(createIterator(inputDir), queue);
-        ExecutorService executorService = Executors.newFixedThreadPool(evalConfig.getNumWorkers() + 2);
-        ExecutorCompletionService<Long> executorCompletionService = new ExecutorCompletionService<>(executorService);
+        CallablePipesIterator pipesIterator =
+                        new CallablePipesIterator(createIterator(inputDir), queue);
+        ExecutorService executorService =
+                        Executors.newFixedThreadPool(evalConfig.getNumWorkers() + 2);
+        ExecutorCompletionService<Long> executorCompletionService =
+                        new ExecutorCompletionService<>(executorService);
 
-        StatusReporter statusReporter = new StatusReporter(pipesIterator, processed, activeWorkers, crawlerActive);
+        StatusReporter statusReporter =
+                        new StatusReporter(pipesIterator, processed, activeWorkers, crawlerActive);
         executorCompletionService.submit(statusReporter);
 
         executorCompletionService.submit(pipesIterator);
         for (int i = 0; i < evalConfig.getNumWorkers(); i++) {
-            ExtractReader extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS, evalConfig.getMinExtractLength(), evalConfig.getMaxExtractLength());
-            ExtractProfiler extractProfiler = new ExtractProfiler(inputDir, extractsDir, extractReader, builder.getDBWriter(builder.tableInfos, jdbcUtil, mimeBuffer));
+            ExtractReader extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS,
+                            evalConfig.getMinExtractLength(), evalConfig.getMaxExtractLength());
+            ExtractProfiler extractProfiler = new ExtractProfiler(inputDir, extractsDir,
+                            extractReader,
+                            builder.getDBWriter(builder.tableInfos, jdbcUtil, mimeBuffer));
             executorCompletionService.submit(new ProfileWorker(queue, extractProfiler, processed));
         }
 
         int finished = 0;
         try {
             while (finished < evalConfig.getNumWorkers() + 2) {
-                //blocking
+                // blocking
                 Future<Long> future = executorCompletionService.take();
                 Long result = future.get();
                 if (result != null) {
-                    //if the dir walker has finished
+                    // if the dir walker has finished
                     if (result == DIR_WALKER_COMPLETED_VALUE) {
                         queue.put(PipesIterator.COMPLETED_SEMAPHORE);
                         crawlerActive.set(false);
@@ -178,20 +194,25 @@ public class ExtractProfileRunner {
         return fs;
     }
 
-    private static MimeBuffer initTables(JDBCUtil jdbcUtil, ExtractProfilerBuilder builder, String connectionString, EvalConfig evalConfig) throws SQLException, IOException {
+    private static MimeBuffer initTables(JDBCUtil jdbcUtil, ExtractProfilerBuilder builder,
+                    String connectionString, EvalConfig evalConfig)
+                    throws SQLException, IOException {
 
-        //step 1. create the tables
-        jdbcUtil.createTables(builder.getNonRefTableInfos(), JDBCUtil.CREATE_TABLE.THROW_EX_IF_EXISTS);
+        // step 1. create the tables
+        jdbcUtil.createTables(builder.getNonRefTableInfos(),
+                        JDBCUtil.CREATE_TABLE.THROW_EX_IF_EXISTS);
         jdbcUtil.createTables(builder.getRefTableInfos(), JDBCUtil.CREATE_TABLE.THROW_EX_IF_EXISTS);
 
-        //step 2. create mime buffer
-        return new MimeBuffer(jdbcUtil.getConnection(), builder.getMimeTable(), MimeTypes.getDefaultMimeTypes());
+        // step 2. create mime buffer
+        return new MimeBuffer(jdbcUtil.getConnection(), builder.getMimeTable(),
+                        MimeTypes.getDefaultMimeTypes());
     }
 
     private static void USAGE() throws IOException {
         HelpFormatter helpFormatter = HelpFormatter.builder().get();
-        helpFormatter.printHelp("java -jar tika-eval-app-x.y.z.jar FileProfiler -e docs -d mydb [-i inputDir, -c config.json]",
-                "Tool: Profile", OPTIONS, null, true);
+        helpFormatter.printHelp(
+                        "java -jar tika-eval-app-x.y.z.jar FileProfiler -e docs -d mydb [-i inputDir, -c config.json]",
+                        "Tool: Profile", OPTIONS, null, true);
     }
 
     private static String USAGE_FAIL(String msg) throws IOException {
@@ -205,7 +226,8 @@ public class ExtractProfileRunner {
         private final ExtractProfiler extractProfiler;
         private final AtomicInteger processed;
 
-        ProfileWorker(ArrayBlockingQueue<FetchEmitTuple> queue, ExtractProfiler extractProfiler, AtomicInteger processed) {
+        ProfileWorker(ArrayBlockingQueue<FetchEmitTuple> queue, ExtractProfiler extractProfiler,
+                        AtomicInteger processed) {
             this.queue = queue;
             this.extractProfiler = extractProfiler;
             this.processed = processed;
@@ -222,7 +244,7 @@ public class ExtractProfileRunner {
                 if (t == PipesIterator.COMPLETED_SEMAPHORE) {
                     LOG.debug("worker hit semaphore and is stopping");
                     extractProfiler.closeWriter();
-                    //hangs
+                    // hangs
                     queue.put(PipesIterator.COMPLETED_SEMAPHORE);
                     return PROFILE_WORKER_COMPLETED_VALUE;
                 }
@@ -268,15 +290,15 @@ public class ExtractProfileRunner {
             return ProfilerBase.MIME_TABLE;
         }
 
-        public void populateRefTables(JDBCUtil dbUtil, MimeBuffer mimeBuffer) throws IOException, SQLException {
+        public void populateRefTables(JDBCUtil dbUtil, MimeBuffer mimeBuffer)
+                        throws IOException, SQLException {
             boolean refTablesPopulated = true;
             try {
                 Connection connection = dbUtil.getConnection();
                 for (TableInfo tableInfo : getRefTableInfos()) {
                     int rows = 0;
-                    try (ResultSet rs = connection
-                            .createStatement()
-                            .executeQuery("select * from " + tableInfo.getName())) {
+                    try (ResultSet rs = connection.createStatement()
+                                    .executeQuery("select * from " + tableInfo.getName())) {
                         while (rs.next()) {
                             rows++;
                         }
@@ -288,7 +310,7 @@ public class ExtractProfileRunner {
 
                 }
             } catch (SQLException e) {
-                //swallow
+                // swallow
             }
             if (refTablesPopulated) {
                 LOG.info("ref tables are already populated");
@@ -320,7 +342,8 @@ public class ExtractProfileRunner {
             writer.close();
         }
 
-        protected IDBWriter getDBWriter(List<TableInfo> tableInfos, JDBCUtil dbUtil, MimeBuffer mimeBuffer) throws IOException, SQLException {
+        protected IDBWriter getDBWriter(List<TableInfo> tableInfos, JDBCUtil dbUtil,
+                        MimeBuffer mimeBuffer) throws IOException, SQLException {
             Connection conn = dbUtil.getConnection();
             return new DBWriter(conn, tableInfos, dbUtil, mimeBuffer);
         }

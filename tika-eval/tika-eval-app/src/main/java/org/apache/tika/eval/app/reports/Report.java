@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.eval.app.reports;
 
@@ -46,7 +44,7 @@ import org.slf4j.LoggerFactory;
 public class Report {
     private static final Logger LOG = LoggerFactory.getLogger(Report.class);
 
-    final String NULL_VALUE = "";//TODO: make this configurable!!!
+    final String NULL_VALUE = "";// TODO: make this configurable!!!
     Map<String, XSLXCellFormatter> cellFormatters = new HashMap<>();
     String sql;
     String reportFilename;
@@ -101,7 +99,7 @@ public class Report {
             ResultSetMetaData meta = rs.getMetaData();
 
             Row xssfRow = sheet.createRow(rowCount++);
-            //write headers and cache them to check against styles
+            // write headers and cache them to check against styles
             for (int i = 1; i <= meta.getColumnCount(); i++) {
                 Cell cell = xssfRow.createCell(i - 1);
                 cell.setCellValue(meta.getColumnLabel(i));
@@ -138,7 +136,7 @@ public class Report {
         Cell cell = sqlRow.createCell(0);
         cell.setCellStyle(sqlCellStyle);
 
-        cell.setCellValue(sql.trim());//.replaceAll("[\r\n]+", "\r\n"));
+        cell.setCellValue(sql.trim());// .replaceAll("[\r\n]+", "\r\n"));
     }
 
     private XSLXCellFormatter getDefaultFormatter(int columnType) {
@@ -154,10 +152,11 @@ public class Report {
         }
     }
 
-    private void writeCell(ResultSetMetaData meta, int colIndex, ResultSet rs, Cell cell) throws SQLException {
+    private void writeCell(ResultSetMetaData meta, int colIndex, ResultSet rs, Cell cell)
+                    throws SQLException {
 
         switch (meta.getColumnType(colIndex)) {
-            //fall through on numerics
+            // fall through on numerics
             case Types.BIGINT:
             case Types.SMALLINT:
             case Types.INTEGER:
@@ -173,7 +172,7 @@ public class Report {
                     cell.setCellValue(dbl);
                 }
                 break;
-            //fall through strings
+            // fall through strings
             case Types.BOOLEAN:
             case Types.CHAR:
             case Types.VARCHAR:
@@ -191,7 +190,8 @@ public class Report {
                 } else {
                     cell.setCellValue(rs.getString(colIndex));
                 }
-                LOG.warn("Couldn't find type for: {}. Defaulting to String", meta.getColumnType(colIndex));
+                LOG.warn("Couldn't find type for: {}. Defaulting to String",
+                                meta.getColumnType(colIndex));
         }
     }
 

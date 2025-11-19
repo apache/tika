@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mp3;
 
@@ -23,18 +21,16 @@ import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
-
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
 
 /**
- * A frame of ID3v2 data, which is then passed to a handler to
- * be turned into useful data.
+ * A frame of ID3v2 data, which is then passed to a handler to be turned into useful data.
  */
 public class ID3v2Frame implements MP3Frame {
 
-    protected static final TextEncoding[] encodings =
-            new TextEncoding[]{new TextEncoding("ISO-8859-1", false),
-                    new TextEncoding("UTF-16", true), // With BOM
+    protected static final TextEncoding[] encodings = new TextEncoding[] {
+                    new TextEncoding("ISO-8859-1", false), new TextEncoding("UTF-16", true), // With
+                                                                                             // BOM
                     new TextEncoding("UTF-16BE", true), // Without BOM
                     new TextEncoding("UTF-8", false)};
     private static int MAX_RECORD_SIZE = 50_000_000;
@@ -63,7 +59,7 @@ public class ID3v2Frame implements MP3Frame {
         }
 
         // Get the frame's data, or at least as much
-        //  of it as we could do
+        // of it as we could do
         data = readFully(inp, length, false);
     }
 
@@ -72,13 +68,10 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     /**
-     * Returns the next ID3v2 Frame in
-     * the file, or null if the next batch of data
-     * doesn't correspond to either an ID3v2 header.
-     * If no ID3v2 frame could be detected and the passed in input stream is a
-     * {@code PushbackInputStream}, the bytes read so far are pushed back so
-     * that they can be read again.
-     * ID3v2 Frames should come before all Audio ones.
+     * Returns the next ID3v2 Frame in the file, or null if the next batch of data doesn't
+     * correspond to either an ID3v2 header. If no ID3v2 frame could be detected and the passed in
+     * input stream is a {@code PushbackInputStream}, the bytes read so far are pushed back so that
+     * they can be read again. ID3v2 Frames should come before all Audio ones.
      */
     public static MP3Frame createFrameIfPresent(InputStream inp) throws IOException {
         int h1 = inp.read();
@@ -102,10 +95,10 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     /**
-     * Pushes bytes back into the stream if possible. This method is called if
-     * no ID3v2 header could be found at the current stream position.
+     * Pushes bytes back into the stream if possible. This method is called if no ID3v2 header could
+     * be found at the current stream position.
      *
-     * @param inp   the input stream
+     * @param inp the input stream
      * @param bytes the bytes to be pushed back
      * @throws IOException if an error occurs
      */
@@ -145,9 +138,8 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     /**
-     * AKA a Synchsafe integer.
-     * 4 bytes hold a 28 bit number. The highest
-     * bit in each byte is always 0 and always ignored.
+     * AKA a Synchsafe integer. 4 bytes hold a 28 bit number. The highest bit in each byte is always
+     * 0 and always ignored.
      */
     protected static int get7BitsInt(byte[] data, int offset) {
         int b0 = data[offset + 0] & 0x7F;
@@ -162,11 +154,10 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     protected static byte[] readFully(InputStream inp, int length, boolean shortDataIsFatal)
-            throws IOException {
+                    throws IOException {
         if (MAX_RECORD_SIZE > 0 && length > MAX_RECORD_SIZE) {
-            throw new IOException(
-                    "Record size (" + length + " bytes) is larger than the allowed record size: " +
-                            MAX_RECORD_SIZE);
+            throw new IOException("Record size (" + length
+                            + " bytes) is larger than the allowed record size: " + MAX_RECORD_SIZE);
         }
         byte[] b = new byte[length];
 
@@ -176,8 +167,8 @@ public class ID3v2Frame implements MP3Frame {
             read = inp.read(b, pos, length - pos);
             if (read == -1) {
                 if (shortDataIsFatal) {
-                    throw new IOException("Tried to read " + length + " bytes, but only " + pos +
-                            " bytes present");
+                    throw new IOException("Tried to read " + length + " bytes, but only " + pos
+                                    + " bytes present");
                 } else {
                     // Give them what we found
                     // TODO Log the short read
@@ -191,8 +182,8 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     /**
-     * Returns the (possibly null padded) String at the given offset and
-     * length. String encoding is held in the first byte;
+     * Returns the (possibly null padded) String at the given offset and length. String encoding is
+     * held in the first byte;
      */
     protected static String getTagString(byte[] data, int offset, int length) {
         int actualLength = length;
@@ -214,8 +205,8 @@ public class ID3v2Frame implements MP3Frame {
         }
 
         // Trim off null termination / padding (as present)
-        while (encoding.doubleByte && actualLength >= 2 && data[offset + actualLength - 1] == 0 &&
-                data[offset + actualLength - 2] == 0) {
+        while (encoding.doubleByte && actualLength >= 2 && data[offset + actualLength - 1] == 0
+                        && data[offset + actualLength - 2] == 0) {
             actualLength -= 2;
         }
         while (!encoding.doubleByte && actualLength >= 1 && data[offset + actualLength - 1] == 0) {
@@ -229,9 +220,10 @@ public class ID3v2Frame implements MP3Frame {
         // have is a naked BOM then short-circuit here
         // (return empty string), because new String(..)
         // gives different results on different JVMs
-        if (encoding.encoding.equals("UTF-16") && actualLength == 2 &&
-                ((data[offset] == (byte) 0xff && data[offset + 1] == (byte) 0xfe) ||
-                        (data[offset] == (byte) 0xfe && data[offset + 1] == (byte) 0xff))) {
+        if (encoding.encoding.equals("UTF-16") && actualLength == 2
+                        && ((data[offset] == (byte) 0xff && data[offset + 1] == (byte) 0xfe)
+                                        || (data[offset] == (byte) 0xfe
+                                                        && data[offset + 1] == (byte) 0xff))) {
             return "";
         }
 
@@ -240,13 +232,13 @@ public class ID3v2Frame implements MP3Frame {
             return new String(data, offset, actualLength, encoding.encoding);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Core encoding " + encoding.encoding + " is not available",
-                    e);
+                            e);
         }
     }
 
     /**
-     * Builds up the ID3 comment, by parsing and extracting
-     * the comment string parts from the given data.
+     * Builds up the ID3 comment, by parsing and extracting the comment string parts from the given
+     * data.
      */
     protected static ID3Comment getComment(byte[] data, int offset, int length) {
         // Comments must have an encoding
@@ -300,13 +292,12 @@ public class ID3v2Frame implements MP3Frame {
             return new ID3Comment(lang, description, text);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Core encoding " + encoding.encoding + " is not available",
-                    e);
+                            e);
         }
     }
 
     /**
-     * Returns the String at the given
-     * offset and length. Strings are ISO-8859-1
+     * Returns the String at the given offset and length. Strings are ISO-8859-1
      */
     protected static String getString(byte[] data, int offset, int length) {
         return new String(data, offset, length, ISO_8859_1);
@@ -357,7 +348,7 @@ public class ID3v2Frame implements MP3Frame {
         private int headerSize;
 
         private RawTag(int nameLength, int sizeLength, int sizeMultiplier, int flagLength,
-                       byte[] frameData, int offset) {
+                        byte[] frameData, int offset) {
             headerSize = nameLength + sizeLength + flagLength;
 
             // Name, normally 3 or 4 bytes
@@ -383,8 +374,9 @@ public class ID3v2Frame implements MP3Frame {
 
             // Now data
             int copyFrom = offset + nameLength + sizeLength + flagLength;
-            size = Math.max(0, Math.min(size, frameData.length -
-                    copyFrom)); // TIKA-1218, prevent negative size for malformed files.
+            size = Math.max(0, Math.min(size, frameData.length - copyFrom)); // TIKA-1218, prevent
+                                                                             // negative size for
+                                                                             // malformed files.
             data = new byte[size];
             System.arraycopy(frameData, copyFrom, data, 0, size);
         }
@@ -396,9 +388,8 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     /**
-     * Iterates over id3v2 raw tags.
-     * Create an instance of this that configures the
-     * various length and multipliers.
+     * Iterates over id3v2 raw tags. Create an instance of this that configures the various length
+     * and multipliers.
      */
     protected class RawTagIterator implements Iterator<RawTag> {
         private int nameLength;
@@ -409,7 +400,7 @@ public class ID3v2Frame implements MP3Frame {
         private int offset = 0;
 
         protected RawTagIterator(int nameLength, int sizeLength, int sizeMultiplier,
-                                 int flagLength) {
+                        int flagLength) {
             this.nameLength = nameLength;
             this.sizeLength = sizeLength;
             this.sizeMultiplier = sizeMultiplier;
@@ -422,14 +413,13 @@ public class ID3v2Frame implements MP3Frame {
         }
 
         public RawTag next() {
-            RawTag tag =
-                    new RawTag(nameLength, sizeLength, sizeMultiplier, flagLength, data, offset);
+            RawTag tag = new RawTag(nameLength, sizeLength, sizeMultiplier, flagLength, data,
+                            offset);
             offset += tag.getSize();
             return tag;
         }
 
-        public void remove() {
-        }
+        public void remove() {}
 
     }
 

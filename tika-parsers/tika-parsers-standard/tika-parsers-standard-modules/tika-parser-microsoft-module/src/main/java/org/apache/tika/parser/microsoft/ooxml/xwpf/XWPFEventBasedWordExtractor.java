@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.ooxml.xwpf;
@@ -24,7 +22,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.ooxml.POIXMLProperties;
@@ -37,11 +34,6 @@ import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
-import org.apache.xmlbeans.XmlException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
@@ -51,8 +43,12 @@ import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
 import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.apache.xmlbeans.XmlException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
-//TODO: move this into POI?
+// TODO: move this into POI?
 
 /**
  * Experimental class that is based on POI's XSSFEventBasedExcelExtractor
@@ -65,7 +61,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
     private POIXMLProperties properties;
 
     public XWPFEventBasedWordExtractor(OPCPackage container)
-            throws XmlException, OpenXML4JException, IOException {
+                    throws XmlException, OpenXML4JException, IOException {
         this.container = container;
         this.properties = new POIXMLProperties(container);
     }
@@ -95,12 +91,12 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
     @Override
     public String getText() {
         StringBuilder sb = new StringBuilder();
-        //handle main document
+        // handle main document
         List<PackagePart> pps =
-                container.getPartsByContentType(XWPFRelation.DOCUMENT.getContentType());
+                        container.getPartsByContentType(XWPFRelation.DOCUMENT.getContentType());
         if (pps != null) {
             for (PackagePart pp : pps) {
-                //likely only one, but why not...
+                // likely only one, but why not...
                 try {
                     handleDocumentPart(pp, sb);
                 } catch (IOException e) {
@@ -109,19 +105,19 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
                     if (WriteLimitReachedException.isWriteLimitReached(e)) {
                         throw new RuntimeSAXException(e);
                     }
-                    //swallow this because we don't actually call it
+                    // swallow this because we don't actually call it
                     LOG.warn("SAXException handling document part", e);
                 } catch (TikaException e) {
                     LOG.warn("ParseException handling document part", e);
                 }
             }
         }
-        //handle glossary document
+        // handle glossary document
         pps = container.getPartsByContentType(XWPFRelation.GLOSSARY_DOCUMENT.getContentType());
 
         if (pps != null) {
             for (PackagePart pp : pps) {
-                //likely only one, but why not...
+                // likely only one, but why not...
                 try {
                     handleDocumentPart(pp, sb);
                 } catch (IOException e) {
@@ -130,7 +126,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
                     if (WriteLimitReachedException.isWriteLimitReached(e)) {
                         throw new RuntimeSAXException(e);
                     }
-                    //swallow this because we don't actually call it
+                    // swallow this because we don't actually call it
                     LOG.warn("SAXException handling glossary document part", e);
                 } catch (TikaException e) {
                     LOG.warn("ParseException handling document part", e);
@@ -158,16 +154,16 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
 
 
     private void handleDocumentPart(PackagePart documentPart, StringBuilder sb)
-            throws IOException, SAXException, TikaException {
-        //load the numbering/list manager and styles from the main document part
+                    throws IOException, SAXException, TikaException {
+        // load the numbering/list manager and styles from the main document part
         XWPFNumbering numbering = loadNumbering(documentPart);
         XWPFListManager xwpfListManager = new XWPFListManager(numbering);
-        //TODO: XWPFStyles styles = loadStyles(documentPart);
+        // TODO: XWPFStyles styles = loadStyles(documentPart);
 
-        //headers
+        // headers
         try {
             PackageRelationshipCollection headersPRC =
-                    documentPart.getRelationshipsByType(XWPFRelation.HEADER.getRelation());
+                            documentPart.getRelationshipsByType(XWPFRelation.HEADER.getRelation());
             if (headersPRC != null) {
                 for (int i = 0; i < headersPRC.size(); i++) {
                     PackagePart header = documentPart.getRelatedPart(headersPRC.getRelationship(i));
@@ -178,19 +174,19 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
             LOG.warn("Invalid format", e);
         }
 
-        //main document
+        // main document
         handlePart(documentPart, xwpfListManager, sb);
 
-        //for now, just dump other components at end
-        for (XWPFRelation rel : new XWPFRelation[]{XWPFRelation.FOOTNOTE, XWPFRelation.COMMENT,
-                XWPFRelation.FOOTER, XWPFRelation.ENDNOTE}) {
+        // for now, just dump other components at end
+        for (XWPFRelation rel : new XWPFRelation[] {XWPFRelation.FOOTNOTE, XWPFRelation.COMMENT,
+                        XWPFRelation.FOOTER, XWPFRelation.ENDNOTE}) {
             try {
                 PackageRelationshipCollection prc =
-                        documentPart.getRelationshipsByType(rel.getRelation());
+                                documentPart.getRelationshipsByType(rel.getRelation());
                 if (prc != null) {
                     for (int i = 0; i < prc.size(); i++) {
                         PackagePart packagePart =
-                                documentPart.getRelatedPart(prc.getRelationship(i));
+                                        documentPart.getRelatedPart(prc.getRelationship(i));
                         handlePart(packagePart, xwpfListManager, sb);
                     }
                 }
@@ -201,13 +197,14 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
     }
 
     private void handlePart(PackagePart packagePart, XWPFListManager xwpfListManager,
-                            StringBuilder buffer) throws IOException, SAXException, TikaException {
+                    StringBuilder buffer) throws IOException, SAXException, TikaException {
 
         Map<String, String> hyperlinks = loadHyperlinkRelationships(packagePart);
         try (InputStream stream = packagePart.getInputStream()) {
             XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
-                    new OOXMLWordAndPowerPointTextHandler(new XWPFToTextContentHandler(buffer),
-                    hyperlinks), new ParseContext());
+                            new OOXMLWordAndPowerPointTextHandler(
+                                            new XWPFToTextContentHandler(buffer), hyperlinks),
+                            new ParseContext());
         }
 
     }
@@ -216,7 +213,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
         Map<String, String> hyperlinks = new HashMap<>();
         try {
             PackageRelationshipCollection prc =
-                    bodyPart.getRelationshipsByType(XWPFRelation.HYPERLINK.getRelation());
+                            bodyPart.getRelationshipsByType(XWPFRelation.HYPERLINK.getRelation());
             for (int i = 0; i < prc.size(); i++) {
                 PackageRelationship pr = prc.getRelationship(i);
                 if (pr == null) {
@@ -236,8 +233,8 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
 
     private XWPFNumbering loadNumbering(PackagePart packagePart) throws IOException {
         try {
-            PackageRelationshipCollection numberingParts =
-                    packagePart.getRelationshipsByType(XWPFRelation.NUMBERING.getRelation());
+            PackageRelationshipCollection numberingParts = packagePart
+                            .getRelationshipsByType(XWPFRelation.NUMBERING.getRelation());
             if (numberingParts.size() > 0) {
                 PackageRelationship numberingRelationShip = numberingParts.getRelationship(0);
                 if (numberingRelationShip == null) {
@@ -256,7 +253,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
     }
 
     private static class XWPFToTextContentHandler
-            implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
+                    implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
         private final StringBuilder buffer;
 
         public XWPFToTextContentHandler(StringBuilder buffer) {
@@ -270,17 +267,17 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
 
         @Override
         public void hyperlinkStart(String link) {
-            //no-op
+            // no-op
         }
 
         @Override
         public void hyperlinkEnd() {
-            //no-op
+            // no-op
         }
 
         @Override
         public void startParagraph(ParagraphProperties paragraphProperties) {
-            //no-op
+            // no-op
         }
 
         @Override
@@ -330,7 +327,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
 
         @Override
         public void startEditedSection(String editor, Date date,
-                                       OOXMLWordAndPowerPointTextHandler.EditType editType) {
+                        OOXMLWordAndPowerPointTextHandler.EditType editType) {
 
         }
 
@@ -361,23 +358,22 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
 
         @Override
         public void embeddedOLERef(String refId) {
-            //no-op
+            // no-op
         }
 
         @Override
         public void embeddedPicRef(String picFileName, String picDescription) {
-            //no-op
+            // no-op
         }
 
         @Override
         public void startBookmark(String id, String name) {
-            //no-op
+            // no-op
         }
 
         @Override
         public void endBookmark(String id) {
-            //no-op
+            // no-op
         }
     }
 }
-

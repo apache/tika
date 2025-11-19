@@ -1,24 +1,21 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 
 /**
@@ -36,15 +33,14 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
     public static final int STREAM_OBJECT_HEADER_START_32_BIT = 0x02;
     public StreamObjectTypeHeaderStart type;
     /**
-     * Gets or sets the type of the stream object.
-     * value 0 for 16-bit stream object header start,
+     * Gets or sets the type of the stream object. value 0 for 16-bit stream object header start,
      * value 2 for 32-bit stream object header start.
      */
     protected int headerType;
     /**
-     * Gets or sets a value that specifies if set a compound parse type is needed and
-     * MUST be ended with either an 8-bit stream object header end or a 16-bit stream object header end.
-     * If the bit is zero, it specifies a single object. Otherwise it specifies a compound object.
+     * Gets or sets a value that specifies if set a compound parse type is needed and MUST be ended
+     * with either an 8-bit stream object header end or a 16-bit stream object header end. If the
+     * bit is zero, it specifies a single object. Otherwise it specifies a compound object.
      */
     protected int compound;
     protected int length;
@@ -52,8 +48,7 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
     /**
      * Initializes a new instance of the StreamObjectHeaderStart class.
      */
-    protected StreamObjectHeaderStart() {
-    }
+    protected StreamObjectHeaderStart() {}
 
     /**
      * Initializes a new instance of the StreamObjectHeaderStart class with specified header type.
@@ -67,13 +62,13 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
     /**
      * This method is used to parse the actual 16bit or 32bit stream header.
      *
-     * @param byteArray          Specify the Byte array.
-     * @param startIndex         Specify the start position.
+     * @param byteArray Specify the Byte array.
+     * @param startIndex Specify the start position.
      * @param streamObjectHeader Specify the out value for the parse result.
      * @return Return true if success, otherwise returns false.
      */
     public static int tryParse(byte[] byteArray, int startIndex,
-                               AtomicReference<StreamObjectHeaderStart> streamObjectHeader) {
+                    AtomicReference<StreamObjectHeaderStart> streamObjectHeader) {
         int headerType = byteArray[startIndex] & 0x03;
         if (headerType == StreamObjectHeaderStart.STREAM_OBJECT_HEADER_START_16_BIT) {
             streamObjectHeader.set(new StreamObjectHeaderStart16bit());

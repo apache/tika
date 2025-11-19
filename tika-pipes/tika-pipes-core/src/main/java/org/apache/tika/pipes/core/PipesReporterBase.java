@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.core;
 
@@ -20,7 +18,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -43,10 +40,10 @@ public abstract class PipesReporterBase extends PipesReporter implements Initial
     }
 
     private StatusFilter buildStatusFilter(Set<PipesResult.STATUS> includes,
-                                           Set<PipesResult.STATUS> excludes) throws TikaConfigException {
+                    Set<PipesResult.STATUS> excludes) throws TikaConfigException {
         if (includes.size() > 0 && excludes.size() > 0) {
-            throw new TikaConfigException("Only one of includes and excludes may have any " +
-                    "contents");
+            throw new TikaConfigException(
+                            "Only one of includes and excludes may have any " + "contents");
         }
         if (includes.size() > 0) {
             return new IncludesFilter(includes);
@@ -58,12 +55,13 @@ public abstract class PipesReporterBase extends PipesReporter implements Initial
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+                    throws TikaConfigException {
 
     }
 
     /**
      * Implementations must call this for the includes/excludes filters to work!
+     * 
      * @param status
      * @return
      */
@@ -79,9 +77,8 @@ public abstract class PipesReporterBase extends PipesReporter implements Initial
                 this.includes.add(status);
             } catch (IllegalArgumentException e) {
                 String optionString = getOptionString();
-                throw new TikaConfigException(
-                        "I regret I don't recognize " + s + ". I only understand: " + optionString,
-                        e);
+                throw new TikaConfigException("I regret I don't recognize " + s
+                                + ". I only understand: " + optionString, e);
             }
         }
     }
@@ -94,9 +91,8 @@ public abstract class PipesReporterBase extends PipesReporter implements Initial
                 this.excludes.add(status);
             } catch (IllegalArgumentException e) {
                 String optionString = getOptionString();
-                throw new TikaConfigException(
-                        "I regret I don't recognize " + s + ". I only understand: " + optionString,
-                        e);
+                throw new TikaConfigException("I regret I don't recognize " + s
+                                + ". I only understand: " + optionString, e);
             }
         }
     }

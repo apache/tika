@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.fork;
 
@@ -28,13 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
@@ -50,10 +41,15 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.libpst.LibPstParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
- * Test that the ForkParser correctly behaves when
- * wired in to the regular Parsers and their test data
+ * Test that the ForkParser correctly behaves when wired in to the regular Parsers and their test
+ * data
  */
 public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
 
@@ -65,7 +61,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     @Test
     public void testForkedTextParsing() throws Exception {
         try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
-                tika.getParser())) {
+                        tika.getParser())) {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
             ParseContext context = new ParseContext();
@@ -78,8 +74,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     }
 
     /**
-     * TIKA-831 Parsers throwing errors should be caught and
-     * properly reported
+     * TIKA-831 Parsers throwing errors should be caught and properly reported
      */
     @Test
     public void testParsingErrorInForkedParserShouldBeReported() throws Exception {
@@ -105,25 +100,25 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         brokenParser = new BrokenParser();
         brokenParser.re = new WontBeSerializedError("Can't Serialize");
         parser = new ForkParser(ForkParser.class.getClassLoader(), brokenParser);
-//        try {
-//           ContentHandler output = new BodyContentHandler();
-//           ParseContext context = new ParseContext();
-//           parser.parse(stream, output, new Metadata(), context);
-//           fail("Expected TikaException caused by Error");
-//       } catch (TikaException e) {
-//           assertEquals(TikaException.class, e.getCause().getClass());
-//           assertEquals("Bang!", e.getCause().getMessage());
-//       }
+        // try {
+        // ContentHandler output = new BodyContentHandler();
+        // ParseContext context = new ParseContext();
+        // parser.parse(stream, output, new Metadata(), context);
+        // fail("Expected TikaException caused by Error");
+        // } catch (TikaException e) {
+        // assertEquals(TikaException.class, e.getCause().getClass());
+        // assertEquals("Bang!", e.getCause().getMessage());
+        // }
     }
 
     /**
-     * If we supply a non serializable object on the ParseContext,
-     * check we get a helpful exception back
+     * If we supply a non serializable object on the ParseContext, check we get a helpful exception
+     * back
      */
     @Test
     public void testParserHandlingOfNonSerializable() throws Exception {
-        ForkParser parser =
-                new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser());
+        ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
+                        tika.getParser());
 
         ParseContext context = new ParseContext();
         context.set(Detector.class, new Detector() {
@@ -141,7 +136,8 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             // Check the right details
             assertNotNull(e.getCause());
             assertEquals(NotSerializableException.class, e.getCause().getClass());
-            assertEquals("Unable to serialize ParseContext to pass to the Forked Parser",e.getMessage());
+            assertEquals("Unable to serialize ParseContext to pass to the Forked Parser",
+                            e.getMessage());
         } finally {
             parser.close();
         }
@@ -163,10 +159,10 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         } catch (IOException e) {
             fail("Port is not available");
         }
-        ForkParser parser =
-                new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser());
-        parser.setJavaCommand(Arrays.asList("java", "-Xmx32m", "-Xdebug", "-Xrunjdwp:transport" +
-                "=dt_socket,address=" + availSocket + ",server=y,suspend=n"));
+        ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
+                        tika.getParser());
+        parser.setJavaCommand(Arrays.asList("java", "-Xmx32m", "-Xdebug", "-Xrunjdwp:transport"
+                        + "=dt_socket,address=" + availSocket + ",server=y,suspend=n"));
         try {
             ContentHandler body = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
@@ -180,13 +176,13 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     }
 
     /**
-     * TIKA-808 - Ensure that parsing of our test PDFs work under
-     * the Fork Parser, to ensure that complex parsing behaves
+     * TIKA-808 - Ensure that parsing of our test PDFs work under the Fork Parser, to ensure that
+     * complex parsing behaves
      */
     @Test
     public void testForkedPDFParsing() throws Exception {
         try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
-                tika.getParser())) {
+                        tika.getParser())) {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testPDF.pdf");
             ParseContext context = new ParseContext();
@@ -204,7 +200,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     @Test
     public void testForkedPackageParsing() throws Exception {
         try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
-                tika.getParser())) {
+                        tika.getParser())) {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/moby.zip");
             ParseContext context = new ParseContext();
@@ -215,13 +211,13 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
 
     @Test
     public void testLibPstParser() throws Exception {
-        if (! new LibPstParser().checkQuietly()) {
+        if (!new LibPstParser().checkQuietly()) {
             return;
         }
-        TikaConfig tikaConfig = new TikaConfig(
-                ForkParserIntegrationTest.class.getResourceAsStream("/configs/tika-config-lib-pst.xml"));
+        TikaConfig tikaConfig = new TikaConfig(ForkParserIntegrationTest.class
+                        .getResourceAsStream("/configs/tika-config-lib-pst.xml"));
         try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
-                new AutoDetectParser(tikaConfig))) {
+                        new AutoDetectParser(tikaConfig))) {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testPST.pst");
             ParseContext context = new ParseContext();
@@ -231,13 +227,13 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     }
 
     @Test
-    @Disabled("use for development/one off testing.  This is a beast and takes enormous " +
-            "resources and time")
+    @Disabled("use for development/one off testing.  This is a beast and takes enormous "
+                    + "resources and time")
     public void smokeTest() throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(tika.getParser());
         int numThreads = 5;
         ForkParser parser =
-                new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), wrapper);
+                        new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), wrapper);
         parser.setServerPulseMillis(500);
         parser.setServerParseTimeoutMillis(1000);
         parser.setPoolSize(numThreads);
@@ -249,12 +245,10 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             super.testMultiThreaded(parser, parseContexts, numThreads, 5, pathname -> {
                 return pathname.getAbsolutePath().contains("mock");
                 /*
-                        if (pathname.getName().contains("11_hang.rar") ||
-                                pathname.getName().contains("radar_profiles_2009.mat") ||
-                                pathname.getAbsolutePath().contains("mock")) {
-                            //return false;
-                        }
-                        return true;*/
+                 * if (pathname.getName().contains("11_hang.rar") ||
+                 * pathname.getName().contains("radar_profiles_2009.mat") ||
+                 * pathname.getAbsolutePath().contains("mock")) { //return false; } return true;
+                 */
             });
         } catch (Throwable t) {
             t.printStackTrace();
@@ -264,8 +258,8 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     }
 
     /**
-     * This error has a message and an equals() implementation as to be able
-     * to match it against the serialized version of itself.
+     * This error has a message and an equals() implementation as to be able to match it against the
+     * serialized version of itself.
      */
     static class AnError extends Error {
         private static final long serialVersionUID = -6197267350768803348L;
@@ -301,8 +295,8 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     }
 
     /**
-     * This error isn't serializable on the server, so can't be sent back
-     * to the Fork Client once it has occured
+     * This error isn't serializable on the server, so can't be sent back to the Fork Client once it
+     * has occured
      */
     static class WontBeSerializedError extends RuntimeException {
         private static final long serialVersionUID = 1L;
@@ -336,7 +330,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         }
 
         public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException, SAXException, TikaException {
+                        ParseContext context) throws IOException, SAXException, TikaException {
             if (re != null) {
                 throw re;
             }

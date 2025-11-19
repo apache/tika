@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.server.standard;
@@ -23,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import jakarta.ws.rs.core.Response;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -30,14 +29,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
-
-import jakarta.ws.rs.core.Response;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
@@ -47,6 +42,7 @@ import org.apache.tika.server.core.resource.UnpackerResource;
 import org.apache.tika.server.core.writer.TarWriter;
 import org.apache.tika.server.core.writer.ZipWriter;
 import org.apache.tika.server.standard.config.PDFServerConfig;
+import org.junit.jupiter.api.Test;
 
 public class UnpackerResourceTest extends CXFTestBase {
     private static final String BASE_PATH = "/unpack";
@@ -80,7 +76,8 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(UnpackerResource.class);
-        sf.setResourceProvider(UnpackerResource.class, new SingletonResourceProvider(new UnpackerResource()));
+        sf.setResourceProvider(UnpackerResource.class,
+                        new SingletonResourceProvider(new UnpackerResource()));
     }
 
     @Override
@@ -94,11 +91,9 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void testDocWAV() throws Exception {
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
-                .type(APPLICATION_MSWORD)
-                .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+        Response response = WebClient.create(CXFTestBase.endPoint + UNPACKER_PATH)
+                        .type(APPLICATION_MSWORD).accept("application/zip")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
         assertEquals(WAV1_MD5, data.get(WAV1_NAME));
@@ -108,11 +103,9 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void testDocWAVText() throws Exception {
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
-                .type(APPLICATION_MSWORD)
-                .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+        Response response = WebClient.create(CXFTestBase.endPoint + ALL_PATH)
+                        .type(APPLICATION_MSWORD).accept("application/zip")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
         assertEquals(WAV1_MD5, data.get(WAV1_NAME));
@@ -122,11 +115,9 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void testDocPicture() throws Exception {
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
-                .type(APPLICATION_MSWORD)
-                .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+        Response response = WebClient.create(CXFTestBase.endPoint + UNPACKER_PATH)
+                        .type(APPLICATION_MSWORD).accept("application/zip")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
 
@@ -135,11 +126,9 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void testDocPictureNoOle() throws Exception {
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
-                .type(APPLICATION_MSWORD)
-                .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/2pic.doc"));
+        Response response = WebClient.create(CXFTestBase.endPoint + UNPACKER_PATH)
+                        .type(APPLICATION_MSWORD).accept("application/zip")
+                        .put(ClassLoader.getSystemResourceAsStream("test-documents/2pic.doc"));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
         assertEquals(JPG2_MD5, data.get(JPG2_NAME));
@@ -147,10 +136,9 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void testImageDOCX() throws Exception {
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
-                .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOCX_IMAGE));
+        Response response = WebClient.create(CXFTestBase.endPoint + UNPACKER_PATH)
+                        .accept("application/zip")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_DOCX_IMAGE));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
         assertEquals(DOCX_IMAGE1_MD5, data.get(DOCX_IMAGE1_NAME));
@@ -159,11 +147,8 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void test204() throws Exception {
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
-                .type("xxx/xxx")
-                .accept("*/*")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+        Response response = WebClient.create(CXFTestBase.endPoint + UNPACKER_PATH).type("xxx/xxx")
+                        .accept("*/*").put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
 
         assertEquals(204, response.getStatus());
     }
@@ -171,10 +156,9 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testExeDOCX() throws Exception {
         String TEST_DOCX_EXE = "test-documents/2exe.docx";
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
-                .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOCX_EXE));
+        Response response = WebClient.create(CXFTestBase.endPoint + UNPACKER_PATH)
+                        .accept("application/zip")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_DOCX_EXE));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
 
@@ -184,10 +168,9 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void testImageXSL() throws Exception {
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
-                .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/pic.xls"));
+        Response response = WebClient.create(CXFTestBase.endPoint + UNPACKER_PATH)
+                        .accept("application/zip")
+                        .put(ClassLoader.getSystemResourceAsStream("test-documents/pic.xls"));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
         assertEquals(XSL_IMAGE1_MD5, data.get("0.jpg"));
@@ -196,24 +179,21 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void testTarDocPicture() throws Exception {
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
-                .type(APPLICATION_MSWORD)
-                .accept("application/x-tar")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+        Response response = WebClient.create(CXFTestBase.endPoint + UNPACKER_PATH)
+                        .type(APPLICATION_MSWORD).accept("application/x-tar")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
 
-        Map<String, String> data = readArchiveFromStream(new TarArchiveInputStream((InputStream) response.getEntity()));
+        Map<String, String> data = readArchiveFromStream(
+                        new TarArchiveInputStream((InputStream) response.getEntity()));
 
         assertEquals(JPG_MD5, data.get(JPG_NAME));
     }
 
     @Test
     public void testText() throws Exception {
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
-                .header(CONTENT_TYPE, APPLICATION_XML)
-                .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/test.doc"));
+        Response response = WebClient.create(CXFTestBase.endPoint + ALL_PATH)
+                        .header(CONTENT_TYPE, APPLICATION_XML).accept("application/zip")
+                        .put(ClassLoader.getSystemResourceAsStream("test-documents/test.doc"));
 
         String responseMsg = readArchiveMetadataAndText((InputStream) response.getEntity());
         assertNotNull(responseMsg);
@@ -223,41 +203,40 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void testMaxBytes() throws Exception {
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
-                .header(CONTENT_TYPE, APPLICATION_XML)
-                .header(UnpackerResource.UNPACK_MAX_BYTES_KEY, 100)
-                .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/pic.xls"));
+        Response response = WebClient.create(CXFTestBase.endPoint + ALL_PATH)
+                        .header(CONTENT_TYPE, APPLICATION_XML)
+                        .header(UnpackerResource.UNPACK_MAX_BYTES_KEY, 100)
+                        .accept("application/zip")
+                        .put(ClassLoader.getSystemResourceAsStream("test-documents/pic.xls"));
         assertEquals(422, response.getStatus());
     }
 
     @Test
     public void testPDFImages() throws Exception {
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ExtractInlineImages", "true")
-                .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
+        Response response = WebClient.create(CXFTestBase.endPoint + UNPACKER_PATH)
+                        .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ExtractInlineImages",
+                                        "true")
+                        .accept("application/zip")
+                        .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
         Map<String, String> results = readZipArchive((InputStream) response.getEntity());
         assertTrue(results.containsKey("image0.png"));
         String md5 = results.get("image0.png");
         assertTrue(
-                //pre Java 11
-                md5.equals("7c2f14acbb737672a1245f4ceb50622a") ||
-                        //Java 11 -- underlying image libraries generate a diff image in Java 11
-                        md5.equals("58b8269d1a584b7e8c1adcb936123923"));
+                        // pre Java 11
+                        md5.equals("7c2f14acbb737672a1245f4ceb50622a") ||
+                        // Java 11 -- underlying image libraries generate a diff image in Java 11
+                                        md5.equals("58b8269d1a584b7e8c1adcb936123923"));
     }
 
     @Test
     public void testPDFRenderOCR() throws Exception {
         assumeTrue(new TesseractOCRParser().hasTesseract());
 
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrStrategy", "ocr_only")
-                .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
+        Response response = WebClient.create(CXFTestBase.endPoint + ALL_PATH)
+                        .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrStrategy",
+                                        "ocr_only")
+                        .accept("application/zip")
+                        .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
         String txt = readArchiveText((InputStream) response.getEntity());
         CXFTestBase.assertContains("Happy New Year", txt);
     }
@@ -265,46 +244,47 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testPDFPerPageRenderColor() throws Exception {
 
-        Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "imageStrategy", "RenderPagesAtPageEnd")
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageType", "rgb")
-                .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/testColorRendering.pdf"));
+        Response response = WebClient.create(CXFTestBase.endPoint + ALL_PATH)
+                        .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "imageStrategy",
+                                        "RenderPagesAtPageEnd")
+                        .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageType", "rgb")
+                        .accept("application/zip").put(ClassLoader.getSystemResourceAsStream(
+                                        "test-documents/testColorRendering.pdf"));
         Map<String, byte[]> results = readZipArchiveBytes((InputStream) response.getEntity());
         byte[] renderedImage = null;
         for (Map.Entry<String, byte[]> e : results.entrySet()) {
-            if (e
-                    .getKey()
-                    .startsWith("tika-pdfbox-rendering")) {
+            if (e.getKey().startsWith("tika-pdfbox-rendering")) {
                 renderedImage = e.getValue();
                 break;
             }
         }
-        assertEquals("image/png", TikaConfig
-                .getDefaultConfig()
-                .getDetector()
-                .detect(new ByteArrayInputStream(renderedImage), new Metadata())
-                .toString());
+        assertEquals("image/png", TikaConfig.getDefaultConfig().getDetector()
+                        .detect(new ByteArrayInputStream(renderedImage), new Metadata())
+                        .toString());
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
             BufferedImage image = ImageIO.read(is);
-            //top left
-            AverageColor averageColor = getAverageColor(image, 0, image.getWidth() / 5, 0, image.getHeight() / 10);
+            // top left
+            AverageColor averageColor = getAverageColor(image, 0, image.getWidth() / 5, 0,
+                            image.getHeight() / 10);
             assertTrue(averageColor.getRed() > 250);
             assertTrue(averageColor.getGreen() < 1);
             assertTrue(averageColor.getBlue() < 1);
 
-            //bottom left = green
-            averageColor = getAverageColor(image, 0, image.getWidth() / 5, image.getHeight() / 2 + image.getHeight() / 10, image.getHeight() / 2 + 2 * image.getHeight() / 10);
+            // bottom left = green
+            averageColor = getAverageColor(image, 0, image.getWidth() / 5,
+                            image.getHeight() / 2 + image.getHeight() / 10,
+                            image.getHeight() / 2 + 2 * image.getHeight() / 10);
 
             assertTrue(averageColor.getRed() < 1);
             assertTrue(averageColor.getGreen() > 250);
             assertTrue(averageColor.getBlue() < 1);
 
-            //bottom right = blue
-            averageColor = getAverageColor(image, image.getWidth() / 2 + image.getWidth() / 10, image.getWidth() / 2 + 2 * image.getWidth() / 10,
-                    image.getHeight() / 2 + image.getHeight() / 10, image.getHeight() / 2 + 2 * image.getHeight() / 10);
+            // bottom right = blue
+            averageColor = getAverageColor(image, image.getWidth() / 2 + image.getWidth() / 10,
+                            image.getWidth() / 2 + 2 * image.getWidth() / 10,
+                            image.getHeight() / 2 + image.getHeight() / 10,
+                            image.getHeight() / 2 + 2 * image.getHeight() / 10);
 
             assertTrue(averageColor.getRed() < 1);
             assertTrue(averageColor.getGreen() < 1);

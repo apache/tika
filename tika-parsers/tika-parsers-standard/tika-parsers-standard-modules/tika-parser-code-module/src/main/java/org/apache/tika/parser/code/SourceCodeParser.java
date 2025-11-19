@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.code;
 
@@ -30,8 +28,16 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.XMLConstants;
-
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.codelibs.jhighlight.renderer.Renderer;
 import org.codelibs.jhighlight.renderer.XhtmlRendererFactory;
 import org.jsoup.Jsoup;
@@ -46,19 +52,9 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.detect.AutoDetectReader;
-import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractEncodingDetectorParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.XHTMLContentHandler;
-
 /**
- * Generic Source code parser for Java, Groovy, C++.
- * Aware: This parser uses JHightlight library (https://github.com/codelibs/jhighlight) under CDDL/LGPL dual license
+ * Generic Source code parser for Java, Groovy, C++. Aware: This parser uses JHightlight library
+ * (https://github.com/codelibs/jhighlight) under CDDL/LGPL dual license
  *
  * @author Hong-Thai.Nguyen
  * @since 1.6
@@ -69,15 +65,16 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
 
     private static final Pattern AUTHORPATTERN = Pattern.compile("(?im)@author (.*) *$");
 
-    private static final Map<MediaType, String> TYPES_TO_RENDERER = new HashMap<MediaType, String>() {
-        private static final long serialVersionUID = -741976157563751152L;
+    private static final Map<MediaType, String> TYPES_TO_RENDERER =
+                    new HashMap<MediaType, String>() {
+                        private static final long serialVersionUID = -741976157563751152L;
 
-        {
-            put(MediaType.text("x-c++src"), CPP);
-            put(MediaType.text("x-java-source"), JAVA);
-            put(MediaType.text("x-groovy"), GROOVY);
-        }
-    };
+                        {
+                            put(MediaType.text("x-c++src"), CPP);
+                            put(MediaType.text("x-java-source"), JAVA);
+                            put(MediaType.text("x-groovy"), GROOVY);
+                        }
+                    };
 
     public SourceCodeParser() {
         super();
@@ -93,10 +90,10 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                    ParseContext context) throws IOException, SAXException, TikaException {
         try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
-                metadata, getEncodingDetector(context))) {
+                        metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             String mediaType = metadata.get(Metadata.CONTENT_TYPE);
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
@@ -112,9 +109,7 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
             String line;
             int nbLines = 0;
             while ((line = reader.readLine()) != null) {
-                out
-                        .append(line)
-                        .append(System.getProperty("line.separator"));
+                out.append(line).append(System.getProperty("line.separator"));
                 String author = parserAuthor(line);
                 if (author != null) {
                     metadata.add(TikaCoreProperties.CREATOR, author);
@@ -152,9 +147,7 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
     private String parserAuthor(String line) {
         Matcher m = AUTHORPATTERN.matcher(line);
         if (m.find()) {
-            return m
-                    .group(1)
-                    .trim();
+            return m.group(1).trim();
         }
 
         return null;
@@ -170,7 +163,7 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
 
         @Override
         public NodeFilter.FilterResult head(Node node, int i) {
-            //skip document fragment
+            // skip document fragment
             if ("html".equals(node.nodeName())) {
                 ignore = false;
             }
@@ -191,8 +184,8 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
                 }
                 return NodeFilter.FilterResult.CONTINUE;
             } else if (node instanceof DataNode) {
-                //maybe handle script data directly here instead of
-                //passing it through to the HTMLHandler?
+                // maybe handle script data directly here instead of
+                // passing it through to the HTMLHandler?
                 String txt = ((DataNode) node).getWholeData();
                 if (txt != null) {
                     char[] chars = txt.toCharArray();
@@ -207,12 +200,11 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
                 return NodeFilter.FilterResult.CONTINUE;
             }
             AttributesImpl attributes = new AttributesImpl();
-            Iterator<Attribute> jsoupAttrs = node
-                    .attributes()
-                    .iterator();
+            Iterator<Attribute> jsoupAttrs = node.attributes().iterator();
             while (jsoupAttrs.hasNext()) {
                 Attribute jsoupAttr = jsoupAttrs.next();
-                attributes.addAttribute("", jsoupAttr.getKey(), jsoupAttr.getKey(), "", jsoupAttr.getValue());
+                attributes.addAttribute("", jsoupAttr.getKey(), jsoupAttr.getKey(), "",
+                                jsoupAttr.getValue());
             }
             try {
                 handler.startElement("", node.nodeName(), node.nodeName(), attributes);

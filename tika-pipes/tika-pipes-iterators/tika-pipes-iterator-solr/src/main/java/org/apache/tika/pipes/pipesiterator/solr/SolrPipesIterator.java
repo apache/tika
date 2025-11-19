@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.pipesiterator.solr;
 
@@ -26,7 +24,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -36,9 +33,6 @@ import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.CursorMarkParams;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -52,6 +46,8 @@ import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Iterates through results from a Solr query.
@@ -62,7 +58,8 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
     private final HttpClientFactory httpClientFactory;
     private String solrCollection;
     /**
-     * You can specify solrUrls, or you can specify solrZkHosts and use use zookeeper to determine the solr server urls.
+     * You can specify solrUrls, or you can specify solrZkHosts and use use zookeeper to determine
+     * the solr server urls.
      */
     private List<String> solrUrls = Collections.emptyList();
     private List<String> solrZkHosts = Collections.emptyList();
@@ -146,7 +143,7 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
         this.socketTimeout = socketTimeout;
     }
 
-    //TODO -- add other httpclient configurations??
+    // TODO -- add other httpclient configurations??
     @Field
     public void setUserName(String userName) {
         httpClientFactory.setUserName(userName);
@@ -192,10 +189,10 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
             allFields.add(sizeFieldName);
             allFields.addAll(additionalFields);
 
-            query.setFields(allFields.toArray(new String[]{}));
+            query.setFields(allFields.toArray(new String[] {}));
             query.setSort(SolrQuery.SortClause.asc(parsingIdField));
             query.addSort(SolrQuery.SortClause.asc("id"));
-            query.setFilterQueries(filters.toArray(new String[]{}));
+            query.setFilterQueries(filters.toArray(new String[] {}));
 
             HandlerConfig handlerConfig = getHandlerConfig();
 
@@ -204,11 +201,10 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
             while (!done) {
                 query.set(CursorMarkParams.CURSOR_MARK_PARAM, cursorMark);
                 QueryResponse qr = solrClient.query(solrCollection, query);
-                long totalToFetch = qr
-                        .getResults()
-                        .getNumFound();
+                long totalToFetch = qr.getResults().getNumFound();
                 String nextCursorMark = qr.getNextCursorMark();
-                LOGGER.info("Query to fetch files to parse collection={}, q={}, onCount={}, totalCount={}", solrCollection, query, fileCount, totalToFetch);
+                LOGGER.info("Query to fetch files to parse collection={}, q={}, onCount={}, totalCount={}",
+                                solrCollection, query, fileCount, totalToFetch);
                 for (SolrDocument sd : qr.getResults()) {
                     ++fileCount;
                     String fetchKey = (String) sd.getFieldValue(idField);
@@ -220,8 +216,9 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
                     LOGGER.info("iterator doc: {}, idField={}, fetchKey={}", sd, idField, fetchKey);
                     ParseContext parseContext = new ParseContext();
                     parseContext.set(HandlerConfig.class, handlerConfig);
-                    tryToAdd(new FetchEmitTuple(fetchKey, new FetchKey(fetcherName, fetchKey), new EmitKey(emitterName, emitKey), new Metadata(), parseContext,
-                            getOnParseException()));
+                    tryToAdd(new FetchEmitTuple(fetchKey, new FetchKey(fetcherName, fetchKey),
+                                    new EmitKey(emitterName, emitKey), new Metadata(), parseContext,
+                                    getOnParseException()));
                 }
                 if (cursorMark.equals(nextCursorMark)) {
                     done = true;
@@ -235,43 +232,46 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
 
     private SolrClient createSolrClient() throws TikaConfigException {
         if (solrUrls == null || solrUrls.isEmpty()) {
-            //TODO -- there's more that we need to pass through, including ssl etc.
+            // TODO -- there's more that we need to pass through, including ssl etc.
             Http2SolrClient.Builder http2SolrClientBuilder = new Http2SolrClient.Builder();
             if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
-                http2SolrClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
+                http2SolrClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(),
+                                httpClientFactory.getPassword());
             }
             http2SolrClientBuilder
-                    .withRequestTimeout(httpClientFactory.getRequestTimeout(), TimeUnit.MILLISECONDS)
-                    .withConnectionTimeout(connectionTimeout, TimeUnit.MILLISECONDS);
+                            .withRequestTimeout(httpClientFactory.getRequestTimeout(),
+                                            TimeUnit.MILLISECONDS)
+                            .withConnectionTimeout(connectionTimeout, TimeUnit.MILLISECONDS);
 
 
             Http2SolrClient http2SolrClient = http2SolrClientBuilder.build();
             return new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(solrZkChroot))
-                    .withHttpClient(http2SolrClient)
-                    .build();
+                            .withHttpClient(http2SolrClient).build();
 
         }
-        return new LBHttpSolrClient.Builder()
-                .withConnectionTimeout(connectionTimeout)
-                .withSocketTimeout(socketTimeout)
-                .withHttpClient(httpClientFactory.build())
-                .withBaseSolrUrls(solrUrls.toArray(new String[]{}))
-                .build();
+        return new LBHttpSolrClient.Builder().withConnectionTimeout(connectionTimeout)
+                        .withSocketTimeout(socketTimeout).withHttpClient(httpClientFactory.build())
+                        .withBaseSolrUrls(solrUrls.toArray(new String[] {})).build();
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+                    throws TikaConfigException {
         super.checkInitialization(problemHandler);
         mustNotBeEmpty("solrCollection", this.solrCollection);
         mustNotBeEmpty("urlFieldName", this.idField);
         mustNotBeEmpty("parsingIdField", this.parsingIdField);
         mustNotBeEmpty("failCountField", this.failCountField);
         mustNotBeEmpty("sizeFieldName", this.sizeFieldName);
-        if ((this.solrUrls == null || this.solrUrls.isEmpty()) && (this.solrZkHosts == null || this.solrZkHosts.isEmpty())) {
-            throw new IllegalArgumentException("expected either param solrUrls or param solrZkHosts, but neither was specified");
+        if ((this.solrUrls == null || this.solrUrls.isEmpty())
+                        && (this.solrZkHosts == null || this.solrZkHosts.isEmpty())) {
+            throw new IllegalArgumentException(
+                            "expected either param solrUrls or param solrZkHosts, but neither was specified");
         }
-        if (this.solrUrls != null && !this.solrUrls.isEmpty() && this.solrZkHosts != null && !this.solrZkHosts.isEmpty()) {
-            throw new IllegalArgumentException("expected either param solrUrls or param solrZkHosts, but both were specified");
+        if (this.solrUrls != null && !this.solrUrls.isEmpty() && this.solrZkHosts != null
+                        && !this.solrZkHosts.isEmpty()) {
+            throw new IllegalArgumentException(
+                            "expected either param solrUrls or param solrZkHosts, but both were specified");
         }
     }
 }

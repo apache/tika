@@ -1,46 +1,43 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.language.translate.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Properties;
-
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Properties;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.language.translate.Translator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.language.translate.Translator;
-
 /**
- * An implementation of a REST client for the YANDEX <a href="https://tech.yandex.com/translate/">Translate API</a>.
- * You can sign up for free access online on the <a href="https://tech.yandex.com/key/form.xml?service=trnsl">API Key form</a>
- * and set your Application's User Key in the <code>translator.yandex.properties</code> file.
+ * An implementation of a REST client for the YANDEX
+ * <a href="https://tech.yandex.com/translate/">Translate API</a>. You can sign up for free access
+ * online on the <a href="https://tech.yandex.com/key/form.xml?service=trnsl">API Key form</a> and
+ * set your Application's User Key in the <code>translator.yandex.properties</code> file.
  */
 public class YandexTranslator implements Translator {
 
@@ -50,10 +47,11 @@ public class YandexTranslator implements Translator {
      * Yandex Translate API service end-point URL
      */
     private static final String YANDEX_TRANSLATE_URL_BASE =
-            "https://translate.yandex.net/api/v1.5/tr.json/translate";
+                    "https://translate.yandex.net/api/v1.5/tr.json/translate";
 
     /**
-     * Default USer-Key, a real User-Key must be provided before the Lingo24 can successfully request translations
+     * Default USer-Key, a real User-Key must be provided before the Lingo24 can successfully
+     * request translations
      */
     private static final String DEFAULT_KEY = "dummy-key";
 
@@ -63,8 +61,8 @@ public class YandexTranslator implements Translator {
     private String apiKey;
 
     /**
-     * The Yandex Translate API can handle text in <b>plain</b> and/or <b>html</b> format, the default
-     * format is <b>plain</b>
+     * The Yandex Translate API can handle text in <b>plain</b> and/or <b>html</b> format, the
+     * default format is <b>plain</b>
      */
     private String format = "plain";
 
@@ -81,7 +79,7 @@ public class YandexTranslator implements Translator {
 
     @Override
     public String translate(String text, String sourceLanguage, String targetLanguage)
-            throws TikaException, IOException {
+                    throws TikaException, IOException {
         if (!this.isAvailable()) {
             return text;
         }
@@ -91,20 +89,20 @@ public class YandexTranslator implements Translator {
         String langCode;
 
         if (sourceLanguage == null) {
-            //Translate Service will identify source language
+            // Translate Service will identify source language
             langCode = targetLanguage;
         } else {
-            //Source language is well known
+            // Source language is well known
             langCode = sourceLanguage + '-' + targetLanguage;
         }
 
-        //TODO Add support for text over 10k characters
+        // TODO Add support for text over 10k characters
         Response response = client.accept(MediaType.APPLICATION_JSON).query("key", this.apiKey)
-                .query("lang", langCode).query("text", text).get();
+                        .query("lang", langCode).query("text", text).get();
         StringBuilder responseText = new StringBuilder();
-        try (InputStreamReader inputStreamReader = new InputStreamReader(
-                (InputStream) response.getEntity(), UTF_8);
-                BufferedReader reader = new BufferedReader(inputStreamReader)) {
+        try (InputStreamReader inputStreamReader =
+                        new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+                        BufferedReader reader = new BufferedReader(inputStreamReader)) {
             String line;
             while ((line = reader.readLine()) != null) {
                 responseText.append(line);
@@ -123,15 +121,14 @@ public class YandexTranslator implements Translator {
                     throw new TikaException(jsonResp.findValue("message").get(0).asText());
                 }
             } else {
-                throw new TikaException("Return message not recognized: " +
-                        responseText.toString().substring(0, Math.min(responseText.length(), 100)));
+                throw new TikaException("Return message not recognized: " + responseText.toString()
+                                .substring(0, Math.min(responseText.length(), 100)));
             }
         } catch (JsonParseException e) {
-            throw new TikaException(
-                    "Error requesting translation from '" + sourceLanguage + "' to '" +
-                            targetLanguage +
-                            "', JSON response from Lingo24 is not well formatted: " +
-                            responseText.toString());
+            throw new TikaException("Error requesting translation from '" + sourceLanguage
+                            + "' to '" + targetLanguage
+                            + "', JSON response from Lingo24 is not well formatted: "
+                            + responseText.toString());
         }
     }
 
@@ -155,9 +152,8 @@ public class YandexTranslator implements Translator {
     }
 
     /**
-     * Retrieve the current text format setting.
-     * The Yandex Translate API can handle text in <b>plain</b> and/or <b>html</b> format, the default
-     * format is <b>plain</b>
+     * Retrieve the current text format setting. The Yandex Translate API can handle text in
+     * <b>plain</b> and/or <b>html</b> format, the default format is <b>plain</b>
      *
      * @return
      */

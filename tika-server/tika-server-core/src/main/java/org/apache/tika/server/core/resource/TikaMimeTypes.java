@@ -1,21 +1,25 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.server.core.resource;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -24,14 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
@@ -43,9 +39,11 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.server.core.HTMLHelper;
 
 /**
- * <p>Provides details of all the mimetypes known to Apache Tika,
- * similar to <em>--list-supported-types</em> with the Tika CLI.
- * <p>Can also provide full details on a single known type.
+ * <p>
+ * Provides details of all the mimetypes known to Apache Tika, similar to
+ * <em>--list-supported-types</em> with the Tika CLI.
+ * <p>
+ * Can also provide full details on a single known type.
  */
 @Path("/mime-types")
 public class TikaMimeTypes {
@@ -82,74 +80,40 @@ public class TikaMimeTypes {
         }
         h.append("<ul>");
         for (String section : firstType.keySet()) {
-            h
-                    .append("<li><a href=\"#")
-                    .append(firstType.get(section))
-                    .append("\">")
-                    .append(section)
-                    .append("</a></li>\n");
+            h.append("<li><a href=\"#").append(firstType.get(section)).append("\">").append(section)
+                            .append("</a></li>\n");
         }
         h.append("</ul>");
 
         // Output all of them
         for (MediaTypeDetails type : types) {
-            h
-                    .append("<a name=\"")
-                    .append(type.type)
-                    .append("\"></a>\n");
-            h
-                    .append("<h2><a href=\"mime-types/")
-                    .append(type.type)
-                    .append("\">")
-                    .append(type.type)
-                    .append("</a></h2>\n");
+            h.append("<a name=\"").append(type.type).append("\"></a>\n");
+            h.append("<h2><a href=\"mime-types/").append(type.type).append("\">").append(type.type)
+                            .append("</a></h2>\n");
 
             for (MediaType alias : type.aliases) {
-                h
-                        .append("<div>Alias: ")
-                        .append(alias)
-                        .append("</div>\n");
+                h.append("<div>Alias: ").append(alias).append("</div>\n");
             }
             if (type.supertype != null) {
-                h
-                        .append("<div>Super Type: <a href=\"#")
-                        .append(type.supertype)
-                        .append("\">")
-                        .append(type.supertype)
-                        .append("</a></div>\n");
+                h.append("<div>Super Type: <a href=\"#").append(type.supertype).append("\">")
+                                .append(type.supertype).append("</a></div>\n");
             }
             if (type.mime != null) {
-                if (!type.mime
-                        .getDescription()
-                        .isEmpty()) {
-                    h
-                            .append("<div>Description: ")
-                            .append(type.mime.getDescription())
-                            .append("</div>\n");
+                if (!type.mime.getDescription().isEmpty()) {
+                    h.append("<div>Description: ").append(type.mime.getDescription())
+                                    .append("</div>\n");
                 }
-                if (!type.mime
-                        .getAcronym()
-                        .isEmpty()) {
-                    h
-                            .append("<div>Acronym: ")
-                            .append(type.mime.getAcronym())
-                            .append("</div>\n");
+                if (!type.mime.getAcronym().isEmpty()) {
+                    h.append("<div>Acronym: ").append(type.mime.getAcronym()).append("</div>\n");
                 }
-                if (!type.mime
-                        .getExtension()
-                        .isEmpty()) {
-                    h
-                            .append("<div>Default Extension: ")
-                            .append(type.mime.getExtension())
-                            .append("</div>\n");
+                if (!type.mime.getExtension().isEmpty()) {
+                    h.append("<div>Default Extension: ").append(type.mime.getExtension())
+                                    .append("</div>\n");
                 }
             }
 
             if (type.parser != null) {
-                h
-                        .append("<div>Parser: ")
-                        .append(type.parser)
-                        .append("</div>\n");
+                h.append("<div>Parser: ").append(type.parser).append("</div>\n");
             }
         }
 
@@ -160,82 +124,47 @@ public class TikaMimeTypes {
     @GET
     @Path("/{type}/{subtype}")
     @Produces("text/html")
-    public String getMimeTypeDetailsHTML(@PathParam("type") String typePart, @PathParam("subtype") String subtype) {
+    public String getMimeTypeDetailsHTML(@PathParam("type") String typePart,
+                    @PathParam("subtype") String subtype) {
         MediaTypeDetails type = getMediaType(typePart, subtype);
 
         StringBuffer h = new StringBuffer();
         html.generateHeader(h, "Apache Tika Details on Mime Type " + type.type);
-        h
-                .append("<h2>")
-                .append(type.type)
-                .append("</h2>\n");
+        h.append("<h2>").append(type.type).append("</h2>\n");
 
         for (MediaType alias : type.aliases) {
-            h
-                    .append("<div>Alias: ")
-                    .append(alias)
-                    .append("</div>\n");
+            h.append("<div>Alias: ").append(alias).append("</div>\n");
         }
         if (type.supertype != null) {
-            h
-                    .append("<div>Super Type: <a href=\"#")
-                    .append(type.supertype)
-                    .append("\">")
-                    .append(type.supertype)
-                    .append("</a></div>\n");
+            h.append("<div>Super Type: <a href=\"#").append(type.supertype).append("\">")
+                            .append(type.supertype).append("</a></div>\n");
         }
         if (type.mime != null) {
-            if (!type.mime
-                    .getDescription()
-                    .isEmpty()) {
-                h
-                        .append("<div>Description: ")
-                        .append(type.mime.getDescription())
-                        .append("</div>\n");
+            if (!type.mime.getDescription().isEmpty()) {
+                h.append("<div>Description: ").append(type.mime.getDescription())
+                                .append("</div>\n");
             }
-            if (!type.mime
-                    .getAcronym()
-                    .isEmpty()) {
-                h
-                        .append("<div>Acronym: ")
-                        .append(type.mime.getAcronym())
-                        .append("</div>\n");
+            if (!type.mime.getAcronym().isEmpty()) {
+                h.append("<div>Acronym: ").append(type.mime.getAcronym()).append("</div>\n");
             }
-            if (!type.mime
-                    .getUniformTypeIdentifier()
-                    .isEmpty()) {
-                h
-                        .append("<div>Uniform Type Identifier: ")
-                        .append(type.mime.getUniformTypeIdentifier())
-                        .append("</div>\n");
+            if (!type.mime.getUniformTypeIdentifier().isEmpty()) {
+                h.append("<div>Uniform Type Identifier: ")
+                                .append(type.mime.getUniformTypeIdentifier()).append("</div>\n");
             }
             for (URI uri : type.mime.getLinks()) {
-                h
-                        .append("<div>Link: ")
-                        .append(uri)
-                        .append("</div>\n");
+                h.append("<div>Link: ").append(uri).append("</div>\n");
             }
-            if (!type.mime
-                    .getExtension()
-                    .isEmpty()) {
-                h
-                        .append("<div>Default Extension: ")
-                        .append(type.mime.getExtension())
-                        .append("</div>\n");
+            if (!type.mime.getExtension().isEmpty()) {
+                h.append("<div>Default Extension: ").append(type.mime.getExtension())
+                                .append("</div>\n");
             }
             for (String ext : type.mime.getExtensions()) {
-                h
-                        .append("<div>Extension: ")
-                        .append(ext)
-                        .append("</div>\n");
+                h.append("<div>Extension: ").append(ext).append("</div>\n");
             }
         }
 
         if (type.parser != null) {
-            h
-                    .append("<div>Parser: ")
-                    .append(type.parser)
-                    .append("</div>\n");
+            h.append("<div>Parser: ").append(type.parser).append("</div>\n");
         }
 
         html.generateFooter(h);
@@ -261,15 +190,14 @@ public class TikaMimeTypes {
             details.put(type.type.toString(), typeDets);
         }
 
-        return new ObjectMapper()
-                .writerWithDefaultPrettyPrinter()
-                .writeValueAsString(details);
+        return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(details);
     }
 
     @GET
     @Path("/{type}/{subtype}")
     @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-    public String getMimeTypeDetailsJSON(@PathParam("type") String typePart, @PathParam("subtype") String subtype) throws IOException {
+    public String getMimeTypeDetailsJSON(@PathParam("type") String typePart,
+                    @PathParam("subtype") String subtype) throws IOException {
         MediaTypeDetails type = getMediaType(typePart, subtype);
         Map<String, Object> details = new HashMap<>();
 
@@ -282,41 +210,27 @@ public class TikaMimeTypes {
             details.put("parser", type.parser);
         }
         if (type.mime != null) {
-            if (!type.mime
-                    .getDescription()
-                    .isEmpty()) {
+            if (!type.mime.getDescription().isEmpty()) {
                 details.put("description", type.mime.getDescription());
             }
-            if (!type.mime
-                    .getAcronym()
-                    .isEmpty()) {
+            if (!type.mime.getAcronym().isEmpty()) {
                 details.put("acronym", type.mime.getAcronym());
             }
-            if (!type.mime
-                    .getUniformTypeIdentifier()
-                    .isEmpty()) {
+            if (!type.mime.getUniformTypeIdentifier().isEmpty()) {
                 details.put("uniformTypeIdentifier", type.mime.getUniformTypeIdentifier());
             }
-            if (!type.mime
-                    .getLinks()
-                    .isEmpty()) {
+            if (!type.mime.getLinks().isEmpty()) {
                 details.put("links", type.mime.getLinks());
             }
-            if (!type.mime
-                    .getExtension()
-                    .isEmpty()) {
+            if (!type.mime.getExtension().isEmpty()) {
                 details.put("defaultExtension", type.mime.getExtension());
             }
-            if (!type.mime
-                    .getExtensions()
-                    .isEmpty()) {
+            if (!type.mime.getExtensions().isEmpty()) {
                 details.put("extensions", type.mime.getExtensions());
             }
         }
 
-        return new ObjectMapper()
-                .writerWithDefaultPrettyPrinter()
-                .writeValueAsString(details);
+        return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(details);
     }
 
     @GET
@@ -329,23 +243,14 @@ public class TikaMimeTypes {
             text.append("\n");
 
             for (MediaType alias : type.aliases) {
-                text
-                        .append("  alias:     ")
-                        .append(alias)
-                        .append("\n");
+                text.append("  alias:     ").append(alias).append("\n");
             }
             if (type.supertype != null) {
-                text
-                        .append("  supertype: ")
-                        .append(type.supertype.toString())
-                        .append("\n");
+                text.append("  supertype: ").append(type.supertype.toString()).append("\n");
             }
 
             if (type.parser != null) {
-                text
-                        .append("  parser:    ")
-                        .append(type.parser)
-                        .append("\n");
+                text.append("  parser:    ").append(type.parser).append("\n");
             }
         }
 
@@ -368,16 +273,12 @@ public class TikaMimeTypes {
         MediaTypeRegistry registry = config.getMediaTypeRegistry();
         Map<MediaType, Parser> parsers = ((CompositeParser) config.getParser()).getParsers();
 
-        List<MediaTypeDetails> types = new ArrayList<>(registry
-                .getTypes()
-                .size());
+        List<MediaTypeDetails> types = new ArrayList<>(registry.getTypes().size());
 
         for (MediaType type : registry.getTypes()) {
             MediaTypeDetails details = new MediaTypeDetails();
             details.type = type;
-            details.aliases = registry
-                    .getAliases(type)
-                    .toArray(new MediaType[0]);
+            details.aliases = registry.getAliases(type).toArray(new MediaType[0]);
 
             try {
                 details.mime = mimeTypes.getRegisteredMimeType(type.toString());
@@ -393,13 +294,9 @@ public class TikaMimeTypes {
             Parser p = parsers.get(type);
             if (p != null) {
                 if (p instanceof CompositeParser) {
-                    p = ((CompositeParser) p)
-                            .getParsers()
-                            .get(type);
+                    p = ((CompositeParser) p).getParsers().get(type);
                 }
-                details.parser = p
-                        .getClass()
-                        .getName();
+                details.parser = p.getClass().getName();
             }
 
             types.add(details);

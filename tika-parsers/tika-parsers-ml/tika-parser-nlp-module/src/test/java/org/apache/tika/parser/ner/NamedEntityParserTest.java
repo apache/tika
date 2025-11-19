@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.ner;
 
@@ -24,10 +22,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
-
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -36,6 +31,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ner.opennlp.OpenNLPNERecogniser;
 import org.apache.tika.parser.ner.regex.RegexNERecogniser;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test case for {@link NamedEntityParser}
@@ -47,18 +43,18 @@ public class NamedEntityParserTest extends TikaTest {
     @Test
     public void testParse() throws Exception {
 
-        //test config is added to resources directory
+        // test config is added to resources directory
         try (InputStream is = getResourceAsStream(CONFIG_FILE)) {
             TikaConfig config = new TikaConfig(is);
             Tika tika = new Tika(config);
-            String text = "I am student at University of Southern California (USC)," +
-                    " located in Los Angeles . USC's football team is called by name Trojans." +
-                    " Mr. John McKay was a head coach of the team from 1960 - 1975";
+            String text = "I am student at University of Southern California (USC),"
+                            + " located in Los Angeles . USC's football team is called by name Trojans."
+                            + " Mr. John McKay was a head coach of the team from 1960 - 1975";
             Metadata md = new Metadata();
             tika.parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), md);
 
             HashSet<String> set = new HashSet<>(
-                    Arrays.asList(md.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+                            Arrays.asList(md.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
             assumeTrue(set.contains(NamedEntityParser.class.getName()));
 
             set.clear();
@@ -81,16 +77,16 @@ public class NamedEntityParserTest extends TikaTest {
 
     @Test
     public void testNerChain() throws Exception {
-        String classNames =
-                OpenNLPNERecogniser.class.getName() + "," + RegexNERecogniser.class.getName();
+        String classNames = OpenNLPNERecogniser.class.getName() + ","
+                        + RegexNERecogniser.class.getName();
         System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, classNames);
         try (InputStream is = getResourceAsStream(CONFIG_FILE)) {
             TikaConfig config = new TikaConfig(is);
-            String text = "University of Southern California (USC), is located in Los Angeles ." +
-                    " Campus is busy from monday to saturday";
-            Metadata md = getXML(
-                    UnsynchronizedByteArrayInputStream.builder().setByteArray(text.getBytes(StandardCharsets.UTF_8)).get(),
-                    new AutoDetectParser(config), new Metadata()).metadata;
+            String text = "University of Southern California (USC), is located in Los Angeles ."
+                            + " Campus is busy from monday to saturday";
+            Metadata md = getXML(UnsynchronizedByteArrayInputStream.builder()
+                            .setByteArray(text.getBytes(StandardCharsets.UTF_8)).get(),
+                            new AutoDetectParser(config), new Metadata()).metadata;
             HashSet<String> keys = new HashSet<>(Arrays.asList(md.names()));
             assertTrue(keys.contains("NER_WEEK_DAY"));
             assumeTrue(keys.contains("NER_LOCATION"));

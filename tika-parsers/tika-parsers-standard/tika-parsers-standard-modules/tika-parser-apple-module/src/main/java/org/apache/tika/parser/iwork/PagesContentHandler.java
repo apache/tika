@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.iwork;
 
@@ -20,16 +18,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 class PagesContentHandler extends DefaultHandler {
 
@@ -51,6 +47,7 @@ class PagesContentHandler extends DefaultHandler {
     private List<String> activeRow = new ArrayList<>();
     private String metaDataLocalName;
     private String metaDataQName;
+
     PagesContentHandler(XHTMLContentHandler xhtml, Metadata metadata) {
         this.xhtml = xhtml;
         this.metadata = metadata;
@@ -67,7 +64,7 @@ class PagesContentHandler extends DefaultHandler {
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+                    throws SAXException {
         if (parseProperty) {
             String value = parsePrimitiveElementValue(qName, attributes);
             if (value != null) {
@@ -121,8 +118,8 @@ class PagesContentHandler extends DefaultHandler {
         } else if ("sf:footer".equals(qName)) {
             inPart = footers.identifyPart(attributes.getValue("sf:name"));
         } else if ("sf:page-number".equals(qName)) {
-            if (inPart == DocumentPart.FOOTER_ODD || inPart == DocumentPart.FOOTER_FIRST ||
-                    inPart == DocumentPart.FOOTER_EVEN) {
+            if (inPart == DocumentPart.FOOTER_ODD || inPart == DocumentPart.FOOTER_FIRST
+                            || inPart == DocumentPart.FOOTER_EVEN) {
                 // We are in a footer
                 footers.hasAutoPageNumber = true;
                 footers.autoPageNumberFormat = attributes.getValue("sf:format");
@@ -270,9 +267,9 @@ class PagesContentHandler extends DefaultHandler {
     }
 
     /**
-     * Returns a resolved key that is common in other document types or
-     * returns the specified metaDataLocalName if no common key could be found.
-     * The key could be a simple String key, or could be a {@link Property}
+     * Returns a resolved key that is common in other document types or returns the specified
+     * metaDataLocalName if no common key could be found. The key could be a simple String key, or
+     * could be a {@link Property}
      *
      * @param metaDataLocalName The localname of the element containing metadata
      * @return a resolved key that is common in other document types
@@ -294,17 +291,13 @@ class PagesContentHandler extends DefaultHandler {
     }
 
     /**
-     * Returns the value of a primitive element e.g.:
-     * &lt;sl:number sfa:number="0" sfa:type="f"/&gt; - the number attribute
-     * &lt;sl:string sfa:string="en"/&gt; = the string attribute
+     * Returns the value of a primitive element e.g.: &lt;sl:number sfa:number="0" sfa:type="f"/&gt;
+     * - the number attribute &lt;sl:string sfa:string="en"/&gt; = the string attribute
      * <p>
-     * Returns <code>null</code> if the value could not be extracted from
-     * the list of attributes.
+     * Returns <code>null</code> if the value could not be extracted from the list of attributes.
      *
-     * @param qName      The fully qualified name of the element containing
-     *                   the value to extract
-     * @param attributes The list of attributes of which one contains the
-     *                   value to be extracted
+     * @param qName The fully qualified name of the element containing the value to extract
+     * @param attributes The list of attributes of which one contains the value to be extracted
      * @return the value of a primitive element
      */
     private String parsePrimitiveElementValue(String qName, Attributes attributes) {
@@ -335,13 +328,11 @@ class PagesContentHandler extends DefaultHandler {
      * The (interesting) part of the document we're in. Should be more structured...
      */
     private enum DocumentPart {
-        METADATA, PARSABLE_TEXT, HEADERS, HEADER_ODD, HEADER_EVEN, HEADER_FIRST, FOOTERS,
-        FOOTER_ODD, FOOTER_EVEN, FOOTER_FIRST, FOOTNOTES, ANNOTATIONS
+        METADATA, PARSABLE_TEXT, HEADERS, HEADER_ODD, HEADER_EVEN, HEADER_FIRST, FOOTERS, FOOTER_ODD, FOOTER_EVEN, FOOTER_FIRST, FOOTNOTES, ANNOTATIONS
     }
 
     /**
-     * Represents Footnotes in a document. The way these work
-     * in the file format isn't very clean...
+     * Represents Footnotes in a document. The way these work in the file format isn't very clean...
      */
     private static class Footnotes {
         /**
@@ -427,7 +418,7 @@ class PagesContentHandler extends DefaultHandler {
                         xhtml.characters("\t" + AutoPageNumberUtils.asRomanNumerals(pageCount));
                     } else if (autoPageNumberFormat.equals("lower-roman")) {
                         xhtml.characters(
-                                "\t" + AutoPageNumberUtils.asRomanNumeralsLower(pageCount));
+                                        "\t" + AutoPageNumberUtils.asRomanNumeralsLower(pageCount));
                     } else if (autoPageNumberFormat.equals("upper-alpha")) {
                         xhtml.characters("\t" + AutoPageNumberUtils.asAlphaNumeric(pageCount));
                     } else if (autoPageNumberFormat.equals("lower-alpha")) {
@@ -440,8 +431,7 @@ class PagesContentHandler extends DefaultHandler {
     }
 
     /**
-     * Represents Annotations in a document. We currently
-     * just grab all the sf:p text in each one
+     * Represents Annotations in a document. We currently just grab all the sf:p text in each one
      */
     private static class Annotations {
         /**

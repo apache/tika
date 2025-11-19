@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  *
  * Copyright (c) Data Geekery GmbH (http://www.datageekery.com)
  */
@@ -24,9 +22,8 @@ import java.math.BigInteger;
 /**
  * A utility class for static access to unsigned number functionality.
  * <p>
- * It essentially contains factory methods for unsigned number wrappers. In
- * future versions, it will also contain some arithmetic methods, handling
- * regular arithmetic and bitwise operations
+ * It essentially contains factory methods for unsigned number wrappers. In future versions, it will
+ * also contain some arithmetic methods, handling regular arithmetic and bitwise operations
  *
  * @author Lukas Eder
  */
@@ -35,14 +32,13 @@ public final class Unsigned {
     /**
      * No instances
      */
-    private Unsigned() {
-    }
+    private Unsigned() {}
 
     /**
      * Create an <code>unsigned byte</code>
      *
-     * @throws NumberFormatException If <code>value</code> does not contain a
-     *                               parsable <code>unsigned byte</code>.
+     * @throws NumberFormatException If <code>value</code> does not contain a parsable
+     *         <code>unsigned byte</code>.
      * @see UByte#valueOf(String)
      */
     public static UByte ubyte(String value) throws NumberFormatException {
@@ -50,8 +46,8 @@ public final class Unsigned {
     }
 
     /**
-     * Create an <code>unsigned byte</code> by masking it with <code>0xFF</code>
-     * i.e. <code>(byte) -1</code> becomes <code>(ubyte) 255</code>
+     * Create an <code>unsigned byte</code> by masking it with <code>0xFF</code> i.e.
+     * <code>(byte) -1</code> becomes <code>(ubyte) 255</code>
      *
      * @see UByte#valueOf(byte)
      */
@@ -62,8 +58,8 @@ public final class Unsigned {
     /**
      * Create an <code>unsigned byte</code>
      *
-     * @throws NumberFormatException If <code>value</code> is not in the range
-     *                               of an <code>unsigned byte</code>
+     * @throws NumberFormatException If <code>value</code> is not in the range of an
+     *         <code>unsigned byte</code>
      * @see UByte#valueOf(short)
      */
     public static UByte ubyte(short value) throws NumberFormatException {
@@ -73,8 +69,8 @@ public final class Unsigned {
     /**
      * Create an <code>unsigned byte</code>
      *
-     * @throws NumberFormatException If <code>value</code> is not in the range
-     *                               of an <code>unsigned byte</code>
+     * @throws NumberFormatException If <code>value</code> is not in the range of an
+     *         <code>unsigned byte</code>
      * @see UByte#valueOf(short)
      */
     public static UByte ubyte(int value) throws NumberFormatException {
@@ -84,8 +80,8 @@ public final class Unsigned {
     /**
      * Create an <code>unsigned byte</code>
      *
-     * @throws NumberFormatException If <code>value</code> is not in the range
-     *                               of an <code>unsigned byte</code>
+     * @throws NumberFormatException If <code>value</code> is not in the range of an
+     *         <code>unsigned byte</code>
      * @see UByte#valueOf(short)
      */
     public static UByte ubyte(long value) throws NumberFormatException {
@@ -95,8 +91,8 @@ public final class Unsigned {
     /**
      * Create an <code>unsigned short</code>
      *
-     * @throws NumberFormatException If <code>value</code> does not contain a
-     *                               parsable <code>unsigned short</code>.
+     * @throws NumberFormatException If <code>value</code> does not contain a parsable
+     *         <code>unsigned short</code>.
      * @see UShort#valueOf(String)
      */
     public static UShort ushort(String value) throws NumberFormatException {
@@ -104,9 +100,8 @@ public final class Unsigned {
     }
 
     /**
-     * Create an <code>unsigned short</code> by masking it with
-     * <code>0xFFFF</code> i.e. <code>(short) -1</code> becomes
-     * <code>(ushort) 65535</code>
+     * Create an <code>unsigned short</code> by masking it with <code>0xFFFF</code> i.e.
+     * <code>(short) -1</code> becomes <code>(ushort) 65535</code>
      *
      * @see UShort#valueOf(short)
      */
@@ -117,8 +112,8 @@ public final class Unsigned {
     /**
      * Create an <code>unsigned short</code>
      *
-     * @throws NumberFormatException If <code>value</code> is not in the range
-     *                               of an <code>unsigned short</code>
+     * @throws NumberFormatException If <code>value</code> is not in the range of an
+     *         <code>unsigned short</code>
      * @see UShort#valueOf(int)
      */
     public static UShort ushort(int value) throws NumberFormatException {
@@ -128,8 +123,8 @@ public final class Unsigned {
     /**
      * Create an <code>unsigned int</code>
      *
-     * @throws NumberFormatException If <code>value</code> does not contain a
-     *                               parsable <code>unsigned int</code>.
+     * @throws NumberFormatException If <code>value</code> does not contain a parsable
+     *         <code>unsigned int</code>.
      * @see UInteger#valueOf(String)
      */
     public static UInteger uint(String value) throws NumberFormatException {
@@ -137,9 +132,8 @@ public final class Unsigned {
     }
 
     /**
-     * Create an <code>unsigned int</code> by masking it with
-     * <code>0xFFFFFFFF</code> i.e. <code>(int) -1</code> becomes
-     * <code>(uint) 4294967295</code>
+     * Create an <code>unsigned int</code> by masking it with <code>0xFFFFFFFF</code> i.e.
+     * <code>(int) -1</code> becomes <code>(uint) 4294967295</code>
      *
      * @see UInteger#valueOf(int)
      */
@@ -150,8 +144,8 @@ public final class Unsigned {
     /**
      * Create an <code>unsigned int</code>
      *
-     * @throws NumberFormatException If <code>value</code> is not in the range
-     *                               of an <code>unsigned int</code>
+     * @throws NumberFormatException If <code>value</code> is not in the range of an
+     *         <code>unsigned int</code>
      * @see UInteger#valueOf(long)
      */
     public static UInteger uint(long value) throws NumberFormatException {
@@ -161,8 +155,8 @@ public final class Unsigned {
     /**
      * Create an <code>unsigned long</code>
      *
-     * @throws NumberFormatException If <code>value</code> does not contain a
-     *                               parsable <code>unsigned long</code>.
+     * @throws NumberFormatException If <code>value</code> does not contain a parsable
+     *         <code>unsigned long</code>.
      * @see ULong#valueOf(String)
      */
     public static ULong ulong(String value) throws NumberFormatException {
@@ -170,9 +164,8 @@ public final class Unsigned {
     }
 
     /**
-     * Create an <code>unsigned long</code> by masking it with
-     * <code>0xFFFFFFFFFFFFFFFF</code> i.e. <code>(long) -1</code> becomes
-     * <code>(uint) 18446744073709551615</code>
+     * Create an <code>unsigned long</code> by masking it with <code>0xFFFFFFFFFFFFFFFF</code> i.e.
+     * <code>(long) -1</code> becomes <code>(uint) 18446744073709551615</code>
      *
      * @see ULong#valueOf(long)
      */
@@ -183,8 +176,8 @@ public final class Unsigned {
     /**
      * Create an <code>unsigned long</code>
      *
-     * @throws NumberFormatException If <code>value</code> is not in the range
-     *                               of an <code>unsigned long</code>
+     * @throws NumberFormatException If <code>value</code> is not in the range of an
+     *         <code>unsigned long</code>
      * @see ULong#valueOf(BigInteger)
      */
     public static ULong ulong(BigInteger value) throws NumberFormatException {

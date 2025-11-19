@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.eval.app.io;
 
@@ -34,9 +32,6 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -44,6 +39,8 @@ import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.serialization.JsonMetadataList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class ExtractReader {
@@ -65,12 +62,14 @@ public class ExtractReader {
         this(alterMetadataList, IGNORE_LENGTH, IGNORE_LENGTH);
     }
 
-    public ExtractReader(ALTER_METADATA_LIST alterMetadataList, long minExtractLength, long maxExtractLength) {
+    public ExtractReader(ALTER_METADATA_LIST alterMetadataList, long minExtractLength,
+                    long maxExtractLength) {
         this.alterMetadataList = alterMetadataList;
         this.minExtractLength = minExtractLength;
         this.maxExtractLength = maxExtractLength;
         if (maxExtractLength > IGNORE_LENGTH && minExtractLength >= maxExtractLength) {
-            throw new IllegalArgumentException("minExtractLength(" + minExtractLength + ") must be < maxExtractLength(" + maxExtractLength + ")");
+            throw new IllegalArgumentException("minExtractLength(" + minExtractLength
+                            + ") must be < maxExtractLength(" + maxExtractLength + ")");
         }
     }
 
@@ -79,9 +78,8 @@ public class ExtractReader {
         if (fName == null) {
             return fileSuffixes;
         }
-        Matcher m = Pattern
-                .compile("(?i)^(.*?)\\.(json|txt|x?html)(?:\\.(bz2|gz(?:ip)?|zip))?$")
-                .matcher(fName);
+        Matcher m = Pattern.compile("(?i)^(.*?)\\.(json|txt|x?html)(?:\\.(bz2|gz(?:ip)?|zip))?$")
+                        .matcher(fName);
         if (m.find()) {
             fileSuffixes.originalFileName = m.group(1);
             fileSuffixes.setFormat(m.group(2));
@@ -97,11 +95,10 @@ public class ExtractReader {
             throw new ExtractReaderException(ExtractReaderException.TYPE.NO_EXTRACT_FILE);
         }
 
-        FileSuffixes fileSuffixes = parseSuffixes(extractFile
-                .getFileName()
-                .toString());
+        FileSuffixes fileSuffixes = parseSuffixes(extractFile.getFileName().toString());
         if (fileSuffixes.format == null) {
-            throw new ExtractReaderException(ExtractReaderException.TYPE.INCORRECT_EXTRACT_FILE_SUFFIX);
+            throw new ExtractReaderException(
+                            ExtractReaderException.TYPE.INCORRECT_EXTRACT_FILE_SUFFIX);
         }
         if (!Files.isRegularFile(extractFile)) {
             throw new ExtractReaderException(ExtractReaderException.TYPE.NO_EXTRACT_FILE);
@@ -119,13 +116,13 @@ public class ExtractReader {
         }
 
         if (minExtractLength > IGNORE_LENGTH && length < minExtractLength) {
-            LOG.info("minExtractLength {} > IGNORE_LENGTH {} and length {} < minExtractLength {} for file '{}'", 
-                    minExtractLength, IGNORE_LENGTH, length, minExtractLength, extractFile);
+            LOG.info("minExtractLength {} > IGNORE_LENGTH {} and length {} < minExtractLength {} for file '{}'",
+                            minExtractLength, IGNORE_LENGTH, length, minExtractLength, extractFile);
             throw new ExtractReaderException(ExtractReaderException.TYPE.EXTRACT_FILE_TOO_SHORT);
         }
         if (maxExtractLength > IGNORE_LENGTH && length > maxExtractLength) {
-            LOG.info("maxExtractLength {} > IGNORE_LENGTH {} and length {} > maxExtractLength {} for file '{}'", 
-                    maxExtractLength, IGNORE_LENGTH, length, maxExtractLength, extractFile);
+            LOG.info("maxExtractLength {} > IGNORE_LENGTH {} and length {} > maxExtractLength {} for file '{}'",
+                            maxExtractLength, IGNORE_LENGTH, length, maxExtractLength, extractFile);
             throw new ExtractReaderException(ExtractReaderException.TYPE.EXTRACT_FILE_TOO_LONG);
         }
 
@@ -146,7 +143,8 @@ public class ExtractReader {
                         is = new ZCompressorInputStream(is);
                         break;
                     default:
-                        LOG.warn("Can't yet process compression of type: {}", fileSuffixes.compression);
+                        LOG.warn("Can't yet process compression of type: {}",
+                                        fileSuffixes.compression);
                         return metadataList;
                 }
             }
@@ -158,11 +156,14 @@ public class ExtractReader {
         try {
             if (fileSuffixes.format == FileSuffixes.FORMAT.JSON) {
                 metadataList = JsonMetadataList.fromJson(reader);
-                if (alterMetadataList.equals(ALTER_METADATA_LIST.FIRST_ONLY) && metadataList.size() > 1) {
+                if (alterMetadataList.equals(ALTER_METADATA_LIST.FIRST_ONLY)
+                                && metadataList.size() > 1) {
                     while (metadataList.size() > 1) {
                         metadataList.remove(metadataList.size() - 1);
                     }
-                } else if (alterMetadataList.equals(ALTER_METADATA_LIST.AS_IS.CONCATENATE_CONTENT_INTO_FIRST) && metadataList.size() > 1) {
+                } else if (alterMetadataList
+                                .equals(ALTER_METADATA_LIST.AS_IS.CONCATENATE_CONTENT_INTO_FIRST)
+                                && metadataList.size() > 1) {
                     StringBuilder sb = new StringBuilder();
                     Metadata containerMetadata = metadataList.get(0);
                     for (Metadata m : metadataList) {
@@ -189,19 +190,22 @@ public class ExtractReader {
         return metadataList;
     }
 
-    private List<Metadata> generateListFromTextFile(Reader reader, FileSuffixes fileSuffixes) throws IOException {
+    private List<Metadata> generateListFromTextFile(Reader reader, FileSuffixes fileSuffixes)
+                    throws IOException {
         List<Metadata> metadataList = new ArrayList<>();
         String content = IOUtils.toString(reader);
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.TIKA_CONTENT, content);
         if (fileSuffixes.format == FileSuffixes.FORMAT.HTML) {
-            m.set(TikaCoreProperties.TIKA_CONTENT_HANDLER, ToXMLContentHandler.class.getSimpleName());
+            m.set(TikaCoreProperties.TIKA_CONTENT_HANDLER,
+                            ToXMLContentHandler.class.getSimpleName());
         } else if (fileSuffixes.format == FileSuffixes.FORMAT.TXT) {
-            m.set(TikaCoreProperties.TIKA_CONTENT_HANDLER, ToTextContentHandler.class.getSimpleName());
+            m.set(TikaCoreProperties.TIKA_CONTENT_HANDLER,
+                            ToTextContentHandler.class.getSimpleName());
         }
-        //Let's hope the file name has a suffix that can
-        //be used to determine the mime.  Could be wrong or missing,
-        //but better than nothing.
+        // Let's hope the file name has a suffix that can
+        // be used to determine the mime. Could be wrong or missing,
+        // but better than nothing.
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileSuffixes.originalFileName);
 
         MediaType mimeType = mimeTypes.detect(null, m);
@@ -214,8 +218,8 @@ public class ExtractReader {
     }
 
     public enum ALTER_METADATA_LIST {
-        AS_IS,  //leave the metadata list as is
-        FIRST_ONLY, //take only the metadata list for the "container" document
+        AS_IS, // leave the metadata list as is
+        FIRST_ONLY, // take only the metadata list for the "container" document
         CONCATENATE_CONTENT_INTO_FIRST // concatenate all of the content into the first
     }
 

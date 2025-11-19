@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.config;
 
@@ -33,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
@@ -45,17 +42,16 @@ import org.apache.tika.utils.ServiceLoaderUtils;
 public class ServiceLoader {
 
     /**
-     * The dynamic set of services available in an OSGi environment.
-     * Managed by the {@link TikaActivator} class and used as an additional
-     * source of service instances in the {@link #loadServiceProviders(Class)}
-     * method.
+     * The dynamic set of services available in an OSGi environment. Managed by the
+     * {@link TikaActivator} class and used as an additional source of service instances in the
+     * {@link #loadServiceProviders(Class)} method.
      */
     private static final Map<Object, RankedService> SERVICES = new HashMap<>();
     private static final Pattern COMMENT = Pattern.compile("#.*");
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
     /**
-     * The default context class loader to use for all threads, or
-     * <code>null</code> to automatically select the context class loader.
+     * The default context class loader to use for all threads, or <code>null</code> to
+     * automatically select the context class loader.
      */
     private static volatile ClassLoader CONTEXT_CLASS_LOADER = null;
     private final ClassLoader loader;
@@ -64,13 +60,14 @@ public class ServiceLoader {
     private final boolean dynamic;
 
     public ServiceLoader(ClassLoader loader, LoadErrorHandler handler,
-                         InitializableProblemHandler initializableProblemHandler, boolean dynamic) {
+                    InitializableProblemHandler initializableProblemHandler, boolean dynamic) {
         this.loader = loader;
         this.handler = handler;
         this.initializableProblemHandler = initializableProblemHandler;
         this.dynamic = dynamic;
 
     }
+
     public ServiceLoader(ClassLoader loader, LoadErrorHandler handler, boolean dynamic) {
         this(loader, handler, InitializableProblemHandler.WARN, dynamic);
     }
@@ -80,24 +77,24 @@ public class ServiceLoader {
     }
 
     public ServiceLoader(ClassLoader loader) {
-        this(loader,
-                Boolean.getBoolean("org.apache.tika.service.error.warn") ? LoadErrorHandler.WARN :
-                        LoadErrorHandler.IGNORE);
+        this(loader, Boolean.getBoolean("org.apache.tika.service.error.warn")
+                        ? LoadErrorHandler.WARN
+                        : LoadErrorHandler.IGNORE);
     }
 
     public ServiceLoader() {
         this(getContextClassLoader(),
-                Boolean.getBoolean("org.apache.tika.service.error.warn") ? LoadErrorHandler.WARN :
-                        LoadErrorHandler.IGNORE, true);
+                        Boolean.getBoolean("org.apache.tika.service.error.warn")
+                                        ? LoadErrorHandler.WARN
+                                        : LoadErrorHandler.IGNORE,
+                        true);
     }
 
     /**
-     * Returns the context class loader of the current thread. If such
-     * a class loader is not available, then the loader of this class or
-     * finally the system class loader is returned.
+     * Returns the context class loader of the current thread. If such a class loader is not
+     * available, then the loader of this class or finally the system class loader is returned.
      *
-     * @return context class loader, or <code>null</code> if no loader
-     * is available
+     * @return context class loader, or <code>null</code> if no loader is available
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-441">TIKA-441</a>
      */
     static ClassLoader getContextClassLoader() {
@@ -112,12 +109,11 @@ public class ServiceLoader {
     }
 
     /**
-     * Sets the context class loader to use for all threads that access
-     * this class. Used for example in an OSGi environment to avoid problems
-     * with the default context class loader.
+     * Sets the context class loader to use for all threads that access this class. Used for example
+     * in an OSGi environment to avoid problems with the default context class loader.
      *
-     * @param loader default context class loader,
-     *               or <code>null</code> to automatically pick the loader
+     * @param loader default context class loader, or <code>null</code> to automatically pick the
+     *        loader
      */
     public static void setContextClassLoader(ClassLoader loader) {
         CONTEXT_CLASS_LOADER = loader;
@@ -166,8 +162,7 @@ public class ServiceLoader {
     }
 
     /**
-     * Returns an input stream for reading the specified resource from the
-     * configured class loader.
+     * Returns an input stream for reading the specified resource from the configured class loader.
      *
      * @param name resource name
      * @return input stream, or <code>null</code> if the resource was not found
@@ -192,24 +187,23 @@ public class ServiceLoader {
     }
 
     /**
-     * Loads and returns the named service class that's expected to implement
-     * the given interface.
+     * Loads and returns the named service class that's expected to implement the given interface.
      * <p>
      * Note that this class does not use the {@link LoadErrorHandler}, a
-     * {@link ClassNotFoundException} is always returned for unknown
-     * classes or classes of the wrong type
+     * {@link ClassNotFoundException} is always returned for unknown classes or classes of the wrong
+     * type
      *
      * @param iface service interface
-     * @param name  service class name
+     * @param name service class name
      * @return service class
-     * @throws ClassNotFoundException if the service class can not be found
-     *                                or does not implement the given interface
+     * @throws ClassNotFoundException if the service class can not be found or does not implement
+     *         the given interface
      * @see Class#forName(String, boolean, ClassLoader)
      * @since Apache Tika 1.1
      */
     @SuppressWarnings("unchecked")
     public <T> Class<? extends T> getServiceClass(Class<T> iface, String name)
-            throws ClassNotFoundException {
+                    throws ClassNotFoundException {
         if (loader == null) {
             throw new ClassNotFoundException("Service class " + name + " is not available");
         }
@@ -218,17 +212,15 @@ public class ServiceLoader {
             throw new ClassNotFoundException("Service class " + name + " is an interface");
         } else if (!iface.isAssignableFrom(klass)) {
             throw new ClassNotFoundException(
-                    "Service class " + name + " does not implement " + iface.getName());
+                            "Service class " + name + " does not implement " + iface.getName());
         } else {
             return (Class<? extends T>) klass;
         }
     }
 
     /**
-     * Returns all the available service resources matching the
-     * given pattern, such as all instances of tika-mimetypes.xml
-     * on the classpath, or all org.apache.tika.parser.Parser
-     * service files.
+     * Returns all the available service resources matching the given pattern, such as all instances
+     * of tika-mimetypes.xml on the classpath, or all org.apache.tika.parser.Parser service files.
      */
     public Enumeration<URL> findServiceResources(String filePattern) {
         try {
@@ -256,7 +248,7 @@ public class ServiceLoader {
         List<T> providers = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         for (T provider : tmp) {
-            if (! seen.contains(provider.getClass().getCanonicalName())) {
+            if (!seen.contains(provider.getClass().getCanonicalName())) {
                 providers.add(provider);
                 seen.add(provider.getClass().getCanonicalName());
             }
@@ -265,9 +257,8 @@ public class ServiceLoader {
     }
 
     /**
-     * Returns the available dynamic service providers of the given type.
-     * The returned list is newly allocated and may be freely modified
-     * by the caller.
+     * Returns the available dynamic service providers of the given type. The returned list is newly
+     * allocated and may be freely modified by the caller.
      *
      * @param iface service provider interface
      * @return dynamic service providers
@@ -294,10 +285,9 @@ public class ServiceLoader {
     }
 
     /**
-     * Returns the defined static service providers of the given type, without
-     * attempting to load them.
-     * The providers are loaded using the service provider mechanism using
-     * the configured class loader (if any).
+     * Returns the defined static service providers of the given type, without attempting to load
+     * them. The providers are loaded using the service provider mechanism using the configured
+     * class loader (if any).
      *
      * @param iface service provider interface
      * @return static list of uninitialised service providers
@@ -326,19 +316,18 @@ public class ServiceLoader {
     }
 
     /**
-     * Returns the available static service providers of the given type.
-     * The providers are loaded using the service provider mechanism using
-     * the configured class loader (if any). The returned list is newly
-     * allocated and may be freely modified by the caller.
+     * Returns the available static service providers of the given type. The providers are loaded
+     * using the service provider mechanism using the configured class loader (if any). The returned
+     * list is newly allocated and may be freely modified by the caller.
      *
-     * @param iface    service provider interface
+     * @param iface service provider interface
      * @param excludes -- do not load these classes
      * @return static service providers
      * @since Apache Tika 1.2
      */
     @SuppressWarnings("unchecked")
     public <T> List<T> loadStaticServiceProviders(Class<T> iface,
-                                                  Collection<Class<? extends T>> excludes) {
+                    Collection<Class<? extends T>> excludes) {
         List<T> providers = new ArrayList<>();
 
         if (loader != null) {
@@ -359,13 +348,13 @@ public class ServiceLoader {
                             if (instance instanceof Initializable) {
                                 ((Initializable) instance).initialize(Collections.EMPTY_MAP);
                                 ((Initializable) instance)
-                                        .checkInitialization(initializableProblemHandler);
+                                                .checkInitialization(initializableProblemHandler);
                             }
                             providers.add(instance);
                         }
                     } else {
                         throw new TikaConfigException(
-                                "Class " + name + " is not of type: " + iface);
+                                        "Class " + name + " is not of type: " + iface);
                     }
                 } catch (Throwable t) {
                     handler.handleLoadError(name, t);
@@ -376,9 +365,10 @@ public class ServiceLoader {
     }
 
     private void collectServiceClassNames(URL resource, Collection<String> names)
-            throws IOException {
+                    throws IOException {
         try (InputStream stream = resource.openStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8))) {
+                        BufferedReader reader =
+                                        new BufferedReader(new InputStreamReader(stream, UTF_8))) {
             String line = reader.readLine();
             while (line != null) {
                 line = COMMENT.matcher(line).replaceFirst("");

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.journal;
@@ -22,7 +20,10 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -30,17 +31,11 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.utils.XMLReaderUtils;
-
 public class TEIDOMParser {
 
-    public TEIDOMParser() {
-    }
+    public TEIDOMParser() {}
 
-    //returns first child with this name, null otherwise
+    // returns first child with this name, null otherwise
     private static Node getFirstChild(NodeList childNodes, String name) {
         for (int i = 0; i < childNodes.getLength(); i++) {
             Node n = childNodes.item(i);
@@ -76,10 +71,9 @@ public class TEIDOMParser {
     }
 
     public Metadata parse(String source, ParseContext parseContext)
-            throws TikaException, SAXException, IOException {
+                    throws TikaException, SAXException, IOException {
 
-        Document root = XMLReaderUtils
-                .buildDOM(new StringReader(source), parseContext);
+        Document root = XMLReaderUtils.buildDOM(new StringReader(source), parseContext);
 
         Metadata metadata = new Metadata();
         createGrobidMetadata(source, root.getDocumentElement(), metadata);
@@ -111,8 +105,8 @@ public class TEIDOMParser {
 
     private void addStaticMet(String source, Element obj, Metadata metadata) {
         metadata.add("Class", Metadata.class.getName());
-        //no longer available after we got rid of json.org's and its .toJSONObject()
-//        metadata.add("TEIJSONSource", obj.toString());
+        // no longer available after we got rid of json.org's and its .toJSONObject()
+        // metadata.add("TEIJSONSource", obj.toString());
         metadata.add("TEIXMLSource", source);
     }
 
@@ -508,9 +502,9 @@ public class TEIDOMParser {
          */
         @Override
         public String toString() {
-            return "Author [surName=" + surName + ", middleName=" + (middleName != null ?
-                    middleName :
-                    "") + ", firstName=" + firstName + ", affiliations=" + affiliations + "]";
+            return "Author [surName=" + surName + ", middleName="
+                            + (middleName != null ? middleName : "") + ", firstName=" + firstName
+                            + ", affiliations=" + affiliations + "]";
         }
 
     }
@@ -565,8 +559,8 @@ public class TEIDOMParser {
                 return false;
             }
             Affiliation otherA = (Affiliation) obj;
-            return this.getAddress().equals(otherA.getAddress()) &&
-                    this.getOrgName().equals(otherA.getOrgName());
+            return this.getAddress().equals(otherA.getAddress())
+                            && this.getOrgName().equals(otherA.getOrgName());
 
         }
 
@@ -708,8 +702,8 @@ public class TEIDOMParser {
                 return false;
             }
             OrgTypeName otherOrgName = (OrgTypeName) obj;
-            return this.type.equals(otherOrgName.getType()) &&
-                    this.name.equals(otherOrgName.getName());
+            return this.type.equals(otherOrgName.getType())
+                            && this.name.equals(otherOrgName.getName());
         }
 
         @Override
@@ -809,10 +803,10 @@ public class TEIDOMParser {
                 return otherA.getRegion() == null;
             }
 
-            return this.settlment.equals(otherA.getSettlment()) &&
-                    this.country.equals(otherA.getCountry()) &&
-                    this.postCode.equals(otherA.getPostCode()) &&
-                    this.region.equals(otherA.getRegion());
+            return this.settlment.equals(otherA.getSettlment())
+                            && this.country.equals(otherA.getCountry())
+                            && this.postCode.equals(otherA.getPostCode())
+                            && this.region.equals(otherA.getRegion());
         }
 
         @Override
@@ -910,8 +904,8 @@ public class TEIDOMParser {
                         return this.key.equals(otherC.getKey());
                     }
                 } else {
-                    return this.key.equals(otherC.getKey()) &&
-                            this.content.equals(otherC.getContent());
+                    return this.key.equals(otherC.getKey())
+                                    && this.content.equals(otherC.getContent());
                 }
             }
         }

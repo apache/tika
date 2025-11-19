@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.detect.zip;
 
@@ -20,21 +18,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.StoppingEarlyException;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class StarOfficeDetector implements ZipContainerDetector {
 
@@ -43,19 +39,19 @@ public class StarOfficeDetector implements ZipContainerDetector {
     private static final int MAX_MANIFEST = 20 * 1024 * 1024;
 
     static {
-        STAR_OFFICE_X
-                .put("application/vnd.sun.xml.writer", MediaType.application("vnd.sun.xml.writer"));
-        STAR_OFFICE_X
-                .put("application/vnd.sun.xml.calc", MediaType.application("vnd.sun.xml.calc"));
-        STAR_OFFICE_X
-                .put("application/vnd.sun.xml.draw", MediaType.application("vnd.sun.xml.draw"));
+        STAR_OFFICE_X.put("application/vnd.sun.xml.writer",
+                        MediaType.application("vnd.sun.xml.writer"));
+        STAR_OFFICE_X.put("application/vnd.sun.xml.calc",
+                        MediaType.application("vnd.sun.xml.calc"));
+        STAR_OFFICE_X.put("application/vnd.sun.xml.draw",
+                        MediaType.application("vnd.sun.xml.draw"));
         STAR_OFFICE_X.put("application/vnd.sun.xml.impress",
-                MediaType.application("vnd.sun.xml.impress"));
+                        MediaType.application("vnd.sun.xml.impress"));
         STAR_OFFICE_X.put("application/vnd.sun.star.configuration-data",
-                MediaType.application("vnd.openofficeorg.extension"));
+                        MediaType.application("vnd.openofficeorg.extension"));
     }
 
-    //parse the META-INF/content.xml file
+    // parse the META-INF/content.xml file
     static MediaType detectStarOfficeX(InputStream is) {
         StarOfficeXHandler handler = new StarOfficeXHandler();
         try {
@@ -63,7 +59,7 @@ public class StarOfficeDetector implements ZipContainerDetector {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            //swallow
+            // swallow
         }
         return handler.mediaType;
     }
@@ -81,17 +77,17 @@ public class StarOfficeDetector implements ZipContainerDetector {
 
     @Override
     public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
-                                           StreamingDetectContext detectContext)
-            throws IOException {
+                    StreamingDetectContext detectContext) throws IOException {
         String name = zae.getName();
         if (!"META-INF/manifest.xml".equals(name)) {
             return null;
         }
-        //for an unknown reason, passing in the zipArchiveInputStream
-        //"as is" can cause the iteration of the entries to stop early
-        //without exception or warning.  So, copy the full stream, then
-        //process.  TIKA-3061
-        UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
+        // for an unknown reason, passing in the zipArchiveInputStream
+        // "as is" can cause the iteration of the entries to stop early
+        // without exception or warning. So, copy the full stream, then
+        // process. TIKA-3061
+        UnsynchronizedByteArrayOutputStream bos =
+                        UnsynchronizedByteArrayOutputStream.builder().get();
         BoundedInputStream bis = new BoundedInputStream(MAX_MANIFEST, zis);
         IOUtils.copy(bis, bos);
 
@@ -110,7 +106,7 @@ public class StarOfficeDetector implements ZipContainerDetector {
 
         @Override
         public void startElement(String uri, String localName, String name, Attributes attrs)
-                throws SAXException {
+                        throws SAXException {
             if (!"file-entry".equals(localName)) {
                 return;
             }

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.eval.app;
@@ -25,9 +23,8 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 /**
- * Simple struct to keep track of relative path of source file (
- * original binary file, e.g. /subdir/document1.doc)
- * and the extract file (e.g. /subdir/document1.doc.json).
+ * Simple struct to keep track of relative path of source file ( original binary file, e.g.
+ * /subdir/document1.doc) and the extract file (e.g. /subdir/document1.doc.json).
  */
 class EvalFilePaths {
 
@@ -48,7 +45,7 @@ class EvalFilePaths {
             try {
                 extractFileLength = Files.size(extractFile);
             } catch (IOException e) {
-                //swallow ?
+                // swallow ?
             }
         }
         this.relativeSourceFilePath = relativeSourceFilePath;
@@ -59,12 +56,12 @@ class EvalFilePaths {
         return relativeSourceFilePath;
     }
 
-    //this path may or may not exist and it could be null!
+    // this path may or may not exist and it could be null!
     public Path getExtractFile() {
         return extractFile;
     }
 
-    //if it doesn't exist, it'll be -1l.
+    // if it doesn't exist, it'll be -1l.
     public long getSourceFileLength() {
         return sourceFileLength;
     }
@@ -108,7 +105,8 @@ class EvalFilePaths {
 
     @Override
     public String toString() {
-        return "EvalFilePaths{" + "relativeSourceFilePath=" + relativeSourceFilePath + ", extractFile=" + extractFile + ", sourceFileLength=" + sourceFileLength +
-                ", extractFileLength=" + extractFileLength + '}';
+        return "EvalFilePaths{" + "relativeSourceFilePath=" + relativeSourceFilePath
+                        + ", extractFile=" + extractFile + ", sourceFileLength=" + sourceFileLength
+                        + ", extractFileLength=" + extractFileLength + '}';
     }
 }

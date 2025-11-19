@@ -1,31 +1,27 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.chm;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-
 import org.apache.tika.exception.TikaException;
 
 /**
  * LZXC reset table For ensuring a decompression. Reads the block named
  * "::DataSpace/Storage/<SectionName>/Transform/
- * {7FC28940-9D31-11D0-9B27-00A0C91E9C7C}/InstanceData/ResetTable"
- * .
+ * {7FC28940-9D31-11D0-9B27-00A0C91E9C7C}/InstanceData/ResetTable" .
  */
 public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
     private static final long serialVersionUID = -8209574429411707460L;
@@ -82,11 +78,15 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("version:=").append(getVersion()).append(System.getProperty("line.separator"));
-        sb.append("block_count:=").append(getBlockCount()).append(System.getProperty("line.separator"));
+        sb.append("block_count:=").append(getBlockCount())
+                        .append(System.getProperty("line.separator"));
         sb.append("unknown:=").append(getUnknown()).append(System.getProperty("line.separator"));
-        sb.append("table_offset:=").append(getTableOffset()).append(System.getProperty("line.separator"));
-        sb.append("uncompressed_len:=").append(getUncompressedLen()).append(System.getProperty("line.separator"));
-        sb.append("compressed_len:=").append(getCompressedLen()).append(System.getProperty("line.separator"));
+        sb.append("table_offset:=").append(getTableOffset())
+                        .append(System.getProperty("line.separator"));
+        sb.append("uncompressed_len:=").append(getUncompressedLen())
+                        .append(System.getProperty("line.separator"));
+        sb.append("compressed_len:=").append(getCompressedLen())
+                        .append(System.getProperty("line.separator"));
         sb.append("block_len:=").append(getBlockLen()).append(System.getProperty("line.separator"));
         sb.append("block_addresses:=").append(Arrays.toString(getBlockAddress()));
         return sb.toString();
@@ -133,7 +133,7 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
      * @throws TikaException
      */
     private boolean validateParamaters(byte[] data, ChmLzxcResetTable chmLzxcResetTable)
-            throws TikaException {
+                    throws TikaException {
         int goodParameter = 0;
         ChmAssert.assertByteArrayNotNull(data);
         ++goodParameter;
@@ -144,10 +144,10 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
 
     private long unmarshalUInt32(byte[] data, long dest) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
-        dest = (data[this.getCurrentPlace()] & 0xff) |
-                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
-                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
-                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                        | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                        | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                        | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -304,15 +304,15 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
         if (validateParamaters(data, chmLzxcResetTable)) {
             /* unmarshal fields */
             chmLzxcResetTable.setVersion(unmarshalUInt32(data, chmLzxcResetTable.getVersion()));
-            chmLzxcResetTable
-                    .setBlockCount(unmarshalUInt32(data, chmLzxcResetTable.getBlockCount()));
+            chmLzxcResetTable.setBlockCount(
+                            unmarshalUInt32(data, chmLzxcResetTable.getBlockCount()));
             chmLzxcResetTable.setUnknown(unmarshalUInt32(data, chmLzxcResetTable.getUnknown()));
-            chmLzxcResetTable
-                    .setTableOffset(unmarshalUInt32(data, chmLzxcResetTable.getTableOffset()));
+            chmLzxcResetTable.setTableOffset(
+                            unmarshalUInt32(data, chmLzxcResetTable.getTableOffset()));
             chmLzxcResetTable.setUncompressedLen(
-                    unmarshalUint64(data, chmLzxcResetTable.getUncompressedLen()));
-            chmLzxcResetTable
-                    .setCompressedLen(unmarshalUint64(data, chmLzxcResetTable.getCompressedLen()));
+                            unmarshalUint64(data, chmLzxcResetTable.getUncompressedLen()));
+            chmLzxcResetTable.setCompressedLen(
+                            unmarshalUint64(data, chmLzxcResetTable.getCompressedLen()));
             chmLzxcResetTable.setBlockLlen(unmarshalUint64(data, chmLzxcResetTable.getBlockLen()));
             chmLzxcResetTable.setBlockAddress(enumerateBlockAddresses(data));
         }

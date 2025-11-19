@@ -1,33 +1,28 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.wordperfect;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.commons.collections4.MapUtils;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.sax.XHTMLContentHandler;
-
 /**
- * Extracts WordPerfect Document Area text from a WordPerfect document
- * version 6+.
+ * Extracts WordPerfect Document Area text from a WordPerfect document version 6+.
  *
  * @author Pascal Essiembre
  */
@@ -36,27 +31,27 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
     private static final byte END_UNDO = 1;
     private static final byte START_INSERT = 3;
     private static final byte END_INSERT = 4;
-    /* 240-254 characters represent fixed-length multi-byte functions.
-     * Those that are not handled explicitely in the code below should be
-     * skipped according to their size (minus the first char if already read).
+    /*
+     * 240-254 characters represent fixed-length multi-byte functions. Those that are not handled
+     * explicitely in the code below should be skipped according to their size (minus the first char
+     * if already read).
      */
     private static final Map<Integer, Integer> FIXED_LENGTH_FUNCTION_SIZES =
-            MapUtils.putAll(new HashMap<>(),
-                    new Integer[]{240, 4,  // Extended Character
-                            241, 5,  // Undo
-                            242, 3,  // Attribute On
-                            243, 3,  // Attribute Off
-                            244, 3,  // (Reserved)
-                            245, 3,  // (Reserved)
-                            246, 4,  // (Reserved)
-                            247, 4,  // (Reserved)
-                            248, 4,  // (Reserved)
-                            249, 5,  // (Reserved)
-                            250, 5,  // (Reserved)
-                            251, 6,  // (Reserved)
-                            252, 6,  // (Reserved)
-                            253, 8,  // (Reserved)
-                            254, 8,  // (Reserved)
+                    MapUtils.putAll(new HashMap<>(), new Integer[] {240, 4, // Extended Character
+                                    241, 5, // Undo
+                                    242, 3, // Attribute On
+                                    243, 3, // Attribute Off
+                                    244, 3, // (Reserved)
+                                    245, 3, // (Reserved)
+                                    246, 4, // (Reserved)
+                                    247, 4, // (Reserved)
+                                    248, 4, // (Reserved)
+                                    249, 5, // (Reserved)
+                                    250, 5, // (Reserved)
+                                    251, 6, // (Reserved)
+                                    252, 6, // (Reserved)
+                                    253, 8, // (Reserved)
+                                    254, 8, // (Reserved)
                     });
     private boolean includeDeletedContent = true;
     private boolean inUndo = false;
@@ -67,18 +62,18 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
     }
 
     protected void extract(int c, WPInputStream in, StringBuilder out, XHTMLContentHandler xhtml)
-            throws IOException, SAXException {
-        //special handling for undo must come first
+                    throws IOException, SAXException {
+        // special handling for undo must come first
 
         if (!includeDeletedContent) {
             if (inUndo && c != 241) {
                 return;
             }
         }
-        //241 is the fixed length multi-byte marker for
-        //undo/insert.  The second byte determines
-        //what type of undo this is.  I don't understand
-        //what the third byte signifies.
+        // 241 is the fixed length multi-byte marker for
+        // undo/insert. The second byte determines
+        // what type of undo this is. I don't understand
+        // what the third byte signifies.
         if (c == 241) {
             byte b = in.readWPByte();
             if (b == START_UNDO) {
@@ -94,11 +89,11 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
         } else if (c >= 33 && c <= 126) {
             out.append((char) c);
         } else if (c == 128) {
-            out.append(' ');      // Soft space
+            out.append(' '); // Soft space
         } else if (c == 129) {
             out.append('\u00A0'); // Hard space
         } else if (c == 132) {
-            out.append('-');      // Hard hyphen
+            out.append('-'); // Hard hyphen
         } else if (c == 135 || c == 137) {
             endParagraph(out, xhtml); // Dormant Hard return
         } else if (c == 138) {
@@ -137,7 +132,7 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
             } else if (c == 224) {
                 out.append('\t');
             }
-            //TODO Are there functions containing data? Like footnotes?
+            // TODO Are there functions containing data? Like footnotes?
 
         } else if (c == 240) {
             // extended char

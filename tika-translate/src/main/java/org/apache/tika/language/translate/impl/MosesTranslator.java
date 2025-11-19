@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.language.translate.impl;
@@ -26,12 +24,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.Properties;
-
 import org.apache.tika.exception.TikaException;
 
 /**
- * Translator that uses the Moses decoder for translation.
- * Users must install the Moses system before using this Translator. @link http://www.statmt.org/moses/.
+ * Translator that uses the Moses decoder for translation. Users must install the Moses system
+ * before using this Translator. @link http://www.statmt.org/moses/.
  */
 public class MosesTranslator extends ExternalTranslator {
 
@@ -52,7 +49,7 @@ public class MosesTranslator extends ExternalTranslator {
         try {
             config.load(MosesTranslator.class.getResourceAsStream("translator.moses.properties"));
             new MosesTranslator(config.getProperty("translator.smt_path"),
-                    config.getProperty("translator.script_path"));
+                            config.getProperty("translator.script_path"));
         } catch (IOException e) {
             throw new AssertionError("Failed to read translator.moses.properties.");
         }
@@ -61,7 +58,7 @@ public class MosesTranslator extends ExternalTranslator {
     /**
      * Create a Moses Translator with the specified smt jar and script paths.
      *
-     * @param smtPath    Full path to the jar to run.
+     * @param smtPath Full path to the jar to run.
      * @param scriptPath Full path to the script to pass to the smt jar.
      */
     public MosesTranslator(String smtPath, String scriptPath) {
@@ -72,27 +69,27 @@ public class MosesTranslator extends ExternalTranslator {
 
     @Override
     public String translate(String text, String sourceLanguage, String targetLanguage)
-            throws TikaException, IOException {
+                    throws TikaException, IOException {
         if (!isAvailable() || !checkCommand(buildCheckCommand(smtPath), 1)) {
             return text;
         }
         File tmpFile = new File(TMP_FILE_NAME);
         try (OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile),
-                Charset.defaultCharset())) {
+                        Charset.defaultCharset())) {
             out.append(text).append('\n').close();
         }
 
-        Runtime.getRuntime().exec(buildCommand(smtPath, scriptPath), new String[]{},
-                buildWorkingDirectory(scriptPath));
+        Runtime.getRuntime().exec(buildCommand(smtPath, scriptPath), new String[] {},
+                        buildWorkingDirectory(scriptPath));
 
         File tmpTranslatedFile = new File(TMP_FILE_NAME + ".translated");
 
         StringBuilder stringBuilder = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new FileInputStream(tmpTranslatedFile),
-                        Charset.defaultCharset()))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                        new FileInputStream(tmpTranslatedFile), Charset.defaultCharset()))) {
             String line;
-            while ((line = reader.readLine()) != null) stringBuilder.append(line);
+            while ((line = reader.readLine()) != null)
+                stringBuilder.append(line);
         }
 
         if (!tmpFile.delete() || !tmpTranslatedFile.delete()) {
@@ -109,13 +106,13 @@ public class MosesTranslator extends ExternalTranslator {
     /**
      * Build the command String to be executed.
      *
-     * @param smtPath    Full path to the jar to run.
+     * @param smtPath Full path to the jar to run.
      * @param scriptPath Full path to the script to pass to the smt jar.
      * @return String to run on the command line.
      */
     private String buildCommand(String smtPath, String scriptPath) {
-        return "java -jar " + smtPath + " -c NONE " + scriptPath + " " +
-                System.getProperty("user.dir") + "/" + TMP_FILE_NAME;
+        return "java -jar " + smtPath + " -c NONE " + scriptPath + " "
+                        + System.getProperty("user.dir") + "/" + TMP_FILE_NAME;
     }
 
     /**
@@ -129,8 +126,8 @@ public class MosesTranslator extends ExternalTranslator {
     }
 
     /**
-     * Build the File that represents the desired working directory. In this case,
-     * the directory the script is in.
+     * Build the File that represents the desired working directory. In this case, the directory the
+     * script is in.
      *
      * @param scriptPath Full path to the script passed to the smt jar.
      * @return File of the directory with the script in it.

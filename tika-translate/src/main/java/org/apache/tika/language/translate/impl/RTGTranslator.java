@@ -1,23 +1,24 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 
 package org.apache.tika.language.translate.impl;
 
+import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -28,27 +29,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.exception.TikaException;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
-
 
 /**
- * <p>This translator is designed to work with a TCP-IP available
- * RTG translation server, specifically the
- * <a href="https://isi-nlp.github.io/rtg/#_rtg_serve">
- * REST-based RTG server</a>.</p>
- * To get Docker image:
- * https://hub.docker.com/repository/docker/tgowda/rtg-model <br/>
+ * <p>
+ * This translator is designed to work with a TCP-IP available RTG translation server, specifically
+ * the <a href="https://isi-nlp.github.io/rtg/#_rtg_serve"> REST-based RTG server</a>.
+ * </p>
+ * To get Docker image: https://hub.docker.com/repository/docker/tgowda/rtg-model <br/>
+ * 
  * <pre>
  * {code
  * # without GPU
@@ -58,8 +54,9 @@ import org.apache.tika.exception.TikaException;
  * }
  * </pre>
  *
- * <p>If you were to interact with the server via curl a request
- * would look as follows</p>
+ * <p>
+ * If you were to interact with the server via curl a request would look as follows
+ * </p>
  *
  * <pre>
  * {code
@@ -69,8 +66,8 @@ import org.apache.tika.exception.TikaException;
  * }
  * </pre>
  * <p>
- * RTG requires input to be pre-formatted into sentences, one per line,
- * so this translation implementation takes care of that.
+ * RTG requires input to be pre-formatted into sentences, one per line, so this translation
+ * implementation takes care of that.
  */
 public class RTGTranslator extends AbstractTranslator {
 
@@ -106,7 +103,7 @@ public class RTGTranslator extends AbstractTranslator {
 
     @Override
     public String translate(String text, String sourceLanguage, String targetLanguage)
-            throws TikaException, IOException {
+                    throws TikaException, IOException {
         return this.translate(text);
     }
 
@@ -122,9 +119,9 @@ public class RTGTranslator extends AbstractTranslator {
         Map<String, List<Object>> input = new HashMap<>();
         input.put("source", Arrays.asList(text.split("(?<=(?<![A-Z])\\. )|\\n")));
         Response response = client.path("translate").type(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON).post(input);
+                        .accept(MediaType.APPLICATION_JSON).post(input);
         try (InputStreamReader reader = new InputStreamReader((InputStream) response.getEntity(),
-                Charset.defaultCharset())) {
+                        Charset.defaultCharset())) {
             JSONParser parser = new JSONParser();
             JSONObject obj = (JSONObject) parser.parse(reader);
             List<String> sentences = (List<String>) obj.get("translation");

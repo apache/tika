@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.langdetect.optimaize;
 
@@ -27,101 +25,37 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
 import org.apache.tika.langdetect.LanguageDetectorTest;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.detect.LanguageWriter;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
     /*
-     * The complete list of supported languages (as of 0.5) is below.
-     * The ones we have tests for have '*' after the name.
+     * The complete list of supported languages (as of 0.5) is below. The ones we have tests for
+     * have '*' after the name.
      *
-    af Afrikaans
-    an Aragonese
-    ar Arabic
-    ast Asturian
-    be Belarusian
-    br Breton
-    ca Catalan
-    bg Bulgarian
-    bn Bengali
-    cs Czech
-    cy Welsh
-    da Danish *
-    de German *
-    el Greek *
-    en English *
-    es Spanish *
-    et Estonian
-    eu Basque
-    fa Persian
-    fi Finnish *
-    fr French *
-    ga Irish
-    gl Galician
-    gu Gujarati
-    he Hebrew
-    hi Hindi
-    hr Croatian
-    ht Haitian
-    hu Hungarian
-    id Indonesian
-    is Icelandic
-    it Italian *
-    ja Japanese *
-    km Khmer
-    kn Kannada
-    ko Korean
-    lt Lithuanian *
-    lv Latvian
-    mk Macedonian
-    ml Malayalam
-    mr Marathi
-    ms Malay
-    mt Maltese
-    ne Nepali
-    nl Dutch *
-    no Norwegian
-    oc Occitan
-    pa Punjabi
-    pl Polish
-    pt Portuguese *
-    ro Romanian
-    ru Russian
-    sk Slovak
-    sl Slovene
-    so Somali
-    sq Albanian
-    sr Serbian
-    sv Swedish *
-    sw Swahili
-    ta Tamil
-    te Telugu
-    th Thai *
-    tl Tagalog
-    tr Turkish
-    uk Ukrainian
-    ur Urdu
-    vi Vietnamese
-    yi Yiddish
-    zh-CN Simplified Chinese * (just generic Chinese)
-    zh-TW Traditional Chinese * (just generic Chinese)
-    */
+     * af Afrikaans an Aragonese ar Arabic ast Asturian be Belarusian br Breton ca Catalan bg
+     * Bulgarian bn Bengali cs Czech cy Welsh da Danish * de German * el Greek * en English * es
+     * Spanish * et Estonian eu Basque fa Persian fi Finnish * fr French * ga Irish gl Galician gu
+     * Gujarati he Hebrew hi Hindi hr Croatian ht Haitian hu Hungarian id Indonesian is Icelandic it
+     * Italian * ja Japanese * km Khmer kn Kannada ko Korean lt Lithuanian * lv Latvian mk
+     * Macedonian ml Malayalam mr Marathi ms Malay mt Maltese ne Nepali nl Dutch * no Norwegian oc
+     * Occitan pa Punjabi pl Polish pt Portuguese * ro Romanian ru Russian sk Slovak sl Slovene so
+     * Somali sq Albanian sr Serbian sv Swedish * sw Swahili ta Tamil te Telugu th Thai * tl Tagalog
+     * tr Turkish uk Ukrainian ur Urdu vi Vietnamese yi Yiddish zh-CN Simplified Chinese * (just
+     * generic Chinese) zh-TW Traditional Chinese * (just generic Chinese)
+     */
 
     /**
-     * Test correct detection for the many (short) translations of the
-     * "Universal Declaration of Human Rights (Article 1)", at
-     * http://www.omniglot.com/udhr
+     * Test correct detection for the many (short) translations of the "Universal Declaration of
+     * Human Rights (Article 1)", at http://www.omniglot.com/udhr
      * <p>
-     * Also make sure we get uncertain results for some set of unsupported
-     * languages.
+     * Also make sure we get uncertain results for some set of unsupported languages.
      *
      * @throws Exception
      */
@@ -202,9 +136,8 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
                 if (results.size() > 0) {
                     LanguageResult result = results.get(0);
 
-                    assertFalse(result.isReasonablyCertain(),
-                            "mix of " + language + " and " + other + " incorrectly detected as " +
-                                    result);
+                    assertFalse(result.isReasonablyCertain(), "mix of " + language + " and " + other
+                                    + " incorrectly detected as " + result);
                 }
             }
         }
@@ -236,15 +169,15 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
             writeTo(language, writer, 300);
 
             LanguageResult result = detector.detect();
-            assertNotNull(result, String.format(Locale.US, "Language '%s' wasn't detected",
-                            language));
+            assertNotNull(result,
+                            String.format(Locale.US, "Language '%s' wasn't detected", language));
 
-            assertTrue(result.isLanguage(language), String.format(Locale.US, "Language '%s' was " +
-                            "detected as '%s'", language,
-                    result.getLanguage()));
+            assertTrue(result.isLanguage(language),
+                            String.format(Locale.US, "Language '%s' was " + "detected as '%s'",
+                                            language, result.getLanguage()));
             assertTrue(result.isReasonablyCertain(),
-                    String.format(Locale.US, "Language '%s' isn't reasonably certain: %s", language,
-                            result.getConfidence()));
+                            String.format(Locale.US, "Language '%s' isn't reasonably certain: %s",
+                                            language, result.getConfidence()));
         }
 
         writer.close();
@@ -252,8 +185,8 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
 
     private Map<String, String> getTestLanguages(String resourceName) throws IOException {
         Map<String, String> result = new HashMap<>();
-        List<String> languages =
-                IOUtils.readLines(OptimaizeLangDetectorTest.class.getResourceAsStream(resourceName),
+        List<String> languages = IOUtils.readLines(
+                        OptimaizeLangDetectorTest.class.getResourceAsStream(resourceName),
                         StandardCharsets.UTF_8);
         for (String line : languages) {
             line = line.trim();
@@ -275,7 +208,7 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
     @Test
     @Timeout(5000)
     public void testOptimaizeRegexBug() throws Exception {
-        //confirm TIKA-2777 doesn't affect langdetect's Optimaize
+        // confirm TIKA-2777 doesn't affect langdetect's Optimaize
         LanguageDetector detector = new OptimaizeLangDetector().setShortText(false).loadModels();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 50000; i++) {

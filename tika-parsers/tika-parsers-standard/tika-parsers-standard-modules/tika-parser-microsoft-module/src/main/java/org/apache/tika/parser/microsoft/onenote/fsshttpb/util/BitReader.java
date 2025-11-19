@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
@@ -27,8 +25,8 @@ import java.util.UUID;
  */
 public class BitReader {
     /**
-     * A start position which will be not changed in the process of reading.
-     * This value will be used for recording the start position and will be used by the function reset.
+     * A start position which will be not changed in the process of reading. This value will be used
+     * for recording the start position and will be used by the function reset.
      */
     private final long startPosition;
     /**
@@ -45,7 +43,8 @@ public class BitReader {
     private long offset;
 
     /**
-     * Initializes a new instance of the BitReader class with specified bytes buffer and start position in byte.
+     * Initializes a new instance of the BitReader class with specified bytes buffer and start
+     * position in byte.
      *
      * @param array Specify the byte array which contains the bytes need to be read.
      * @param index Specify the start position in byte.
@@ -85,7 +84,8 @@ public class BitReader {
     }
 
     /**
-     * Read specified bit length content as an UInt32 type and increase the bit offset with the specified length.
+     * Read specified bit length content as an UInt32 type and increase the bit offset with the
+     * specified length.
      *
      * @param readingLength Specify the reading bit length.
      * @return Return the UInt32 type value.
@@ -111,7 +111,8 @@ public class BitReader {
     }
 
     /**
-     * Read specified bit length content as an UInt16 type and increase the bit offset with the specified length.
+     * Read specified bit length content as an UInt16 type and increase the bit offset with the
+     * specified length.
      *
      * @param readingLength Specify the reading bit length.
      * @return Return the UInt16 value.
@@ -122,7 +123,8 @@ public class BitReader {
     }
 
     /**
-     * Read specified bit length content as an Int32 type and increase the bit offset with the specified length.
+     * Read specified bit length content as an Int32 type and increase the bit offset with the
+     * specified length.
      *
      * @param readingLength Specify the reading bit length.
      * @return Return the Int32 type value.
@@ -144,8 +146,8 @@ public class BitReader {
     /**
      * Advances the enumerator to the next bit of the byte array.
      *
-     * @return true if the enumerator was successfully advanced to the next bit; false if the enumerator
-     * has passed the end of the byte array.
+     * @return true if the enumerator was successfully advanced to the next bit; false if the
+     *         enumerator has passed the end of the byte array.
      */
     public boolean moveNext() {
         return ++this.offset < this.length;
@@ -169,7 +171,7 @@ public class BitReader {
      * Construct a byte array with specified bit length and the specified the byte array size.
      *
      * @param needReadlength Specify the need read bit length.
-     * @param size           Specify the byte array size.
+     * @param size Specify the byte array size.
      * @return Returns the constructed byte array.
      */
     private byte[] getBytes(int needReadlength, int size) throws IOException {

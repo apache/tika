@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mp3;
 
@@ -22,15 +20,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
-
+import org.apache.tika.exception.TikaException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaException;
-
 /**
- * This is used to parse ID3 Version 1 Tag information from an MP3 file,
- * if available.
+ * This is used to parse ID3 Version 1 Tag information from an MP3 file, if available.
  *
  * @see <a href="http://www.id3.org/ID3v1">MP3 ID3 Version 1 specification</a>
  */
@@ -45,7 +40,7 @@ public class ID3v1Handler implements ID3Tags {
     private String trackNumber;
 
     public ID3v1Handler(InputStream stream, ContentHandler handler)
-            throws IOException, SAXException, TikaException {
+                    throws IOException, SAXException, TikaException {
         this(LyricsHandler.getSuffix(stream, 128));
     }
 
@@ -80,15 +75,14 @@ public class ID3v1Handler implements ID3Tags {
     }
 
     /**
-     * Returns the identified ISO-8859-1 substring from the given byte buffer.
-     * The return value is the zero-terminated substring retrieved from
-     * between the given start and end positions in the given byte buffer.
-     * Extra whitespace (and control characters) from the beginning and the
-     * end of the substring is removed.
+     * Returns the identified ISO-8859-1 substring from the given byte buffer. The return value is
+     * the zero-terminated substring retrieved from between the given start and end positions in the
+     * given byte buffer. Extra whitespace (and control characters) from the beginning and the end
+     * of the substring is removed.
      *
      * @param buffer byte buffer
-     * @param start  start index of the substring
-     * @param end    end index of the substring
+     * @param start start index of the substring
+     * @param end end index of the substring
      * @return the identified substring
      * @throws TikaException if the ISO-8859-1 encoding is not available
      */
@@ -147,32 +141,28 @@ public class ID3v1Handler implements ID3Tags {
     }
 
     /**
-     * ID3v1 doesn't have composers,
-     * so returns null;
+     * ID3v1 doesn't have composers, so returns null;
      */
     public String getComposer() {
         return null;
     }
 
     /**
-     * ID3v1 doesn't have album-wide artists,
-     * so returns null;
+     * ID3v1 doesn't have album-wide artists, so returns null;
      */
     public String getAlbumArtist() {
         return null;
     }
 
     /**
-     * ID3v1 doesn't have disc numbers,
-     * so returns null;
+     * ID3v1 doesn't have disc numbers, so returns null;
      */
     public String getDisc() {
         return null;
     }
 
     /**
-     * ID3v1 doesn't have compilations,
-     * so returns null;
+     * ID3v1 doesn't have compilations, so returns null;
      */
     public String getCompilation() {
         return null;

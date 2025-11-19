@@ -1,23 +1,21 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.gdal;
 
-//JDK imports
+// JDK imports
 
 import static org.apache.tika.parser.external.ExternalParser.INPUT_FILE_TOKEN;
 
@@ -34,12 +32,6 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaException;
@@ -54,24 +46,26 @@ import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
-//Tika imports
-//SAX imports
+// Tika imports
+// SAX imports
 
 /**
- * Wraps execution of the <a href="http//gdal.org/">Geospatial Data Abstraction
- * Library (GDAL)</a> <code>gdalinfo</code> tool used to extract geospatial
- * information out of hundreds of geo file formats.
+ * Wraps execution of the <a href="http//gdal.org/">Geospatial Data Abstraction Library (GDAL)</a>
+ * <code>gdalinfo</code> tool used to extract geospatial information out of hundreds of geo file
+ * formats.
  * <p/>
- * The parser requires the installation of GDAL and for <code>gdalinfo</code> to
- * be located on the path.
+ * The parser requires the installation of GDAL and for <code>gdalinfo</code> to be located on the
+ * path.
  * <p/>
- * Basic information (Size, Coordinate System, Bounding Box, Driver, and
- * resource info) are extracted as metadata, and the remaining metadata patterns
- * are extracted and added.
+ * Basic information (Size, Coordinate System, Bounding Box, Driver, and resource info) are
+ * extracted as metadata, and the remaining metadata patterns are extracted and added.
  * <p/>
- * The output of the command is available from the provided
- * {@link ContentHandler} in the
+ * The output of the command is available from the provided {@link ContentHandler} in the
  * {@link #parse(InputStream, ContentHandler, Metadata, ParseContext)} method.
  */
 public class GDALParser implements Parser {
@@ -81,66 +75,89 @@ public class GDALParser implements Parser {
 
     public static final long DEFAULT_TIMEOUT_MS = 60000;
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
-            Arrays.asList(MediaType.application("x-netcdf"), MediaType.application("vrt"),
-                    MediaType.image("geotiff"), MediaType.image("nitf"),
-                    MediaType.application("x-rpf-toc"), MediaType.application("x-ecrg-toc"),
-                    MediaType.image("hfa"), MediaType.image("sar-ceos"), MediaType.image("ceos"),
-                    MediaType.application("jaxa-pal-sar"), MediaType.application("gff"),
-                    MediaType.application("elas"), MediaType.application("aig"),
-                    MediaType.application("aaigrid"), MediaType.application("grass-ascii-grid"),
-                    MediaType.application("sdts-raster"), MediaType.application("dted"),
-                    MediaType.image("png"), MediaType.image("jpeg"), MediaType.image("raster"),
-                    MediaType.application("jdem"), MediaType.image("gif"),
-                    MediaType.image("big-gif"), MediaType.image("envisat"), MediaType.image("fits"),
-                    MediaType.application("fits"), MediaType.image("bsb"),
-                    MediaType.application("xpm"), MediaType.image("bmp"),
-                    MediaType.image("x-dimap"), MediaType.image("x-airsar"),
-                    MediaType.application("x-rs2"), MediaType.application("x-pcidsk"),
-                    MediaType.application("pcisdk"), MediaType.image("x-pcraster"),
-                    MediaType.image("ilwis"), MediaType.image("sgi"),
-                    MediaType.application("x-srtmhgt"), MediaType.application("leveller"),
-                    MediaType.application("terragen"), MediaType.application("x-gmt"),
-                    MediaType.application("x-isis3"), MediaType.application("x-isis2"),
-                    MediaType.application("x-pds"), MediaType.application("x-til"),
-                    MediaType.application("x-ers"), MediaType.application("x-l1b"),
-                    MediaType.image("fit"), MediaType.application("x-grib"), MediaType.image("jp2"),
-                    MediaType.application("x-rmf"), MediaType.application("x-wcs"),
-                    MediaType.application("x-wms"), MediaType.application("x-msgn"),
-                    MediaType.application("x-wms"), MediaType.application("x-wms"),
-                    MediaType.application("x-rst"), MediaType.application("x-ingr"),
-                    MediaType.application("x-gsag"), MediaType.application("x-gsbg"),
-                    MediaType.application("x-gs7bg"), MediaType.application("x-cosar"),
-                    MediaType.application("x-tsx"), MediaType.application("x-coasp"),
-                    MediaType.application("x-r"), MediaType.application("x-map"),
-                    MediaType.application("x-pnm"), MediaType.application("x-doq1"),
-                    MediaType.application("x-doq2"), MediaType.application("x-envi"),
-                    MediaType.application("x-envi-hdr"), MediaType.application("x-generic-bin"),
-                    MediaType.application("x-p-aux"), MediaType.image("x-mff"),
-                    MediaType.image("x-mff2"), MediaType.image("x-fujibas"),
-                    MediaType.application("x-gsc"), MediaType.application("x-fast"),
-                    MediaType.application("x-bt"), MediaType.application("x-lan"),
-                    MediaType.application("x-cpg"), MediaType.image("ida"),
-                    MediaType.application("x-ndf"), MediaType.image("eir"),
-                    MediaType.application("x-dipex"), MediaType.application("x-lcp"),
-                    MediaType.application("x-gtx"), MediaType.application("x-los-las"),
-                    MediaType.application("x-ntv2"), MediaType.application("x-ctable2"),
-                    MediaType.application("x-ace2"), MediaType.application("x-snodas"),
-                    MediaType.application("x-kro"), MediaType.image("arg"),
-                    MediaType.application("x-rik"), MediaType.application("x-usgs-dem"),
-                    MediaType.application("x-gxf"), MediaType.application("x-dods"),
-                    MediaType.application("x-http"), MediaType.application("x-bag"),
-                    MediaType.application("x-hdf"), MediaType.image("x-hdf5-image"),
-                    MediaType.application("x-nwt-grd"), MediaType.application("x-nwt-grc"),
-                    MediaType.image("adrg"), MediaType.image("x-srp"),
-                    MediaType.application("x-blx"), MediaType.application("x-rasterlite"),
-                    MediaType.application("x-epsilon"), MediaType.application("x-sdat"),
-                    MediaType.application("x-kml"), MediaType.application("x-xyz"),
-                    MediaType.application("x-geo-pdf"), MediaType.image("x-ozi"),
-                    MediaType.application("x-ctg"), MediaType.application("x-e00-grid"),
-                    MediaType.application("x-zmap"), MediaType.application("x-webp"),
-                    MediaType.application("x-ngs-geoid"), MediaType.application("x-mbtiles"),
-                    MediaType.application("x-ppi"), MediaType.application("x-cappi"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+                    .unmodifiableSet(new HashSet<>(Arrays.asList(MediaType.application("x-netcdf"),
+                                    MediaType.application("vrt"), MediaType.image("geotiff"),
+                                    MediaType.image("nitf"), MediaType.application("x-rpf-toc"),
+                                    MediaType.application("x-ecrg-toc"), MediaType.image("hfa"),
+                                    MediaType.image("sar-ceos"), MediaType.image("ceos"),
+                                    MediaType.application("jaxa-pal-sar"),
+                                    MediaType.application("gff"), MediaType.application("elas"),
+                                    MediaType.application("aig"), MediaType.application("aaigrid"),
+                                    MediaType.application("grass-ascii-grid"),
+                                    MediaType.application("sdts-raster"),
+                                    MediaType.application("dted"), MediaType.image("png"),
+                                    MediaType.image("jpeg"), MediaType.image("raster"),
+                                    MediaType.application("jdem"), MediaType.image("gif"),
+                                    MediaType.image("big-gif"), MediaType.image("envisat"),
+                                    MediaType.image("fits"), MediaType.application("fits"),
+                                    MediaType.image("bsb"), MediaType.application("xpm"),
+                                    MediaType.image("bmp"), MediaType.image("x-dimap"),
+                                    MediaType.image("x-airsar"), MediaType.application("x-rs2"),
+                                    MediaType.application("x-pcidsk"),
+                                    MediaType.application("pcisdk"), MediaType.image("x-pcraster"),
+                                    MediaType.image("ilwis"), MediaType.image("sgi"),
+                                    MediaType.application("x-srtmhgt"),
+                                    MediaType.application("leveller"),
+                                    MediaType.application("terragen"),
+                                    MediaType.application("x-gmt"),
+                                    MediaType.application("x-isis3"),
+                                    MediaType.application("x-isis2"),
+                                    MediaType.application("x-pds"), MediaType.application("x-til"),
+                                    MediaType.application("x-ers"), MediaType.application("x-l1b"),
+                                    MediaType.image("fit"), MediaType.application("x-grib"),
+                                    MediaType.image("jp2"), MediaType.application("x-rmf"),
+                                    MediaType.application("x-wcs"), MediaType.application("x-wms"),
+                                    MediaType.application("x-msgn"), MediaType.application("x-wms"),
+                                    MediaType.application("x-wms"), MediaType.application("x-rst"),
+                                    MediaType.application("x-ingr"),
+                                    MediaType.application("x-gsag"),
+                                    MediaType.application("x-gsbg"),
+                                    MediaType.application("x-gs7bg"),
+                                    MediaType.application("x-cosar"),
+                                    MediaType.application("x-tsx"),
+                                    MediaType.application("x-coasp"), MediaType.application("x-r"),
+                                    MediaType.application("x-map"), MediaType.application("x-pnm"),
+                                    MediaType.application("x-doq1"),
+                                    MediaType.application("x-doq2"),
+                                    MediaType.application("x-envi"),
+                                    MediaType.application("x-envi-hdr"),
+                                    MediaType.application("x-generic-bin"),
+                                    MediaType.application("x-p-aux"), MediaType.image("x-mff"),
+                                    MediaType.image("x-mff2"), MediaType.image("x-fujibas"),
+                                    MediaType.application("x-gsc"), MediaType.application("x-fast"),
+                                    MediaType.application("x-bt"), MediaType.application("x-lan"),
+                                    MediaType.application("x-cpg"), MediaType.image("ida"),
+                                    MediaType.application("x-ndf"), MediaType.image("eir"),
+                                    MediaType.application("x-dipex"),
+                                    MediaType.application("x-lcp"), MediaType.application("x-gtx"),
+                                    MediaType.application("x-los-las"),
+                                    MediaType.application("x-ntv2"),
+                                    MediaType.application("x-ctable2"),
+                                    MediaType.application("x-ace2"),
+                                    MediaType.application("x-snodas"),
+                                    MediaType.application("x-kro"), MediaType.image("arg"),
+                                    MediaType.application("x-rik"),
+                                    MediaType.application("x-usgs-dem"),
+                                    MediaType.application("x-gxf"), MediaType.application("x-dods"),
+                                    MediaType.application("x-http"), MediaType.application("x-bag"),
+                                    MediaType.application("x-hdf"), MediaType.image("x-hdf5-image"),
+                                    MediaType.application("x-nwt-grd"),
+                                    MediaType.application("x-nwt-grc"), MediaType.image("adrg"),
+                                    MediaType.image("x-srp"), MediaType.application("x-blx"),
+                                    MediaType.application("x-rasterlite"),
+                                    MediaType.application("x-epsilon"),
+                                    MediaType.application("x-sdat"), MediaType.application("x-kml"),
+                                    MediaType.application("x-xyz"),
+                                    MediaType.application("x-geo-pdf"), MediaType.image("x-ozi"),
+                                    MediaType.application("x-ctg"),
+                                    MediaType.application("x-e00-grid"),
+                                    MediaType.application("x-zmap"),
+                                    MediaType.application("x-webp"),
+                                    MediaType.application("x-ngs-geoid"),
+                                    MediaType.application("x-mbtiles"),
+                                    MediaType.application("x-ppi"),
+                                    MediaType.application("x-cappi"))));
 
 
     private String command;
@@ -184,7 +201,7 @@ public class GDALParser implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
 
         if (!ExternalParser.check("gdalinfo")) {
             return;
@@ -199,7 +216,7 @@ public class GDALParser implements Parser {
 
         long localTimeoutMillis = TikaTaskTimeout.getTimeoutMillis(context, timeoutMs);
         FileProcessResult result = ProcessUtils.execute(new ProcessBuilder(runCommand),
-                localTimeoutMillis, maxStdOut, maxStdErr);
+                        localTimeoutMillis, maxStdOut, maxStdErr);
 
         metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
         metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
@@ -254,7 +271,8 @@ public class GDALParser implements Parser {
 
     private void addBoundingBoxPattern(String name, Map<Pattern, String> patterns) {
         patterns.put(Pattern.compile(
-                name + "\\s*\\(\\s*([0-9]+\\.[0-9]+\\s*,\\s*[0-9]+\\.[0-9]+\\s*)\\)\\s*"), name);
+                        name + "\\s*\\(\\s*([0-9]+\\.[0-9]+\\s*,\\s*[0-9]+\\.[0-9]+\\s*)\\)\\s*"),
+                        name);
     }
 
     private void extractMetFromOutput(String output, Metadata met) {
@@ -298,14 +316,15 @@ public class GDALParser implements Parser {
     }
 
     private void applyPatternsToOutput(String output, Metadata metadata,
-                                       Map<Pattern, String> metadataPatterns) {
+                    Map<Pattern, String> metadataPatterns) {
         try (Scanner scanner = new Scanner(output)) {
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
                 for (Pattern p : metadataPatterns.keySet()) {
                     Matcher m = p.matcher(line);
                     if (m.find()) {
-                        if (metadataPatterns.get(p) != null && !metadataPatterns.get(p).equals("")) {
+                        if (metadataPatterns.get(p) != null
+                                        && !metadataPatterns.get(p).equals("")) {
                             metadata.add(metadataPatterns.get(p), m.group(1));
                         } else {
                             metadata.add(m.group(1), m.group(2));
@@ -317,7 +336,7 @@ public class GDALParser implements Parser {
     }
 
     private void processOutput(ContentHandler handler, Metadata metadata, String output)
-            throws SAXException, IOException {
+                    throws SAXException, IOException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         try (Reader reader = new StringReader(output)) {
             xhtml.startDocument();

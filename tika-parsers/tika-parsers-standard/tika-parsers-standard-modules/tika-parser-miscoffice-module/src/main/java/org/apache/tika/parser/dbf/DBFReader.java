@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.dbf;
 
@@ -22,21 +20,19 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.tika.exception.TikaException;
 
 /**
- * This reads many dbase3 file variants (not DBASE 7, yet!).
- * This parses the header on open.  The client
- * should get a row and then iterate until next() returns null.
- * Be careful to deepCopy the row (if caching) because the row
- * is mutable and will change as the reader iterates over new rows.
+ * This reads many dbase3 file variants (not DBASE 7, yet!). This parses the header on open. The
+ * client should get a row and then iterate until next() returns null. Be careful to deepCopy the
+ * row (if caching) because the row is mutable and will change as the reader iterates over new rows.
  * <p>
- * This is based on: <a href="http://web.archive.org/web/20150323061445/http://ulisse.elettra.trieste.it/services/doc/dbase/DBFstruct.htm">
+ * This is based on: <a href=
+ * "http://web.archive.org/web/20150323061445/http://ulisse.elettra.trieste.it/services/doc/dbase/DBFstruct.htm">
  * http://ulisse.elettra.trieste.it/services/doc/dbase/DBFstruct.htm</a>
  * <p>
- * This is designed to separate out Tika-specific code so that it can
- * be copied/pasted as a standalone if desired.
+ * This is designed to separate out Tika-specific code so that it can be copied/pasted as a
+ * standalone if desired.
  */
 
 class DBFReader {
@@ -55,6 +51,7 @@ class DBFReader {
     private final InputStream is;
     private DBFRow currRow = null;
     private Charset charset = StandardCharsets.US_ASCII;
+
     private DBFReader(InputStream is) throws IOException, TikaException {
         header = DBFFileHeader.parse(is);
         this.is = is;
@@ -65,7 +62,7 @@ class DBFReader {
         return new DBFReader(is);
     }
 
-    //can return null!
+    // can return null!
     static Version getVersion(int b) {
         return VERSION_MAP.get(b);
     }
@@ -95,8 +92,7 @@ class DBFReader {
     /**
      * Iterate through the rows with this.
      * <p>
-     * Be careful: the reader reuses the row!  Make sure to call deep copy
-     * if you are buffering rows.
+     * Be careful: the reader reuses the row! Make sure to call deep copy if you are buffering rows.
      *
      * @return
      * @throws IOException
@@ -109,8 +105,8 @@ class DBFReader {
         return null;
     }
 
-    //returns whether or not some content was read.
-    //it might not be complete!
+    // returns whether or not some content was read.
+    // it might not be complete!
     private boolean fillRow(DBFRow row) throws IOException, TikaException {
         if (row == null) {
             return false;
@@ -119,19 +115,19 @@ class DBFReader {
         int isDeletedByte = is.read();
         boolean isDeleted = false;
         if (isDeletedByte == 32) {
-            //all ok
-        } else if (isDeletedByte == 42) { //asterisk
+            // all ok
+        } else if (isDeletedByte == 42) { // asterisk
             isDeleted = true;
-        } else if (isDeletedByte == 26) { //marker for end of dbf file
+        } else if (isDeletedByte == 26) { // marker for end of dbf file
             return false;
-        } else if (isDeletedByte == -1) { //truncated file
+        } else if (isDeletedByte == -1) { // truncated file
             if (DBFReader.STRICT) {
                 throw new IOException("EOF reached too early");
             }
             return false;
         } else {
-            throw new TikaException(
-                    "Expecting space or asterisk at beginning of record, not:" + isDeletedByte);
+            throw new TikaException("Expecting space or asterisk at beginning of record, not:"
+                            + isDeletedByte);
         }
         row.setDeleted(isDeleted);
 
@@ -153,7 +149,7 @@ class DBFReader {
     }
 
     enum Version {
-
+        // @formatter:off
         FOXBASE(0x02, "FoxBASE", ""), FOXBASE_PLUS(0x03, "FoxBASE_plus", ""),
         VISUAL_FOXPRO(0x30, "Visual_FoxPro", ""),
         VISUAL_FOXPRO_AUTOINCREMENT(0x31, "Visual_FoxPro", "autoincrement"),
@@ -165,6 +161,7 @@ class DBFReader {
         DBASE_IV_SQL_TABLE_WITH_MEMO(0xCB, "dBASE_IV_SQL", "table_with_memo"),
         FOXPRO_2x_WITH_MEMO(0xF5, "FoxPro_2.x", "memo"),
         HIPER_SIZ_WITH_SMT_MEMO(0xE5, "HiPer-Siz", "SMT_memo"), FOXBASE2(0xFB, "FoxBASE", "");
+        // @formatter:on
 
         private final int id;
         private final String format;

@@ -1,23 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft;
 
 import org.apache.poi.util.IOUtils;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -30,14 +27,14 @@ public abstract class AbstractOfficeParser implements Parser {
     private final OfficeParserConfig defaultOfficeParserConfig = new OfficeParserConfig();
 
     /**
-     * Checks to see if the user has specified an {@link OfficeParserConfig}.
-     * If so, no changes are made; if not, one is added to the context.
+     * Checks to see if the user has specified an {@link OfficeParserConfig}. If so, no changes are
+     * made; if not, one is added to the context.
      *
      * @param parseContext
      */
     public void configure(ParseContext parseContext) {
         OfficeParserConfig officeParserConfig =
-                parseContext.get(OfficeParserConfig.class, defaultOfficeParserConfig);
+                        parseContext.get(OfficeParserConfig.class, defaultOfficeParserConfig);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
     }
 
@@ -126,13 +123,12 @@ public abstract class AbstractOfficeParser implements Parser {
     }
 
     /**
-     * Some .msg files can contain body content in html, rtf and/or text.
-     * The default behavior is to pick the first non-null value and include only that.
-     * If you'd like to extract all non-null body content, which is likely duplicative,
-     * set this value to true.
+     * Some .msg files can contain body content in html, rtf and/or text. The default behavior is to
+     * pick the first non-null value and include only that. If you'd like to extract all non-null
+     * body content, which is likely duplicative, set this value to true.
      *
-     * @param extractAllAlternativesFromMSG whether or not to extract all alternative parts from
-     *                                     msg files
+     * @param extractAllAlternativesFromMSG whether or not to extract all alternative parts from msg
+     *        files
      * @since 1.17
      */
     @Field
@@ -141,10 +137,9 @@ public abstract class AbstractOfficeParser implements Parser {
     }
 
     /**
-     * <b>WARNING:</b> this sets a static variable in POI.
-     * This allows users to override POI's protection of the allocation
-     * of overly large byte arrays.  Use carefully; and please open up issues on
-     * POI's bugzilla to bump values for specific records.
+     * <b>WARNING:</b> this sets a static variable in POI. This allows users to override POI's
+     * protection of the allocation of overly large byte arrays. Use carefully; and please open up
+     * issues on POI's bugzilla to bump values for specific records.
      *
      * If the value is &lt;&eq; 0, this value is ignored
      *
@@ -154,7 +149,7 @@ public abstract class AbstractOfficeParser implements Parser {
     public void setByteArrayMaxOverride(int maxOverride) {
         if (maxOverride > 0) {
             IOUtils.setByteArrayMaxOverride(maxOverride);
-            //required for serialization
+            // required for serialization
             defaultOfficeParserConfig.setMaxOverride(maxOverride);
         }
     }

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.isatab;
 
@@ -24,13 +22,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
-
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.DefaultEncodingDetector;
@@ -40,6 +35,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
 
 public class ISATabUtils {
 
@@ -48,9 +44,8 @@ public class ISATabUtils {
      */
 
     // Investigation section.
-    private static final String[] sections =
-            {"ONTOLOGY SOURCE REFERENCE", "INVESTIGATION", "INVESTIGATION PUBLICATIONS",
-                    "INVESTIGATION CONTACTS"};
+    private static final String[] sections = {"ONTOLOGY SOURCE REFERENCE", "INVESTIGATION",
+                    "INVESTIGATION PUBLICATIONS", "INVESTIGATION CONTACTS"};
 
     // STUDY section (inside the Study section)
     private static final String studySectionField = "STUDY";
@@ -59,32 +54,31 @@ public class ISATabUtils {
     private static final String studyFileNameField = "Study File Name";
 
     public static void parseInvestigation(InputStream stream, XHTMLContentHandler handler,
-                                          Metadata metadata, ParseContext context,
-                                          String studyFileName)
-            throws IOException, TikaException, SAXException {
+                    Metadata metadata, ParseContext context, String studyFileName)
+                    throws IOException, TikaException, SAXException {
 
         // Automatically detect the character encoding
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
-                metadata)) {
+        try (AutoDetectReader reader =
+                        new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata)) {
             extractMetadata(reader, metadata, studyFileName);
         }
     }
 
     public static void parseInvestigation(InputStream stream, XHTMLContentHandler handler,
-                                          Metadata metadata, ParseContext context)
-            throws IOException, TikaException, SAXException {
+                    Metadata metadata, ParseContext context)
+                    throws IOException, TikaException, SAXException {
         parseInvestigation(stream, handler, metadata, context, null);
     }
 
     public static void parseStudy(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
-                                  ParseContext context)
-            throws IOException, TikaException, SAXException {
+                    ParseContext context) throws IOException, TikaException, SAXException {
         TikaInputStream tis = TikaInputStream.get(stream);
         // Automatically detect the character encoding
         EncodingDetector encodingDetector = getEncodingDetector(context);
         try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
-                metadata, encodingDetector);
-                CSVParser csvParser = CSVParser.builder().setReader(reader).setFormat(CSVFormat.TDF).get()) {
+                        metadata, encodingDetector);
+                        CSVParser csvParser = CSVParser.builder().setReader(reader)
+                                        .setFormat(CSVFormat.TDF).get()) {
             Iterator<CSVRecord> iterator = csvParser.iterator();
 
             xhtml.startElement("table");
@@ -126,15 +120,15 @@ public class ISATabUtils {
     }
 
     public static void parseAssay(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
-                                  ParseContext context)
-            throws IOException, TikaException, SAXException {
+                    ParseContext context) throws IOException, TikaException, SAXException {
         TikaInputStream tis = TikaInputStream.get(stream);
 
         // Automatically detect the character encoding
         EncodingDetector encodingDetector = getEncodingDetector(context);
         try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
-                metadata, encodingDetector);
-                CSVParser csvParser = CSVParser.builder().setReader(reader).setFormat(CSVFormat.TDF).get()) {
+                        metadata, encodingDetector);
+                        CSVParser csvParser = CSVParser.builder().setReader(reader)
+                                        .setFormat(CSVFormat.TDF).get()) {
             xhtml.startElement("table");
 
             Iterator<CSVRecord> iterator = csvParser.iterator();
@@ -168,14 +162,15 @@ public class ISATabUtils {
     }
 
     private static void extractMetadata(Reader reader, Metadata metadata, String studyFileName)
-            throws IOException {
+                    throws IOException {
         boolean investigationSection = false;
         boolean studySection = false;
         boolean studyTarget = false;
 
         Map<String, String> map = new HashMap<>();
 
-        try (CSVParser csvParser = CSVParser.builder().setReader(reader).setFormat(CSVFormat.TDF).get()) {
+        try (CSVParser csvParser =
+                        CSVParser.builder().setReader(reader).setFormat(CSVFormat.TDF).get()) {
 
             for (CSVRecord record : csvParser) {
                 String field = record.get(0);
@@ -191,8 +186,8 @@ public class ISATabUtils {
                         }
                         String value = record.get(1);
                         map.put(field, value);
-                        studyTarget =
-                                (field.equals(studyFileNameField)) && (value.equals(studyFileName));
+                        studyTarget = (field.equals(studyFileNameField))
+                                        && (value.equals(studyFileName));
                         if (studyTarget) {
                             mapStudyToMetadata(map, metadata);
                             studySection = false;

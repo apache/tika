@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.pipesiterator.s3;
 
@@ -28,12 +26,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 @Disabled("turn into an actual unit test")
 public class TestS3PipesIterator {
@@ -43,9 +39,9 @@ public class TestS3PipesIterator {
     public void testSimple() throws Exception {
         S3PipesIterator it = new S3PipesIterator();
         it.setFetcherName("s3");
-        it.setBucket("");//find one
-        it.setProfile("");//use one
-        it.setRegion("");//select one
+        it.setBucket("");// find one
+        it.setProfile("");// use one
+        it.setRegion("");// select one
         it.initialize(Collections.EMPTY_MAP);
         int numConsumers = 6;
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(10);

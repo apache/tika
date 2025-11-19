@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.eval.app.db;
 
@@ -34,9 +32,11 @@ public class MimeBuffer extends AbstractDBBuffer {
     private final Connection connection;
 
 
-    public MimeBuffer(Connection connection, TableInfo mimeTable, MimeTypes mimeTypes) throws SQLException {
-        st = connection.prepareStatement(
-                "insert into " + mimeTable.getName() + "( " + Cols.MIME_ID.name() + ", " + Cols.MIME_STRING.name() + ", " + Cols.FILE_EXTENSION.name() + ") values (?,?,?)");
+    public MimeBuffer(Connection connection, TableInfo mimeTable, MimeTypes mimeTypes)
+                    throws SQLException {
+        st = connection.prepareStatement("insert into " + mimeTable.getName() + "( "
+                        + Cols.MIME_ID.name() + ", " + Cols.MIME_STRING.name() + ", "
+                        + Cols.FILE_EXTENSION.name() + ") values (?,?,?)");
         this.mimeTypes = mimeTypes;
         this.connection = connection;
     }
@@ -71,7 +71,7 @@ public class MimeBuffer extends AbstractDBBuffer {
     }
 
     private static class MimeUtil {
-        //TODO: see if MimeType now works for these
+        // TODO: see if MimeType now works for these
         private static final String APPLICATION = "application";
         private static final String TEXT = "text";
         private static final String HTML = "html";
@@ -83,19 +83,19 @@ public class MimeBuffer extends AbstractDBBuffer {
         private static final String EMPTY_STRING = "";
 
         /**
-         * Utility method to convert from a string value representing a content type
-         * (e.g. "application/pdf") into the most common extension for that file type
-         * (e.g. "pdf").
+         * Utility method to convert from a string value representing a content type (e.g.
+         * "application/pdf") into the most common extension for that file type (e.g. "pdf").
          * <p>
-         * This will has special handling for texty filetypes whose MimeTypes
-         * don't currently return anything for {@link MimeType#getExtension};
+         * This will has special handling for texty filetypes whose MimeTypes don't currently return
+         * anything for {@link MimeType#getExtension};
          *
          * @param contentType string representing a content type, for example: "application/pdf"
          * @param mimeTypes MimeRepository
          * @return extension or empty string
          * @throws MimeTypeException thrown if MimeTypes can't parse the contentType
          */
-        public static String getExtension(String contentType, MimeTypes mimeTypes) throws MimeTypeException {
+        public static String getExtension(String contentType, MimeTypes mimeTypes)
+                        throws MimeTypeException {
             MimeType mime = mimeTypes.forName(contentType);
             return getExtension(mime);
         }
@@ -107,7 +107,7 @@ public class MimeBuffer extends AbstractDBBuffer {
                 ext = ext.substring(1);
             }
 
-            //special handling for text/html/xml
+            // special handling for text/html/xml
             if (ext.isEmpty()) {
                 ext = tryTextyTypes(mime.getType());
             }

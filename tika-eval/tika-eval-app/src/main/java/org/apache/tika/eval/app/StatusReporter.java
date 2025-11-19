@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.eval.app;
 
@@ -22,11 +20,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.utils.DurationFormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StatusReporter implements Callable<Long> {
 
@@ -40,7 +37,8 @@ public class StatusReporter implements Callable<Long> {
     private final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.ROOT);
 
 
-    public StatusReporter(CallablePipesIterator pipesIterator, AtomicInteger filesProcessed, AtomicInteger activeWorkers, AtomicBoolean crawlerIsActive) {
+    public StatusReporter(CallablePipesIterator pipesIterator, AtomicInteger filesProcessed,
+                    AtomicInteger activeWorkers, AtomicBoolean crawlerIsActive) {
         this.pipesIterator = pipesIterator;
         this.filesProcessed = filesProcessed;
         this.activeWorkers = activeWorkers;
@@ -56,7 +54,7 @@ public class StatusReporter implements Callable<Long> {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 LOGGER.info("Interrupted?");
-                //expected
+                // expected
                 return COMPLETED_VAL;
             }
             report();
@@ -74,8 +72,11 @@ public class StatusReporter implements Callable<Long> {
         int avg = (elapsedSecs > 5 || cnt > 100) ? (int) ((double) cnt / elapsedSecs) : -1;
 
         String elapsedString = DurationFormatUtils.formatMillis(System.currentTimeMillis() - start);
-        String docsPerSec = avg > -1 ? String.format(Locale.ROOT, " (%s docs per sec)", numberFormat.format(avg)) : "";
-        String msg = String.format(Locale.ROOT, "Processed %s documents in %s%s.", numberFormat.format(cnt), elapsedString, docsPerSec);
+        String docsPerSec = avg > -1
+                        ? String.format(Locale.ROOT, " (%s docs per sec)", numberFormat.format(avg))
+                        : "";
+        String msg = String.format(Locale.ROOT, "Processed %s documents in %s%s.",
+                        numberFormat.format(cnt), elapsedString, docsPerSec);
         LOGGER.info(msg);
 
         int stillAlive = activeWorkers.get();
@@ -95,7 +96,7 @@ public class StatusReporter implements Callable<Long> {
         }
         LOGGER.info(msg);
 
-        if (! crawlerIsActive.get()) {
+        if (!crawlerIsActive.get()) {
             msg = "The directory crawler has completed its crawl.\n";
             LOGGER.info(msg);
         }

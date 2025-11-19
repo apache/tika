@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.detect.gzip;
 
@@ -20,19 +18,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
-
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
 /**
- * This is designed to detect commonly gzipped file types such as warc.gz.
- * This is a first step.  We still need to implement tar.gz and svg.gz and ???
+ * This is designed to detect commonly gzipped file types such as warc.gz. This is a first step. We
+ * still need to implement tar.gz and svg.gz and ???
  */
 public class GZipSpecializationDetector implements Detector {
     public static MediaType GZ = MediaType.application("gzip");
@@ -61,30 +57,33 @@ public class GZipSpecializationDetector implements Detector {
         return detectSpecialization(input, metadata);
     }
 
-    private MediaType detectSpecialization(InputStream input, Metadata metadata) throws IOException {
+    private MediaType detectSpecialization(InputStream input, Metadata metadata)
+                    throws IOException {
 
         int buffSize = 1024;
-        UnsynchronizedByteArrayOutputStream gzippedBytes = UnsynchronizedByteArrayOutputStream.builder().get();
+        UnsynchronizedByteArrayOutputStream gzippedBytes =
+                        UnsynchronizedByteArrayOutputStream.builder().get();
         try {
             IOUtils.copyLarge(input, gzippedBytes, 0, buffSize);
         } catch (IOException e) {
-            //swallow
+            // swallow
         } finally {
             input.reset();
         }
-        UnsynchronizedByteArrayOutputStream bytes = UnsynchronizedByteArrayOutputStream.builder().get();
-        try (InputStream is = new
-                     GzipCompressorInputStream(UnsynchronizedByteArrayInputStream.builder().setByteArray(gzippedBytes.toByteArray()).get())) {
+        UnsynchronizedByteArrayOutputStream bytes =
+                        UnsynchronizedByteArrayOutputStream.builder().get();
+        try (InputStream is = new GzipCompressorInputStream(UnsynchronizedByteArrayInputStream
+                        .builder().setByteArray(gzippedBytes.toByteArray()).get())) {
             int c = is.read();
-            //read bytes one at a time to avoid premature EOF from buffering
+            // read bytes one at a time to avoid premature EOF from buffering
             while (c > -1) {
                 bytes.write(c);
                 c = is.read();
             }
         } catch (IOException e) {
-            //swallow
+            // swallow
         }
-        //TODO: something better than this
+        // TODO: something better than this
         String s = new String(bytes.toByteArray(), StandardCharsets.UTF_8);
         if (s.startsWith("WARC/")) {
             return WARC_GZ;

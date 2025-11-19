@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.pkg;
 
@@ -41,7 +39,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.commons.compress.MemoryLimitException;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorInputStream;
@@ -57,9 +54,6 @@ import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStrea
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -72,6 +66,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for various compression formats.
@@ -90,26 +86,25 @@ public class CompressorParser implements Parser {
     private boolean decompressConcatenated = false;
 
     static {
-        Set<MediaType> TMP_SET = new HashSet<>(MediaType
-                .set(BZIP, BZIP2, DEFLATE64, GZIP, GZIP_ALT, LZ4_FRAMED, COMPRESS, XZ, PACK,
-                        SNAPPY_FRAMED, ZLIB, LZMA));
+        Set<MediaType> TMP_SET = new HashSet<>(MediaType.set(BZIP, BZIP2, DEFLATE64, GZIP, GZIP_ALT,
+                        LZ4_FRAMED, COMPRESS, XZ, PACK, SNAPPY_FRAMED, ZLIB, LZMA));
         try {
             Class.forName("org.brotli.dec.BrotliInputStream");
             TMP_SET.add(BROTLI);
         } catch (NoClassDefFoundError | ClassNotFoundException e) {
-            //swallow
+            // swallow
         }
         try {
             Class.forName("com.github.luben.zstd.ZstdInputStream");
             TMP_SET.add(ZSTD);
         } catch (NoClassDefFoundError | ClassNotFoundException e) {
-            //swallow
+            // swallow
         }
         SUPPORTED_TYPES = Collections.unmodifiableSet(TMP_SET);
     }
 
     static {
-        //map the mime type strings to the compressor stream names
+        // map the mime type strings to the compressor stream names
         Map<String, String> tmpMimesToName = new HashMap<>();
         tmpMimesToName.put(BZIP2.toString(), CompressorStreamFactory.BZIP2);
         tmpMimesToName.put(GZIP.toString(), CompressorStreamFactory.GZIP);
@@ -127,7 +122,7 @@ public class CompressorParser implements Parser {
     }
 
 
-    private int memoryLimitInKb = 100000;//100MB
+    private int memoryLimitInKb = 100000;// 100MB
 
     /**
      * @param stream stream
@@ -135,8 +130,8 @@ public class CompressorParser implements Parser {
      */
     private static MediaType getMediaType(CompressorInputStream stream) {
         // TODO Add support for the remaining CompressorInputStream formats:
-        //   LZ4
-        //   LZWInputStream -> UnshrinkingInputStream
+        // LZ4
+        // LZWInputStream -> UnshrinkingInputStream
         if (stream instanceof BZip2CompressorInputStream) {
             return BZIP2;
         } else if (stream instanceof GzipCompressorInputStream) {
@@ -149,8 +144,8 @@ public class CompressorParser implements Parser {
             return COMPRESS;
         } else if (stream instanceof Pack200CompressorInputStream) {
             return PACK;
-        } else if (stream instanceof FramedSnappyCompressorInputStream ||
-                stream instanceof SnappyCompressorInputStream) {
+        } else if (stream instanceof FramedSnappyCompressorInputStream
+                        || stream instanceof SnappyCompressorInputStream) {
             // TODO Add unit tests for this format
             return SNAPPY_FRAMED;
         } else if (stream instanceof LZMACompressorInputStream) {
@@ -168,7 +163,7 @@ public class CompressorParser implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         // At the end we want to close the compression stream to release
         // any associated resources, but the underlying document stream
         // should not be closed
@@ -181,14 +176,13 @@ public class CompressorParser implements Parser {
 
         CompressorInputStream cis;
         try {
-            CompressorParserOptions options =
-                    context.get(CompressorParserOptions.class, metadata1 -> decompressConcatenated);
-            CompressorStreamFactory factory =
-                    new CompressorStreamFactory(options.decompressConcatenated(metadata),
-                            memoryLimitInKb);
-            //if we've already identified it via autodetect
-            //trust that and go with the appropriate name
-            //to avoid calling CompressorStreamFactory.detect() twice
+            CompressorParserOptions options = context.get(CompressorParserOptions.class,
+                            metadata1 -> decompressConcatenated);
+            CompressorStreamFactory factory = new CompressorStreamFactory(
+                            options.decompressConcatenated(metadata), memoryLimitInKb);
+            // if we've already identified it via autodetect
+            // trust that and go with the appropriate name
+            // to avoid calling CompressorStreamFactory.detect() twice
             String name = getStreamName(metadata);
             if (name != null) {
                 cis = factory.createCompressorInputStream(name, stream);
@@ -216,8 +210,9 @@ public class CompressorParser implements Parser {
             if (name != null) {
                 if (name.endsWith(".tbz") || name.endsWith(".tbz2")) {
                     name = name.substring(0, name.lastIndexOf(".")) + ".tar";
-                } else if (name.endsWith(".bz") || name.endsWith(".bz2") || name.endsWith(".xz") ||
-                        name.endsWith(".zlib") || name.endsWith(".pack") || name.endsWith(".br")) {
+                } else if (name.endsWith(".bz") || name.endsWith(".bz2") || name.endsWith(".xz")
+                                || name.endsWith(".zlib") || name.endsWith(".pack")
+                                || name.endsWith(".br")) {
                     name = name.substring(0, name.lastIndexOf("."));
                 } else if (name.length() > 0) {
                     name = GzipUtils.getUncompressedFileName(name);
@@ -227,7 +222,7 @@ public class CompressorParser implements Parser {
 
             // Use the delegate parser to parse the compressed document
             EmbeddedDocumentExtractor extractor =
-                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+                            EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
             if (extractor.shouldParseEmbedded(entrydata)) {
                 try (TikaInputStream tis = TikaInputStream.get(cis)) {
                     extractor.parseEmbedded(tis, xhtml, entrydata, true);
@@ -242,9 +237,8 @@ public class CompressorParser implements Parser {
 
     /**
      * @param metadata
-     * @return CompressorStream name based on the content-type value
-     * in metadata or <code>null</code> if not found
-     * ind
+     * @return CompressorStream name based on the content-type value in metadata or
+     *         <code>null</code> if not found ind
      */
     private String getStreamName(Metadata metadata) {
         String mimeString = metadata.get(Metadata.CONTENT_TYPE);

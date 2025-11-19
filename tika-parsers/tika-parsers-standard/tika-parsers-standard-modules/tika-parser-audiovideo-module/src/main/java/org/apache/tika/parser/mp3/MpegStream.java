@@ -1,74 +1,64 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mp3;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
-
 import org.apache.commons.io.IOUtils;
 
 /**
  * <p>
- * A specialized stream class which can be used to extract single frames of MPEG
- * audio files.
+ * A specialized stream class which can be used to extract single frames of MPEG audio files.
  * </p>
  * <p>
- * Instances of this class are constructed with an underlying stream which
- * should point to an audio file. Read operations are possible in the usual way.
- * However, there are special methods for searching and extracting headers of
- * MPEG frames. Some meta information of frames can be queried.
+ * Instances of this class are constructed with an underlying stream which should point to an audio
+ * file. Read operations are possible in the usual way. However, there are special methods for
+ * searching and extracting headers of MPEG frames. Some meta information of frames can be queried.
  * </p>
  */
 class MpegStream extends PushbackInputStream {
     /**
      * Bit rate table for MPEG V1, layer 1.
      */
-    private static final int[] BIT_RATE_MPEG1_L1 =
-            {0, 32000, 64000, 96000, 128000, 160000, 192000, 224000, 256000, 288000, 320000, 352000,
-                    384000, 416000, 448000};
+    private static final int[] BIT_RATE_MPEG1_L1 = {0, 32000, 64000, 96000, 128000, 160000, 192000,
+                    224000, 256000, 288000, 320000, 352000, 384000, 416000, 448000};
 
     /**
      * Bit rate table for MPEG V1, layer 2.
      */
-    private static final int[] BIT_RATE_MPEG1_L2 =
-            {0, 32000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 160000, 192000, 224000,
-                    256000, 320000, 384000};
+    private static final int[] BIT_RATE_MPEG1_L2 = {0, 32000, 48000, 56000, 64000, 80000, 96000,
+                    112000, 128000, 160000, 192000, 224000, 256000, 320000, 384000};
 
     /**
      * Bit rate table for MPEG V1, layer 3.
      */
-    private static final int[] BIT_RATE_MPEG1_L3 =
-            {0, 32000, 40000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 160000, 192000,
-                    224000, 256000, 320000};
+    private static final int[] BIT_RATE_MPEG1_L3 = {0, 32000, 40000, 48000, 56000, 64000, 80000,
+                    96000, 112000, 128000, 160000, 192000, 224000, 256000, 320000};
 
     /**
      * Bit rate table for MPEG V2/V2.5, layer 1.
      */
-    private static final int[] BIT_RATE_MPEG2_L1 =
-            {0, 32000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 144000, 160000, 176000,
-                    192000, 224000, 256000};
+    private static final int[] BIT_RATE_MPEG2_L1 = {0, 32000, 48000, 56000, 64000, 80000, 96000,
+                    112000, 128000, 144000, 160000, 176000, 192000, 224000, 256000};
 
     /**
      * Bit rate table for MPEG V2/V2.5, layer 2 and 3.
      */
-    private static final int[] BIT_RATE_MPEG2_L2 =
-            {0, 8000, 16000, 24000, 32000, 40000, 48000, 56000, 64000, 80000, 96000, 112000, 128000,
-                    144000, 160000};
+    private static final int[] BIT_RATE_MPEG2_L2 = {0, 8000, 16000, 24000, 32000, 40000, 48000,
+                    56000, 64000, 80000, 96000, 112000, 128000, 144000, 160000};
 
     /**
      * Sample rate table for MPEG V1.
@@ -116,8 +106,7 @@ class MpegStream extends PushbackInputStream {
     private boolean endOfStream;
 
     /**
-     * Creates a new instance of {@code MpegStream} and initializes it with the
-     * underlying stream.
+     * Creates a new instance of {@code MpegStream} and initializes it with the underlying stream.
      *
      * @param in the underlying audio stream
      */
@@ -129,8 +118,8 @@ class MpegStream extends PushbackInputStream {
      * Calculates the bit rate based on the given parameters.
      *
      * @param mpegVer the MPEG version
-     * @param layer   the layer
-     * @param code    the code for the bit rate
+     * @param layer the layer
+     * @param code the code for the bit rate
      * @return the bit rate in bits per second
      */
     private static int calculateBitRate(int mpegVer, int layer, int code) {
@@ -162,7 +151,7 @@ class MpegStream extends PushbackInputStream {
      * Calculates the sample rate based on the given parameters.
      *
      * @param mpegVer the MPEG version
-     * @param code    the code for the sample rate
+     * @param code the code for the sample rate
      * @return the sample rate in samples per second
      */
     private static int calculateSampleRate(int mpegVer, int code) {
@@ -172,10 +161,10 @@ class MpegStream extends PushbackInputStream {
     /**
      * Calculates the length of an MPEG frame based on the given parameters.
      *
-     * @param layer      the layer
-     * @param bitRate    the bit rate
+     * @param layer the layer
+     * @param bitRate the bit rate
      * @param sampleRate the sample rate
-     * @param padding    the padding flag
+     * @param padding the padding flag
      * @return the length of the frame in bytes
      */
     private static int calculateFrameLength(int layer, int bitRate, int sampleRate, int padding) {
@@ -189,7 +178,7 @@ class MpegStream extends PushbackInputStream {
     /**
      * Calculates the duration of a MPEG frame based on the given parameters.
      *
-     * @param layer      the layer
+     * @param layer the layer
      * @param sampleRate the sample rate
      * @return the duration of this frame in milliseconds
      */
@@ -222,12 +211,10 @@ class MpegStream extends PushbackInputStream {
     }
 
     /**
-     * Searches for the next MPEG frame header from the current stream position
-     * on. This method advances the underlying input stream until it finds a
-     * valid frame header or the end of the stream is reached. In the former
-     * case a corresponding {@code AudioFrame} object is created. In the latter
-     * case there are no more headers, so the end of the stream is probably
-     * reached.
+     * Searches for the next MPEG frame header from the current stream position on. This method
+     * advances the underlying input stream until it finds a valid frame header or the end of the
+     * stream is reached. In the former case a corresponding {@code AudioFrame} object is created.
+     * In the latter case there are no more headers, so the end of the stream is probably reached.
      *
      * @return the next {@code AudioFrame} or <b>null</b>
      * @throws IOException if an IO error occurs
@@ -252,10 +239,9 @@ class MpegStream extends PushbackInputStream {
     }
 
     /**
-     * Skips the current MPEG frame. This method can be called after a valid
-     * MPEG header has been retrieved using {@code nextFrame()}. In this case
-     * the underlying stream is advanced to the end of the associated MPEG
-     * frame or until the EOF is reached. The return value indicates
+     * Skips the current MPEG frame. This method can be called after a valid MPEG header has been
+     * retrieved using {@code nextFrame()}. In this case the underlying stream is advanced to the
+     * end of the associated MPEG frame or until the EOF is reached. The return value indicates
      * whether the full frame could be skipped.
      *
      * @return <b>true</b> if a frame could be skipped, <b>false</b> otherwise, perhaps EOF?
@@ -275,8 +261,7 @@ class MpegStream extends PushbackInputStream {
     }
 
     /**
-     * Advances the underlying stream until the first byte of frame sync is
-     * found.
+     * Advances the underlying stream until the first byte of frame sync is found.
      *
      * @throws IOException if an error occurs
      */
@@ -304,8 +289,8 @@ class MpegStream extends PushbackInputStream {
     }
 
     /**
-     * Creates an {@code AudioFrame} object based on the given header field. If
-     * the header field contains invalid values, result is <b>null</b>.
+     * Creates an {@code AudioFrame} object based on the given header field. If the header field
+     * contains invalid values, result is <b>null</b>.
      *
      * @param bits the header bit field
      * @return the {@code AudioFrame}
@@ -321,8 +306,8 @@ class MpegStream extends PushbackInputStream {
         int sampleRateCode = bits.get(10, 11);
         int padding = bits.get(9);
 
-        if (mpegVer == 1 || layer == 0 || bitRateCode == 0 || bitRateCode == 15 ||
-                sampleRateCode == 3) {
+        if (mpegVer == 1 || layer == 0 || bitRateCode == 0 || bitRateCode == 15
+                        || sampleRateCode == 3) {
             // invalid header values
             return null;
         }
@@ -353,9 +338,9 @@ class MpegStream extends PushbackInputStream {
     }
 
     /**
-     * Pushes the given header field back in the stream so that the bytes are
-     * read again. This method is called if an invalid header was detected. Then
-     * search has to continue at the next byte after the frame sync byte.
+     * Pushes the given header field back in the stream so that the bytes are read again. This
+     * method is called if an invalid header was detected. Then search has to continue at the next
+     * byte after the frame sync byte.
      *
      * @param field the header bit field with the invalid frame header
      * @throws IOException if an error occurs
@@ -365,8 +350,8 @@ class MpegStream extends PushbackInputStream {
     }
 
     /**
-     * A class representing the bit field of an MPEG header. It allows
-     * convenient access to specific bit groups.
+     * A class representing the bit field of an MPEG header. It allows convenient access to specific
+     * bit groups.
      */
     private static class HeaderBitField {
         /**
@@ -385,12 +370,11 @@ class MpegStream extends PushbackInputStream {
         }
 
         /**
-         * Returns the value of the bit group from the given start and end
-         * index. E.g. ''from'' = 0, ''to'' = 3 will return the value of the
-         * first 4 bits.
+         * Returns the value of the bit group from the given start and end index. E.g. ''from'' = 0,
+         * ''to'' = 3 will return the value of the first 4 bits.
          *
          * @param from index
-         * @param to   the to index
+         * @param to the to index
          * @return the value of this group of bits
          */
         public int get(int from, int to) {
@@ -400,8 +384,8 @@ class MpegStream extends PushbackInputStream {
         }
 
         /**
-         * Returns the value of the bit with the given index. The bit index is
-         * 0-based. Result is either 0 or 1, depending on the value of this bit.
+         * Returns the value of the bit with the given index. The bit index is 0-based. Result is
+         * either 0 or 1, depending on the value of this bit.
          *
          * @param bit the bit index
          * @return the value of this bit
@@ -411,8 +395,7 @@ class MpegStream extends PushbackInputStream {
         }
 
         /**
-         * Returns the internal value of this field as an array. The array
-         * contains 3 bytes.
+         * Returns the internal value of this field as an array. The array contains 3 bytes.
          *
          * @return the internal value of this field as int array
          */

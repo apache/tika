@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.mail;
 
@@ -33,14 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-
 import org.apache.james.mime4j.stream.MimeConfig;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -57,16 +48,21 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ocr.TesseractOCRParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class RFC822ParserTest extends TikaTest {
 
-    //legacy RFC822 behavior...extract every alternative part
+    // legacy RFC822 behavior...extract every alternative part
     private static Parser EXTRACT_ALL_ALTERNATIVES_PARSER;
     private static TikaConfig TIKA_CONFIG;
 
     private static InputStream getStream(String name) {
         InputStream stream =
-                Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
+                        Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
         assertNotNull(stream, "Test file not found " + name);
         return stream;
     }
@@ -75,7 +71,7 @@ public class RFC822ParserTest extends TikaTest {
     public static void setUp() throws Exception {
 
         try (InputStream is = getStream(
-                "org/apache/tika/parser/mail/tika-config-extract-all-alternatives.xml")) {
+                        "org/apache/tika/parser/mail/tika-config-extract-all-alternatives.xml")) {
             TIKA_CONFIG = new TikaConfig(is);
         }
         EXTRACT_ALL_ALTERNATIVES_PARSER = new AutoDetectParser(TIKA_CONFIG);
@@ -90,23 +86,22 @@ public class RFC822ParserTest extends TikaTest {
         try {
             EXTRACT_ALL_ALTERNATIVES_PARSER.parse(stream, handler, metadata, new ParseContext());
             verify(handler).startDocument();
-            //just one body
+            // just one body
             verify(handler).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"),
-                    any(Attributes.class));
-            verify(handler).endElement(XHTMLContentHandler.XHTML, "p", "p");
-            //no multi-part body parts
-            verify(handler, never())
-                    .startElement(eq(XHTMLContentHandler.XHTML), eq("div"), eq("div"),
                             any(Attributes.class));
+            verify(handler).endElement(XHTMLContentHandler.XHTML, "p", "p");
+            // no multi-part body parts
+            verify(handler, never()).startElement(eq(XHTMLContentHandler.XHTML), eq("div"),
+                            eq("div"), any(Attributes.class));
             verify(handler, never()).endElement(XHTMLContentHandler.XHTML, "div", "div");
             verify(handler).endDocument();
-            //note no leading spaces, and no quotes
+            // note no leading spaces, and no quotes
             assertEquals("Julien Nioche (JIRA) <jira@apache.org>",
-                    metadata.get(TikaCoreProperties.CREATOR));
+                            metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("[jira] Commented: (TIKA-461) RFC822 messages not parsed",
-                    metadata.get(TikaCoreProperties.TITLE));
+                            metadata.get(TikaCoreProperties.TITLE));
             assertEquals("[jira] Commented: (TIKA-461) RFC822 messages not parsed",
-                    metadata.get(TikaCoreProperties.SUBJECT));
+                            metadata.get(TikaCoreProperties.SUBJECT));
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
@@ -130,7 +125,7 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals("Keld Jørn Simonsen", m.get(Message.MESSAGE_FROM_NAME));
         assertEquals("keld@dkuug.dk", m.get(Message.MESSAGE_FROM_EMAIL));
 
-        //this is currently detected as mbox!!!
+        // this is currently detected as mbox!!!
         m = getXML("testEmailWithPNGAtt.eml", new RFC822Parser()).metadata;
         assertEquals("Tika Test", m.get(Message.MESSAGE_FROM_NAME));
         assertEquals("XXXX@apache.org", m.get(Message.MESSAGE_FROM_EMAIL));
@@ -153,34 +148,33 @@ public class RFC822ParserTest extends TikaTest {
             // to a different number of invocations. So, we
             // only verify the handler if Tesseract cannot run.
             if (!TesseractOCRParserTest.canRun()) {
-                verify(handler, times(bodyExpectedTimes))
-                        .startElement(eq(XHTMLContentHandler.XHTML), eq("div"), eq("div"),
+                verify(handler, times(bodyExpectedTimes)).startElement(
+                                eq(XHTMLContentHandler.XHTML), eq("div"), eq("div"),
                                 any(Attributes.class));
-                verify(handler, times(bodyExpectedTimes))
-                        .endElement(XHTMLContentHandler.XHTML, "div", "div");
+                verify(handler, times(bodyExpectedTimes)).endElement(XHTMLContentHandler.XHTML,
+                                "div", "div");
             }
-            verify(handler, times(multipackExpectedTimes))
-                    .startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"),
-                            any(Attributes.class));
-            verify(handler, times(multipackExpectedTimes))
-                    .endElement(XHTMLContentHandler.XHTML, "p", "p");
+            verify(handler, times(multipackExpectedTimes)).startElement(
+                            eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
+            verify(handler, times(multipackExpectedTimes)).endElement(XHTMLContentHandler.XHTML,
+                            "p", "p");
             verify(handler).endDocument();
 
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
 
-        //repeat, this time looking at content
+        // repeat, this time looking at content
         metadata = new Metadata();
         stream = getStream("test-documents/testRFC822-multipart");
         handler = new BodyContentHandler();
         try {
             EXTRACT_ALL_ALTERNATIVES_PARSER.parse(stream, handler, metadata, context);
-            //tests correct decoding of quoted printable text, including UTF-8 bytes into Unicode
+            // tests correct decoding of quoted printable text, including UTF-8 bytes into Unicode
             String bodyText = handler.toString();
             assertTrue(bodyText.contains("body 1"));
             assertTrue(bodyText.contains("body 2"));
-            assertFalse(bodyText.contains("R0lGODlhNgE8AMQAA")); //part of encoded gif
+            assertFalse(bodyText.contains("R0lGODlhNgE8AMQAA")); // part of encoded gif
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
@@ -195,12 +189,12 @@ public class RFC822ParserTest extends TikaTest {
 
         try {
             EXTRACT_ALL_ALTERNATIVES_PARSER.parse(stream, handler, metadata, context);
-            //tests correct decoding of quoted printable text, including UTF-8 bytes into Unicode
+            // tests correct decoding of quoted printable text, including UTF-8 bytes into Unicode
             String bodyText = handler.toString();
             assertTrue(bodyText.contains("D\u00FCsseldorf has non-ascii."));
             assertTrue(bodyText.contains("Lines can be split like this."));
             assertTrue(bodyText.contains("Spaces at the end of a line \r\nmust be encoded.\r\n"));
-            assertFalse(bodyText.contains("=")); //there should be no escape sequences
+            assertFalse(bodyText.contains("=")); // there should be no escape sequences
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
@@ -213,13 +207,13 @@ public class RFC822ParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         ParseContext context = new ParseContext();
         context.set(Parser.class, EXTRACT_ALL_ALTERNATIVES_PARSER);
-        //need to pass in hint.  Autodetects text/plain
+        // need to pass in hint. Autodetects text/plain
         metadata.set(Metadata.CONTENT_TYPE, "message/rfc822");
         try {
             EXTRACT_ALL_ALTERNATIVES_PARSER.parse(stream, handler, metadata, context);
-            //tests correct decoding of base64 text, including ISO-8859-1 bytes into Unicode
+            // tests correct decoding of base64 text, including ISO-8859-1 bytes into Unicode
             assertContains("Here is some text, with international characters, voil\u00E0!",
-                    handler.toString());
+                            handler.toString());
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
@@ -233,22 +227,21 @@ public class RFC822ParserTest extends TikaTest {
 
         try {
             EXTRACT_ALL_ALTERNATIVES_PARSER.parse(stream, handler, metadata, new ParseContext());
-            //tests correct decoding of internationalized headers, both
-            //quoted-printable (Q) and Base64 (B).
+            // tests correct decoding of internationalized headers, both
+            // quoted-printable (Q) and Base64 (B).
             assertEquals("Keld J\u00F8rn Simonsen <keld@dkuug.dk>",
-                    metadata.get(TikaCoreProperties.CREATOR));
+                            metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("If you can read this you understand the example.",
-                    metadata.get(TikaCoreProperties.TITLE));
+                            metadata.get(TikaCoreProperties.TITLE));
             assertEquals("If you can read this you understand the example.",
-                    metadata.get(TikaCoreProperties.SUBJECT));
+                            metadata.get(TikaCoreProperties.SUBJECT));
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
     }
 
     /**
-     * The from isn't in the usual form.
-     * See TIKA-618
+     * The from isn't in the usual form. See TIKA-618
      */
     @Test
     public void testUnusualFromAddress() throws Exception {
@@ -258,11 +251,11 @@ public class RFC822ParserTest extends TikaTest {
 
         EXTRACT_ALL_ALTERNATIVES_PARSER.parse(stream, handler, metadata, new ParseContext());
         assertEquals("Saved by Windows Internet Explorer 7",
-                metadata.get(TikaCoreProperties.CREATOR));
+                        metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Air Permit Programs | Air & Radiation | US EPA",
-                metadata.get(TikaCoreProperties.TITLE));
+                        metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Air Permit Programs | Air & Radiation | US EPA",
-                metadata.get(TikaCoreProperties.SUBJECT));
+                        metadata.get(TikaCoreProperties.SUBJECT));
     }
 
 
@@ -273,8 +266,8 @@ public class RFC822ParserTest extends TikaTest {
     public void testLongHeader() throws Exception {
         StringBuilder inputBuilder = new StringBuilder();
         for (int i = 0; i < 2000; ++i) {
-            inputBuilder.append( //len > 50
-                    "really really really really really really long name ");
+            inputBuilder.append( // len > 50
+                            "really really really really really really long name ");
         }
         String name = inputBuilder.toString();
         byte[] data = ("Status: 520\r\nFrom: " + name + "\r\n\r\n").getBytes(US_ASCII);
@@ -284,16 +277,16 @@ public class RFC822ParserTest extends TikaTest {
         ParseContext context = new ParseContext();
 
         try {
-            EXTRACT_ALL_ALTERNATIVES_PARSER
-                    .parse(new ByteArrayInputStream(data), handler, metadata, context);
+            EXTRACT_ALL_ALTERNATIVES_PARSER.parse(new ByteArrayInputStream(data), handler, metadata,
+                            context);
             fail();
         } catch (TikaException expected) {
         }
 
         MimeConfig config = new MimeConfig.Builder().setMaxHeaderLen(-1).setMaxLineLen(-1).build();
         context.set(MimeConfig.class, config);
-        EXTRACT_ALL_ALTERNATIVES_PARSER
-                .parse(new ByteArrayInputStream(data), handler, metadata, context);
+        EXTRACT_ALL_ALTERNATIVES_PARSER.parse(new ByteArrayInputStream(data), handler, metadata,
+                        context);
         assertEquals(name.trim(), metadata.get(TikaCoreProperties.CREATOR));
     }
 
@@ -324,15 +317,15 @@ public class RFC822ParserTest extends TikaTest {
     }
 
     /**
-     * TIKA-1222 When requested, ensure that the various attachments of
-     * the mail come through properly as embedded resources
+     * TIKA-1222 When requested, ensure that the various attachments of the mail come through
+     * properly as embedded resources
      */
     @Test
     public void testGetAttachmentsAsEmbeddedResources() throws Exception {
         TrackingHandler tracker = new TrackingHandler();
         ContainerExtractor ex = new ParserContainerExtractor(TIKA_CONFIG);
-        try (TikaInputStream tis = TikaInputStream
-                .get(getStream("test-documents/testRFC822-multipart"))) {
+        try (TikaInputStream tis =
+                        TikaInputStream.get(getStream("test-documents/testRFC822-multipart"))) {
             assertEquals(true, ex.isSupported(tis));
             ex.extract(tis, ex, tracker);
         }
@@ -354,18 +347,18 @@ public class RFC822ParserTest extends TikaTest {
 
     @Test
     public void testDetection() throws Exception {
-        //test simple text file
+        // test simple text file
         XMLResult r = getXML("testRFC822_date_utf8");
         assertEquals("message/rfc822", r.metadata.get(Metadata.CONTENT_TYPE));
 
-        //test without extension
+        // test without extension
         r = getXML("testRFC822_eml");
         assertEquals("message/rfc822", r.metadata.get(Metadata.CONTENT_TYPE));
     }
 
     @Test
     public void testDates() throws Exception {
-        //tests non-standard dates that mime4j can't parse
+        // tests non-standard dates that mime4j can't parse
         XMLResult r = getXML("testRFC822_date_utf8");
         assertEquals("2016-05-16T08:30:32Z", r.metadata.get(TikaCoreProperties.CREATED));
 
@@ -376,21 +369,21 @@ public class RFC822ParserTest extends TikaTest {
 
     @Test
     public void testMultipleSubjects() throws Exception {
-        //adapted from govdocs1 303710.txt
-        String s = "From: Shawn Jones [chiroshawn@yahoo.com]\n" + "Subject: 2006N-3502\n" +
-                "Subject: I Urge You to Require Notice of Mercury";
+        // adapted from govdocs1 303710.txt
+        String s = "From: Shawn Jones [chiroshawn@yahoo.com]\n" + "Subject: 2006N-3502\n"
+                        + "Subject: I Urge You to Require Notice of Mercury";
         Parser p = new RFC822Parser();
         Metadata m = new Metadata();
         p.parse(TikaInputStream.get(s.getBytes(StandardCharsets.UTF_8)), new DefaultHandler(), m,
-                new ParseContext());
+                        new ParseContext());
         assertEquals("I Urge You to Require Notice of Mercury", m.get(TikaCoreProperties.TITLE));
     }
 
 
     @Test
     public void testExtractAttachments() throws Exception {
-        List<Metadata> metadataList =
-                getRecursiveMetadata("testEmailWithPNGAtt.eml", EXTRACT_ALL_ALTERNATIVES_PARSER);
+        List<Metadata> metadataList = getRecursiveMetadata("testEmailWithPNGAtt.eml",
+                        EXTRACT_ALL_ALTERNATIVES_PARSER);
         // Check we get the metadata
         assertEquals("Tika Test <XXXX@apache.org>", metadataList.get(3).get(Metadata.MESSAGE_FROM));
         assertEquals("Test Attachment Email", metadataList.get(3).get(TikaCoreProperties.TITLE));
@@ -401,20 +394,20 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals("image/png", metadataList.get(2).get(Metadata.CONTENT_TYPE));
         assertEquals("testPNG.png", metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertContains("This email has a PNG attachment included in it",
-                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+                        metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals(null, metadataList.get(1).get(Metadata.CONTENT_DISPOSITION));
         assertEquals("attachment; filename=\"testPNG.png\"",
-                metadataList.get(2).get(Metadata.CONTENT_DISPOSITION));
+                        metadataList.get(2).get(Metadata.CONTENT_DISPOSITION));
         assertEquals("/Test Attachment Email.eml/embedded-1",
-                metadataList.get(1).get(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(1).get(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH));
         assertEquals("/Test Attachment Email.eml/testPNG.png",
-                metadataList.get(2).get(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(2).get(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH));
     }
 
     @Test
     public void testEmbeddedMetadata() throws Exception {
-        List<Metadata> seenMetadata =
-                getRecursiveMetadata("testRFC822-multipart", EXTRACT_ALL_ALTERNATIVES_PARSER);
+        List<Metadata> seenMetadata = getRecursiveMetadata("testRFC822-multipart",
+                        EXTRACT_ALL_ALTERNATIVES_PARSER);
 
         assertEquals(4, seenMetadata.size());
         assertEquals(null, seenMetadata.get(1).get(Metadata.CONTENT_DISPOSITION));
@@ -424,49 +417,45 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals("text/html; charset=UTF-8", seenMetadata.get(2).get(Metadata.CONTENT_TYPE));
         assertEquals("UTF-8", seenMetadata.get(2).get(Metadata.CONTENT_ENCODING));
         assertEquals("attachment; filename=\"logo.gif\"",
-                seenMetadata.get(3).get(Metadata.CONTENT_DISPOSITION));
+                        seenMetadata.get(3).get(Metadata.CONTENT_DISPOSITION));
         assertEquals("logo.gif", seenMetadata.get(3).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("image/gif", seenMetadata.get(3).get(Metadata.CONTENT_TYPE));
     }
 
     @Test
     public void testMultipartFlags() throws Exception {
-        List<Metadata> metadataList =
-                getRecursiveMetadata("testRFC822-multipart", EXTRACT_ALL_ALTERNATIVES_PARSER);
+        List<Metadata> metadataList = getRecursiveMetadata("testRFC822-multipart",
+                        EXTRACT_ALL_ALTERNATIVES_PARSER);
         // Check the root metadata.
         assertEquals("mixed", metadataList.get(0).get(Message.MULTIPART_SUBTYPE));
         assertEquals("0016e64606800312ee04913db790",
-                metadataList.get(0).get(Message.MULTIPART_BOUNDARY));
+                        metadataList.get(0).get(Message.MULTIPART_BOUNDARY));
 
         // Check the metadata of the first alternative.
-        assertTrue(
-                metadataList.get(1).get(Metadata.CONTENT_TYPE).equals("text/plain; charset=UTF-8"));
+        assertTrue(metadataList.get(1).get(Metadata.CONTENT_TYPE)
+                        .equals("text/plain; charset=UTF-8"));
         assertTrue(metadataList.get(1).get(Message.MULTIPART_SUBTYPE).equals("alternative"));
         assertTrue(metadataList.get(1).get(Message.MULTIPART_BOUNDARY)
-                .equals("0016e64606800312ea04913db78e"));
+                        .equals("0016e64606800312ea04913db78e"));
 
         // Check the metadata of the second alternative.
-        assertTrue(
-                metadataList.get(2).get(Metadata.CONTENT_TYPE).equals("text/html; charset=UTF-8"));
+        assertTrue(metadataList.get(2).get(Metadata.CONTENT_TYPE)
+                        .equals("text/html; charset=UTF-8"));
         assertTrue(metadataList.get(2).get(Message.MULTIPART_SUBTYPE).equals("alternative"));
         assertTrue(metadataList.get(2).get(Message.MULTIPART_BOUNDARY)
-                .equals("0016e64606800312ea04913db78e"));
+                        .equals("0016e64606800312ea04913db78e"));
 
         // Check the metadata of the attached GIF.
         assertTrue(metadataList.get(3).get(Metadata.CONTENT_TYPE).equals("image/gif"));
         assertEquals("mixed", metadataList.get(3).get(Message.MULTIPART_SUBTYPE));
         assertEquals("0016e64606800312ee04913db790",
-                metadataList.get(3).get(Message.MULTIPART_BOUNDARY));
+                        metadataList.get(3).get(Message.MULTIPART_BOUNDARY));
     }
 
     @Test
     public void testBasicAlternativeBodyHandling() throws Exception {
         /*
-            multi-part/mixed
-                multi-part/alternative
-                    text
-                    html
-                gif
+         * multi-part/mixed multi-part/alternative text html gif
          */
         List<Metadata> metadataList = getRecursiveMetadata("testRFC822-multipart");
         assertEquals(2, metadataList.size());
@@ -476,20 +465,16 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals("message/rfc822", metadataList.get(0).get(Metadata.CONTENT_TYPE));
         assertEquals("image/gif", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals("/logo.gif",
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
     @Test
     public void testMixedRelatedMultipart() throws Exception {
         /*
-            multipart/mixed (..6)
-                multipart/related (..5)
-                    multipart/alternative  (..4)
-                        text/plain
-                        text/html
-                image/jpeg (inline) Mary with cooler.jpeg  (..5)
-            image/jpeg (attachment) mary-coffee.jpg (..6)
-
+         * multipart/mixed (..6) multipart/related (..5) multipart/alternative (..4) text/plain
+         * text/html image/jpeg (inline) Mary with cooler.jpeg (..5) image/jpeg (attachment)
+         * mary-coffee.jpg (..6)
+         * 
          */
 
         List<Metadata> metadataList = getRecursiveMetadata("testRFC822-mixed-simple");
@@ -501,30 +486,25 @@ public class RFC822ParserTest extends TikaTest {
 
         assertEquals("image/jpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals("/Mary with cooler.jpeg",
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+                        metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
 
         assertEquals("image/jpeg", metadataList.get(2).get(Metadata.CONTENT_TYPE));
         assertEquals("/mary-coffee.jpg",
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+                        metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
     @Test
     public void testAlternativeWithComplexMixedChild() throws Exception {
         /*
-        This tests that both html body chunks are stitched back
-        together in the body text for the main email.
-
-            multi-part/alternative
-                    text
-                    multipart/mixed
-                        html body chunk 1
-                        pdf
-                        html body chunk 2
-
+         * This tests that both html body chunks are stitched back together in the body text for the
+         * main email.
+         * 
+         * multi-part/alternative text multipart/mixed html body chunk 1 pdf html body chunk 2
+         * 
          */
         List<Metadata> metadataList = getRecursiveMetadata("testRFC822-mixed-with-pdf-inline");
         assertEquals(2, metadataList.size());
@@ -535,20 +515,20 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals("message/rfc822", metadataList.get(0).get(Metadata.CONTENT_TYPE));
         assertEquals("application/pdf", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals("/tzora-titan-4-hummer-xl-manual.pdf",
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
     @Test
     public void testArc() throws Exception {
         /*
-        This tests an email with ARC-* headers but that does not begin 
-        with one, and was detected as HTML
-        */
+         * This tests an email with ARC-* headers but that does not begin with one, and was detected
+         * as HTML
+         */
         List<Metadata> metadataList = getRecursiveMetadata("testRFC822-ARC");
         assertEquals(1, metadataList.size());
         assertEquals("message/rfc822", metadataList.get(0).get(Metadata.CONTENT_TYPE));
 
-        //Also, test that this date has been parsed: Wed, 26 Jan 2022 09:14:37 +0100 (CET)
+        // Also, test that this date has been parsed: Wed, 26 Jan 2022 09:14:37 +0100 (CET)
         assertTrue(metadataList.get(0).get(TikaCoreProperties.CREATED).startsWith("2022-01-"));
     }
 
@@ -566,15 +546,15 @@ public class RFC822ParserTest extends TikaTest {
         assertContains("test<", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("test2", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+                        metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("/test.eml",
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
         assertContains("ssssss", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+                        metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("/Neues Textdokument.txt",
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
     }
 
@@ -583,29 +563,30 @@ public class RFC822ParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testRFC822_multipart_attachments.eml");
         assertEquals(3, metadataList.size());
         assertContains("This is the html body of the main msg.",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+                        metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         assertContains("This is Test TXTA File for parser",
-                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+                        metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertNotContained("This is Test TXTA File for parser",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("/Test TxtA.txt", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("/Test TxtA.txt",
+                        metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-        //make sure we extracted creation and modified dates
+                        metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        // make sure we extracted creation and modified dates
         assertTrue(metadataList.get(1).get(TikaCoreProperties.CREATED).startsWith("2022-11-"));
         assertTrue(metadataList.get(1).get(TikaCoreProperties.MODIFIED).startsWith("2022-11-"));
 
 
         assertContains("This is Test TXTB File for parser",
-                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+                        metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
         assertNotContained("This is Test TXTB File for parser",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+                        metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("/Test TxtB.txt",
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+                        metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-        //make sure we extracted creation and modified dates
+                        metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        // make sure we extracted creation and modified dates
         assertTrue(metadataList.get(2).get(TikaCoreProperties.CREATED).startsWith("2022-11-"));
         assertTrue(metadataList.get(2).get(TikaCoreProperties.MODIFIED).startsWith("2022-11-"));
     }

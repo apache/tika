@@ -1,27 +1,23 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.eval.core.metadata;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.lang3.StringUtils;
-
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
 import org.apache.tika.eval.core.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.core.textstats.CommonTokens;
@@ -43,21 +39,21 @@ public class TikaEvalMetadataFilter extends MetadataFilter {
     public static Property NUM_TOKENS = Property.externalInteger(TIKA_EVAL_NS + "numTokens");
 
     public static Property NUM_UNIQUE_TOKENS =
-            Property.externalInteger(TIKA_EVAL_NS + "numUniqueTokens");
+                    Property.externalInteger(TIKA_EVAL_NS + "numUniqueTokens");
 
     public static Property NUM_ALPHA_TOKENS =
-            Property.externalInteger(TIKA_EVAL_NS + "numAlphaTokens");
+                    Property.externalInteger(TIKA_EVAL_NS + "numAlphaTokens");
 
     public static Property NUM_COMMON_TOKENS =
-            Property.externalInteger(TIKA_EVAL_NS + "numCommonTokens");
+                    Property.externalInteger(TIKA_EVAL_NS + "numCommonTokens");
 
     public static Property NUM_UNIQUE_ALPHA_TOKENS =
-            Property.externalInteger(TIKA_EVAL_NS + "numUniqueAlphaTokens");
+                    Property.externalInteger(TIKA_EVAL_NS + "numUniqueAlphaTokens");
 
     public static Property LANGUAGE = Property.externalText(TIKA_EVAL_NS + "lang");
 
     public static Property LANGUAGE_CONFIDENCE =
-            Property.externalReal(TIKA_EVAL_NS + "langConfidence");
+                    Property.externalReal(TIKA_EVAL_NS + "langConfidence");
 
     public static Property OUT_OF_VOCABULARY = Property.externalReal(TIKA_EVAL_NS + "oov");
 
@@ -89,7 +85,7 @@ public class TikaEvalMetadataFilter extends MetadataFilter {
         metadata.set(NUM_UNIQUE_TOKENS, tokenCounts.getTotalUniqueTokens());
 
 
-        //common token results
+        // common token results
         CommonTokenResult commonTokenResult = (CommonTokenResult) results.get(CommonTokens.class);
         metadata.set(NUM_ALPHA_TOKENS, commonTokenResult.getAlphabeticTokens());
         metadata.set(NUM_UNIQUE_ALPHA_TOKENS, commonTokenResult.getUniqueAlphabeticTokens());
@@ -100,9 +96,9 @@ public class TikaEvalMetadataFilter extends MetadataFilter {
             metadata.set(OUT_OF_VOCABULARY, -1.0f);
         }
 
-        //languages
+        // languages
         List<LanguageResult> probabilities =
-                (List<LanguageResult>) results.get(LanguageIDWrapper.class);
+                        (List<LanguageResult>) results.get(LanguageIDWrapper.class);
         if (probabilities.size() > 0) {
             metadata.set(LANGUAGE, probabilities.get(0).getLanguage());
             metadata.set(LANGUAGE_CONFIDENCE, probabilities.get(0).getRawScore());

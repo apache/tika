@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.ocr;
 
@@ -22,10 +20,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.Arrays;
 import java.util.List;
-
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
@@ -41,6 +35,8 @@ import org.apache.tika.parser.image.ImageMetadataExtractor;
 import org.apache.tika.parser.image.ImageParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class TesseractOCRParserTest extends TikaTest {
 
@@ -51,9 +47,8 @@ public class TesseractOCRParserTest extends TikaTest {
 
 
     /*
-    Check that if Tesseract is told to skip OCR,
-    the TesseractOCRParser claims to not support
-    any file types. So, the standard image parser is called instead.
+     * Check that if Tesseract is told to skip OCR, the TesseractOCRParser claims to not support any
+     * file types. So, the standard image parser is called instead.
      */
     @Test
     public void offersNoTypesIfNotFound() throws Exception {
@@ -96,7 +91,8 @@ public class TesseractOCRParserTest extends TikaTest {
         TikaConfig tikaConfig = new TikaConfig(getResourceAsStream("tesseract-config.xml"));
         Parser p = new AutoDetectParser(tikaConfig);
         List<Metadata> metadataList = getRecursiveMetadata("testOCR.pdf", p);
-        assertContains("Happy New Year 2003!", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("Happy New Year 2003!",
+                        metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
@@ -120,8 +116,8 @@ public class TesseractOCRParserTest extends TikaTest {
         String resource = "testOCR.pdf";
 
         String[] nonOCRContains = new String[0];
-        String contents =
-                runOCR(resource, nonOCRContains, 2, BasicContentHandlerFactory.HANDLER_TYPE.XML,
+        String contents = runOCR(resource, nonOCRContains, 2,
+                        BasicContentHandlerFactory.HANDLER_TYPE.XML,
                         TesseractOCRConfig.OUTPUT_TYPE.HOCR);
 
         assertContains("<span class=\"ocrx_word\" id=\"word_1_1\"", contents);
@@ -132,20 +128,21 @@ public class TesseractOCRParserTest extends TikaTest {
     @Test
     public void testParserContentTypeOverride() throws Exception {
         assumeTrue(canRun(), "can run OCR");
-        //this tests that the content-type is not overwritten by the ocr parser
+        // this tests that the content-type is not overwritten by the ocr parser
         // override content type
         List<Metadata> metadata = getRecursiveMetadata("testOCR.pdf", AUTO_DETECT_PARSER,
-                BasicContentHandlerFactory.HANDLER_TYPE.XML);
+                        BasicContentHandlerFactory.HANDLER_TYPE.XML);
         assertContains("<meta name=\"Content-Type\" content=\"application/pdf\" />",
-                metadata.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+                        metadata.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas)
-            throws Exception {
+                    throws Exception {
         assumeTrue(canRun(), "can run OCR");
 
         String contents = runOCR(resource, nonOCRContains, numMetadatas,
-                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, TesseractOCRConfig.OUTPUT_TYPE.TXT);
+                        BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                        TesseractOCRConfig.OUTPUT_TYPE.TXT);
         if (canRun()) {
             if (resource.substring(resource.lastIndexOf('.')).equals(".jpg")) {
                 assertContains("Apache", contents);
@@ -156,8 +153,8 @@ public class TesseractOCRParserTest extends TikaTest {
     }
 
     private String runOCR(String resource, String[] nonOCRContains, int numMetadatas,
-                          BasicContentHandlerFactory.HANDLER_TYPE handlerType,
-                          TesseractOCRConfig.OUTPUT_TYPE outputType) throws Exception {
+                    BasicContentHandlerFactory.HANDLER_TYPE handlerType,
+                    TesseractOCRConfig.OUTPUT_TYPE outputType) throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
         config.setOutputType(outputType);
 
@@ -168,8 +165,8 @@ public class TesseractOCRParserTest extends TikaTest {
         parseContext.set(TesseractOCRConfig.class, config);
         parseContext.set(PDFParserConfig.class, pdfConfig);
 
-        List<Metadata> metadataList =
-                getRecursiveMetadata(resource, AUTO_DETECT_PARSER, handlerType, parseContext);
+        List<Metadata> metadataList = getRecursiveMetadata(resource, AUTO_DETECT_PARSER,
+                        handlerType, parseContext);
         assertEquals(numMetadatas, metadataList.size());
 
         StringBuilder contents = new StringBuilder();
@@ -182,12 +179,12 @@ public class TesseractOCRParserTest extends TikaTest {
         }
         assertTrue(metadataList.get(0).names().length > 10);
         assertTrue(metadataList.get(1).names().length > 10);
-        //test at least one value
+        // test at least one value
         assertEquals("deflate", metadataList.get(1).get("Compression CompressionTypeName"));
 
-        //make sure that tesseract is showing up in the full set of "parsed bys"
-        assertContains(TesseractOCRParser.class.getName(),
-                Arrays.asList(metadataList.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET)));
+        // make sure that tesseract is showing up in the full set of "parsed bys"
+        assertContains(TesseractOCRParser.class.getName(), Arrays.asList(
+                        metadataList.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET)));
 
         return contents.toString();
     }
@@ -197,10 +194,10 @@ public class TesseractOCRParserTest extends TikaTest {
         assumeTrue(canRun(), "can run OCR");
         String xml = getXML("testOCR.jpg").xml;
         assertContains("OCR Testing", xml);
-        //test metadata extraction
+        // test metadata extraction
         assertContains("<meta name=\"Image Width\" content=\"136 pixels\" />", xml);
 
-        //TIKA-2169
+        // TIKA-2169
         assertContainsCount("<html", xml, 1);
         assertContainsCount("<title", xml, 1);
         assertContainsCount("</title", xml, 1);
@@ -214,16 +211,16 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void getNormalMetadataToo() throws Exception {
-        //this should be successful whether or not TesseractOCR is installed/active
-        //If tesseract is installed, the internal metadata extraction parser should
-        //work; and if tesseract isn't installed, the regular parsers should take over.
+        // this should be successful whether or not TesseractOCR is installed/active
+        // If tesseract is installed, the internal metadata extraction parser should
+        // work; and if tesseract isn't installed, the regular parsers should take over.
 
-        //gif
+        // gif
         Metadata m = getXML("testGIF.gif").metadata;
         assertTrue(m.names().length > 20);
         assertEquals("RGB", m.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Chroma ColorSpaceType"));
 
-        //jpg
+        // jpg
         m = getXML("testOCR.jpg").metadata;
         assertEquals("136", m.get(Metadata.IMAGE_WIDTH));
         assertEquals("66", m.get(Metadata.IMAGE_LENGTH));
@@ -231,22 +228,24 @@ public class TesseractOCRParserTest extends TikaTest {
         assertEquals(null, m.get(Metadata.SAMPLES_PER_PIXEL));
         assertContains("This is a test Apache Tika imag", m.get(TikaCoreProperties.COMMENTS));
 
-        //bmp
+        // bmp
         m = getXML("testBMP.bmp").metadata;
         assertEquals("100", m.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", m.get(Metadata.IMAGE_LENGTH));
 
-        //png
+        // png
         m = getXML("testPNG.png").metadata;
         assertEquals("100", m.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", m.get(Metadata.IMAGE_LENGTH));
-        assertEquals("UnsignedIntegral", m.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data SampleFormat"));
+        assertEquals("UnsignedIntegral",
+                        m.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data SampleFormat"));
 
-        //tiff
+        // tiff
         m = getXML("testTIFF.tif").metadata;
         assertEquals("100", m.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", m.get(Metadata.IMAGE_LENGTH));
-        assertEquals("72 dots per inch", m.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Exif IFD0:Y Resolution"));
+        assertEquals("72 dots per inch",
+                        m.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Exif IFD0:Y Resolution"));
     }
 
     @Test
@@ -258,15 +257,20 @@ public class TesseractOCRParserTest extends TikaTest {
         context.set(TesseractOCRConfig.class, config);
         List<Metadata> metadataList = getRecursiveMetadata("testOCR.pptx", context);
 
-        //0 is main doc, 1 is embedded image, 2 is thumbnail
+        // 0 is main doc, 1 is embedded image, 2 is thumbnail
         assertEquals(3, metadataList.size());
-        assertContains("This is some text", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-        assertNotContained("This is some text", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
-        assertNotContained("This is some text", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("This is some text",
+                        metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotContained("This is some text",
+                        metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotContained("This is some text",
+                        metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
 
-        assertContains("Happy New Year 2003", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("Happy New Year 2003", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("Happy New Year 2003",
+                        metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("Happy New Year 2003",
+                        metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
-    //TODO: add unit tests for jp2/jpx/ppm TIKA-2174
+    // TODO: add unit tests for jp2/jpx/ppm TIKA-2174
 
 }

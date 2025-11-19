@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft;
 
@@ -24,9 +22,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
@@ -34,10 +29,10 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.junit.jupiter.api.Test;
 
 /**
- * Tests that the various POI powered parsers are
- * able to extract their embedded contents.
+ * Tests that the various POI powered parsers are able to extract their embedded contents.
  */
 public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTest {
 
@@ -48,9 +43,8 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
     public void testWithoutEmbedded() throws Exception {
         ContainerExtractor extractor = new ParserContainerExtractor();
 
-        String[] files =
-                new String[]{"testEXCEL.xls", "testWORD.doc", "testPPT.ppt", "testVISIO.vsd",
-                        "test-outlook.msg"};
+        String[] files = new String[] {"testEXCEL.xls", "testWORD.doc", "testPPT.ppt",
+                        "testVISIO.vsd", "test-outlook.msg"};
         for (String file : files) {
             // Process it without recursing
             TrackingHandler handler = process(file, extractor, false);
@@ -67,8 +61,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
     }
 
     /**
-     * Office files with embedded images, but no other
-     * office files in them
+     * Office files with embedded images, but no other office files in them
      */
     @Test
     public void testEmbeddedImages() throws Exception {
@@ -135,28 +128,28 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
     public void testEmbeddedStorageId() throws Exception {
 
         List<Metadata> list = getRecursiveMetadata("testWORD_embeded.doc");
-        //.docx
+        // .docx
         assertEquals("{F4754C9B-64F5-4B40-8AF4-679732AC0607}",
-                list.get(10).get(Office.EMBEDDED_STORAGE_CLASS_ID));
-        //_1345471035.ppt
+                        list.get(10).get(Office.EMBEDDED_STORAGE_CLASS_ID));
+        // _1345471035.ppt
         assertEquals("{64818D10-4F9B-11CF-86EA-00AA00B929E8}",
-                list.get(14).get(Office.EMBEDDED_STORAGE_CLASS_ID));
-        //_1345470949.xls
+                        list.get(14).get(Office.EMBEDDED_STORAGE_CLASS_ID));
+        // _1345470949.xls
         assertEquals("{00020820-0000-0000-C000-000000000046}",
-                list.get(16).get(Office.EMBEDDED_STORAGE_CLASS_ID));
+                        list.get(16).get(Office.EMBEDDED_STORAGE_CLASS_ID));
 
     }
 
     @Test
     public void testEmbeddedGraphChart() throws Exception {
-        //doc converts a chart to a actual xls file
-        //so we only need to look in ppt and xls
-        for (String suffix : new String[]{"ppt", "xls"}) {
+        // doc converts a chart to a actual xls file
+        // so we only need to look in ppt and xls
+        for (String suffix : new String[] {"ppt", "xls"}) {
             List<Metadata> list = getRecursiveMetadata("testMSChart-govdocs-428996." + suffix);
             boolean found = false;
             for (Metadata m : list) {
                 if (m.get(Metadata.CONTENT_TYPE)
-                        .equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
+                                .equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
                     found = true;
                 }
                 assertNull(m.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
@@ -167,7 +160,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
 
     @Test
     public void testEmbeddedEquation() throws Exception {
-        //file derives from govdocs1 863534.doc
+        // file derives from govdocs1 863534.doc
         List<Metadata> metadataList = getRecursiveMetadata("testMSEquation-govdocs-863534.doc");
         assertEquals(3, metadataList.size());
         assertEquals("application/vnd.ms-equation", metadataList.get(2).get(Metadata.CONTENT_TYPE));
@@ -175,8 +168,8 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
 
     @Test
     public void testWPSVariantAttachments() throws Exception {
-        //test that files created by WPS have embedded files extracted
-        //TIKA-3526
+        // test that files created by WPS have embedded files extracted
+        // TIKA-3526
         Set<String> expected = new HashSet<>();
         expected.add("application/msword");
         expected.add("application/vnd.ms-excel");
@@ -187,11 +180,9 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         expected.add("application/pdf");
         expected.add("application/xml");
         expected.add("text/plain; charset=ISO-8859-1");
-        //test that we're correctly handling attachment variants for
+        // test that we're correctly handling attachment variants for
         // files created by WPS 表格 (https://www.wps.cn/)
-        for (String suffix : new String[]{
-                "ppt", "doc", "xls", "docx", "pptx", "xlsx"
-        }) {
+        for (String suffix : new String[] {"ppt", "doc", "xls", "docx", "pptx", "xlsx"}) {
             List<Metadata> metadataList = getRecursiveMetadata("testWPSAttachment." + suffix);
             Set<String> found = new HashSet<>();
             int i = 0;
@@ -202,7 +193,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
             }
             Set<String> notFound = new HashSet<>();
             for (String ex : expected) {
-                if (! found.contains(ex)) {
+                if (!found.contains(ex)) {
                     notFound.add(ex);
                 }
             }

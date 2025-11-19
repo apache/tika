@@ -1,9 +1,8 @@
 // © 2016 and later: Unicode, Inc. and others.
 // License & terms of use: http://www.unicode.org/copyright.html#License
 /**
- * ******************************************************************************
- * Copyright (C) 2005-2016, International Business Machines Corporation and    *
- * others. All Rights Reserved.                                                *
+ * ****************************************************************************** Copyright (C)
+ * 2005-2016, International Business Machines Corporation and * others. All Rights Reserved. *
  * ******************************************************************************
  */
 package org.apache.tika.parser.txt;
@@ -12,19 +11,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 
 /**
- * This class represents a charset that has been identified by a CharsetDetector
- * as a possible encoding for a set of input data.  From an instance of this
- * class, you can ask for a confidence level in the charset identification,
- * or for Java Reader or String to access the original byte data in Unicode form.
+ * This class represents a charset that has been identified by a CharsetDetector as a possible
+ * encoding for a set of input data. From an instance of this class, you can ask for a confidence
+ * level in the charset identification, or for Java Reader or String to access the original byte
+ * data in Unicode form.
  * <p>
  * Instances of this class are created only by CharsetDetectors.
  * <p>
- * Note:  this class has a natural ordering that is inconsistent with equals.
- * The natural ordering is based on the match confidence value.
+ * Note: this class has a natural ordering that is inconsistent with equals. The natural ordering is
+ * based on the match confidence value.
  *
  * @stable ICU 3.4
  */
@@ -32,29 +30,29 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
 
 
     //
-    //   Private Data
+    // Private Data
     //
     private int fConfidence;
-    private byte[] fRawInput = null;     // Original, untouched input bytes.
-    //  If user gave us a byte array, this is it.
-    private int fRawLength;           // Length of data in fRawInput array.
-    private InputStream fInputStream = null;  // User's input stream, or null if the user
-    private String fCharsetName;         // The name of the charset this CharsetMatch
-    //   represents.  Filled in by the recognizer.
-    private String fLang;                // The language, if one was determined by
+    private byte[] fRawInput = null; // Original, untouched input bytes.
+    // If user gave us a byte array, this is it.
+    private int fRawLength; // Length of data in fRawInput array.
+    private InputStream fInputStream = null; // User's input stream, or null if the user
+    private String fCharsetName; // The name of the charset this CharsetMatch
+    // represents. Filled in by the recognizer.
+    private String fLang; // The language, if one was determined by
 
     /*
-     *  Constructor.  Implementation internal
+     * Constructor. Implementation internal
      */
     CharsetMatch(CharsetDetector det, CharsetRecognizer rec, int conf) {
         fConfidence = conf;
 
         // The references to the original application input data must be copied out
-        //   of the charset recognizer to here, in case the application resets the
-        //   recognizer before using this CharsetMatch.
+        // of the charset recognizer to here, in case the application resets the
+        // recognizer before using this CharsetMatch.
         if (det.fInputStream == null) {
             // We only want the existing input byte data if it came straight from the user,
-            //   not if is just the head of a stream.
+            // not if is just the head of a stream.
             fRawInput = det.fRawInput;
             fRawLength = det.fRawLength;
         }
@@ -64,17 +62,17 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     }
 
     /*
-     *  Constructor.  Implementation internal
+     * Constructor. Implementation internal
      */
     CharsetMatch(CharsetDetector det, CharsetRecognizer rec, int conf, String csName, String lang) {
         fConfidence = conf;
 
         // The references to the original application input data must be copied out
-        //   of the charset recognizer to here, in case the application resets the
-        //   recognizer before using this CharsetMatch.
+        // of the charset recognizer to here, in case the application resets the
+        // recognizer before using this CharsetMatch.
         if (det.fInputStream == null) {
             // We only want the existing input byte data if it came straight from the user,
-            //   not if is just the head of a stream.
+            // not if is just the head of a stream.
             fRawInput = det.fRawInput;
             fRawLength = det.fRawLength;
         }
@@ -84,13 +82,13 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     }
 
     /**
-     * Create a java.io.Reader for reading the Unicode character data corresponding
-     * to the original byte data supplied to the Charset detect operation.
+     * Create a java.io.Reader for reading the Unicode character data corresponding to the original
+     * byte data supplied to the Charset detect operation.
      * <p>
-     * CAUTION:  if the source of the byte data was an InputStream, a Reader
-     * can be created for only one matching char set using this method.  If more
-     * than one charset needs to be tried, the caller will need to reset
-     * the InputStream and create InputStreamReaders itself, based on the charset name.
+     * CAUTION: if the source of the byte data was an InputStream, a Reader can be created for only
+     * one matching char set using this method. If more than one charset needs to be tried, the
+     * caller will need to reset the InputStream and create InputStreamReaders itself, based on the
+     * charset name.
      *
      * @return the Reader for the Unicode character data.
      * @stable ICU 3.4
@@ -100,9 +98,9 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
 
         if (inputStream == null) {
             try {
-                inputStream = UnsynchronizedByteArrayInputStream.builder().setByteArray(fRawInput).setLength(fRawLength).get();
-            }
-            catch (IOException ex) {
+                inputStream = UnsynchronizedByteArrayInputStream.builder().setByteArray(fRawInput)
+                                .setLength(fRawLength).get();
+            } catch (IOException ex) {
                 return null;
             }
         }
@@ -116,8 +114,8 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     }
 
     /**
-     * Create a Java String from Unicode character data corresponding
-     * to the original byte data supplied to the Charset detect operation.
+     * Create a Java String from Unicode character data corresponding to the original byte data
+     * supplied to the Charset detect operation.
      *
      * @return a String created from the converted input data.
      * @throws IOException
@@ -129,15 +127,13 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     }
 
     /**
-     * Create a Java String from Unicode character data corresponding
-     * to the original byte data supplied to the Charset detect operation.
-     * The length of the returned string is limited to the specified size;
-     * the string will be trunctated to this length if necessary.  A limit value of
+     * Create a Java String from Unicode character data corresponding to the original byte data
+     * supplied to the Charset detect operation. The length of the returned string is limited to the
+     * specified size; the string will be trunctated to this length if necessary. A limit value of
      * zero or less is ignored, and treated as no limit.
      *
-     * @param maxLength The maximium length of the String to be created when the
-     *                  source of the data is an input stream, or -1 for
-     *                  unlimited length.
+     * @param maxLength The maximium length of the String to be created when the source of the data
+     *        is an input stream, or -1 for unlimited length.
      * @return a String created from the converted input data.
      * @throws IOException
      * @stable ICU 3.4
@@ -150,7 +146,7 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
             try (Reader reader = getReader()) {
                 int max = maxLength < 0 ? Integer.MAX_VALUE : maxLength;
                 int bytesRead;
-                
+
                 while ((bytesRead = reader.read(buffer, 0, Math.min(max, 1024))) > 0) {
                     sb.append(buffer, 0, bytesRead);
                     max -= bytesRead;
@@ -174,12 +170,11 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     public String getNormalizedName() {
         String name = getName();
         /*
-         * getName() may return a name with a suffix 'rtl' or 'ltr'. This cannot
-         * be used to open a charset (e.g. IBM424_rtl). The ending '_rtl' or '_ltr'
-         * should be stripped off before creating the string.
+         * getName() may return a name with a suffix 'rtl' or 'ltr'. This cannot be used to open a
+         * charset (e.g. IBM424_rtl). The ending '_rtl' or '_ltr' should be stripped off before
+         * creating the string.
          */
-        int startSuffix =
-                !name.contains("_rtl") ? name.indexOf("_ltr") : name.indexOf("_rtl");
+        int startSuffix = !name.contains("_rtl") ? name.indexOf("_ltr") : name.indexOf("_rtl");
         if (startSuffix > 0) {
             name = name.substring(0, startSuffix);
         }
@@ -187,10 +182,9 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     }
 
     /**
-     * Get an indication of the confidence in the charset detected.
-     * Confidence values range from 0-100, with larger numbers indicating
-     * a better match of the input data to the characteristics of the
-     * charset.
+     * Get an indication of the confidence in the charset detected. Confidence values range from
+     * 0-100, with larger numbers indicating a better match of the input data to the characteristics
+     * of the charset.
      *
      * @return the confidence in the charset match
      * @stable ICU 3.4
@@ -200,11 +194,9 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     }
 
     /**
-     * Get the name of the detected charset.
-     * The name will be one that can be used with other APIs on the
-     * platform that accept charset names.  It is the "Canonical name"
-     * as defined by the class java.nio.charset.Charset; for
-     * charsets that are registered with the IANA charset registry,
+     * Get the name of the detected charset. The name will be one that can be used with other APIs
+     * on the platform that accept charset names. It is the "Canonical name" as defined by the class
+     * java.nio.charset.Charset; for charsets that are registered with the IANA charset registry,
      * this is the MIME-preferred registerd name.
      *
      * @return The name of the charset.
@@ -215,13 +207,13 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     public String getName() {
         return fCharsetName;
     }
-    //   gave us a byte array.
+    // gave us a byte array.
 
     /**
      * Get the ISO code for the language of the detected charset.
      *
-     * @return The ISO code for the language or <code>null</code> if the
-     * language cannot be determined.
+     * @return The ISO code for the language or <code>null</code> if the language cannot be
+     *         determined.
      * @stable ICU 3.4
      */
     public String getLanguage() {
@@ -229,15 +221,12 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     }
 
     /**
-     * Compare to other CharsetMatch objects.
-     * Comparison is based on the match confidence value, which
-     * allows CharsetDetector.detectAll() to order its results.
+     * Compare to other CharsetMatch objects. Comparison is based on the match confidence value,
+     * which allows CharsetDetector.detectAll() to order its results.
      *
      * @param other the CharsetMatch object to compare against.
-     * @return a negative integer, zero, or a positive integer as the
-     * confidence level of this CharsetMatch
-     * is less than, equal to, or greater than that of
-     * the argument.
+     * @return a negative integer, zero, or a positive integer as the confidence level of this
+     *         CharsetMatch is less than, equal to, or greater than that of the argument.
      * @throws ClassCastException if the argument is not a CharsetMatch.
      * @stable ICU 4.4
      */
@@ -277,7 +266,7 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     public int hashCode() {
         return fConfidence;
     }
-    //   gave us a byte array.
+    // gave us a byte array.
 
     @Override
     public String toString() {

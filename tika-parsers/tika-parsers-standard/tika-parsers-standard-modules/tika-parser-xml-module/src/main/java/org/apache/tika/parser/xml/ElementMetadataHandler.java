@@ -1,33 +1,28 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.xml;
 
 import java.util.Arrays;
-
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
-
 /**
- * SAX event handler that maps the contents of an XML element into
- * a metadata field.
+ * SAX event handler that maps the contents of an XML element into a metadata field.
  *
  * @since Apache Tika 0.10
  */
@@ -67,10 +62,10 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
     /**
      * Constructor for string metadata keys.
      *
-     * @param uri       the uri of the namespace of the element
+     * @param uri the uri of the namespace of the element
      * @param localName the local name of the element
-     * @param metadata  the Tika metadata object to populate
-     * @param name      the Tika metadata field key
+     * @param metadata the Tika metadata object to populate
+     * @param name the Tika metadata field key
      */
     public ElementMetadataHandler(String uri, String localName, Metadata metadata, String name) {
         super(metadata, name);
@@ -84,18 +79,18 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
     }
 
     /**
-     * Constructor for string metadata keys which allows change of behavior
-     * for duplicate and empty entry values.
+     * Constructor for string metadata keys which allows change of behavior for duplicate and empty
+     * entry values.
      *
-     * @param uri                  the uri of the namespace of the element
-     * @param localName            the local name of the element
-     * @param metadata             the Tika metadata object to populate
-     * @param name                 the Tika metadata field key
+     * @param uri the uri of the namespace of the element
+     * @param localName the local name of the element
+     * @param metadata the Tika metadata object to populate
+     * @param name the Tika metadata field key
      * @param allowDuplicateValues add duplicate values to the Tika metadata
-     * @param allowEmptyValues     add empty values to the Tika metadata
+     * @param allowEmptyValues add empty values to the Tika metadata
      */
     public ElementMetadataHandler(String uri, String localName, Metadata metadata, String name,
-                                  boolean allowDuplicateValues, boolean allowEmptyValues) {
+                    boolean allowDuplicateValues, boolean allowEmptyValues) {
         super(metadata, name);
         this.uri = uri;
         this.localName = localName;
@@ -109,13 +104,13 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
     /**
      * Constructor for Property metadata keys.
      *
-     * @param uri            the uri of the namespace of the element
-     * @param localName      the local name of the element
-     * @param metadata       the Tika metadata object to populate
+     * @param uri the uri of the namespace of the element
+     * @param localName the local name of the element
+     * @param metadata the Tika metadata object to populate
      * @param targetProperty the Tika metadata Property key
      */
     public ElementMetadataHandler(String uri, String localName, Metadata metadata,
-                                  Property targetProperty) {
+                    Property targetProperty) {
         super(metadata, targetProperty);
         this.uri = uri;
         this.localName = localName;
@@ -128,19 +123,19 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
     }
 
     /**
-     * Constructor for Property metadata keys which allows change of behavior
-     * for duplicate and empty entry values.
+     * Constructor for Property metadata keys which allows change of behavior for duplicate and
+     * empty entry values.
      *
-     * @param uri                  the uri of the namespace of the element
-     * @param localName            the local name of the element
-     * @param metadata             the Tika metadata object to populate
-     * @param targetProperty       the Tika metadata Property key
+     * @param uri the uri of the namespace of the element
+     * @param localName the local name of the element
+     * @param metadata the Tika metadata object to populate
+     * @param targetProperty the Tika metadata Property key
      * @param allowDuplicateValues add duplicate values to the Tika metadata
-     * @param allowEmptyValues     add empty values to the Tika metadata
+     * @param allowEmptyValues add empty values to the Tika metadata
      */
     public ElementMetadataHandler(String uri, String localName, Metadata metadata,
-                                  Property targetProperty, boolean allowDuplicateValues,
-                                  boolean allowEmptyValues) {
+                    Property targetProperty, boolean allowDuplicateValues,
+                    boolean allowEmptyValues) {
         super(metadata, targetProperty);
         this.uri = uri;
         this.localName = localName;
@@ -158,10 +153,10 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
 
     protected boolean isMatchingElement(String uri, String localName) {
         // match if we're inside the parent element or within some bag element
-        return (uri.equals(this.uri) && localName.equals(this.localName)) ||
-                (parentMatchLevel > 0 &&
-                        ((uri.equals(URI_RDF) && localName.equals(LOCAL_NAME_RDF_BAG)) ||
-                                (uri.equals(URI_RDF) && localName.equals(LOCAL_NAME_RDF_LI))));
+        return (uri.equals(this.uri) && localName.equals(this.localName)) || (parentMatchLevel > 0
+                        && ((uri.equals(URI_RDF) && localName.equals(LOCAL_NAME_RDF_BAG))
+                                        || (uri.equals(URI_RDF)
+                                                        && localName.equals(LOCAL_NAME_RDF_LI))));
     }
 
     @Override
@@ -224,8 +219,8 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
                     value = "";
                 }
                 String[] previous = metadata.getValues(name);
-                if (previous == null || !Arrays.asList(previous).contains(value) ||
-                        allowDuplicateValues) {
+                if (previous == null || !Arrays.asList(previous).contains(value)
+                                || allowDuplicateValues) {
                     metadata.add(targetProperty, value);
                 }
             }

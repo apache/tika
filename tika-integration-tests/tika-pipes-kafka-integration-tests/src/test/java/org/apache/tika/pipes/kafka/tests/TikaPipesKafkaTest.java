@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.pipes.kafka.tests;
 
@@ -20,6 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Stopwatch;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -34,10 +35,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Stopwatch;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -50,6 +47,9 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.tika.cli.TikaCLI;
+import org.apache.tika.pipes.core.HandlerConfig;
+import org.apache.tika.utils.SystemUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -61,28 +61,25 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.ConfluentKafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import org.apache.tika.cli.TikaCLI;
-import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.utils.SystemUtils;
-
 /**
  * Test will emit some documents into a Kafka "pipe_iterator_topic", then kafka pipe iterator will
- * poll those documents and send them to tika pipes. Tika pipes will then use a file fetcher to fetch/parse, then
- * the kafka emitter will send the now-parsed output to the "emitter_topic".
- * Will then wait for the messages to come from the emitter and assert they are correct.
+ * poll those documents and send them to tika pipes. Tika pipes will then use a file fetcher to
+ * fetch/parse, then the kafka emitter will send the now-parsed output to the "emitter_topic". Will
+ * then wait for the messages to come from the emitter and assert they are correct.
  */
 @Testcontainers(disabledWithoutDocker = true)
 public class TikaPipesKafkaTest {
     @BeforeAll
     public static void setUp() {
         assumeTrue(!SystemUtils.IS_OS_MAC_OSX && !SystemUtils.OS_VERSION.equals("12.6.1"),
-                "This stopped working on macos x ... TIKA-3932");
+                        "This stopped working on macos x ... TIKA-3932");
     }
+
     public static final String PIPE_ITERATOR_TOPIC = "pipe_iterator_topic";
     public static final String EMITTER_TOPIC = "emitter_topic";
     /**
-     * Wait up to this many minutes before you give up waiting for the emitted documents to poll from the
-     * emitter_topic and fail the test.
+     * Wait up to this many minutes before you give up waiting for the emitted documents to poll
+     * from the emitter_topic and fail the test.
      */
     public static final int WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES = 2;
     private static final Logger LOG = LoggerFactory.getLogger(TikaPipesKafkaTest.class);
@@ -94,7 +91,8 @@ public class TikaPipesKafkaTest {
 
     private final Set<String> waitingFor = new HashSet<>();
     // https://java.testcontainers.org/modules/kafka/#using-orgtestcontainerskafkaconfluentkafkacontainer
-    ConfluentKafkaContainer kafka = new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.0"));
+    ConfluentKafkaContainer kafka = new ConfluentKafkaContainer(
+                    DockerImageName.parse("confluentinc/cp-kafka:7.4.0"));
 
     private void createTestFiles() throws Exception {
         if (testFileFolder.mkdirs()) {
@@ -103,7 +101,7 @@ public class TikaPipesKafkaTest {
         for (int i = 0; i < numDocs; ++i) {
             String nextFileName = "test-" + i + ".html";
             FileUtils.writeStringToFile(new File(testFileFolder, nextFileName),
-                    "<html><body>body-" + i + "</body></html>", StandardCharsets.UTF_8);
+                            "<html><body>body-" + i + "</body></html>", StandardCharsets.UTF_8);
             waitingFor.add(nextFileName);
         }
     }
@@ -124,7 +122,7 @@ public class TikaPipesKafkaTest {
         File tikaConfigFile = new File("target", "ta.xml");
         File log4jPropFile = new File("target", "tmp-log4j2.xml");
         try (InputStream is = this.getClass()
-                .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
+                        .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
             assert is != null;
             FileUtils.copyInputStreamToFile(is, log4jPropFile);
         }
@@ -138,17 +136,17 @@ public class TikaPipesKafkaTest {
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
         consumerProps.put("group.id", UUID.randomUUID().toString());
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-                StringDeserializer.class.getName());
+                        StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-                StringDeserializer.class.getName());
+                        StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         Properties producerProps = new Properties();
         producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
         producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-                StringSerializer.class.getName());
+                        StringSerializer.class.getName());
         producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-                StringSerializer.class.getName());
+                        StringSerializer.class.getName());
 
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps);
         LOG.info("Listening to EMITTER_TOPIC={}", EMITTER_TOPIC);
@@ -165,8 +163,8 @@ public class TikaPipesKafkaTest {
                 meta.put("path", nextFile.getAbsolutePath());
                 meta.put("totalSpace", nextFile.getTotalSpace());
                 try {
-                    producer.send(
-                            new ProducerRecord<>(PIPE_ITERATOR_TOPIC, nextFile.getAbsolutePath(),
+                    producer.send(new ProducerRecord<>(PIPE_ITERATOR_TOPIC,
+                                    nextFile.getAbsolutePath(),
                                     objectMapper.writeValueAsString(meta))).get();
                     LOG.info("Sent fetch request : {}", nextFile.getAbsolutePath());
                     ++numSent;
@@ -179,32 +177,30 @@ public class TikaPipesKafkaTest {
 
         es.execute(() -> {
             try {
-                String tikaConfigXml =
-                        createTikaConfigXml(tikaConfigFile, log4jPropFile, tikaConfigTemplateXml);
+                String tikaConfigXml = createTikaConfigXml(tikaConfigFile, log4jPropFile,
+                                tikaConfigTemplateXml);
 
                 FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
-                TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.getAbsolutePath()});
+                TikaCLI.main(new String[] {"-a", "-c", tikaConfigFile.getAbsolutePath()});
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
 
-        LOG.info(
-                "Tika pipes have been started. See if we can pull the response messages from the EMITTER_TOPIC={}",
-                EMITTER_TOPIC);
+        LOG.info("Tika pipes have been started. See if we can pull the response messages from the EMITTER_TOPIC={}",
+                        EMITTER_TOPIC);
 
         Stopwatch stopwatch = Stopwatch.createStarted();
         while (!waitingFor.isEmpty()) {
             assertFalse(stopwatch.elapsed(TimeUnit.MINUTES) > WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES,
-                    "Timed out after " + WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES +
-                            " minutes waiting for the emitted docs");
+                            "Timed out after " + WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES
+                                            + " minutes waiting for the emitted docs");
             try {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(1));
                 for (ConsumerRecord<String, String> record : records) {
                     String val = record.value();
-                    Map<String, Object> valMap =
-                            objectMapper.readValue(val, new TypeReference<Map<String, Object>>() {
-                            });
+                    Map<String, Object> valMap = objectMapper.readValue(val,
+                                    new TypeReference<Map<String, Object>>() {});
                     waitingFor.remove(FilenameUtils.getName(record.key()));
                     assertNotNull(valMap.get("content_s"));
                     assertNotNull(valMap.get("mime_s"));
@@ -219,15 +215,14 @@ public class TikaPipesKafkaTest {
         LOG.info("Done");
     }
 
-    @NotNull
-    private String createTikaConfigXml(File tikaConfigFile, File log4jPropFile,
-                                       String tikaConfigTemplateXml) {
+    @NotNull private String createTikaConfigXml(File tikaConfigFile, File log4jPropFile,
+                    String tikaConfigTemplateXml) {
         return tikaConfigTemplateXml.replace("{TIKA_CONFIG}", tikaConfigFile.getAbsolutePath())
-                .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.getAbsolutePath())
-                .replace("{PATH_TO_DOCS}", testFileFolder.getAbsolutePath())
-                .replace("{PARSE_MODE}", HandlerConfig.PARSE_MODE.RMETA.name())
-                .replace("{PIPE_ITERATOR_TOPIC}", PIPE_ITERATOR_TOPIC)
-                .replace("{EMITTER_TOPIC}", EMITTER_TOPIC)
-                .replace("{BOOTSTRAP_SERVERS}", kafka.getBootstrapServers());
+                        .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.getAbsolutePath())
+                        .replace("{PATH_TO_DOCS}", testFileFolder.getAbsolutePath())
+                        .replace("{PARSE_MODE}", HandlerConfig.PARSE_MODE.RMETA.name())
+                        .replace("{PIPE_ITERATOR_TOPIC}", PIPE_ITERATOR_TOPIC)
+                        .replace("{EMITTER_TOPIC}", EMITTER_TOPIC)
+                        .replace("{BOOTSTRAP_SERVERS}", kafka.getBootstrapServers());
     }
 }

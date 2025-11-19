@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.dbf;
 
@@ -27,10 +25,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -41,14 +35,15 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * This is a Tika wrapper around the DBFReader.
  * <p>
  * This reads many dbase3 file variants (not DBASE 7, yet!).
  * <p>
- * It caches the first 10 rows and then runs encoding dectection
- * on the "character" cells.
+ * It caches the first 10 rows and then runs encoding dectection on the "character" cells.
  */
 public class DBFParser implements Parser {
 
@@ -57,7 +52,7 @@ public class DBFParser implements Parser {
     private static final Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("x-dbf"));
+                    Collections.singleton(MediaType.application("x-dbf"));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -66,18 +61,18 @@ public class DBFParser implements Parser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+                    ParseContext context) throws IOException, SAXException, TikaException {
         DBFReader reader = DBFReader.open(stream);
         DBFFileHeader header = reader.getHeader();
         metadata.set(Metadata.CONTENT_TYPE, header.getVersion().getFullMimeString());
 
-        //insert metadata here
+        // insert metadata here
         Calendar lastModified = header.getLastModified();
         if (lastModified != null) {
             metadata.set(TikaCoreProperties.MODIFIED, lastModified);
         }
 
-        //buffer first X rows for charset detection
+        // buffer first X rows for charset detection
         List<DBFRow> firstRows = new LinkedList<>();
         DBFRow row = reader.next();
         int i = 0;
@@ -102,13 +97,13 @@ public class DBFParser implements Parser {
 
         xhtml.startElement("tbody");
 
-        //now write cached rows
+        // now write cached rows
         while (firstRows.size() > 0) {
             DBFRow cachedRow = firstRows.remove(0);
             writeRow(cachedRow, charset, xhtml);
         }
 
-        //now continue with rest
+        // now continue with rest
         while (row != null) {
             writeRow(row, charset, xhtml);
             row = reader.next();
@@ -119,8 +114,8 @@ public class DBFParser implements Parser {
     }
 
     private Charset getCharset(List<DBFRow> firstRows, DBFFileHeader header)
-            throws IOException, TikaException {
-        //TODO: potentially use codepage info in the header
+                    throws IOException, TikaException {
+        // TODO: potentially use codepage info in the header
         Charset charset = DEFAULT_CHARSET;
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         for (DBFRow row : firstRows) {
@@ -144,7 +139,7 @@ public class DBFParser implements Parser {
     }
 
     private void writeRow(DBFRow row, Charset charset, XHTMLContentHandler xhtml)
-            throws SAXException {
+                    throws SAXException {
         xhtml.startElement("tr");
         for (DBFCell cell : row.cells) {
             xhtml.startElement("td");

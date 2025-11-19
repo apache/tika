@@ -1,32 +1,29 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.parser.microsoft.chm;
 
 import org.apache.tika.exception.TikaException;
 
 /**
- * The format of a directory listing entry is as follows: BYTE: length of name
- * BYTEs: name (UTF-8 encoded) ENCINT: content section ENCINT: offset ENCINT:
- * length The offset is from the beginning of the content section the file is
- * in, after the section has been decompressed (if appropriate). The length also
- * refers to length of the file in the section after decompression. There are
- * two kinds of file represented in the directory: user data and format related
- * files. The files which are format-related have names which begin with '::',
- * the user data files have names which begin with "/".
+ * The format of a directory listing entry is as follows: BYTE: length of name BYTEs: name (UTF-8
+ * encoded) ENCINT: content section ENCINT: offset ENCINT: length The offset is from the beginning
+ * of the content section the file is in, after the section has been decompressed (if appropriate).
+ * The length also refers to length of the file in the section after decompression. There are two
+ * kinds of file represented in the directory: user data and format related files. The files which
+ * are format-related have names which begin with '::', the user data files have names which begin
+ * with "/".
  */
 public class DirectoryListingEntry {
     /* Length of the entry name */
@@ -47,15 +44,15 @@ public class DirectoryListingEntry {
     /**
      * Constructs directoryListingEntry
      *
-     * @param name_length  int
-     * @param name         String
+     * @param name_length int
+     * @param name String
      * @param isCompressed ChmCommons.EntryType
-     * @param offset       int
-     * @param length       int
+     * @param offset int
+     * @param length int
      * @throws TikaException
      */
     public DirectoryListingEntry(int name_length, String name, ChmCommons.EntryType isCompressed,
-                                 int offset, int length) throws TikaException {
+                    int offset, int length) throws TikaException {
         ChmAssert.assertDirectoryListingEntry(name_length, name, isCompressed, offset, length);
         setNameLength(name_length);
         setName(name);
@@ -66,9 +63,11 @@ public class DirectoryListingEntry {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("name_length:=").append(getNameLength()).append(System.getProperty("line.separator"));
+        sb.append("name_length:=").append(getNameLength())
+                        .append(System.getProperty("line.separator"));
         sb.append("name:=").append(getName()).append(System.getProperty("line.separator"));
-        sb.append("entryType:=").append(getEntryType()).append(System.getProperty("line.separator"));
+        sb.append("entryType:=").append(getEntryType())
+                        .append(System.getProperty("line.separator"));
         sb.append("offset:=").append(getOffset()).append(System.getProperty("line.separator"));
         sb.append("length:=").append(getLength());
         return sb.toString();

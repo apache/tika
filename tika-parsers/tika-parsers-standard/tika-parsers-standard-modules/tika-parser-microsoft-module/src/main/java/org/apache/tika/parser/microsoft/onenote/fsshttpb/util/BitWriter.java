@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
@@ -49,7 +47,7 @@ public class BitWriter {
     public byte[] getBytes() throws IOException {
         if (this.bitOffset % 8 != 0) {
             throw new IOException(
-                    "BitWriter:Bytes, Cannot get the current bytes because the last byte is not written completely.");
+                            "BitWriter:Bytes, Cannot get the current bytes because the last byte is not written completely.");
         }
 
         int retByteLength = this.bitOffset / 8;
@@ -68,7 +66,7 @@ public class BitWriter {
     /**
      * Append a specified Unit64 type value into the buffer with the specified bit length.
      *
-     * @param value  Specify the value which needs to be appended.
+     * @param value Specify the value which needs to be appended.
      * @param length Specify the bit length which the value will occupy in the buffer.
      */
     public void appendUInt64(long value, int length) {
@@ -79,7 +77,7 @@ public class BitWriter {
     /**
      * Append a specified Unit32 type value into the buffer with the specified bit length.
      *
-     * @param value  Specify the value which needs to be appended.
+     * @param value Specify the value which needs to be appended.
      * @param length Specify the bit length which the value will occupy in the buffer.
      */
     public void appendUInit32(int value, int length) {
@@ -90,7 +88,7 @@ public class BitWriter {
     /**
      * Append a specified Init32 type value into the buffer with the specified bit length.
      *
-     * @param value  Specify the value which needs to be appended.
+     * @param value Specify the value which needs to be appended.
      * @param length Specify the bit length which the value will occupy in the buffer.
      */
     public void appendInit32(int value, int length) {
@@ -108,10 +106,11 @@ public class BitWriter {
     }
 
     /**
-     * Write the specified byte array into the buffer from the current position with the specified bit length.
+     * Write the specified byte array into the buffer from the current position with the specified
+     * bit length.
      *
      * @param needWrittenBytes Specify the needed written byte array.
-     * @param length           Specify the bit length which the byte array will occupy in the buffer.
+     * @param length Specify the bit length which the byte array will occupy in the buffer.
      */
     private void setBytes(byte[] needWrittenBytes, int length) {
         for (int i = 0; i < length; i++) {

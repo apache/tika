@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.tika.parser.microsoft.ooxml;
@@ -20,26 +18,24 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.util.Date;
 import java.util.Map;
-
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
+import org.apache.tika.utils.DateUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.utils.DateUtils;
-
 /**
- * This class is intended to handle anything that might contain IBodyElements:
- * main document, headers, footers, notes, slides, etc.
+ * This class is intended to handle anything that might contain IBodyElements: main document,
+ * headers, footers, notes, slides, etc.
  * <p>
  * <p/>
  * <p>
- * This class does not generally check for namespaces, and it can be applied
- * to PPTX and DOCX for text extraction.
+ * This class does not generally check for namespaces, and it can be applied to PPTX and DOCX for
+ * text extraction.
  * <p>
  * <p/>
- * This can be used to scrape content from charts.  It currently ignores
- * formula (&lt;c:f/&gt;) elements
+ * This can be used to scrape content from charts. It currently ignores formula (&lt;c:f/&gt;)
+ * elements
  * <p>
  * <p/>
  * This does not work with .xlsx or .vsdx.
@@ -51,7 +47,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
 
     public final static String W_NS =
-            "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+                    "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
     private final static String R = "r";
     private final static String FLD = "fld";
     private final static String RPR = "rPr";
@@ -71,7 +67,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String NUM_PR = "numPr";
     private final static String BR = "br";
     private final static String HYPERLINK = "hyperlink";
-    private final static String HLINK_CLICK = "hlinkClick"; //pptx hlink
+    private final static String HLINK_CLICK = "hlinkClick"; // pptx hlink
     private final static String TBL = "tbl";
     private final static String PIC = "pic";
     private final static String PICT = "pict";
@@ -82,22 +78,22 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String OLE_OBJECT = "OLEObject";
     private final static String CR = "cr";
     private final static String V = "v";
-    private final static String RUBY = "ruby"; //phonetic section
-    private final static String RT = "rt"; //phonetic run
+    private final static String RUBY = "ruby"; // phonetic section
+    private final static String RT = "rt"; // phonetic run
     private static final String VAL = "val";
     private static final String SLIDE = "sld";
     private static final String SHOW = "show";
     private final static String MC_NS =
-            "http://schemas.openxmlformats.org/markup-compatibility/2006";
+                    "http://schemas.openxmlformats.org/markup-compatibility/2006";
     private final static String O_NS = "urn:schemas-microsoft-com:office:office";
     private final static String PIC_NS = "http://schemas.openxmlformats.org/drawingml/2006/picture";
     private final static String DRAWING_MAIN_NS =
-            "http://schemas.openxmlformats.org/drawingml/2006/main";
+                    "http://schemas.openxmlformats.org/drawingml/2006/main";
     private final static String V_NS = "urn:schemas-microsoft-com:vml";
     private final static String C_NS = "http://schemas.openxmlformats.org/drawingml/2006/chart";
     private final static String OFFICE_DOC_RELATIONSHIP_NS =
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
-    private final static char[] TAB_CHAR = new char[]{'\t'};
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+    private final static char[] TAB_CHAR = new char[] {'\t'};
     private final static char NEWLINE = '\n';
     private final static String BOOKMARK_START = "bookmarkStart";
     private final static String BOOKMARK_END = "bookmarkEnd";
@@ -118,7 +114,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final StringBuilder runBuffer = new StringBuilder();
     private final StringBuilder rubyBuffer = new StringBuilder();
     private boolean inR = false;
-    //in run or in field. TODO: convert this to an integer because you can have a run within a run
+    // in run or in field. TODO: convert this to an integer because you can have a run within a run
     private boolean inT = false;
     private boolean inRPr = false;
     private boolean inNumPr = false;
@@ -128,38 +124,38 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private String picDescription = null;
     private String picRId = null;
     private String picFilename = null;
-    //mechanism used to determine when to
-    //signal the start of the p, and still
-    //handle p with pPr and those without
+    // mechanism used to determine when to
+    // signal the start of the p, and still
+    // handle p with pPr and those without
     private boolean lastStartElementWasP = false;
-    //have we signaled the start of a p?
-    //pPr can happen multiple times within a p
-    //<p><pPr/><r><t>text</t></r><pPr></p>
+    // have we signaled the start of a p?
+    // pPr can happen multiple times within a p
+    // <p><pPr/><r><t>text</t></r><pPr></p>
     private boolean pStarted = false;
-    //alternate content can be embedded in itself.
-    //need to track depth.
-    //if in alternate, choose fallback, maybe make this configurable?
+    // alternate content can be embedded in itself.
+    // need to track depth.
+    // if in alternate, choose fallback, maybe make this configurable?
     private int inACChoiceDepth = 0;
     private int inACFallbackDepth = 0;
     private boolean inDelText = false;
-    //buffers rt in ruby sections (see 17.3.3.25)
+    // buffers rt in ruby sections (see 17.3.3.25)
     private boolean inHlinkClick = false;
     private boolean inTextBox = false;
-    private boolean inV = false; //in c:v in chart file
+    private boolean inV = false; // in c:v in chart file
     private OOXMLWordAndPowerPointTextHandler.EditType editType =
-            OOXMLWordAndPowerPointTextHandler.EditType.NONE;
+                    OOXMLWordAndPowerPointTextHandler.EditType.NONE;
     private DateUtils dateUtils = new DateUtils();
 
     private boolean hiddenSlide = false;
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
-                                             Map<String, String> hyperlinks) {
+                    Map<String, String> hyperlinks) {
         this(bodyContentsHandler, hyperlinks, true, true);
     }
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
-                                             Map<String, String> hyperlinks, boolean includeTextBox,
-                                             boolean concatenatePhoneticRuns) {
+                    Map<String, String> hyperlinks, boolean includeTextBox,
+                    boolean concatenatePhoneticRuns) {
         this.bodyContentsHandler = bodyContentsHandler;
         this.linkedRelationships = hyperlinks;
         this.includeTextBox = includeTextBox;
@@ -167,25 +163,21 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     }
 
     @Override
-    public void startDocument() throws SAXException {
-    }
+    public void startDocument() throws SAXException {}
 
     @Override
-    public void endDocument() throws SAXException {
-    }
+    public void endDocument() throws SAXException {}
 
     @Override
-    public void startPrefixMapping(String prefix, String uri) throws SAXException {
-    }
+    public void startPrefixMapping(String prefix, String uri) throws SAXException {}
 
     @Override
-    public void endPrefixMapping(String prefix) throws SAXException {
-    }
+    public void endPrefixMapping(String prefix) throws SAXException {}
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
-        //TODO: checkBox, textBox, sym, headerReference, footerReference, commentRangeEnd
+                    throws SAXException {
+        // TODO: checkBox, textBox, sym, headerReference, footerReference, commentRangeEnd
 
         if (lastStartElementWasP && !PPR.equals(localName)) {
             bodyContentsHandler.startParagraph(currPProperties);
@@ -209,9 +201,9 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             inTextBox = true;
             return;
         }
-        //these are sorted descending by frequency within docx files
-        //in our regression corpus.
-        //yes, I know, likely premature optimization...
+        // these are sorted descending by frequency within docx files
+        // in our regression corpus.
+        // yes, I know, likely premature optimization...
         if (RPR.equals(localName)) {
             inRPr = true;
         } else if (R.equals(localName)) {
@@ -222,7 +214,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             runBuffer.append(TAB_CHAR);
         } else if (P.equals(localName)) {
             lastStartElementWasP = true;
-        } else if (B.equals(localName)) { //TODO: add bCs
+        } else if (B.equals(localName)) { // TODO: add bCs
             if (inR && inRPr) {
                 currRunProperties.setBold(true);
             }
@@ -231,8 +223,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (P_STYLE.equals(localName)) {
             String styleId = atts.getValue(W_NS, "val");
             currPProperties.setStyleID(styleId);
-        } else if (I.equals(localName)) { //TODO: add iCs
-            //rprs don't have to be inR; ignore those that aren't
+        } else if (I.equals(localName)) { // TODO: add iCs
+            // rprs don't have to be inR; ignore those that aren't
             if (inR && inRPr) {
                 currRunProperties.setItalics(true);
             }
@@ -265,7 +257,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (BOOKMARK_END.equals(localName)) {
             String id = atts.getValue(W_NS, "id");
             bodyContentsHandler.endBookmark(id);
-        } else if (HYPERLINK.equals(localName)) { //docx hyperlink
+        } else if (HYPERLINK.equals(localName)) { // docx hyperlink
             String hyperlinkId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
             String hyperlink = null;
             if (hyperlinkId != null) {
@@ -278,7 +270,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 }
                 bodyContentsHandler.hyperlinkStart(anchor);
             }
-        } else if (HLINK_CLICK.equals(localName)) { //pptx hyperlink
+        } else if (HLINK_CLICK.equals(localName)) { // pptx hyperlink
             String hyperlinkId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
             String hyperlink = null;
             if (hyperlinkId != null) {
@@ -288,13 +280,13 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             }
         } else if (TBL.equals(localName)) {
             bodyContentsHandler.startTable();
-        } else if (BLIP.equals(localName)) { //check for DRAWING_NS
+        } else if (BLIP.equals(localName)) { // check for DRAWING_NS
             picRId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "embed");
-        } else if ("cNvPr".equals(localName)) { //check for PIC_NS?
+        } else if ("cNvPr".equals(localName)) { // check for PIC_NS?
             picDescription = atts.getValue("", "descr");
         } else if (PIC.equals(localName)) {
-            inPic = true; //check for PIC_NS?
-        } //TODO: add sdt, sdtPr, sdtContent goes here statistically
+            inPic = true; // check for PIC_NS?
+        } // TODO: add sdt, sdtPr, sdtContent goes here statistically
         else if (FOOTNOTE_REFERENCE.equals(localName)) {
             String id = atts.getValue(W_NS, "id");
             bodyContentsHandler.footnoteReference(id);
@@ -311,17 +303,17 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             startEditedSection(EditType.MOVE_TO, atts);
         } else if (MOVE_FROM.equals(localName)) {
             startEditedSection(editType.MOVE_FROM, atts);
-        } else if (OLE_OBJECT.equals(localName)) { //check for O_NS?
+        } else if (OLE_OBJECT.equals(localName)) { // check for O_NS?
             String type = null;
             String refId = null;
-            //TODO: clean this up and ...want to get ProgID?
+            // TODO: clean this up and ...want to get ProgID?
             for (int i = 0; i < atts.getLength(); i++) {
                 String attLocalName = atts.getLocalName(i);
                 String attValue = atts.getValue(i);
                 if (attLocalName.equals("Type")) {
                     type = attValue;
-                } else if (OFFICE_DOC_RELATIONSHIP_NS.equals(atts.getURI(i)) &&
-                        attLocalName.equals("id")) {
+                } else if (OFFICE_DOC_RELATIONSHIP_NS.equals(atts.getURI(i))
+                                && attLocalName.equals("id")) {
                     refId = attValue;
                 }
             }
@@ -371,7 +363,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             try {
                 return Integer.parseInt(valString);
             } catch (NumberFormatException e) {
-                //swallow
+                // swallow
             }
         }
         return -1;
@@ -393,7 +385,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             inTextBox = false;
             return;
         }
-        if (PIC.equals(localName)) { //PIC_NS
+        if (PIC.equals(localName)) { // PIC_NS
             handlePict();
             inPic = false;
             return;
@@ -411,8 +403,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             currPProperties.reset();
         } else if (P.equals(localName)) {
             if (runBuffer.length() > 0) {
-                //<p><tab></p>...this will treat that as if it were
-                //a run...TODO: should we swallow whitespace that doesn't occur in a run?
+                // <p><tab></p>...this will treat that as if it were
+                // a run...TODO: should we swallow whitespace that doesn't occur in a run?
                 bodyContentsHandler.run(currRunProperties, runBuffer.toString());
                 runBuffer.setLength(0);
             }
@@ -428,8 +420,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             handleEndOfRun();
         } else if (DEL_TEXT.equals(localName)) {
             inDelText = false;
-        } else if (INS.equals(localName) || DEL.equals(localName) || MOVE_TO.equals(localName) ||
-                MOVE_FROM.equals(localName)) {
+        } else if (INS.equals(localName) || DEL.equals(localName) || MOVE_TO.equals(localName)
+                        || MOVE_FROM.equals(localName)) {
             editType = EditType.NONE;
         } else if (HYPERLINK.equals(localName)) {
             bodyContentsHandler.hyperlinkEnd();

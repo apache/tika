@@ -1,29 +1,25 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.tika.xmp.convert;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 import com.adobe.internal.xmp.XMPException;
 import com.adobe.internal.xmp.XMPMeta;
 import com.adobe.internal.xmp.XMPMetaFactory;
-
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -38,7 +34,8 @@ public class TikaToXMP {
     /**
      * Map from mimetype to converter class
      */
-    private static final Map<MediaType, Class<? extends ITikaToXMPConverter>> CONVERTER_MAP = new HashMap<>();
+    private static final Map<MediaType, Class<? extends ITikaToXMPConverter>> CONVERTER_MAP =
+                    new HashMap<>();
 
     static {
         initialize();
@@ -51,8 +48,7 @@ public class TikaToXMP {
     }
 
     /**
-     * @see TikaToXMP#convert(Metadata, String) But the mimetype is retrieved from the metadata
-     * map.
+     * @see TikaToXMP#convert(Metadata, String) But the mimetype is retrieved from the metadata map.
      */
     public static XMPMeta convert(Metadata tikaMetadata) throws TikaException {
         if (tikaMetadata == null) {
@@ -75,7 +71,7 @@ public class TikaToXMP {
      * prefixes.
      *
      * @param tikaMetadata the Metadata map from Tika
-     * @param mimetype     depicts the format's converter to use
+     * @param mimetype depicts the format's converter to use
      * @return XMP object
      * @throws TikaException
      */
@@ -146,8 +142,9 @@ public class TikaToXMP {
                     converter = clazz.getDeclaredConstructor().newInstance();
                 } catch (Exception e) {
                     throw new TikaException(
-                            "TikaToXMP converter class cannot be instantiated for mimetype: " +
-                                    type.toString(), e);
+                                    "TikaToXMP converter class cannot be instantiated for mimetype: "
+                                                    + type.toString(),
+                                    e);
                 }
             }
         }
@@ -167,7 +164,7 @@ public class TikaToXMP {
 
         // MS Office Binary File Format
         addConverter(new OfficeParser().getSupportedTypes(parseContext),
-                MSOfficeBinaryConverter.class);
+                        MSOfficeBinaryConverter.class);
 
         // Rich Text Format
         addConverter(new RTFParser().getSupportedTypes(parseContext), RTFConverter.class);
@@ -177,11 +174,11 @@ public class TikaToXMP {
 
         // Open document format
         addConverter(new OpenDocumentParser().getSupportedTypes(parseContext),
-                OpenDocumentConverter.class);
+                        OpenDocumentConverter.class);
     }
 
     private static void addConverter(Set<MediaType> supportedTypes,
-                                     Class<? extends ITikaToXMPConverter> converter) {
+                    Class<? extends ITikaToXMPConverter> converter) {
         for (MediaType type : supportedTypes) {
             CONVERTER_MAP.put(type, converter);
         }
