@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- downloaded from: https://google.github.io/styleguide/eclipse-java-google-style.xml -->
+<!-- downloaded from: https://google.github.io/styleguide/eclipse-java-google-style.xml on 2025-11-20 -->
 <profiles version="13">
   <profile kind="CodeFormatterProfile" name="GoogleStyle" version="13">
     <!-- customized features -->
@@ -12,8 +12,10 @@
     <setting id="org.eclipse.jdt.core.formatter.brace_position_for_switch" value="next_line"/>
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_expressions_in_parenthesized_expression" value="17"/>
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_expressions_in_return_statement" value="17"/>
-<!--
-
+    <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="120"/>
+    <setting id="org.eclipse.jdt.core.formatter.comment.line_length" value="100"/>
+    <setting id="org.eclipse.jdt.core.formatter.join_lines_in_comments" value="false"/>
+    <!-- original features from the file as downloaded
     <setting id="org.eclipse.jdt.core.formatter.comment.new_lines_at_block_boundaries" value="true"/>
     <setting id="org.eclipse.jdt.core.formatter.comment.insert_new_line_before_root_tags" value="insert"/>
     <setting id="org.eclipse.jdt.core.formatter.disabling_tag" value="@formatter:off"/>
@@ -98,7 +100,6 @@
     <setting id="org.eclipse.jdt.core.formatter.insert_space_before_opening_angle_bracket_in_type_parameters" value="do not insert"/>
     <setting id="org.eclipse.jdt.core.formatter.comment.clear_blank_lines_in_block_comment" value="false"/>
     <setting id="org.eclipse.jdt.core.formatter.insert_new_line_in_empty_type_declaration" value="insert"/>
-    <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="100"/>
     <setting id="org.eclipse.jdt.core.formatter.insert_space_before_opening_paren_in_if" value="insert"/>
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_selector_in_method_invocation.count_dependent" value="16|4|48"/>
     <setting id="org.eclipse.jdt.core.formatter.insert_space_between_brackets_in_array_type_reference" value="do not insert"/>
@@ -248,7 +249,6 @@
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_enum_constant" value="16"/>
     <setting id="org.eclipse.jdt.core.formatter.insert_new_line_before_while_in_do_statement" value="do not insert"/>
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_enum_constant.count_dependent" value="16|-1|16"/>
-    <setting id="org.eclipse.jdt.core.formatter.comment.line_length" value="100"/>
     <setting id="org.eclipse.jdt.core.formatter.insert_new_line_after_annotation_on_package" value="insert"/>
     <setting id="org.eclipse.jdt.core.formatter.blank_lines_between_import_groups" value="0"/>
     <setting id="org.eclipse.jdt.core.formatter.insert_space_before_comma_in_enum_constant_arguments" value="do not insert"/>
@@ -264,7 +264,6 @@
     <setting id="org.eclipse.jdt.core.formatter.insert_space_before_closing_paren_in_synchronized" value="do not insert"/>
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_superinterfaces_in_enum_declaration" value="16"/>
     <setting id="org.eclipse.jdt.core.formatter.indent_statements_compare_to_block" value="true"/>
-    <setting id="org.eclipse.jdt.core.formatter.join_lines_in_comments" value="true"/>
     <setting id="org.eclipse.jdt.core.formatter.insert_space_before_question_in_conditional" value="insert"/>
     <setting id="org.eclipse.jdt.core.formatter.insert_space_before_comma_in_multiple_field_declarations" value="do not insert"/>
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_compact_if" value="16"/>
@@ -338,6 +337,6 @@
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_for_statement" value="16"/>
     <setting id="org.eclipse.jdt.core.formatter.insert_space_before_opening_angle_bracket_in_type_arguments" value="do not insert"/>
     <setting id="org.eclipse.jdt.core.formatter.never_indent_block_comments_on_first_column" value="false"/>
-    <setting id="org.eclipse.jdt.core.formatter.keep_then_statement_on_same_line" value="false"/> -->
+    <setting id="org.eclipse.jdt.core.formatter.keep_then_statement_on_same_line" value="false"/>-->
   </profile>
 </profiles>
